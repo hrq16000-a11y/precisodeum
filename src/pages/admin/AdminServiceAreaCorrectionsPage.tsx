@@ -18,8 +18,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPinned, RefreshCw, PlayCircle, Loader2 } from 'lucide-react';
+import { MapPinned, RefreshCw, PlayCircle, Loader2, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface SyncRun {
+  id: string;
+  started_at: string;
+  finished_at: string | null;
+  triggered_by: string;
+  dry_run: boolean;
+  affected_count: number;
+  status: string;
+  error_message: string | null;
+  timezone: string | null;
+}
 
 interface Correction {
   id: string;
@@ -56,6 +68,19 @@ const AdminServiceAreaCorrectionsPage = () => {
   const [to, setTo] = useState('');
   const [fetching, setFetching] = useState(false);
   const [running, setRunning] = useState(false);
+  const [runs, setRuns] = useState<SyncRun[]>([]);
+  const [tz, setTz] = useState<string>('America/Sao_Paulo');
+
+  const fetchRuns = useCallback(async () => {
+    const { data } = await supabase.rpc('admin_list_service_area_sync_runs' as any, { p_limit: 30 });
+    setRuns((data ?? []) as SyncRun[]);
+    const { data: setting } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'service_area_sync_timezone')
+      .maybeSingle();
+    if (setting?.value) setTz(String(setting.value).replace(/^"|"$/g, ''));
+  }, []);
 
   const fetchRows = useCallback(async () => {
     setFetching(true);
@@ -78,8 +103,11 @@ const AdminServiceAreaCorrectionsPage = () => {
   }, [providerFilter, cityFilter, from, to]);
 
   useEffect(() => {
-    if (isAdmin) fetchRows();
-  }, [isAdmin, fetchRows]);
+    if (isAdmin) {
+      fetchRows();
+      fetchRuns();
+    }
+  }, [isAdmin, fetchRows, fetchRuns]);
 
   const runSync = async (dryRun: boolean) => {
     setRunning(true);
@@ -99,6 +127,7 @@ const AdminServiceAreaCorrectionsPage = () => {
         : `${n} serviço(s) sincronizados com a cidade do provider.`,
     );
     if (!dryRun) fetchRows();
+    fetchRuns();
   };
 
   if (loading) {
@@ -177,6 +206,51 @@ const AdminServiceAreaCorrectionsPage = () => {
             Aplicar filtros
           </Button>
         </div>
+      </Card>
+
+      {/* Histórico de execuções do job */}
+      <Card className="mt-4 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold text-foreground">Execuções do job</h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Diário às 03:00 · TZ <span className="font-mono">{tz}</span> (cron 06:00 UTC)
+          </p>
+        </div>
+        {runs.length === 0 ? (
+          <p className="mt-2 text-xs text-muted-foreground">Nenhuma execução registrada ainda.</p>
+        ) : (
+          <div className="mt-2 max-h-64 overflow-auto divide-y divide-border">
+            {runs.map((run) => (
+              <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-xs">
+                <div className="flex items-center gap-2">
+                  {run.status === 'completed' ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                  ) : run.status === 'failed' ? (
+                    <XCircle className="h-3.5 w-3.5 text-red-600" />
+                  ) : (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  )}
+                  <span className="font-medium text-foreground">
+                    {new Date(run.started_at).toLocaleString('pt-BR')}
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">{run.triggered_by}</Badge>
+                  {run.dry_run && <Badge variant="secondary" className="text-[10px]">dry-run</Badge>}
+                </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <span>{run.affected_count} divergência(s)</span>
+                  {run.error_message && (
+                    <span className="max-w-[280px] truncate text-red-600" title={run.error_message}>
+                      {run.error_message}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       <p className="mt-3 text-xs text-muted-foreground">

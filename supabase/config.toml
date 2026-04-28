@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.import-jobs-rss]
 verify_jwt = false
+
+[functions.sync-service-areas-cron]
+verify_jwt = false
