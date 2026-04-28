@@ -161,9 +161,20 @@ const CategoryPage = () => {
     };
   }, [category, localProviders, nearbyProviders]);
 
+  // CollectionPage envelope — sinaliza ao Google que esta é uma página de coleção
+  const collectionLd = useMemo(() => category ? ({
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: cityForSeo ? `${category.name} em ${cityForSeo}` : category.name,
+    url: `${SITE_BASE_URL}/categoria/${category.slug}`,
+    isPartOf: { '@type': 'WebSite', url: SITE_BASE_URL, name: 'Preciso de um' },
+    about: { '@type': 'Service', name: category.name },
+  }) : null, [category, cityForSeo]);
+
   useJsonLd(breadcrumbLd);
   useJsonLd(serviceLd);
   useJsonLd(itemListLd);
+  useJsonLd(collectionLd);
 
   const paginatedLocal = localProviders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
   const paginatedNearby = nearbyProviders;
