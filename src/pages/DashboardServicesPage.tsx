@@ -791,7 +791,7 @@ const DashboardServicesPage = () => {
           return (
             <button
               type="button"
-              onClick={openCreate}
+              onClick={() => { resetForm(); setShowDialog(true); }}
               className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-accent/40 bg-accent/5 p-5 text-center transition-colors hover:border-accent hover:bg-accent/10 min-h-[200px]"
               aria-label={`Cadastrar ${nextSlotNumber}º serviço`}
             >
