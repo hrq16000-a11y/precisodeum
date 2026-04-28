@@ -613,7 +613,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // Antes de criar, verifica se este provider já tem serviço dessa
       // categoria (ou nome). Se tiver, reusa o ID — evita duplicar registros
       // e estourar a cota de serviços do plano.
-      if (state.firstServiceId) {
+      // Rastreia o ID resolvido localmente — `dispatch` não atualiza
+      // `state.firstServiceId` no mesmo tick, então o read-back abaixo
+      // precisa de uma referência síncrona.
+      let resolvedServiceId: string | null = state.firstServiceId;
+      if (resolvedServiceId) {
         // Estado local já tem ID → confiar e seguir para herança/conclusão.
       } else {
         const reusedId = await findExistingFirstService(
@@ -628,6 +632,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             .from('services')
             .update({ service_name: resolvedCategoryName, category_id: categoryId })
             .eq('id', reusedId);
+          resolvedServiceId = reusedId;
           dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
         } else {
           // 1) RPC oficial — cria serviço atomicamente
@@ -649,6 +654,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           if (error || !data?.success) {
             throw new Error(error?.message || data?.error || 'Falha ao criar serviço');
           }
+          resolvedServiceId = data.service_id;
           dispatch({ type: 'SET_FIRST_SERVICE_ID', id: data.service_id });
         }
       }
@@ -667,7 +673,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // Se algo divergir, executa UPDATE corretivo e registra telemetria.
       // Se a correção falhar, aborta e mostra erro ao usuário.
       try {
-        const sid = state.firstServiceId;
+        const sid = resolvedServiceId;
         if (sid) {
           const [{ data: svcRow }, { data: provRow }] = await Promise.all([
             supabase.from('services').select('service_name, category_id').eq('id', sid).maybeSingle(),
