@@ -122,6 +122,25 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const trustedDistanceKm = (typeof rawDistanceKm === 'number' && Number.isFinite(rawDistanceKm) && rawDistanceKm >= 0)
     ? rawDistanceKm
     : null;
+  // Telemetria one-shot por card: registra quando recebemos coords inválidas.
+  const distanceMissingReportedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (distanceMissingReportedRef.current) return;
+    const hasAuditOrField = provider._distanceAudit !== undefined || provider.distanceKm !== undefined;
+    if (!hasAuditOrField) return; // contexto sem GPS nem audit — não conta como erro
+    if (trustedDistanceKm !== null) return;
+    distanceMissingReportedRef.current = true;
+    // Importa lazy para não custar bundle no caminho feliz
+    import('@/lib/tracking').then(({ trackGeoEvent }) => {
+      trackGeoEvent('geo_failed', {
+        stage: 'provider_card_distance_missing',
+        provider_id: String(provider.id),
+        provider_city: String(provider.city || ''),
+        audit_source: String(provider._distanceAudit?.source || 'none'),
+        raw_value: String(rawDistanceKm ?? 'undefined'),
+      });
+    }).catch(() => {});
+  }, [provider.id, provider.city, provider._distanceAudit, provider.distanceKm, rawDistanceKm, trustedDistanceKm]);
 
   if (!suspiciousDistance && trustedDistanceKm != null && trustedDistanceKm < 2) {
     badges.push(
