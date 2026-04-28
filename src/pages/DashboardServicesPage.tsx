@@ -583,7 +583,34 @@ const DashboardServicesPage = () => {
     setTagInput('');
     setWizardStep('form');
     setFormStep(1);
+    clearServiceWizardDraft(user?.id);
   };
+
+  // Restore draft when opening dialog for a NEW service.
+  // Disparado uma vez por abertura — não rehidrata em modo edição.
+  const restoredOnOpenRef = useRef(false);
+  useEffect(() => {
+    if (!showDialog || editId) {
+      restoredOnOpenRef.current = false;
+      return;
+    }
+    if (restoredOnOpenRef.current) return;
+    restoredOnOpenRef.current = true;
+    const draft = loadServiceWizardDraft(user?.id);
+    if (!draft) return;
+    setForm(draft.form);
+    setSelectedCategoryIds(draft.selectedCategoryIds);
+    setCitySearch(draft.citySearch);
+    setServiceRadius(draft.serviceRadius);
+    setIsEmergency(draft.isEmergency);
+    setSeoTags(draft.seoTags);
+    setGeoDetected(draft.geoDetected);
+    setFormStep(draft.formStep);
+    toast.message('Rascunho restaurado', {
+      description: 'Continuamos do ponto onde você parou.',
+      duration: 3000,
+    });
+  }, [showDialog, editId, user?.id]);
 
   const handleEdit = async (s: any) => {
     setForm({
