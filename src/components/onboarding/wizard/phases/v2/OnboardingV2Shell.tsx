@@ -622,6 +622,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           resolvedCategoryName,
         );
         if (reusedId) {
+          // Mesmo reusando, force-aligna nome e category_id ao canônico —
+          // a invariante vale para serviços recém-criados E reaproveitados.
+          await supabase
+            .from('services')
+            .update({ service_name: resolvedCategoryName, category_id: categoryId })
+            .eq('id', reusedId);
           dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
         } else {
           // 1) RPC oficial — cria serviço atomicamente
