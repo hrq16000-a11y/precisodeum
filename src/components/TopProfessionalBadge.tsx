@@ -37,7 +37,7 @@ const TopProfessionalBadge = ({ size = 'sm', showLabel = false, className = '' }
         <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
           <p className="font-semibold mb-1">Profissional Top</p>
           <p className="text-muted-foreground">
-            Profissional ativo na plataforma com nome e WhatsApp verificados pelo próprio prestador.
+            Perfil completo (foto, descrição, serviço) e contato/localização válidos. Veja os critérios cumpridos no perfil público.
           </p>
           <p className="mt-1.5 text-[10px] italic text-muted-foreground/80">
             O selo reflete maturidade e auto-verificação — não atesta qualificação técnica nem responsabilidade jurídica.
