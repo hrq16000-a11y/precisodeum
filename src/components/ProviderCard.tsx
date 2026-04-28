@@ -307,7 +307,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               <div className="mt-1 flex min-w-0 max-w-full flex-wrap items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate min-w-0 flex-1">{locationText}</span>
-                {trustedDistanceKm != null && (
+                {trustedDistanceKm != null ? (
                   <span
                     className="ml-1 shrink-0 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
                     title={provider._distanceAudit?.source === 'city-center'
@@ -318,6 +318,15 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                     <span className="opacity-70">·</span>
                     <Clock className="h-2.5 w-2.5" />
                     {Math.max(1, Math.round((trustedDistanceKm / 30) * 60))}min
+                  </span>
+                ) : (provider._distanceAudit !== undefined || provider.distanceKm !== undefined) && (
+                  <span
+                    className="ml-1 shrink-0 inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                    title="Não foi possível calcular a distância — coordenadas do profissional ou do usuário indisponíveis."
+                    data-testid="distance-unavailable"
+                  >
+                    <MapPin className="h-2.5 w-2.5" />
+                    Distância indisponível
                   </span>
                 )}
                 {/* Audit chip — visível apenas em DEV ou quando ?audit=1 está na URL */}
