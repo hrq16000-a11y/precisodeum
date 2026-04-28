@@ -697,18 +697,21 @@ const DashboardPage = () => {
           );
         }
         return (
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <DismissibleWidget widgetKey="first_lead_checklist">
-              <FirstLeadChecklist
-                servicesCount={servicesCount ?? 0}
-                portfolioAlbumsCount={portfolioAlbumCount}
-              />
-            </DismissibleWidget>
-            <DismissibleWidget widgetKey="profile_location_checklist">
-              <ProfileLocationChecklist provider={provider as any} />
-            </DismissibleWidget>
-            <CommunityVerifiedStatus />
-          </div>
+          <>
+            <IncompleteLocationAlert provider={provider as any} />
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <DismissibleWidget widgetKey="first_lead_checklist">
+                <FirstLeadChecklist
+                  servicesCount={servicesCount ?? 0}
+                  portfolioAlbumsCount={portfolioAlbumCount}
+                />
+              </DismissibleWidget>
+              <DismissibleWidget widgetKey="profile_location_checklist">
+                <ProfileLocationChecklist provider={provider as any} />
+              </DismissibleWidget>
+              <CommunityVerifiedStatus />
+            </div>
+          </>
         );
       })()}
 
