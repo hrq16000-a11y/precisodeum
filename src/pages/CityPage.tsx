@@ -54,13 +54,34 @@ const CityPage = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['city-page', slug],
     queryFn: async () => {
-      const { data: city } = await supabase
+      // 1) Match exato pelo slug fornecido na URL
+      let { data: city } = await supabase
         .from('cities')
         .select('*')
         .eq('slug', slug)
         .maybeSingle();
 
+      // 2) Fallback: tenta resolver via RPC fuzzy (ex.: "picarras" → "balneario-picarras-sc")
+      if (!city) {
+        const { data: resolved } = await supabase
+          .rpc('resolve_city_slug' as any, { _input: slug });
+        const match = Array.isArray(resolved) && resolved.length > 0 ? resolved[0] as any : null;
+        if (match?.slug && match.slug !== slug) {
+          // Sinaliza para o componente fazer redirect ao slug canônico
+          return { redirectTo: match.slug as string };
+        }
+        if (match?.slug) {
+          const { data: byCanonical } = await supabase
+            .from('cities')
+            .select('*')
+            .eq('slug', match.slug)
+            .maybeSingle();
+          city = byCanonical;
+        }
+      }
+
       if (!city) return null;
+
 
       const { data: provs } = await supabase
         .from('providers')
