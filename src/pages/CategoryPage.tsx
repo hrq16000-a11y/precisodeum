@@ -154,11 +154,19 @@ const CategoryPage = () => {
     ],
   }) : null, [category]);
 
+  // Helper: filtra os providers já rankeados pelo critério SEO de qualidade
+  const eligibleIds = useMemo(() => new Set(seoEligibleProviders.map((p: any) => p.id)), [seoEligibleProviders]);
+  const filteredForSeo = useMemo(() => {
+    const merged = [...localProviders, ...nearbyProviders];
+    const filtered = merged.filter((p: any) => eligibleIds.has(p.id));
+    // Fallback: se o filtro zerar, mantém os top 10 originais para não quebrar Rich Results
+    return (filtered.length > 0 ? filtered : merged).slice(0, 10);
+  }, [localProviders, nearbyProviders, eligibleIds]);
+
   // Service schema with ItemList of providers and aggregate ratings (Rich Snippets)
   const serviceLd = useMemo(() => {
     if (!category) return null;
-    const topProviders = [...localProviders, ...nearbyProviders].slice(0, 10);
-    const { aggregateRating } = getSeoAuthorityData(topProviders);
+    const { aggregateRating } = getSeoAuthorityData(filteredForSeo);
     const aggregate = aggregateRating ? { aggregateRating } : {};
     return {
       '@context': 'https://schema.org',
@@ -174,23 +182,22 @@ const CategoryPage = () => {
       url: `${SITE_BASE_URL}/categoria/${category.slug}`,
       ...aggregate,
     };
-  }, [category, localProviders, nearbyProviders, cityForSeo]);
+  }, [category, filteredForSeo, cityForSeo]);
 
   const itemListLd = useMemo(() => {
     if (!category) return null;
-    const topProviders = [...localProviders, ...nearbyProviders].slice(0, 10);
-    if (topProviders.length === 0) return null;
+    if (filteredForSeo.length === 0) return null;
     return {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
-      itemListElement: topProviders.map((p, idx) => ({
+      itemListElement: filteredForSeo.map((p, idx) => ({
         '@type': 'ListItem',
         position: idx + 1,
         url: `${SITE_BASE_URL}/profissional/${p.slug}`,
         name: p.businessName || p.name || 'Profissional',
       })),
     };
-  }, [category, localProviders, nearbyProviders]);
+  }, [category, filteredForSeo]);
 
   // CollectionPage envelope — sinaliza ao Google que esta é uma página de coleção
   const collectionLd = useMemo(() => category ? ({
