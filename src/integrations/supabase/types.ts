@@ -6795,6 +6795,14 @@ export type Database = {
       process_daily_stats: { Args: never; Returns: number }
       process_lead_followup_reminders: { Args: never; Returns: Json }
       publish_my_provider: { Args: never; Returns: Json }
+      realign_first_service: {
+        Args: {
+          _category_id: string
+          _provider_id: string
+          _service_id: string
+        }
+        Returns: Json
+      }
       recalc_provider_community_verified: {
         Args: { _provider_id: string }
         Returns: boolean

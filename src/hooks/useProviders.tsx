@@ -244,14 +244,21 @@ const sortFeaturedProviders = (providers: DbProvider[], options: FeaturedProvide
   const { latitude, longitude, categorySlug, sortBy = 'proximity', userCity } = options as FeaturedProvidersOptions & { userCity?: string };
   const userCityNorm = (userCity || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+  // Fallback: sem GPS → tenta usar centro da cidade do usuário como origem.
+  const fallbackUserCoords = (!Number.isFinite(latitude) || !Number.isFinite(longitude)) && userCity
+    ? getCityCoords(userCity)
+    : null;
+  const effectiveLat = Number.isFinite(latitude) ? latitude : fallbackUserCoords?.lat ?? null;
+  const effectiveLon = Number.isFinite(longitude) ? longitude : fallbackUserCoords?.lon ?? null;
+
   const withDistance = providers.map((provider) => {
-    if (hasCoordinates(latitude, longitude)) {
-      const audit = calculateAuditedDistanceKm(latitude ?? null, longitude ?? null, provider, userCity);
-      return {
-        ...provider,
-        distanceKm: Number.isFinite(audit.distanceKm) ? Math.round(audit.distanceKm * 10) / 10 : undefined,
-        _distanceAudit: audit,
-      };
+    if (hasCoordinates(effectiveLat, effectiveLon)) {
+      const audit = calculateAuditedDistanceKm(effectiveLat ?? null, effectiveLon ?? null, provider, userCity);
+      // Normaliza não-finito → undefined (UI mostra "indisponível", sort empurra pro fim).
+      const dKm = Number.isFinite(audit.distanceKm)
+        ? Math.round(audit.distanceKm * 10) / 10
+        : undefined;
+      return { ...provider, distanceKm: dKm, _distanceAudit: audit };
     }
     return provider;
   });
@@ -961,6 +968,11 @@ export function filterAndRankProvidersGrouped(
 
   const userCityNorm = city ? normalize(city) : '';
 
+  // Telemetria: conta quantos providers ficaram com distância não-finita
+  // (Infinity/NaN). Reportado uma vez por consulta para identificar fontes
+  // de coordenadas inválidas (ex: providers sem latitude/longitude no DB).
+  let _invalidDistanceCount = 0;
+
   // Enrich with geo + relevance scores + audited distance
   const enriched = results.map((p, index) => {
     const isLocal = (intent !== 'SERVICE_ONLY' && (geoContext.cityNorm || geoContext.stateNorm))
@@ -970,9 +982,13 @@ export function filterAndRankProvidersGrouped(
     const relevance = SearchIntelligence.computeRelevanceScore(p, serviceQuery);
     const scored = SearchIntelligence.computeFinalScore(gs, relevance, intent);
 
-    // Audited distance — keeps source/suspicious flags for UI
+    // Audited distance — keeps source/suspicious flags for UI.
+    // Normaliza qualquer valor não-finito (NaN) para o sentinel `Infinity`
+    // — todo o sort downstream usa `=== Infinity` como "sem distância".
     const audit = calculateAuditedDistanceKm(effectiveUserLat, effectiveUserLon, p, city);
-    const distanceKm = audit.distanceKm;
+    const rawDistance = audit.distanceKm;
+    const distanceKm = Number.isFinite(rawDistance) ? rawDistance : Infinity;
+    if (!Number.isFinite(rawDistance)) _invalidDistanceCount += 1;
 
     // Combined text+distance score: avoids weak match closer beating strong match a bit further
     const textRel = _textMatches.get(p.id)?.score ?? (relevance || 0);
@@ -992,6 +1008,19 @@ export function filterAndRankProvidersGrouped(
 
     return { p, isLocal, scored, distanceKm, audit, textRel, strongTextMatch, distScore, combinedScore, originalIndex: index };
   });
+
+  // Telemetria batched — só dispara se houve coords inválidas
+  if (_invalidDistanceCount > 0) {
+    void import('@/lib/tracking').then(({ trackGeoEvent }) => {
+      trackGeoEvent('geo_failed', {
+        stage: 'search_invalid_distance_batch',
+        invalid_count: String(_invalidDistanceCount),
+        total: String(enriched.length),
+        had_user_coords: String(Number.isFinite(effectiveUserLat) && Number.isFinite(effectiveUserLon)),
+        used_city_fallback: String(!!fallbackUserCoords),
+      });
+    }).catch(() => {});
+  }
 
   const hasGeoContext = !!(geoContext.cityNorm || geoContext.stateNorm);
 

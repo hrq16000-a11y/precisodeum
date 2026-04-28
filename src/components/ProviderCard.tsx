@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy, Sparkles, Zap, Rocket } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
@@ -122,6 +123,25 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const trustedDistanceKm = (typeof rawDistanceKm === 'number' && Number.isFinite(rawDistanceKm) && rawDistanceKm >= 0)
     ? rawDistanceKm
     : null;
+  // Telemetria one-shot por card: registra quando recebemos coords inválidas.
+  const distanceMissingReportedRef = useRef(false);
+  useEffect(() => {
+    if (distanceMissingReportedRef.current) return;
+    const hasAuditOrField = provider._distanceAudit !== undefined || provider.distanceKm !== undefined;
+    if (!hasAuditOrField) return; // contexto sem GPS nem audit — não conta como erro
+    if (trustedDistanceKm !== null) return;
+    distanceMissingReportedRef.current = true;
+    // Importa lazy para não custar bundle no caminho feliz
+    import('@/lib/tracking').then(({ trackGeoEvent }) => {
+      trackGeoEvent('geo_failed', {
+        stage: 'provider_card_distance_missing',
+        provider_id: String(provider.id),
+        provider_city: String(provider.city || ''),
+        audit_source: String(provider._distanceAudit?.source || 'none'),
+        raw_value: String(rawDistanceKm ?? 'undefined'),
+      });
+    }).catch(() => {});
+  }, [provider.id, provider.city, provider._distanceAudit, provider.distanceKm, rawDistanceKm, trustedDistanceKm]);
 
   if (!suspiciousDistance && trustedDistanceKm != null && trustedDistanceKm < 2) {
     badges.push(
@@ -287,7 +307,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               <div className="mt-1 flex min-w-0 max-w-full flex-wrap items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate min-w-0 flex-1">{locationText}</span>
-                {trustedDistanceKm != null && (
+                {trustedDistanceKm != null ? (
                   <span
                     className="ml-1 shrink-0 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
                     title={provider._distanceAudit?.source === 'city-center'
@@ -298,6 +318,15 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                     <span className="opacity-70">·</span>
                     <Clock className="h-2.5 w-2.5" />
                     {Math.max(1, Math.round((trustedDistanceKm / 30) * 60))}min
+                  </span>
+                ) : (provider._distanceAudit !== undefined || provider.distanceKm !== undefined) && (
+                  <span
+                    className="ml-1 shrink-0 inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                    title="Não foi possível calcular a distância — coordenadas do profissional ou do usuário indisponíveis."
+                    data-testid="distance-unavailable"
+                  >
+                    <MapPin className="h-2.5 w-2.5" />
+                    Distância indisponível
                   </span>
                 )}
                 {/* Audit chip — visível apenas em DEV ou quando ?audit=1 está na URL */}
