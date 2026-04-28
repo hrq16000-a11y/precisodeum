@@ -23,6 +23,9 @@ import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
 import { formatServiceArea, stripLegacyAreaPrefixes, isCatalogedCity } from '@/lib/serviceAreaFormat';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import { handleImageError } from '@/lib/imageResolver';
+import { lintServiceDescription, sanitizePastedCity } from '@/lib/serviceQualityLinter';
+import AdQualityScore from '@/components/dashboard/AdQualityScore';
+import WizardLegalDisclaimer from '@/components/dashboard/WizardLegalDisclaimer';
 
 // Heavy editor sub-components — only loaded when the edit Dialog opens
 const SmartCategoryPicker = lazy(() => import('@/components/SmartCategoryPicker'));
@@ -391,10 +394,20 @@ const DashboardServicesPage = () => {
       // Bloqueia digitação livre — só aceita seleção do autocomplete (IBGE).
       errors.service_area = 'Selecione uma cidade da lista (não digite manualmente)';
     }
+    // Linter anti-leilão: bloqueia termos proibidos antes de enviar ao backend
+    const forbiddenHits = lintServiceDescription(form.description);
+    if (forbiddenHits.length > 0) {
+      errors.description = `Linguagem de leilão detectada: "${forbiddenHits[0].term}". Substitua por uma frase de valorização técnica.`;
+    }
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    // Coerência radius=city: trava service_area = provider.city
+    let finalArea = cleanedArea;
+    if (serviceRadius === 'city' && provider?.city) {
+      finalArea = provider.city;
+    }
     // Garante que vai para o banco já normalizado (trigger do DB também valida).
-    if (cleanedArea !== form.service_area) {
-      setForm((prev) => ({ ...prev, service_area: cleanedArea }));
+    if (finalArea !== form.service_area) {
+      setForm((prev) => ({ ...prev, service_area: finalArea }));
     }
     setFormErrors({});
     setIsSubmitting(true);
@@ -410,7 +423,7 @@ const DashboardServicesPage = () => {
         service_name: form.service_name,
         description: form.description,
         whatsapp: form.whatsapp || provider?.whatsapp || '',
-        service_area: form.service_area,
+        service_area: finalArea,
         address: provider ? [provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') : form.address,
         working_hours: form.working_hours,
         website: form.website,
@@ -927,8 +940,35 @@ const DashboardServicesPage = () => {
                     value={form.description}
                     onChange={handleChange}
                     placeholder="Descreva seu serviço, diferenciais e o que está incluso no valor..."
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                    className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.description ? 'border-destructive' : 'border-input'}`}
                   />
+                  {/* Linter anti-leilão: sugestão de valorização técnica */}
+                  {(() => {
+                    const hits = lintServiceDescription(form.description);
+                    if (hits.length === 0) return null;
+                    const hit = hits[0];
+                    return (
+                      <div className="mt-1.5 rounded-lg border border-destructive/30 bg-destructive/5 p-2 space-y-1.5">
+                        <p className="text-[11px] text-destructive font-medium">
+                          Termo "{hit.term}" desvaloriza seu serviço. Sugestão:
+                        </p>
+                        <p className="text-[11px] text-foreground italic">"{hit.suggestion}"</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const replaced = form.description.replace(new RegExp(`\\b${hit.term}\\b`, 'i'), '');
+                            const next = `${replaced.trim()} ${hit.suggestion}`.trim();
+                            setForm(prev => ({ ...prev, description: next }));
+                            setFormErrors(prev => ({ ...prev, description: '' }));
+                          }}
+                          className="text-[11px] font-semibold text-accent hover:underline"
+                        >
+                          Aplicar sugestão
+                        </button>
+                      </div>
+                    );
+                  })()}
+                  {formErrors.description && <p className="text-xs text-destructive mt-1">{formErrors.description}</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -979,6 +1019,13 @@ const DashboardServicesPage = () => {
                         setShowCityDropdown(true);
                         if (e.target.value.length < 2) setForm(prev => ({ ...prev, service_area: '' }));
                       }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pasted = e.clipboardData.getData('text');
+                        const sanitized = sanitizePastedCity(pasted);
+                        setCitySearch(sanitized);
+                        setShowCityDropdown(true);
+                      }}
                       onFocus={() => { if (citySearch.length >= 2) setShowCityDropdown(true); }}
                       placeholder="Digite o nome da cidade..."
                       className={`w-full rounded-lg border bg-background pl-9 pr-8 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.service_area ? 'border-destructive' : 'border-input'}`}
@@ -989,8 +1036,28 @@ const DashboardServicesPage = () => {
                       </button>
                     )}
                   </div>
+                  {/* Chip de geo-confirmação 1-clique */}
+                  {!form.service_area && geo.city && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const match = ALL_CITIES.find(
+                          c => c.value.toLowerCase() === (geo.city || '').toLowerCase()
+                            && (!geo.state || c.state === geo.state)
+                        );
+                        if (match) {
+                          selectCity(match);
+                          setGeoDetected(true);
+                        }
+                      }}
+                      className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent hover:bg-accent/20 transition"
+                    >
+                      <MapPin className="h-3 w-3" />
+                      Vimos que você está em {geo.city}{geo.state ? `/${geo.state}` : ''}. Confirmar?
+                    </button>
+                  )}
                   {geoDetected && form.service_area && (
-                    <p className="text-[11px] text-accent mt-0.5 flex items-center gap-1">📍 Localização detectada</p>
+                    <p className="text-[11px] text-accent mt-0.5 flex items-center gap-1"><MapPin className="h-3 w-3" />Localização confirmada</p>
                   )}
                   {formErrors.service_area && <p className="text-xs text-destructive mt-1">{formErrors.service_area}</p>}
                   {showCityDropdown && filteredCities.length > 0 && (
@@ -1103,6 +1170,18 @@ const DashboardServicesPage = () => {
                     </p>
                   </div>
                 )}
+
+                {/* Score "Anúncio Padrão Ouro" — barra 0-100% */}
+                <AdQualityScore
+                  description={form.description}
+                  hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
+                  cityValidated={isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES)}
+                  hasPrice={!!form.price?.trim()}
+                  hasCategory={selectedCategoryIds.length > 0}
+                />
+
+                {/* Disclaimer fixo de não-intermediação */}
+                <WizardLegalDisclaimer />
 
                 {/* SEO Tags */}
                 <div>
