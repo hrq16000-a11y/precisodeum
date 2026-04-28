@@ -40,6 +40,7 @@ import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
 import FirstLeadChecklist from '@/components/dashboard/FirstLeadChecklist';
+import ProfileLocationChecklist from '@/components/dashboard/ProfileLocationChecklist';
 import SmartNextStepCTA from '@/components/dashboard/SmartNextStepCTA';
 import OnboardingCompletionTracker from '@/components/dashboard/OnboardingCompletionTracker';
 import LeadFollowupWidget from '@/components/dashboard/LeadFollowupWidget';
@@ -701,6 +702,9 @@ const DashboardPage = () => {
                 servicesCount={servicesCount ?? 0}
                 portfolioAlbumsCount={portfolioAlbumCount}
               />
+            </DismissibleWidget>
+            <DismissibleWidget widgetKey="profile_location_checklist">
+              <ProfileLocationChecklist provider={provider as any} />
             </DismissibleWidget>
             <CommunityVerifiedStatus />
           </div>
