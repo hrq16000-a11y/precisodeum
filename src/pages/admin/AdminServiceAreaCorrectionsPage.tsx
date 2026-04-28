@@ -18,8 +18,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPinned, RefreshCw, PlayCircle, Loader2 } from 'lucide-react';
+import { MapPinned, RefreshCw, PlayCircle, Loader2, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface SyncRun {
+  id: string;
+  started_at: string;
+  finished_at: string | null;
+  triggered_by: string;
+  dry_run: boolean;
+  affected_count: number;
+  status: string;
+  error_message: string | null;
+  timezone: string | null;
+}
 
 interface Correction {
   id: string;
@@ -56,6 +68,19 @@ const AdminServiceAreaCorrectionsPage = () => {
   const [to, setTo] = useState('');
   const [fetching, setFetching] = useState(false);
   const [running, setRunning] = useState(false);
+  const [runs, setRuns] = useState<SyncRun[]>([]);
+  const [tz, setTz] = useState<string>('America/Sao_Paulo');
+
+  const fetchRuns = useCallback(async () => {
+    const { data } = await supabase.rpc('admin_list_service_area_sync_runs' as any, { p_limit: 30 });
+    setRuns((data ?? []) as SyncRun[]);
+    const { data: setting } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'service_area_sync_timezone')
+      .maybeSingle();
+    if (setting?.value) setTz(String(setting.value).replace(/^"|"$/g, ''));
+  }, []);
 
   const fetchRows = useCallback(async () => {
     setFetching(true);
@@ -78,8 +103,11 @@ const AdminServiceAreaCorrectionsPage = () => {
   }, [providerFilter, cityFilter, from, to]);
 
   useEffect(() => {
-    if (isAdmin) fetchRows();
-  }, [isAdmin, fetchRows]);
+    if (isAdmin) {
+      fetchRows();
+      fetchRuns();
+    }
+  }, [isAdmin, fetchRows, fetchRuns]);
 
   const runSync = async (dryRun: boolean) => {
     setRunning(true);
@@ -99,6 +127,7 @@ const AdminServiceAreaCorrectionsPage = () => {
         : `${n} serviço(s) sincronizados com a cidade do provider.`,
     );
     if (!dryRun) fetchRows();
+    fetchRuns();
   };
 
   if (loading) {
