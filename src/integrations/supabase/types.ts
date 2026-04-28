@@ -4156,6 +4156,48 @@ export type Database = {
           },
         ]
       }
+      service_area_sync_runs: {
+        Row: {
+          affected_count: number
+          created_at: string
+          dry_run: boolean
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          timezone: string | null
+          triggered_by: string
+          triggered_user_id: string | null
+        }
+        Insert: {
+          affected_count?: number
+          created_at?: string
+          dry_run?: boolean
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          timezone?: string | null
+          triggered_by?: string
+          triggered_user_id?: string | null
+        }
+        Update: {
+          affected_count?: number
+          created_at?: string
+          dry_run?: boolean
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          timezone?: string | null
+          triggered_by?: string
+          triggered_user_id?: string | null
+        }
+        Relationships: []
+      }
       service_categories: {
         Row: {
           category_id: string
@@ -6518,6 +6560,28 @@ export type Database = {
               source: string
             }[]
           }
+      admin_list_service_area_sync_runs: {
+        Args: { p_limit?: number }
+        Returns: {
+          affected_count: number
+          created_at: string
+          dry_run: boolean
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          timezone: string | null
+          triggered_by: string
+          triggered_user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "service_area_sync_runs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_log_impersonation_end: {
         Args: { _session_id: string }
         Returns: undefined
@@ -6631,15 +6695,29 @@ export type Database = {
         }[]
       }
       admin_suspicious_summary: { Args: { _limit?: number }; Returns: Json }
-      admin_sync_provider_city_with_services: {
-        Args: { p_dry_run?: boolean }
-        Returns: {
-          after_value: string
-          before_value: string
-          provider_id: string
-          service_id: string
-        }[]
-      }
+      admin_sync_provider_city_with_services:
+        | {
+            Args: { p_dry_run?: boolean }
+            Returns: {
+              after_value: string
+              before_value: string
+              provider_id: string
+              service_id: string
+            }[]
+          }
+        | {
+            Args: {
+              p_dry_run?: boolean
+              p_timezone?: string
+              p_triggered_by?: string
+            }
+            Returns: {
+              after_value: string
+              before_value: string
+              provider_id: string
+              service_id: string
+            }[]
+          }
       admin_system_health: { Args: { _limit?: number }; Returns: Json }
       admin_system_health_full: { Args: never; Returns: Json }
       audit_user_ref_full: {
