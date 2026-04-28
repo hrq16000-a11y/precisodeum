@@ -46,12 +46,39 @@ export function safeOptionalString(value: unknown): string | null {
 export type RawProviderInput = Record<string, unknown>;
 
 /**
+ * Chaves de endereço detalhado que NÃO devem ser persistidas em `providers`.
+ *
+ * O schema só guarda `city`, `state`, `neighborhood`, `latitude`, `longitude`.
+ * Qualquer tentativa de salvar logradouro/CEP/complemento vinda de UI antiga
+ * ou de auto-fill é silenciosamente removida e logada em console.warn para
+ * facilitar debugging. Isso impede 1) erros 42703 (column does not exist)
+ * e 2) vazamento de PII de endereço residencial.
+ */
+export const PROVIDER_FORBIDDEN_ADDRESS_KEYS = [
+  'address',
+  'street',
+  'logradouro',
+  'cep',
+  'postal_code',
+  'zipcode',
+  'zip',
+  'complement',
+  'complemento',
+  'numero',
+  'number',
+  'address_line',
+  'address_line_1',
+  'address_line_2',
+] as const;
+
+/**
  * Normaliza um payload de provider antes do insert/update.
  *
  * - Garante que todos os campos em PROVIDER_REQUIRED_STRING_FIELDS sejam
  *   strings (vazias se faltarem).
- * - Mantém demais campos como vieram (não filtra colunas desconhecidas
- *   para preservar flexibilidade do chamador).
+ * - Remove silenciosamente chaves de endereço detalhado que não pertencem
+ *   ao schema (logradouro/CEP/complemento). Loga aviso em dev.
+ * - Mantém demais campos como vieram para preservar flexibilidade.
  *
  * @param input  Payload bruto montado pelo wizard / página de edição.
  * @returns      Payload pronto para `.insert()` ou `.update()`.
@@ -60,10 +87,36 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
   input: T,
 ): T & Record<ProviderRequiredStringField, string> {
   const out = { ...input } as Record<string, unknown>;
+
+  // 1) Remove chaves proibidas (endereço detalhado fora do schema).
+  const stripped: string[] = [];
+  for (const key of PROVIDER_FORBIDDEN_ADDRESS_KEYS) {
+    if (key in out) {
+      stripped.push(key);
+      delete out[key];
+    }
+  }
+  if (stripped.length > 0 && typeof console !== 'undefined') {
+    console.warn(
+      '[providerPayload] Campos de endereço ignorados (não pertencem ao schema):',
+      stripped.join(', '),
+      '— se você precisa salvar isso, adicione coluna explícita ou use outra tabela.',
+    );
+  }
+
+  // 2) Garante NOT NULL strings.
   for (const key of PROVIDER_REQUIRED_STRING_FIELDS) {
     out[key] = safeRequiredString(out[key]);
   }
   return out as T & Record<ProviderRequiredStringField, string>;
+}
+
+/**
+ * Detecta payload com chaves de endereço inconsistentes (para mostrar aviso na UI).
+ * Retorna lista de chaves problemáticas — vazio = OK.
+ */
+export function detectForbiddenAddressKeys(input: RawProviderInput): string[] {
+  return PROVIDER_FORBIDDEN_ADDRESS_KEYS.filter((k) => k in input && Boolean(input[k]));
 }
 
 /** Validação mínima para impedir submissão de cadastro inviável. */
