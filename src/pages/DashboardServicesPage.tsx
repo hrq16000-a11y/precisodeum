@@ -956,29 +956,48 @@ const DashboardServicesPage = () => {
                     placeholder="Descreva seu serviço, diferenciais e o que está incluso no valor..."
                     className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.description ? 'border-destructive' : 'border-input'}`}
                   />
-                  {/* Linter anti-leilão: sugestão de valorização técnica */}
+                  {/* Linter anti-leilão: sugestão + botão "Reescrever com qualidade" */}
                   {(() => {
                     const hits = lintServiceDescription(form.description);
                     if (hits.length === 0) return null;
-                    const hit = hits[0];
                     return (
                       <div className="mt-1.5 rounded-lg border border-destructive/30 bg-destructive/5 p-2 space-y-1.5">
-                        <p className="text-[11px] text-destructive font-medium">
-                          Termo "{hit.term}" desvaloriza seu serviço. Sugestão:
+                        <p className="text-[11px] text-destructive font-medium flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {hits.length === 1
+                            ? `Termo "${hits[0].term}" desvaloriza seu serviço.`
+                            : `${hits.length} termos de leilão detectados (${hits.map(h => `"${h.term}"`).join(', ')}).`}
                         </p>
-                        <p className="text-[11px] text-foreground italic">"{hit.suggestion}"</p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const replaced = form.description.replace(new RegExp(`\\b${hit.term}\\b`, 'i'), '');
-                            const next = `${replaced.trim()} ${hit.suggestion}`.trim();
-                            setForm(prev => ({ ...prev, description: next }));
-                            setFormErrors(prev => ({ ...prev, description: '' }));
-                          }}
-                          className="text-[11px] font-semibold text-accent hover:underline"
-                        >
-                          Aplicar sugestão
-                        </button>
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = rewriteWithQuality(form.description);
+                              setForm(prev => ({ ...prev, description: next }));
+                              setFormErrors(prev => ({ ...prev, description: '' }));
+                              toast.success('Descrição reescrita com qualidade técnica!', {
+                                description: `${hits.length} termo(s) substituído(s) por linguagem profissional.`,
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 rounded-full bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 text-[11px] font-semibold transition-colors"
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            Reescrever com qualidade
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const hit = hits[0];
+                              const replaced = form.description.replace(new RegExp(`\\b${hit.term}\\b`, 'i'), '');
+                              const next = `${replaced.trim()} ${hit.suggestion}`.trim();
+                              setForm(prev => ({ ...prev, description: next }));
+                              setFormErrors(prev => ({ ...prev, description: '' }));
+                            }}
+                            className="text-[11px] font-semibold text-accent hover:underline"
+                          >
+                            Aplicar só "{hits[0].term}"
+                          </button>
+                        </div>
                       </div>
                     );
                   })()}
