@@ -423,7 +423,7 @@ const DashboardServicesPage = () => {
         service_name: form.service_name,
         description: form.description,
         whatsapp: form.whatsapp || provider?.whatsapp || '',
-        service_area: form.service_area,
+        service_area: finalArea,
         address: provider ? [provider.neighborhood, provider.city, provider.state].filter(Boolean).join(', ') : form.address,
         working_hours: form.working_hours,
         website: form.website,
