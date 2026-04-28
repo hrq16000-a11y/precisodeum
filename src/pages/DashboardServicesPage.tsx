@@ -1171,6 +1171,18 @@ const DashboardServicesPage = () => {
                   </div>
                 )}
 
+                {/* Score "Anúncio Padrão Ouro" — barra 0-100% */}
+                <AdQualityScore
+                  description={form.description}
+                  hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
+                  cityValidated={isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES)}
+                  hasPrice={!!form.price?.trim()}
+                  hasCategory={selectedCategoryIds.length > 0}
+                />
+
+                {/* Disclaimer fixo de não-intermediação */}
+                <WizardLegalDisclaimer />
+
                 {/* SEO Tags */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground flex items-center gap-1">
