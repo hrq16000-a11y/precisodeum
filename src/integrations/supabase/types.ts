@@ -3344,6 +3344,8 @@ export type Database = {
           meta_title: string | null
           mission_answers: Json
           neighborhood: string
+          neighborhood_source: string | null
+          neighborhood_source_at: string | null
           notification_channels: Json
           onboarding_progress: Json | null
           phone: string
@@ -3406,6 +3408,8 @@ export type Database = {
           meta_title?: string | null
           mission_answers?: Json
           neighborhood?: string
+          neighborhood_source?: string | null
+          neighborhood_source_at?: string | null
           notification_channels?: Json
           onboarding_progress?: Json | null
           phone?: string
@@ -3468,6 +3472,8 @@ export type Database = {
           meta_title?: string | null
           mission_answers?: Json
           neighborhood?: string
+          neighborhood_source?: string | null
+          neighborhood_source_at?: string | null
           notification_channels?: Json
           onboarding_progress?: Json | null
           phone?: string
@@ -6295,6 +6301,22 @@ export type Database = {
           level_name: string
           min_points: number
           user_count: number
+        }[]
+      }
+      admin_list_default_neighborhood_providers: {
+        Args: { _city?: string; _limit?: number; _state?: string }
+        Returns: {
+          city: string
+          full_name: string
+          has_coords: boolean
+          id: string
+          neighborhood: string
+          neighborhood_source: string
+          neighborhood_source_at: string
+          state: string
+          status: string
+          updated_at: string
+          user_id: string
         }[]
       }
       admin_list_orphan_profiles: {
