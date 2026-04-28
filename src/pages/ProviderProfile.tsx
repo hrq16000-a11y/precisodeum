@@ -1577,6 +1577,9 @@ const ProviderProfile = () => {
                       Ver pedido do produto: manter apenas a categoria abaixo do nome. */}
                 </div>
 
+                {/* Seção "Por que é Profissional Top" — critérios cumpridos (visível só quando is_verified=true) */}
+                {provider.id && <TopProfessionalCriteriaCard providerId={provider.id} />}
+
                 {/* ── PROMINENT LEVEL BADGE (Metallic Design) — hidden for admins and generic "Usuário" level ── */}
                 {provider.levelInfo && !(provider.accTypeInfo?.name || '').toLowerCase().includes('admin') && !['usuário', 'usuario', 'user'].includes((provider.levelInfo.name || '').toLowerCase()) && (
                   <div className="mt-2 flex justify-center sm:justify-start">
