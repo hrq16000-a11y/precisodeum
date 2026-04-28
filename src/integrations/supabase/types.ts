@@ -4112,6 +4112,50 @@ export type Database = {
         }
         Relationships: []
       }
+      service_area_corrections: {
+        Row: {
+          corrected_by: string | null
+          created_at: string
+          id: string
+          new_value: string | null
+          previous_value: string | null
+          provider_id: string | null
+          reason: string
+          service_id: string
+          source: string
+        }
+        Insert: {
+          corrected_by?: string | null
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          previous_value?: string | null
+          provider_id?: string | null
+          reason?: string
+          service_id: string
+          source?: string
+        }
+        Update: {
+          corrected_by?: string | null
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          previous_value?: string | null
+          provider_id?: string | null
+          reason?: string
+          service_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_area_corrections_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_categories: {
         Row: {
           category_id: string
@@ -6436,6 +6480,21 @@ export type Database = {
           policy_count: number
         }[]
       }
+      admin_list_service_area_corrections: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: {
+          created_at: string
+          id: string
+          new_value: string
+          previous_value: string
+          provider_id: string
+          provider_name: string
+          reason: string
+          service_id: string
+          service_name: string
+          source: string
+        }[]
+      }
       admin_log_impersonation_end: {
         Args: { _session_id: string }
         Returns: undefined
@@ -7100,6 +7159,7 @@ export type Database = {
           years_experience: number
         }[]
       }
+      normalize_service_area_text: { Args: { _raw: string }; Returns: string }
       normalize_uf: { Args: { _input: string }; Returns: string }
       notify_admins_geo_alert: {
         Args: {

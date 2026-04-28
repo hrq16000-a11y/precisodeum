@@ -2,13 +2,14 @@
  * formatServiceArea — apresenta a área de atendimento de um serviço
  * de forma consistente, sem texto livre digitado fora da seleção.
  *
- * Estratégia:
+ * Regras:
  *  - Se houver `service_radius` reconhecido, usa rótulo controlado
  *    ("Atendimento no local", "Toda a cidade", "Região metropolitana").
- *  - Caso contrário, usa o texto bruto removendo prefixos espúrios
- *    como "Toda " que vinham de wizards antigos.
- *  - Quando combinamos rádio "city" + cidade do provider, exibimos
+ *  - Quando há cidade do provider, exibimos
  *    "Toda a cidade — Curitiba" (claro e auditável).
+ *  - O texto livre legado é higienizado: "Toda Curitiba" -> "Curitiba".
+ *  - `isCatalogedCity` valida no front que a cidade veio realmente da
+ *    seleção do autocomplete (lista IBGE), nunca de digitação livre.
  */
 
 const RADIUS_LABEL: Record<string, string> = {
@@ -17,8 +18,8 @@ const RADIUS_LABEL: Record<string, string> = {
   metro: 'Região metropolitana',
 };
 
-/** Remove prefixos legados ("Toda ", "Em toda ") sem perder a cidade. */
-function stripLegacyPrefixes(raw: string): string {
+/** Remove prefixos legados ("Toda ", "Em toda ", "Todo "). */
+export function stripLegacyAreaPrefixes(raw: string): string {
   return raw
     .replace(/^\s*(em\s+)?toda\s+/i, '')
     .replace(/^\s*(em\s+)?todo\s+/i, '')
@@ -30,7 +31,7 @@ export function formatServiceArea(
   radius?: string | null,
   providerCity?: string | null,
 ): string {
-  const cleanedArea = stripLegacyPrefixes((rawArea ?? '').toString());
+  const cleanedArea = stripLegacyAreaPrefixes((rawArea ?? '').toString());
   const radiusLabel = radius ? RADIUS_LABEL[radius] : null;
   const city = (providerCity ?? '').trim() || cleanedArea;
 
@@ -39,4 +40,22 @@ export function formatServiceArea(
   if (cleanedArea) return cleanedArea;
   if (city) return city;
   return '';
+}
+
+/**
+ * Verifica se o valor `service_area` corresponde exatamente a uma cidade
+ * do catálogo (lista de cidades carregadas do IBGE, em `ALL_CITIES`).
+ * Aceita match por `value` (nome puro) OU `label` ("Cidade - UF").
+ */
+export function isCatalogedCity(
+  rawArea: string,
+  catalog: ReadonlyArray<{ value: string; label?: string }>,
+): boolean {
+  const candidate = stripLegacyAreaPrefixes(rawArea).toLowerCase();
+  if (!candidate) return false;
+  return catalog.some(
+    (c) =>
+      c.value.toLowerCase() === candidate ||
+      (c.label ?? '').toLowerCase() === candidate,
+  );
 }

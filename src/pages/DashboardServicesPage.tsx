@@ -20,7 +20,7 @@ import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
-import { formatServiceArea } from '@/lib/serviceAreaFormat';
+import { formatServiceArea, stripLegacyAreaPrefixes, isCatalogedCity } from '@/lib/serviceAreaFormat';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import { handleImageError } from '@/lib/imageResolver';
 
@@ -384,8 +384,18 @@ const DashboardServicesPage = () => {
     }
     const errors: Record<string, string> = {};
     if (!form.service_name.trim()) errors.service_name = 'Título é obrigatório';
-    if (!form.service_area.trim()) errors.service_area = 'Cidade é obrigatória';
+    const cleanedArea = stripLegacyAreaPrefixes(form.service_area);
+    if (!cleanedArea) {
+      errors.service_area = 'Cidade é obrigatória';
+    } else if (!isCatalogedCity(cleanedArea, ALL_CITIES)) {
+      // Bloqueia digitação livre — só aceita seleção do autocomplete (IBGE).
+      errors.service_area = 'Selecione uma cidade da lista (não digite manualmente)';
+    }
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    // Garante que vai para o banco já normalizado (trigger do DB também valida).
+    if (cleanedArea !== form.service_area) {
+      setForm((prev) => ({ ...prev, service_area: cleanedArea }));
+    }
     setFormErrors({});
     setIsSubmitting(true);
 
@@ -783,12 +793,17 @@ const DashboardServicesPage = () => {
             </div>
           );
         })}
-        {/* Próximo slot disponível — CTA para criar mais um serviço */}
+        {/* Próximo slot disponível — CTA claro com explicação de limites */}
         {(() => {
           const SERVICES_CAP = Math.min(5, limits?.max_services ?? 5);
           const used = services.length;
           if (used === 0 || used >= SERVICES_CAP) return null;
           const nextSlotNumber = used + 1;
+          const remaining = SERVICES_CAP - used;
+          const subline =
+            limits?.max_services && limits.max_services <= 5
+              ? `Você tem ${remaining} ${remaining === 1 ? 'vaga restante' : 'vagas restantes'} no seu plano (${SERVICES_CAP} no total). Cada serviço extra aumenta seu alcance no Google e nas buscas internas.`
+              : 'Adicionar mais um serviço amplia seu alcance no Google e nas buscas internas. Você pode pausar ou editar a qualquer momento.';
           return (
             <button
               type="button"
@@ -800,10 +815,10 @@ const DashboardServicesPage = () => {
                 <Plus className="h-5 w-5" />
               </div>
               <p className="text-xs font-bold uppercase tracking-wider text-accent">
-                {nextSlotNumber}º slot disponível
+                {nextSlotNumber}º slot disponível — adicionar serviço
               </p>
-              <p className="text-[11px] text-muted-foreground leading-snug max-w-[200px]">
-                Cadastre mais um serviço e ganhe mais destaque no Google.
+              <p className="text-[11px] text-muted-foreground leading-snug max-w-[220px]">
+                {subline}
               </p>
             </button>
           );
