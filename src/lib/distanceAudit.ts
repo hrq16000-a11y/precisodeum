@@ -49,8 +49,9 @@ export function calculateAuditedDistanceKm(
   const providerCity = provider.city || '';
   const userCityStr = userCity || '';
   const baseAudit: DistanceAudit = {
-    // Use NaN sentinel internally; UI must check Number.isFinite before rendering.
-    distanceKm: Number.NaN,
+    // Infinity = sentinel para "sem distância" (usado em ranking/sort).
+    // UI DEVE checar Number.isFinite antes de renderizar.
+    distanceKm: Infinity,
     source: 'unavailable',
     suspicious: false,
     rawDirectKm: null,
