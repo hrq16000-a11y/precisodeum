@@ -1378,14 +1378,13 @@ const DashboardServicesPage = () => {
             ) : (
               <>
                 <Button variant="outline" className="flex-1 h-11" onClick={() => {
-                  if (formStep > 1) setFormStep((formStep - 1) as 1 | 2 | 3);
+                  if (formStep > 1) setFormStep((formStep - 1) as 1 | 2 | 3 | 4);
                   else { resetForm(); setShowDialog(false); }
                 }}>
                   {formStep > 1 ? '← Voltar' : 'Cancelar'}
                 </Button>
-                {formStep < 3 ? (
+                {formStep < 4 ? (
                   <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={() => {
-                    // Validate per step before advancing
                     if (formStep === 1 && !form.service_name.trim()) {
                       setFormErrors({ service_name: 'Título é obrigatório' });
                       toast.error('Informe o título do serviço');
@@ -1396,16 +1395,42 @@ const DashboardServicesPage = () => {
                       toast.error('Informe a cidade de atendimento');
                       return;
                     }
+                    if (formStep === 3) {
+                      // Bloqueia avanço se existirem termos proibidos pendentes
+                      const hits = lintServiceDescription(form.description);
+                      if (hits.length > 0) {
+                        toast.error('Termos de leilão detectados', {
+                          description: 'Use "Reescrever com qualidade" antes de avançar para a revisão.',
+                        });
+                        return;
+                      }
+                    }
                     setFormErrors({});
-                    setFormStep((formStep + 1) as 1 | 2 | 3);
+                    setFormStep((formStep + 1) as 1 | 2 | 3 | 4);
                   }}>
-                    Avançar →
+                    {formStep === 3 ? 'Revisar →' : 'Avançar →'}
                   </Button>
-                ) : (
-                  <Button variant="accent" className="flex-1 h-11 font-semibold" onClick={handleSave} disabled={isSubmitting}>
-                    {isSubmitting ? '⏳ Salvando...' : `📢 ${editId ? 'Salvar' : 'Publicar'}`}
-                  </Button>
-                )}
+                ) : (() => {
+                  const cleanedArea = stripLegacyAreaPrefixes(form.service_area);
+                  const divergence = serviceRadius === 'city' && provider?.city && cleanedArea && cleanedArea.toLowerCase() !== provider.city.toLowerCase();
+                  return (
+                    <Button
+                      variant="accent"
+                      className="flex-1 h-11 font-semibold"
+                      onClick={() => {
+                        if (divergence) {
+                          toast.error('Resolva a divergência cidade × raio antes de publicar.');
+                          return;
+                        }
+                        handleSave();
+                      }}
+                      disabled={isSubmitting || !!divergence}
+                      title={divergence ? 'Divergência entre cidade do serviço e raio "Toda a cidade"' : ''}
+                    >
+                      {isSubmitting ? '⏳ Salvando...' : `📢 ${editId ? 'Salvar' : 'Publicar'}`}
+                    </Button>
+                  );
+                })()}
               </>
             )}
           </div>
