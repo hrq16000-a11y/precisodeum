@@ -82,11 +82,11 @@ describe('computeAdScore — score 0-100 do anúncio Padrão Ouro', () => {
   });
 
   it('anúncio completo = 100% e Padrão Ouro', () => {
-    const technicalDesc = (
+    const technicalDesc =
       'Profissional especializado em manutenção e instalação de quadros elétricos residenciais ' +
-      'e comerciais. Trabalho com fiação, disjuntores, tomadas, aterramento e tubulação. ' +
-      'Atendimento técnico transparente, com vistoria detalhada antes de cada projeto.'
-    ).padEnd(320, ' ');
+      'e comerciais. Trabalho com fiação, disjuntores, tomadas, aterramento e tubulação adequada. ' +
+      'Atendimento técnico transparente, com vistoria detalhada antes de cada projeto entregue. ' +
+      'Garantia de execução em todos os serviços contratados, com nota fiscal e suporte pós-obra.';
     const r = computeAdScore({
       description: technicalDesc,
       hasOriginalPhoto: true,
