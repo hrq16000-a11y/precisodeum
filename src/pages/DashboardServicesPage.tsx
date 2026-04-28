@@ -496,6 +496,20 @@ const DashboardServicesPage = () => {
         const SERVICES_CAP = 5;
         const unlockedNext = newCount < SERVICES_CAP;
         celebrate({ intensity: 'mini', id: CELEBRATION_IDS.serviceSlot(serviceId!) });
+        const finalScore = computeAdScore({
+          description: form.description,
+          hasOriginalPhoto: !!newServicePhoto,
+          cityValidated: isCatalogedCity(stripLegacyAreaPrefixes(finalArea), ALL_CITIES),
+          hasPrice: !!form.price?.trim(),
+          hasCategory: selectedCategoryIds.length > 0,
+        });
+        if (finalScore.isPadrãoOuro) {
+          celebrate({ intensity: 'full', id: `padrao-ouro-${serviceId}` });
+          toast.success('🏆 Anúncio Padrão Ouro publicado!', {
+            description: '+25 pontos extras de engajamento creditados.',
+            duration: 6000,
+          });
+        }
         toast.success('🎉 Você ganhou um novo slot!', {
           description: unlockedNext
             ? `Seu ${newCount + 1}º espaço na vitrine já está liberado. Continue subindo!`
