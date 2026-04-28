@@ -129,10 +129,11 @@ const CategoryPage = () => {
         ? `${category.name} em ${cityForSeo} - Profissionais Verificados | Preciso de Um`
         : `${category.name} no Brasil - Profissionais Verificados | Preciso de Um`)
     : 'Categoria';
+  const seoCount = seoEligibleProviders.length || allProviders.length;
   const dynamicDescription = category
     ? (cityForSeo
-        ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${allProviders.length} prestadores verificados, avaliados pela comunidade. Orçamento grátis pelo WhatsApp.`
-        : `Encontre os melhores profissionais verificados de ${category.name} no Brasil. ${allProviders.length} prestadores cadastrados com avaliações reais.`)
+        ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${seoCount} prestadores com cidade validada e perfil completo. Orçamento grátis pelo WhatsApp.`
+        : `Encontre os melhores profissionais de ${category.name} no Brasil. ${seoCount} prestadores com perfil completo e cidade validada.`)
     : 'Encontre profissionais por categoria.';
 
   useSeoHead({
