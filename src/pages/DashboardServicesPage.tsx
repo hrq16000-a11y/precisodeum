@@ -547,12 +547,25 @@ const DashboardServicesPage = () => {
           description: form.description,
           hasOriginalPhoto: !!newServicePhoto,
           cityValidated: isCatalogedCity(stripLegacyAreaPrefixes(finalArea), ALL_CITIES),
-          hasPrice: !!form.price?.trim(),
-          hasCategory: selectedCategoryIds.length > 0,
+          categorySlugs: selectedSlugsForScore,
         });
+        // Auditoria de evolução do score (initial → final). Fail-soft.
+        try {
+          await (supabase.from as any)('service_quality_log').insert({
+            service_id: serviceId,
+            provider_id: providerId,
+            user_id: user?.id,
+            initial_score: initialScoreSnapshot,
+            final_score: finalScore.score,
+            forbidden_hits: finalScore.forbiddenHits.map((h) => h.term),
+            category_keywords_hit: finalScore.matchedKeywords,
+            description_length: form.description.trim().length,
+            reason: 'publish',
+          });
+        } catch { /* fail-soft: auditoria não bloqueia publicação */ }
         if (finalScore.isPadrãoOuro) {
           celebrate({ intensity: 'big', id: `padrao-ouro-${serviceId}` });
-          toast.success('🏆 Anúncio Padrão Ouro publicado!', {
+          toast.success('Anúncio Padrão Ouro publicado!', {
             description: '+25 pontos extras de engajamento creditados.',
             duration: 6000,
           });
