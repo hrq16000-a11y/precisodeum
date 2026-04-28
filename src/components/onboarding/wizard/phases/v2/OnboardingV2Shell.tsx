@@ -653,6 +653,65 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       if (s.starting_price_brl != null) updates.starting_price = s.starting_price_brl;
       await supabase.from('providers').update(updates).eq('id', state.providerId);
 
+      // ── READ-BACK INVARIANTE (fail-loud, auto-heal) ────────────────────────
+      // Confirma no banco que:
+      //   services.service_name === categories.name (do categoryId escolhido)
+      //   services.category_id  === categoryId
+      //   providers.category_id === categoryId
+      // Se algo divergir, executa UPDATE corretivo e registra telemetria.
+      // Se a correção falhar, aborta e mostra erro ao usuário.
+      try {
+        const sid = state.firstServiceId;
+        if (sid) {
+          const [{ data: svcRow }, { data: provRow }] = await Promise.all([
+            supabase.from('services').select('service_name, category_id').eq('id', sid).maybeSingle(),
+            supabase.from('providers').select('category_id').eq('id', state.providerId).maybeSingle(),
+          ]);
+          const dbName = (svcRow?.service_name || '').trim();
+          const dbSvcCat = svcRow?.category_id || null;
+          const dbProvCat = (provRow as any)?.category_id || null;
+          const svcNameOk = dbName.toLowerCase() === resolvedCategoryName.toLowerCase();
+          const svcCatOk = dbSvcCat === categoryId;
+          const provCatOk = dbProvCat === categoryId;
+          if (!svcNameOk || !svcCatOk || !provCatOk) {
+            const drift = {
+              where: 'persistFirstService.readback_invariant',
+              serviceId: sid,
+              categoryId,
+              expectedName: resolvedCategoryName,
+              dbServiceName: dbName,
+              dbServiceCategoryId: dbSvcCat,
+              dbProviderCategoryId: dbProvCat,
+            };
+            console.warn('[onboardingV2] read-back drift detectado, aplicando correção:', drift);
+            void trackOnboardingEvent({
+              phase: state.phase,
+              event: 'error',
+              userId: user?.id,
+              meta: { reason: 'first_service_invariant_drift', ...drift },
+            });
+            // Auto-heal: força os valores corretos.
+            const fixSvc = supabase
+              .from('services')
+              .update({ service_name: resolvedCategoryName, category_id: categoryId })
+              .eq('id', sid);
+            const fixProv = supabase
+              .from('providers')
+              .update({ category_id: categoryId })
+              .eq('id', state.providerId);
+            const [r1, r2] = await Promise.all([fixSvc, fixProv]);
+            if (r1.error || r2.error) {
+              toast.error('Não foi possível alinhar a categoria do serviço. Tente novamente.');
+              return false;
+            }
+          }
+        }
+      } catch (readbackErr: any) {
+        // Read-back é defensivo — não derruba o fluxo se a leitura falhar,
+        // mas registra para auditoria.
+        console.warn('[onboardingV2] read-back falhou (não bloqueante):', readbackErr?.message);
+      }
+
       // 3) Marca onboarding completo. A categoria principal vive em providers.category_id
       // (já atualizada acima); profiles.primary_category_id é apenas estado de UI no wizard.
       await supabase.from('profiles')
