@@ -23,6 +23,10 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { getSeoAuthorityData } from '@/lib/seoAuthority';
 import CategorySeoBlock from '@/components/CategorySeoBlock';
+import { isKnownCity } from '@/lib/citiesIndex';
+import { normalize } from '@/lib/normalize';
+import { lintServiceDescription } from '@/lib/serviceQualityLinter';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 
 const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) =>
   calculateDistanceKm({ latitude: lat1, longitude: lon1 }, { latitude: lat2, longitude: lon2 });
