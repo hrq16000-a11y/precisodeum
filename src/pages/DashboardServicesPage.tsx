@@ -27,6 +27,12 @@ import { lintServiceDescription, sanitizePastedCity, rewriteWithQuality, compute
 import { CheckCircle2, AlertTriangle, Sparkles, Award } from 'lucide-react';
 import AdQualityScore from '@/components/dashboard/AdQualityScore';
 import WizardLegalDisclaimer from '@/components/dashboard/WizardLegalDisclaimer';
+import GeoPermissionStep from '@/components/dashboard/GeoPermissionStep';
+import {
+  loadServiceWizardDraft,
+  clearServiceWizardDraft,
+  useServiceWizardDraftAutosave,
+} from '@/hooks/useServiceWizardDraft';
 
 // Heavy editor sub-components — only loaded when the edit Dialog opens
 const SmartCategoryPicker = lazy(() => import('@/components/SmartCategoryPicker'));
@@ -230,6 +236,19 @@ const DashboardServicesPage = () => {
   useEffect(() => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);
+
+  // Persistência de rascunho — apenas para criação (não em edição) e quando o dialog está aberto.
+  const draftEnabled = showDialog && !editId;
+  useServiceWizardDraftAutosave(user?.id, draftEnabled, {
+    form,
+    selectedCategoryIds,
+    citySearch,
+    serviceRadius,
+    isEmergency,
+    seoTags,
+    geoDetected,
+    formStep,
+  });
 
   useEffect(() => {
     supabase.from('categories').select('*').order('name').then(({ data }) => {
@@ -518,6 +537,8 @@ const DashboardServicesPage = () => {
         });
         setEditId(serviceId!);
         setWizardStep('photos');
+        // Serviço publicado — limpa o rascunho local.
+        clearServiceWizardDraft(user?.id);
         // Trigger "hand-holding" next-step prompt after a short delay
         setTimeout(() => setShowNextStepPrompt(true), 1200);
       }
@@ -564,7 +585,34 @@ const DashboardServicesPage = () => {
     setTagInput('');
     setWizardStep('form');
     setFormStep(1);
+    clearServiceWizardDraft(user?.id);
   };
+
+  // Restore draft when opening dialog for a NEW service.
+  // Disparado uma vez por abertura — não rehidrata em modo edição.
+  const restoredOnOpenRef = useRef(false);
+  useEffect(() => {
+    if (!showDialog || editId) {
+      restoredOnOpenRef.current = false;
+      return;
+    }
+    if (restoredOnOpenRef.current) return;
+    restoredOnOpenRef.current = true;
+    const draft = loadServiceWizardDraft(user?.id);
+    if (!draft) return;
+    setForm(draft.form);
+    setSelectedCategoryIds(draft.selectedCategoryIds);
+    setCitySearch(draft.citySearch);
+    setServiceRadius(draft.serviceRadius);
+    setIsEmergency(draft.isEmergency);
+    setSeoTags(draft.seoTags);
+    setGeoDetected(draft.geoDetected);
+    setFormStep(draft.formStep);
+    toast.message('Rascunho restaurado', {
+      description: 'Continuamos do ponto onde você parou.',
+      duration: 3000,
+    });
+  }, [showDialog, editId, user?.id]);
 
   const handleEdit = async (s: any) => {
     setForm({
@@ -1053,6 +1101,26 @@ const DashboardServicesPage = () => {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <MapPinned className="h-3.5 w-3.5" /> Localização & Atendimento
               </h3>
+              {/* Passo de permissão de localização (GPS → IP fallback → manual) */}
+              {!form.service_area && (
+                <GeoPermissionStep
+                  catalog={ALL_CITIES}
+                  onConfirm={(city, state) => {
+                    const match = ALL_CITIES.find(
+                      c => c.value.toLowerCase() === city.toLowerCase()
+                        && (!state || c.state === state)
+                    );
+                    if (match) { selectCity(match); setGeoDetected(true); }
+                  }}
+                  onSkipToManual={() => {
+                    // foca o input de cidade
+                    setTimeout(() => {
+                      const el = cityRef.current?.querySelector('input') as HTMLInputElement | null;
+                      el?.focus();
+                    }, 50);
+                  }}
+                />
+              )}
               <div className="rounded-lg border border-border bg-card p-3 space-y-3">
                 {/* City autocomplete */}
                 <div ref={cityRef} className="relative">
