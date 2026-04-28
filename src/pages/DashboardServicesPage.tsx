@@ -422,10 +422,18 @@ const DashboardServicesPage = () => {
       // Bloqueia digitação livre — só aceita seleção do autocomplete (IBGE).
       errors.service_area = 'Selecione uma cidade da lista (não digite manualmente)';
     }
-    // Linter anti-leilão: bloqueia termos proibidos antes de enviar ao backend
+    // Linter anti-leilão: avisa para qualquer hit, mas só BLOQUEIA o save
+    // quando a descrição contém mais que LEILAO_BLOCK_THRESHOLD termos.
+    // Esta regra dá margem educativa para o prestador antes de barrar.
     const forbiddenHits = lintServiceDescription(form.description);
-    if (forbiddenHits.length > 0) {
-      errors.description = `Linguagem de leilão detectada: "${forbiddenHits[0].term}". Substitua por uma frase de valorização técnica.`;
+    if (shouldBlockByLeilao(forbiddenHits)) {
+      errors.description = `Foram detectados ${forbiddenHits.length} termos de leilão (limite: ${LEILAO_BLOCK_THRESHOLD}). Use o botão "Reescrever com qualidade" ou substitua manualmente.`;
+    } else if (forbiddenHits.length > 0) {
+      // Apenas exibe alerta no toast — não bloqueia o save
+      toast.warning(`Atenção: ${forbiddenHits.length} termo(s) de leilão na descrição`, {
+        description: `Sugestão para "${forbiddenHits[0].term}": ${forbiddenHits[0].suggestion}`,
+        duration: 5000,
+      });
     }
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
     // Coerência radius=city: trava service_area = provider.city
