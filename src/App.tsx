@@ -415,6 +415,7 @@ const App = () => {
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
                 <Route path="/admin/bairro-default" element={<ProtectedRoute><AdminDefaultNeighborhoodPage /></ProtectedRoute>} />
+                <Route path="/admin/service-area-corrections" element={<ProtectedRoute><AdminServiceAreaCorrectionsPage /></ProtectedRoute>} />
                 <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
                 <Route path="/admin/usuarios" element={<AdminUsersPage />} />
                 <Route path="/admin/crm-usuarios" element={<AdminUsersCrmPage />} />
