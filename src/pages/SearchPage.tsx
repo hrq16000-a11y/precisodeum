@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import SearchBar from '@/components/SearchBar';
 import CategoryIcon from '@/components/CategoryIcon';
 import ProviderCard from '@/components/ProviderCard';
+import ProviderRenderer from '@/components/cards/ProviderRenderer';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import GeoFallbackNotice from '@/components/GeoFallbackNotice';
