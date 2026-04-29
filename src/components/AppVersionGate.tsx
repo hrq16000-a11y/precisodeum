@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, Download, X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppVersionGate } from '@/hooks/useAppVersionGate';
-import { forceClientUpdate } from '@/lib/forceClientUpdate';
+import {
+  forceClientUpdate,
+  getForceUpdateStats,
+  hasExceededForceUpdateAttempts,
+  markForceUpdateSuccess,
+  resetForceUpdateAttempts,
+} from '@/lib/forceClientUpdate';
 
 const DISMISS_KEY = 'app_update_suggest_dismissed_v';
 // Flag local para evitar loops de reload caso algo dê errado.
@@ -21,9 +27,22 @@ const purgeAndReload = () => { void forceClientUpdate(); };
  */
 const AppVersionGate = () => {
   const gate = useAppVersionGate();
+  const [autoUpdateBlocked, setAutoUpdateBlocked] = useState(false);
   const [dismissedFor, setDismissedFor] = useState<string | null>(() => {
     try { return localStorage.getItem(DISMISS_KEY); } catch { return null; }
   });
+
+  useEffect(() => {
+    if (gate.loading) return;
+    if (gate.status === 'ok') {
+      markForceUpdateSuccess();
+      resetForceUpdateAttempts();
+      setAutoUpdateBlocked(false);
+      try { localStorage.removeItem(AUTO_RELOAD_GUARD_KEY); } catch { /* noop */ }
+      return;
+    }
+    setAutoUpdateBlocked(hasExceededForceUpdateAttempts());
+  }, [gate.loading, gate.status]);
 
   // ── AUTO PURGE em modo FORCE ────────────────────────────────────────────
   // Regra padrão: a cada release que sobe `app_min_version`, todas as
@@ -32,6 +51,7 @@ const AppVersionGate = () => {
   useEffect(() => {
     if (gate.loading) return;
     if (gate.status !== 'force') return;
+    if (autoUpdateBlocked) return;
     let alreadyDone = '';
     try { alreadyDone = localStorage.getItem(AUTO_RELOAD_GUARD_KEY) || ''; } catch { /* noop */ }
     if (alreadyDone === gate.minVersion) return;
@@ -39,7 +59,7 @@ const AppVersionGate = () => {
     // Pequeno atraso para o React render completar e o usuário enxergar o modal.
     const t = setTimeout(() => { void forceClientUpdate(); }, 1200);
     return () => clearTimeout(t);
-  }, [gate.loading, gate.status, gate.minVersion]);
+  }, [gate.loading, gate.status, gate.minVersion, autoUpdateBlocked]);
 
   if (gate.loading) return null;
 
@@ -64,9 +84,14 @@ const AppVersionGate = () => {
               {gate.forceMessage || 'Para continuar usando o Preciso de Um, instale a versão mais recente.'}
             </p>
           </div>
-          <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-1">
             Sua versão: <span className="font-mono font-semibold">{gate.currentVersion}</span>
             {' · '}Mínima exigida: <span className="font-mono font-semibold">{gate.minVersion}</span>
+            {autoUpdateBlocked ? (
+              <div className="text-destructive font-medium">
+                A atualização automática foi interrompida para evitar loop. Assim que a nova versão publicada estiver disponível, este aviso some sozinho.
+              </div>
+            ) : null}
           </div>
           <Button
             size="lg"
@@ -76,6 +101,14 @@ const AppVersionGate = () => {
             <RefreshCw className="mr-2 h-4 w-4" />
             Atualizar agora
           </Button>
+          {autoUpdateBlocked ? (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Última tentativa: {(() => {
+                const lastAttemptAt = getForceUpdateStats().lastAttemptAt;
+                return lastAttemptAt ? new Date(lastAttemptAt).toLocaleTimeString('pt-BR') : 'agora';
+              })()}
+            </p>
+          ) : null}
         </div>
       </div>
     );
