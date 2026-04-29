@@ -191,6 +191,7 @@ const OnboardingV2SuccessPage = lazy(() => import("./pages/OnboardingV2SuccessPa
 
 const CookieConsent = reactLazy(() => importWithRetry(() => import("./components/CookieConsent")));
 const PwaInstallBanner = reactLazy(() => importWithRetry(() => import("./components/PwaInstallBanner")));
+const AppVersionGate = reactLazy(() => importWithRetry(() => import("./components/AppVersionGate")));
 const OAuthRedirectHandler = reactLazy(() => importWithRetry(() => import("./components/OAuthRedirectHandler")));
 const FloatingHelpButton = reactLazy(() => importWithRetry(() => import("./components/FloatingHelpButton")));
 
