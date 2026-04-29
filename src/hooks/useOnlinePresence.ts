@@ -75,18 +75,40 @@ function syncPresenceState() {
 
   onlineUsers = next;
   lastSyncAt = now;
+  if (realtimeHealth !== 'healthy') {
+    realtimeHealth = 'healthy';
+  }
+  resetHealthTimer();
   notify();
+}
+
+function resetHealthTimer() {
+  if (healthTimer) clearTimeout(healthTimer);
+  healthTimer = setTimeout(() => {
+    // No sync for too long → mark as degraded so UI can fallback gracefully
+    if (realtimeHealth !== 'degraded') {
+      realtimeHealth = 'degraded';
+      notify();
+    }
+  }, REALTIME_HEALTH_TIMEOUT_MS);
 }
 
 function ensureChannel() {
   if (channel) return channel;
+  realtimeHealth = 'connecting';
+  resetHealthTimer();
   channel = supabase.channel(CHANNEL_NAME, {
     config: { presence: { key: 'providers' } },
   });
 
   channel
     .on('presence', { event: 'sync' }, syncPresenceState)
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        realtimeHealth = 'degraded';
+        notify();
+      }
+    });
 
   return channel;
 }
@@ -96,6 +118,8 @@ function destroyChannel() {
   supabase.removeChannel(channel);
   channel = null;
   onlineUsers = new Map();
+  if (healthTimer) { clearTimeout(healthTimer); healthTimer = null; }
+  realtimeHealth = 'connecting';
   // Keep lastSeenMap so badges can still show "esteve online há Xm" briefly
   notify();
 }
