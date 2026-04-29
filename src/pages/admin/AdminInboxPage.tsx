@@ -226,6 +226,72 @@ const AdminInboxPage = () => {
             </p>
           </div>
         </div>
+
+        {/* Filtros avançados */}
+        <details className="mt-3 group">
+          <summary className="cursor-pointer text-[12px] font-medium text-primary hover:underline list-none flex items-center gap-1">
+            <span className="group-open:hidden">+ Filtros avançados</span>
+            <span className="hidden group-open:inline">− Ocultar filtros avançados</span>
+          </summary>
+          <div className="mt-3 grid gap-3 sm:grid-cols-4">
+            <div>
+              <Label htmlFor="type-filter" className="text-[11px] text-muted-foreground">Tipo</Label>
+              <Select value={typeFilter} onValueChange={(v) => { setPage(0); setTypeFilter(v); }}>
+                <SelectTrigger id="type-filter" aria-label="Filtrar por tipo"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos os tipos</SelectItem>
+                  {typeOptions.map((t) => (
+                    <SelectItem key={t.type} value={t.type}>
+                      {t.type} ({t.count})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="from" className="text-[11px] text-muted-foreground">De</Label>
+              <Input
+                id="from"
+                type="date"
+                value={dateFrom}
+                onChange={(e) => { setPage(0); setDateFrom(e.target.value); }}
+                aria-label="Data inicial"
+              />
+            </div>
+            <div>
+              <Label htmlFor="to" className="text-[11px] text-muted-foreground">Até</Label>
+              <Input
+                id="to"
+                type="date"
+                value={dateTo}
+                onChange={(e) => { setPage(0); setDateTo(e.target.value); }}
+                aria-label="Data final"
+              />
+            </div>
+            <div>
+              <Label htmlFor="provider" className="text-[11px] text-muted-foreground">Provedor (UUID)</Label>
+              <Input
+                id="provider"
+                type="text"
+                value={providerId}
+                onChange={(e) => { setPage(0); setProviderId(e.target.value); }}
+                placeholder="ex: 9f7c..."
+                aria-label="Filtrar por ID de provedor"
+              />
+            </div>
+          </div>
+          {(typeFilter !== '__all__' || dateFrom || dateTo || providerId) && (
+            <button
+              type="button"
+              onClick={() => {
+                setTypeFilter('__all__'); setDateFrom(''); setDateTo(''); setProviderId(''); setPage(0);
+              }}
+              className="mt-2 text-[11px] text-muted-foreground hover:text-foreground underline"
+            >
+              Limpar filtros avançados
+            </button>
+          )}
+        </details>
       </Card>
 
       {loading ? (
