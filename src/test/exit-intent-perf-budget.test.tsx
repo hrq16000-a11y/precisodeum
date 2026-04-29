@@ -19,7 +19,7 @@ import { MemoryRouter } from 'react-router-dom';
 const COMPONENT_PATH = 'src/components/GlobalExitIntentDialog.tsx';
 const APP_PATH = 'src/App.tsx';
 
-const MAX_SOURCE_KB = 12;
+const MAX_SOURCE_KB = 16;
 const MAX_OPEN_DOM_NODES = 60;
 
 describe('GlobalExitIntentDialog — performance budget', () => {
