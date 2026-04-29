@@ -54,21 +54,37 @@ export type RawProviderInput = Record<string, unknown>;
  * facilitar debugging. Isso impede 1) erros 42703 (column does not exist)
  * e 2) vazamento de PII de endereço residencial.
  */
+/**
+ * Keys de endereço que NÃO existem no schema da tabela `providers` para perfis
+ * autônomos (PF). Para empresas (PJ, account_type='company'), as colunas
+ * institucionais `street`, `street_number`, `complement`, `postal_code` foram
+ * adicionadas via migration — então essas chaves devem ser preservadas.
+ *
+ * As chaves abaixo são SEMPRE removidas (aliases / colunas inexistentes).
+ */
 export const PROVIDER_FORBIDDEN_ADDRESS_KEYS = [
   'address',
-  'street',
   'logradouro',
   'cep',
-  'postal_code',
   'zipcode',
   'zip',
-  'complement',
   'complemento',
   'numero',
   'number',
   'address_line',
   'address_line_1',
   'address_line_2',
+] as const;
+
+/**
+ * Chaves de endereço institucional que SÃO colunas válidas em `providers`,
+ * mas só fazem sentido para perfis PJ. Para autônomos, são removidas.
+ */
+export const PROVIDER_PJ_ADDRESS_KEYS = [
+  'street',
+  'street_number',
+  'complement',
+  'postal_code',
 ] as const;
 
 /**
