@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Archive, Download, ShieldCheck, Loader2, FileText,
   CheckCircle2, Circle, Eye, EyeOff, Trash2, RefreshCw, ListChecks, Server, Webhook,
+  Fingerprint, AlertTriangle,
 } from "lucide-react";
 
 // ---------------- Helpers ----------------
@@ -101,12 +102,13 @@ export default function AdminPortabilityPage() {
         </header>
 
         <Tabs defaultValue="bundle" className="w-full">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full h-auto">
+          <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full h-auto">
             <TabsTrigger value="bundle"><Archive className="size-4 mr-2" />ZIP único</TabsTrigger>
             <TabsTrigger value="env"><Server className="size-4 mr-2" />Variáveis</TabsTrigger>
             <TabsTrigger value="checklist"><ListChecks className="size-4 mr-2" />Checklist</TabsTrigger>
             <TabsTrigger value="snapshots"><Archive className="size-4 mr-2" />Snapshots</TabsTrigger>
             <TabsTrigger value="validate"><ShieldCheck className="size-4 mr-2" />Validação</TabsTrigger>
+            <TabsTrigger value="userref"><Fingerprint className="size-4 mr-2" />user_ref</TabsTrigger>
           </TabsList>
 
           <TabsContent value="bundle"><BundleTab /></TabsContent>
@@ -114,6 +116,7 @@ export default function AdminPortabilityPage() {
           <TabsContent value="checklist"><ChecklistTab /></TabsContent>
           <TabsContent value="snapshots"><SnapshotsTab /></TabsContent>
           <TabsContent value="validate"><ValidateTab /></TabsContent>
+          <TabsContent value="userref"><UserRefAuditTab /></TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
@@ -559,5 +562,147 @@ function ValidateTab() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ---------------- user_ref Audit Tab ----------------
+
+type UserRefRow = {
+  table_name: string;
+  total_rows: number;
+  filled: number;
+  missing: number;
+  has_index: boolean;
+  data_type: string;
+};
+
+function UserRefAuditTab() {
+  const [rows, setRows] = useState<UserRefRow[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const reload = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc("audit_user_ref_health" as any);
+      if (error) throw error;
+      setRows((data as UserRefRow[]) ?? []);
+    } catch (e: any) {
+      toast.error(`Erro: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { reload(); }, [reload]);
+
+  const totals = rows.reduce(
+    (acc, r) => {
+      acc.tables += 1;
+      acc.total += Number(r.total_rows) || 0;
+      acc.filled += Number(r.filled) || 0;
+      acc.missing += Number(r.missing) || 0;
+      if (!r.has_index) acc.noIndex += 1;
+      return acc;
+    },
+    { tables: 0, total: 0, filled: 0, missing: 0, noIndex: 0 },
+  );
+
+  const coverage = totals.total > 0
+    ? ((totals.filled / totals.total) * 100).toFixed(1)
+    : "—";
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Fingerprint className="size-5" />Auditoria global do user_ref
+            </CardTitle>
+            <CardDescription>
+              Chave mestra para portabilidade. Verifica tipo, índices e cobertura em todas as tabelas.
+            </CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
+            <RefreshCw className={`size-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Recarregar
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="border rounded-lg p-3">
+              <div className="text-xs text-muted-foreground">Tabelas</div>
+              <div className="text-2xl font-bold">{totals.tables}</div>
+            </div>
+            <div className="border rounded-lg p-3">
+              <div className="text-xs text-muted-foreground">Cobertura</div>
+              <div className="text-2xl font-bold">{coverage}%</div>
+            </div>
+            <div className="border rounded-lg p-3">
+              <div className="text-xs text-muted-foreground">Sem user_ref</div>
+              <div className="text-2xl font-bold text-destructive">{totals.missing}</div>
+            </div>
+            <div className="border rounded-lg p-3">
+              <div className="text-xs text-muted-foreground">Sem índice</div>
+              <div className="text-2xl font-bold text-amber-600">{totals.noIndex}</div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto border rounded-lg">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40">
+                <tr>
+                  <th className="text-left p-2">Tabela</th>
+                  <th className="text-left p-2">Tipo</th>
+                  <th className="text-right p-2">Linhas</th>
+                  <th className="text-right p-2">Preenchidas</th>
+                  <th className="text-right p-2">Faltando</th>
+                  <th className="text-center p-2">Índice</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => {
+                  const ok = r.missing === 0 && r.has_index;
+                  return (
+                    <tr key={r.table_name} className="border-t">
+                      <td className="p-2 font-mono text-xs">{r.table_name}</td>
+                      <td className="p-2">
+                        <Badge variant={r.data_type === "text" ? "outline" : "destructive"}>
+                          {r.data_type}
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-right">{r.total_rows}</td>
+                      <td className="p-2 text-right">{r.filled}</td>
+                      <td className="p-2 text-right">
+                        {r.missing > 0
+                          ? <span className="text-destructive font-semibold">{r.missing}</span>
+                          : "0"}
+                      </td>
+                      <td className="p-2 text-center">
+                        {r.has_index
+                          ? <CheckCircle2 className="size-4 text-green-600 inline" />
+                          : <AlertTriangle className="size-4 text-amber-600 inline" />}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {rows.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                      Sem dados.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p><strong>Tipo esperado:</strong> <code>text</code> em todas as tabelas (consistência confirmada).</p>
+            <p><strong>Recomendação:</strong> tabelas sem índice em <code>user_ref</code> devem receber <code>CREATE INDEX</code> antes de importar grandes volumes.</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
