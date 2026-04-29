@@ -59,35 +59,30 @@ const AdminInboxPage = () => {
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [order, setOrder] = useState<'date' | 'relevance'>('date');
 
   const load = async () => {
     if (!user?.id) return;
     setLoading(true);
-    let q = (supabase
-      .from('notifications') as any)
-      .select('id, title, message, read, type, link, created_at', { count: 'exact' })
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    const trimmed = search.trim();
+    const effectiveOrder = trimmed ? order : 'date';
 
-    if (filter === 'unread') q = q.eq('read', false);
-    if (filter === 'read') q = q.eq('read', true);
+    const { data, error } = await (supabase as any).rpc('search_user_notifications', {
+      _query: trimmed || null,
+      _status: filter,
+      _order: effectiveOrder,
+      _limit: PAGE_SIZE,
+      _offset: page * PAGE_SIZE,
+    });
 
-    if (search.trim()) {
-      const safe = search.trim().replace(/[%_]/g, ' ');
-      q = q.or(`title.ilike.%${safe}%,message.ilike.%${safe}%`);
-    }
-
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    q = q.range(from, to);
-
-    const { data, error, count } = await q;
     if (error) {
       toast.error('Falha ao carregar notificações');
-      setRows([]); setTotal(0);
+      setRows([]);
+      setTotal(0);
     } else {
-      setRows((data || []) as NotifRow[]);
-      setTotal(count || 0);
+      const list = (data || []) as Array<NotifRow & { total_count?: number }>;
+      setRows(list.map(({ total_count, ...n }) => n));
+      setTotal(Number(list[0]?.total_count ?? 0));
     }
     setLoading(false);
   };
