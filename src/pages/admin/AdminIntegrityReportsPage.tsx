@@ -169,7 +169,7 @@ const AdminIntegrityReportsPage = () => {
           </div>
         )}
       </div>
-    </AdminGuard>
+    </>
   );
 };
 
