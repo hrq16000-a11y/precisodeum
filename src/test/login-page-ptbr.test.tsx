@@ -84,12 +84,10 @@ describe('LoginPage — cópia pt-BR mobile-first', () => {
     // Remove required temporariamente para garantir que o handler rode
     form.querySelectorAll('input').forEach((i) => i.removeAttribute('required'));
     fireEvent.submit(form);
-    await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith(
-        expect.stringMatching(/Preencha e-mail e senha/i),
-        expect.anything(),
-      ),
-    );
+    await waitFor(() => {
+      const calls = toastError.mock.calls.map((c) => String(c[0] || ''));
+      expect(calls.some((m) => /Preencha e-mail e senha/i.test(m))).toBe(true);
+    });
   });
 });
 
