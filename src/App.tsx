@@ -160,6 +160,7 @@ const AdminError500Page = lazy(() => import("./pages/AdminError500Page"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ComoFuncionaPage = lazy(() => import("./pages/ComoFuncionaPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const SitemapRedirect = lazy(() => import("./pages/SitemapRedirect"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
