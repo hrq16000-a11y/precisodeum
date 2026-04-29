@@ -33,7 +33,7 @@ describe('GlobalExitIntentDialog — performance budget', () => {
     expect(direct.test(app), 'NÃO deve haver import estático').toBe(false);
   });
 
-  it('source TS está abaixo do orçamento de 12KB', () => {
+  it(`source TS está abaixo do orçamento de ${MAX_SOURCE_KB}KB`, () => {
     const stat = fs.statSync(path.join(process.cwd(), COMPONENT_PATH));
     const kb = stat.size / 1024;
     expect(kb, `${kb.toFixed(2)}KB > ${MAX_SOURCE_KB}KB`).toBeLessThan(MAX_SOURCE_KB);
