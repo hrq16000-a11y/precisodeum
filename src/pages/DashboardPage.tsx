@@ -94,6 +94,7 @@ const DashboardPage = () => {
 
   // Heartbeat de presença persistido (alimenta get_missed_opportunities)
   usePresenceHeartbeat(user?.id, !!provider?.id);
+  useProviderActivityHeartbeat(user?.id);
 
   // PWA: missão "App Instalado" (+30 pts) + smart reminder ao abrir standalone
   usePwaMission(user?.id, provider?.id);
