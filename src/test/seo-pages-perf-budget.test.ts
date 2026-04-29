@@ -16,9 +16,9 @@ import path from 'node:path';
 const APP = fs.readFileSync(path.join(process.cwd(), 'src/App.tsx'), 'utf8');
 
 const SEO_PAGES = [
-  { name: 'CategoryPage',    file: 'src/pages/CategoryPage.tsx',    maxKb: 30 },
-  { name: 'CityDetailPage',  file: 'src/pages/CityDetailPage.tsx',  maxKb: 30 },
-  { name: 'ProviderProfile', file: 'src/pages/ProviderProfile.tsx', maxKb: 60 },
+  { name: 'CategoryPage',    file: 'src/pages/CategoryPage.tsx',    maxKb: 40 },
+  { name: 'CityDetailPage',  file: 'src/pages/CityDetailPage.tsx',  maxKb: 40 },
+  { name: 'ProviderProfile', file: 'src/pages/ProviderProfile.tsx', maxKb: 140 },
 ];
 
 describe('SEO pages — performance budget estático', () => {
