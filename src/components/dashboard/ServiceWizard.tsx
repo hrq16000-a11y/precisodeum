@@ -673,6 +673,24 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                   maxPhotos={5}
                   onChange={(imgs) => setPhotoCount(imgs.length)}
                 />
+
+                {/* Guia contextual — onde fica "Pular por enquanto" + como concluir sem fotos */}
+                <div className="rounded-lg border border-dashed border-border bg-muted/30 p-3 text-[12px] text-muted-foreground space-y-1.5">
+                  <p className="flex items-start gap-1.5 text-foreground">
+                    <Info className="h-3.5 w-3.5 mt-0.5 text-accent shrink-0" strokeWidth={2} />
+                    <span>
+                      <strong>Sem fotos no momento?</strong> Você pode concluir mesmo assim:
+                      role até o fim e clique em <em>“Pular por enquanto”</em> — seu serviço já está
+                      salvo e você adiciona as fotos depois pelo Dashboard.
+                    </span>
+                  </p>
+                  <p className="pl-5">
+                    Se as fotos não estiverem subindo (carregando travado), tente
+                    1) trocar para outra rede (Wi-Fi ↔ 4G); 2) usar imagens menores que 5 MB;
+                    3) atualizar a página. Se ainda assim falhar, use o botão
+                    <em> “Reportar erro” </em> abaixo — vamos ajudar.
+                  </p>
+                </div>
               </>
             )}
           </div>
