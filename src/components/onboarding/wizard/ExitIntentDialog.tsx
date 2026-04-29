@@ -82,7 +82,10 @@ export default function ExitIntentDialog({
   variantOverride,
   tracker = defaultTracker,
   inactivityMs = INACTIVITY_MS,
+  hasFirstService = false,
+  saveLaterRedirectTo = '/dashboard',
 }: ExitIntentDialogProps) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const triggeredRef = useRef(false);
   const inactivityTimer = useRef<number | null>(null);
