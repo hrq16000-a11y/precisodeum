@@ -80,6 +80,7 @@ const AdminKillSwitchBlocksPage = lazy(() => import("./pages/admin/AdminKillSwit
 const AdminRegressionReportsPage = lazy(() => import("./pages/admin/AdminRegressionReportsPage"));
 const AdminAuthMetricsPage = lazy(() => import("./pages/admin/AdminAuthMetricsPage"));
 const AdminConsentRevocationsPage = lazy(() => import("./pages/admin/AdminConsentRevocationsPage"));
+const AdminIntegrityReportsPage = lazy(() => import("./pages/admin/AdminIntegrityReportsPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
@@ -493,6 +494,7 @@ const App = () => {
                 <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
                 <Route path="/admin/conversao" element={<AdminConversionMetricsPage />} />
                 <Route path="/admin/onboarding-funnel" element={<AdminOnboardingFunnelPage />} />
+                <Route path="/admin/integridade" element={<ProtectedRoute><AdminIntegrityReportsPage /></ProtectedRoute>} />
                 <Route path="/admin/erros-500" element={<AdminError500Page />} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
                 <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />

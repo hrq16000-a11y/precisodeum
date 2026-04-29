@@ -8,13 +8,15 @@ import ServiceImageDragUploader from '@/components/dashboard/ServiceImageDragUpl
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import {
   ArrowRight, ArrowLeft, Store, Phone, ImagePlus,
-  CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X,
+  CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X, Info,
 } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCityState } from '@/lib/locationFormat';
 import { buildServiceCountdownCopy } from '@/lib/serviceWizardCopy';
 import { recoverProviderId, fetchProviderServiceCount } from '@/lib/recoverProviderId';
+import StuckStepBanner from '@/components/wizard/StuckStepBanner';
+import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
 
 /**
  * ServiceWizard — ONBOARDING ONLY
@@ -245,14 +247,25 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   };
 
   /* ──── Save service (called when moving from step 2 → step 3) ──── */
+  // Retry com backoff exponencial leve: 0ms, 400ms, 1000ms (3 tentativas).
+  const PROVIDER_RETRY_DELAYS = [0, 400, 1000];
+  const ensureProviderId = async (): Promise<string | null> => {
+    if (effectiveProviderId) return effectiveProviderId;
+    for (const delay of PROVIDER_RETRY_DELAYS) {
+      if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+      const pid = await recoverProviderId({ userId, hint: effectiveProviderId });
+      if (pid) {
+        setEffectiveProviderId(pid);
+        return pid;
+      }
+    }
+    return null;
+  };
+
   const handleCreate = async (): Promise<boolean> => {
     if (!serviceName.trim()) { toast.error('Nome do serviço é obrigatório'); return false; }
-    // Garante providerId — fallback para casos de prop vazio / sessão expirada
-    let pid = effectiveProviderId;
-    if (!pid) {
-      pid = await recoverProviderId({ userId, hint: effectiveProviderId });
-      if (pid) setEffectiveProviderId(pid);
-    }
+    // Retry automático para garantir que o providerId esteja disponível
+    const pid = await ensureProviderId();
     if (!pid) {
       toast.error('Não conseguimos identificar seu cadastro de prestador. Atualize a página.');
       return false;
@@ -294,6 +307,13 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
       setSaving(false);
     }
   };
+
+  // Campos faltantes para o banner de "etapa travada"
+  const missingFields: string[] = [];
+  if (step === 0) {
+    if (!serviceName.trim()) missingFields.push('Nome do serviço');
+    if (selectedCategoryIds.length === 0) missingFields.push('Categoria');
+  }
 
   const handleNext = async () => {
     if (step === 1 && !createdServiceId) {
@@ -407,6 +427,15 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           );
         })}
       </div>
+
+      {/* Mensagem clara quando faltarem dados para avançar */}
+      {missingFields.length > 0 && (
+        <StuckStepBanner
+          missing={missingFields}
+          stepLabel={STEPS[step]?.label}
+          showStatusLink
+        />
+      )}
 
       {/* Step content */}
       <AnimatePresence mode="wait">
@@ -644,6 +673,24 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                   maxPhotos={5}
                   onChange={(imgs) => setPhotoCount(imgs.length)}
                 />
+
+                {/* Guia contextual — onde fica "Pular por enquanto" + como concluir sem fotos */}
+                <div className="rounded-lg border border-dashed border-border bg-muted/30 p-3 text-[12px] text-muted-foreground space-y-1.5">
+                  <p className="flex items-start gap-1.5 text-foreground">
+                    <Info className="h-3.5 w-3.5 mt-0.5 text-accent shrink-0" strokeWidth={2} />
+                    <span>
+                      <strong>Sem fotos no momento?</strong> Você pode concluir mesmo assim:
+                      role até o fim e clique em <em>“Pular por enquanto”</em> — seu serviço já está
+                      salvo e você adiciona as fotos depois pelo Dashboard.
+                    </span>
+                  </p>
+                  <p className="pl-5">
+                    Se as fotos não estiverem subindo (carregando travado), tente
+                    1) trocar para outra rede (Wi-Fi ↔ 4G); 2) usar imagens menores que 5 MB;
+                    3) atualizar a página. Se ainda assim falhar, use o botão
+                    <em> “Reportar erro” </em> abaixo — vamos ajudar.
+                  </p>
+                </div>
               </>
             )}
           </div>
@@ -706,6 +753,11 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
         >
           Pular por enquanto
         </Button>
+      </div>
+
+      {/* Reportar erro — pré-preenchido com etapa, user_id e últimos eventos */}
+      <div className="flex justify-center">
+        <ReportWizardErrorButton step={STEPS[step]?.key || 'unknown'} componentName="ServiceWizard" />
       </div>
 
       {/* Share section (only on photos step) */}
