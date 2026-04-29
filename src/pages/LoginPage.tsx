@@ -20,6 +20,8 @@ const GoogleIcon = () => (
   </svg>
 );
 
+type GoogleState = 'idle' | 'loading' | 'redirecting' | 'success' | 'error';
+
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +29,8 @@ const LoginPage = () => {
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [googleState, setGoogleState] = useState<GoogleState>('idle');
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
@@ -165,18 +169,36 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async (forceFreshChooser = false) => {
     if (from) sessionStorage.setItem('auth_redirect', from);
+    setGoogleError(null);
+    setGoogleState('loading');
     setLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: window.location.origin,
-      extraParams: { prompt: 'select_account' },
-    });
-    if (error) {
+    try {
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: window.location.origin,
+        // Se já falhou uma vez, força tela de seleção de conta
+        extraParams: { prompt: forceFreshChooser ? 'select_account consent' : 'select_account' },
+      });
+      if ((result as any).redirected) {
+        setGoogleState('redirecting');
+        return; // navegador já saiu da página
+      }
+      if ((result as any).error) {
+        const msg = (result as any).error?.message || 'Falha ao continuar com Google';
+        setGoogleError(msg);
+        setGoogleState('error');
+        setLoading(false);
+        toast.error('Não foi possível entrar com Google. Tente trocar de conta.');
+        return;
+      }
+      setGoogleState('success');
+    } catch (err: any) {
+      setGoogleError(err?.message || 'Erro inesperado no login Google');
+      setGoogleState('error');
       setLoading(false);
-      toast.error('Erro ao continuar com Google');
+      toast.error('Erro inesperado no login Google');
     }
-    // se redirected=true, o navegador já foi redirecionado — nada a fazer
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -225,15 +247,34 @@ const LoginPage = () => {
             {/* Google as primary CTA */}
             <Button
               variant="accent"
-              className="mt-6 w-full text-base py-5 font-semibold shadow-md"
-              onClick={handleGoogleLogin}
+              className="mt-6 w-full text-base py-5 font-semibold shadow-md disabled:opacity-70"
+              onClick={() => handleGoogleLogin(false)}
+              disabled={googleState === 'loading' || googleState === 'redirecting'}
+              aria-busy={googleState === 'loading' || googleState === 'redirecting'}
             >
               <GoogleIcon />
-              Continuar com Google
+              {googleState === 'loading' && 'Conectando...'}
+              {googleState === 'redirecting' && 'Redirecionando para o Google...'}
+              {googleState === 'success' && 'Conectado!'}
+              {(googleState === 'idle' || googleState === 'error') && 'Continuar com Google'}
             </Button>
-            <p className="mt-2 text-center text-[11px] text-muted-foreground">
-              Rápido, seguro e sem precisar de senha
-            </p>
+            {googleState === 'error' ? (
+              <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-[12px] text-destructive">
+                <p className="font-semibold">Não foi possível entrar com Google.</p>
+                {googleError && <p className="mt-0.5 break-words text-[11px] opacity-80">{googleError}</p>}
+                <button
+                  type="button"
+                  onClick={() => handleGoogleLogin(true)}
+                  className="mt-2 inline-block text-[11px] font-semibold underline"
+                >
+                  Tentar trocar de conta Google
+                </button>
+              </div>
+            ) : (
+              <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                Rápido, seguro e sem precisar de senha
+              </p>
+            )}
 
             <div className="my-5 flex items-center gap-3">
               <div className="h-px flex-1 bg-border" />
@@ -271,7 +312,7 @@ const LoginPage = () => {
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
                   </div>
                   <div className="text-right">
-                    <button type="button" onClick={() => { setShowForgot(true); setForgotEmail(email); }}
+                    <button type="button" onClick={() => navigate('/esqueci-senha', { state: { email } })}
                       className="text-xs text-accent hover:underline">
                       Esqueci minha senha
                     </button>

@@ -160,6 +160,7 @@ const AdminError500Page = lazy(() => import("./pages/AdminError500Page"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ComoFuncionaPage = lazy(() => import("./pages/ComoFuncionaPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const SitemapRedirect = lazy(() => import("./pages/SitemapRedirect"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
@@ -574,6 +575,8 @@ const App = () => {
                 <Route path="/sobre" element={<AboutPage />} />
                 <Route path="/como-funciona" element={<ComoFuncionaPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/sitemap" element={<SitemapRedirect />} />
                 <Route path="/sitemap.xml" element={<SitemapRedirect />} />
                 {/* Sponsor Panel — CRM Module (protected B2B access) */}
