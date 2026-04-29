@@ -580,24 +580,84 @@ type UserRefRow = {
   data_type: string;
 };
 
+type UserRefDetailRow = {
+  table_name: string;
+  data_type: string;
+  total_rows: number;
+  filled: number;
+  missing: number;
+  coverage_pct: number | null;
+  has_index: boolean;
+  sample_missing_ids: string[];
+  is_sponsor_table: boolean;
+};
+
 function UserRefAuditTab() {
   const [rows, setRows] = useState<UserRefRow[]>([]);
+  const [detail, setDetail] = useState<UserRefDetailRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [threshold, setThreshold] = useState<number>(95);
+  const [strict, setStrict] = useState<boolean>(true);
+  const [savingCfg, setSavingCfg] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("audit_user_ref_health" as any);
-      if (error) throw error;
-      setRows((data as UserRefRow[]) ?? []);
-    } catch (e: any) {
-      toast.error(`Erro: ${e.message}`);
+      const [{ data: basic, error: e1 }, { data: full, error: e2 }] =
+        await Promise.all([
+          supabase.rpc("audit_user_ref_health" as never),
+          supabase.rpc("audit_user_ref_full_detailed" as never),
+        ]);
+      if (e1) throw e1;
+      setRows((basic as UserRefRow[]) ?? []);
+      if (!e2) setDetail((full as UserRefDetailRow[]) ?? []);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Erro: ${msg}`);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { reload(); }, [reload]);
+  const loadConfig = useCallback(async () => {
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key,value")
+      .in("key", ["restore_min_user_ref_coverage_pct", "restore_strict_mode"]);
+    if (data) {
+      for (const r of data as Array<{ key: string; value: unknown }>) {
+        if (r.key === "restore_min_user_ref_coverage_pct") {
+          setThreshold(Number(r.value) || 95);
+        }
+        if (r.key === "restore_strict_mode") setStrict(Boolean(r.value));
+      }
+    }
+  }, []);
+
+  const saveConfig = useCallback(async () => {
+    setSavingCfg(true);
+    try {
+      const updates: Array<{ key: string; value: unknown }> = [
+        { key: "restore_min_user_ref_coverage_pct", value: threshold },
+        { key: "restore_strict_mode", value: strict },
+      ];
+      for (const u of updates) {
+        const { error } = await supabase
+          .from("site_settings")
+          // value column is jsonb at the DB level; the generated TS type is narrow
+          .upsert(u as never, { onConflict: "key" });
+        if (error) throw error;
+      }
+      toast.success("Regra de cobertura salva.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Erro: ${msg}`);
+    } finally {
+      setSavingCfg(false);
+    }
+  }, [threshold, strict]);
+
+  useEffect(() => { reload(); loadConfig(); }, [reload, loadConfig]);
 
   const totals = rows.reduce(
     (acc, r) => {
@@ -614,9 +674,48 @@ function UserRefAuditTab() {
   const coverage = totals.total > 0
     ? ((totals.filled / totals.total) * 100).toFixed(1)
     : "—";
+  const coverageNum = totals.total > 0
+    ? (totals.filled / totals.total) * 100
+    : 100;
+  const belowThreshold = coverageNum < threshold;
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="size-5" />Regra de cobertura mínima (pós-restore)
+          </CardTitle>
+          <CardDescription>
+            Define o percentual mínimo de cobertura de <code>user_ref</code> para
+            marcar a validação pós-restore como bem-sucedida.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid sm:grid-cols-3 gap-3 items-end">
+          <div className="space-y-1">
+            <label className="text-xs font-medium">Cobertura mínima (%)</label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              value={threshold}
+              onChange={(e) => setThreshold(Number(e.target.value))}
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={strict} onCheckedChange={(v) => setStrict(!!v)} />
+            Modo estrito (falhar restore se abaixo)
+          </label>
+          <Button onClick={saveConfig} disabled={savingCfg}>
+            {savingCfg
+              ? <Loader2 className="size-4 mr-2 animate-spin" />
+              : <CheckCircle2 className="size-4 mr-2" />}
+            Salvar regra
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <div>
@@ -624,12 +723,12 @@ function UserRefAuditTab() {
               <Fingerprint className="size-5" />Auditoria global do user_ref
             </CardTitle>
             <CardDescription>
-              Chave mestra para portabilidade. Verifica tipo, índices e cobertura em todas as tabelas.
+              Cobertura, índices e evidências de backfill.
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => exportUserRefCsv(rows)} disabled={rows.length === 0}>
-              <Download className="size-4 mr-2" />Exportar CSV
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => exportUserRefCsv(rows, detail)} disabled={rows.length === 0}>
+              <Download className="size-4 mr-2" />Exportar CSV detalhado
             </Button>
             <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
               <RefreshCw className={`size-4 mr-2 ${loading ? "animate-spin" : ""}`} />
@@ -643,9 +742,12 @@ function UserRefAuditTab() {
               <div className="text-xs text-muted-foreground">Tabelas</div>
               <div className="text-2xl font-bold">{totals.tables}</div>
             </div>
-            <div className="border rounded-lg p-3">
+            <div className={`border rounded-lg p-3 ${belowThreshold ? "border-destructive" : ""}`}>
               <div className="text-xs text-muted-foreground">Cobertura</div>
-              <div className="text-2xl font-bold">{coverage}%</div>
+              <div className={`text-2xl font-bold ${belowThreshold ? "text-destructive" : "text-green-600"}`}>
+                {coverage}%
+              </div>
+              <div className="text-[10px] text-muted-foreground">mínimo: {threshold}%</div>
             </div>
             <div className="border rounded-lg p-3">
               <div className="text-xs text-muted-foreground">Sem user_ref</div>
@@ -656,6 +758,14 @@ function UserRefAuditTab() {
               <div className="text-2xl font-bold text-amber-600">{totals.noIndex}</div>
             </div>
           </div>
+
+          {belowThreshold && (
+            <div className="text-xs p-3 rounded-lg border border-destructive/40 bg-destructive/5 text-destructive">
+              <AlertTriangle className="size-4 inline mr-1" />
+              Cobertura abaixo do limite configurado ({threshold}%). O modo estrito
+              {strict ? " irá falhar" : " NÃO falhará"} a validação pós-restore.
+            </div>
+          )}
 
           <div className="overflow-x-auto border rounded-lg">
             <table className="w-full text-sm">
@@ -670,31 +780,28 @@ function UserRefAuditTab() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => {
-                  const ok = r.missing === 0 && r.has_index;
-                  return (
-                    <tr key={r.table_name} className="border-t">
-                      <td className="p-2 font-mono text-xs">{r.table_name}</td>
-                      <td className="p-2">
-                        <Badge variant={r.data_type === "text" ? "outline" : "destructive"}>
-                          {r.data_type}
-                        </Badge>
-                      </td>
-                      <td className="p-2 text-right">{r.total_rows}</td>
-                      <td className="p-2 text-right">{r.filled}</td>
-                      <td className="p-2 text-right">
-                        {r.missing > 0
-                          ? <span className="text-destructive font-semibold">{r.missing}</span>
-                          : "0"}
-                      </td>
-                      <td className="p-2 text-center">
-                        {r.has_index
-                          ? <CheckCircle2 className="size-4 text-green-600 inline" />
-                          : <AlertTriangle className="size-4 text-amber-600 inline" />}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {rows.map((r) => (
+                  <tr key={r.table_name} className="border-t">
+                    <td className="p-2 font-mono text-xs">{r.table_name}</td>
+                    <td className="p-2">
+                      <Badge variant={r.data_type === "text" ? "outline" : "destructive"}>
+                        {r.data_type}
+                      </Badge>
+                    </td>
+                    <td className="p-2 text-right">{r.total_rows}</td>
+                    <td className="p-2 text-right">{r.filled}</td>
+                    <td className="p-2 text-right">
+                      {r.missing > 0
+                        ? <span className="text-destructive font-semibold">{r.missing}</span>
+                        : "0"}
+                    </td>
+                    <td className="p-2 text-center">
+                      {r.has_index
+                        ? <CheckCircle2 className="size-4 text-green-600 inline" />
+                        : <AlertTriangle className="size-4 text-amber-600 inline" />}
+                    </td>
+                  </tr>
+                ))}
                 {rows.length === 0 && !loading && (
                   <tr>
                     <td colSpan={6} className="p-4 text-center text-muted-foreground">
@@ -705,29 +812,44 @@ function UserRefAuditTab() {
               </tbody>
             </table>
           </div>
-
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p><strong>Tipo esperado:</strong> <code>text</code> em todas as tabelas (consistência confirmada).</p>
-            <p><strong>Recomendação:</strong> tabelas sem índice em <code>user_ref</code> devem receber <code>CREATE INDEX</code> antes de importar grandes volumes.</p>
-          </div>
         </CardContent>
       </Card>
     </div>
   );
 }
 
-// ---------------- user_ref CSV export ----------------
+// ---------------- user_ref CSV export (detailed + sponsor evidence) ----------------
 
-function exportUserRefCsv(rows: UserRefRow[]) {
-  const header = ["table_name", "data_type", "total_rows", "filled", "missing", "has_index"];
+function exportUserRefCsv(rows: UserRefRow[], detail: UserRefDetailRow[]) {
+  const detailMap = new Map(detail.map((d) => [d.table_name, d]));
+  const header = [
+    "table_name", "data_type", "total_rows", "filled", "missing",
+    "coverage_pct", "has_index", "is_sponsor_table", "sample_missing_ids",
+  ];
   const lines = [header.join(",")];
   for (const r of rows) {
-    lines.push([r.table_name, r.data_type, r.total_rows, r.filled, r.missing, r.has_index ? "yes" : "no"].join(","));
+    const d = detailMap.get(r.table_name);
+    const samples = (d?.sample_missing_ids ?? []).join("|");
+    const cov = d?.coverage_pct ?? (r.total_rows > 0
+      ? ((r.filled / r.total_rows) * 100).toFixed(2)
+      : "");
+    lines.push([
+      r.table_name,
+      r.data_type,
+      r.total_rows,
+      r.filled,
+      r.missing,
+      cov,
+      r.has_index ? "yes" : "no",
+      d?.is_sponsor_table ? "yes" : "no",
+      `"${samples}"`,
+    ].join(","));
   }
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
   downloadBlob(blob, `user-ref-audit-${new Date().toISOString().slice(0, 10)}.csv`);
-  toast.success("Relatório CSV gerado");
+  toast.success("Relatório CSV detalhado gerado");
 }
+
 
 // ---------------- Secrets Tab ----------------
 
@@ -820,7 +942,7 @@ type RestoreStep = {
   id: string;
   title: string;
   hint: string;
-  action: "schema-integrity" | "storage-checksums" | "smoke-tests" | "manual";
+  action: "schema-integrity" | "storage-checksums" | "smoke-tests" | "manifest-compare" | "manual";
   manualText?: string;
 };
 
@@ -831,55 +953,99 @@ const RESTORE_STEPS: RestoreStep[] = [
     manualText: "psql \"$NEW_DB\" -v ON_ERROR_STOP=1 -f db/01-schema.sql" },
   { id: "import_data", title: "3. Importar dados (data-only, ordem das dependências)", hint: "Use db/per-table/*.sql ou 02-data.sql.", action: "manual",
     manualText: "psql \"$NEW_DB\" -c \"SET session_replication_role = replica;\"\nfor f in db/per-table/*.sql; do psql \"$NEW_DB\" -v ON_ERROR_STOP=1 -f \"$f\"; done\npsql \"$NEW_DB\" -c \"SET session_replication_role = DEFAULT;\"" },
-  { id: "schema_integrity", title: "4. Validar integridade do schema", hint: "Confere tabelas críticas e cobertura de user_ref.", action: "schema-integrity" },
+  { id: "schema_integrity", title: "4. Validar integridade do schema (cobertura user_ref)", hint: "Aplica a regra de cobertura mínima configurada na aba user_ref.", action: "schema-integrity" },
   { id: "recreate_cron", title: "5. Recriar cron jobs", hint: "psql -f cron/recreate-cron-jobs.sql", action: "manual",
     manualText: "psql \"$NEW_DB\" -f cron/recreate-cron-jobs.sql" },
   { id: "download_media", title: "6. Subir mídia do Storage", hint: "node scripts/download-storage.mjs --upload ./storage", action: "manual",
     manualText: "node scripts/download-storage.mjs --upload ./storage" },
-  { id: "storage_checksums", title: "7. Comparar checksums dos buckets", hint: "Recalcula SHA-256 de cada arquivo restaurado.", action: "storage-checksums" },
-  { id: "smoke_tests", title: "8. Rodar smoke tests", hint: "RPCs, tabelas críticas e listagem de buckets.", action: "smoke-tests" },
+  { id: "storage_checksums", title: "7. Recalcular checksums dos buckets restaurados", hint: "SHA-256 de cada arquivo (amostragem).", action: "storage-checksums" },
+  { id: "manifest_compare", title: "8. Comparar com manifest do ZIP original", hint: "Carregue storage-manifest.json (vindo do ZIP) e compare divergências.", action: "manifest-compare" },
+  { id: "smoke_tests", title: "9. Smoke tests estendidos (RPCs + busca)", hint: "Inclui /buscar por categoria e cidade com dados de exemplo.", action: "smoke-tests" },
 ];
 
 function RestoreTab() {
-  const [logs, setLogs] = useState<{ step: string; ts: string; level: "info" | "ok" | "error"; msg: string; data?: any }[]>([]);
+  const [logs, setLogs] = useState<{ step: string; ts: string; level: "info" | "ok" | "error"; msg: string; data?: unknown }[]>([]);
   const [running, setRunning] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, "ok" | "error" | "pending">>({});
+  const [manifest, setManifest] = useState<unknown | null>(null);
+  const [manifestName, setManifestName] = useState<string>("");
+  const [finalSummary, setFinalSummary] = useState<{ ok: number; failed: number; failures: string[] } | null>(null);
 
-  const log = (step: string, level: "info" | "ok" | "error", msg: string, data?: any) => {
+  const log = (step: string, level: "info" | "ok" | "error", msg: string, data?: unknown) => {
     setLogs((l) => [...l, { step, ts: new Date().toISOString(), level, msg, data }]);
+  };
+
+  const onManifestUpload = async (file: File) => {
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      setManifest(json);
+      setManifestName(file.name);
+      toast.success(`Manifest carregado: ${file.name}`);
+      log("manifest_compare", "info", `Manifest carregado: ${file.name}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Manifest inválido: ${msg}`);
+    }
   };
 
   const runAction = async (step: RestoreStep) => {
     if (step.action === "manual") return;
+    if (step.action === "manifest-compare" && !manifest) {
+      toast.error("Carregue o storage-manifest.json antes de comparar.");
+      return;
+    }
     setRunning(step.id);
     log(step.id, "info", `Iniciando "${step.title}"...`);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${FUNCTION_URL("portability-restore")}?action=${step.action}`, {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
+      const isPost = step.action === "manifest-compare";
+      const actionParam = step.action === "manifest-compare"
+        ? "storage-checksums-compare"
+        : step.action;
+      const res = await fetch(`${FUNCTION_URL("portability-restore")}?action=${actionParam}`, {
+        method: isPost ? "POST" : "GET",
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          ...(isPost ? { "Content-Type": "application/json" } : {}),
+        },
+        body: isPost ? JSON.stringify({ manifest }) : undefined,
       });
       const json = await res.json();
       if (json.error) throw new Error(json.error);
       const ok = json.ok !== false;
       log(step.id, ok ? "ok" : "error", ok ? "Etapa concluída com sucesso." : "Falha detectada.", json);
       setResults((r) => ({ ...r, [step.id]: ok ? "ok" : "error" }));
-      if (ok) toast.success(`${step.title} ✔`);
+      if (ok) toast.success(`${step.title} OK`);
       else toast.error(`Falha em: ${step.title}`);
-    } catch (e: any) {
-      log(step.id, "error", e.message);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      log(step.id, "error", msg);
       setResults((r) => ({ ...r, [step.id]: "error" }));
-      toast.error(e.message);
+      toast.error(msg);
     } finally {
       setRunning(null);
     }
   };
 
   const runAll = async () => {
+    setFinalSummary(null);
     for (const s of RESTORE_STEPS) {
       if (s.action !== "manual") {
+        if (s.action === "manifest-compare" && !manifest) {
+          log(s.id, "info", "Etapa pulada: nenhum manifest carregado.");
+          continue;
+        }
         await runAction(s);
       }
     }
+    // build final summary
+    setResults((current) => {
+      const failed = Object.entries(current).filter(([, v]) => v === "error").map(([k]) => k);
+      const ok = Object.values(current).filter((v) => v === "ok").length;
+      setFinalSummary({ ok, failed: failed.length, failures: failed });
+      return current;
+    });
   };
 
   const exportLogs = () => {
@@ -891,12 +1057,38 @@ function RestoreTab() {
   return (
     <div className="space-y-4">
       <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="size-4" />Manifest do Storage (do ZIP original)
+          </CardTitle>
+          <CardDescription>
+            Necessário para a etapa 8 (comparação de divergências). Gerado pelo
+            bundle ou pelo passo 7 do host original (<code>storage-manifest.json</code>).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-3 items-start">
+          <Input
+            type="file"
+            accept="application/json"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onManifestUpload(f);
+            }}
+          />
+          {manifestName && (
+            <Badge variant="secondary">
+              <CheckCircle2 className="size-3 mr-1" />{manifestName}
+            </Badge>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
           <div>
             <CardTitle className="flex items-center gap-2"><Rocket className="size-5" />Restaurar em novo host</CardTitle>
             <CardDescription>
-              Fluxo sequencial com etapas manuais (comandos shell) e automatizadas (validação no backend).
-              O pacote só deve ser marcado como "pronto" quando todas as etapas automatizadas passarem.
+              Fluxo sequencial. O pacote só deve ser marcado como "pronto" quando todas as etapas automáticas passarem.
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -937,6 +1129,22 @@ function RestoreTab() {
               </div>
             );
           })}
+
+          {finalSummary && (
+            <div className={`mt-3 border rounded-lg p-3 ${finalSummary.failed === 0 ? "border-green-500/40 bg-green-500/5" : "border-destructive/40 bg-destructive/5"}`}>
+              <div className="font-semibold text-sm flex items-center gap-2">
+                {finalSummary.failed === 0
+                  ? <><CheckCircle2 className="size-4 text-green-600" />Restore validado — pacote pronto.</>
+                  : <><XCircle className="size-4 text-destructive" />Restore com divergências.</>}
+              </div>
+              <div className="text-xs mt-1">
+                Etapas OK: {finalSummary.ok} · Falhas: {finalSummary.failed}
+                {finalSummary.failures.length > 0 && (
+                  <span className="ml-2">({finalSummary.failures.join(", ")})</span>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -953,9 +1161,9 @@ function RestoreTab() {
                 <span className="opacity-60">[{l.ts.slice(11, 19)}]</span>{" "}
                 <span className="font-semibold">{l.step}</span>{" "}
                 {l.msg}
-                {l.data && (
+                {l.data ? (
                   <pre className="ml-4 opacity-80 whitespace-pre-wrap">{JSON.stringify(l.data, null, 2).slice(0, 800)}{JSON.stringify(l.data).length > 800 ? "…" : ""}</pre>
-                )}
+                ) : null}
               </div>
             ))}
           </div>
@@ -964,3 +1172,4 @@ function RestoreTab() {
     </div>
   );
 }
+
