@@ -12,8 +12,9 @@
  *  - Sempre exibe "Pular" e "Continuar" — o passo é 100% opcional.
  *  - Quando atinge 5 serviços, esconde o botão de adicionar.
  */
-import { useCallback, useEffect, useState } from 'react';
-import { Plus, ArrowRight, SkipForward, CheckCircle2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Plus, ArrowRight, SkipForward, CheckCircle2, LayoutDashboard, UserRound } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -77,6 +78,12 @@ const Step20_MoreServices = ({ onContinue, onSkip }: Step20Props) => {
 
   const remaining = count == null ? null : Math.max(0, MAX_SERVICES - count);
   const reachedCap = count != null && count >= MAX_SERVICES;
+  const statusCopy = useMemo(() => {
+    if (count == null) return 'Carregando…';
+    if (reachedCap) return 'Seu primeiro serviço já está garantido e o limite foi atingido. Agora você pode ir direto para o painel ou revisar sua página pública.';
+    if (count <= 1) return 'Seu primeiro serviço já está salvo. Se quiser, adicione outro agora ou siga para o painel.';
+    return `Você já tem ${count} serviços ativos. Pode adicionar mais ${remaining} ou seguir para a próxima etapa.`;
+  }, [count, reachedCap, remaining]);
 
   const handleServiceCreated = useCallback(async () => {
     setEditorOpen(false);
