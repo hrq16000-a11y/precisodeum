@@ -19,25 +19,54 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const type = url.searchParams.get('type');
+  const pageParam = parseInt(url.searchParams.get('page') || '1', 10);
+  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+  const PAGE_SIZE = 5000; // alinhado com src/lib/sitemapBuilder.ts (SITEMAP_PAGE_SIZE)
   const sitemapBaseUrl = `${siteUrl}/sitemap`;
 
-  // Sitemap Index — returns links to sub-sitemaps
+  // Sitemap Index — returns links to sub-sitemaps (paginados quando necessário)
   if (!type) {
+    // Pré-conta volume das fontes paginadas para emitir &page=N no índice.
+    // Usa HEAD count para ser barato (não baixa as linhas).
+    const [providersCount, citiesCount, categoriesCount] = await Promise.all([
+      supabase.from('providers').select('id', { count: 'exact', head: true })
+        .eq('status', 'approved').not('slug', 'is', null),
+      supabase.from('cities').select('id', { count: 'exact', head: true }),
+      supabase.from('categories').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+    ]);
+    const pagesFor = (n: number | null) => Math.max(1, Math.ceil((n || 0) / PAGE_SIZE));
+    const paginated: Record<string, number> = {
+      providers: pagesFor(providersCount.count),
+      cities: pagesFor(citiesCount.count),
+      categories: pagesFor(categoriesCount.count),
+      especialidades: pagesFor(categoriesCount.count),
+    };
     const sitemaps = [
       'static', 'categories', 'especialidades', 'providers', 'cities',
       'blog', 'jobs', 'pages', 'popular', 'seo',
     ];
-    const entries = sitemaps.map(s =>
-      `  <sitemap>\n    <loc>${escapeXml(sitemapBaseUrl)}?type=${s}</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>`
-    ).join('\n');
+    const entries: string[] = [];
+    for (const s of sitemaps) {
+      const total = paginated[s] ?? 1;
+      for (let p = 1; p <= total; p++) {
+        const loc = p === 1
+          ? `${sitemapBaseUrl}?type=${s}`
+          : `${sitemapBaseUrl}?type=${s}&page=${p}`;
+        entries.push(`  <sitemap>\n    <loc>${escapeXml(loc)}</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>`);
+      }
+    }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${entries}
+${entries.join('\n')}
 </sitemapindex>`;
 
     return respond(xml);
   }
+
+  // Janela de paginação para os sub-sitemaps de listagem grande.
+  const offset = (page - 1) * PAGE_SIZE;
+  const limit = PAGE_SIZE;
 
   // Sub-sitemaps by type
   let urls = '';
@@ -113,7 +142,7 @@ ${entries}
   }
 
   if (type === 'categories') {
-    const { data } = await supabase.from('categories').select('id, slug, created_at').is('deleted_at', null).range(0, 49999);
+    const { data } = await supabase.from('categories').select('id, slug, created_at').is('deleted_at', null).range(offset, offset + limit - 1);
     for (const cat of data || []) {
       if (!eligibleCategoryIds.has(cat.id)) continue; // gate
       urls += entry(siteUrl, `/categoria/${cat.slug}`, fmtDate(cat.created_at), 'daily', '0.9');
@@ -121,7 +150,7 @@ ${entries}
   }
 
   if (type === 'especialidades') {
-    const { data } = await supabase.from('categories').select('id, slug, created_at').is('deleted_at', null).range(0, 49999);
+    const { data } = await supabase.from('categories').select('id, slug, created_at').is('deleted_at', null).range(offset, offset + limit - 1);
     for (const cat of data || []) {
       if (!eligibleCategoryIds.has(cat.id)) continue; // gate
       urls += entry(siteUrl, `/especialidades/${cat.slug}`, fmtDate(cat.created_at), 'weekly', '0.85');
@@ -136,7 +165,7 @@ ${entries}
       .select('slug, updated_at')
       .eq('status', 'approved')
       .not('slug', 'is', null)
-      .range(0, 49999);
+      .range(offset, offset + limit - 1);
     for (const p of data || []) {
       if (!eligibleProviderSlugs.has(p.slug)) continue; // gate de qualidade
       urls += entry(siteUrl, `/profissional/${p.slug}`, fmtDate(p.updated_at), 'weekly', '0.7');
@@ -144,7 +173,7 @@ ${entries}
   }
 
   if (type === 'cities') {
-    const { data } = await supabase.from('cities').select('slug, name, created_at').range(0, 49999);
+    const { data } = await supabase.from('cities').select('slug, name, created_at').range(offset, offset + limit - 1);
     for (const city of data || []) {
       const norm = String(city.name || city.slug || '').trim().toLowerCase();
       if (!eligibleCityNames.has(norm)) continue; // gate
