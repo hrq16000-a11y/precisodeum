@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -12,23 +12,57 @@ type HealthResult = {
 };
 
 interface Props {
-  /** When true, render even if everything is OK (compact green badge). */
   alwaysShow?: boolean;
-  /** Called with the latest health result so the parent can decide to block actions. */
   onHealthChange?: (ok: boolean) => void;
+  /** Background re-run interval in ms. Default: 5 minutes. Set 0 to disable. */
+  intervalMs?: number;
 }
 
+const STORAGE_LAST_LOG = "health_check_last_logged_at";
+const LOG_THROTTLE_MS = 10 * 60 * 1000; // log to DB at most every 10 min per tab
+
 /**
- * Runs a lightweight DB sanity check on dashboard mount:
- * - critical RPCs exist (register_service_completion, audit_user_ref_health, etc.)
- * - critical columns exist (audit_log.resource_type/details, media.user_ref, ...)
- * If any check fails, surfaces a red alert and reports back so the parent can disable
- * destructive actions until the schema is fixed.
+ * Runs validate_db_health on mount, then periodically (every 5 min by default).
+ * Records each result into health_check_history (throttled to avoid spam).
+ * Surfaces a red alert if any RPC/column is missing.
  */
-export function DashboardHealthCheck({ alwaysShow = false, onHealthChange }: Props) {
+export function DashboardHealthCheck({
+  alwaysShow = false,
+  onHealthChange,
+  intervalMs = 5 * 60 * 1000,
+}: Props) {
   const [result, setResult] = useState<HealthResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const lastLoggedRef = useRef<number>(0);
+
+  const persistResult = async (r: HealthResult) => {
+    try {
+      const now = Date.now();
+      const last = lastLoggedRef.current ||
+        Number(sessionStorage.getItem(STORAGE_LAST_LOG) ?? 0);
+      // Always log when status changes, otherwise throttle
+      const shouldLog = r.ok === false || (now - last) > LOG_THROTTLE_MS;
+      if (!shouldLog) return;
+      lastLoggedRef.current = now;
+      sessionStorage.setItem(STORAGE_LAST_LOG, String(now));
+      const { data: { user } } = await supabase.auth.getUser();
+      const failedRpcs = r.rpcs.filter((x) => !x.ok).map((x) => x.name);
+      const failedColumns = r.columns.filter((x) => !x.ok)
+        .map((x) => ({ table: x.table, column: x.column }));
+      await supabase.from("health_check_history" as never).insert({
+        user_id: user?.id ?? null,
+        source: "dashboard",
+        ok: r.ok,
+        failed_rpcs: failedRpcs,
+        failed_columns: failedColumns,
+        raw: r as unknown as Record<string, unknown>,
+      } as never);
+    } catch (e) {
+      // Silent — health logging must never break the dashboard
+      console.warn("[DashboardHealthCheck] persist failed:", e);
+    }
+  };
 
   const run = async () => {
     setLoading(true);
@@ -39,6 +73,7 @@ export function DashboardHealthCheck({ alwaysShow = false, onHealthChange }: Pro
       const r = data as unknown as HealthResult;
       setResult(r);
       onHealthChange?.(r.ok);
+      void persistResult(r);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErr(msg);
@@ -49,9 +84,12 @@ export function DashboardHealthCheck({ alwaysShow = false, onHealthChange }: Pro
   };
 
   useEffect(() => {
-    run();
+    void run();
+    if (intervalMs <= 0) return;
+    const id = window.setInterval(() => void run(), intervalMs);
+    return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [intervalMs]);
 
   if (loading && !result) {
     return (
