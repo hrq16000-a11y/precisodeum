@@ -14,8 +14,15 @@ let onlineUsers = new Map<string, OnlinePresenceMeta>();
 let lastSeenMap = new Map<string, number>();
 /** Wall-clock timestamp of the last presence sync — used for the "atualizado há Xs" label. */
 let lastSyncAt = 0;
+/** Realtime health: 'connecting' | 'healthy' | 'degraded' (Supabase Realtime offline / blocked) */
+type RealtimeHealth = 'connecting' | 'healthy' | 'degraded';
+let realtimeHealth: RealtimeHealth = 'connecting';
 let listeners = new Set<() => void>();
 let subscriberCount = 0;
+
+/** If Supabase presence does not sync within this window, mark realtime as degraded. */
+const REALTIME_HEALTH_TIMEOUT_MS = 12_000;
+let healthTimer: ReturnType<typeof setTimeout> | null = null;
 
 function notify() {
   listeners.forEach((fn) => fn());
