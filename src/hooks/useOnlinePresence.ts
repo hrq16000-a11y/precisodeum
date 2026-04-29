@@ -335,6 +335,8 @@ export const __presenceInternals = {
     lastSeenMap = new Map();
     lastSyncAt = 0;
     realtimeHealth = 'connecting';
+    onlineSetCache = null;
+    recentlyOfflineCache = null;
   },
   applyState(state: PresenceState, now: number = Date.now()) {
     const next = reducePresenceState(state, onlineUsers, now);
