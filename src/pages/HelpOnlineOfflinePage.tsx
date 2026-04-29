@@ -2,15 +2,78 @@ import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
-import { Activity, Clock, Eye, EyeOff, ShieldCheck, Wifi, WifiOff, ArrowLeft } from 'lucide-react';
+import { useJsonLd } from '@/hooks/useJsonLd';
+import { Activity, Clock, Eye, EyeOff, ShieldCheck, Wifi, WifiOff, ChevronRight } from 'lucide-react';
+
+// Single source of truth for both the rendered FAQ and the schema.org JSON-LD —
+// guarantees parity between what users read and what Google ingests.
+const FAQ_ITEMS: Array<{ q: string; a: string }> = [
+  {
+    q: 'O que significa o badge "Online" no perfil de um profissional?',
+    a: 'O profissional está conectado neste momento, com o app ou site aberto e visibilidade ativada. Mostramos um indicador verde pulsante com a hora em que ele se conectou (online_since). Atualizamos o status em tempo real, sem precisar recarregar a página.',
+  },
+  {
+    q: 'O que significa "Offline" e "Visto pela última vez há X"?',
+    a: 'O badge Offline aparece apenas quando o profissional saiu há pouco tempo (até 10 minutos por padrão). Mostramos a mensagem "Visto pela última vez há X min" usando o carimbo lastSeen, que é o momento exato em que detectamos a desconexão. Após esse intervalo, o badge desaparece para não passar uma impressão errada.',
+  },
+  {
+    q: 'Quais dados são usados para calcular o status?',
+    a: 'Usamos apenas o user_id do profissional, sua cidade (opcional) e dois timestamps: online_since (início da sessão atual) e lastSeen (última desconexão detectada). Não armazenamos histórico, nem coletamos IP ou geolocalização para esse recurso. Tudo fica em memória durante a sessão.',
+  },
+  {
+    q: 'O que acontece se o tempo real falhar?',
+    a: 'Se o canal de tempo real ficar indisponível, ocultamos automaticamente os badges Online/Offline e o filtro de Status. A busca continua funcionando normalmente por avaliação, distância e relevância — sem quebrar a ordenação dos resultados.',
+  },
+  {
+    q: 'Como o status influencia minha busca em /buscar?',
+    a: 'O modo padrão "Online primeiro" mantém a ordenação que você escolheu (distância, avaliação ou relevância) e apenas sobe os profissionais online ao topo de cada grupo. Você também pode escolher "Apenas Online" (somente quem está conectado agora) ou "Recentemente Offline" (saíram há poucos minutos).',
+  },
+  {
+    q: 'Profissional: como controlar minha visibilidade?',
+    a: 'No painel, em "Status — Trabalhando agora", você pode desativar o modo visível a qualquer momento. Quando invisível, seu cartão deixa de mostrar o badge verde, mas seus serviços continuam aparecendo nas buscas normalmente. Sua preferência fica salva no seu dispositivo.',
+  },
+];
 
 const HelpOnlineOfflinePage = () => {
   useSeoHead({
     title: 'Como funciona Online/Offline | Preciso de um',
     description:
-      'Entenda como o status "Online" e "Offline" dos profissionais funciona no Preciso de um, quais dados são usados e como o tempo real influencia a busca.',
+      'Entenda como o status "Online" e "Offline" dos profissionais funciona no Preciso de um, quais dados são usados (online_since e lastSeen) e como o tempo real influencia a busca.',
     canonical: `${SITE_BASE_URL}/ajuda/online-offline`,
   });
+
+  // FAQPage schema for rich-snippet eligibility
+  useJsonLd(
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FAQ_ITEMS.map((item) => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: { '@type': 'Answer', text: item.a },
+      })),
+    },
+    'json-ld-faq-online-offline',
+  );
+
+  // BreadcrumbList schema for breadcrumb-style result display
+  useJsonLd(
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_BASE_URL },
+        { '@type': 'ListItem', position: 2, name: 'Central de Ajuda', item: `${SITE_BASE_URL}/ajuda` },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: 'Como funciona Online/Offline',
+          item: `${SITE_BASE_URL}/ajuda/online-offline`,
+        },
+      ],
+    },
+    'json-ld-breadcrumb-online-offline',
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -18,13 +81,23 @@ const HelpOnlineOfflinePage = () => {
 
       <section className="bg-gradient-to-br from-emerald-500/5 via-background to-primary/5 py-12 px-4">
         <div className="container mx-auto max-w-3xl">
-          <Link
-            to="/ajuda"
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Central de Ajuda
-          </Link>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+          {/* Visual breadcrumbs (mirrors the JSON-LD above) */}
+          <nav aria-label="Breadcrumb" className="mb-3">
+            <ol className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+              <li>
+                <Link to="/" className="hover:text-foreground">Início</Link>
+              </li>
+              <li aria-hidden="true"><ChevronRight className="inline h-3 w-3" /></li>
+              <li>
+                <Link to="/ajuda" className="hover:text-foreground">Central de Ajuda</Link>
+              </li>
+              <li aria-hidden="true"><ChevronRight className="inline h-3 w-3" /></li>
+              <li className="font-medium text-foreground" aria-current="page">
+                Online / Offline
+              </li>
+            </ol>
+          </nav>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Como funciona Online / Offline
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
@@ -41,7 +114,7 @@ const HelpOnlineOfflinePage = () => {
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
               <Wifi className="h-4 w-4" />
             </span>
-            <h2 className="text-lg font-semibold">O que significa “Online”?</h2>
+            <h2 className="text-lg font-semibold">O que significa "Online"?</h2>
           </header>
           <p className="mt-3 text-sm text-muted-foreground">
             Um profissional aparece como <strong className="text-foreground">Online</strong> quando
@@ -54,7 +127,7 @@ const HelpOnlineOfflinePage = () => {
               <span>
                 <strong className="text-foreground">online_since</strong>: o instante em que a
                 sessão atual começou. Se ele recarregar a página, mantemos o horário mais antigo
-                para não “zerar” o tempo conectado.
+                para não "zerar" o tempo conectado.
               </span>
             </li>
             <li className="flex gap-2">
@@ -72,12 +145,12 @@ const HelpOnlineOfflinePage = () => {
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
               <WifiOff className="h-4 w-4" />
             </span>
-            <h2 className="text-lg font-semibold">O que significa “Offline”?</h2>
+            <h2 className="text-lg font-semibold">O que significa "Offline"?</h2>
           </header>
           <p className="mt-3 text-sm text-muted-foreground">
             Mostramos o badge <strong className="text-foreground">Offline</strong> apenas quando o
             profissional saiu há pouco tempo (até 10 minutos por padrão), com a mensagem{' '}
-            <em>“Visto pela última vez há X min”</em>. Depois desse intervalo, o badge desaparece e
+            <em>"Visto pela última vez há X min"</em>. Depois desse intervalo, o badge desaparece e
             o card volta ao estado neutro — sem dar a impressão errada de que está ausente há
             muito tempo.
           </p>
@@ -119,7 +192,7 @@ const HelpOnlineOfflinePage = () => {
             <h2 className="text-lg font-semibold">Profissional: como controlar minha visibilidade</h2>
           </header>
           <p className="mt-3 text-sm text-muted-foreground">
-            No painel, em <strong className="text-foreground">Status “Trabalhando agora”</strong>,
+            No painel, em <strong className="text-foreground">Status "Trabalhando agora"</strong>,
             você pode desativar o modo visível a qualquer momento. Quando invisível, seu cartão
             não mostra o badge verde — mas seus serviços continuam aparecendo nas buscas.
           </p>
@@ -147,12 +220,25 @@ const HelpOnlineOfflinePage = () => {
           </ul>
         </article>
 
+        {/* Plain Q&A list — mirrors the JSON-LD FAQPage above */}
+        <section aria-labelledby="faq-heading" className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 id="faq-heading" className="text-lg font-semibold">Perguntas frequentes</h2>
+          <dl className="mt-4 divide-y divide-border">
+            {FAQ_ITEMS.map((item) => (
+              <div key={item.q} className="py-3">
+                <dt className="text-sm font-medium text-foreground">{item.q}</dt>
+                <dd className="mt-1 text-sm text-muted-foreground">{item.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
         <div className="text-center">
           <Link
             to="/ajuda"
             className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" /> Voltar para a Central de Ajuda
+            Voltar para a Central de Ajuda
           </Link>
         </div>
       </main>

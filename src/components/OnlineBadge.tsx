@@ -135,6 +135,12 @@ export function OnlineBadge({
           <TooltipContent side="top" align="center" className="text-xs">
             <div className="font-medium">Offline no momento</div>
             <div className="text-muted-foreground">Visto pela última vez há {offlineRelative}</div>
+            <a
+              href="/ajuda/online-offline"
+              className="mt-1 inline-block text-[10px] text-primary underline-offset-2 hover:underline"
+            >
+              Como funciona Online/Offline?
+            </a>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -188,6 +194,12 @@ export function OnlineBadge({
             {lastSync > 0 && (
               <div className="text-muted-foreground">Atualizado há {freshness}</div>
             )}
+            <a
+              href="/ajuda/online-offline"
+              className="mt-1 inline-block text-[10px] text-emerald-700 dark:text-emerald-400 underline-offset-2 hover:underline"
+            >
+              Como funciona?
+            </a>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

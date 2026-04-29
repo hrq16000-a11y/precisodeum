@@ -6,7 +6,8 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import { whatsappLink } from '@/lib/whatsapp';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Search, HelpCircle, Users, Briefcase, CreditCard, Shield, MessageCircle, ChevronDown } from 'lucide-react';
+import { Search, HelpCircle, Users, Briefcase, CreditCard, Shield, MessageCircle, ChevronDown, Wifi, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FALLBACK_PHONE = '5541997452053';
@@ -107,6 +108,34 @@ const HelpCenterPage = () => {
                 <span className="text-xs font-semibold text-foreground">{sec.label}</span>
               </motion.a>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Featured articles */}
+      {!search.trim() && (
+        <section className="container mx-auto max-w-4xl px-4 mb-8">
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Artigos em destaque
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Link
+              to="/ajuda/online-offline"
+              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-sm hover:shadow-md hover:border-emerald-500/30 transition-all"
+            >
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                <Wifi className="h-5 w-5" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-foreground">Como funciona Online/Offline</h3>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" />
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                  O que significam os badges, quais dados usamos (online_since e lastSeen) e como o status influencia a busca.
+                </p>
+              </div>
+            </Link>
           </div>
         </section>
       )}

@@ -10,7 +10,17 @@ vi.mock('@/hooks/useSiteSettings', () => ({
 }));
 vi.mock('@/hooks/useGeoCity', () => ({ useGeoCity: () => ({ city: 'Curitiba', state: 'PR' }) }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: null }) }));
-vi.mock('@/hooks/useOnlinePresence', () => ({ useIsProviderOnline: () => false }));
+vi.mock('@/hooks/useOnlinePresence', () => ({
+  useIsProviderOnline: () => false,
+  useProviderPresence: () => null,
+  useProviderLastSeen: () => null,
+  useLastPresenceSync: () => 0,
+  useRealtimeHealth: () => 'healthy',
+  useOnlineProviders: () => new Set<string>(),
+  useRecentlyOfflineSet: () => new Set<string>(),
+  useIsRecentlyOffline: () => false,
+  RECENTLY_OFFLINE_WINDOW_MS: 600000,
+}));
 vi.mock('@/hooks/useProviderActivity', () => ({ useProviderActivity: () => ({ data: null }) }));
 vi.mock('@/hooks/useEngagementPoints', () => ({ useEngagementPoints: () => ({ data: 0 }) }));
 vi.mock('@/hooks/useTopProfessional', () => ({ useTopProfessional: () => false }));
