@@ -101,6 +101,14 @@ export function applySearchFilters<T extends FilterableProvider>(
   else if (featuredFilter === 'normal') results = results.filter((p) => !p.featured);
 
   if (onlineOnly) results = results.filter((p) => onlineSet.has(p.userId));
+
+  // Status filter (UI: "Online primeiro" / "Apenas Online" / "Recentemente Offline")
+  if (statusFilter === 'online_only') {
+    results = results.filter((p) => onlineSet.has(p.userId));
+  } else if (statusFilter === 'recently_offline') {
+    results = results.filter((p) => recentlyOfflineSet.has(p.userId));
+  }
+
   if (activeTodayOnly) {
     // "Ativo hoje" inclui quem está online agora também,
     // E só vale para profissionais a até 5km do usuário (mesma régua do mapa).
