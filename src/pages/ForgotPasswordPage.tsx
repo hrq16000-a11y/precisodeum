@@ -31,10 +31,24 @@ const ForgotPasswordPage = () => {
 
   useEffect(() => {
     document.title = 'Esqueci minha senha | Preciso de Um';
+    // Restaura cooldown persistido (sobrevive a reload)
+    try {
+      const until = Number(localStorage.getItem(COOLDOWN_KEY) || '0');
+      const remaining = Math.ceil((until - Date.now()) / 1000);
+      if (remaining > 0) setCooldown(remaining);
+    } catch { /* noop */ }
   }, []);
 
+  const startCooldown = (seconds: number) => {
+    setCooldown(seconds);
+    try { localStorage.setItem(COOLDOWN_KEY, String(Date.now() + seconds * 1000)); } catch { /* noop */ }
+  };
+
   useEffect(() => {
-    if (cooldown <= 0) return;
+    if (cooldown <= 0) {
+      try { localStorage.removeItem(COOLDOWN_KEY); } catch { /* noop */ }
+      return;
+    }
     const t = setTimeout(() => setCooldown(c => c - 1), 1000);
     return () => clearTimeout(t);
   }, [cooldown]);
@@ -50,7 +64,7 @@ const ForgotPasswordPage = () => {
     e.preventDefault();
     if (cooldown > 0) {
       setStatus('cooldown');
-      setMessage(`Aguarde ${cooldown}s antes de pedir um novo e-mail.`);
+      setMessage(`Aguarde ${formatCooldown(cooldown)} antes de pedir um novo e-mail.`);
       return;
     }
     const err = validate(email);
@@ -69,16 +83,14 @@ const ForgotPasswordPage = () => {
       if (/rate|too.?many|over.?email.?send/.test(msg)) {
         setStatus('cooldown');
         setMessage('Muitos pedidos seguidos. Tente novamente em alguns minutos.');
-        setCooldown(COOLDOWN_SECONDS);
+        startCooldown(COOLDOWN_SECONDS * 2);
         toast.error('Muitos pedidos seguidos. Aguarde alguns minutos.');
         return;
       }
       if (/user.?not.?found|no.?such.?user|invalid.?email/.test(msg)) {
-        // Por segurança, NÃO confirmamos publicamente que o e-mail não existe.
-        // Mostramos a mesma tela de "enviamos se existir".
         setStatus('not_found');
         setMessage('Se este e-mail estiver cadastrado, você receberá um link de redefinição em instantes. Verifique também a caixa de spam.');
-        setCooldown(COOLDOWN_SECONDS);
+        startCooldown(COOLDOWN_SECONDS);
         return;
       }
       setStatus('error');
@@ -88,7 +100,7 @@ const ForgotPasswordPage = () => {
     }
     setStatus('sent');
     setMessage('Enviamos um link de redefinição para seu e-mail. O link expira em 1 hora.');
-    setCooldown(COOLDOWN_SECONDS);
+    startCooldown(COOLDOWN_SECONDS);
     toast.success('Link de recuperação enviado!');
   };
 
