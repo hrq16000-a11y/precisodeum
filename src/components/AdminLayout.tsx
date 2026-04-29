@@ -111,6 +111,7 @@ const menuGroups = [
       { label: 'Barra Inferior', icon: Smartphone, path: '/admin/barra-inferior' },
       { label: 'Módulos', icon: Blocks, path: '/admin/modulos' },
       { label: 'Backup & Export', icon: Database, path: '/admin/backup' },
+      { label: 'Portabilidade & Migração', icon: Package, path: '/admin/portabilidade' },
       { label: 'Lixeira', icon: Trash2, path: '/admin/lixeira' },
     ],
   },
