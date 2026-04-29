@@ -1,11 +1,14 @@
 // Gerenciamento de consentimento de cookies (LGPD)
-// Persiste preferências por categoria no localStorage e dispara eventos
-// para os módulos de analytics/ads consultarem antes de inicializar.
+// Persiste preferências por categoria no localStorage, dispara eventos
+// para os módulos de analytics/ads consultarem em tempo real, e registra
+// auditoria no banco (cookie_consent_log) por user_id e versão.
+
+import { supabase } from "@/integrations/supabase/client";
 
 export type ConsentCategory = "essential" | "functional" | "analytics" | "marketing";
 
 export type ConsentState = {
-  essential: true; // sempre true (necessário para o site funcionar)
+  essential: true;
   functional: boolean;
   analytics: boolean;
   marketing: boolean;
@@ -14,6 +17,7 @@ export type ConsentState = {
 };
 
 const STORAGE_KEY = "cookie_consent_v2";
+const ANON_ID_KEY = "cookie_consent_anon_id";
 const LEGACY_KEY = "cookie_consent_accepted";
 const CURRENT_VERSION = 1;
 const EVENT_NAME = "cookie-consent-changed";
@@ -40,7 +44,26 @@ export function getConsent(): ConsentState | null {
   }
 }
 
-export function saveConsent(partial: Partial<Omit<ConsentState, "essential" | "version" | "updated_at">>) {
+function getOrCreateAnonId(): string {
+  try {
+    let id = localStorage.getItem(ANON_ID_KEY);
+    if (!id) {
+      id =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `anon_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(ANON_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return `anon_${Date.now()}`;
+  }
+}
+
+export function saveConsent(
+  partial: Partial<Omit<ConsentState, "essential" | "version" | "updated_at">>,
+  source: "banner" | "pagina_cookies" | "api" = "banner",
+) {
   const state: ConsentState = {
     ...DEFAULT_CONSENT,
     ...getConsent(),
@@ -56,15 +79,42 @@ export function saveConsent(partial: Partial<Omit<ConsentState, "essential" | "v
   } catch {
     // ignore quota
   }
+
+  // Auditoria no banco — best-effort, não bloqueia a UI
+  void recordConsentLog(state, source);
+
   return state;
 }
 
-export function acceptAll() {
-  return saveConsent({ functional: true, analytics: true, marketing: true });
+async function recordConsentLog(state: ConsentState, source: string) {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user_id = sessionData.session?.user?.id ?? null;
+    const anon_id = getOrCreateAnonId();
+    await supabase.from("cookie_consent_log" as any).insert({
+      user_id,
+      anon_id,
+      version: state.version,
+      essential: state.essential,
+      functional: state.functional,
+      analytics: state.analytics,
+      marketing: state.marketing,
+      source,
+      user_agent:
+        typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : null,
+    });
+  } catch (e) {
+    // silencioso — auditoria não pode bloquear o fluxo
+    if (typeof console !== "undefined") console.warn("[consent] log failed", e);
+  }
 }
 
-export function rejectAll() {
-  return saveConsent({ functional: false, analytics: false, marketing: false });
+export function acceptAll(source: "banner" | "pagina_cookies" | "api" = "banner") {
+  return saveConsent({ functional: true, analytics: true, marketing: true }, source);
+}
+
+export function rejectAll(source: "banner" | "pagina_cookies" | "api" = "banner") {
+  return saveConsent({ functional: false, analytics: false, marketing: false }, source);
 }
 
 export function hasConsent(category: ConsentCategory): boolean {
