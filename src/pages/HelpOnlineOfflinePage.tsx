@@ -22,7 +22,6 @@ const FAQ_ITEMS: Array<{ q: string; a: string }> = [
   },
   {
     q: 'O que acontece se o tempo real falhar?',
-    o: 'fallback',
     a: 'Se o canal de tempo real ficar indisponível, ocultamos automaticamente os badges Online/Offline e o filtro de Status. A busca continua funcionando normalmente por avaliação, distância e relevância — sem quebrar a ordenação dos resultados.',
   },
   {
