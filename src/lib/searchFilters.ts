@@ -64,6 +64,7 @@ export function applySearchFilters<T extends FilterableProvider>(
     onlineSet = new Set<string>(),
     activeTodaySet = new Set<string>(),
     routeCorridor = null,
+    disableOnlineBoost = false,
   } = opts;
 
   let results = [...list];
