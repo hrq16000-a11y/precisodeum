@@ -627,10 +627,15 @@ function UserRefAuditTab() {
               Chave mestra para portabilidade. Verifica tipo, índices e cobertura em todas as tabelas.
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
-            <RefreshCw className={`size-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Recarregar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => exportUserRefCsv(rows)} disabled={rows.length === 0}>
+              <Download className="size-4 mr-2" />Exportar CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
+              <RefreshCw className={`size-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+              Recarregar
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
