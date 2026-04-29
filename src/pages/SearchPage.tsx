@@ -153,6 +153,8 @@ const SearchPage = () => {
   const allProviders = useMemo(() => [...localProviders, ...nearbyProviders, ...outOfStateProviders], [localProviders, nearbyProviders, outOfStateProviders]);
 
   // Apply additional client-side filters
+  const effectiveStatusFilter = realtimeHealth === 'degraded' ? 'all' : presenceStatusFilter;
+
   const applyClientFilters = useCallback((list: DbProvider[]) => {
     return applySearchFilters(list, {
       selectedNeighborhood,
@@ -166,6 +168,8 @@ const SearchPage = () => {
       urgencyMode,
       onlineSet,
       activeTodaySet,
+      recentlyOfflineSet,
+      statusFilter: effectiveStatusFilter,
       routeCorridor: routeCorridor
         ? {
             midLat: routeCorridor.midLat,
@@ -174,7 +178,7 @@ const SearchPage = () => {
           }
         : null,
     }) as DbProvider[];
-  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, onlineOnly, acceptingOnly, activeTodayOnly]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, recentlyOfflineSet, effectiveStatusFilter, onlineOnly, acceptingOnly, activeTodayOnly]);
 
   const stateFilterFn = useCallback((list: DbProvider[]) =>
     selectedState ? list.filter(p => safeUF(p.state) === selectedState) : list,
