@@ -65,6 +65,8 @@ export interface DbProvider {
   levelPriority?: number;
   /** Audit metadata about how distance was computed (debug/inspection) */
   _distanceAudit?: DistanceAudit;
+  /** Sinal de atividade do prestador (Recency Factor) */
+  activitySignal?: 'em_alta' | 'responde_rapido' | 'ativo_recente' | null;
 }
 
 export type FeaturedProviderSort = 'proximity' | 'category' | 'availability';
