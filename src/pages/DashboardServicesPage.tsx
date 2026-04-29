@@ -1755,6 +1755,39 @@ const DashboardServicesPage = () => {
         context="service"
         providerSlug={provider?.slug ?? null}
       />
+
+      {/* Kill-Switch: modal de conscientização quando score<50% ou >3 termos de leilão */}
+      <AlertDialog open={blockModal.open} onOpenChange={(o) => setBlockModal((s) => ({ ...s, open: o }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-5 w-5" />
+              Anúncio bloqueado pelo Padrão de Qualidade
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 pt-1">
+              <span className="block text-foreground">
+                Para proteger a valorização da sua mão de obra, não permitimos anúncios com baixo score
+                ou termos de leilão. Use o botão <strong>"Reescrever com Qualidade"</strong> para atingir
+                o Padrão Ouro e ser aprovado.
+              </span>
+              <span className="block rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-foreground">
+                <strong>Motivos detectados:</strong>
+                <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                  {blockModal.reasons.map((r, i) => (<li key={i}>{r}</li>))}
+                </ul>
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                Esta tentativa foi registrada na auditoria interna para acompanhamento.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setBlockModal({ open: false, score: 0, hits: 0, reasons: [] })}>
+              Entendi, vou melhorar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
