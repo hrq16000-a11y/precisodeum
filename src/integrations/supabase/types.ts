@@ -1785,6 +1785,33 @@ export type Database = {
         }
         Relationships: []
       }
+      integrity_reports: {
+        Row: {
+          created_at: string
+          details: Json
+          finding_count: number
+          id: string
+          ran_at: string
+          scope: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          finding_count?: number
+          id?: string
+          ran_at?: string
+          scope: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          finding_count?: number
+          id?: string
+          ran_at?: string
+          scope?: string
+        }
+        Relationships: []
+      }
       ip_blocks: {
         Row: {
           blocked_until: string
@@ -8017,6 +8044,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      run_integrity_check: { Args: never; Returns: Json }
       search_cities: {
         Args: { term: string }
         Returns: {
