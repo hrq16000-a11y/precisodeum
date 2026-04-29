@@ -946,6 +946,7 @@ const ProviderProfile = () => {
     return extractSpecialties(parts, 6);
   }, [provider, category, services]);
 
+  const breadcrumbLd = useMemo(() => provider ? ({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
