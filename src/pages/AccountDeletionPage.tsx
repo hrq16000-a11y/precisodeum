@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { useSeoHead, SITE_BASE_URL } from "@/hooks/useSeoHead";
 import { toast } from "sonner";
 import { CheckCircle2, AlertCircle, ShieldCheck, Mail, Trash2 } from "lucide-react";
 
