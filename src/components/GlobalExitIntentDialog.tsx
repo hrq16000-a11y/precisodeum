@@ -28,6 +28,7 @@ import { MessageCircle, UserPlus, Search, X, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { markSupportContacted, shouldSuppressExitIntent } from '@/lib/conversionFunnel';
+import { trackExitIntent, markPendingExitConversion } from '@/lib/exitIntentTelemetry';
 
 const STORAGE_KEY = 'global-exit-intent:shown';
 const INACTIVITY_MS = 45_000;
@@ -74,6 +75,7 @@ function detectPageKind(pathname: string): PageKind {
 interface CopyContext {
   city: string | null;
   state: string | null;
+  neighborhood: string | null;
   pageKind: PageKind;
   isAuthed: boolean;
 }
@@ -88,16 +90,28 @@ interface ExitCopy {
   secondaryHref: string;
 }
 
-function locationPhrase({ city, state }: CopyContext): string {
+/**
+ * Constrói uma frase amigável de localização. Sempre cordial, nunca quebra
+ * layout quando geo está indisponível ("a gente atende todo o Brasil").
+ */
+function locationPhrase({ city, state, neighborhood }: CopyContext): string {
+  if (neighborhood && city) return ` no bairro ${neighborhood}, em ${city}`;
   if (city && state) return ` em ${city}/${state}`;
   if (city) return ` em ${city}`;
-  return ' na sua região';
+  return ' na nossa rede nacional';
+}
+
+function shortLocation({ city, state }: CopyContext): string {
+  if (city && state) return `${city}/${state}`;
+  if (city) return city;
+  return 'todo o Brasil';
 }
 
 function buildCopy(ctx: CopyContext): ExitCopy {
   const where = locationPhrase(ctx);
+  const place = shortLocation(ctx);
   const waMsg = encodeURIComponent(
-    `Olá! Estou navegando${where} em precisodeum.com.br e gostaria de me cadastrar. Pode me ajudar?`,
+    `Olá! Estou navegando${where} em precisodeum.com.br e quero me tornar um Profissional top da rede. Pode me ajudar?`,
   );
   const waHref = `https://wa.me/${SUPPORT_WHATSAPP}?text=${waMsg}`;
 
@@ -105,7 +119,7 @@ function buildCopy(ctx: CopyContext): ExitCopy {
   if (ctx.isAuthed) {
     return {
       title: 'Quer aproveitar melhor a plataforma?',
-      body: `Vamos finalizar a configuração do seu perfil${where}. Leva menos de 2 minutos e você passa a aparecer pra clientes que estão buscando agora.`,
+      body: `Vamos finalizar a configuração do seu perfil${where}. Leva menos de 2 minutos e você passa a aparecer pra clientes que estão buscando agora — em ${place} e em toda a nossa rede nacional.`,
       primaryCta: 'Completar meu perfil',
       primaryHref: '/dashboard',
       primaryIsWhatsApp: false,
@@ -117,9 +131,9 @@ function buildCopy(ctx: CopyContext): ExitCopy {
   switch (ctx.pageKind) {
     case 'profissional':
       return {
-        title: 'Gostou do que viu?',
-        body: `Cadastre-se grátis e receba indicações de profissionais como esse${where} sempre que precisar. Em menos de 1 minuto, sem cartão.`,
-        primaryCta: 'Criar conta gratuita',
+        title: 'Que tal aparecer aqui também?',
+        body: `Profissionais como esse recebem contatos todos os dias${where}. Cadastre-se grátis em 1 minuto e comece a ser indicado pela nossa rede nacional — sem cartão, sem mensalidade.`,
+        primaryCta: 'Quero ser um Profissional top',
         primaryHref: '/cadastro',
         primaryIsWhatsApp: false,
         secondaryCta: 'Falar com o suporte',
@@ -127,19 +141,19 @@ function buildCopy(ctx: CopyContext): ExitCopy {
       };
     case 'categoria':
       return {
-        title: `Ache o profissional ideal${where}`,
-        body: `Cadastre-se grátis em 1 minuto para receber indicações personalizadas de profissionais${where}. Você ainda economiza tempo comparando avaliações reais.`,
+        title: `Tem espaço pra mais profissionais${where}`,
+        body: `A demanda nessa categoria está crescendo${where} e em toda a rede nacional. Cadastre-se grátis em 1 minuto e comece a aparecer pra quem está buscando agora.`,
         primaryCta: 'Quero me cadastrar grátis',
         primaryHref: '/cadastro',
         primaryIsWhatsApp: false,
-        secondaryCta: 'Buscar agora',
+        secondaryCta: 'Buscar profissionais',
         secondaryHref: '/buscar',
       };
     case 'cidade':
       return {
-        title: `Profissionais verificados${where}`,
-        body: `A gente tem dezenas de profissionais ativos${where} prontos pra te atender. Crie sua conta grátis e desbloqueie o contato direto com eles.`,
-        primaryCta: 'Cadastro rápido (grátis)',
+        title: `A demanda${where} está crescendo`,
+        body: `Cada dia mais clientes${where} buscam profissionais aqui. Garante seu espaço grátis e comece a receber contatos diretos no seu WhatsApp.`,
+        primaryCta: 'Cadastrar grátis em 1 minuto',
         primaryHref: '/cadastro',
         primaryIsWhatsApp: false,
         secondaryCta: 'Ver profissionais',
@@ -147,8 +161,8 @@ function buildCopy(ctx: CopyContext): ExitCopy {
       };
     case 'busca':
       return {
-        title: 'Encontre mais rápido com uma conta',
-        body: `Cadastre-se grátis para salvar buscas, favoritar profissionais${where} e receber alertas quando alguém novo se cadastrar perto de você.`,
+        title: 'Antes de continuar buscando...',
+        body: `Crie sua conta grátis pra salvar buscas, favoritar profissionais${where} e receber alertas quando alguém novo entrar na rede perto de você.`,
         primaryCta: 'Criar conta agora',
         primaryHref: '/cadastro',
         primaryIsWhatsApp: false,
@@ -158,54 +172,53 @@ function buildCopy(ctx: CopyContext): ExitCopy {
     case 'vagas':
       return {
         title: `Quer ser chamado pra trabalhos${where}?`,
-        body: 'Profissionais cadastrados aparecem antes nas buscas e recebem leads direto no WhatsApp. Cadastro 100% grátis.',
-        primaryCta: 'Cadastrar como profissional',
+        body: 'Profissionais cadastrados aparecem antes na busca e recebem oportunidades direto no WhatsApp. Cadastro 100% grátis e sem mensalidade.',
+        primaryCta: 'Cadastrar como Profissional',
         primaryHref: '/cadastro?tipo=profissional',
         primaryIsWhatsApp: false,
-        secondaryCta: 'Falar com suporte',
+        secondaryCta: 'Falar com o suporte',
         secondaryHref: waHref,
       };
     case 'blog':
     case 'cursos':
       return {
-        title: 'Aproveite mais — gratuitamente',
-        body: `Cadastre-se grátis para acompanhar conteúdos, salvar artigos e receber recomendações de profissionais${where} sempre que precisar.`,
+        title: 'Antes de sair, leva 1 minuto?',
+        body: `Cadastre-se grátis pra acompanhar conteúdos, salvar artigos e receber recomendações de profissionais${where} sempre que precisar.`,
         primaryCta: 'Quero criar conta',
         primaryHref: '/cadastro',
         primaryIsWhatsApp: false,
-        secondaryCta: 'Falar com suporte',
+        secondaryCta: 'Falar com o suporte',
         secondaryHref: waHref,
       };
     case 'home':
-    default:
+    default: {
+      const greeting = ctx.neighborhood && ctx.city
+        ? `Ei! Vimos que você é do ${ctx.neighborhood}, em ${ctx.city}.`
+        : ctx.city
+          ? `Ei! Vimos que você é de ${ctx.city}.`
+          : 'Ei, antes de sair...';
       return {
-        title: ctx.city ? `Bem-vindo${where}!` : 'Antes de sair…',
-        body: `Cadastre-se grátis em 1 minuto para encontrar profissionais verificados${where} ou aparecer pra clientes que estão buscando agora mesmo. É 100% grátis pra profissionais.`,
+        title: greeting,
+        body: `${ctx.city ? 'A demanda aqui está crescendo bastante. ' : ''}Não vá embora sem garantir seu espaço! Cadastro grátis em 1 minuto pra encontrar profissionais ou virar um Profissional top da nossa rede nacional.`,
         primaryCta: 'Quero me cadastrar grátis',
         primaryHref: '/cadastro',
         primaryIsWhatsApp: false,
-        secondaryCta: 'Falar com suporte (WhatsApp)',
+        secondaryCta: 'Falar com o suporte (WhatsApp)',
         secondaryHref: waHref,
       };
+    }
   }
 }
 
-function track(event: string, meta: Record<string, unknown>) {
-  // Telemetria leve via console + window event (consumido pelos providers globais).
-  try {
-    window.dispatchEvent(new CustomEvent('precisodeum:telemetry', { detail: { event, meta } }));
-    if (typeof console !== 'undefined') {
-      console.debug('[exit-intent-global]', event, meta);
-    }
-  } catch {
-    /* noop */
-  }
-}
+// Telemetria persistida → ver `@/lib/exitIntentTelemetry`.
 
 export default function GlobalExitIntentDialog() {
   const { pathname } = useLocation();
   const { user } = useAuth();
-  const { city, state } = useGeoCity();
+  const geo = useGeoCity() as any;
+  const city: string | null = geo?.city ?? null;
+  const state: string | null = geo?.state ?? null;
+  const neighborhood: string | null = geo?.neighborhood ?? null;
   const [open, setOpen] = useState(false);
   const triggeredRef = useRef(false);
   const inactivityTimer = useRef<number | null>(null);
@@ -217,13 +230,20 @@ export default function GlobalExitIntentDialog() {
 
   const pageKind = useMemo(() => detectPageKind(pathname), [pathname]);
   const copy = useMemo(
-    () => buildCopy({ city, state, pageKind, isAuthed: !!user }),
-    [city, state, pageKind, user],
+    () => buildCopy({ city, state, neighborhood, pageKind, isAuthed: !!user }),
+    [city, state, neighborhood, pageKind, user],
   );
 
-  const baseMeta = useMemo(
-    () => ({ pathname, page_kind: pageKind, city, state, authed: !!user }),
-    [pathname, pageKind, city, state, user],
+  const baseTel = useMemo(
+    () => ({
+      pathname,
+      page_kind: pageKind,
+      city,
+      state,
+      neighborhood,
+      user_id: user?.id ?? null,
+    }),
+    [pathname, pageKind, city, state, neighborhood, user?.id],
   );
 
   const trigger = useCallback(
@@ -242,9 +262,9 @@ export default function GlobalExitIntentDialog() {
         /* noop */
       }
       setOpen(true);
-      track('global_exit_intent_shown', { ...baseMeta, source });
+      void trackExitIntent({ ...baseTel, kind: 'impression', source, meta: { authed: !!user } });
     },
-    [excluded, baseMeta],
+    [excluded, baseTel, user],
   );
 
   const resetInactivity = useCallback(() => {
@@ -278,27 +298,47 @@ export default function GlobalExitIntentDialog() {
   }, [excluded, resetInactivity, trigger]);
 
   const handlePrimary = useCallback(() => {
-    track('global_exit_intent_primary', { ...baseMeta, target: copy.primaryHref });
-    if (copy.primaryIsWhatsApp) {
+    const isWa = copy.primaryIsWhatsApp;
+    void trackExitIntent({
+      ...baseTel,
+      kind: isWa ? 'cta_whatsapp' : 'cta_signup',
+      meta: { target: copy.primaryHref, cta: 'primary' },
+    });
+    if (!isWa && copy.primaryHref.startsWith('/cadastro')) {
+      // marca pendente para casar com `post_signup_conversion` no Dashboard.
+      markPendingExitConversion({
+        pathname: baseTel.pathname,
+        page_kind: baseTel.page_kind,
+        city: baseTel.city,
+        state: baseTel.state,
+        neighborhood: baseTel.neighborhood,
+      });
+    }
+    if (isWa) {
       markSupportContacted({ source: 'other' });
       window.open(copy.primaryHref, '_blank', 'noopener,noreferrer');
     }
     setOpen(false);
-  }, [baseMeta, copy.primaryHref, copy.primaryIsWhatsApp, pageKind]);
+  }, [baseTel, copy.primaryHref, copy.primaryIsWhatsApp]);
 
   const handleSecondary = useCallback(() => {
-    track('global_exit_intent_secondary', { ...baseMeta, target: copy.secondaryHref });
-    if (copy.secondaryHref.startsWith('https://wa.me')) {
+    const isWa = copy.secondaryHref.startsWith('https://wa.me');
+    void trackExitIntent({
+      ...baseTel,
+      kind: isWa ? 'cta_whatsapp' : 'cta_secondary',
+      meta: { target: copy.secondaryHref, cta: 'secondary' },
+    });
+    if (isWa) {
       markSupportContacted({ source: 'other' });
       window.open(copy.secondaryHref, '_blank', 'noopener,noreferrer');
     }
     setOpen(false);
-  }, [baseMeta, copy.secondaryHref, pageKind]);
+  }, [baseTel, copy.secondaryHref]);
 
   const handleDismiss = useCallback(() => {
-    track('global_exit_intent_dismiss', baseMeta);
+    void trackExitIntent({ ...baseTel, kind: 'dismiss' });
     setOpen(false);
-  }, [baseMeta]);
+  }, [baseTel]);
 
   if (excluded) return null;
 
