@@ -45,6 +45,8 @@ import { useActiveTodayProviders } from '@/hooks/useActiveTodayProviders';
 import AskSystemDialog from '@/components/search/AskSystemDialog';
 import { logSearchIntent } from '@/lib/searchIntent';
 import { safeUF } from '@/lib/locationFormat';
+import CepLookupField from '@/components/CepLookupField';
+import { toast } from 'sonner';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -356,6 +358,22 @@ const SearchPage = () => {
   /* ── Filter form content (shared between sidebar & drawer) ── */
   const filterContent = (
     <div className="space-y-4">
+      {/* CEP lookup com fallback para cidade */}
+      <CepLookupField
+        helper="Informe seu CEP — preenchemos cidade e estado automaticamente."
+        onFallbackCity={() => {
+          // Foco no select de cidade abaixo
+          toast.info('Selecione manualmente sua cidade abaixo.');
+        }}
+        onResolved={(r) => {
+          setSelectedState(r.state);
+          setSelectedCity(r.city);
+          if (r.neighborhood) setSelectedNeighborhood(r.neighborhood);
+          setPage(1);
+          toast.success(`Filtro aplicado: ${r.city} • ${r.state}`);
+        }}
+      />
+
       {/* Category */}
       <div>
         <Label className="text-xs text-muted-foreground">Categoria</Label>
