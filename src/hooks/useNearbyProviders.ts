@@ -112,6 +112,7 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
           distanceKm: p.distance_m != null ? Math.round((p.distance_m / 1000) * 10) / 10 : 0,
           isOnline: !!p.is_online,
           visibilityScore: Number(p.visibility_score) || 0,
+          activitySignal: (p.activity_signal as any) || null,
         };
       });
     },
