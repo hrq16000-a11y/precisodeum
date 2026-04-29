@@ -580,24 +580,83 @@ type UserRefRow = {
   data_type: string;
 };
 
+type UserRefDetailRow = {
+  table_name: string;
+  data_type: string;
+  total_rows: number;
+  filled: number;
+  missing: number;
+  coverage_pct: number | null;
+  has_index: boolean;
+  sample_missing_ids: string[];
+  is_sponsor_table: boolean;
+};
+
 function UserRefAuditTab() {
   const [rows, setRows] = useState<UserRefRow[]>([]);
+  const [detail, setDetail] = useState<UserRefDetailRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [threshold, setThreshold] = useState<number>(95);
+  const [strict, setStrict] = useState<boolean>(true);
+  const [savingCfg, setSavingCfg] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("audit_user_ref_health" as any);
-      if (error) throw error;
-      setRows((data as UserRefRow[]) ?? []);
-    } catch (e: any) {
-      toast.error(`Erro: ${e.message}`);
+      const [{ data: basic, error: e1 }, { data: full, error: e2 }] =
+        await Promise.all([
+          supabase.rpc("audit_user_ref_health" as never),
+          supabase.rpc("audit_user_ref_full_detailed" as never),
+        ]);
+      if (e1) throw e1;
+      setRows((basic as UserRefRow[]) ?? []);
+      if (!e2) setDetail((full as UserRefDetailRow[]) ?? []);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Erro: ${msg}`);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { reload(); }, [reload]);
+  const loadConfig = useCallback(async () => {
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key,value")
+      .in("key", ["restore_min_user_ref_coverage_pct", "restore_strict_mode"]);
+    if (data) {
+      for (const r of data as Array<{ key: string; value: unknown }>) {
+        if (r.key === "restore_min_user_ref_coverage_pct") {
+          setThreshold(Number(r.value) || 95);
+        }
+        if (r.key === "restore_strict_mode") setStrict(Boolean(r.value));
+      }
+    }
+  }, []);
+
+  const saveConfig = useCallback(async () => {
+    setSavingCfg(true);
+    try {
+      const updates = [
+        { key: "restore_min_user_ref_coverage_pct", value: threshold },
+        { key: "restore_strict_mode", value: strict },
+      ];
+      for (const u of updates) {
+        const { error } = await supabase
+          .from("site_settings")
+          .upsert(u, { onConflict: "key" });
+        if (error) throw error;
+      }
+      toast.success("Regra de cobertura salva.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Erro: ${msg}`);
+    } finally {
+      setSavingCfg(false);
+    }
+  }, [threshold, strict]);
+
+  useEffect(() => { reload(); loadConfig(); }, [reload, loadConfig]);
 
   const totals = rows.reduce(
     (acc, r) => {
@@ -614,9 +673,48 @@ function UserRefAuditTab() {
   const coverage = totals.total > 0
     ? ((totals.filled / totals.total) * 100).toFixed(1)
     : "—";
+  const coverageNum = totals.total > 0
+    ? (totals.filled / totals.total) * 100
+    : 100;
+  const belowThreshold = coverageNum < threshold;
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="size-5" />Regra de cobertura mínima (pós-restore)
+          </CardTitle>
+          <CardDescription>
+            Define o percentual mínimo de cobertura de <code>user_ref</code> para
+            marcar a validação pós-restore como bem-sucedida.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid sm:grid-cols-3 gap-3 items-end">
+          <div className="space-y-1">
+            <label className="text-xs font-medium">Cobertura mínima (%)</label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              value={threshold}
+              onChange={(e) => setThreshold(Number(e.target.value))}
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={strict} onCheckedChange={(v) => setStrict(!!v)} />
+            Modo estrito (falhar restore se abaixo)
+          </label>
+          <Button onClick={saveConfig} disabled={savingCfg}>
+            {savingCfg
+              ? <Loader2 className="size-4 mr-2 animate-spin" />
+              : <CheckCircle2 className="size-4 mr-2" />}
+            Salvar regra
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
           <div>
@@ -624,12 +722,12 @@ function UserRefAuditTab() {
               <Fingerprint className="size-5" />Auditoria global do user_ref
             </CardTitle>
             <CardDescription>
-              Chave mestra para portabilidade. Verifica tipo, índices e cobertura em todas as tabelas.
+              Cobertura, índices e evidências de backfill.
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => exportUserRefCsv(rows)} disabled={rows.length === 0}>
-              <Download className="size-4 mr-2" />Exportar CSV
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => exportUserRefCsv(rows, detail)} disabled={rows.length === 0}>
+              <Download className="size-4 mr-2" />Exportar CSV detalhado
             </Button>
             <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
               <RefreshCw className={`size-4 mr-2 ${loading ? "animate-spin" : ""}`} />
@@ -643,9 +741,12 @@ function UserRefAuditTab() {
               <div className="text-xs text-muted-foreground">Tabelas</div>
               <div className="text-2xl font-bold">{totals.tables}</div>
             </div>
-            <div className="border rounded-lg p-3">
+            <div className={`border rounded-lg p-3 ${belowThreshold ? "border-destructive" : ""}`}>
               <div className="text-xs text-muted-foreground">Cobertura</div>
-              <div className="text-2xl font-bold">{coverage}%</div>
+              <div className={`text-2xl font-bold ${belowThreshold ? "text-destructive" : "text-green-600"}`}>
+                {coverage}%
+              </div>
+              <div className="text-[10px] text-muted-foreground">mínimo: {threshold}%</div>
             </div>
             <div className="border rounded-lg p-3">
               <div className="text-xs text-muted-foreground">Sem user_ref</div>
@@ -656,6 +757,14 @@ function UserRefAuditTab() {
               <div className="text-2xl font-bold text-amber-600">{totals.noIndex}</div>
             </div>
           </div>
+
+          {belowThreshold && (
+            <div className="text-xs p-3 rounded-lg border border-destructive/40 bg-destructive/5 text-destructive">
+              <AlertTriangle className="size-4 inline mr-1" />
+              Cobertura abaixo do limite configurado ({threshold}%). O modo estrito
+              {strict ? " irá falhar" : " NÃO falhará"} a validação pós-restore.
+            </div>
+          )}
 
           <div className="overflow-x-auto border rounded-lg">
             <table className="w-full text-sm">
@@ -670,31 +779,28 @@ function UserRefAuditTab() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => {
-                  const ok = r.missing === 0 && r.has_index;
-                  return (
-                    <tr key={r.table_name} className="border-t">
-                      <td className="p-2 font-mono text-xs">{r.table_name}</td>
-                      <td className="p-2">
-                        <Badge variant={r.data_type === "text" ? "outline" : "destructive"}>
-                          {r.data_type}
-                        </Badge>
-                      </td>
-                      <td className="p-2 text-right">{r.total_rows}</td>
-                      <td className="p-2 text-right">{r.filled}</td>
-                      <td className="p-2 text-right">
-                        {r.missing > 0
-                          ? <span className="text-destructive font-semibold">{r.missing}</span>
-                          : "0"}
-                      </td>
-                      <td className="p-2 text-center">
-                        {r.has_index
-                          ? <CheckCircle2 className="size-4 text-green-600 inline" />
-                          : <AlertTriangle className="size-4 text-amber-600 inline" />}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {rows.map((r) => (
+                  <tr key={r.table_name} className="border-t">
+                    <td className="p-2 font-mono text-xs">{r.table_name}</td>
+                    <td className="p-2">
+                      <Badge variant={r.data_type === "text" ? "outline" : "destructive"}>
+                        {r.data_type}
+                      </Badge>
+                    </td>
+                    <td className="p-2 text-right">{r.total_rows}</td>
+                    <td className="p-2 text-right">{r.filled}</td>
+                    <td className="p-2 text-right">
+                      {r.missing > 0
+                        ? <span className="text-destructive font-semibold">{r.missing}</span>
+                        : "0"}
+                    </td>
+                    <td className="p-2 text-center">
+                      {r.has_index
+                        ? <CheckCircle2 className="size-4 text-green-600 inline" />
+                        : <AlertTriangle className="size-4 text-amber-600 inline" />}
+                    </td>
+                  </tr>
+                ))}
                 {rows.length === 0 && !loading && (
                   <tr>
                     <td colSpan={6} className="p-4 text-center text-muted-foreground">
@@ -705,29 +811,44 @@ function UserRefAuditTab() {
               </tbody>
             </table>
           </div>
-
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p><strong>Tipo esperado:</strong> <code>text</code> em todas as tabelas (consistência confirmada).</p>
-            <p><strong>Recomendação:</strong> tabelas sem índice em <code>user_ref</code> devem receber <code>CREATE INDEX</code> antes de importar grandes volumes.</p>
-          </div>
         </CardContent>
       </Card>
     </div>
   );
 }
 
-// ---------------- user_ref CSV export ----------------
+// ---------------- user_ref CSV export (detailed + sponsor evidence) ----------------
 
-function exportUserRefCsv(rows: UserRefRow[]) {
-  const header = ["table_name", "data_type", "total_rows", "filled", "missing", "has_index"];
+function exportUserRefCsv(rows: UserRefRow[], detail: UserRefDetailRow[]) {
+  const detailMap = new Map(detail.map((d) => [d.table_name, d]));
+  const header = [
+    "table_name", "data_type", "total_rows", "filled", "missing",
+    "coverage_pct", "has_index", "is_sponsor_table", "sample_missing_ids",
+  ];
   const lines = [header.join(",")];
   for (const r of rows) {
-    lines.push([r.table_name, r.data_type, r.total_rows, r.filled, r.missing, r.has_index ? "yes" : "no"].join(","));
+    const d = detailMap.get(r.table_name);
+    const samples = (d?.sample_missing_ids ?? []).join("|");
+    const cov = d?.coverage_pct ?? (r.total_rows > 0
+      ? ((r.filled / r.total_rows) * 100).toFixed(2)
+      : "");
+    lines.push([
+      r.table_name,
+      r.data_type,
+      r.total_rows,
+      r.filled,
+      r.missing,
+      cov,
+      r.has_index ? "yes" : "no",
+      d?.is_sponsor_table ? "yes" : "no",
+      `"${samples}"`,
+    ].join(","));
   }
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
   downloadBlob(blob, `user-ref-audit-${new Date().toISOString().slice(0, 10)}.csv`);
-  toast.success("Relatório CSV gerado");
+  toast.success("Relatório CSV detalhado gerado");
 }
+
 
 // ---------------- Secrets Tab ----------------
 
