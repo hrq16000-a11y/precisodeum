@@ -10,6 +10,7 @@ import { WhatsAppGateProvider, WhatsAppGateInterceptor } from "@/contexts/WhatsA
 import { importWithRetry, prefetchImportWithRetry } from "@/lib/lazyWithRetry";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminGuard from "./components/AdminGuard";
 import ModuleBoundary from "./components/ModuleBoundary";
 const SponsorProtectedRoute = reactLazy(() => importWithRetry(() => import("./components/SponsorProtectedRoute")));
 const SponsorFeatureGate = reactLazy(() => importWithRetry(() => import("./components/sponsor/SponsorFeatureGate")));
@@ -483,20 +484,20 @@ const App = () => {
                 <Route path="/dashboard/auditoria-bairro" element={<ProtectedRoute allowedTypes={['provider']}><DashboardBadgeAuditPage /></ProtectedRoute>} />
                 <Route path="/dashboard/localizacao-guiada" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLocationGuidedPage /></ProtectedRoute>} />
                 <Route path="/dashboard/chat" element={<ProtectedRoute><DashboardChatPage /></ProtectedRoute>} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
-                <Route path="/admin/bairro-default" element={<ProtectedRoute><AdminDefaultNeighborhoodPage /></ProtectedRoute>} />
-                <Route path="/admin/service-area-corrections" element={<ProtectedRoute><AdminServiceAreaCorrectionsPage /></ProtectedRoute>} />
-                <Route path="/admin/kill-switch-blocks" element={<ProtectedRoute><AdminKillSwitchBlocksPage /></ProtectedRoute>} />
-                <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
-                <Route path="/admin/usuarios" element={<AdminUsersPage />} />
-                <Route path="/admin/crm-usuarios" element={<AdminUsersCrmPage />} />
-                <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
-                <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
-                <Route path="/admin/conversao" element={<AdminConversionMetricsPage />} />
-                <Route path="/admin/onboarding-funnel" element={<AdminOnboardingFunnelPage />} />
-                <Route path="/admin/integridade" element={<ProtectedRoute><AdminIntegrityReportsPage /></ProtectedRoute>} />
-                <Route path="/admin/caixa-notificacoes" element={<ProtectedRoute><AdminInboxPage /></ProtectedRoute>} />
+                <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
+                <Route path="/admin/prestadores" element={<AdminGuard><AdminProvidersPage /></AdminGuard>} />
+                <Route path="/admin/bairro-default" element={<AdminGuard><AdminDefaultNeighborhoodPage /></AdminGuard>} />
+                <Route path="/admin/service-area-corrections" element={<AdminGuard><AdminServiceAreaCorrectionsPage /></AdminGuard>} />
+                <Route path="/admin/kill-switch-blocks" element={<AdminGuard><AdminKillSwitchBlocksPage /></AdminGuard>} />
+                <Route path="/admin/avaliacoes" element={<AdminGuard><AdminReviewsPage /></AdminGuard>} />
+                <Route path="/admin/usuarios" element={<AdminGuard><AdminUsersPage /></AdminGuard>} />
+                <Route path="/admin/crm-usuarios" element={<AdminGuard><AdminUsersCrmPage /></AdminGuard>} />
+                <Route path="/admin/categorias" element={<AdminGuard><AdminCategoriesPage /></AdminGuard>} />
+                <Route path="/admin/estatisticas" element={<AdminGuard><AdminStatsPage /></AdminGuard>} />
+                <Route path="/admin/conversao" element={<AdminGuard><AdminConversionMetricsPage /></AdminGuard>} />
+                <Route path="/admin/onboarding-funnel" element={<AdminGuard><AdminOnboardingFunnelPage /></AdminGuard>} />
+                <Route path="/admin/integridade" element={<AdminGuard><AdminIntegrityReportsPage /></AdminGuard>} />
+                <Route path="/admin/caixa-notificacoes" element={<AdminGuard><AdminInboxPage /></AdminGuard>} />
                 <Route path="/admin/erros-500" element={<AdminError500Page />} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
                 <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />

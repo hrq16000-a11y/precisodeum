@@ -7788,6 +7788,13 @@ export type Database = {
           status: string
         }[]
       }
+      list_user_notification_types: {
+        Args: never
+        Returns: {
+          count: number
+          type: string
+        }[]
+      }
       log_provider_geo_issue: {
         Args: {
           _actor_user_id?: string
@@ -8075,11 +8082,15 @@ export type Database = {
       }
       search_user_notifications: {
         Args: {
+          _from?: string
           _limit?: number
           _offset?: number
           _order?: string
+          _provider_id?: string
           _query?: string
           _status?: string
+          _to?: string
+          _type?: string
         }
         Returns: {
           created_at: string
