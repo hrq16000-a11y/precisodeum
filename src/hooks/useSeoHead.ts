@@ -37,7 +37,7 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     setMeta('description', description);
     setMeta('robots', noindex ? 'noindex, nofollow' : 'index, follow');
 
-    const resolvedOgImage = socialImageUrl(ogImage);
+    const resolvedOgImage = normalizeSocialImageUrl(ogImage || socialImageUrl(ogImage), 'og:image');
     const resolvedLogo = toAbsoluteSiteUrl(DEFAULT_LOGO_URL);
 
     const setSocialImageMeta = (content: string) => {
