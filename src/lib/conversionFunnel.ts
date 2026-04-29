@@ -91,6 +91,33 @@ export function shouldSuppressExitIntent(): boolean {
   }
 }
 
+/**
+ * Registra clique em "Salvar e continuar mais tarde" com origem + destino.
+ * Não toca em SUPPORT_KEY — usuário não está pedindo suporte humano.
+ */
+export function markSaveLater(meta: {
+  source: SupportSource;
+  destination: SaveLaterDestination;
+  intent?: ExitIntentIntent;
+  phase?: string;
+  variant?: ExitIntentVariant;
+  /** % de progresso (0..100) — segmenta quem desistiu cedo vs tarde. */
+  progressPct?: number;
+}): void {
+  const intentMeta = meta.intent && meta.intent !== 'unknown' ? { intent: meta.intent } : {};
+  void trackOnboardingEvent({
+    phase: (meta.phase || 'unknown') as any,
+    event: 'save_later_clicked' as any,
+    meta: {
+      source: meta.source,
+      destination: meta.destination,
+      variant: meta.variant ?? null,
+      progress_pct: typeof meta.progressPct === 'number' ? Math.round(meta.progressPct) : null,
+      ...intentMeta,
+    },
+  });
+}
+
 /** Helpers de teste. */
 export function resetConversionFunnelForTest(): void {
   try {
