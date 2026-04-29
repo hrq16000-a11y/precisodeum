@@ -125,8 +125,9 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
       setMeta('google-site-verification', gscId);
     }
 
-    // Canonical & og:url
-    const canonicalUrl = canonical || `${SITE_URL}${window.location.pathname}`;
+    // Canonical & og:url — sempre via helper compartilhado (absoluto e normalizado).
+    const { buildCanonicalUrl } = await import('@/lib/canonicalUrl');
+    const canonicalUrl = buildCanonicalUrl(canonical || window.location.pathname);
     setMeta('og:url', canonicalUrl, 'property');
 
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
