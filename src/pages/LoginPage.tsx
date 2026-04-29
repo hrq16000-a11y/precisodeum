@@ -247,15 +247,34 @@ const LoginPage = () => {
             {/* Google as primary CTA */}
             <Button
               variant="accent"
-              className="mt-6 w-full text-base py-5 font-semibold shadow-md"
-              onClick={handleGoogleLogin}
+              className="mt-6 w-full text-base py-5 font-semibold shadow-md disabled:opacity-70"
+              onClick={() => handleGoogleLogin(false)}
+              disabled={googleState === 'loading' || googleState === 'redirecting'}
+              aria-busy={googleState === 'loading' || googleState === 'redirecting'}
             >
               <GoogleIcon />
-              Continuar com Google
+              {googleState === 'loading' && 'Conectando...'}
+              {googleState === 'redirecting' && 'Redirecionando para o Google...'}
+              {googleState === 'success' && 'Conectado!'}
+              {(googleState === 'idle' || googleState === 'error') && 'Continuar com Google'}
             </Button>
-            <p className="mt-2 text-center text-[11px] text-muted-foreground">
-              Rápido, seguro e sem precisar de senha
-            </p>
+            {googleState === 'error' ? (
+              <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-[12px] text-destructive">
+                <p className="font-semibold">Não foi possível entrar com Google.</p>
+                {googleError && <p className="mt-0.5 break-words text-[11px] opacity-80">{googleError}</p>}
+                <button
+                  type="button"
+                  onClick={() => handleGoogleLogin(true)}
+                  className="mt-2 inline-block text-[11px] font-semibold underline"
+                >
+                  Tentar trocar de conta Google
+                </button>
+              </div>
+            ) : (
+              <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                Rápido, seguro e sem precisar de senha
+              </p>
+            )}
 
             <div className="my-5 flex items-center gap-3">
               <div className="h-px flex-1 bg-border" />
