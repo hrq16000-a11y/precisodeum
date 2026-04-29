@@ -166,6 +166,7 @@ const DashboardPrivacyPage = () => {
               icon={Cookie}
               title="Auditoria de consentimentos"
               description="Histórico de aceites e mudanças de preferências de cookies."
+            />
             <PrivacyLink
               to="/termos"
               icon={FileText}
