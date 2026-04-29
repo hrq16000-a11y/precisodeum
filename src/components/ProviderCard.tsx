@@ -219,6 +219,11 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     badges.push(<OnlineBadge key="offline-lastseen" userId={provider.userId} showOffline />);
   }
 
+  // Sinal de Vida (Recency Factor) — em alta / responde rápido / ativo recente
+  if (provider.activitySignal && !isOnline) {
+    badges.push(<ActivitySignalBadge key="activity-signal" signal={provider.activitySignal} />);
+  }
+
   const visibleBadges = badges.slice(0, MAX_BADGES_MOBILE);
   const hiddenCount = badges.length - visibleBadges.length;
 
