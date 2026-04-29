@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import AuthPageShell from '@/components/auth/AuthPageShell';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
@@ -127,8 +126,8 @@ const LoginPage = () => {
           });
           return;
         }
-        if (/password.*(short|6 characters|weak)/i.test(m)) {
-          toast.error('Senha muito curta. Use pelo menos 6 caracteres.');
+        if (/password.*(short|6 characters)|weak_password|pwned|weak/i.test(m)) {
+          toast.error('Escolha uma senha mais forte. Evite sequências fáceis e combinações comuns.');
           return;
         }
         if (/rate limit|too many/i.test(m)) {
@@ -221,9 +220,8 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <div className="flex flex-1 items-center justify-center py-12 relative overflow-hidden">
+    <AuthPageShell backTo="/" backLabel="Voltar ao início">
+      <div className="flex w-full items-center justify-center py-6 relative overflow-hidden">
         <div className="absolute -top-32 -left-32 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-accent/5 blur-3xl" />
         
@@ -329,8 +327,7 @@ const LoginPage = () => {
           </div>
         </motion.div>
       </div>
-      <Footer />
-    </div>
+    </AuthPageShell>
   );
 };
 
