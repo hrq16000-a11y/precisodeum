@@ -248,6 +248,7 @@ export const initialWizardState: WizardState = {
     intent: null,
     city: '',
     state: '',
+    neighborhood: '',
     pro_kind: null,
     document: '',
     company_name: '',
