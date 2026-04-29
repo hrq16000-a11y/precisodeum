@@ -114,18 +114,38 @@ const LoginPage = () => {
       setLoading(false);
       if (signUpError) {
         const m = signUpError.message || '';
+        // Conta já existe → senha digitada está incorreta. Pré-preenche o forgot e abre o flow.
         if (/already.*registered|user.*already.*exists|already_registered/i.test(m)) {
-          // Conta existe mas a senha digitada está errada (caímos aqui via signIn=invalid)
-          toast.error('Já existe uma conta com esse e-mail. Senha incorreta — use "Esqueci minha senha".');
-        } else if (/password.*(short|6 characters|weak)/i.test(m)) {
-          toast.error('Senha muito curta. Use pelo menos 6 caracteres.');
-        } else if (/rate limit|too many/i.test(m)) {
-          toast.error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
-        } else if (/invalid.*email|validate email|invalid.*format/i.test(m)) {
-          toast.error('E-mail inválido.');
-        } else {
-          toast.error('Não foi possível criar sua conta. Tente novamente em instantes.');
+          setForgotEmail(trimmedEmail);
+          setShowForgot(true);
+          toast.error('Já existe uma conta com esse e-mail. Redefina sua senha para continuar.', {
+            duration: 6000,
+          });
+          return;
         }
+        if (/password.*(short|6 characters|weak)/i.test(m)) {
+          toast.error('Senha muito curta. Use pelo menos 6 caracteres.');
+          return;
+        }
+        if (/rate limit|too many/i.test(m)) {
+          toast.error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+          return;
+        }
+        if (/invalid.*email|validate email|invalid.*format/i.test(m)) {
+          toast.error('E-mail inválido.');
+          return;
+        }
+        toast.error('Não foi possível criar sua conta. Tente novamente em instantes.');
+        return;
+      }
+      // Heurística adicional: Supabase às vezes responde com sucesso + identities=[] quando o e-mail já existe
+      const identities = (signUpData.user as any)?.identities;
+      if (Array.isArray(identities) && identities.length === 0) {
+        setForgotEmail(trimmedEmail);
+        setShowForgot(true);
+        toast.error('Já existe uma conta com esse e-mail. Redefina sua senha para continuar.', {
+          duration: 6000,
+        });
         return;
       }
       if (signUpData.session) {
@@ -147,10 +167,16 @@ const LoginPage = () => {
 
   const handleGoogleLogin = async () => {
     if (from) sessionStorage.setItem('auth_redirect', from);
+    setLoading(true);
     const { error } = await lovable.auth.signInWithOAuth('google', {
       redirect_uri: window.location.origin,
+      extraParams: { prompt: 'select_account' },
     });
-    if (error) toast.error('Erro ao continuar com Google');
+    if (error) {
+      setLoading(false);
+      toast.error('Erro ao continuar com Google');
+    }
+    // se redirected=true, o navegador já foi redirecionado — nada a fazer
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
