@@ -13,6 +13,7 @@ import TopLoadingBar from '@/components/ui/TopLoadingBar';
 import Logo from '@/components/Logo';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DashboardHealthCheck } from '@/components/dashboard/DashboardHealthCheck';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
@@ -433,6 +434,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 </Button>
               </motion.div>
             )}
+            <DashboardHealthCheck />
             {children}
           </motion.div>
         </AnimatePresence>
