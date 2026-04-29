@@ -18,10 +18,10 @@
  * permitindo medir conversão por criativo × etapa × tipo de usuário.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, X, HelpCircle } from 'lucide-react';
+import { MessageCircle, X, HelpCircle, Save } from 'lucide-react';
 import { trackOnboardingEvent } from './phases/v2/telemetry';
 import {
   getSessionVariant,
@@ -36,7 +36,11 @@ const INACTIVITY_MS = 30_000;
 const STORAGE_KEY = 'wizard:exit-intent-shown';
 
 export type ExitIntentTracker = (
-  event: 'exit_intent_shown' | 'exit_intent_whatsapp' | 'exit_intent_dismiss',
+  event:
+    | 'exit_intent_shown'
+    | 'exit_intent_whatsapp'
+    | 'exit_intent_dismiss'
+    | 'exit_intent_save_later',
   meta: Record<string, unknown>,
 ) => void;
 
@@ -61,6 +65,14 @@ type ExitIntentDialogProps = {
   tracker?: ExitIntentTracker;
   /** Tempo (ms) de inatividade que dispara o pop-up. */
   inactivityMs?: number;
+  /**
+   * True se o usuário JÁ publicou o primeiro serviço (state.firstServiceId).
+   * Habilita o CTA secundário "Salvar e continuar mais tarde" — sem isso, o
+   * usuário não tem nada salvo no perfil e não faz sentido oferecer "depois".
+   */
+  hasFirstService?: boolean;
+  /** Rota de destino do "Salvar e continuar mais tarde". Default: /dashboard. */
+  saveLaterRedirectTo?: string;
 };
 
 export default function ExitIntentDialog({
