@@ -101,6 +101,7 @@ const AdminAuditRlsPage = lazy(() => import("./pages/AdminAuditRlsPage"));
 const AdminTrashPage = lazy(() => import("./pages/AdminTrashPage"));
 const AdminBackupPage = lazy(() => import("./pages/AdminBackupPage"));
 const AdminPortabilityPage = lazy(() => import("./pages/AdminPortabilityPage"));
+const AdminPortabilityDetailsPage = lazy(() => import("./pages/AdminPortabilityDetailsPage"));
 const AdminHeroBannersPage = lazy(() => import("./pages/AdminHeroBannersPage"));
 const AdminPwaPage = lazy(() => import("./pages/AdminPwaPage"));
 
@@ -498,6 +499,7 @@ const App = () => {
                 <Route path="/admin/auditoria-rls" element={<AdminAuditRlsPage />} />
                 <Route path="/admin/backup" element={<AdminBackupPage />} />
                 <Route path="/admin/portabilidade" element={<AdminPortabilityPage />} />
+                <Route path="/admin/portabilidade/detalhes" element={<AdminPortabilityDetailsPage />} />
                 <Route path="/admin/lixeira" element={<AdminTrashPage />} />
                 <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
                 <Route path="/admin/pwa" element={<AdminPwaPage />} />
