@@ -26,10 +26,10 @@ describe('GlobalExitIntentDialog — performance budget', () => {
   it('é carregado por dynamic import em App.tsx (não entra no bundle inicial)', () => {
     const app = fs.readFileSync(path.join(process.cwd(), APP_PATH), 'utf8');
     expect(app).toMatch(/GlobalExitIntentDialog/);
-    // Deve estar dentro de uma chamada lazy/reactLazy (regex tolerante a quebras).
-    const lazyRegex = /(?:reactLazy|lazy)\([^)]*GlobalExitIntentDialog/s;
-    const direct = /import\s+GlobalExitIntentDialog\s+from/;
-    expect(lazyRegex.test(app), 'deve usar reactLazy/lazy').toBe(true);
+    // Deve estar dentro de reactLazy/lazy com import() — wrappers (importWithRetry) aceitos.
+    const lazyOk = /(?:reactLazy|lazy)\([\s\S]*?import\(["'][^"']*GlobalExitIntentDialog["']\)/.test(app);
+    const direct = /^import\s+GlobalExitIntentDialog\s+from/m;
+    expect(lazyOk, 'deve usar reactLazy/lazy com import()').toBe(true);
     expect(direct.test(app), 'NÃO deve haver import estático').toBe(false);
   });
 
