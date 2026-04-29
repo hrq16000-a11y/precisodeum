@@ -53,14 +53,14 @@ describe('useOnlinePresence — lastSeen tracking', () => {
     __presenceInternals.applyState({ providers: [] }, T0 + 30_000);
     expect(__presenceInternals.getLastSeenMap().get('u1')).toBe(T0 + 30_000);
 
-    // Reconnects — earliest onlineSince must be preserved
+    // Reconnects after going fully offline → starts a fresh session
     __presenceInternals.applyState(
       { providers: [{ user_id: 'u1', online_since: T0 + 100_000 }] },
       T0 + 100_000,
     );
-    expect(__presenceInternals.getOnlineMap().get('u1')?.onlineSince).toBe(T0);
+    expect(__presenceInternals.getOnlineMap().get('u1')?.onlineSince).toBe(T0 + 100_000);
 
-    // Disconnects again later
+    // Disconnects again later — lastSeen advances accordingly
     __presenceInternals.applyState({ providers: [] }, T0 + 200_000);
     expect(__presenceInternals.getLastSeenMap().get('u1')).toBe(T0 + 200_000);
   });
