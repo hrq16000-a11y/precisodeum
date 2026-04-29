@@ -1420,6 +1420,25 @@ const DashboardServicesPage = () => {
                     placeholder="(61) 99999-9999"
                     className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
                   />
+                  {(() => {
+                    const candidate = form.whatsapp || provider?.whatsapp || '';
+                    if (!candidate.trim()) return null;
+                    const v = validateWhatsapp(candidate);
+                    if (v.valid) {
+                      return (
+                        <p className="mt-1 text-[11px] text-emerald-600 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Número válido — leads cairão direto no seu WhatsApp.
+                        </p>
+                      );
+                    }
+                    return (
+                      <p className="mt-1 text-[11px] text-amber-600 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Formato inválido para link direto. Use DDD + 9 dígitos (ex.: 61999999999).
+                      </p>
+                    );
+                  })()}
                 </div>
 
                 {/* Photos are added in the dedicated post-publish step (1 capa + até 4 extras com drag&drop) */}
