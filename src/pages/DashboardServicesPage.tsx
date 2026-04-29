@@ -33,6 +33,8 @@ import {
 } from '@/lib/serviceQualityLinter';
 import { CheckCircle2, AlertTriangle, Sparkles, Award } from 'lucide-react';
 import AdQualityScore from '@/components/dashboard/AdQualityScore';
+import AdLivePreview from '@/components/dashboard/AdLivePreview';
+import GoldChecklist from '@/components/dashboard/GoldChecklist';
 import WizardLegalDisclaimer from '@/components/dashboard/WizardLegalDisclaimer';
 import MetroExpandSuggestion from '@/components/dashboard/MetroExpandSuggestion';
 import GeoPermissionStep from '@/components/dashboard/GeoPermissionStep';
@@ -1016,6 +1018,16 @@ const DashboardServicesPage = () => {
               />
             </div>
 
+            {/* Prévia ao vivo do anúncio — atualiza a cada digitação */}
+            <AdLivePreview
+              title={form.service_name}
+              description={form.description}
+              city={stripLegacyAreaPrefixes(form.service_area)}
+              cityValidated={isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES)}
+              hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
+              categoryName={categories.find((c: any) => selectedCategoryIds.includes(c.id))?.name}
+              categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
+            />
 
             {/* ── Section 1: Informações Básicas ── */}
             {formStep === 1 && (
@@ -1481,6 +1493,14 @@ const DashboardServicesPage = () => {
 
                     {/* Score breakdown final */}
                     <AdQualityScore
+                      description={form.description}
+                      hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
+                      cityValidated={cityValidated}
+                      categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
+                    />
+
+                    {/* Checklist dinâmico do Padrão Ouro */}
+                    <GoldChecklist
                       description={form.description}
                       hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
                       cityValidated={cityValidated}
