@@ -171,6 +171,7 @@ export default function WizardShell() {
             ? 'professional'
             : 'unknown'
         }
+        hasFirstService={Boolean(state.firstServiceId)}
         enabled={state.phase !== 'triage_celebration' && state.phase !== 'main_celebration' && state.phase !== 'done'}
       />
       <WizardProgressBar phase={state.phase} phaseOrder={progressOrder} />
