@@ -7201,6 +7201,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_app_version_config: { Args: never; Returns: Json }
       get_community_feed: {
         Args: { _limit?: number }
         Returns: {
