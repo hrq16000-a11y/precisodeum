@@ -650,6 +650,8 @@ const DashboardServicesPage = () => {
     setTagInput('');
     setWizardStep('form');
     setFormStep(1);
+    setFinalConsent(false);
+    setMetroBonus(false);
     clearServiceWizardDraft(user?.id);
   };
 
