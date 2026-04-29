@@ -28,6 +28,7 @@ import { MessageCircle, UserPlus, Search, X, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { markSupportContacted, shouldSuppressExitIntent } from '@/lib/conversionFunnel';
+import { trackExitIntent, markPendingExitConversion } from '@/lib/exitIntentTelemetry';
 
 const STORAGE_KEY = 'global-exit-intent:shown';
 const INACTIVITY_MS = 45_000;
