@@ -264,19 +264,42 @@ export function useIsRecentlyOffline(
   return Date.now() - seen <= windowMs;
 }
 
-/** Returns the set of users that went offline within the given window. */
+/**
+ * Returns the set of users that went offline within the given window.
+ *
+ * Optimization: returns the same Set reference when the membership did not
+ * change (structural equality check), so consumers wrapped in useMemo /
+ * useCallback don't re-render on every Realtime presence sync.
+ */
+let recentlyOfflineCache: { windowMs: number; set: Set<string> } | null = null;
+
+function computeRecentlyOfflineSet(windowMs: number): Set<string> {
+  const now = Date.now();
+  const next = new Set<string>();
+  lastSeenMap.forEach((seen, userId) => {
+    if (!onlineUsers.has(userId) && now - seen <= windowMs) next.add(userId);
+  });
+  // Reuse previous reference if membership is identical
+  if (
+    recentlyOfflineCache &&
+    recentlyOfflineCache.windowMs === windowMs &&
+    recentlyOfflineCache.set.size === next.size
+  ) {
+    let identical = true;
+    for (const id of next) {
+      if (!recentlyOfflineCache.set.has(id)) { identical = false; break; }
+    }
+    if (identical) return recentlyOfflineCache.set;
+  }
+  recentlyOfflineCache = { windowMs, set: next };
+  return next;
+}
+
 export function useRecentlyOfflineSet(windowMs: number = RECENTLY_OFFLINE_WINDOW_MS): Set<string> {
   useOnlineUsersMap();
-  return useMemo(() => {
-    const set = new Set<string>();
-    const now = Date.now();
-    lastSeenMap.forEach((seen, userId) => {
-      if (!onlineUsers.has(userId) && now - seen <= windowMs) set.add(userId);
-    });
-    return set;
-  // lastSyncAt is the proxy that drives re-evaluation
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastSyncAt, windowMs]);
+  // Recompute on every render is cheap (single Map walk) but the returned
+  // Set ref is stable across syncs that don't change membership.
+  return computeRecentlyOfflineSet(windowMs);
 }
 
 /** Count online users in a specific city */
