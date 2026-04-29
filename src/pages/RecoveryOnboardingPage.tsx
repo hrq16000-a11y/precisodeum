@@ -121,7 +121,9 @@ export default function RecoveryOnboardingPage() {
     });
     markSupportContacted({
       source: 'recovery_page',
-      intent,
+      // ExitIntentIntent só aceita client/professional/unknown — colapsa rh→unknown
+      // pra evitar quebra de tipo (o sessionStorage ainda guarda 'rh' real).
+      intent: intent === 'rh' ? 'unknown' : intent,
       phase: draft?.state.phase,
     });
     const url = `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(msg)}`;
