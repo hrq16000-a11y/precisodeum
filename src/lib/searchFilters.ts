@@ -43,6 +43,8 @@ export interface SearchFilterOptions {
   onlineSet?: Set<string>;
   activeTodaySet?: Set<string>;
   routeCorridor?: RouteCorridor | null;
+  /** When false (default), online providers are pulled to the top after sorting (stable partition). */
+  disableOnlineBoost?: boolean;
 }
 
 export function applySearchFilters<T extends FilterableProvider>(
@@ -62,6 +64,7 @@ export function applySearchFilters<T extends FilterableProvider>(
     onlineSet = new Set<string>(),
     activeTodaySet = new Set<string>(),
     routeCorridor = null,
+    disableOnlineBoost = false,
   } = opts;
 
   let results = [...list];
@@ -142,7 +145,15 @@ export function applySearchFilters<T extends FilterableProvider>(
     });
   }
 
-  if (urgencyMode && onlineSet.size > 0) {
+  // Online-first stable partition: profissionais online sobem ao topo
+  // dentro do conjunto atual, preservando a ordem produzida pelo sort.
+  // Aplica-se em qualquer modo (busca, lista, grid), salvo opt-out explícito.
+  if (!disableOnlineBoost && onlineSet.size > 0) {
+    results = [
+      ...results.filter((p) => onlineSet.has(p.userId)),
+      ...results.filter((p) => !onlineSet.has(p.userId)),
+    ];
+  } else if (urgencyMode && onlineSet.size > 0) {
     results = [
       ...results.filter((p) => onlineSet.has(p.userId)),
       ...results.filter((p) => !onlineSet.has(p.userId)),
