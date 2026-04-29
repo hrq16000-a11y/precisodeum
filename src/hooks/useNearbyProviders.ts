@@ -76,7 +76,7 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
         return !n || GENERIC.has(n);
       };
 
-      return rows.map((p: any): DbProvider & { distanceKm: number; isOnline: boolean; visibilityScore: number } => {
+      return rows.map((p: any): DbProvider & { distanceKm: number; isOnline: boolean; visibilityScore: number; activitySignal: 'em_alta' | 'responde_rapido' | 'ativo_recente' | null } => {
         const profile = profileMap[p.user_id];
         const fullName = profile?.name?.trim() || '';
         const businessName = (p.business_name || '').trim();
