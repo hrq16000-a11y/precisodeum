@@ -247,6 +247,7 @@ const DeferredShell = () => {
       <CurtainReveal />
       <Toaster />
       <Sonner />
+      <AppVersionGate />
       <ScrollProgressBar />
       <MobileBottomNav />
       <FloatingHelpButton />
