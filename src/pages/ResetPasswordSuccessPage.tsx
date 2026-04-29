@@ -1,14 +1,26 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { CheckCircle2, LogIn, ShieldCheck, ArrowRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
+import { buildLoginUrl, sanitizeNextPath } from '@/lib/authRedirect';
 
 const ResetPasswordSuccessPage = () => {
+  const location = useLocation();
+
   useEffect(() => {
     document.title = 'Senha redefinida com sucesso | Preciso de Um';
   }, []);
+
+  const loginHref = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return buildLoginUrl(
+      sanitizeNextPath(params.get('next'), '/dashboard'),
+      params.get('message') || 'Senha atualizada com sucesso. Faça login para continuar.',
+      window.location.origin,
+    );
+  }, [location.search]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -42,7 +54,7 @@ const ResetPasswordSuccessPage = () => {
             </ul>
 
             <div className="mt-7 grid gap-2">
-              <Link to="/login">
+              <Link to={loginHref}>
                 <Button variant="accent" className="w-full">
                   <LogIn className="mr-2 h-4 w-4" /> Ir para o login
                 </Button>

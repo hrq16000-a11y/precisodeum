@@ -284,6 +284,45 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_rate_limits: {
+        Row: {
+          attempt_count: number
+          cooldown_until: string | null
+          email_normalized: string | null
+          flow: string
+          id: string
+          ip_hash: string | null
+          last_attempt_at: string
+          last_success_at: string | null
+          metadata: Json
+          window_started_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          cooldown_until?: string | null
+          email_normalized?: string | null
+          flow: string
+          id?: string
+          ip_hash?: string | null
+          last_attempt_at?: string
+          last_success_at?: string | null
+          metadata?: Json
+          window_started_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          cooldown_until?: string | null
+          email_normalized?: string | null
+          flow?: string
+          id?: string
+          ip_hash?: string | null
+          last_attempt_at?: string
+          last_success_at?: string | null
+          metadata?: Json
+          window_started_at?: string
+        }
+        Relationships: []
+      }
       blog_discover_previews: {
         Row: {
           created_at: string
@@ -7098,6 +7137,18 @@ export type Database = {
         Args: { _action_key: string; _metadata?: Json; _user_id: string }
         Returns: number
       }
+      bump_auth_rate_limit: {
+        Args: {
+          _cooldown_minutes?: number
+          _email_normalized: string
+          _flow: string
+          _ip_hash: string
+          _max_attempts?: number
+          _success?: boolean
+          _window_minutes?: number
+        }
+        Returns: Json
+      }
       calc_provider_avg_response: {
         Args: { _provider_id: string }
         Returns: number
@@ -7663,6 +7714,10 @@ export type Database = {
           _type?: string
         }
         Returns: undefined
+      }
+      peek_auth_rate_limit: {
+        Args: { _email_normalized: string; _flow: string; _ip_hash: string }
+        Returns: Json
       }
       process_daily_stats: { Args: never; Returns: number }
       process_lead_followup_reminders: { Args: never; Returns: Json }
