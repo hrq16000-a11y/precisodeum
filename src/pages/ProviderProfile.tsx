@@ -54,6 +54,7 @@ import { sanitizeSlug } from '@/lib/slugify';
 import { toast } from 'sonner';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+import { extractSpecialties } from '@/lib/specialtyExtractor';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 
