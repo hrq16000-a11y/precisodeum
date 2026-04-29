@@ -14,6 +14,7 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCityState } from '@/lib/locationFormat';
 import { buildServiceCountdownCopy } from '@/lib/serviceWizardCopy';
+import { recoverProviderId, fetchProviderServiceCount } from '@/lib/recoverProviderId';
 
 /**
  * ServiceWizard — ONBOARDING ONLY
@@ -47,6 +48,52 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   const [createdServiceId, setCreatedServiceId] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [photoCount, setPhotoCount] = useState(0);
+
+  // ─── Fallback de providerId ───
+  // Se vier vazio (sessão expirou, draft perdido, prop tardio), recupera
+  // do banco usando userId. Mesma lógica do OnboardingV2Shell.
+  const [effectiveProviderId, setEffectiveProviderId] = useState<string | null>(providerId || null);
+  useEffect(() => {
+    if (providerId) {
+      setEffectiveProviderId(providerId);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const recovered = await recoverProviderId({ userId, hint: providerId });
+      if (!cancelled && recovered) setEffectiveProviderId(recovered);
+    })();
+    return () => { cancelled = true; };
+  }, [providerId, userId]);
+
+  // ─── Validação da contagem expressa contra o banco ───
+  // Sobrescreve o prop `serviceNumber` (que pode estar defasado após reload
+  // ou troca de aba) com a contagem real +1. Só ativa em modo CRIAÇÃO,
+  // i.e. quando o parent passa serviceNumber explicitamente.
+  const isCreatingNew = typeof serviceNumber === 'number' && serviceNumber >= 1;
+  const [verifiedServiceNumber, setVerifiedServiceNumber] = useState<number | null>(
+    isCreatingNew ? serviceNumber! : null,
+  );
+  useEffect(() => {
+    if (!isCreatingNew) { setVerifiedServiceNumber(null); return; }
+    let cancelled = false;
+    const sync = async () => {
+      const realCount = await fetchProviderServiceCount(effectiveProviderId);
+      if (cancelled) return;
+      // Próximo número = realCount + 1 (clamp ao max)
+      const next = Math.min(realCount + 1, maxServices);
+      setVerifiedServiceNumber(next);
+    };
+    void sync();
+    const onVisible = () => { if (document.visibilityState === 'visible') void sync(); };
+    window.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [isCreatingNew, effectiveProviderId, maxServices, serviceNumber]);
+
+  const displayServiceNumber = verifiedServiceNumber ?? (isCreatingNew ? serviceNumber! : null);
 
   // Step 1 — Identity
   const [serviceName, setServiceName] = useState('');
