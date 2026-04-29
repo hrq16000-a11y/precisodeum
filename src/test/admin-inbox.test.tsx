@@ -1,12 +1,21 @@
 /**
  * Testes do centro de notificações admin (UI):
  *  - filtros e busca aparecem
- *  - botão "Marcar página como lida" desabilitado quando não há não-lidas
  *  - chamada à RPC mark_notification_read ao clicar no botão de check individual
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+
+const mocks = vi.hoisted(() => {
+  const rpcSpy = (() => {
+    const fn: any = (...args: any[]) => { fn.mock.calls.push(args); return Promise.resolve({ data: true, error: null }); };
+    fn.mock = { calls: [] as any[] };
+    fn.mockClear = () => { fn.mock.calls = []; };
+    return fn;
+  })();
+  return { rpcSpy };
+});
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { id: 'admin-1' }, loading: false }),
@@ -23,29 +32,24 @@ vi.mock('@/integrations/supabase/client', () => {
     { id: 'n2', title: 'Outra', message: null, read: true, type: 'system', link: null, created_at: new Date().toISOString() },
   ];
   const builder: any = {};
-  builder.select = vi.fn(() => builder);
-  builder.eq = vi.fn(() => builder);
-  builder.order = vi.fn(() => builder);
-  builder.or = vi.fn(() => builder);
-  builder.range = vi.fn(async () => ({ data, error: null, count: data.length }));
-  const rpc = vi.fn(async () => ({ data: true, error: null }));
+  builder.select = (...a: any[]) => builder;
+  builder.eq = (...a: any[]) => builder;
+  builder.order = (...a: any[]) => builder;
+  builder.or = (...a: any[]) => builder;
+  builder.range = async () => ({ data, error: null, count: data.length });
   return {
-    __rpcSpy: rpc,
     supabase: {
       from: () => builder,
-      rpc,
+      rpc: mocks.rpcSpy,
     },
   };
 });
 
-import { supabase as supabaseMock } from '@/integrations/supabase/client';
 import AdminInboxPage from '@/pages/admin/AdminInboxPage';
-
-const rpcSpy = (supabaseMock as any).rpc as ReturnType<typeof vi.fn>;
 
 const wrap = (ui: React.ReactNode) => <MemoryRouter>{ui}</MemoryRouter>;
 
-beforeEach(() => rpcSpy.mockClear());
+beforeEach(() => mocks.rpcSpy.mockClear());
 
 describe('AdminInboxPage', () => {
   it('renderiza filtros e botão de marcar página como lida', async () => {
@@ -59,6 +63,10 @@ describe('AdminInboxPage', () => {
     render(wrap(<AdminInboxPage />));
     const btn = await screen.findByRole('button', { name: /marcar "alerta de integridade" como lida/i });
     fireEvent.click(btn);
-    await waitFor(() => expect(rpcSpy).toHaveBeenCalledWith('mark_notification_read', { _notification_id: 'n1' }));
+    await waitFor(() =>
+      expect(mocks.rpcSpy.mock.calls.some(
+        (c: any[]) => c[0] === 'mark_notification_read' && c[1]?._notification_id === 'n1',
+      )).toBe(true),
+    );
   });
 });
