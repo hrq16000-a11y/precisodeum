@@ -30,6 +30,7 @@ import {
   type ExitIntentIntent,
   type ExitIntentVariant,
 } from '@/lib/exitIntentVariants';
+import { markSupportContacted, shouldSuppressExitIntent } from '@/lib/conversionFunnel';
 
 const INACTIVITY_MS = 30_000;
 const STORAGE_KEY = 'wizard:exit-intent-shown';
