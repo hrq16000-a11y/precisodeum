@@ -67,6 +67,19 @@ export interface DbProvider {
   _distanceAudit?: DistanceAudit;
   /** Sinal de atividade do prestador (Recency Factor) */
   activitySignal?: 'em_alta' | 'responde_rapido' | 'ativo_recente' | null;
+  /** Tipo de conta — 'autonomous' (PF, default) ou 'company' (PJ). */
+  accountType?: 'autonomous' | 'company' | string | null;
+  /** PJ: segmento de atuação. */
+  businessSegment?: string | null;
+  /** PJ: endereço institucional. */
+  street?: string | null;
+  streetNumber?: string | null;
+  complement?: string | null;
+  postalCode?: string | null;
+  /** PJ: links para redes sociais e site institucional. */
+  socialLinks?: Record<string, string> | null;
+  /** PJ: razão social. */
+  legalName?: string | null;
 }
 
 export type FeaturedProviderSort = 'proximity' | 'category' | 'availability';
