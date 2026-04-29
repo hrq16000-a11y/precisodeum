@@ -497,6 +497,7 @@ const App = () => {
                 <Route path="/admin/auditoria-ref" element={<AdminAuditRefPage />} />
                 <Route path="/admin/auditoria-rls" element={<AdminAuditRlsPage />} />
                 <Route path="/admin/backup" element={<AdminBackupPage />} />
+                <Route path="/admin/portabilidade" element={<AdminPortabilityPage />} />
                 <Route path="/admin/lixeira" element={<AdminTrashPage />} />
                 <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
                 <Route path="/admin/pwa" element={<AdminPwaPage />} />
