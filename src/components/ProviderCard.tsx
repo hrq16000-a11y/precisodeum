@@ -207,17 +207,15 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
         <Sparkles className="h-3 w-3" /> Ativo hoje
       </span>
     );
-    // Se ficou offline há pouco tempo, mostra badge "Offline" com tooltip lastSeen
-    badges.push(<OnlineBadge key="offline-lastseen" userId={provider.userId} showOffline />);
-  } else {
-    // Sem ativo hoje, mas talvez tenha estado online recentemente: badge offline opcional
-    badges.push(<OnlineBadge key="offline-lastseen" userId={provider.userId} showOffline />);
   } else if (fastByChat) {
     badges.push(
       <span key="fast-chat" className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
         <Zap className="h-3 w-3" /> Responde em ~{provider.avgResponseMinutes}min
       </span>
     );
+  } else {
+    // Sem destaque ativo: se ficou offline recentemente (lastSeen), badge "Offline" com tooltip
+    badges.push(<OnlineBadge key="offline-lastseen" userId={provider.userId} showOffline />);
   }
 
   const visibleBadges = badges.slice(0, MAX_BADGES_MOBILE);
