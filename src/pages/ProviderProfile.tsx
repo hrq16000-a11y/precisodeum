@@ -924,7 +924,28 @@ const ProviderProfile = () => {
   }, [provider, slug, category, seoTitle, seoDescription]);
 
 
-  const breadcrumbLd = useMemo(() => provider ? ({
+  // "Padrão Ouro" alinhado à mesma regra do RPC nearby_providers:
+  // nível Ouro+ E last_active_at < 7 dias (mesmo recency_factor do score).
+  const isPadraoOuro = useMemo(() => {
+    if (!provider) return false;
+    const levelName = String(provider.levelInfo?.name || '').toLowerCase();
+    const isGoldPlus = ['ouro', 'platina', 'diamante', 'mestre'].includes(levelName);
+    const lastActive = provider.last_active_at ? new Date(provider.last_active_at).getTime() : 0;
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return isGoldPlus && lastActive >= sevenDaysAgo;
+  }, [provider]);
+
+  const seoSpecialties = useMemo(() => {
+    if (!provider) return [] as string[];
+    const parts: string[] = [
+      provider.description || '',
+      category || '',
+      provider.business_name || '',
+      ...(services || []).slice(0, 10).map((s: any) => `${s.name || ''} ${s.description || ''}`),
+    ];
+    return extractSpecialties(parts, 6);
+  }, [provider, category, services]);
+
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
