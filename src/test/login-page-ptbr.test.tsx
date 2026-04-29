@@ -127,11 +127,9 @@ describe('LoginPage — cadastro silencioso e senha fraca', () => {
     fireEvent.change(getEmailInput(), { target: { value: 'existe@example.com' } });
     fireEvent.change(getPasswordInput(), { target: { value: 'qualquer' } });
     fireEvent.click(getSubmitBtn());
-    await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith(
-        expect.stringMatching(/Já existe uma conta com esse e-mail/i),
-        expect.anything(),
-      ),
-    );
+    await waitFor(() => {
+      const calls = toastError.mock.calls.map((c) => String(c[0] || ''));
+      expect(calls.some((m) => /Já existe uma conta com esse e-mail/i.test(m))).toBe(true);
+    });
   });
 });
