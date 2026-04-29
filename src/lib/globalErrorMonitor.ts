@@ -54,14 +54,29 @@ const getExternalSink = (): ExternalSink | null => {
   return w.Sentry || w.LogRocket || null;
 };
 
+const getDeviceInfo = () => {
+  const ua = navigator.userAgent;
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(ua);
+  const isStandalone = window.matchMedia?.('(display-mode: standalone)')?.matches
+    || (navigator as any).standalone === true;
+  return {
+    isMobile,
+    isStandalone,
+    platform: (navigator as any).userAgentData?.platform || navigator.platform || 'unknown',
+    dpr: window.devicePixelRatio || 1,
+  };
+};
+
 const buildContext = () => ({
   userId: cachedUserId,
+  appVersion: APP_VERSION,
   route: window.location.pathname + window.location.search,
   referrer: document.referrer || null,
   viewport: `${window.innerWidth}x${window.innerHeight}`,
   online: navigator.onLine,
   language: navigator.language,
   userAgent: navigator.userAgent,
+  device: getDeviceInfo(),
   timestamp: new Date().toISOString(),
 });
 
