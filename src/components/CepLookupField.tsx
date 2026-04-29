@@ -44,14 +44,16 @@ const CepLookupField = ({ onResolved, helper, onFallbackCity }: CepLookupFieldPr
     setLoading(true);
     try {
       const r = await lookupCep(value);
-      if (r.ok) {
+      if (r.ok === true) {
         setSuccess(`${r.city} • ${r.state}${r.neighborhood ? ` — ${r.neighborhood}` : ''}`);
         onResolved(r);
-      } else if (r.reason === 'invalid_format') {
-        setError(r.message);
       } else {
-        setNotFound(true);
-        setError(r.message);
+        if (r.reason === 'invalid_format') {
+          setError(r.message);
+        } else {
+          setNotFound(true);
+          setError(r.message);
+        }
       }
     } catch {
       setError('Falha ao consultar o CEP. Tente novamente.');
