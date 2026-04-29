@@ -145,7 +145,15 @@ export function applySearchFilters<T extends FilterableProvider>(
     });
   }
 
-  if (urgencyMode && onlineSet.size > 0) {
+  // Online-first stable partition: profissionais online sobem ao topo
+  // dentro do conjunto atual, preservando a ordem produzida pelo sort.
+  // Aplica-se em qualquer modo (busca, lista, grid), salvo opt-out explícito.
+  if (!disableOnlineBoost && onlineSet.size > 0) {
+    results = [
+      ...results.filter((p) => onlineSet.has(p.userId)),
+      ...results.filter((p) => !onlineSet.has(p.userId)),
+    ];
+  } else if (urgencyMode && onlineSet.size > 0) {
     results = [
       ...results.filter((p) => onlineSet.has(p.userId)),
       ...results.filter((p) => !onlineSet.has(p.userId)),
