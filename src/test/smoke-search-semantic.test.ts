@@ -12,7 +12,7 @@ import {
   applySearchFilters,
   type FilterableProvider,
 } from '@/lib/searchFilters';
-import { normalizeText } from '@/lib/searchNormalization';
+import { normalizeSearchText as normalizeText } from '@/lib/searchNormalization';
 
 /* ───────── Dataset semântico ───────── */
 
