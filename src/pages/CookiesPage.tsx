@@ -31,18 +31,18 @@ const CookiesPage = () => {
   });
 
   const save = () => {
-    saveConsent(prefs);
+    saveConsent(prefs, "pagina_cookies");
     toast.success("Preferências de cookies atualizadas.");
   };
 
   const reset = () => {
-    rejectAll();
+    rejectAll("pagina_cookies");
     setPrefs({ functional: false, analytics: false, marketing: false });
     toast.success("Consentimento revogado. Apenas cookies essenciais permanecem ativos.");
   };
 
   const allOn = () => {
-    acceptAll();
+    acceptAll("pagina_cookies");
     setPrefs({ functional: true, analytics: true, marketing: true });
     toast.success("Todos os cookies foram aceitos.");
   };
