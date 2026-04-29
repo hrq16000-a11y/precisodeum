@@ -721,12 +721,16 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
         // Centralized name + avatar resolution (consistent across all feeds)
         const fullName = profile?.name?.trim() || '';
         const businessName = (p.business_name || '').trim();
-        const safeBusinessName = isGenericProviderName(businessName) ? '' : businessName;
+        const isCompany = (p.account_type || 'autonomous') === 'company';
+        const safeBusinessName = isCompany
+          ? businessName
+          : (isGenericProviderName(businessName) ? '' : businessName);
         const resolvedName = _centralResolveDisplayName({
           profileFullName: fullName,
           businessName,
           slug: p.slug,
           city: p.city,
+          accountType: p.account_type,
         });
 
         // Avatar: profile.avatar_url > providers.photo_url > fallback (handled by ProviderCard)
@@ -759,6 +763,13 @@ export function useFeaturedProviders(options: boolean | FeaturedProvidersOptions
           servicesCount: p.services_count || 0,
           portfolioAlbumCount: p.portfolio_album_count || 0,
           portfolioPhotoCount: p.portfolio_photo_count || 0,
+          accountType: (p.account_type as any) || 'autonomous',
+          businessSegment: p.business_segment ?? null,
+          street: p.street ?? null,
+          streetNumber: p.street_number ?? null,
+          complement: p.complement ?? null,
+          postalCode: p.postal_code ?? null,
+          socialLinks: (p.social_links as any) ?? null,
         };
         return mapped;
       });
