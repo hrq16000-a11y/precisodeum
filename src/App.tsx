@@ -148,6 +148,7 @@ const EspecialidadesPage = lazy(() => import("./pages/EspecialidadesPage"));
 const EspecialidadeDetailPage = lazy(() => import("./pages/EspecialidadeDetailPage"));
 const AdminConversionMetricsPage = lazy(() => import("./pages/AdminConversionMetricsPage"));
 const AdminOnboardingFunnelPage = lazy(() => import("./pages/AdminOnboardingFunnelPage"));
+const AdminError500Page = lazy(() => import("./pages/AdminError500Page"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ComoFuncionaPage = lazy(() => import("./pages/ComoFuncionaPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
