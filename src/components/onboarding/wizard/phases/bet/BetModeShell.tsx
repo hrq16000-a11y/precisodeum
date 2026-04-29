@@ -39,6 +39,7 @@ import PhaseProLocation from './PhaseProLocation';
 import PhaseCelebration from './PhaseCelebration';
 
 import { initialBetState, type BetState, type BetIntent, type BetPhase } from './types';
+import { setOnboardingIntent } from '../v2/telemetry';
 
 type Action =
   | { type: 'PATCH'; patch: Partial<BetState> }
