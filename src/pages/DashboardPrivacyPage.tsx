@@ -88,10 +88,34 @@ const DashboardPrivacyPage = () => {
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Gere um arquivo <strong>JSON</strong> com todos os dados pessoais que tratamos
-                  sobre você: perfil, serviços, leads, mensagens, avaliações, notificações,
-                  preferências e logs vinculados à sua conta. O arquivo está em formato aberto e
-                  pode ser importado em outras ferramentas.
+                  sobre você. O arquivo segue um formato aberto e pode ser importado em outras
+                  ferramentas (portabilidade — LGPD Art. 18, V).
                 </p>
+
+                <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3 text-xs">
+                  <p className="font-semibold text-foreground">O que está incluído no arquivo</p>
+                  <ul className="mt-1.5 grid list-disc gap-1 pl-5 text-muted-foreground sm:grid-cols-2">
+                    <li>Dados da conta de autenticação (e-mail, telefone, datas)</li>
+                    <li>Perfil público e configurações da página</li>
+                    <li>Serviços, categorias e portfólio</li>
+                    <li>Leads recebidos, histórico e interações</li>
+                    <li>Mensagens de chat enviadas e recebidas</li>
+                    <li>Avaliações dadas e recebidas</li>
+                    <li>Notificações e preferências de notificação</li>
+                    <li>Favoritos e indicações</li>
+                    <li>Mídias (referências e metadados)</li>
+                    <li>Pontos de engajamento e papéis (roles)</li>
+                    <li>Logs de acesso vinculados à sua conta</li>
+                    <li>Solicitações anteriores de exclusão</li>
+                  </ul>
+                  <p className="mt-2 text-muted-foreground">
+                    <strong className="text-foreground">Tempo estimado:</strong> 5 a 30 segundos
+                    para a maioria das contas. Contas com muitos leads, mensagens ou mídias podem
+                    levar até 1 a 2 minutos. O download começa automaticamente assim que o
+                    arquivo é gerado.
+                  </p>
+                </div>
+
                 <div className="mt-3 rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
                   <p>
                     <strong className="text-foreground">Conta:</strong>{" "}
