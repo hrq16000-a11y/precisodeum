@@ -1730,8 +1730,14 @@ const DashboardServicesPage = () => {
                         }
                         handleSave();
                       }}
-                      disabled={isSubmitting || !!divergence}
-                      title={divergence ? 'Divergência entre cidade do serviço e raio "Toda a cidade"' : ''}
+                      disabled={isSubmitting || !!divergence || (!editId && !finalConsent)}
+                      title={
+                        divergence
+                          ? 'Divergência entre cidade do serviço e raio "Toda a cidade"'
+                          : (!editId && !finalConsent)
+                            ? 'Confirme o termo de responsabilidade para publicar'
+                            : ''
+                      }
                     >
                       {isSubmitting ? '⏳ Salvando...' : `📢 ${editId ? 'Salvar' : 'Publicar'}`}
                     </Button>
