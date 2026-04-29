@@ -14,8 +14,15 @@ let onlineUsers = new Map<string, OnlinePresenceMeta>();
 let lastSeenMap = new Map<string, number>();
 /** Wall-clock timestamp of the last presence sync — used for the "atualizado há Xs" label. */
 let lastSyncAt = 0;
+/** Realtime health: 'connecting' | 'healthy' | 'degraded' (Supabase Realtime offline / blocked) */
+type RealtimeHealth = 'connecting' | 'healthy' | 'degraded';
+let realtimeHealth: RealtimeHealth = 'connecting';
 let listeners = new Set<() => void>();
 let subscriberCount = 0;
+
+/** If Supabase presence does not sync within this window, mark realtime as degraded. */
+const REALTIME_HEALTH_TIMEOUT_MS = 12_000;
+let healthTimer: ReturnType<typeof setTimeout> | null = null;
 
 function notify() {
   listeners.forEach((fn) => fn());
@@ -68,18 +75,40 @@ function syncPresenceState() {
 
   onlineUsers = next;
   lastSyncAt = now;
+  if (realtimeHealth !== 'healthy') {
+    realtimeHealth = 'healthy';
+  }
+  resetHealthTimer();
   notify();
+}
+
+function resetHealthTimer() {
+  if (healthTimer) clearTimeout(healthTimer);
+  healthTimer = setTimeout(() => {
+    // No sync for too long → mark as degraded so UI can fallback gracefully
+    if (realtimeHealth !== 'degraded') {
+      realtimeHealth = 'degraded';
+      notify();
+    }
+  }, REALTIME_HEALTH_TIMEOUT_MS);
 }
 
 function ensureChannel() {
   if (channel) return channel;
+  realtimeHealth = 'connecting';
+  resetHealthTimer();
   channel = supabase.channel(CHANNEL_NAME, {
     config: { presence: { key: 'providers' } },
   });
 
   channel
     .on('presence', { event: 'sync' }, syncPresenceState)
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        realtimeHealth = 'degraded';
+        notify();
+      }
+    });
 
   return channel;
 }
@@ -89,6 +118,8 @@ function destroyChannel() {
   supabase.removeChannel(channel);
   channel = null;
   onlineUsers = new Map();
+  if (healthTimer) { clearTimeout(healthTimer); healthTimer = null; }
+  realtimeHealth = 'connecting';
   // Keep lastSeenMap so badges can still show "esteve online há Xm" briefly
   notify();
 }
@@ -211,6 +242,43 @@ export function useLastPresenceSync(): number {
   return lastSyncAt;
 }
 
+/** Default window after which a user is no longer considered "recently offline". */
+export const RECENTLY_OFFLINE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+/** Returns the realtime channel health, so UI can fallback when Supabase Realtime is down. */
+export function useRealtimeHealth(): RealtimeHealth {
+  useOnlineUsersMap();
+  return realtimeHealth;
+}
+
+/** Returns true if the user went offline within the given window (default 10min). */
+export function useIsRecentlyOffline(
+  userId: string | undefined,
+  windowMs: number = RECENTLY_OFFLINE_WINDOW_MS,
+): boolean {
+  useOnlineUsersMap();
+  if (!userId) return false;
+  if (onlineUsers.has(userId)) return false;
+  const seen = lastSeenMap.get(userId);
+  if (!seen) return false;
+  return Date.now() - seen <= windowMs;
+}
+
+/** Returns the set of users that went offline within the given window. */
+export function useRecentlyOfflineSet(windowMs: number = RECENTLY_OFFLINE_WINDOW_MS): Set<string> {
+  useOnlineUsersMap();
+  return useMemo(() => {
+    const set = new Set<string>();
+    const now = Date.now();
+    lastSeenMap.forEach((seen, userId) => {
+      if (!onlineUsers.has(userId) && now - seen <= windowMs) set.add(userId);
+    });
+    return set;
+  // lastSyncAt is the proxy that drives re-evaluation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastSyncAt, windowMs]);
+}
+
 /** Count online users in a specific city */
 export function useOnlineCountByCity(city: string | null): number {
   const map = useOnlineUsersMap();
@@ -232,6 +300,7 @@ export const __presenceInternals = {
     onlineUsers = new Map();
     lastSeenMap = new Map();
     lastSyncAt = 0;
+    realtimeHealth = 'connecting';
   },
   applyState(state: PresenceState, now: number = Date.now()) {
     const next = reducePresenceState(state, onlineUsers, now);
@@ -240,8 +309,11 @@ export const __presenceInternals = {
     });
     onlineUsers = next;
     lastSyncAt = now;
+    realtimeHealth = 'healthy';
     notify();
   },
+  setHealth(h: RealtimeHealth) { realtimeHealth = h; notify(); },
   getOnlineMap: () => onlineUsers,
   getLastSeenMap: () => lastSeenMap,
+  getHealth: () => realtimeHealth,
 };

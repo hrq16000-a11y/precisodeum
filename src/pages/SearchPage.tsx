@@ -40,7 +40,7 @@ import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import { usePinnedSponsor } from '@/hooks/usePinnedSponsor';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
 import { useUrgencyMode } from '@/hooks/useUrgencyMode';
-import { useOnlineProviders } from '@/hooks/useOnlinePresence';
+import { useOnlineProviders, useRecentlyOfflineSet, useRealtimeHealth } from '@/hooks/useOnlinePresence';
 import { useActiveTodayProviders } from '@/hooks/useActiveTodayProviders';
 import AskSystemDialog from '@/components/search/AskSystemDialog';
 import { logSearchIntent } from '@/lib/searchIntent';
@@ -102,6 +102,9 @@ const SearchPage = () => {
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
   const onlineSet = useOnlineProviders();
   const activeTodaySet = useActiveTodayProviders();
+  const recentlyOfflineSet = useRecentlyOfflineSet();
+  const realtimeHealth = useRealtimeHealth();
+  const [presenceStatusFilter, setPresenceStatusFilter] = useState<'all' | 'online_first' | 'online_only' | 'recently_offline'>('all');
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
 
@@ -150,6 +153,8 @@ const SearchPage = () => {
   const allProviders = useMemo(() => [...localProviders, ...nearbyProviders, ...outOfStateProviders], [localProviders, nearbyProviders, outOfStateProviders]);
 
   // Apply additional client-side filters
+  const effectiveStatusFilter = realtimeHealth === 'degraded' ? 'all' : presenceStatusFilter;
+
   const applyClientFilters = useCallback((list: DbProvider[]) => {
     return applySearchFilters(list, {
       selectedNeighborhood,
@@ -163,6 +168,8 @@ const SearchPage = () => {
       urgencyMode,
       onlineSet,
       activeTodaySet,
+      recentlyOfflineSet,
+      statusFilter: effectiveStatusFilter,
       routeCorridor: routeCorridor
         ? {
             midLat: routeCorridor.midLat,
@@ -171,7 +178,7 @@ const SearchPage = () => {
           }
         : null,
     }) as DbProvider[];
-  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, onlineOnly, acceptingOnly, activeTodayOnly]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, recentlyOfflineSet, effectiveStatusFilter, onlineOnly, acceptingOnly, activeTodayOnly]);
 
   const stateFilterFn = useCallback((list: DbProvider[]) =>
     selectedState ? list.filter(p => safeUF(p.state) === selectedState) : list,
@@ -491,6 +498,41 @@ const SearchPage = () => {
             <span className="text-[10px] font-semibold">{acceptingOnly ? 'ATIVO' : 'OFF'}</span>
           </button>
         </div>
+      </div>
+
+      {/* Status (presença em tempo real) */}
+      <div>
+        <Label className="text-xs text-muted-foreground flex items-center justify-between">
+          <span>Status</span>
+          {realtimeHealth === 'degraded' && (
+            <span className="text-[10px] font-medium text-muted-foreground/70">tempo real indisponível</span>
+          )}
+        </Label>
+        <Select
+          value={presenceStatusFilter}
+          onValueChange={(v) => { setPresenceStatusFilter(v as typeof presenceStatusFilter); setPage(1); }}
+          disabled={realtimeHealth === 'degraded'}
+        >
+          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="online_first">
+              <span className="inline-flex items-center gap-1.5">
+                <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online primeiro
+              </span>
+            </SelectItem>
+            <SelectItem value="online_only">
+              <span className="inline-flex items-center gap-1.5">
+                <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Apenas Online
+              </span>
+            </SelectItem>
+            <SelectItem value="recently_offline">
+              <span className="inline-flex items-center gap-1.5">
+                <Circle className="h-2 w-2 fill-muted-foreground/50 text-muted-foreground/50" /> Recentemente Offline
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {reviewsEnabled && (

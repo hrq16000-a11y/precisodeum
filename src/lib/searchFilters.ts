@@ -6,6 +6,14 @@ import { calculateDistanceKm } from '@/lib/geoDistance';
 
 export type SortMode = 'relevance' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
 export type FeaturedFilter = 'all' | 'featured' | 'normal';
+/**
+ * Status filter:
+ *  - 'all': no status restriction (online still gets a stable boost to the top)
+ *  - 'online_first': same as 'all' (kept explicit for UI clarity)
+ *  - 'online_only': keep only providers currently online
+ *  - 'recently_offline': keep only providers that went offline within the recent window
+ */
+export type StatusFilter = 'all' | 'online_first' | 'online_only' | 'recently_offline';
 
 export interface FilterableProvider {
   id: string;
@@ -42,6 +50,10 @@ export interface SearchFilterOptions {
   urgencyMode?: boolean;
   onlineSet?: Set<string>;
   activeTodaySet?: Set<string>;
+  /** Users who went offline recently (within the configured window). Used by status filter. */
+  recentlyOfflineSet?: Set<string>;
+  /** Status filter — see StatusFilter type for behavior */
+  statusFilter?: StatusFilter;
   routeCorridor?: RouteCorridor | null;
   /** When false (default), online providers are pulled to the top after sorting (stable partition). */
   disableOnlineBoost?: boolean;
@@ -63,6 +75,8 @@ export function applySearchFilters<T extends FilterableProvider>(
     urgencyMode = false,
     onlineSet = new Set<string>(),
     activeTodaySet = new Set<string>(),
+    recentlyOfflineSet = new Set<string>(),
+    statusFilter = 'all',
     routeCorridor = null,
     disableOnlineBoost = false,
   } = opts;
@@ -87,6 +101,14 @@ export function applySearchFilters<T extends FilterableProvider>(
   else if (featuredFilter === 'normal') results = results.filter((p) => !p.featured);
 
   if (onlineOnly) results = results.filter((p) => onlineSet.has(p.userId));
+
+  // Status filter (UI: "Online primeiro" / "Apenas Online" / "Recentemente Offline")
+  if (statusFilter === 'online_only') {
+    results = results.filter((p) => onlineSet.has(p.userId));
+  } else if (statusFilter === 'recently_offline') {
+    results = results.filter((p) => recentlyOfflineSet.has(p.userId));
+  }
+
   if (activeTodayOnly) {
     // "Ativo hoje" inclui quem está online agora também,
     // E só vale para profissionais a até 5km do usuário (mesma régua do mapa).

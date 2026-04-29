@@ -4,6 +4,8 @@ import {
   useProviderPresence,
   useProviderLastSeen,
   useLastPresenceSync,
+  useRealtimeHealth,
+  RECENTLY_OFFLINE_WINDOW_MS,
 } from '@/hooks/useOnlinePresence';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +17,24 @@ interface OnlineBadgeProps {
   showOffline?: boolean;
   /** Show small "atualizado há Xs" freshness label next to the badge. */
   showFreshness?: boolean;
+  /**
+   * Time window (ms) within which an offline user still shows the "Offline" badge.
+   * After this, the badge disappears so the card falls back to neutral state.
+   * Defaults to RECENTLY_OFFLINE_WINDOW_MS (10 min).
+   */
+  offlineVisibleWindowMs?: number;
   className?: string;
+}
+
+function formatFullRelative(ms: number): string {
+  const seconds = Math.max(1, Math.floor(ms / 1000));
+  if (seconds < 60) return `${seconds} s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+  const days = Math.floor(hours / 24);
+  return `${days} ${days === 1 ? 'dia' : 'dias'}`;
 }
 
 function formatRelative(ms: number): string {
@@ -49,11 +68,13 @@ export function OnlineBadge({
   size = 'sm',
   showOffline = false,
   showFreshness = false,
+  offlineVisibleWindowMs = RECENTLY_OFFLINE_WINDOW_MS,
   className,
 }: OnlineBadgeProps) {
   const presence = useProviderPresence(userId);
   const lastSeen = useProviderLastSeen(userId);
   const lastSync = useLastPresenceSync();
+  const health = useRealtimeHealth();
   const [, setTick] = useState(0);
 
   // Re-render every 15s so relative/freshness labels stay fresh.
@@ -63,10 +84,17 @@ export function OnlineBadge({
     return () => clearInterval(id);
   }, [presence, lastSeen]);
 
+  // Realtime fallback: when Supabase Realtime is degraded, hide Online/Offline
+  // badges entirely so the card falls back gracefully to rating / "Disponível hoje".
+  if (health === 'degraded') return null;
+
   // Offline state with optional lastSeen tooltip
   if (!presence) {
     if (!showOffline || !lastSeen) return null;
-    const offlineRelative = formatRelative(Date.now() - lastSeen);
+    const elapsed = Date.now() - lastSeen;
+    // Hide offline badge once we're past the configured window
+    if (elapsed > offlineVisibleWindowMs) return null;
+    const offlineRelative = formatFullRelative(elapsed);
     const padding = size === 'md' ? 'px-2.5 py-1 text-xs' : 'px-2 py-0.5 text-[11px]';
     return (
       <TooltipProvider delayDuration={150}>
@@ -78,7 +106,7 @@ export function OnlineBadge({
                 padding,
                 className,
               )}
-              aria-label={`Profissional offline ${offlineRelative}`}
+              aria-label={`Visto pela última vez há ${offlineRelative}`}
               role="status"
             >
               <span className="inline-flex h-2 w-2 rounded-full bg-muted-foreground/50" />
@@ -87,7 +115,7 @@ export function OnlineBadge({
           </TooltipTrigger>
           <TooltipContent side="top" align="center" className="text-xs">
             <div className="font-medium">Offline no momento</div>
-            <div className="text-muted-foreground">Esteve online {offlineRelative}</div>
+            <div className="text-muted-foreground">Visto pela última vez há {offlineRelative}</div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
