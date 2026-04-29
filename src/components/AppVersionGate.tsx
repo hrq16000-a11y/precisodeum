@@ -1,25 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, Download, X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppVersionGate } from '@/hooks/useAppVersionGate';
+import { forceClientUpdate } from '@/lib/forceClientUpdate';
 
 const DISMISS_KEY = 'app_update_suggest_dismissed_v';
+// Flag local para evitar loops de reload caso algo dê errado.
+const AUTO_RELOAD_GUARD_KEY = 'app_auto_force_reload_done_v';
 
-const purgeAndReload = async () => {
-  try {
-    if ('serviceWorker' in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map((r) => r.unregister().catch(() => false)));
-    }
-    if ('caches' in window) {
-      const names = await caches.keys();
-      await Promise.all(names.map((n) => caches.delete(n).catch(() => false)));
-    }
-  } catch {
-    // best-effort
-  }
-  window.location.reload();
-};
+const purgeAndReload = () => { void forceClientUpdate(); };
 
 /**
  * Gate global de versão do app:
@@ -35,6 +24,22 @@ const AppVersionGate = () => {
   const [dismissedFor, setDismissedFor] = useState<string | null>(() => {
     try { return localStorage.getItem(DISMISS_KEY); } catch { return null; }
   });
+
+  // ── AUTO PURGE em modo FORCE ────────────────────────────────────────────
+  // Regra padrão: a cada release que sobe `app_min_version`, todas as
+  // instâncias dos navegadores devem limpar SW/caches e recarregar uma única
+  // vez, sem esperar interação do usuário. Guard via localStorage evita loop.
+  useEffect(() => {
+    if (gate.loading) return;
+    if (gate.status !== 'force') return;
+    let alreadyDone = '';
+    try { alreadyDone = localStorage.getItem(AUTO_RELOAD_GUARD_KEY) || ''; } catch { /* noop */ }
+    if (alreadyDone === gate.minVersion) return;
+    try { localStorage.setItem(AUTO_RELOAD_GUARD_KEY, gate.minVersion); } catch { /* noop */ }
+    // Pequeno atraso para o React render completar e o usuário enxergar o modal.
+    const t = setTimeout(() => { void forceClientUpdate(); }, 1200);
+    return () => clearTimeout(t);
+  }, [gate.loading, gate.status, gate.minVersion]);
 
   if (gate.loading) return null;
 

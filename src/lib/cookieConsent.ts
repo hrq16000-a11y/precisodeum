@@ -64,9 +64,10 @@ export function saveConsent(
   partial: Partial<Omit<ConsentState, "essential" | "version" | "updated_at">>,
   source: "banner" | "pagina_cookies" | "api" = "banner",
 ) {
+  const previous = getConsent();
   const state: ConsentState = {
     ...DEFAULT_CONSENT,
-    ...getConsent(),
+    ...previous,
     ...partial,
     essential: true,
     version: CURRENT_VERSION,
@@ -82,6 +83,18 @@ export function saveConsent(
 
   // Auditoria no banco — best-effort, não bloqueia a UI
   void recordConsentLog(state, source);
+
+  // Detecta revogações (true → false) de marketing/analytics e dispara
+  // notificação admin (best-effort).
+  const revoked: ConsentCategory[] = [];
+  (["analytics", "marketing", "functional"] as const).forEach((cat) => {
+    const wasOn = !!previous && previous[cat] === true;
+    const isOff = state[cat] === false;
+    if (wasOn && isOff) revoked.push(cat);
+  });
+  if (revoked.length > 0) {
+    void recordConsentRevocation(state, previous, revoked, source);
+  }
 
   return state;
 }
@@ -106,6 +119,42 @@ async function recordConsentLog(state: ConsentState, source: string) {
   } catch (e) {
     // silencioso — auditoria não pode bloquear o fluxo
     if (typeof console !== "undefined") console.warn("[consent] log failed", e);
+  }
+}
+
+async function recordConsentRevocation(
+  state: ConsentState,
+  previous: ConsentState | null,
+  revoked: ConsentCategory[],
+  source: string,
+) {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user_id = sessionData.session?.user?.id ?? null;
+    const anon_id = getOrCreateAnonId();
+    await supabase.from("consent_revocations" as any).insert({
+      user_id,
+      anon_id,
+      version: state.version,
+      revoked_categories: revoked,
+      previous_state: previous
+        ? {
+            functional: previous.functional,
+            analytics: previous.analytics,
+            marketing: previous.marketing,
+          }
+        : null,
+      current_state: {
+        functional: state.functional,
+        analytics: state.analytics,
+        marketing: state.marketing,
+      },
+      source,
+      user_agent:
+        typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : null,
+    });
+  } catch (e) {
+    if (typeof console !== "undefined") console.warn("[consent] revocation log failed", e);
   }
 }
 

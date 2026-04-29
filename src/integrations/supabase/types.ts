@@ -707,6 +707,48 @@ export type Database = {
         }
         Relationships: []
       }
+      consent_revocations: {
+        Row: {
+          anon_id: string | null
+          created_at: string
+          current_state: Json | null
+          id: string
+          previous_state: Json | null
+          read_by_admin: boolean
+          revoked_categories: string[]
+          source: string
+          user_agent: string | null
+          user_id: string | null
+          version: number
+        }
+        Insert: {
+          anon_id?: string | null
+          created_at?: string
+          current_state?: Json | null
+          id?: string
+          previous_state?: Json | null
+          read_by_admin?: boolean
+          revoked_categories?: string[]
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+          version?: number
+        }
+        Update: {
+          anon_id?: string | null
+          created_at?: string
+          current_state?: Json | null
+          id?: string
+          previous_state?: Json | null
+          read_by_admin?: boolean
+          revoked_categories?: string[]
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
       contact_clicks: {
         Row: {
           contact_type: string
@@ -7681,6 +7723,23 @@ export type Database = {
         Returns: boolean
       }
       is_top_professional: { Args: { _user_id: string }; Returns: boolean }
+      list_consent_revocations: {
+        Args: { _limit?: number; _offset?: number; _only_unread?: boolean }
+        Returns: {
+          anon_id: string
+          created_at: string
+          current_state: Json
+          id: string
+          previous_state: Json
+          read_by_admin: boolean
+          revoked_categories: string[]
+          source: string
+          total_count: number
+          user_email: string
+          user_id: string
+          version: number
+        }[]
+      }
       list_provider_geo_fallbacks: {
         Args: { _limit?: number; _status?: string }
         Returns: {
@@ -7764,6 +7823,10 @@ export type Database = {
           _reason: string
         }
         Returns: undefined
+      }
+      mark_consent_revocations_read: {
+        Args: { _ids: string[] }
+        Returns: number
       }
       mark_lead_as_concluded: { Args: { _lead_id: string }; Returns: Json }
       mark_provider_geo_reviewed: {
