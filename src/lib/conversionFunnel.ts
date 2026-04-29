@@ -39,13 +39,16 @@ export function markSupportContacted(meta: SupportContactMeta): void {
   } catch {
     /* noop */
   }
+  // Não passamos `intent: 'unknown'` em meta para permitir que a telemetria
+  // auto-injete o intent REAL persistido em sessionStorage (PhaseWho/triage).
+  const intentMeta = meta.intent && meta.intent !== 'unknown' ? { intent: meta.intent } : {};
   void trackOnboardingEvent({
     phase: (meta.phase || 'unknown') as any,
     event: 'support_whatsapp_clicked' as any,
     meta: {
       source: meta.source,
-      intent: meta.intent ?? 'unknown',
       variant: meta.variant ?? null,
+      ...intentMeta,
     },
   });
 }
@@ -57,10 +60,11 @@ export function markHelpPageVisited(meta: { intent?: ExitIntentIntent; phase?: s
   } catch {
     /* noop */
   }
+  const intentMeta = meta.intent && meta.intent !== 'unknown' ? { intent: meta.intent } : {};
   void trackOnboardingEvent({
     phase: (meta.phase || 'help_page') as any,
     event: 'help_page_visited' as any,
-    meta: { intent: meta.intent ?? 'unknown' },
+    meta: { ...intentMeta },
   });
 }
 
