@@ -15,6 +15,7 @@ import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DashboardHealthCheck } from '@/components/dashboard/DashboardHealthCheck';
 import NotificationPermissionGate from '@/components/dashboard/NotificationPermissionGate';
+import { useDashboardSessionPing } from '@/hooks/useDashboardSessionPing';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
@@ -37,6 +38,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const daysLimit = Number(useSettingValue('incomplete_profile_days_limit')) || 60;
   const isProvider = !!profile && profile.profile_type !== 'client' && profile.profile_type !== 'rh';
   const onbStatus = useOnboardingStatus();
+  // Telemetria de retenção: registra acesso ao dashboard (throttle 30min no servidor).
+  useDashboardSessionPing(location.pathname);
   const onbPercent = isProvider ? onbStatus.percent : 0;
   const onbPublishable = isProvider && onbStatus.publishable;
 

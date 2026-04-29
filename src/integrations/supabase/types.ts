@@ -786,6 +786,13 @@ export type Database = {
             foreignKeyName: "contact_clicks_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "contact_clicks_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -2221,6 +2228,13 @@ export type Database = {
             foreignKeyName: "lead_interactions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -2328,6 +2342,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "featured_providers_mv"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
           },
           {
             foreignKeyName: "leads_provider_id_fkey"
@@ -2503,6 +2524,13 @@ export type Database = {
             foreignKeyName: "mission_completions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "mission_completions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -2574,6 +2602,7 @@ export type Database = {
       notifications: {
         Row: {
           created_at: string
+          fts_pt: unknown
           id: string
           image_url: string | null
           link: string | null
@@ -2589,6 +2618,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          fts_pt?: unknown
           id?: string
           image_url?: string | null
           link?: string | null
@@ -2604,6 +2634,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          fts_pt?: unknown
           id?: string
           image_url?: string | null
           link?: string | null
@@ -3104,6 +3135,13 @@ export type Database = {
             foreignKeyName: "portfolio_albums_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "portfolio_albums_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -3473,6 +3511,13 @@ export type Database = {
             foreignKeyName: "provider_daily_stats_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "provider_daily_stats_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -3492,6 +3537,76 @@ export type Database = {
           },
           {
             foreignKeyName: "provider_daily_stats_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
+        ]
+      }
+      provider_dashboard_sessions: {
+        Row: {
+          id: string
+          provider_id: string
+          route: string | null
+          session_started_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          provider_id: string
+          route?: string | null
+          session_started_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          provider_id?: string
+          route?: string | null
+          session_started_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_dashboard_sessions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_dashboard_sessions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "provider_dashboard_sessions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "provider_dashboard_sessions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_dashboard_sessions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_dashboard_sessions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "user_master_view"
@@ -3572,6 +3687,13 @@ export type Database = {
             foreignKeyName: "provider_geo_audit_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "provider_geo_audit_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -3624,6 +3746,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "featured_providers_mv"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_impressions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
           },
           {
             foreignKeyName: "provider_impressions_provider_id_fkey"
@@ -3693,6 +3822,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "featured_providers_mv"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_neighborhood_corrections_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
           },
           {
             foreignKeyName: "provider_neighborhood_corrections_provider_id_fkey"
@@ -3792,6 +3928,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "featured_providers_mv"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_page_settings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
           },
           {
             foreignKeyName: "provider_page_settings_provider_id_fkey"
@@ -4354,6 +4497,13 @@ export type Database = {
             foreignKeyName: "reviews_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "reviews_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -4888,6 +5038,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "featured_providers_mv"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
           },
           {
             foreignKeyName: "services_provider_id_fkey"
@@ -5883,6 +6040,13 @@ export type Database = {
             foreignKeyName: "subscriptions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "provider_audit_view"
             referencedColumns: ["provider_id"]
           },
@@ -6641,6 +6805,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lead_conversion_daily: {
+        Row: {
+          contact_clicks: number | null
+          day: string | null
+          phone_clicks: number | null
+          profile_clicks: number | null
+          provider_id: string | null
+          whatsapp_clicks: number | null
+        }
+        Relationships: []
       }
       provider_audit_view: {
         Row: {
@@ -7571,6 +7746,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_lead_conversion_stats: {
+        Args: { _days?: number; _provider_id?: string }
+        Returns: {
+          contact_clicks: number
+          conversion_pct: number
+          leads_sent: number
+          provider_id: string
+          window_days: number
+        }[]
+      }
       get_lead_history_authors: {
         Args: { p_author_ids: string[] }
         Returns: {
@@ -7665,6 +7850,19 @@ export type Database = {
           phone_7d: number
           whatsapp_30d: number
           whatsapp_7d: number
+        }[]
+      }
+      get_provider_retention: {
+        Args: { _days?: number }
+        Returns: {
+          cohort_day: string
+          cohort_size: number
+          pct_d1: number
+          pct_d30: number
+          pct_d7: number
+          retained_d1: number
+          retained_d30: number
+          retained_d7: number
         }[]
       }
       get_provider_verification_status: {
@@ -7985,6 +8183,10 @@ export type Database = {
       recompute_provider_verified: {
         Args: { _provider_id: string }
         Returns: Json
+      }
+      record_dashboard_session: {
+        Args: { _route?: string; _ua?: string }
+        Returns: undefined
       }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
       register_click_lead: {
