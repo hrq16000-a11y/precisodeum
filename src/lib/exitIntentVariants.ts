@@ -89,7 +89,7 @@ export function resolveExitIntentCopy(
       return {
         title: 'Precisa de ajuda para encontrar o profissional certo?',
         body:
-          'Nosso time pode te indicar agora mesmo um profissional verificado na sua cidade. Fale com a gente pelo WhatsApp e resolvemos juntos em poucos minutos.',
+          'Nosso time pode te indicar agora mesmo um profissional ativo na sua cidade. Fale com a gente pelo WhatsApp e resolvemos juntos em poucos minutos.',
         ctaPrimary: 'Falar com o suporte agora',
         ctaDismiss: 'Continuar buscando sozinho',
         whatsappMessage: msg,
