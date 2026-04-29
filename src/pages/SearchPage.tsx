@@ -500,6 +500,41 @@ const SearchPage = () => {
         </div>
       </div>
 
+      {/* Status (presença em tempo real) */}
+      <div>
+        <Label className="text-xs text-muted-foreground flex items-center justify-between">
+          <span>Status</span>
+          {realtimeHealth === 'degraded' && (
+            <span className="text-[10px] font-medium text-muted-foreground/70">tempo real indisponível</span>
+          )}
+        </Label>
+        <Select
+          value={presenceStatusFilter}
+          onValueChange={(v) => { setPresenceStatusFilter(v as typeof presenceStatusFilter); setPage(1); }}
+          disabled={realtimeHealth === 'degraded'}
+        >
+          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="online_first">
+              <span className="inline-flex items-center gap-1.5">
+                <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Online primeiro
+              </span>
+            </SelectItem>
+            <SelectItem value="online_only">
+              <span className="inline-flex items-center gap-1.5">
+                <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" /> Apenas Online
+              </span>
+            </SelectItem>
+            <SelectItem value="recently_offline">
+              <span className="inline-flex items-center gap-1.5">
+                <Circle className="h-2 w-2 fill-muted-foreground/50 text-muted-foreground/50" /> Recentemente Offline
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {reviewsEnabled && (
         <div>
           <Label className="text-xs text-muted-foreground">Avaliação mínima</Label>
