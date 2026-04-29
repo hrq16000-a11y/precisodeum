@@ -141,9 +141,9 @@ describe('Smoke /cidade/{cidade} — coerência geográfica + sort', () => {
     expect(r.map((p) => p.id)).toEqual(['p1']);
   });
 
-  it('online_only filtra por presença', () => {
+  it('onlineOnly filtra por presença', () => {
     const onlineSet = new Set(['p1', 'p3']);
-    const r = applySearchFilters(PROVIDERS, { statusFilter: 'online_only', onlineSet });
+    const r = applySearchFilters(PROVIDERS, { onlineOnly: true, onlineSet });
     expect(r.map((p) => p.id).sort()).toEqual(['p1', 'p3']);
   });
 });
