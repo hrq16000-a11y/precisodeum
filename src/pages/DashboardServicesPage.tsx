@@ -33,6 +33,8 @@ import {
 } from '@/lib/serviceQualityLinter';
 import { CheckCircle2, AlertTriangle, Sparkles, Award } from 'lucide-react';
 import AdQualityScore from '@/components/dashboard/AdQualityScore';
+import AdLivePreview from '@/components/dashboard/AdLivePreview';
+import GoldChecklist from '@/components/dashboard/GoldChecklist';
 import WizardLegalDisclaimer from '@/components/dashboard/WizardLegalDisclaimer';
 import MetroExpandSuggestion from '@/components/dashboard/MetroExpandSuggestion';
 import GeoPermissionStep from '@/components/dashboard/GeoPermissionStep';
