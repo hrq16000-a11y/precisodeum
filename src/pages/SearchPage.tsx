@@ -1127,7 +1127,7 @@ const SearchPage = () => {
                                   transition={{ duration: 0.3 }}
                                   layout
                                 >
-                                  <ProviderCard provider={p} isFallback={isFallback} />
+                                  <ProviderRenderer provider={p} isFallback={isFallback} />
                                 </motion.div>
                               ))}
                             </motion.div>
@@ -1148,7 +1148,7 @@ const SearchPage = () => {
                               transition={{ duration: 0.35 }}
                               layout
                             >
-                              <ProviderCard provider={p} isFallback={isFallback} />
+                              <ProviderRenderer provider={p} isFallback={isFallback} />
                             </motion.div>
                             {/* Inject sponsor ad every 5 results */}
                             {(idx + 1) % 5 === 0 && (
@@ -1197,7 +1197,7 @@ const SearchPage = () => {
                           transition={{ duration: 0.35 }}
                           layout
                         >
-                          <ProviderCard provider={p} isFallback={isFallback} />
+                          <ProviderRenderer provider={p} isFallback={isFallback} />
                         </motion.div>
                       ))}
                     </motion.div>
@@ -1256,7 +1256,7 @@ const SearchPage = () => {
                           transition={{ duration: 0.35 }}
                           layout
                         >
-                          <ProviderCard provider={p} isFallback={true} />
+                          <ProviderRenderer provider={p} isFallback={true} />
                         </motion.div>
                       ))}
                     </motion.div>
