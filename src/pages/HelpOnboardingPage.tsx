@@ -67,6 +67,16 @@ export default function HelpOnboardingPage() {
     canonical: `${SITE_BASE_URL}/ajuda/cadastro`,
   });
 
+  // Telemetria: marca a visita à página de ajuda — usado para suprimir
+  // exit-intent redundante e medir conversão por canal.
+  useEffect(() => {
+    markHelpPageVisited();
+  }, []);
+
+  const handleSupportClick = () => {
+    markSupportContacted({ source: 'help_page' });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-amber-50/20 dark:to-amber-950/10">
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
@@ -103,7 +113,7 @@ export default function HelpOnboardingPage() {
               asChild
               className="gap-2 bg-gradient-to-r from-emerald-500 to-green-600 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)] hover:opacity-95"
             >
-              <a href={waUrl} target="_blank" rel="noopener noreferrer">
+              <a href={waUrl} target="_blank" rel="noopener noreferrer" onClick={handleSupportClick}>
                 <MessageCircle className="h-4 w-4" />
                 Falar no WhatsApp
               </a>
