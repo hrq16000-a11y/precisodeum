@@ -312,7 +312,7 @@ const LoginPage = () => {
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
                   </div>
                   <div className="text-right">
-                    <button type="button" onClick={() => { setShowForgot(true); setForgotEmail(email); }}
+                    <button type="button" onClick={() => navigate('/esqueci-senha', { state: { email } })}
                       className="text-xs text-accent hover:underline">
                       Esqueci minha senha
                     </button>
