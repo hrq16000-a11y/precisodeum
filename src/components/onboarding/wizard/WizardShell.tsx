@@ -37,7 +37,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
-import { trackOnboardingEvent } from './phases/v2/telemetry';
+import { trackOnboardingEvent, setOnboardingIntent } from './phases/v2/telemetry';
 import {
   initialWizardState,
   mapMainPhaseToUnified,
