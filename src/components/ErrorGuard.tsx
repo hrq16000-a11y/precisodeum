@@ -13,6 +13,7 @@ interface State {
   error: Error | null;
   reportId: string | null;
   reporting: boolean;
+  copied: boolean;
 }
 
 /**
