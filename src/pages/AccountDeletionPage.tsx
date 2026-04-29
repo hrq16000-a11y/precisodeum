@@ -15,6 +15,12 @@ const SUPPORT_EMAIL = "contato@precisodeum.com.br";
 type Status = "idle" | "sending" | "sent" | "error";
 
 const AccountDeletionPage = () => {
+  useSeoHead({
+    title: `Excluir minha conta | ${APP_NAME}`,
+    description: `Solicite a exclusão da sua conta e dos seus dados pessoais no ${APP_NAME}. Atendemos a LGPD e às políticas do Google Play.`,
+    canonical: `${SITE_BASE_URL}/excluir-conta`,
+  });
+
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [reason, setReason] = useState("");
