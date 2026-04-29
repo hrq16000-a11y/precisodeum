@@ -499,7 +499,7 @@ Deno.serve(async (req) => {
         const { error } = await admin.rpc("nearby_providers" as any, {
           _lat: -23.55,
           _lng: -46.63,
-          _radius_km: 50,
+          _radius_m: 50000,
           _limit: 5,
         });
         tests.push({
