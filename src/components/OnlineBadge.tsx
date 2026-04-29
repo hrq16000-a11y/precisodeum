@@ -88,6 +88,25 @@ export function OnlineBadge({
   // badges entirely so the card falls back gracefully to rating / "Disponível hoje".
   if (health === 'degraded') return null;
 
+  // Discrete skeleton during the initial Realtime handshake — avoids
+  // a jarring "Online" appearing 1–2s after card mount.
+  if (health === 'connecting' && !presence && !lastSeen) {
+    const padding = size === 'md' ? 'px-2.5 py-1' : 'px-2 py-0.5';
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full bg-muted/30 ring-1 ring-border/50 animate-pulse',
+          padding,
+          className,
+        )}
+        aria-hidden="true"
+      >
+        <span className="inline-flex h-2 w-2 rounded-full bg-muted-foreground/30" />
+        <span className="h-2 w-10 rounded-full bg-muted-foreground/20" />
+      </span>
+    );
+  }
+
   // Offline state with optional lastSeen tooltip
   if (!presence) {
     if (!showOffline || !lastSeen) return null;
