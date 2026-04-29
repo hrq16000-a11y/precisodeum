@@ -63,12 +63,48 @@ export function trackCardView(providerId: string, slug: string, source = 'home')
   trackEvent({ event: 'card_view', provider_id: providerId, slug, source });
 }
 
-export function trackWhatsAppClick(providerId: string, slug: string, source = 'home') {
+function getUaHash(): string {
+  try {
+    const key = 'pdu_ua_hash';
+    let v = localStorage.getItem(key);
+    if (!v) {
+      v = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem(key, v);
+    }
+    return v;
+  } catch { return 'anon'; }
+}
+
+async function recordLeadInteraction(
+  providerId: string,
+  type: 'whatsapp' | 'phone' | 'profile' | 'click' | 'share',
+  source: string,
+  serviceId?: string,
+) {
+  try {
+    await supabase.rpc('track_lead_interaction', {
+      _provider_id: providerId,
+      _service_id: serviceId ?? null,
+      _type: type,
+      _source: source,
+      _ua_hash: getUaHash(),
+    });
+  } catch { /* silent — tracking não bloqueia ação */ }
+}
+
+export function trackWhatsAppClick(providerId: string, slug: string, source = 'home', serviceId?: string) {
   trackEvent({ event: 'click_whatsapp', provider_id: providerId, slug, source });
+  void recordLeadInteraction(providerId, 'whatsapp', source, serviceId);
+}
+
+export function trackPhoneClick(providerId: string, slug: string, source = 'home', serviceId?: string) {
+  trackEvent({ event: 'click_whatsapp', provider_id: providerId, slug, source, extra: { kind: 'phone' } });
+  void recordLeadInteraction(providerId, 'phone', source, serviceId);
 }
 
 export function trackProfileClick(providerId: string, slug: string, source = 'home') {
   trackEvent({ event: 'click_profile', provider_id: providerId, slug, source });
+  void recordLeadInteraction(providerId, 'profile', source);
 }
 
 export function trackBannerClick(sponsorId: string, source = 'home') {
