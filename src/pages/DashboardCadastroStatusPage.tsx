@@ -61,7 +61,7 @@ const DashboardCadastroStatusPage = () => {
   useSeoHead({
     title: 'Status do cadastro — Precisodeum',
     description: 'Acompanhe os eventos e diagnósticos do seu cadastro.',
-    noIndex: true,
+    noindex: true,
   });
 
   const [rows, setRows] = useState<EventRow[]>([]);
