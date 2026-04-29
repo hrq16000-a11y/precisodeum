@@ -9,7 +9,16 @@ import { Mail, AlertCircle, CheckCircle2, ArrowLeft, Clock } from 'lucide-react'
 
 type Status = 'idle' | 'sending' | 'sent' | 'cooldown' | 'not_found' | 'error';
 
-const COOLDOWN_SECONDS = 30;
+const COOLDOWN_SECONDS = 60;
+const COOLDOWN_KEY = 'forgot-password:cooldown-until';
+
+const formatCooldown = (s: number): string => {
+  if (s <= 0) return '0s';
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  if (m === 0) return `${r}s`;
+  return `${m}min ${r.toString().padStart(2, '0')}s`;
+};
 
 const ForgotPasswordPage = () => {
   const location = useLocation();
@@ -22,10 +31,24 @@ const ForgotPasswordPage = () => {
 
   useEffect(() => {
     document.title = 'Esqueci minha senha | Preciso de Um';
+    // Restaura cooldown persistido (sobrevive a reload)
+    try {
+      const until = Number(localStorage.getItem(COOLDOWN_KEY) || '0');
+      const remaining = Math.ceil((until - Date.now()) / 1000);
+      if (remaining > 0) setCooldown(remaining);
+    } catch { /* noop */ }
   }, []);
 
+  const startCooldown = (seconds: number) => {
+    setCooldown(seconds);
+    try { localStorage.setItem(COOLDOWN_KEY, String(Date.now() + seconds * 1000)); } catch { /* noop */ }
+  };
+
   useEffect(() => {
-    if (cooldown <= 0) return;
+    if (cooldown <= 0) {
+      try { localStorage.removeItem(COOLDOWN_KEY); } catch { /* noop */ }
+      return;
+    }
     const t = setTimeout(() => setCooldown(c => c - 1), 1000);
     return () => clearTimeout(t);
   }, [cooldown]);
@@ -41,7 +64,7 @@ const ForgotPasswordPage = () => {
     e.preventDefault();
     if (cooldown > 0) {
       setStatus('cooldown');
-      setMessage(`Aguarde ${cooldown}s antes de pedir um novo e-mail.`);
+      setMessage(`Aguarde ${formatCooldown(cooldown)} antes de pedir um novo e-mail.`);
       return;
     }
     const err = validate(email);
@@ -60,16 +83,14 @@ const ForgotPasswordPage = () => {
       if (/rate|too.?many|over.?email.?send/.test(msg)) {
         setStatus('cooldown');
         setMessage('Muitos pedidos seguidos. Tente novamente em alguns minutos.');
-        setCooldown(COOLDOWN_SECONDS);
+        startCooldown(COOLDOWN_SECONDS * 2);
         toast.error('Muitos pedidos seguidos. Aguarde alguns minutos.');
         return;
       }
       if (/user.?not.?found|no.?such.?user|invalid.?email/.test(msg)) {
-        // Por segurança, NÃO confirmamos publicamente que o e-mail não existe.
-        // Mostramos a mesma tela de "enviamos se existir".
         setStatus('not_found');
         setMessage('Se este e-mail estiver cadastrado, você receberá um link de redefinição em instantes. Verifique também a caixa de spam.');
-        setCooldown(COOLDOWN_SECONDS);
+        startCooldown(COOLDOWN_SECONDS);
         return;
       }
       setStatus('error');
@@ -79,7 +100,7 @@ const ForgotPasswordPage = () => {
     }
     setStatus('sent');
     setMessage('Enviamos um link de redefinição para seu e-mail. O link expira em 1 hora.');
-    setCooldown(COOLDOWN_SECONDS);
+    startCooldown(COOLDOWN_SECONDS);
     toast.success('Link de recuperação enviado!');
   };
 
@@ -129,8 +150,8 @@ const ForgotPasswordPage = () => {
               >
                 {status === 'sending' && 'Enviando...'}
                 {cooldown > 0 && status !== 'sending' && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Clock className="h-4 w-4" /> Reenviar em {cooldown}s
+                  <span className="inline-flex items-center gap-1.5" aria-live="polite">
+                    <Clock className="h-4 w-4" /> Reenviar em {formatCooldown(cooldown)}
                   </span>
                 )}
                 {cooldown === 0 && status !== 'sending' && 'Enviar link de redefinição'}

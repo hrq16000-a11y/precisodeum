@@ -45,8 +45,10 @@ const ResetPasswordPage = () => {
     if (error) {
       toast.error('Erro ao redefinir senha: ' + error.message);
     } else {
+      // Encerra a sessão de recovery para forçar login com a nova senha
+      try { await supabase.auth.signOut(); } catch { /* noop */ }
       toast.success('Senha redefinida com sucesso!');
-      navigate('/dashboard');
+      navigate('/senha-redefinida', { replace: true });
     }
   };
 
