@@ -310,7 +310,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       const businessName = isPj ? (companyName || fullName) : fullName;
       const providerPayload = normalizeProviderPayload({
         user_id: user.id,
-        account_type: isPj ? 'pj' : 'pf',
+        account_type: isPj ? 'company' : 'autonomous',
         business_name: businessName || null,
         legal_name: isPj ? (companyName || fullName) : fullName,
         cpf,
@@ -319,7 +319,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         phone: state.whatsapp,
         city: state.city,
         state: state.state,
-        neighborhood: '', // NOT NULL — wizard não captura ainda; V2/Dashboard refina depois.
+        neighborhood: (state.neighborhood || '').trim(),
         description: '',
       });
 
