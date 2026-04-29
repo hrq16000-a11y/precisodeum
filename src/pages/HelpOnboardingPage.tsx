@@ -68,6 +68,21 @@ export default function HelpOnboardingPage() {
     canonical: `${SITE_BASE_URL}/ajuda/cadastro`,
   });
 
+  // FAQ Schema JSON-LD para rich snippets nas SERPs (Google FAQ rich result)
+  const faqJsonLd = useMemo(
+    () => ({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faq.map((item) => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: { '@type': 'Answer', text: item.a },
+      })),
+    }),
+    [],
+  );
+  useJsonLd(faqJsonLd);
+
   // Telemetria: marca a visita à página de ajuda — usado para suprimir
   // exit-intent redundante e medir conversão por canal.
   useEffect(() => {
