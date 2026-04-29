@@ -15,6 +15,7 @@ import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DashboardHealthCheck } from '@/components/dashboard/DashboardHealthCheck';
 import NotificationPermissionGate from '@/components/dashboard/NotificationPermissionGate';
+import { useDashboardSessionPing } from '@/hooks/useDashboardSessionPing';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
