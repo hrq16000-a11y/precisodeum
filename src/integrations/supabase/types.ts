@@ -3487,6 +3487,7 @@ export type Database = {
           cnpj: string | null
           community_verified: boolean
           community_verified_at: string | null
+          completion_boost_until: string | null
           content_flags: Json | null
           cpf: string | null
           created_at: string
@@ -3552,6 +3553,7 @@ export type Database = {
           cnpj?: string | null
           community_verified?: boolean
           community_verified_at?: string | null
+          completion_boost_until?: string | null
           content_flags?: Json | null
           cpf?: string | null
           created_at?: string
@@ -3617,6 +3619,7 @@ export type Database = {
           cnpj?: string | null
           community_verified?: boolean
           community_verified_at?: string | null
+          completion_boost_until?: string | null
           content_flags?: Json | null
           cpf?: string | null
           created_at?: string
@@ -7186,6 +7189,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Json
       }
+      get_provider_clicks_24h: {
+        Args: { _provider_id: string }
+        Returns: number
+      }
       get_provider_daily_post: {
         Args: { _provider_id: string }
         Returns: {
@@ -7424,6 +7431,7 @@ export type Database = {
           _radius_m?: number
         }
         Returns: {
+          activity_signal: string
           business_name: string
           category_icon: string
           category_name: string
@@ -7523,6 +7531,7 @@ export type Database = {
             Args: { _referral_code: string; _referred_id: string }
             Returns: boolean
           }
+      register_service_completion: { Args: never; Returns: Json }
       reschedule_lead_followup: {
         Args: { _lead_id: string; _next_at: string; _note?: string }
         Returns: undefined

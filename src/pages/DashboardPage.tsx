@@ -53,6 +53,8 @@ import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
 import DashboardAnalytics from '@/components/dashboard/DashboardAnalytics';
 import AdPerformanceWidget from '@/components/dashboard/AdPerformanceWidget';
 import { useProviderActivityHeartbeat } from '@/hooks/useProviderActivityHeartbeat';
+import { useLeadInteractionPing } from '@/hooks/useLeadInteractionPing';
+import ServiceCompletionCard from '@/components/dashboard/ServiceCompletionCard';
 import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWidget';
 import RegionalDemandWidget from '@/components/dashboard/RegionalDemandWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
@@ -95,6 +97,9 @@ const DashboardPage = () => {
   // Heartbeat de presença persistido (alimenta get_missed_opportunities)
   usePresenceHeartbeat(user?.id, !!provider?.id);
   useProviderActivityHeartbeat(user?.id);
+
+  // Ping de Sucesso: toast em tempo real ao receber clique no WhatsApp/telefone
+  useLeadInteractionPing();
 
   // PWA: missão "App Instalado" (+30 pts) + smart reminder ao abrir standalone
   usePwaMission(user?.id, provider?.id);
@@ -666,6 +671,11 @@ const DashboardPage = () => {
       {/* Contador de Impacto Real (24h) — visualizações e cliques de contato */}
       <div className="mt-4" data-tour="contact-impact">
         <ContactImpactWidget />
+      </div>
+
+      {/* Ciclo de Fechamento — botão "Concluí um serviço" (boost +15% por 3 dias) */}
+      <div className="mt-4">
+        <ServiceCompletionCard />
       </div>
 
       {/* Engagement Loop — guides the user to the next highest-impact action */}

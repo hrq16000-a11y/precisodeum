@@ -20,6 +20,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
 import { OnlineBadge } from '@/components/OnlineBadge';
+import ActivitySignalBadge from '@/components/ActivitySignalBadge';
 import { useProviderActivity } from '@/hooks/useProviderActivity';
 import { useEngagementPoints } from '@/hooks/useEngagementPoints';
 import { getEngagementTier } from '@/lib/engagementTiers';
@@ -216,6 +217,11 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   } else {
     // Sem destaque ativo: se ficou offline recentemente (lastSeen), badge "Offline" com tooltip
     badges.push(<OnlineBadge key="offline-lastseen" userId={provider.userId} showOffline />);
+  }
+
+  // Sinal de Vida (Recency Factor) — em alta / responde rápido / ativo recente
+  if (provider.activitySignal && !isOnline) {
+    badges.push(<ActivitySignalBadge key="activity-signal" signal={provider.activitySignal} />);
   }
 
   const visibleBadges = badges.slice(0, MAX_BADGES_MOBILE);
