@@ -100,7 +100,7 @@ export function usePresenceTracker(userId: string | undefined, meta?: { city?: s
     subscriberCount++;
 
     const timer = setTimeout(() => {
-      ch.track({ user_id: userId, city: meta?.city });
+      ch.track({ user_id: userId, city: meta?.city, online_since: Date.now() });
     }, 500);
 
     return () => {
@@ -134,7 +134,7 @@ function getSnapshot() {
   return onlineUsers;
 }
 
-export function useOnlineUsersMap(): Map<string, { city?: string }> {
+export function useOnlineUsersMap(): Map<string, OnlinePresenceMeta> {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
@@ -147,6 +147,12 @@ export function useOnlineProviders(): Set<string> {
 export function useIsProviderOnline(userId: string | undefined): boolean {
   const map = useOnlineUsersMap();
   return useMemo(() => !!userId && map.has(userId), [map, userId]);
+}
+
+/** Returns presence meta (including onlineSince timestamp) for a single provider */
+export function useProviderPresence(userId: string | undefined): OnlinePresenceMeta | null {
+  const map = useOnlineUsersMap();
+  return useMemo(() => (userId ? map.get(userId) ?? null : null), [map, userId]);
 }
 
 /** Count online users in a specific city */
