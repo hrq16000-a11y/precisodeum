@@ -43,6 +43,8 @@ export interface SearchFilterOptions {
   onlineSet?: Set<string>;
   activeTodaySet?: Set<string>;
   routeCorridor?: RouteCorridor | null;
+  /** When false (default), online providers are pulled to the top after sorting (stable partition). */
+  disableOnlineBoost?: boolean;
 }
 
 export function applySearchFilters<T extends FilterableProvider>(
