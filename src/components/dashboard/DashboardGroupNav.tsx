@@ -39,6 +39,7 @@ const DashboardGroupNav = () => {
         { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes' },
         { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade' },
         { label: 'Privacidade', icon: ShieldCheck, path: '/dashboard/privacidade' },
+        { label: 'Consentimentos', icon: ShieldCheck, path: '/dashboard/auditoria-consentimentos' },
         { label: 'Status do cadastro', icon: Activity, path: '/dashboard/cadastro-status' },
       ],
     },
