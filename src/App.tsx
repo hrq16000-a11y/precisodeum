@@ -19,6 +19,7 @@ const MobileBottomNav = reactLazy(() => importWithRetry(() => import("./componen
 const BackToTopButton = reactLazy(() => importWithRetry(() => import("./components/BackToTopButton")));
 const ScrollProgressBar = reactLazy(() => importWithRetry(() => import("./components/ui/ScrollProgressBar")));
 const ImpersonationBanner = reactLazy(() => importWithRetry(() => import("./components/admin/ImpersonationBanner")));
+const GlobalExitIntentDialog = reactLazy(() => importWithRetry(() => import("./components/GlobalExitIntentDialog")));
 import { useAuth } from "@/hooks/useAuth";
 import { initializeUiFreezeMonitor } from "@/lib/uiFreezeMonitor";
 import { appendWizardResetDebugLog } from "@/lib/wizardResetDebug";
@@ -363,6 +364,7 @@ const App = () => {
             <WhatsAppGateInterceptor />
             <Suspense fallback={null}><OAuthRedirectHandler /></Suspense>
             <Suspense fallback={null}><ImpersonationBanner /></Suspense>
+            <Suspense fallback={null}><GlobalExitIntentDialog /></Suspense>
             <Suspense fallback={<PageFallback />}>
               <LazyRouteBoundary>
               <OnboardingGate>
