@@ -73,7 +73,7 @@ export default function CompanyProfile() {
   const { data: company, isLoading, error } = useQuery({
     queryKey: ['company-profile', slug],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('providers')
         .select(
           'id, user_id, slug, business_name, legal_name, description, photo_url, city, state, neighborhood, phone, whatsapp, latitude, longitude, rating_avg, review_count, account_type, business_segment, street, street_number, complement, postal_code, social_links, founded_year, team_size',
@@ -83,7 +83,7 @@ export default function CompanyProfile() {
         .is('deleted_at', null)
         .maybeSingle();
       if (error) throw error;
-      return data as CompanyRow | null;
+      return (data as unknown) as CompanyRow | null;
     },
     enabled: !!slug,
     staleTime: 1000 * 60 * 2,
