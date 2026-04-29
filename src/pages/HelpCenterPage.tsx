@@ -6,7 +6,8 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import { whatsappLink } from '@/lib/whatsapp';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Search, HelpCircle, Users, Briefcase, CreditCard, Shield, MessageCircle, ChevronDown } from 'lucide-react';
+import { Search, HelpCircle, Users, Briefcase, CreditCard, Shield, MessageCircle, ChevronDown, Wifi, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FALLBACK_PHONE = '5541997452053';
