@@ -306,6 +306,16 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
             {altSubtitle && (
               <p className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">{altSubtitle}</p>
             )}
+            {(() => {
+              const specialties = extractSpecialties([provider.description, provider.category, provider.businessName]);
+              if (specialties.length === 0) return null;
+              return (
+                <p className="mt-1 truncate text-[11px] text-muted-foreground" title={`Especialista em: ${specialties.join(', ')}`}>
+                  <span className="font-semibold text-foreground/80">Especialista em:</span>{' '}
+                  {specialties.join(' · ')}
+                </p>
+              );
+            })()}
             {hasLocation && (
               <div className="mt-1 flex min-w-0 max-w-full flex-wrap items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="h-3 w-3 shrink-0" />
