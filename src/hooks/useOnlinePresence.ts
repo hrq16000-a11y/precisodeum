@@ -242,6 +242,43 @@ export function useLastPresenceSync(): number {
   return lastSyncAt;
 }
 
+/** Default window after which a user is no longer considered "recently offline". */
+export const RECENTLY_OFFLINE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+/** Returns the realtime channel health, so UI can fallback when Supabase Realtime is down. */
+export function useRealtimeHealth(): RealtimeHealth {
+  useOnlineUsersMap();
+  return realtimeHealth;
+}
+
+/** Returns true if the user went offline within the given window (default 10min). */
+export function useIsRecentlyOffline(
+  userId: string | undefined,
+  windowMs: number = RECENTLY_OFFLINE_WINDOW_MS,
+): boolean {
+  useOnlineUsersMap();
+  if (!userId) return false;
+  if (onlineUsers.has(userId)) return false;
+  const seen = lastSeenMap.get(userId);
+  if (!seen) return false;
+  return Date.now() - seen <= windowMs;
+}
+
+/** Returns the set of users that went offline within the given window. */
+export function useRecentlyOfflineSet(windowMs: number = RECENTLY_OFFLINE_WINDOW_MS): Set<string> {
+  useOnlineUsersMap();
+  return useMemo(() => {
+    const set = new Set<string>();
+    const now = Date.now();
+    lastSeenMap.forEach((seen, userId) => {
+      if (!onlineUsers.has(userId) && now - seen <= windowMs) set.add(userId);
+    });
+    return set;
+  // lastSyncAt is the proxy that drives re-evaluation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastSyncAt, windowMs]);
+}
+
 /** Count online users in a specific city */
 export function useOnlineCountByCity(city: string | null): number {
   const map = useOnlineUsersMap();
