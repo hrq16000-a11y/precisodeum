@@ -151,6 +151,15 @@ export default function WizardShell() {
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
   const progressOrder = state.triage.intent === 'professional' ? PROVIDER_WIZARD_PHASE_ORDER : undefined;
 
+  // Sincroniza intent real do reducer → sessionStorage para auto-injeção em
+  // todos os eventos de telemetria (milestone, skip, next, error, complete).
+  useEffect(() => {
+    const i = state.triage.intent;
+    if (i === 'professional' || i === 'client' || i === 'rh') {
+      setOnboardingIntent(i);
+    }
+  }, [state.triage.intent]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
       <ExitIntentDialog
