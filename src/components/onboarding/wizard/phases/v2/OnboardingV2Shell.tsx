@@ -807,7 +807,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     } catch (e: any) {
       logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'publish_first_service' } });
       toast.error('Erro ao publicar serviço', {
-        description: (e?.message || 'tente novamente').slice(0, 160),
+        description: `${(e?.message || 'tente novamente').slice(0, 140)} — Tire um print desta tela e envie ao suporte para resolvermos rapidamente.`,
+        duration: 12000,
         action: { label: 'Tentar novamente', onClick: () => { void persistFirstService(); } },
       });
       return false;
