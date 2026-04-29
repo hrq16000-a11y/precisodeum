@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Archive, Download, ShieldCheck, Loader2, FileText,
   CheckCircle2, Circle, Eye, EyeOff, Trash2, RefreshCw, ListChecks, Server, Webhook,
-  Fingerprint, AlertTriangle,
+  Fingerprint, AlertTriangle, KeyRound, Rocket, PlayCircle, XCircle,
 } from "lucide-react";
 
 // ---------------- Helpers ----------------
@@ -102,21 +102,25 @@ export default function AdminPortabilityPage() {
         </header>
 
         <Tabs defaultValue="bundle" className="w-full">
-          <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full h-auto">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 w-full h-auto">
             <TabsTrigger value="bundle"><Archive className="size-4 mr-2" />ZIP único</TabsTrigger>
             <TabsTrigger value="env"><Server className="size-4 mr-2" />Variáveis</TabsTrigger>
+            <TabsTrigger value="secrets"><KeyRound className="size-4 mr-2" />Secrets</TabsTrigger>
             <TabsTrigger value="checklist"><ListChecks className="size-4 mr-2" />Checklist</TabsTrigger>
             <TabsTrigger value="snapshots"><Archive className="size-4 mr-2" />Snapshots</TabsTrigger>
             <TabsTrigger value="validate"><ShieldCheck className="size-4 mr-2" />Validação</TabsTrigger>
             <TabsTrigger value="userref"><Fingerprint className="size-4 mr-2" />user_ref</TabsTrigger>
+            <TabsTrigger value="restore"><Rocket className="size-4 mr-2" />Restaurar</TabsTrigger>
           </TabsList>
 
           <TabsContent value="bundle"><BundleTab /></TabsContent>
           <TabsContent value="env"><EnvTab /></TabsContent>
+          <TabsContent value="secrets"><SecretsTab /></TabsContent>
           <TabsContent value="checklist"><ChecklistTab /></TabsContent>
           <TabsContent value="snapshots"><SnapshotsTab /></TabsContent>
           <TabsContent value="validate"><ValidateTab /></TabsContent>
           <TabsContent value="userref"><UserRefAuditTab /></TabsContent>
+          <TabsContent value="restore"><RestoreTab /></TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
@@ -623,10 +627,15 @@ function UserRefAuditTab() {
               Chave mestra para portabilidade. Verifica tipo, índices e cobertura em todas as tabelas.
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
-            <RefreshCw className={`size-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Recarregar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => exportUserRefCsv(rows)} disabled={rows.length === 0}>
+              <Download className="size-4 mr-2" />Exportar CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
+              <RefreshCw className={`size-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+              Recarregar
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -700,6 +709,255 @@ function UserRefAuditTab() {
           <div className="text-xs text-muted-foreground space-y-1">
             <p><strong>Tipo esperado:</strong> <code>text</code> em todas as tabelas (consistência confirmada).</p>
             <p><strong>Recomendação:</strong> tabelas sem índice em <code>user_ref</code> devem receber <code>CREATE INDEX</code> antes de importar grandes volumes.</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ---------------- user_ref CSV export ----------------
+
+function exportUserRefCsv(rows: UserRefRow[]) {
+  const header = ["table_name", "data_type", "total_rows", "filled", "missing", "has_index"];
+  const lines = [header.join(",")];
+  for (const r of rows) {
+    lines.push([r.table_name, r.data_type, r.total_rows, r.filled, r.missing, r.has_index ? "yes" : "no"].join(","));
+  }
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  downloadBlob(blob, `user-ref-audit-${new Date().toISOString().slice(0, 10)}.csv`);
+  toast.success("Relatório CSV gerado");
+}
+
+// ---------------- Secrets Tab ----------------
+
+type SecretRow = {
+  name: string;
+  required: boolean;
+  group: string;
+  status: "configured" | "pending" | "optional";
+  length: number;
+};
+
+function SecretsTab() {
+  const [data, setData] = useState<{ summary: any; secrets: SecretRow[] } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const reload = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${FUNCTION_URL("portability-restore")}?action=secrets-checklist`, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      setData(json);
+    } catch (e: any) {
+      toast.error(`Erro: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { reload(); }, [reload]);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="size-5" />Checklist de Secrets do novo host
+          </CardTitle>
+          <CardDescription>
+            Status (configurado / pendente) com base nas variáveis declaradas em <code>.env.example</code>.
+            Consultado em tempo real na edge function.
+          </CardDescription>
+        </div>
+        <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
+          <RefreshCw className={`size-4 mr-2 ${loading ? "animate-spin" : ""}`} />Recarregar
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {data && (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="border rounded-lg p-3">
+              <div className="text-xs text-muted-foreground">Configurados</div>
+              <div className="text-2xl font-bold text-green-600">{data.summary.configured}</div>
+            </div>
+            <div className="border rounded-lg p-3">
+              <div className="text-xs text-muted-foreground">Pendentes</div>
+              <div className="text-2xl font-bold text-destructive">{data.summary.pending}</div>
+            </div>
+            <div className="border rounded-lg p-3">
+              <div className="text-xs text-muted-foreground">Opcionais</div>
+              <div className="text-2xl font-bold text-muted-foreground">{data.summary.optional}</div>
+            </div>
+          </div>
+        )}
+        <div className="space-y-2">
+          {data?.secrets.map((s) => (
+            <div key={s.name} className="border rounded-lg p-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <code className="font-mono text-sm font-semibold">{s.name}</code>
+                <div className="text-xs text-muted-foreground">grupo: {s.group} · {s.required ? "obrigatória" : "opcional"}</div>
+              </div>
+              {s.status === "configured" && <Badge className="bg-green-600 hover:bg-green-700"><CheckCircle2 className="size-3 mr-1" />configurado ({s.length}c)</Badge>}
+              {s.status === "pending" && <Badge variant="destructive"><AlertTriangle className="size-3 mr-1" />pendente</Badge>}
+              {s.status === "optional" && <Badge variant="secondary">opcional</Badge>}
+            </div>
+          ))}
+          {!data && !loading && <p className="text-sm text-muted-foreground">Sem dados.</p>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------- Restore Tab ----------------
+
+type RestoreStep = {
+  id: string;
+  title: string;
+  hint: string;
+  action: "schema-integrity" | "storage-checksums" | "smoke-tests" | "manual";
+  manualText?: string;
+};
+
+const RESTORE_STEPS: RestoreStep[] = [
+  { id: "create_db", title: "1. Criar banco de dados no novo host", hint: "Postgres 15+ com pgcrypto, pg_trgm, unaccent, pg_cron, pg_net, postgis.", action: "manual",
+    manualText: "psql -c \"CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS unaccent; CREATE EXTENSION IF NOT EXISTS pg_cron; CREATE EXTENSION IF NOT EXISTS pg_net; CREATE EXTENSION IF NOT EXISTS postgis;\"" },
+  { id: "apply_schema", title: "2. Aplicar schema (estrutura, RLS, triggers)", hint: "psql -v ON_ERROR_STOP=1 -f db/01-schema.sql", action: "manual",
+    manualText: "psql \"$NEW_DB\" -v ON_ERROR_STOP=1 -f db/01-schema.sql" },
+  { id: "import_data", title: "3. Importar dados (data-only, ordem das dependências)", hint: "Use db/per-table/*.sql ou 02-data.sql.", action: "manual",
+    manualText: "psql \"$NEW_DB\" -c \"SET session_replication_role = replica;\"\nfor f in db/per-table/*.sql; do psql \"$NEW_DB\" -v ON_ERROR_STOP=1 -f \"$f\"; done\npsql \"$NEW_DB\" -c \"SET session_replication_role = DEFAULT;\"" },
+  { id: "schema_integrity", title: "4. Validar integridade do schema", hint: "Confere tabelas críticas e cobertura de user_ref.", action: "schema-integrity" },
+  { id: "recreate_cron", title: "5. Recriar cron jobs", hint: "psql -f cron/recreate-cron-jobs.sql", action: "manual",
+    manualText: "psql \"$NEW_DB\" -f cron/recreate-cron-jobs.sql" },
+  { id: "download_media", title: "6. Subir mídia do Storage", hint: "node scripts/download-storage.mjs --upload ./storage", action: "manual",
+    manualText: "node scripts/download-storage.mjs --upload ./storage" },
+  { id: "storage_checksums", title: "7. Comparar checksums dos buckets", hint: "Recalcula SHA-256 de cada arquivo restaurado.", action: "storage-checksums" },
+  { id: "smoke_tests", title: "8. Rodar smoke tests", hint: "RPCs, tabelas críticas e listagem de buckets.", action: "smoke-tests" },
+];
+
+function RestoreTab() {
+  const [logs, setLogs] = useState<{ step: string; ts: string; level: "info" | "ok" | "error"; msg: string; data?: any }[]>([]);
+  const [running, setRunning] = useState<string | null>(null);
+  const [results, setResults] = useState<Record<string, "ok" | "error" | "pending">>({});
+
+  const log = (step: string, level: "info" | "ok" | "error", msg: string, data?: any) => {
+    setLogs((l) => [...l, { step, ts: new Date().toISOString(), level, msg, data }]);
+  };
+
+  const runAction = async (step: RestoreStep) => {
+    if (step.action === "manual") return;
+    setRunning(step.id);
+    log(step.id, "info", `Iniciando "${step.title}"...`);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${FUNCTION_URL("portability-restore")}?action=${step.action}`, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      const ok = json.ok !== false;
+      log(step.id, ok ? "ok" : "error", ok ? "Etapa concluída com sucesso." : "Falha detectada.", json);
+      setResults((r) => ({ ...r, [step.id]: ok ? "ok" : "error" }));
+      if (ok) toast.success(`${step.title} ✔`);
+      else toast.error(`Falha em: ${step.title}`);
+    } catch (e: any) {
+      log(step.id, "error", e.message);
+      setResults((r) => ({ ...r, [step.id]: "error" }));
+      toast.error(e.message);
+    } finally {
+      setRunning(null);
+    }
+  };
+
+  const runAll = async () => {
+    for (const s of RESTORE_STEPS) {
+      if (s.action !== "manual") {
+        await runAction(s);
+      }
+    }
+  };
+
+  const exportLogs = () => {
+    const text = logs.map((l) => `[${l.ts}] [${l.level.toUpperCase()}] ${l.step}: ${l.msg}${l.data ? "\n  " + JSON.stringify(l.data) : ""}`).join("\n");
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    downloadBlob(blob, `restore-log-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.txt`);
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+          <div>
+            <CardTitle className="flex items-center gap-2"><Rocket className="size-5" />Restaurar em novo host</CardTitle>
+            <CardDescription>
+              Fluxo sequencial com etapas manuais (comandos shell) e automatizadas (validação no backend).
+              O pacote só deve ser marcado como "pronto" quando todas as etapas automatizadas passarem.
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={exportLogs} disabled={logs.length === 0}>
+              <Download className="size-4 mr-2" />Exportar logs
+            </Button>
+            <Button size="sm" onClick={runAll} disabled={!!running}>
+              <PlayCircle className="size-4 mr-2" />Rodar todas as automáticas
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {RESTORE_STEPS.map((s) => {
+            const r = results[s.id];
+            return (
+              <div key={s.id} className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{s.title}</span>
+                      {r === "ok" && <Badge className="bg-green-600 hover:bg-green-700"><CheckCircle2 className="size-3 mr-1" />OK</Badge>}
+                      {r === "error" && <Badge variant="destructive"><XCircle className="size-3 mr-1" />Falhou</Badge>}
+                      {s.action === "manual" && <Badge variant="outline">manual</Badge>}
+                      {s.action !== "manual" && <Badge variant="secondary">automática</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{s.hint}</p>
+                  </div>
+                  {s.action !== "manual" && (
+                    <Button size="sm" onClick={() => runAction(s)} disabled={running === s.id}>
+                      {running === s.id ? <Loader2 className="size-4 mr-2 animate-spin" /> : <PlayCircle className="size-4 mr-2" />}
+                      Executar
+                    </Button>
+                  )}
+                </div>
+                {s.manualText && (
+                  <pre className="text-[11px] bg-muted/50 rounded p-2 overflow-x-auto font-mono">{s.manualText}</pre>
+                )}
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Logs detalhados</CardTitle>
+          <CardDescription>{logs.length} entrada(s).</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-muted/30 rounded-lg p-3 max-h-96 overflow-auto font-mono text-[11px] space-y-1">
+            {logs.length === 0 && <p className="text-muted-foreground">Nenhum log ainda. Execute uma etapa automática.</p>}
+            {logs.map((l, i) => (
+              <div key={i} className={l.level === "error" ? "text-destructive" : l.level === "ok" ? "text-green-600" : ""}>
+                <span className="opacity-60">[{l.ts.slice(11, 19)}]</span>{" "}
+                <span className="font-semibold">{l.step}</span>{" "}
+                {l.msg}
+                {l.data && (
+                  <pre className="ml-4 opacity-80 whitespace-pre-wrap">{JSON.stringify(l.data, null, 2).slice(0, 800)}{JSON.stringify(l.data).length > 800 ? "…" : ""}</pre>
+                )}
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
