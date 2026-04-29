@@ -4,6 +4,8 @@ import {
   useProviderPresence,
   useProviderLastSeen,
   useLastPresenceSync,
+  useRealtimeHealth,
+  RECENTLY_OFFLINE_WINDOW_MS,
 } from '@/hooks/useOnlinePresence';
 import { cn } from '@/lib/utils';
 
