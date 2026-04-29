@@ -680,7 +680,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         // Estado local já tem ID → confiar e seguir para herança/conclusão.
       } else {
         const reusedId = await findExistingFirstService(
-          state.providerId,
+          workingProviderId,
           categoryId,
           resolvedCategoryName,
         );
@@ -692,7 +692,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             'realign_first_service',
             {
               _service_id: reusedId,
-              _provider_id: state.providerId,
+              _provider_id: workingProviderId,
               _category_id: categoryId,
             },
           );
@@ -706,7 +706,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 reason: 'realign_first_service_failed',
                 error: realignErr?.message || realignData?.error || 'unknown',
                 serviceId: reusedId,
-                providerId: state.providerId,
+                providerId: workingProviderId,
                 categoryId,
               },
             });
@@ -721,7 +721,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         } else {
           // 1) RPC oficial — cria serviço atomicamente
           const { data, error } = await (supabase as any).rpc('create_service_atomic', {
-            _provider_id: state.providerId,
+            _provider_id: workingProviderId,
             _service_name: resolvedCategoryName, // ← invariante reforçada
             _description: s.description || '',
             _whatsapp: p.whatsapp,
@@ -747,7 +747,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       const updates: any = { category_id: categoryId };
       if (workingHoursSummary) updates.working_hours = workingHoursSummary;
       if (s.starting_price_brl != null) updates.starting_price = s.starting_price_brl;
-      await supabase.from('providers').update(updates).eq('id', state.providerId);
+      await supabase.from('providers').update(updates).eq('id', workingProviderId);
 
       // ── READ-BACK INVARIANTE (fail-loud, auto-heal) ────────────────────────
       // Confirma no banco que:
@@ -761,7 +761,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         if (sid) {
           const [{ data: svcRow }, { data: provRow }] = await Promise.all([
             supabase.from('services').select('service_name, category_id').eq('id', sid).maybeSingle(),
-            supabase.from('providers').select('category_id').eq('id', state.providerId).maybeSingle(),
+            supabase.from('providers').select('category_id').eq('id', workingProviderId).maybeSingle(),
           ]);
           const dbName = (svcRow?.service_name || '').trim();
           const dbSvcCat = svcRow?.category_id || null;
@@ -791,7 +791,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               'realign_first_service',
               {
                 _service_id: sid,
-                _provider_id: state.providerId,
+                _provider_id: workingProviderId,
                 _category_id: categoryId,
               },
             );
@@ -804,7 +804,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               const fixProv = supabase
                 .from('providers')
                 .update({ category_id: categoryId })
-                .eq('id', state.providerId);
+                .eq('id', workingProviderId);
               const [r1, r2] = await Promise.all([fixSvc, fixProv]);
               if (r1.error || r2.error) {
                 toast.error('Não foi possível alinhar a categoria do serviço. Tente novamente.');
