@@ -16,6 +16,7 @@ import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import AdNativeCard from '@/components/ads/AdNativeCard';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import type { FeaturedProviderSort } from '@/hooks/useProviders';
+import CompanyCard from '@/components/cards/CompanyCard';
 
 interface Props {
   providers: DbProvider[];
