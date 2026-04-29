@@ -30,6 +30,7 @@ import {
   type ExitIntentIntent,
   type ExitIntentVariant,
 } from '@/lib/exitIntentVariants';
+import { markSupportContacted, shouldSuppressExitIntent } from '@/lib/conversionFunnel';
 
 const INACTIVITY_MS = 30_000;
 const STORAGE_KEY = 'wizard:exit-intent-shown';
@@ -92,6 +93,9 @@ export default function ExitIntentDialog({
   const trigger = useCallback(
     (source: 'mouseleave' | 'inactivity') => {
       if (triggeredRef.current) return;
+      // Suprime se o usuário já clicou no WhatsApp ou já visitou /ajuda/cadastro
+      // nesta sessão — evita pop-up redundante.
+      if (shouldSuppressExitIntent()) return;
       try {
         if (sessionStorage.getItem(STORAGE_KEY) === '1') return;
       } catch {
@@ -145,11 +149,13 @@ export default function ExitIntentDialog({
 
   const handleWhatsApp = useCallback(() => {
     tracker('exit_intent_whatsapp', baseMeta);
+    // Telemetria de funil: marca origem 'exit_intent' e suprime futuros pop-ups.
+    markSupportContacted({ source: 'exit_intent', intent, phase, variant });
     if (typeof window !== 'undefined') {
       window.open(copy.whatsappUrl, '_blank', 'noopener,noreferrer');
     }
     setOpen(false);
-  }, [tracker, baseMeta, copy.whatsappUrl]);
+  }, [tracker, baseMeta, copy.whatsappUrl, intent, phase, variant]);
 
   const handleDismiss = useCallback(() => {
     tracker('exit_intent_dismiss', baseMeta);

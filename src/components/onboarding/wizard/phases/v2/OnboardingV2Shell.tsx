@@ -980,10 +980,18 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onChangeProfile={patchProfile}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_contact' }); }}
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
+            firstServiceId={state.firstServiceId}
             onSkip={() => {
-              track('skip', { exit: 'phase4_document' });
-              toast.info('Tudo certo. Vamos continuar seu perfil e você cadastra o serviço depois.');
-              void continueWithoutFirstService();
+              // Milestone — só permite "configurar depois" quando JÁ existe um service_id.
+              if (!state.firstServiceId) {
+                toast.warning(
+                  'Falta pouco! Publique seu primeiro serviço para que os clientes já possam te encontrar enquanto você termina o resto depois.',
+                );
+                return;
+              }
+              track('skip', { exit: 'dashboard', milestone: 'first_service_done' });
+              toast.success('Progresso salvo! Você pode continuar de onde parou no painel.');
+              window.location.assign('/dashboard');
             }}
           />
         );
@@ -997,10 +1005,19 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_service' }); }}
             saving={saving}
             onSkip={async () => {
-              track('skip');
+              // "Salvar progresso e configurar meu painel depois" em Phase2Details:
+              // só faz sentido se a persistência do serviço ocorrer com sucesso.
+              track('skip', { milestone: 'first_service_save_only' });
               const ok = await persistFirstService();
-              if (ok) dispatch({ type: 'NEXT' });
-              else track('error', { reason: 'persist_service_failed' });
+              if (ok) {
+                toast.success('Serviço publicado! Você pode terminar o resto depois no painel.');
+                window.location.assign('/dashboard');
+              } else {
+                track('error', { reason: 'persist_service_failed' });
+                toast.error(
+                  'Falta pouco! Não conseguimos publicar agora — revise os campos e tente novamente.',
+                );
+              }
             }}
             onSubmit={async () => {
               track('submit');
