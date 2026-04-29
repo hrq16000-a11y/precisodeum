@@ -48,7 +48,8 @@ describe('Cadastro — validação de WhatsApp em pt-BR', () => {
     if (!r.valid) expect(r.message).toMatch(/Informe o WhatsApp com DDD/i);
   });
   it('mostra mensagem pt-BR para DDD inválido', () => {
-    const r = validateWhatsapp('00912345678');
+    // 11 dígitos com DDD 09 (inválido) — passa o filtro de length e cai em invalid_ddd
+    const r = validateWhatsapp('09912345678');
     expect(r.valid).toBe(false);
     if (!r.valid) {
       expect(r.reason).toBe('invalid_ddd');
