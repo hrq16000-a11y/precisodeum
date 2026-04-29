@@ -26,6 +26,44 @@ interface ServiceWizardProps {
   categories: any[];
   onComplete: (serviceId: string) => void;
   onCancel: () => void;
+  /** Posição deste serviço (1-based). Quando informado, o header mostra
+   * uma contagem expressa contextual ("2º serviço", "penúltimo", etc.). */
+  serviceNumber?: number;
+  /** Limite total de serviços do plano. Default: 5. */
+  maxServices?: number;
+}
+
+/** Devolve "1º", "2º"… (português, masculino) — fallback "Nº". */
+const ordinalPt = (n: number): string => {
+  if (n >= 1 && n <= 10) return `${n}º`;
+  return `${n}º`;
+};
+
+/** Mensagem contextual de contagem expressa para o cabeçalho do wizard. */
+function buildCountdownCopy(current: number, max: number): { title: string; subtitle: string } {
+  const remainingAfter = Math.max(0, max - current);
+  if (current === 1) {
+    return {
+      title: `Seu 1º serviço — vamos começar!`,
+      subtitle: `Você poderá cadastrar até ${max} no total.`,
+    };
+  }
+  if (current === max) {
+    return {
+      title: `Último serviço — após este você terá ${max} anúncios ativos`,
+      subtitle: `Capricha! Esse é o fechamento do seu portfólio.`,
+    };
+  }
+  if (current === max - 1) {
+    return {
+      title: `Penúltimo serviço — falta só 1 depois deste`,
+      subtitle: `Após finalizar, restará ${remainingAfter} cadastro disponível.`,
+    };
+  }
+  return {
+    title: `Você está cadastrando seu ${ordinalPt(current)} serviço`,
+    subtitle: `Após finalizar, você libera mais ${remainingAfter} cadastro${remainingAfter === 1 ? '' : 's'}.`,
+  };
 }
 
 const STEPS = [
@@ -35,7 +73,7 @@ const STEPS = [
 ] as const;
 
 /* ───── Component ───── */
-const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, onCancel }: ServiceWizardProps) => {
+const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, onCancel, serviceNumber, maxServices = 5 }: ServiceWizardProps) => {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [createdServiceId, setCreatedServiceId] = useState<string | null>(null);
@@ -279,15 +317,40 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           <Store className="h-5 w-5 text-accent" />
           <span className="font-display text-sm font-bold text-foreground">Cadastro Express</span>
         </div>
+        {typeof serviceNumber === 'number' && serviceNumber >= 1 && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent"
+            aria-label={`Serviço ${serviceNumber} de ${maxServices}`}
+          >
+            <Sparkles className="h-3 w-3" />
+            {serviceNumber}/{maxServices}
+          </span>
+        )}
       </div>
 
       <div className="text-center">
-        <h1 className="font-display text-xl font-bold text-foreground">
-          Seu serviço pronto em <span className="text-accent italic">2 minutos</span>
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          3 passos rápidos para criar seu anúncio profissional.
-        </p>
+        {typeof serviceNumber === 'number' && serviceNumber >= 1 ? (
+          (() => {
+            const c = buildCountdownCopy(serviceNumber, maxServices);
+            return (
+              <>
+                <h1 className="font-display text-xl font-bold text-foreground">
+                  {c.title}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">{c.subtitle}</p>
+              </>
+            );
+          })()
+        ) : (
+          <>
+            <h1 className="font-display text-xl font-bold text-foreground">
+              Seu serviço pronto em <span className="text-accent italic">2 minutos</span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              3 passos rápidos para criar seu anúncio profissional.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Progress bar */}

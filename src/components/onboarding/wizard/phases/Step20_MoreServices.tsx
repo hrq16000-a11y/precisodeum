@@ -127,6 +127,8 @@ const Step20_MoreServices = ({ onContinue, onSkip }: Step20Props) => {
             userId={user.id}
             provider={providerFull}
             categories={categories}
+            serviceNumber={(count ?? 0) + 1}
+            maxServices={MAX_SERVICES}
             onComplete={handleServiceCreated}
             onCancel={() => setEditorOpen(false)}
           />
