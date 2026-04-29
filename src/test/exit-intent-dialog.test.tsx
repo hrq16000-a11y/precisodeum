@@ -8,6 +8,11 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ExitIntentDialog from '@/components/onboarding/wizard/ExitIntentDialog';
 import { setSessionVariantForTest } from '@/lib/exitIntentVariants';
+import {
+  markHelpPageVisited,
+  markSupportContacted,
+  resetConversionFunnelForTest,
+} from '@/lib/conversionFunnel';
 
 const STORAGE_KEY = 'wizard:exit-intent-shown';
 
@@ -36,6 +41,7 @@ function fireMouseLeaveTop() {
 describe('ExitIntentDialog', () => {
   beforeEach(() => {
     sessionStorage.clear();
+    resetConversionFunnelForTest();
     setSessionVariantForTest('A');
     // window.open mock — evita popup real
     (window as any).open = vi.fn();
@@ -124,5 +130,21 @@ describe('ExitIntentDialog', () => {
     await act(async () => fireMouseLeaveTop());
     const dialog = screen.getByTestId('exit-intent-dialog');
     expect(dialog.textContent?.toLowerCase()).toMatch(/encontrar|profissional|indica/);
+  });
+
+  it('é suprimido se o usuário JÁ contatou suporte (markSupportContacted)', async () => {
+    markSupportContacted({ source: 'help_page' });
+    const { tracker } = renderDialog();
+    await act(async () => fireMouseLeaveTop());
+    expect(screen.queryByTestId('exit-intent-dialog')).not.toBeInTheDocument();
+    expect(tracker).not.toHaveBeenCalledWith('exit_intent_shown', expect.anything());
+  });
+
+  it('é suprimido se o usuário JÁ visitou /ajuda/cadastro (markHelpPageVisited)', async () => {
+    markHelpPageVisited();
+    const { tracker } = renderDialog();
+    await act(async () => fireMouseLeaveTop());
+    expect(screen.queryByTestId('exit-intent-dialog')).not.toBeInTheDocument();
+    expect(tracker).not.toHaveBeenCalledWith('exit_intent_shown', expect.anything());
   });
 });
