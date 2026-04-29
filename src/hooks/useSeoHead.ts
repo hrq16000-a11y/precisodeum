@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { DEFAULT_LOGO_URL, DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL, SITE_BASE_URL as SITE_URL, socialImageUrl, toAbsoluteSiteUrl } from '@/lib/siteAssets';
+import { buildCanonicalUrl } from '@/lib/canonicalUrl';
 import { normalizeSocialImageUrl } from '@/lib/imageUrlNormalizer';
 
 interface SeoHeadProps {
@@ -126,7 +127,6 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     }
 
     // Canonical & og:url — sempre via helper compartilhado (absoluto e normalizado).
-    const { buildCanonicalUrl } = await import('@/lib/canonicalUrl');
     const canonicalUrl = buildCanonicalUrl(canonical || window.location.pathname);
     setMeta('og:url', canonicalUrl, 'property');
 
