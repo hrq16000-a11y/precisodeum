@@ -53,6 +53,8 @@ import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
 import DashboardAnalytics from '@/components/dashboard/DashboardAnalytics';
 import AdPerformanceWidget from '@/components/dashboard/AdPerformanceWidget';
 import { useProviderActivityHeartbeat } from '@/hooks/useProviderActivityHeartbeat';
+import { useLeadInteractionPing } from '@/hooks/useLeadInteractionPing';
+import ServiceCompletionCard from '@/components/dashboard/ServiceCompletionCard';
 import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWidget';
 import RegionalDemandWidget from '@/components/dashboard/RegionalDemandWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
