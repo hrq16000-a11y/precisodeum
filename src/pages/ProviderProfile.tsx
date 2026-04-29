@@ -993,6 +993,10 @@ const ProviderProfile = () => {
           }
         : {}),
       ...(sameAs.length > 0 ? { sameAs } : {}),
+      ...(seoSpecialties.length > 0 ? { knowsAbout: seoSpecialties } : {}),
+      ...(isPadraoOuro ? {
+        award: 'Padrão Ouro — Profissional ativo e bem avaliado na plataforma',
+      } : {}),
       ...(services && services.length > 0
         ? {
             hasOfferCatalog: {
