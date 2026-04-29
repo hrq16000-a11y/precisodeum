@@ -39,6 +39,7 @@ import PhaseProLocation from './PhaseProLocation';
 import PhaseCelebration from './PhaseCelebration';
 
 import { initialBetState, type BetState, type BetIntent, type BetPhase } from './types';
+import { setOnboardingIntent } from '../v2/telemetry';
 
 type Action =
   | { type: 'PATCH'; patch: Partial<BetState> }
@@ -196,6 +197,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
 
   function pickIntent(intent: BetIntent) {
     patch({ intent });
+    // Persiste intent real (sticky por sessão) para auto-injeção em toda telemetria.
+    setOnboardingIntent(
+      intent === 'professional' || intent === 'client' || intent === 'rh' ? intent : null,
+    );
     if (intent === 'professional') {
       goto('pro_kind');
       return;

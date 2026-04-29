@@ -7,13 +7,14 @@
  * Objetivo: aumentar conversão sem depender só do exit-intent — usuário pode
  * entrar aqui via link no próprio pop-up ou pelo footer/navegação.
  */
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, HelpCircle, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 import { markHelpPageVisited, markSupportContacted } from '@/lib/conversionFunnel';
 
 const SUPPORT_WHATSAPP = '5541997452053';
@@ -66,6 +67,21 @@ export default function HelpOnboardingPage() {
       'Tire suas dúvidas sobre o cadastro de profissional na Preciso de um Profissional. Suporte direto pelo WhatsApp.',
     canonical: `${SITE_BASE_URL}/ajuda/cadastro`,
   });
+
+  // FAQ Schema JSON-LD para rich snippets nas SERPs (Google FAQ rich result)
+  const faqJsonLd = useMemo(
+    () => ({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faq.map((item) => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: { '@type': 'Answer', text: item.a },
+      })),
+    }),
+    [],
+  );
+  useJsonLd(faqJsonLd);
 
   // Telemetria: marca a visita à página de ajuda — usado para suprimir
   // exit-intent redundante e medir conversão por canal.

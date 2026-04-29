@@ -37,7 +37,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
-import { trackOnboardingEvent } from './phases/v2/telemetry';
+import { trackOnboardingEvent, setOnboardingIntent } from './phases/v2/telemetry';
 import {
   initialWizardState,
   mapMainPhaseToUnified,
@@ -150,6 +150,15 @@ export default function WizardShell() {
   const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
   const progressOrder = state.triage.intent === 'professional' ? PROVIDER_WIZARD_PHASE_ORDER : undefined;
+
+  // Sincroniza intent real do reducer → sessionStorage para auto-injeção em
+  // todos os eventos de telemetria (milestone, skip, next, error, complete).
+  useEffect(() => {
+    const i = state.triage.intent;
+    if (i === 'professional' || i === 'client' || i === 'rh') {
+      setOnboardingIntent(i);
+    }
+  }, [state.triage.intent]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
