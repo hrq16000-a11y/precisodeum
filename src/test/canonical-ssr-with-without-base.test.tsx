@@ -36,12 +36,13 @@ function getOgUrl() {
 async function renderSeo(path: string) {
   // Reset module cache to re-read SITE_BASE_URL for each scenario.
   vi.resetModules();
-  const { useSeoHead, SITE_BASE_URL } = await import('@/hooks/useSeoHead');
+  const { useSeoHead } = await import('@/hooks/useSeoHead');
+  const { getSiteBaseUrl } = await import('@/lib/canonicalUrl');
   window.history.replaceState({}, '', path);
   renderHook(() =>
     useSeoHead({ title: 'Teste', description: 'descrição válida com mais de 50 caracteres aqui.' }),
   );
-  return SITE_BASE_URL;
+  return getSiteBaseUrl();
 }
 
 describe('Canonical SSR — com e sem SITE_BASE_URL', () => {
