@@ -136,7 +136,7 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).toContain('deferCompletionToParent');
     expect(shell).toContain('Continuar cadastrando serviços');
     expect(shell).toContain('Abrir portfólio');
-    expect(shell).toContain('Ir para o dashboard');
+    expect(shell).toContain('Conhecer o dashboard');
     expect(shell).toContain('InstallAppCard');
   });
 
