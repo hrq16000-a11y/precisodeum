@@ -603,30 +603,18 @@ const DashboardPage = () => {
         avatarUrl={profile?.avatar_url || undefined}
       />
 
-      {/* 1) Painel "Saúde e Performance" — métricas + score gamificado + tendência + atividade */}
+      {/* ===== ORDEM: AÇÕES ÚTEIS PRIMEIRO, MÉTRICAS DEPOIS =====
+          Diretriz UX: o usuário precisa AGIR antes de ver estatísticas.
+          Métricas (DashboardAnalytics, AdPerformance, LeadAnalytics, etc.) ficam
+          abaixo das ações úteis (QuickActions, Onboarding, Obra do Dia). */}
+
+      {/* 1) Ações Rápidas no topo — primeira coisa visível e mais útil */}
       <div className="mt-6">
-        <DashboardAnalytics />
-      </div>
-
-      {/* 1b) Desempenho do Anúncio — cliques reais + diagnóstico */}
-      {provider?.id && (
-        <div className="mt-4">
-          <AdPerformanceWidget providerId={provider.id} hasPhoto={!!provider?.photo_url} />
-        </div>
-      )}
-
-      {/* Mantém UnifiedHealthScore como complemento de completude rápida */}
-      <div className="mt-4">
-        <UnifiedHealthScore score={completenessPercent} remaining={remainingItems} />
-      </div>
-
-      {/* 2) Ações Rápidas no topo — primeira coisa visível */}
-      <div className="mt-4">
         <QuickActionsHero />
       </div>
 
-      {/* 3) "Como funciona" — checklist de onboarding logo abaixo do topo,
-             sincronizado com o estado real (services/portfolio/profile). */}
+      {/* 2) "Como funciona" — checklist de onboarding sincronizado com o estado real
+             (services/portfolio/profile). Mostra progressão imediata. */}
       <div className="mt-4">
         <OnboardingCompletionTracker
           servicesCount={servicesCount ?? 0}
@@ -634,10 +622,27 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* 4) Obra do Dia — ação principal de frescor, próxima ao topo */}
+      {/* 3) Score rápido de completude */}
+      <div className="mt-4">
+        <UnifiedHealthScore score={completenessPercent} remaining={remainingItems} />
+      </div>
+
+      {/* 4) Obra do Dia — ação principal de frescor */}
       {provider?.id && (
         <div className="mt-4">
           <DailyPostCard />
+        </div>
+      )}
+
+      {/* 5) MÉTRICAS E INSIGHTS — abaixo das ações, conforme prioridade definida */}
+      <div className="mt-6">
+        <DashboardAnalytics />
+      </div>
+
+      {/* 5b) Desempenho do Anúncio — métrica detalhada */}
+      {provider?.id && (
+        <div className="mt-4">
+          <AdPerformanceWidget providerId={provider.id} hasPhoto={!!provider?.photo_url} />
         </div>
       )}
 

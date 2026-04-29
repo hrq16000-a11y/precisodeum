@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube, Palette, Eye, Type, Layout, Link2, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube, Palette, Eye, Type, Layout, Link2, Sparkles } from 'lucide-react';
 import ThemePreview from '@/components/dashboard/ThemePreview';
 
 const THEMES = [
@@ -141,6 +142,22 @@ const DashboardMyPagePage = () => {
         setTheme((data as any).theme || 'default');
       }
       setLoading(false);
+
+      // Visitar a página de personalização já marca o passo "Personalize sua
+      // página" como concluído na esteira de onboarding (a maioria dos usuários
+      // só ajusta cor/tema e sai sem clicar em Salvar — antes disso o passo
+      // ficava preso e nunca progredia).
+      try {
+        const current = ((provider as any)?.onboarding_progress as Record<string, unknown>) || {};
+        if (!current.page_customized) {
+          await supabase
+            .from('providers')
+            .update({ onboarding_progress: { ...current, page_customized: true } })
+            .eq('id', provider.id);
+        }
+      } catch (e) {
+        console.warn('[MyPage] auto-mark page_customized falhou:', e);
+      }
     };
     fetch();
   }, [provider]);
@@ -276,13 +293,20 @@ const DashboardMyPagePage = () => {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto space-y-5">
+        {/* Botão Voltar — visível em mobile e desktop */}
+        <Button variant="ghost" size="sm" asChild className="-ml-2 self-start">
+          <Link to="/dashboard" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Voltar ao Dashboard
+          </Link>
+        </Button>
+
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
             <h1 className="font-display text-2xl font-bold text-foreground">Minha Página</h1>
             <p className="text-sm text-muted-foreground">Personalize sua vitrine profissional</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {provider.slug && (
               <Button variant="outline" size="sm" asChild>
                 <a href={`/profissional/${provider.slug}`} target="_blank" rel="noopener noreferrer">
@@ -291,7 +315,7 @@ const DashboardMyPagePage = () => {
               </Button>
             )}
             <Button onClick={handleSave} disabled={saving} size="sm" variant="accent">
-              {saving ? 'Salvando...' : '💾 Salvar'}
+              {saving ? 'Salvando...' : 'Salvar'}
             </Button>
           </div>
         </div>
