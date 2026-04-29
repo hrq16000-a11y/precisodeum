@@ -63,14 +63,6 @@ const AccountDeletionPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Excluir minha conta | {APP_NAME}</title>
-        <meta
-          name="description"
-          content={`Solicite a exclusão da sua conta e dos seus dados pessoais no ${APP_NAME}. Atendemos a LGPD e às políticas do Google Play.`}
-        />
-        <link rel="canonical" href="https://precisodeum.com.br/excluir-conta" />
-      </Helmet>
 
       <header className="border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
