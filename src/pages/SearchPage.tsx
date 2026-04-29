@@ -94,7 +94,23 @@ const SearchPage = () => {
   const [activeTodayOnly, setActiveTodayOnly] = useState(false);
 
   const [showOutOfState, setShowOutOfState] = useState(false);
-  const [page, setPage] = useState(1);
+  const initialPage = (() => {
+    const raw = parseInt(searchParams.get('page') || '1', 10);
+    return Number.isFinite(raw) && raw > 0 ? raw : 1;
+  })();
+  const [page, setPage] = useState(initialPage);
+
+  // Persiste `page` na URL para que o usuário possa compartilhar/voltar
+  // a uma página específica. Mantém demais params; remove quando page=1.
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (page > 1) next.set('page', String(page));
+    else next.delete('page');
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
