@@ -19,6 +19,7 @@ import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
+import { OnlineBadge } from '@/components/OnlineBadge';
 import { useProviderActivity } from '@/hooks/useProviderActivity';
 import { useEngagementPoints } from '@/hooks/useEngagementPoints';
 import { getEngagementTier } from '@/lib/engagementTiers';
