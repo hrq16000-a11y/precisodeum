@@ -318,5 +318,16 @@ export function resolveMetroRegion(normalizedGeo: string, stateNorm?: string): M
   return null;
 }
 
+/**
+ * Retorna a lista de membros (cidades-satélites + polo) de uma RM,
+ * a partir do nome da cidade-polo (forma livre — será normalizada).
+ * Útil para o Wizard expandir 1-clique o atendimento e para SEO local.
+ */
+export function getMetroMembers(poleCity: string | null | undefined): string[] {
+  if (!poleCity) return [];
+  const metro = findMetroByPole(normalize(poleCity));
+  return metro ? [...metro.members] : [];
+}
+
 export { METRO_REGIONS };
 export type { MetroRegion };

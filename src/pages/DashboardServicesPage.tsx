@@ -43,6 +43,19 @@ import {
   clearServiceWizardDraft,
   useServiceWizardDraftAutosave,
 } from '@/hooks/useServiceWizardDraft';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { findMetroByPole, getMetroMembers } from '@/lib/metroRegions';
+import { validateWhatsapp } from '@/lib/whatsapp';
+import { ShieldAlert, UserCheck } from 'lucide-react';
 
 // Heavy editor sub-components — only loaded when the edit Dialog opens
 const SmartCategoryPicker = lazy(() => import('@/components/SmartCategoryPicker'));
@@ -219,6 +232,15 @@ const DashboardServicesPage = () => {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [geoDetected, setGeoDetected] = useState(false);
   const cityRef = useRef<HTMLDivElement>(null);
+
+  // Kill-switch modal (score < 50% OR > 3 leilão hits)
+  const [blockModal, setBlockModal] = useState<{ open: boolean; score: number; hits: number; reasons: string[] }>({
+    open: false, score: 0, hits: 0, reasons: [],
+  });
+  // Final consent (Step 4) — checkbox de responsabilidade direta
+  const [finalConsent, setFinalConsent] = useState(false);
+  // Bônus visual quando o prestador expande para a RM
+  const [metroBonus, setMetroBonus] = useState(false);
 
   const [form, setForm] = useState({
     service_name: '',
@@ -426,18 +448,58 @@ const DashboardServicesPage = () => {
     }
     // Linter anti-leilão: avisa para qualquer hit, mas só BLOQUEIA o save
     // quando a descrição contém mais que LEILAO_BLOCK_THRESHOLD termos.
-    // Esta regra dá margem educativa para o prestador antes de barrar.
     const forbiddenHits = lintServiceDescription(form.description);
-    if (shouldBlockByLeilao(forbiddenHits)) {
-      errors.description = `Foram detectados ${forbiddenHits.length} termos de leilão (limite: ${LEILAO_BLOCK_THRESHOLD}). Use o botão "Reescrever com qualidade" ou substitua manualmente.`;
-    } else if (forbiddenHits.length > 0) {
-      // Apenas exibe alerta no toast — não bloqueia o save
+    if (forbiddenHits.length > 0 && !shouldBlockByLeilao(forbiddenHits)) {
       toast.warning(`Atenção: ${forbiddenHits.length} termo(s) de leilão na descrição`, {
         description: `Sugestão para "${forbiddenHits[0].term}": ${forbiddenHits[0].suggestion}`,
         duration: 5000,
       });
     }
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+
+    // ── KILL-SWITCH (HARD STOP) ─────────────────────────────────────────────
+    // Bloqueia fisicamente o save quando o anúncio não atinge o padrão mínimo.
+    // Regras: score < 50% OU mais de 3 termos de leilão.
+    const selectedSlugsForGate = selectedCategoryIds
+      .map((id) => categories.find((c: any) => c.id === id)?.slug)
+      .filter(Boolean) as string[];
+    const cityValidatedForGate = isCatalogedCity(cleanedArea, ALL_CITIES);
+    const gateScore = computeAdScore({
+      description: form.description,
+      hasOriginalPhoto: !!newServicePhoto || (!!editId && !!serviceImages[editId]),
+      cityValidated: cityValidatedForGate,
+      categorySlugs: selectedSlugsForGate,
+    });
+    const blockReasons: string[] = [];
+    if (gateScore.score < 50) blockReasons.push(`Score atual ${gateScore.score}% (mínimo 50%)`);
+    if (forbiddenHits.length > LEILAO_BLOCK_THRESHOLD) {
+      blockReasons.push(`${forbiddenHits.length} termos de leilão (limite ${LEILAO_BLOCK_THRESHOLD})`);
+    }
+    if (blockReasons.length > 0) {
+      // Auditoria fail-soft da tentativa bloqueada
+      try {
+        const providerId = provider?.id || null;
+        await (supabase.from as any)('service_quality_log').insert({
+          service_id: null,
+          provider_id: providerId,
+          user_id: user?.id,
+          initial_score: gateScore.score,
+          final_score: gateScore.score,
+          forbidden_hits: gateScore.forbiddenHits.map((h) => h.term),
+          category_keywords_hit: gateScore.matchedKeywords,
+          description_length: form.description.trim().length,
+          reason: 'blocked_by_policy',
+        });
+      } catch { /* fail-soft */ }
+      setBlockModal({ open: true, score: gateScore.score, hits: forbiddenHits.length, reasons: blockReasons });
+      return;
+    }
+    // Final consent é obrigatório para publicação (apenas em criação)
+    if (!editId && !finalConsent) {
+      toast.error('Confirme o termo de responsabilidade direta antes de publicar.');
+      return;
+    }
+
     // Coerência radius=city: trava service_area = provider.city
     let finalArea = cleanedArea;
     if (serviceRadius === 'city' && provider?.city) {
@@ -628,6 +690,8 @@ const DashboardServicesPage = () => {
     setTagInput('');
     setWizardStep('form');
     setFormStep(1);
+    setFinalConsent(false);
+    setMetroBonus(false);
     clearServiceWizardDraft(user?.id);
   };
 
@@ -1048,6 +1112,51 @@ const DashboardServicesPage = () => {
                   {formErrors.service_name && <p className="text-xs text-destructive mt-1">{formErrors.service_name}</p>}
                 </div>
 
+                {/* Auto-fill: importa Bio + Foto do perfil para acelerar o cadastro */}
+                {!editId && (provider?.description || provider?.photo_url) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const bio = (provider?.description || '').trim();
+                      const importedPhoto = !!provider?.photo_url;
+                      if (!bio && !importedPhoto) {
+                        toast.info('Seu perfil ainda não tem descrição nem foto para importar.');
+                        return;
+                      }
+                      if (bio) {
+                        setForm((prev) => ({
+                          ...prev,
+                          description: prev.description ? prev.description : bio,
+                        }));
+                      }
+                      // Roda re-linter imediatamente para mostrar se a bio "serve"
+                      const hits = bio ? lintServiceDescription(bio) : [];
+                      const slugs = selectedCategoryIds
+                        .map((id) => categories.find((c: any) => c.id === id)?.slug)
+                        .filter(Boolean) as string[];
+                      const score = computeAdScore({
+                        description: bio || form.description,
+                        hasOriginalPhoto: importedPhoto,
+                        cityValidated: isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES),
+                        categorySlugs: slugs,
+                      });
+                      const tone = score.score >= 70 ? 'success' : score.score >= 40 ? 'info' : 'warning';
+                      toast[tone](`Dados importados do seu perfil — score ${score.score}%`, {
+                        description: hits.length > 0
+                          ? `Atenção: ${hits.length} termo(s) de leilão detectado(s). Use "Reescrever com qualidade".`
+                          : score.score >= 70
+                            ? 'Sua bio do perfil está boa o suficiente para um anúncio de alta performance.'
+                            : 'Sua bio precisa de ajustes para virar um anúncio de alta performance.',
+                        duration: 5000,
+                      });
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/5 hover:bg-accent/10 px-3 py-2 text-xs font-semibold text-accent transition-colors"
+                  >
+                    <UserCheck className="h-3.5 w-3.5" />
+                    Importar dados do meu perfil (Bio + Foto)
+                  </button>
+                )}
+
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-sm font-medium text-foreground">Descrição</label>
@@ -1249,10 +1358,22 @@ const DashboardServicesPage = () => {
                   serviceRadius={serviceRadius}
                   onExpandToMetro={() => {
                     setServiceRadius('metro');
-                    toast.success('Raio expandido para Região Metropolitana', { duration: 3000 });
+                    setMetroBonus(true);
+                    const members = getMetroMembers(form.service_area);
+                    toast.success(`Alcance expandido para toda a região metropolitana (+${Math.max(1, members.length - 1)} cidades)`, { duration: 4000 });
                   }}
                 />
 
+                {/* Bônus visual: Alcance Expandido (RM) */}
+                {metroBonus && serviceRadius === 'metro' && (
+                  <div className="rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-700 p-2 flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <p className="text-[11px] text-emerald-800 dark:text-emerald-200">
+                      <strong>Alcance Expandido</strong> — seu anúncio aparecerá em buscas de até{' '}
+                      <strong>{Math.max(1, getMetroMembers(form.service_area).length)} cidades</strong> da RM.
+                    </p>
+                  </div>
+                )}
                 {/* Service Radius */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Raio de Atendimento</label>
@@ -1299,6 +1420,25 @@ const DashboardServicesPage = () => {
                     placeholder="(61) 99999-9999"
                     className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
                   />
+                  {(() => {
+                    const candidate = form.whatsapp || provider?.whatsapp || '';
+                    if (!candidate.trim()) return null;
+                    const v = validateWhatsapp(candidate);
+                    if (v.valid) {
+                      return (
+                        <p className="mt-1 text-[11px] text-emerald-600 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Número válido — leads cairão direto no seu WhatsApp.
+                        </p>
+                      );
+                    }
+                    return (
+                      <p className="mt-1 text-[11px] text-amber-600 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Formato inválido para link direto. Use DDD + 9 dígitos (ex.: 61999999999).
+                      </p>
+                    );
+                  })()}
                 </div>
 
                 {/* Photos are added in the dedicated post-publish step (1 capa + até 4 extras com drag&drop) */}
@@ -1506,6 +1646,22 @@ const DashboardServicesPage = () => {
                       cityValidated={cityValidated}
                       categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
                     />
+
+                    {/* Disclaimer final + checkbox de responsabilidade direta */}
+                    {!editId && (
+                      <label className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3 cursor-pointer">
+                        <Checkbox
+                          checked={finalConsent}
+                          onCheckedChange={(v) => setFinalConsent(v === true)}
+                          className="mt-0.5"
+                        />
+                        <span className="text-[12px] text-foreground leading-relaxed">
+                          Entendo que a plataforma é apenas uma <strong>vitrine tecnológica</strong> e que sou o
+                          <strong> único responsável pelo atendimento e garantia</strong> deste serviço. Os leads
+                          chegam direto no meu WhatsApp/telefone, sem intermediação de pagamento.
+                        </span>
+                      </label>
+                    )}
                   </div>
                 </div>
               );
@@ -1574,8 +1730,14 @@ const DashboardServicesPage = () => {
                         }
                         handleSave();
                       }}
-                      disabled={isSubmitting || !!divergence}
-                      title={divergence ? 'Divergência entre cidade do serviço e raio "Toda a cidade"' : ''}
+                      disabled={isSubmitting || !!divergence || (!editId && !finalConsent)}
+                      title={
+                        divergence
+                          ? 'Divergência entre cidade do serviço e raio "Toda a cidade"'
+                          : (!editId && !finalConsent)
+                            ? 'Confirme o termo de responsabilidade para publicar'
+                            : ''
+                      }
                     >
                       {isSubmitting ? '⏳ Salvando...' : `📢 ${editId ? 'Salvar' : 'Publicar'}`}
                     </Button>
@@ -1593,6 +1755,39 @@ const DashboardServicesPage = () => {
         context="service"
         providerSlug={provider?.slug ?? null}
       />
+
+      {/* Kill-Switch: modal de conscientização quando score<50% ou >3 termos de leilão */}
+      <AlertDialog open={blockModal.open} onOpenChange={(o) => setBlockModal((s) => ({ ...s, open: o }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-5 w-5" />
+              Anúncio bloqueado pelo Padrão de Qualidade
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 pt-1">
+              <span className="block text-foreground">
+                Para proteger a valorização da sua mão de obra, não permitimos anúncios com baixo score
+                ou termos de leilão. Use o botão <strong>"Reescrever com Qualidade"</strong> para atingir
+                o Padrão Ouro e ser aprovado.
+              </span>
+              <span className="block rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-foreground">
+                <strong>Motivos detectados:</strong>
+                <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                  {blockModal.reasons.map((r, i) => (<li key={i}>{r}</li>))}
+                </ul>
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                Esta tentativa foi registrada na auditoria interna para acompanhamento.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setBlockModal({ open: false, score: 0, hits: 0, reasons: [] })}>
+              Entendi, vou melhorar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

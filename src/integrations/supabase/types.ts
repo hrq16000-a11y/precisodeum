@@ -4310,7 +4310,7 @@ export type Database = {
           initial_score: number | null
           provider_id: string | null
           reason: string | null
-          service_id: string
+          service_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -4323,7 +4323,7 @@ export type Database = {
           initial_score?: number | null
           provider_id?: string | null
           reason?: string | null
-          service_id: string
+          service_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -4336,7 +4336,7 @@ export type Database = {
           initial_score?: number | null
           provider_id?: string | null
           reason?: string | null
-          service_id?: string
+          service_id?: string | null
           user_id?: string | null
         }
         Relationships: []
