@@ -25,6 +25,22 @@ const AppVersionGate = () => {
     try { return localStorage.getItem(DISMISS_KEY); } catch { return null; }
   });
 
+  // ── AUTO PURGE em modo FORCE ────────────────────────────────────────────
+  // Regra padrão: a cada release que sobe `app_min_version`, todas as
+  // instâncias dos navegadores devem limpar SW/caches e recarregar uma única
+  // vez, sem esperar interação do usuário. Guard via localStorage evita loop.
+  useEffect(() => {
+    if (gate.loading) return;
+    if (gate.status !== 'force') return;
+    let alreadyDone = '';
+    try { alreadyDone = localStorage.getItem(AUTO_RELOAD_GUARD_KEY) || ''; } catch { /* noop */ }
+    if (alreadyDone === gate.minVersion) return;
+    try { localStorage.setItem(AUTO_RELOAD_GUARD_KEY, gate.minVersion); } catch { /* noop */ }
+    // Pequeno atraso para o React render completar e o usuário enxergar o modal.
+    const t = setTimeout(() => { void forceClientUpdate(); }, 1200);
+    return () => clearTimeout(t);
+  }, [gate.loading, gate.status, gate.minVersion]);
+
   if (gate.loading) return null;
 
   // ─────── FORCE: modal bloqueante ───────
