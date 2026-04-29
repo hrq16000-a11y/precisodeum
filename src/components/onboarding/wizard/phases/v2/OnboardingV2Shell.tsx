@@ -573,34 +573,40 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
   };
 
+  const ensureProviderId = async (): Promise<string | null> => {
+    if (!user) return null;
+    if (state.providerId) return state.providerId;
+
+    try {
+      const reusedId = await findExistingProvider(user.id, state.userRef ?? null);
+      if (reusedId) {
+        dispatch({ type: 'SET_PROVIDER_ID', id: reusedId });
+        return reusedId;
+      }
+    } catch {
+      /* noop */
+    }
+
+    const created = await persistPhase1();
+    if (!created) return null;
+
+    try {
+      const recoveredId = await findExistingProvider(user.id, state.userRef ?? null);
+      if (recoveredId) {
+        dispatch({ type: 'SET_PROVIDER_ID', id: recoveredId });
+        return recoveredId;
+      }
+    } catch {
+      /* noop */
+    }
+
+    return null;
+  };
+
   /* ───── Persistência: cria 1º serviço (Fase 2) ───── */
   const persistFirstService = async (): Promise<boolean> => {
     if (!user) return false;
-    // Auto-recuperação: se não tem providerId em memória, tenta recuperar do DB
-    // (cobre casos de reload, navegação cross-tab, ou quando o usuário voltou
-    // direto da Phase1 sem o reducer ter persistido o ID ainda).
-    let workingProviderId = state.providerId;
-    if (!workingProviderId) {
-      try {
-        const reusedId = await findExistingProvider(user.id);
-        if (reusedId) {
-          workingProviderId = reusedId;
-          dispatch({ type: 'SET_PROVIDER_ID', id: reusedId });
-        }
-      } catch { /* ignora — fallback abaixo */ }
-    }
-    // Último recurso: cria o provider agora a partir dos dados da Phase 1
-    // já preenchidos no estado (full_name, city, state, whatsapp, kind).
-    if (!workingProviderId) {
-      const created = await persistPhase1();
-      if (!created) return false;
-      // persistPhase1 dispatcha SET_PROVIDER_ID — relê do DB para garantir
-      const reusedId = await findExistingProvider(user.id);
-      if (reusedId) {
-        workingProviderId = reusedId;
-        dispatch({ type: 'SET_PROVIDER_ID', id: reusedId });
-      }
-    }
+    let workingProviderId = await ensureProviderId();
     if (!workingProviderId) {
       toast.error('Não conseguimos preparar seu perfil agora. Volte um passo e tente novamente.');
       return false;
@@ -844,12 +850,17 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   /* ───── Persistência: patches incrementais Fase 4 ───── */
   const persistPatch = async (patch: Record<string, any>): Promise<boolean> => {
-    if (!user || !state.providerId) return true;
+    if (!user) return true;
     setSaving(true);
     try {
+      const workingProviderId = await ensureProviderId();
+      if (!workingProviderId) {
+        toast.error('Não conseguimos recuperar seu perfil agora. Tente novamente em instantes.');
+        return false;
+      }
       warnIfForbiddenAddress(patch);
       const safe = normalizeProviderPayload(patch);
-      const { error } = await supabase.from('providers').update(safe as any).eq('id', state.providerId);
+      const { error } = await supabase.from('providers').update(safe as any).eq('id', workingProviderId);
       if (error) throw error;
       // Salva também tax_id no profile se vier
       if (patch.tax_id) {
