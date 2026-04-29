@@ -1,13 +1,15 @@
+import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { GraduationCap, ArrowRight, Sparkles, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
-const CoursesBanner = () => {
+const CoursesBanner = forwardRef<HTMLDivElement>((_, ref) => {
   const navigate = useNavigate();
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.5 }}
@@ -52,6 +54,8 @@ const CoursesBanner = () => {
       </div>
     </motion.div>
   );
-};
+});
+
+CoursesBanner.displayName = 'CoursesBanner';
 
 export default CoursesBanner;
