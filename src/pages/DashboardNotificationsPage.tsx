@@ -146,7 +146,15 @@ const DashboardNotificationsPage = () => {
             Historico completo com {notifications.length} notificacao{notifications.length !== 1 ? 's' : ''}.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/dashboard/notificacoes/preferencias')}
+            className="gap-2"
+          >
+            <Settings className="h-4 w-4" /> Preferências
+          </Button>
           {unreadCount > 0 && (
             <Button variant="outline" size="sm" onClick={() => markAllAsRead()} className="gap-2">
               <CheckCheck className="h-4 w-4" /> Marcar todas como lidas
