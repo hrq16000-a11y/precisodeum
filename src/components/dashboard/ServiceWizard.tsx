@@ -73,7 +73,7 @@ const STEPS = [
 ] as const;
 
 /* ───── Component ───── */
-const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, onCancel }: ServiceWizardProps) => {
+const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, onCancel, serviceNumber, maxServices = 5 }: ServiceWizardProps) => {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [createdServiceId, setCreatedServiceId] = useState<string | null>(null);
