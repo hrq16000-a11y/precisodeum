@@ -102,6 +102,9 @@ const SearchPage = () => {
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
   const onlineSet = useOnlineProviders();
   const activeTodaySet = useActiveTodayProviders();
+  const recentlyOfflineSet = useRecentlyOfflineSet();
+  const realtimeHealth = useRealtimeHealth();
+  const [presenceStatusFilter, setPresenceStatusFilter] = useState<'all' | 'online_first' | 'online_only' | 'recently_offline'>('all');
 
   const effectiveCity = selectedCity || cityParam || geoCity || '';
 
