@@ -38,15 +38,15 @@ export const Phase1Action = ({ onSelect }: ActionProps) => {
     { type: 'sponsor' as const, icon: Megaphone, title: 'Sou Patrocinador', desc: 'Quero anunciar minha marca' },
   ];
   return (
-    <motion.div {...wizardEnter} className={ws.container}>
+    <motion.div {...wizardEnter} className={ws.container} role="region" aria-labelledby="phase1-action-title">
       <header className={ws.headerWrap}>
         <div className={ws.chip}>
-          <Sparkles className="h-3 w-3" /> Cadastro express
+          <Sparkles className="h-3 w-3" aria-hidden="true" /> Cadastro express
         </div>
-        <h1 className={ws.title}>Como você atua?</h1>
+        <h1 id="phase1-action-title" className={ws.title}>Como você atua?</h1>
         <p className={ws.subtitle}>Em 4 passos rápidos a gente coloca você no mapa.</p>
       </header>
-      <div className="grid gap-3">
+      <div className="grid gap-3" role="radiogroup" aria-labelledby="phase1-action-title">
         {cards.map(({ type, icon: Icon, title, desc }) => (
           <motion.button
             key={type}
@@ -56,16 +56,19 @@ export const Phase1Action = ({ onSelect }: ActionProps) => {
             whileTap={{ scale: 0.985 }}
             transition={{ type: 'spring', stiffness: 320, damping: 22 }}
             className={ws.selectCard}
+            role="radio"
+            aria-checked="false"
+            aria-label={`${title}: ${desc}`}
           >
             <div className="flex items-center gap-4">
               <div className={ws.selectIcon}>
-                <Icon className="h-6 w-6" />
+                <Icon className="h-6 w-6" aria-hidden="true" />
               </div>
               <div className="flex-1">
                 <h3 className="font-display text-base font-extrabold text-foreground">{title}</h3>
                 <p className="text-xs text-muted-foreground">{desc}</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-amber-500" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-amber-500" aria-hidden="true" />
             </div>
           </motion.button>
         ))}
@@ -82,31 +85,34 @@ interface KindProps {
 }
 
 export const Phase1Kind = ({ onSelect, onBack }: KindProps) => (
-  <motion.div {...wizardEnter} className={ws.container}>
-    <button onClick={onBack} className={ws.backBtn}>
-      <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+  <motion.div {...wizardEnter} className={ws.container} role="region" aria-labelledby="phase1-kind-title">
+    <button onClick={onBack} className={ws.backBtn} aria-label="Voltar para a etapa anterior">
+      <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
     </button>
     <header className={ws.headerWrap}>
-      <h1 className={ws.title}>Como vamos te identificar?</h1>
+      <h1 id="phase1-kind-title" className={ws.title}>Como vamos te identificar?</h1>
       <p className={ws.subtitle}>Você poderá editar depois.</p>
     </header>
-    <div className="grid gap-3">
+    <div className="grid gap-3" role="radiogroup" aria-labelledby="phase1-kind-title">
       <motion.button
         type="button"
         onClick={() => onSelect('pf')}
         whileHover={{ y: -2 }}
         whileTap={{ scale: 0.985 }}
         className={ws.selectCard}
+        role="radio"
+        aria-checked="false"
+        aria-label="Pessoa Física com CPF — profissional autônomo, sem CNPJ obrigatório"
       >
         <div className="flex items-center gap-4">
           <div className={ws.selectIcon}>
-            <UserRound className="h-6 w-6" />
+            <UserRound className="h-6 w-6" aria-hidden="true" />
           </div>
           <div className="flex-1">
             <h3 className="font-display text-base font-extrabold text-foreground">PF (CPF)</h3>
             <p className="text-xs text-muted-foreground">Profissional autônomo. Sem CNPJ obrigatório.</p>
           </div>
-          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         </div>
       </motion.button>
       <motion.button
@@ -115,16 +121,19 @@ export const Phase1Kind = ({ onSelect, onBack }: KindProps) => (
         whileHover={{ y: -2 }}
         whileTap={{ scale: 0.985 }}
         className={ws.selectCard}
+        role="radio"
+        aria-checked="false"
+        aria-label="Pessoa Jurídica com CNPJ — empresa, MEI ou agência"
       >
         <div className="flex items-center gap-4">
           <div className={ws.selectIcon}>
-            <Building2 className="h-6 w-6" />
+            <Building2 className="h-6 w-6" aria-hidden="true" />
           </div>
           <div className="flex-1">
             <h3 className="font-display text-base font-extrabold text-foreground">PJ (CNPJ)</h3>
             <p className="text-xs text-muted-foreground">Empresa, MEI ou agência.</p>
           </div>
-          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         </div>
       </motion.button>
     </div>
