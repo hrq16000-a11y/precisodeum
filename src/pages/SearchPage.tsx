@@ -40,7 +40,7 @@ import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import { usePinnedSponsor } from '@/hooks/usePinnedSponsor';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
 import { useUrgencyMode } from '@/hooks/useUrgencyMode';
-import { useOnlineProviders } from '@/hooks/useOnlinePresence';
+import { useOnlineProviders, useRecentlyOfflineSet, useRealtimeHealth } from '@/hooks/useOnlinePresence';
 import { useActiveTodayProviders } from '@/hooks/useActiveTodayProviders';
 import AskSystemDialog from '@/components/search/AskSystemDialog';
 import { logSearchIntent } from '@/lib/searchIntent';
