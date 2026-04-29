@@ -8,7 +8,7 @@
  * entrar aqui via link no próprio pop-up ou pelo footer/navegação.
  */
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { ArrowLeft, MessageCircle, HelpCircle, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
