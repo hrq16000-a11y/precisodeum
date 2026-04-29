@@ -3996,15 +3996,18 @@ export type Database = {
       providers: {
         Row: {
           account_type: string
+          address_complete: boolean | null
           avg_response_minutes: number | null
           birth_date: string | null
           business_name: string | null
+          business_segment: string | null
           category_custom: string | null
           category_id: string | null
           city: string
           cnpj: string | null
           community_verified: boolean
           community_verified_at: string | null
+          complement: string | null
           completion_boost_until: string | null
           content_flags: Json | null
           cpf: string | null
@@ -4039,14 +4042,18 @@ export type Database = {
           plan: string
           portfolio_album_count: number
           portfolio_photo_count: number
+          postal_code: string | null
           rating_avg: number
           response_time: string | null
           review_count: number
           service_radius: string | null
           services_count: number
           slug: string | null
+          social_links: Json
           state: string
           status: string
+          street: string | null
+          street_number: string | null
           updated_at: string
           user_id: string
           user_ref: string | null
@@ -4062,15 +4069,18 @@ export type Database = {
         }
         Insert: {
           account_type?: string
+          address_complete?: boolean | null
           avg_response_minutes?: number | null
           birth_date?: string | null
           business_name?: string | null
+          business_segment?: string | null
           category_custom?: string | null
           category_id?: string | null
           city?: string
           cnpj?: string | null
           community_verified?: boolean
           community_verified_at?: string | null
+          complement?: string | null
           completion_boost_until?: string | null
           content_flags?: Json | null
           cpf?: string | null
@@ -4105,14 +4115,18 @@ export type Database = {
           plan?: string
           portfolio_album_count?: number
           portfolio_photo_count?: number
+          postal_code?: string | null
           rating_avg?: number
           response_time?: string | null
           review_count?: number
           service_radius?: string | null
           services_count?: number
           slug?: string | null
+          social_links?: Json
           state?: string
           status?: string
+          street?: string | null
+          street_number?: string | null
           updated_at?: string
           user_id: string
           user_ref?: string | null
@@ -4128,15 +4142,18 @@ export type Database = {
         }
         Update: {
           account_type?: string
+          address_complete?: boolean | null
           avg_response_minutes?: number | null
           birth_date?: string | null
           business_name?: string | null
+          business_segment?: string | null
           category_custom?: string | null
           category_id?: string | null
           city?: string
           cnpj?: string | null
           community_verified?: boolean
           community_verified_at?: string | null
+          complement?: string | null
           completion_boost_until?: string | null
           content_flags?: Json | null
           cpf?: string | null
@@ -4171,14 +4188,18 @@ export type Database = {
           plan?: string
           portfolio_album_count?: number
           portfolio_photo_count?: number
+          postal_code?: string | null
           rating_avg?: number
           response_time?: string | null
           review_count?: number
           service_radius?: string | null
           services_count?: number
           slug?: string | null
+          social_links?: Json
           state?: string
           status?: string
+          street?: string | null
+          street_number?: string | null
           updated_at?: string
           user_id?: string
           user_ref?: string | null
@@ -6768,12 +6789,15 @@ export type Database = {
       }
       featured_providers_mv: {
         Row: {
+          account_type: string | null
           business_name: string | null
+          business_segment: string | null
           category_icon: string | null
           category_id: string | null
           category_name: string | null
           category_slug: string | null
           city: string | null
+          complement: string | null
           created_at: string | null
           description: string | null
           featured: boolean | null
@@ -6786,11 +6810,15 @@ export type Database = {
           plan: string | null
           portfolio_album_count: number | null
           portfolio_photo_count: number | null
+          postal_code: string | null
           rating_avg: number | null
           review_count: number | null
           services_count: number | null
           slug: string | null
+          social_links: Json | null
           state: string | null
+          street: string | null
+          street_number: string | null
           user_id: string | null
           user_ref: string | null
           whatsapp: string | null
@@ -7683,14 +7711,17 @@ export type Database = {
         }[]
       }
       get_featured_providers: {
-        Args: { _limit?: number }
+        Args: { _account_type?: string; _limit?: number }
         Returns: {
+          account_type: string | null
           business_name: string | null
+          business_segment: string | null
           category_icon: string | null
           category_id: string | null
           category_name: string | null
           category_slug: string | null
           city: string | null
+          complement: string | null
           created_at: string | null
           description: string | null
           featured: boolean | null
@@ -7703,11 +7734,15 @@ export type Database = {
           plan: string | null
           portfolio_album_count: number | null
           portfolio_photo_count: number | null
+          postal_code: string | null
           rating_avg: number | null
           review_count: number | null
           services_count: number | null
           slug: string | null
+          social_links: Json | null
           state: string | null
+          street: string | null
+          street_number: string | null
           user_id: string | null
           user_ref: string | null
           whatsapp: string | null
@@ -8108,6 +8143,7 @@ export type Database = {
       }
       nearby_providers: {
         Args: {
+          _account_type?: string
           _category_slug?: string
           _lat?: number
           _limit?: number
@@ -8116,12 +8152,15 @@ export type Database = {
           _radius_m?: number
         }
         Returns: {
+          account_type: string
           activity_signal: string
           business_name: string
+          business_segment: string
           category_icon: string
           category_name: string
           category_slug: string
           city: string
+          complement: string
           description: string
           distance_m: number
           featured: boolean
@@ -8135,11 +8174,15 @@ export type Database = {
           plan: string
           portfolio_album_count: number
           portfolio_photo_count: number
+          postal_code: string
           rating_avg: number
           review_count: number
           services_count: number
           slug: string
+          social_links: Json
           state: string
+          street: string
+          street_number: string
           user_id: string
           visibility_score: number
           whatsapp: string
