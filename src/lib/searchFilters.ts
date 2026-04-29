@@ -6,6 +6,14 @@ import { calculateDistanceKm } from '@/lib/geoDistance';
 
 export type SortMode = 'relevance' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
 export type FeaturedFilter = 'all' | 'featured' | 'normal';
+/**
+ * Status filter:
+ *  - 'all': no status restriction (online still gets a stable boost to the top)
+ *  - 'online_first': same as 'all' (kept explicit for UI clarity)
+ *  - 'online_only': keep only providers currently online
+ *  - 'recently_offline': keep only providers that went offline within the recent window
+ */
+export type StatusFilter = 'all' | 'online_first' | 'online_only' | 'recently_offline';
 
 export interface FilterableProvider {
   id: string;
