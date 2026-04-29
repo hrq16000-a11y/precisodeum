@@ -770,6 +770,51 @@ export type Database = {
           },
         ]
       }
+      cookie_consent_log: {
+        Row: {
+          analytics: boolean
+          anon_id: string | null
+          created_at: string
+          essential: boolean
+          functional: boolean
+          id: string
+          ip_address: string | null
+          marketing: boolean
+          source: string
+          user_agent: string | null
+          user_id: string | null
+          version: number
+        }
+        Insert: {
+          analytics?: boolean
+          anon_id?: string | null
+          created_at?: string
+          essential?: boolean
+          functional?: boolean
+          id?: string
+          ip_address?: string | null
+          marketing?: boolean
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+          version?: number
+        }
+        Update: {
+          analytics?: boolean
+          anon_id?: string | null
+          created_at?: string
+          essential?: boolean
+          functional?: boolean
+          id?: string
+          ip_address?: string | null
+          marketing?: boolean
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           active: boolean
