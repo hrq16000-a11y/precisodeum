@@ -8,13 +8,15 @@ import ServiceImageDragUploader from '@/components/dashboard/ServiceImageDragUpl
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import {
   ArrowRight, ArrowLeft, Store, Phone, ImagePlus,
-  CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X,
+  CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X, Info,
 } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCityState } from '@/lib/locationFormat';
 import { buildServiceCountdownCopy } from '@/lib/serviceWizardCopy';
 import { recoverProviderId, fetchProviderServiceCount } from '@/lib/recoverProviderId';
+import StuckStepBanner from '@/components/wizard/StuckStepBanner';
+import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
 
 /**
  * ServiceWizard — ONBOARDING ONLY
