@@ -26,6 +26,62 @@ const SAFE_LS_PREFIXES = [
   "app-runtime-cache",
 ];
 
+const FORCE_UPDATE_ATTEMPTS_KEY = "app_force_update_attempts_v1";
+const FORCE_UPDATE_LAST_ATTEMPT_KEY = "app_force_update_last_attempt_v1";
+const FORCE_UPDATE_LAST_SUCCESS_KEY = "app_force_update_last_success_v1";
+const FORCE_UPDATE_WINDOW_MS = 60 * 1000;
+const FORCE_UPDATE_MAX_ATTEMPTS = 3;
+
+function readNumber(key: string): number {
+  if (typeof localStorage === "undefined") return 0;
+  try {
+    return Number(localStorage.getItem(key) || "0") || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeNumber(key: string, value: number): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(key, String(value));
+  } catch {
+    /* best-effort */
+  }
+}
+
+export function getForceUpdateStats() {
+  return {
+    attempts: readNumber(FORCE_UPDATE_ATTEMPTS_KEY),
+    lastAttemptAt: readNumber(FORCE_UPDATE_LAST_ATTEMPT_KEY),
+    lastSuccessAt: readNumber(FORCE_UPDATE_LAST_SUCCESS_KEY),
+  };
+}
+
+export function markForceUpdateAttempt(now = Date.now()): void {
+  const stats = getForceUpdateStats();
+  const withinWindow = now - stats.lastAttemptAt <= FORCE_UPDATE_WINDOW_MS;
+  const attempts = withinWindow ? stats.attempts + 1 : 1;
+  writeNumber(FORCE_UPDATE_ATTEMPTS_KEY, attempts);
+  writeNumber(FORCE_UPDATE_LAST_ATTEMPT_KEY, now);
+}
+
+export function markForceUpdateSuccess(now = Date.now()): void {
+  writeNumber(FORCE_UPDATE_LAST_SUCCESS_KEY, now);
+  writeNumber(FORCE_UPDATE_ATTEMPTS_KEY, 0);
+}
+
+export function hasExceededForceUpdateAttempts(now = Date.now()): boolean {
+  const stats = getForceUpdateStats();
+  if (!stats.lastAttemptAt) return false;
+  if (now - stats.lastAttemptAt > FORCE_UPDATE_WINDOW_MS) return false;
+  return stats.attempts >= FORCE_UPDATE_MAX_ATTEMPTS;
+}
+
+export function resetForceUpdateAttempts(): void {
+  writeNumber(FORCE_UPDATE_ATTEMPTS_KEY, 0);
+}
+
 export async function purgeServiceWorkers(): Promise<void> {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
   try {
@@ -74,6 +130,7 @@ export async function purgeAllClientCaches(): Promise<void> {
 
 /** Limpa tudo e recarrega a página. */
 export async function forceClientUpdate(): Promise<void> {
+  markForceUpdateAttempt();
   await purgeAllClientCaches();
   if (typeof window !== "undefined") {
     try {
@@ -88,4 +145,8 @@ export async function forceClientUpdate(): Promise<void> {
 }
 
 /** Apenas para testes. */
-export const __testing__ = { SAFE_LS_PREFIXES };
+export const __testing__ = {
+  SAFE_LS_PREFIXES,
+  FORCE_UPDATE_WINDOW_MS,
+  FORCE_UPDATE_MAX_ATTEMPTS,
+};
