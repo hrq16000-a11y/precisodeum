@@ -75,6 +75,8 @@ export function applySearchFilters<T extends FilterableProvider>(
     urgencyMode = false,
     onlineSet = new Set<string>(),
     activeTodaySet = new Set<string>(),
+    recentlyOfflineSet = new Set<string>(),
+    statusFilter = 'all',
     routeCorridor = null,
     disableOnlineBoost = false,
   } = opts;
