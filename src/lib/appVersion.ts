@@ -4,7 +4,7 @@
  * via RPC `get_app_version_config` para forçar/sugerir atualizações sem novo
  * deploy do código (Remote Config "estilo Mercado Livre").
  */
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 /**
  * Compara duas versões semver-like (`major.minor.patch`).
