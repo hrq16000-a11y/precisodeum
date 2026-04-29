@@ -133,25 +133,33 @@ const CookiesPage = () => {
               <div className="mt-4 space-y-3">
                 <CategoryRow
                   title="Essenciais"
-                  description="Sempre ativos. Login, segurança e roteamento."
+                  activatesWhenOn="Login, sessão Supabase Auth, segurança e roteamento"
+                  deactivatesWhenOff="Não pode ser desativado — necessário para o site funcionar"
+                  policyLink={{ to: "/privacidade", label: "Política de Privacidade" }}
                   checked
                   disabled
                 />
                 <CategoryRow
                   title="Funcionais"
-                  description="Preferências, cidade detectada, suporte offline."
+                  activatesWhenOn="Lembrar cidade, tema, rascunhos e suporte offline (Service Worker)"
+                  deactivatesWhenOff="Você precisará reconfigurar preferências a cada visita"
+                  policyLink={{ to: "/cookies", label: "Detalhes nesta página, seção 2" }}
                   checked={prefs.functional}
                   onChange={(v) => setPrefs((p) => ({ ...p, functional: v }))}
                 />
                 <CategoryRow
                   title="Analíticos"
-                  description="Métricas agregadas e anônimas de uso."
+                  activatesWhenOn="Web Vitals e eventos UI agregados para melhorias de produto"
+                  deactivatesWhenOff="Sua sessão não conta para estatísticas internas"
+                  policyLink={{ to: "/privacidade", label: "Política de Privacidade" }}
                   checked={prefs.analytics}
                   onChange={(v) => setPrefs((p) => ({ ...p, analytics: v }))}
                 />
                 <CategoryRow
                   title="Marketing"
-                  description="Mensuração de campanhas e patrocinadores."
+                  activatesWhenOn="Pixels de conversão e exibição de patrocinadores relevantes"
+                  deactivatesWhenOff="Pixels de marketing são bloqueados imediatamente e cookies de campanha removidos"
+                  policyLink={{ to: "/termos", label: "Termos de Uso (regras de patrocínio)" }}
                   checked={prefs.marketing}
                   onChange={(v) => setPrefs((p) => ({ ...p, marketing: v }))}
                 />
@@ -208,22 +216,36 @@ const CookiesPage = () => {
 
 function CategoryRow({
   title,
-  description,
+  activatesWhenOn,
+  deactivatesWhenOff,
+  policyLink,
   checked,
   disabled,
   onChange,
 }: {
   title: string;
-  description: string;
+  activatesWhenOn: string;
+  deactivatesWhenOff: string;
+  policyLink?: { to: string; label: string };
   checked: boolean;
   disabled?: boolean;
   onChange?: (v: boolean) => void;
 }) {
   return (
     <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-card p-3">
-      <div className="flex-1">
+      <div className="flex-1 space-y-1">
         <p className="font-medium text-foreground">{title}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+        <p className="text-xs text-emerald-700 dark:text-emerald-400">
+          <strong>Ao ativar:</strong> {activatesWhenOn}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          <strong>Ao desativar:</strong> {deactivatesWhenOff}
+        </p>
+        {policyLink && (
+          <a href={policyLink.to} className="inline-block text-xs text-accent hover:underline">
+            {policyLink.label}
+          </a>
+        )}
       </div>
       <Switch
         checked={checked}
