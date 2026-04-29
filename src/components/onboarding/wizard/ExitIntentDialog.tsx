@@ -18,7 +18,7 @@
  * permitindo medir conversão por criativo × etapa × tipo de usuário.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, X, HelpCircle, Save } from 'lucide-react';
@@ -31,9 +31,13 @@ import {
   type ExitIntentVariant,
 } from '@/lib/exitIntentVariants';
 import { markSupportContacted, shouldSuppressExitIntent } from '@/lib/conversionFunnel';
+import SaveLaterDialog from './SaveLaterDialog';
+import { buildWhatsappContextMessage, computeOnboardingProgress } from '@/lib/onboardingProgress';
+import type { OnboardingState } from './phases/v2/types';
 
 const INACTIVITY_MS = 30_000;
 const STORAGE_KEY = 'wizard:exit-intent-shown';
+const SUPPORT_WHATSAPP = '5541997452053';
 
 export type ExitIntentTracker = (
   event:
@@ -67,12 +71,15 @@ type ExitIntentDialogProps = {
   inactivityMs?: number;
   /**
    * True se o usuário JÁ publicou o primeiro serviço (state.firstServiceId).
-   * Habilita o CTA secundário "Salvar e continuar mais tarde" — sem isso, o
-   * usuário não tem nada salvo no perfil e não faz sentido oferecer "depois".
+   * Habilita o CTA secundário "Salvar e continuar mais tarde".
    */
   hasFirstService?: boolean;
-  /** Rota de destino do "Salvar e continuar mais tarde". Default: /dashboard. */
-  saveLaterRedirectTo?: string;
+  /**
+   * Snapshot do estado do wizard — usado pra (a) montar mensagem WhatsApp com
+   * categoria/cidade/etapa e (b) alimentar o `SaveLaterDialog` com o resumo de
+   * progresso. Quando ausente, o pop-up funciona em modo "minimal" sem contexto.
+   */
+  wizardState?: Pick<OnboardingState, 'profile' | 'service' | 'phase' | 'firstServiceId'>;
 };
 
 export default function ExitIntentDialog({
