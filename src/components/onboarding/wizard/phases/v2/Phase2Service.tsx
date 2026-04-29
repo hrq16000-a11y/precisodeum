@@ -39,10 +39,12 @@ interface ServiceProps {
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
+  /** Se já existe um service_id criado, libera o "Salvar progresso e configurar depois". */
+  firstServiceId?: string | null;
 }
 
 export const Phase2Service = ({
-  service, profile, onChangeService, onChangeProfile, onNext, onBack, onSkip,
+  service, profile, onChangeService, onChangeProfile, onNext, onBack, onSkip, firstServiceId,
 }: ServiceProps) => {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [search, setSearch] = useState('');
@@ -283,9 +285,23 @@ export const Phase2Service = ({
           Salvar e continuar
           <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />
         </Button>
-        <Button type="button" variant="ghost" onClick={onSkip} className="w-full text-muted-foreground">
-          Pular por enquanto
-        </Button>
+        {firstServiceId ? (
+          // Milestone OK — usuário JÁ tem um serviço publicado: pode salvar e ir pro painel.
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onSkip}
+            className="w-full text-muted-foreground"
+          >
+            Salvar progresso e configurar meu painel depois
+          </Button>
+        ) : (
+          // Milestone bloqueado — explica em vez de esconder, para reduzir frustração.
+          <div className="rounded-md border border-amber-200 bg-amber-50/60 p-2 text-center text-[11px] leading-snug text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+            Falta pouco! Publique seu primeiro serviço para que os clientes já
+            possam te encontrar enquanto você termina o resto depois.
+          </div>
+        )}
       </div>
     </motion.div>
   );
