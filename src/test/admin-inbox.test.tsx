@@ -8,8 +8,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-const rpcSpy = vi.fn(async () => ({ data: true, error: null }));
-
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { id: 'admin-1' }, loading: false }),
 }));
@@ -19,27 +17,31 @@ vi.mock('@/hooks/useAdmin', () => ({
 vi.mock('@/hooks/useSeoHead', () => ({ useSeoHead: () => {} }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-const data = [
-  { id: 'n1', title: 'Alerta de integridade', message: 'Críticos: 2', read: false, type: 'system', link: '/admin/integridade', created_at: new Date().toISOString() },
-  { id: 'n2', title: 'Outra', message: null, read: true, type: 'system', link: null, created_at: new Date().toISOString() },
-];
-
 vi.mock('@/integrations/supabase/client', () => {
+  const data = [
+    { id: 'n1', title: 'Alerta de integridade', message: 'Críticos: 2', read: false, type: 'system', link: '/admin/integridade', created_at: new Date().toISOString() },
+    { id: 'n2', title: 'Outra', message: null, read: true, type: 'system', link: null, created_at: new Date().toISOString() },
+  ];
   const builder: any = {};
   builder.select = vi.fn(() => builder);
   builder.eq = vi.fn(() => builder);
   builder.order = vi.fn(() => builder);
   builder.or = vi.fn(() => builder);
   builder.range = vi.fn(async () => ({ data, error: null, count: data.length }));
+  const rpc = vi.fn(async () => ({ data: true, error: null }));
   return {
+    __rpcSpy: rpc,
     supabase: {
       from: () => builder,
-      rpc: rpcSpy,
+      rpc,
     },
   };
 });
 
+import { supabase as supabaseMock } from '@/integrations/supabase/client';
 import AdminInboxPage from '@/pages/admin/AdminInboxPage';
+
+const rpcSpy = (supabaseMock as any).rpc as ReturnType<typeof vi.fn>;
 
 const wrap = (ui: React.ReactNode) => <MemoryRouter>{ui}</MemoryRouter>;
 
