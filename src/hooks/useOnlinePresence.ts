@@ -209,10 +209,21 @@ export function useOnlineUsersMap(): Map<string, OnlinePresenceMeta> {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-/** Legacy: returns Set<userId> for backward compat */
+/** Legacy: returns Set<userId> for backward compat. Stable ref while membership unchanged. */
+let onlineSetCache: Set<string> | null = null;
+function computeOnlineSet(): Set<string> {
+  const next = new Set(onlineUsers.keys());
+  if (onlineSetCache && onlineSetCache.size === next.size) {
+    let identical = true;
+    for (const id of next) if (!onlineSetCache.has(id)) { identical = false; break; }
+    if (identical) return onlineSetCache;
+  }
+  onlineSetCache = next;
+  return next;
+}
 export function useOnlineProviders(): Set<string> {
-  const map = useOnlineUsersMap();
-  return useMemo(() => new Set(map.keys()), [map]);
+  useOnlineUsersMap();
+  return computeOnlineSet();
 }
 
 export function useIsProviderOnline(userId: string | undefined): boolean {
