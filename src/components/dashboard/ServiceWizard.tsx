@@ -342,21 +342,21 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           <Store className="h-5 w-5 text-accent" />
           <span className="font-display text-sm font-bold text-foreground">Cadastro Express</span>
         </div>
-        {typeof serviceNumber === 'number' && serviceNumber >= 1 && (
+        {displayServiceNumber !== null && displayServiceNumber >= 1 && (
           <span
             className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent"
-            aria-label={`Serviço ${serviceNumber} de ${maxServices}`}
+            aria-label={`Serviço ${displayServiceNumber} de ${maxServices}`}
           >
             <Sparkles className="h-3 w-3" />
-            {serviceNumber}/{maxServices}
+            {displayServiceNumber}/{maxServices}
           </span>
         )}
       </div>
 
       <div className="text-center">
-        {typeof serviceNumber === 'number' && serviceNumber >= 1 ? (
+        {displayServiceNumber !== null && displayServiceNumber >= 1 ? (
           (() => {
-            const c = buildServiceCountdownCopy(serviceNumber, maxServices);
+            const c = buildServiceCountdownCopy(displayServiceNumber, maxServices);
             return (
               <>
                 <h1 className="font-display text-xl font-bold text-foreground">
