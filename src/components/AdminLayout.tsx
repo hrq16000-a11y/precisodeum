@@ -106,6 +106,8 @@ const menuGroups = [
       { label: 'Trilha de Auditoria', icon: ScrollText, path: '/admin/auditoria' },
       { label: 'Auditoria Ref', icon: Shield, path: '/admin/auditoria-ref' },
       { label: 'Políticas RLS', icon: Shield, path: '/admin/auditoria-rls' },
+      { label: 'Revogações LGPD', icon: ShieldCheck, path: '/admin/consent-revocations' },
+      { label: 'Funil Onboarding', icon: ScrollText, path: '/admin/onboarding-funnel' },
       { label: 'Mídia & Arquivos', icon: FileImage, path: '/admin/midia' },
       { label: 'Instalar App (PWA)', icon: Smartphone, path: '/admin/pwa' },
       { label: 'Barra Inferior', icon: Smartphone, path: '/admin/barra-inferior' },
