@@ -90,7 +90,7 @@ const AdminInboxPage = () => {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, filter, page]);
+  }, [user?.id, filter, page, order]);
 
   // Busca aplica reset de página
   useEffect(() => {
