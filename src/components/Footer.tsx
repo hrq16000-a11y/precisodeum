@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Instagram, Facebook } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
