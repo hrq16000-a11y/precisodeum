@@ -15,6 +15,7 @@
 
 import { reportError, trackAction } from './errorReporter';
 import { supabase } from '@/integrations/supabase/client';
+import { APP_VERSION } from './appVersion';
 
 let installed = false;
 let cachedUserId: string | null = null;
@@ -53,14 +54,29 @@ const getExternalSink = (): ExternalSink | null => {
   return w.Sentry || w.LogRocket || null;
 };
 
+const getDeviceInfo = () => {
+  const ua = navigator.userAgent;
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(ua);
+  const isStandalone = window.matchMedia?.('(display-mode: standalone)')?.matches
+    || (navigator as any).standalone === true;
+  return {
+    isMobile,
+    isStandalone,
+    platform: (navigator as any).userAgentData?.platform || navigator.platform || 'unknown',
+    dpr: window.devicePixelRatio || 1,
+  };
+};
+
 const buildContext = () => ({
   userId: cachedUserId,
+  appVersion: APP_VERSION,
   route: window.location.pathname + window.location.search,
   referrer: document.referrer || null,
   viewport: `${window.innerWidth}x${window.innerHeight}`,
   online: navigator.onLine,
   language: navigator.language,
   userAgent: navigator.userAgent,
+  device: getDeviceInfo(),
   timestamp: new Date().toISOString(),
 });
 
@@ -79,6 +95,10 @@ export function installGlobalErrorMonitor() {
     const sink = getExternalSink();
     sink?.setContext?.('user', { id: cachedUserId });
   }).catch(() => { /* noop */ });
+
+  // Define versão do app no sink externo (uma vez)
+  const sinkBoot = getExternalSink();
+  sinkBoot?.setContext?.('app', { version: APP_VERSION });
 
   supabase.auth.onAuthStateChange((_event, session) => {
     cachedUserId = session?.user?.id ?? null;
