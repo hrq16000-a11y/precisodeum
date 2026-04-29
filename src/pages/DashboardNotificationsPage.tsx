@@ -174,6 +174,19 @@ const DashboardNotificationsPage = () => {
         >
           Todas
         </button>
+        {performanceCount > 0 && (
+          <button
+            onClick={() => setSelectedType('__performance__')}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              selectedType === '__performance__'
+                ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                : 'border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/5'
+            }`}
+            title="Sinal de Vida + Ping de Sucesso + 5+ cliques/24h"
+          >
+            <TrendingUp className="inline h-3 w-3 mr-0.5" /> Performance ({performanceCount})
+          </button>
+        )}
         {availableTypes.map(type => (
           <button
             key={type}
