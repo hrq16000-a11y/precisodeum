@@ -155,7 +155,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await refetchProfile?.();
       navigate('/dashboard/agencia', { replace: true });
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao salvar cadastro da agência');
+      logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_rh' } });
+      toast.error(err?.message || 'Erro ao salvar cadastro da agência', {
+        action: { label: 'Tentar novamente', onClick: () => { void finishRh(); } },
+      });
     }
   }
 
@@ -184,7 +187,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await refetchProfile?.();
       navigate('/quero-ser-patrocinador', { replace: true });
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao iniciar fluxo de patrocinador');
+      logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_sponsor' } });
+      toast.error(err?.message || 'Erro ao iniciar fluxo de patrocinador', {
+        action: { label: 'Tentar novamente', onClick: () => { void finishSponsor(); } },
+      });
     }
   }
 
@@ -250,7 +256,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       toast.success(`+${state.points} pts conquistados!`, { description: 'Bem-vindo. Levando você ao destino…' });
       navigate(next, { replace: true });
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao salvar cadastro');
+      logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_client' } });
+      toast.error(err?.message || 'Erro ao salvar cadastro', {
+        action: { label: 'Tentar novamente', onClick: () => { void finishClient(); } },
+      });
     }
   }
 
