@@ -233,6 +233,15 @@ const DashboardServicesPage = () => {
   const [geoDetected, setGeoDetected] = useState(false);
   const cityRef = useRef<HTMLDivElement>(null);
 
+  // Kill-switch modal (score < 50% OR > 3 leilão hits)
+  const [blockModal, setBlockModal] = useState<{ open: boolean; score: number; hits: number; reasons: string[] }>({
+    open: false, score: 0, hits: 0, reasons: [],
+  });
+  // Final consent (Step 4) — checkbox de responsabilidade direta
+  const [finalConsent, setFinalConsent] = useState(false);
+  // Bônus visual quando o prestador expande para a RM
+  const [metroBonus, setMetroBonus] = useState(false);
+
   const [form, setForm] = useState({
     service_name: '',
     description: '',
