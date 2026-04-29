@@ -503,6 +503,7 @@ const App = () => {
                 <Route path="/especialidades/:slug" element={<EspecialidadeDetailPage />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/ajuda" element={<HelpCenterPage />} />
+                <Route path="/ajuda/online-offline" element={<HelpOnlineOfflinePage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
                 <Route path="/termos" element={<TermsPage />} />
                 <Route path="/cookies" element={<CookiesPage />} />
