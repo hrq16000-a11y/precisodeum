@@ -157,6 +157,7 @@ const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
 const HelpCenterPage = lazy(() => import("./pages/HelpCenterPage"));
 const HelpOnlineOfflinePage = lazy(() => import("./pages/HelpOnlineOfflinePage"));
+const HelpOnboardingPage = lazy(() => import("./pages/HelpOnboardingPage"));
 const ServicesPage = lazy(() => import("./pages/ServicesPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
@@ -506,6 +507,7 @@ const App = () => {
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/ajuda" element={<HelpCenterPage />} />
                 <Route path="/ajuda/online-offline" element={<HelpOnlineOfflinePage />} />
+                <Route path="/ajuda/cadastro" element={<HelpOnboardingPage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
                 <Route path="/termos" element={<TermsPage />} />
                 <Route path="/cookies" element={<CookiesPage />} />
