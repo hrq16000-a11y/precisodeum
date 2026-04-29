@@ -6592,6 +6592,18 @@ export type Database = {
           with_check_old: string
         }[]
       }
+      admin_error_500_recent: {
+        Args: { _limit?: number }
+        Returns: {
+          id: string
+          occurred_at: string
+          path: string
+          referrer: string
+          user_agent: string
+          user_id: string
+        }[]
+      }
+      admin_error_500_summary: { Args: { _hours?: number }; Returns: Json }
       admin_export_audit_logs: {
         Args: { _days?: number }
         Returns: {
@@ -6860,6 +6872,17 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: undefined
+      }
+      admin_signup_funnel: {
+        Args: { _days?: number }
+        Returns: {
+          day: string
+          drafts_saved: number
+          profiles_created: number
+          providers_created: number
+          visitors: number
+          wizard_started: number
+        }[]
       }
       admin_sponsor_metrics_summary: {
         Args: { _sponsor_ids: string[] }

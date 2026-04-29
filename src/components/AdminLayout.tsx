@@ -86,6 +86,14 @@ const menuGroups = [
     ],
   },
   {
+    label: 'Analytics',
+    items: [
+      { label: 'Funil de Cadastro', icon: BarChart3, path: '/admin/onboarding-funnel' },
+      { label: 'Métricas de Conversão', icon: Target, path: '/admin/conversao' },
+      { label: 'Alertas Erro 500', icon: Shield, path: '/admin/erros-500' },
+    ],
+  },
+  {
     label: 'Sistema',
     items: [
       { label: 'Meta Tags & SEO', icon: Globe, path: '/admin/metatags' },

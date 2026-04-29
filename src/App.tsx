@@ -148,6 +148,7 @@ const EspecialidadesPage = lazy(() => import("./pages/EspecialidadesPage"));
 const EspecialidadeDetailPage = lazy(() => import("./pages/EspecialidadeDetailPage"));
 const AdminConversionMetricsPage = lazy(() => import("./pages/AdminConversionMetricsPage"));
 const AdminOnboardingFunnelPage = lazy(() => import("./pages/AdminOnboardingFunnelPage"));
+const AdminError500Page = lazy(() => import("./pages/AdminError500Page"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ComoFuncionaPage = lazy(() => import("./pages/ComoFuncionaPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
@@ -426,6 +427,7 @@ const App = () => {
                 <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
                 <Route path="/admin/conversao" element={<AdminConversionMetricsPage />} />
                 <Route path="/admin/onboarding-funnel" element={<AdminOnboardingFunnelPage />} />
+                <Route path="/admin/erros-500" element={<AdminError500Page />} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
                 <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
                 <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
