@@ -29,6 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload, detectForbiddenAddressKeys } from '@/lib/providerPayload';
+import { logWizardError } from '@/lib/wizardErrorGuard';
 
 // Aviso única vez por sessão para evitar spam
 let _addressWarnedOnce = false;
