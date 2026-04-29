@@ -102,12 +102,15 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(phase3).toContain('wizard-phase3-celebration');
   });
 
-  it('LoginPage e OAuth handler levam o usuário para /cadastro-inicial', () => {
+  it('LoginPage e OAuth handler resolvem destino pós-login sem forçar wizard para quem já tem serviço', () => {
     const login = read('src/pages/LoginPage.tsx');
     const oauth = read('src/components/OAuthRedirectHandler.tsx');
-    expect(login).toContain("navigate('/cadastro-inicial'");
+    const access = read('src/lib/onboardingAccess.ts');
+    expect(login).toContain('resolvePostLoginRoute');
     expect(login).toContain("emailRedirectTo: `${window.location.origin}/cadastro-inicial`");
-    expect(oauth).toContain("navigate('/cadastro-inicial'");
+    expect(oauth).toContain('resolvePostLoginRoute');
+    expect(access).toContain('hasUnlockedAppAccess');
+    expect(access).toContain("fallbackAuthorizedRoute = '/dashboard'");
   });
 
   it('Triagem (orquestrador interno) não navega para rotas legadas', () => {
@@ -133,8 +136,18 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).toContain('deferCompletionToParent');
     expect(shell).toContain('Continuar cadastrando serviços');
     expect(shell).toContain('Abrir portfólio');
-    expect(shell).toContain('Ir para o dashboard');
+    expect(shell).toContain('Conhecer o dashboard');
     expect(shell).toContain('InstallAppCard');
+  });
+
+  it('Etapas finais deixam claro o atalho para painel, perfil e fotos do portfólio', () => {
+    const moreServices = read('src/components/onboarding/wizard/phases/Step20_MoreServices.tsx');
+    const portfolio = read('src/components/onboarding/wizard/phases/Step21_PortfolioAlbums.tsx');
+    expect(moreServices).toContain('Ir para meu painel');
+    expect(moreServices).toContain('Ir para meu perfil');
+    expect(portfolio).toContain('Como colocar fotos');
+    expect(portfolio).toContain('Crie um álbum e toque nele para abrir o envio de fotos agora mesmo.');
+    expect(portfolio).toContain('/dashboard/portfolio');
   });
 
   it('Pular 1º serviço mantém o usuário dentro do wizard', () => {

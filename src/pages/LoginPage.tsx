@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
 import { useSeoHead } from '@/hooks/useSeoHead';
+import { resolvePostLoginRoute } from '@/lib/onboardingAccess';
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
@@ -34,9 +35,28 @@ const LoginPage = () => {
   const from = (location.state as any)?.from || null;
 
   useEffect(() => {
-    if (authLoading || !user) return;
-    navigate('/cadastro-inicial', { replace: true, state: from ? { from } : undefined });
-  }, [user, authLoading, from, navigate]);
+    if (authLoading || !user || !profile) return;
+
+    let cancelled = false;
+    void (async () => {
+      const fallbackAuthorizedRoute = typeof from === 'string' && from.startsWith('/')
+        ? from
+        : '/dashboard';
+
+      const nextRoute = await resolvePostLoginRoute({
+        userId: user.id,
+        profile,
+        fallbackAuthorizedRoute,
+      });
+
+      if (cancelled) return;
+      navigate(nextRoute, { replace: true, state: from ? { from } : undefined });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, profile, authLoading, from, navigate]);
 
   useSeoHead({ title: 'Entrar', description: 'Acesse a plataforma Preciso de um.', noindex: true });
 

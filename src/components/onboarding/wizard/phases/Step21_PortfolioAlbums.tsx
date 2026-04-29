@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -115,7 +116,7 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
         <p className="text-sm text-muted-foreground">
           Organize seus trabalhos por tema (ex: "Reformas", "Eventos"). Até{' '}
           <span className="font-medium text-foreground">{MAX_ALBUMS} álbuns</span>.
-          Toque em um álbum para enviar fotos agora mesmo.
+          Crie um álbum e toque nele para abrir o envio de fotos agora mesmo.
         </p>
       </header>
 
@@ -237,6 +238,21 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
           )
         )}
       </AnimatePresence>
+
+      <div className="rounded-lg border border-border bg-card p-3 text-left">
+        <p className="text-sm font-medium text-foreground">Como colocar fotos</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          1. Crie um álbum. 2. Toque no nome do álbum. 3. Envie as fotos na área que abre logo abaixo.
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Button asChild type="button" variant="outline" className="gap-2">
+            <Link to="/dashboard/portfolio">Abrir portfólio</Link>
+          </Button>
+          <Button asChild type="button" variant="outline" className="gap-2">
+            <Link to="/dashboard">Ir para meu painel</Link>
+          </Button>
+        </div>
+      </div>
 
       <div className="flex items-center gap-2">
         <Button type="button" variant="ghost" onClick={onSkip} className="flex-1 gap-2">

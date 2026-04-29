@@ -14,10 +14,12 @@ vi.mock("@/hooks/useAuth", () => ({
 // This must stay 1:1 with the real implementation in src/App.tsx.
 import { useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { shouldForceOnboarding } from "@/lib/onboardingAccess";
 
 const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, loading } = useAuth() as any;
   const location = useLocation();
+  const hasExistingService = Boolean(profile?.hasExistingService);
 
   if (loading || (user && !profile)) {
     return (
@@ -27,15 +29,10 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  const onboardingStep = Number(profile?.onboarding_step ?? 0);
-  const mustCompleteOnboarding = !!user && !!profile && (
-    !profile.profile_type ||
-    profile.onboarding_completed !== true ||
-    onboardingStep < 5
-  );
+  const mustCompleteOnboarding = !!user && !!profile && shouldForceOnboarding(profile, hasExistingService);
 
-  if (mustCompleteOnboarding && location.pathname !== "/triagem") {
-    return <Navigate to="/triagem" replace />;
+  if (mustCompleteOnboarding && location.pathname !== "/cadastro-inicial") {
+    return <Navigate to="/cadastro-inicial" replace />;
   }
 
   return <>{children}</>;
@@ -45,7 +42,7 @@ const renderAt = (path = "/dashboard") =>
   render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/triagem" element={<div>TRIAGEM_PAGE</div>} />
+        <Route path="/cadastro-inicial" element={<div>CADASTRO_PAGE</div>} />
         <Route
           path="*"
           element={
@@ -67,7 +64,7 @@ describe("OnboardingGate", () => {
     mockUseAuth.mockReturnValue({ user: null, profile: null, loading: true });
     renderAt("/dashboard");
     expect(screen.getByRole("status")).toBeTruthy();
-    expect(screen.queryByText("TRIAGEM_PAGE")).toBeNull();
+    expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
     expect(screen.queryByText("CHILDREN_RENDERED")).toBeNull();
   });
 
@@ -79,27 +76,37 @@ describe("OnboardingGate", () => {
     });
     renderAt("/dashboard");
     expect(screen.getByRole("status")).toBeTruthy();
-    expect(screen.queryByText("TRIAGEM_PAGE")).toBeNull();
+    expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
   });
 
-  it("redirects to /triagem when profile exists but profile_type is missing", () => {
+  it("redirects to /cadastro-inicial when profile exists but profile_type is missing", () => {
     mockUseAuth.mockReturnValue({
       user: { id: "u1" },
       profile: { profile_type: null, onboarding_completed: false, onboarding_step: 0 },
       loading: false,
     });
     renderAt("/dashboard");
-    expect(screen.getByText("TRIAGEM_PAGE")).toBeTruthy();
+    expect(screen.getByText("CADASTRO_PAGE")).toBeTruthy();
   });
 
-  it("redirects to /triagem when onboarding_completed is false", () => {
+  it("redirects to /cadastro-inicial when onboarding_completed is false and no service exists", () => {
     mockUseAuth.mockReturnValue({
       user: { id: "u1" },
       profile: { profile_type: "provider", onboarding_completed: false, onboarding_step: 2 },
       loading: false,
     });
     renderAt("/dashboard");
-    expect(screen.getByText("TRIAGEM_PAGE")).toBeTruthy();
+    expect(screen.getByText("CADASTRO_PAGE")).toBeTruthy();
+  });
+
+  it("renders children when provider already has first service even if onboarding flag is stale", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: { profile_type: "provider", onboarding_completed: false, onboarding_step: 2, hasExistingService: true },
+      loading: false,
+    });
+    renderAt("/dashboard");
+    expect(screen.getByText("CHILDREN_RENDERED")).toBeTruthy();
   });
 
   it("renders children when profile is complete", () => {
@@ -119,13 +126,13 @@ describe("OnboardingGate", () => {
     expect(screen.queryByText("TRIAGEM_PAGE")).toBeNull();
   });
 
-  it("does not loop redirect when already on /triagem", () => {
+  it("does not loop redirect when already on /cadastro-inicial", () => {
     mockUseAuth.mockReturnValue({
       user: { id: "u1" },
       profile: { profile_type: null, onboarding_completed: false, onboarding_step: 0 },
       loading: false,
     });
-    renderAt("/triagem");
-    expect(screen.getByText("TRIAGEM_PAGE")).toBeTruthy();
+    renderAt("/cadastro-inicial");
+    expect(screen.getByText("CADASTRO_PAGE")).toBeTruthy();
   });
 });
