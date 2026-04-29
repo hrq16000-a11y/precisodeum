@@ -121,7 +121,7 @@ const LoginPage = () => {
           toast.error('Senha muito curta. Use pelo menos 6 caracteres.');
         } else if (/rate limit|too many/i.test(m)) {
           toast.error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
-        } else if (/invalid.*email/i.test(m)) {
+        } else if (/invalid.*email|validate email|invalid.*format/i.test(m)) {
           toast.error('E-mail inválido.');
         } else {
           toast.error('Não foi possível criar sua conta. Tente novamente em instantes.');

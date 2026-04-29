@@ -270,8 +270,8 @@ function mapSignupError(msg: string): string {
     return 'conta_existente';
   if (/password.*(short|6 characters|weak)/i.test(msg)) return 'senha_curta';
   if (/rate limit|too many/i.test(msg)) return 'rate_limit';
-  if (/invalid.*email/i.test(msg)) return 'email_invalido';
   if (/email.*not.*confirmed|email_not_confirmed/i.test(msg)) return 'email_nao_confirmado';
+  if (/invalid.*email|invalid.*format|validate email/i.test(msg)) return 'email_invalido';
   return 'desconhecido';
 }
 
