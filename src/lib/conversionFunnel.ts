@@ -20,7 +20,17 @@
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 import type { ExitIntentIntent, ExitIntentVariant } from './exitIntentVariants';
 
-export type SupportSource = 'exit_intent' | 'help_page' | 'help_card' | 'footer' | 'other';
+export type SupportSource =
+  | 'exit_intent'        // pop-up de saída do wizard
+  | 'help_page'          // /ajuda/cadastro
+  | 'recovery_page'      // /cadastro/retomar (oferece WhatsApp pra desbloquear)
+  | 'save_later_modal'   // modal de "Salvar e continuar mais tarde"
+  | 'help_card'
+  | 'footer'
+  | 'other';
+
+/** Destino do "Salvar e continuar mais tarde" — usado em métricas A/B. */
+export type SaveLaterDestination = 'dashboard' | 'recovery_page';
 
 const SUPPORT_KEY = 'wizard:support-contacted';
 const HELP_VISIT_KEY = 'wizard:help-page-visited';
