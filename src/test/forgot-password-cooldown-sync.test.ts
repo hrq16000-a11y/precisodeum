@@ -54,7 +54,7 @@ describe('forgotPasswordCooldown — sincronização entre abas', () => {
     unsub();
   });
 
-  it('reage a storage events de outra aba (fallback Safari/iframe)', () => {
+  it('reage a storage events de outra aba (fallback Safari/iframe)', async () => {
     const values: number[] = [];
     const unsub = subscribeCooldown((rem) => values.push(rem));
 
@@ -65,6 +65,9 @@ describe('forgotPasswordCooldown — sincronização entre abas', () => {
       key: COOLDOWN_KEY,
       newValue: String(futureUntil),
     }));
+
+    // O subscriber agenda um setTimeout(0) ao receber o evento — aguardamos um tick
+    await new Promise((r) => setTimeout(r, 10));
 
     expect(values.length).toBeGreaterThanOrEqual(2);
     expect(values[values.length - 1]).toBeGreaterThan(60);
