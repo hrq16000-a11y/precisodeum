@@ -147,10 +147,16 @@ const LoginPage = () => {
 
   const handleGoogleLogin = async () => {
     if (from) sessionStorage.setItem('auth_redirect', from);
+    setLoading(true);
     const { error } = await lovable.auth.signInWithOAuth('google', {
       redirect_uri: window.location.origin,
+      extraParams: { prompt: 'select_account' },
     });
-    if (error) toast.error('Erro ao continuar com Google');
+    if (error) {
+      setLoading(false);
+      toast.error('Erro ao continuar com Google');
+    }
+    // se redirected=true, o navegador já foi redirecionado — nada a fazer
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
