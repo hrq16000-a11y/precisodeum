@@ -1018,6 +1018,16 @@ const DashboardServicesPage = () => {
               />
             </div>
 
+            {/* Prévia ao vivo do anúncio — atualiza a cada digitação */}
+            <AdLivePreview
+              title={form.service_name}
+              description={form.description}
+              city={stripLegacyAreaPrefixes(form.service_area)}
+              cityValidated={isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES)}
+              hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
+              categoryName={categories.find((c: any) => selectedCategoryIds.includes(c.id))?.name}
+              categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
+            />
 
             {/* ── Section 1: Informações Básicas ── */}
             {formStep === 1 && (
