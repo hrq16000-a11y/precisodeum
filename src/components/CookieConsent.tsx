@@ -50,9 +50,9 @@ const CookieConsent = () => {
     setOpenPrefs(false);
   };
 
-  const handleAcceptAll = () => close(acceptAll());
-  const handleRejectAll = () => close(rejectAll());
-  const handleSavePrefs = () => close(saveConsent(prefs));
+  const handleAcceptAll = () => close(acceptAll("banner"));
+  const handleRejectAll = () => close(rejectAll("banner"));
+  const handleSavePrefs = () => close(saveConsent(prefs, "banner"));
 
   if (!visible && !openPrefs) return null;
 
@@ -66,19 +66,40 @@ const CookieConsent = () => {
           className="fixed bottom-0 left-0 right-0 z-[9998] border-t border-border bg-card/95 p-4 shadow-lg backdrop-blur-lg"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 60px)" }}
         >
-          <div className="container flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="text-sm text-muted-foreground">
+          <div className="container flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className="text-sm text-muted-foreground lg:max-w-2xl">
               <p className="font-medium text-foreground">Sua privacidade importa</p>
               <p className="mt-1">
                 Usamos cookies essenciais para o funcionamento do site e, com seu consentimento,
-                cookies funcionais, analíticos e de marketing. Você pode escolher por categoria.
-                Saiba mais na{" "}
+                cookies funcionais, analíticos e de marketing. Você pode escolher por categoria
+                a qualquer momento.
+              </p>
+              <ul className="mt-2 grid gap-1 text-xs sm:grid-cols-2">
+                <li>
+                  <strong className="text-foreground">Essenciais:</strong> sempre ativos — login, segurança e roteamento.
+                </li>
+                <li>
+                  <strong className="text-foreground">Funcionais:</strong> cidade detectada, tema, suporte offline.
+                </li>
+                <li>
+                  <strong className="text-foreground">Analíticos:</strong> métricas agregadas e anônimas de uso.
+                </li>
+                <li>
+                  <strong className="text-foreground">Marketing:</strong> mensuração de campanhas e patrocinadores.
+                </li>
+              </ul>
+              <p className="mt-2 text-xs">
+                Detalhes na{" "}
                 <Link to="/cookies" className="font-medium text-accent hover:underline">
                   Política de Cookies
-                </Link>{" "}
-                e na{" "}
+                </Link>
+                ,{" "}
                 <Link to="/privacidade" className="font-medium text-accent hover:underline">
                   Política de Privacidade
+                </Link>{" "}
+                e{" "}
+                <Link to="/termos" className="font-medium text-accent hover:underline">
+                  Termos de Uso
                 </Link>
                 .
               </p>
@@ -103,36 +124,41 @@ const CookieConsent = () => {
           <DialogHeader>
             <DialogTitle>Preferências de cookies</DialogTitle>
             <DialogDescription>
-              Escolha quais categorias deseja permitir. Você pode alterar a qualquer momento em{" "}
+              Escolha quais categorias deseja permitir. As mudanças são aplicadas imediatamente,
+              sem precisar recarregar a página. Veja a{" "}
               <Link to="/cookies" className="text-accent hover:underline">
-                /cookies
-              </Link>
-              .
+                Política de Cookies
+              </Link>{" "}
+              completa.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 text-sm">
+          <div className="space-y-3 py-2 text-sm">
             <CategoryRow
               title="Essenciais"
-              description="Necessários para autenticação, segurança e funcionamento básico. Não podem ser desativados."
+              activatesWhenOn="Login, segurança e funcionamento do site"
+              deactivatesWhenOff="Não pode ser desativado"
               checked
               disabled
             />
             <CategoryRow
               title="Funcionais"
-              description="Lembram preferências como cidade detectada, idioma e tema."
+              activatesWhenOn="Lembrar cidade, tema e rascunhos; suporte offline"
+              deactivatesWhenOff="Você precisará reconfigurar preferências a cada visita"
               checked={prefs.functional}
               onChange={(v) => setPrefs((p) => ({ ...p, functional: v }))}
             />
             <CategoryRow
               title="Analíticos"
-              description="Nos ajudam a entender o uso da plataforma de forma agregada e anônima."
+              activatesWhenOn="Métricas agregadas e anônimas que orientam melhorias"
+              deactivatesWhenOff="Sua sessão não conta para estatísticas internas"
               checked={prefs.analytics}
               onChange={(v) => setPrefs((p) => ({ ...p, analytics: v }))}
             />
             <CategoryRow
               title="Marketing"
-              description="Permitem mensurar campanhas e exibir conteúdo de patrocinadores relevantes."
+              activatesWhenOn="Mensuração de campanhas e exibição de patrocinadores relevantes"
+              deactivatesWhenOff="Pixels de marketing são bloqueados imediatamente"
               checked={prefs.marketing}
               onChange={(v) => setPrefs((p) => ({ ...p, marketing: v }))}
             />
@@ -157,22 +183,29 @@ const CookieConsent = () => {
 
 function CategoryRow({
   title,
-  description,
+  activatesWhenOn,
+  deactivatesWhenOff,
   checked,
   disabled,
   onChange,
 }: {
   title: string;
-  description: string;
+  activatesWhenOn: string;
+  deactivatesWhenOff: string;
   checked: boolean;
   disabled?: boolean;
   onChange?: (v: boolean) => void;
 }) {
   return (
     <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/30 p-3">
-      <div className="flex-1">
+      <div className="flex-1 space-y-1">
         <p className="font-medium text-foreground">{title}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+        <p className="text-xs text-emerald-700 dark:text-emerald-400">
+          <strong>Ao ativar:</strong> {activatesWhenOn}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          <strong>Ao desativar:</strong> {deactivatesWhenOff}
+        </p>
       </div>
       <Switch
         checked={checked}

@@ -1,6 +1,9 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { installConsentBridge } from "./lib/consentBridge";
+
+installConsentBridge();
 
 const rootElement = document.getElementById("root");
 const shellElement = document.getElementById("app-shell");
