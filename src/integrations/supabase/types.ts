@@ -7036,6 +7036,17 @@ export type Database = {
           total_records: number
         }[]
       }
+      audit_user_ref_health: {
+        Args: never
+        Returns: {
+          data_type: string
+          filled: number
+          has_index: boolean
+          missing: number
+          table_name: string
+          total_rows: number
+        }[]
+      }
       award_engagement_points: {
         Args: { _action_key: string; _metadata?: Json; _user_id: string }
         Returns: number
