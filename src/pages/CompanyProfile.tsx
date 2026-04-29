@@ -94,7 +94,7 @@ export default function CompanyProfile() {
     queryKey: ['company-gallery', company?.id],
     queryFn: async () => {
       if (!company?.id) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('media')
         .select('url, optimized_url, alt_text')
         .eq('owner_provider_id', company.id)
@@ -102,7 +102,7 @@ export default function CompanyProfile() {
         .order('created_at', { ascending: false })
         .limit(9);
       if (error) return [];
-      return (data || []) as Array<{ url: string; optimized_url: string | null; alt_text: string | null }>;
+      return ((data as unknown) as Array<{ url: string; optimized_url: string | null; alt_text: string | null }>) || [];
     },
     enabled: !!company?.id,
     staleTime: 1000 * 60 * 5,
