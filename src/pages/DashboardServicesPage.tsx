@@ -1072,6 +1072,34 @@ const DashboardServicesPage = () => {
               {formStep === 4 && 'Etapa 4 de 4 · Revisão Final'}
             </p>
 
+            {/* Contagem expressa — só na criação (não em edição) */}
+            {!editId && (() => {
+              const MAX = 5;
+              const current = Math.min(services.length + 1, MAX);
+              const remainingAfter = Math.max(0, MAX - current);
+              let title = `Você está cadastrando seu ${current}º serviço`;
+              let subtitle = `Após finalizar, você libera mais ${remainingAfter} cadastro${remainingAfter === 1 ? '' : 's'}.`;
+              if (current === 1) {
+                title = 'Seu 1º serviço — vamos começar!';
+                subtitle = `Você poderá cadastrar até ${MAX} no total.`;
+              } else if (current === MAX) {
+                title = `Último serviço — após este você terá ${MAX} anúncios ativos`;
+                subtitle = 'Capricha! Esse é o fechamento do seu portfólio.';
+              } else if (current === MAX - 1) {
+                title = 'Penúltimo serviço — falta só 1 depois deste';
+                subtitle = `Após finalizar, restará ${remainingAfter} cadastro disponível.`;
+              }
+              return (
+                <div
+                  className="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-center"
+                  aria-label={`Serviço ${current} de ${MAX}`}
+                >
+                  <p className="text-sm font-semibold text-foreground">{title}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>
+                </div>
+              );
+            })()}
+
             {/* Barra de progresso global de qualidade — sempre visível durante o wizard */}
             <div className="rounded-lg border border-border bg-card/50 p-2">
               <AdQualityScore
