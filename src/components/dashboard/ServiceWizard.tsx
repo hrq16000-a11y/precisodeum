@@ -26,6 +26,44 @@ interface ServiceWizardProps {
   categories: any[];
   onComplete: (serviceId: string) => void;
   onCancel: () => void;
+  /** Posição deste serviço (1-based). Quando informado, o header mostra
+   * uma contagem expressa contextual ("2º serviço", "penúltimo", etc.). */
+  serviceNumber?: number;
+  /** Limite total de serviços do plano. Default: 5. */
+  maxServices?: number;
+}
+
+/** Devolve "1º", "2º"… (português, masculino) — fallback "Nº". */
+const ordinalPt = (n: number): string => {
+  if (n >= 1 && n <= 10) return `${n}º`;
+  return `${n}º`;
+};
+
+/** Mensagem contextual de contagem expressa para o cabeçalho do wizard. */
+function buildCountdownCopy(current: number, max: number): { title: string; subtitle: string } {
+  const remainingAfter = Math.max(0, max - current);
+  if (current === 1) {
+    return {
+      title: `Seu 1º serviço — vamos começar!`,
+      subtitle: `Você poderá cadastrar até ${max} no total.`,
+    };
+  }
+  if (current === max) {
+    return {
+      title: `Último serviço — após este você terá ${max} anúncios ativos`,
+      subtitle: `Capricha! Esse é o fechamento do seu portfólio.`,
+    };
+  }
+  if (current === max - 1) {
+    return {
+      title: `Penúltimo serviço — falta só 1 depois deste`,
+      subtitle: `Após finalizar, restará ${remainingAfter} cadastro disponível.`,
+    };
+  }
+  return {
+    title: `Você está cadastrando seu ${ordinalPt(current)} serviço`,
+    subtitle: `Após finalizar, você libera mais ${remainingAfter} cadastro${remainingAfter === 1 ? '' : 's'}.`,
+  };
 }
 
 const STEPS = [
