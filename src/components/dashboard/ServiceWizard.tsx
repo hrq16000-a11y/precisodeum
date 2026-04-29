@@ -247,14 +247,25 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   };
 
   /* ──── Save service (called when moving from step 2 → step 3) ──── */
+  // Retry com backoff exponencial leve: 0ms, 400ms, 1000ms (3 tentativas).
+  const PROVIDER_RETRY_DELAYS = [0, 400, 1000];
+  const ensureProviderId = async (): Promise<string | null> => {
+    if (effectiveProviderId) return effectiveProviderId;
+    for (const delay of PROVIDER_RETRY_DELAYS) {
+      if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+      const pid = await recoverProviderId({ userId, hint: effectiveProviderId });
+      if (pid) {
+        setEffectiveProviderId(pid);
+        return pid;
+      }
+    }
+    return null;
+  };
+
   const handleCreate = async (): Promise<boolean> => {
     if (!serviceName.trim()) { toast.error('Nome do serviço é obrigatório'); return false; }
-    // Garante providerId — fallback para casos de prop vazio / sessão expirada
-    let pid = effectiveProviderId;
-    if (!pid) {
-      pid = await recoverProviderId({ userId, hint: effectiveProviderId });
-      if (pid) setEffectiveProviderId(pid);
-    }
+    // Retry automático para garantir que o providerId esteja disponível
+    const pid = await ensureProviderId();
     if (!pid) {
       toast.error('Não conseguimos identificar seu cadastro de prestador. Atualize a página.');
       return false;
@@ -296,6 +307,13 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
       setSaving(false);
     }
   };
+
+  // Campos faltantes para o banner de "etapa travada"
+  const missingFields: string[] = [];
+  if (step === 0) {
+    if (!serviceName.trim()) missingFields.push('Nome do serviço');
+    if (selectedCategoryIds.length === 0) missingFields.push('Categoria');
+  }
 
   const handleNext = async () => {
     if (step === 1 && !createdServiceId) {
