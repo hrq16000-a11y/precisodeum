@@ -50,6 +50,10 @@ export interface SearchFilterOptions {
   urgencyMode?: boolean;
   onlineSet?: Set<string>;
   activeTodaySet?: Set<string>;
+  /** Users who went offline recently (within the configured window). Used by status filter. */
+  recentlyOfflineSet?: Set<string>;
+  /** Status filter — see StatusFilter type for behavior */
+  statusFilter?: StatusFilter;
   routeCorridor?: RouteCorridor | null;
   /** When false (default), online providers are pulled to the top after sorting (stable partition). */
   disableOnlineBoost?: boolean;
