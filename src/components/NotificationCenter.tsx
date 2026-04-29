@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, forwardRef } from 'react';
 import { Bell, Check, CheckCheck, Trash2, ExternalLink, Settings, BellRing, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications, usePushSubscription, type Notification } from '@/hooks/useNotifications';
@@ -114,7 +114,7 @@ const NotificationItem = ({
   </motion.div>
 );
 
-export const NotificationBell = () => {
+export const NotificationBell = forwardRef<HTMLDivElement>((_props, _ref) => {
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
