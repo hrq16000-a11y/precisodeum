@@ -576,8 +576,33 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   /* ───── Persistência: cria 1º serviço (Fase 2) ───── */
   const persistFirstService = async (): Promise<boolean> => {
     if (!user) return false;
-    if (!state.providerId) {
-      toast.error('Perfil ainda não foi criado.');
+    // Auto-recuperação: se não tem providerId em memória, tenta recuperar do DB
+    // (cobre casos de reload, navegação cross-tab, ou quando o usuário voltou
+    // direto da Phase1 sem o reducer ter persistido o ID ainda).
+    let workingProviderId = state.providerId;
+    if (!workingProviderId) {
+      try {
+        const reusedId = await findExistingProvider(user.id);
+        if (reusedId) {
+          workingProviderId = reusedId;
+          dispatch({ type: 'SET_PROVIDER_ID', id: reusedId });
+        }
+      } catch { /* ignora — fallback abaixo */ }
+    }
+    // Último recurso: cria o provider agora a partir dos dados da Phase 1
+    // já preenchidos no estado (full_name, city, state, whatsapp, kind).
+    if (!workingProviderId) {
+      const created = await persistPhase1();
+      if (!created) return false;
+      // persistPhase1 dispatcha SET_PROVIDER_ID — relê do DB para garantir
+      const reusedId = await findExistingProvider(user.id);
+      if (reusedId) {
+        workingProviderId = reusedId;
+        dispatch({ type: 'SET_PROVIDER_ID', id: reusedId });
+      }
+    }
+    if (!workingProviderId) {
+      toast.error('Não conseguimos preparar seu perfil agora. Volte um passo e tente novamente.');
       return false;
     }
     setSaving(true);
