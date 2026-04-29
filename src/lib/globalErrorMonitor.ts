@@ -96,6 +96,10 @@ export function installGlobalErrorMonitor() {
     sink?.setContext?.('user', { id: cachedUserId });
   }).catch(() => { /* noop */ });
 
+  // Define versão do app no sink externo (uma vez)
+  const sinkBoot = getExternalSink();
+  sinkBoot?.setContext?.('app', { version: APP_VERSION });
+
   supabase.auth.onAuthStateChange((_event, session) => {
     cachedUserId = session?.user?.id ?? null;
     const sink = getExternalSink();
