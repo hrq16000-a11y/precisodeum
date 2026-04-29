@@ -80,8 +80,12 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
         const profile = profileMap[p.user_id];
         const fullName = profile?.name?.trim() || '';
         const businessName = (p.business_name || '').trim();
-        const safeBusinessName = isGeneric(businessName) ? '' : businessName;
-        const resolvedName = fullName || safeBusinessName || (p.city ? `Profissional em ${p.city}` : 'Profissional');
+        const isCompany = (p.account_type || 'autonomous') === 'company';
+        // PJ: business_name é o nome oficial (não filtra como genérico).
+        const safeBusinessName = isCompany ? businessName : (isGeneric(businessName) ? '' : businessName);
+        const resolvedName = isCompany
+          ? (safeBusinessName || fullName || (p.city ? `Empresa em ${p.city}` : 'Empresa'))
+          : (fullName || safeBusinessName || (p.city ? `Profissional em ${p.city}` : 'Profissional'));
         const resolvedPhoto = (p.photo_url || profile?.avatar || '').trim();
 
         return {
