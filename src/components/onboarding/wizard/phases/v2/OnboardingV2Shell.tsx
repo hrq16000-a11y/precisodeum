@@ -29,6 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload, detectForbiddenAddressKeys } from '@/lib/providerPayload';
+import { logWizardError } from '@/lib/wizardErrorGuard';
 
 // Aviso única vez por sessão para evitar spam
 let _addressWarnedOnce = false;
@@ -510,12 +511,18 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           .from('providers').select('*').eq('user_id', user.id).is('deleted_at', null).limit(1);
 
         if (existing && existing[0]) {
+          const fullName = (p.full_name || '').trim();
+          // Front-end sync: garante business_name preenchido sem depender só do trigger DB.
+          const businessName = (existing[0].business_name && String(existing[0].business_name).trim()) || fullName;
+          const legalName = (existing[0].legal_name && String(existing[0].legal_name).trim()) || fullName;
           const updPayload = normalizeProviderPayload({
             city: p.city || existing[0].city || '',
             state: p.state || existing[0].state || '',
             whatsapp: p.whatsapp || existing[0].whatsapp || '',
             phone: p.whatsapp || existing[0].phone || '',
             account_type: p.kind === 'pj' ? 'company' : 'autonomous',
+            business_name: businessName || null,
+            legal_name: legalName || null,
           });
           const { error } = await supabase.from('providers').update(updPayload as any).eq('id', existing[0].id);
           if (error) throw error;
@@ -526,7 +533,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           if (reusedId) {
             dispatch({ type: 'SET_PROVIDER_ID', id: reusedId });
           } else {
-            const baseSlug = slugify(p.full_name || user.email?.split('@')[0] || 'profissional');
+            const fullName = (p.full_name || user.email?.split('@')[0] || 'profissional').trim();
+            const baseSlug = slugify(fullName);
             const insPayload = normalizeProviderPayload({
               user_id: user.id,
               slug: `${baseSlug}-${user.id.slice(0, 6)}`,
@@ -535,6 +543,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               whatsapp: p.whatsapp || '',
               phone: p.whatsapp || '',
               account_type: p.kind === 'pj' ? 'company' : 'autonomous',
+              // Front-end sync: business_name e legal_name preenchidos imediatamente.
+              business_name: fullName,
+              legal_name: fullName,
               status: 'pending',
             });
             const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('id').single();
@@ -545,7 +556,17 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       }
       return true;
     } catch (e: any) {
-      toast.error('Não consegui salvar. ' + (e?.message || 'Tente de novo.'));
+      logWizardError({
+        phase: state.phase,
+        userId: user?.id,
+        error: e,
+        variant: 'v2',
+        context: { action: 'persist_phase1', has_provider_id: !!state.providerId },
+      });
+      toast.error('Não consegui salvar agora', {
+        description: (e?.message || 'Tente novamente em instantes.').slice(0, 160),
+        action: { label: 'Tentar novamente', onClick: () => { void persistPhase1(); } },
+      });
       return false;
     } finally {
       setSaving(false);
@@ -784,7 +805,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       return true;
     } catch (e: any) {
-      toast.error('Erro ao publicar serviço: ' + (e?.message || 'tente novamente'));
+      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'publish_first_service' } });
+      toast.error('Erro ao publicar serviço', {
+        description: (e?.message || 'tente novamente').slice(0, 160),
+        action: { label: 'Tentar novamente', onClick: () => { void persistFirstService(); } },
+      });
       return false;
     } finally {
       setSaving(false);
@@ -807,7 +832,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
       return true;
     } catch (e: any) {
-      toast.error('Não consegui salvar este passo agora. ' + (e?.message || ''));
+      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'persist_patch', keys: Object.keys(patch || {}) } });
+      toast.error('Não consegui salvar este passo agora', {
+        description: (e?.message || '').slice(0, 160) || undefined,
+        action: { label: 'Tentar novamente', onClick: () => { void persistPatch(patch); } },
+      });
       return false;
     } finally {
       setSaving(false);

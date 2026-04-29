@@ -26,6 +26,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
+import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
 import { useSeoHead } from '@/hooks/useSeoHead';
 
 import PointsHud from './PointsHud';
@@ -154,7 +155,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await refetchProfile?.();
       navigate('/dashboard/agencia', { replace: true });
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao salvar cadastro da agência');
+      logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_rh' } });
+      toast.error(err?.message || 'Erro ao salvar cadastro da agência', {
+        action: { label: 'Tentar novamente', onClick: () => { void finishRh(); } },
+      });
     }
   }
 
@@ -183,7 +187,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await refetchProfile?.();
       navigate('/quero-ser-patrocinador', { replace: true });
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao iniciar fluxo de patrocinador');
+      logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_sponsor' } });
+      toast.error(err?.message || 'Erro ao iniciar fluxo de patrocinador', {
+        action: { label: 'Tentar novamente', onClick: () => { void finishSponsor(); } },
+      });
     }
   }
 
@@ -249,7 +256,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       toast.success(`+${state.points} pts conquistados!`, { description: 'Bem-vindo. Levando você ao destino…' });
       navigate(next, { replace: true });
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao salvar cadastro');
+      logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_client' } });
+      toast.error(err?.message || 'Erro ao salvar cadastro', {
+        action: { label: 'Tentar novamente', onClick: () => { void finishClient(); } },
+      });
     }
   }
 
@@ -286,12 +296,18 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         .eq('id', user.id);
       if (pErr) throw pErr;
 
-      // ---- providers: documento na coluna certa + business_name (PJ) + neighborhood ----
+      // ---- providers: documento na coluna certa + business_name (PF e PJ) + neighborhood ----
+      // FRONT-END SYNC: business_name é preenchido AGORA com o nome do usuário
+      // (PF) ou da empresa (PJ). Não dependemos exclusivamente do trigger DB —
+      // assim o card aparece corretamente mesmo se o trigger demorar a propagar.
+      const fullName = state.full_name.trim();
+      const companyName = (state.company_name || '').trim();
+      const businessName = isPj ? (companyName || fullName) : fullName;
       const providerPayload = normalizeProviderPayload({
         user_id: user.id,
         account_type: isPj ? 'pj' : 'pf',
-        business_name: isPj ? (state.company_name || '').trim() || null : null,
-        legal_name: isPj ? (state.company_name || '').trim() || null : state.full_name.trim(),
+        business_name: businessName || null,
+        legal_name: isPj ? (companyName || fullName) : fullName,
         cpf,
         cnpj,
         whatsapp: state.whatsapp,
@@ -302,17 +318,34 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         description: '',
       });
 
-      try {
-        await (supabase as any).from('providers').upsert(providerPayload, { onConflict: 'user_id' });
-      } catch {
-        try { await (supabase as any).from('providers').insert(providerPayload); } catch { /* noop */ }
-      }
+      const upsertResult = await safeWizardSave({
+        phase: 'phase1_contact',
+        userId: user.id,
+        variant: 'v1',
+        friendlyMessage: 'Não consegui finalizar seu cadastro',
+        context: { isPj, hasDoc: !!taxIdValue, action: 'bet_finish_pro' },
+        onRetry: () => { void finishPro(); },
+        fn: async () => {
+          const { error } = await (supabase as any)
+            .from('providers').upsert(providerPayload, { onConflict: 'user_id' });
+          if (error) {
+            // Fallback: tenta insert puro
+            const { error: insErr } = await (supabase as any).from('providers').insert(providerPayload);
+            if (insErr) throw insErr;
+          }
+          return true;
+        },
+      });
+      if (!upsertResult.ok) return;
 
       await addSessionPointsToProfile();
       await refetchProfile?.();
       goto('celebration');
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao salvar cadastro');
+      logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'bet_finish_pro_outer' } });
+      toast.error(err?.message || 'Erro ao salvar cadastro', {
+        action: { label: 'Tentar novamente', onClick: () => { void finishPro(); } },
+      });
     }
   }
 
