@@ -171,7 +171,8 @@ export const NotificationBell = forwardRef<HTMLDivElement>((_props, _ref) => {
       </AnimatePresence>
     </div>
   );
-};
+});
+NotificationBell.displayName = 'NotificationBell';
 
 const NotificationDropdown = ({ onClose }: { onClose: () => void }) => {
   const navigate = useNavigate();
