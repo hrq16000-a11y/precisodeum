@@ -9,7 +9,16 @@ import { Mail, AlertCircle, CheckCircle2, ArrowLeft, Clock } from 'lucide-react'
 
 type Status = 'idle' | 'sending' | 'sent' | 'cooldown' | 'not_found' | 'error';
 
-const COOLDOWN_SECONDS = 30;
+const COOLDOWN_SECONDS = 60;
+const COOLDOWN_KEY = 'forgot-password:cooldown-until';
+
+const formatCooldown = (s: number): string => {
+  if (s <= 0) return '0s';
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  if (m === 0) return `${r}s`;
+  return `${m}min ${r.toString().padStart(2, '0')}s`;
+};
 
 const ForgotPasswordPage = () => {
   const location = useLocation();

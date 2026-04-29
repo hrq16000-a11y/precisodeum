@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { reportError } from '@/lib/errorReporter';
-import { AlertTriangle, MessageCircle, Camera, Copy, Check } from 'lucide-react';
+import { AlertTriangle, MessageCircle, Camera, Copy, Check, Send } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -45,16 +45,43 @@ class ErrorGuard extends Component<Props, State> {
   }
 
 
+  private buildSupportMessage(): string {
+    const id = this.state.reportId || 'sem-codigo';
+    const route = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '';
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const screen = typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight}` : '';
+    const when = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    return [
+      'Olá! Preciso de ajuda com um erro na plataforma Preciso de Um.',
+      '',
+      `• Código: ${id}`,
+      `• Rota: ${route}`,
+      `• Componente: ${this.props.componentName}`,
+      `• Mensagem: ${this.state.error?.message || 'desconhecida'}`,
+      `• Quando: ${when}`,
+      `• Tela: ${screen}`,
+      `• Dispositivo: ${ua}`,
+      '',
+      'Já tirei um print da tela. Podem me ajudar?',
+    ].join('\n');
+  }
+
   private handleCopy = async () => {
-    const id = this.state.reportId || '';
-    const summary = `Erro: ${this.state.error?.message || 'desconhecido'}\nCódigo: ${id}\nRota: ${typeof window !== 'undefined' ? window.location.pathname : ''}`;
     try {
-      await navigator.clipboard.writeText(summary);
+      await navigator.clipboard.writeText(this.buildSupportMessage());
       this.setState({ copied: true });
       setTimeout(() => this.setState({ copied: false }), 2000);
     } catch {
       /* noop */
     }
+  };
+
+  private handleSendWhatsapp = async () => {
+    const text = this.buildSupportMessage();
+    // Tenta copiar antes para que o usuário possa colar caso o WhatsApp não preencha automaticamente
+    try { await navigator.clipboard.writeText(text); } catch { /* noop */ }
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   private handleRetry = () => {
@@ -116,13 +143,22 @@ class ErrorGuard extends Component<Props, State> {
             </div>
 
             {code && (
-              <button
-                type="button"
-                onClick={this.handleCopy}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-[12px] font-medium text-foreground hover:bg-muted transition-colors"
-              >
-                {this.state.copied ? <><Check className="h-3.5 w-3.5 text-emerald-600" /> Copiado!</> : <><Copy className="h-3.5 w-3.5" /> Copiar código + detalhes</>}
-              </button>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={this.handleSendWhatsapp}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-[12px] font-semibold text-white hover:bg-emerald-700 transition-colors"
+                >
+                  <Send className="h-3.5 w-3.5" /> Enviar para o suporte
+                </button>
+                <button
+                  type="button"
+                  onClick={this.handleCopy}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-[12px] font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  {this.state.copied ? <><Check className="h-3.5 w-3.5 text-emerald-600" /> Copiado!</> : <><Copy className="h-3.5 w-3.5" /> Copiar mensagem</>}
+                </button>
+              </div>
             )}
 
             {this.state.reporting && (
