@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -35,14 +36,17 @@ export function DashboardHealthCheck({
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const lastLoggedRef = useRef<number>(0);
+  // Track previous OK state so we can detect recovery transitions
+  // (failure → success) and persist a "recovered" event in history.
+  const previousOkRef = useRef<boolean | null>(null);
 
-  const persistResult = async (r: HealthResult) => {
+  const persistResult = async (r: HealthResult, recovered: boolean) => {
     try {
       const now = Date.now();
       const last = lastLoggedRef.current ||
         Number(sessionStorage.getItem(STORAGE_LAST_LOG) ?? 0);
-      // Always log when status changes, otherwise throttle
-      const shouldLog = r.ok === false || (now - last) > LOG_THROTTLE_MS;
+      // Always log when status changes (failure or recovery), otherwise throttle
+      const shouldLog = r.ok === false || recovered || (now - last) > LOG_THROTTLE_MS;
       if (!shouldLog) return;
       lastLoggedRef.current = now;
       sessionStorage.setItem(STORAGE_LAST_LOG, String(now));
@@ -52,11 +56,11 @@ export function DashboardHealthCheck({
         .map((x) => ({ table: x.table, column: x.column }));
       await supabase.from("health_check_history" as never).insert({
         user_id: user?.id ?? null,
-        source: "dashboard",
+        source: recovered ? "dashboard:recovered" : "dashboard",
         ok: r.ok,
         failed_rpcs: failedRpcs,
         failed_columns: failedColumns,
-        raw: r as unknown as Record<string, unknown>,
+        raw: { ...(r as unknown as Record<string, unknown>), recovered } as Record<string, unknown>,
       } as never);
     } catch (e) {
       // Silent — health logging must never break the dashboard
@@ -72,8 +76,17 @@ export function DashboardHealthCheck({
       if (error) throw error;
       const r = data as unknown as HealthResult;
       setResult(r);
+      const wasFailing = previousOkRef.current === false;
+      const recovered = wasFailing && r.ok === true;
+      previousOkRef.current = r.ok;
       onHealthChange?.(r.ok);
-      void persistResult(r);
+      void persistResult(r, recovered);
+      if (recovered) {
+        toast.success("Banco recuperado", {
+          description: "Todas as RPCs e colunas críticas voltaram a responder.",
+          duration: 5000,
+        });
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErr(msg);
