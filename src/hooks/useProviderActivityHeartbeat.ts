@@ -16,6 +16,6 @@ export function useProviderActivityHeartbeat(userId?: string | null) {
       if (Date.now() - last < ONE_HOUR) return;
       localStorage.setItem(KEY, String(Date.now()));
     } catch { /* ignore */ }
-    void supabase.rpc('touch_my_provider_activity').catch(() => {});
+    void supabase.rpc('touch_my_provider_activity').then(() => undefined, () => undefined);
   }, [userId]);
 }
