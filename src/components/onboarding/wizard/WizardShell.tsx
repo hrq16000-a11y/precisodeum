@@ -149,7 +149,9 @@ export default function WizardShell() {
         type: 'HYDRATE',
         state: {
           phase: existingService
-            ? 'main_document'
+            ? profile?.onboarding_completed === true
+              ? 'main_more_services'
+              : 'main_document'
             : mapMainPhaseToUnified(bootstrap?.phase ?? 'phase2_service'),
           triage: {
             intent: 'professional',
@@ -163,6 +165,13 @@ export default function WizardShell() {
             document: profileSeed.document,
             company_name: '',
             points: Number(profile?.engagement_points ?? state.triage.points ?? 0),
+            rewards: {
+              name: true,
+              whatsapp: true,
+              intent: true,
+              city: true,
+              pro_kind: true,
+            },
           },
           profile: profileSeed,
           service: {
