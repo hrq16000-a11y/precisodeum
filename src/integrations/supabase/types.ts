@@ -2728,6 +2728,54 @@ export type Database = {
         }
         Relationships: []
       }
+      portability_snapshots: {
+        Row: {
+          checksum_sha256: string | null
+          created_at: string
+          created_by: string | null
+          file_count: number
+          id: string
+          kind: string
+          label: string
+          manifest: Json
+          notes: string | null
+          size_bytes: number
+          status: string
+          storage_path: string
+          validated_at: string | null
+        }
+        Insert: {
+          checksum_sha256?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_count?: number
+          id?: string
+          kind?: string
+          label: string
+          manifest?: Json
+          notes?: string | null
+          size_bytes?: number
+          status?: string
+          storage_path: string
+          validated_at?: string | null
+        }
+        Update: {
+          checksum_sha256?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_count?: number
+          id?: string
+          kind?: string
+          label?: string
+          manifest?: Json
+          notes?: string | null
+          size_bytes?: number
+          status?: string
+          storage_path?: string
+          validated_at?: string | null
+        }
+        Relationships: []
+      }
       portfolio_albums: {
         Row: {
           cover_image_url: string | null
