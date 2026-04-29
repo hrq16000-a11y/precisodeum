@@ -1,9 +1,10 @@
-/** Phase Pro Location — cidade do profissional. */
+/** Phase Pro Location — cidade + bairro do profissional. */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin } from 'lucide-react';
+import { ArrowRight, MapPin, Home } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { fieldWin } from '@/lib/betDopamine';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { BET_POINTS, type BetState } from './types';
@@ -31,7 +32,13 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     }
   }
 
-  const canFinish = state.city.trim().length > 0 && state.state.trim().length === 2;
+  function handleNeighborhood(e: React.ChangeEvent<HTMLInputElement>) {
+    patch({ neighborhood: e.target.value });
+  }
+
+  const cityOk = state.city.trim().length > 0 && state.state.trim().length === 2;
+  const neighborhoodOk = (state.neighborhood || '').trim().length >= 2;
+  const canFinish = cityOk && neighborhoodOk;
 
   async function onFinish() {
     if (!canFinish || submitting) return;
@@ -51,7 +58,7 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           Onde você atende?
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sua cidade aparece para clientes próximos.
+          Sua cidade e bairro aparecem para clientes próximos.
         </p>
       </header>
 
@@ -64,7 +71,7 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
             </span>
           )}
         </span>
-        <div className={`rounded-lg transition ${awarded ? 'ring-2 ring-emerald-300/60 shadow-[0_0_14px_rgba(16,185,129,0.35)]' : ''}`}>
+        <div className={`rounded-lg transition ${cityOk ? 'ring-2 ring-emerald-300/60 shadow-[0_0_14px_rgba(16,185,129,0.35)]' : ''}`}>
           <CityAutocomplete
             value={{ city: state.city, state: state.state }}
             onChange={handleCity}
@@ -73,6 +80,24 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
             statusText={preferredUF ? `Mostrando primeiro cidades de ${preferredUF}` : undefined}
           />
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <label htmlFor="neighborhood" className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <Home className="h-3.5 w-3.5" /> Bairro
+        </label>
+        <Input
+          id="neighborhood"
+          value={state.neighborhood}
+          onChange={handleNeighborhood}
+          placeholder="Ex: Centro, Boa Vista, Vila Nova"
+          autoComplete="address-level3"
+          maxLength={80}
+          className={neighborhoodOk ? 'ring-2 ring-emerald-300/60' : ''}
+        />
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          O bairro ajuda clientes da sua região a te encontrar mais rápido.
+        </p>
       </div>
 
       <Button
