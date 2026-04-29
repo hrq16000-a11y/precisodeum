@@ -363,6 +363,7 @@ const App = () => {
             <WhatsAppGateInterceptor />
             <Suspense fallback={null}><OAuthRedirectHandler /></Suspense>
             <Suspense fallback={null}><ImpersonationBanner /></Suspense>
+            <Suspense fallback={null}><GlobalExitIntentDialog /></Suspense>
             <Suspense fallback={<PageFallback />}>
               <LazyRouteBoundary>
               <OnboardingGate>
