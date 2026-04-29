@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, ExternalLink, Trash2, Mail, Star, Briefcase, CheckCircle, MessageCircle } from 'lucide-react';
+import { Bell, Check, CheckCheck, ExternalLink, Trash2, Mail, Star, Briefcase, CheckCircle, MessageCircle, Flame, Zap, TrendingUp, Settings } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -15,16 +15,24 @@ const typeIconMap: Record<string, React.ComponentType<any>> = {
   job: Briefcase,
   approval: CheckCircle,
   message: MessageCircle,
+  lead_performance: TrendingUp,
+  lead_ping: Flame,
+  activity_signal: Zap,
 };
 
 const typeLabels: Record<string, string> = {
   lead: 'Leads',
-  review: 'Avaliacoes',
+  review: 'Avaliações',
   system: 'Sistema',
   job: 'Vagas',
-  approval: 'Aprovacoes',
+  approval: 'Aprovações',
   message: 'Mensagens',
+  lead_performance: '5+ cliques/24h',
+  lead_ping: 'Ping de Sucesso',
+  activity_signal: 'Sinal de Vida',
 };
+
+const PERFORMANCE_TYPES = new Set(['lead_performance', 'lead_ping', 'activity_signal']);
 
 const NotificationRow = ({
   notification,
