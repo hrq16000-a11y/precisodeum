@@ -333,7 +333,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await refetchProfile?.();
       goto('celebration');
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao salvar cadastro');
+      logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'bet_finish_pro_outer' } });
+      toast.error(err?.message || 'Erro ao salvar cadastro', {
+        action: { label: 'Tentar novamente', onClick: () => { void finishPro(); } },
+      });
     }
   }
 
