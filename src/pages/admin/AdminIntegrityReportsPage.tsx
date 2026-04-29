@@ -77,8 +77,17 @@ const AdminIntegrityReportsPage = () => {
 
   const last = rows[0];
 
+  if (adminLoading) {
+    return (
+      <div className="p-8 text-center text-sm text-muted-foreground">
+        <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" /> Verificando permissões...
+      </div>
+    );
+  }
+  if (!isAdmin) return <Navigate to="/" replace />;
+
   return (
-    <AdminGuard>
+    <>
       <div className="container mx-auto max-w-5xl px-4 py-6">
         <header className="mb-5 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
