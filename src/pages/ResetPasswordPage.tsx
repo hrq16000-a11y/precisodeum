@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import AuthPageShell from '@/components/auth/AuthPageShell';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { buildLoginUrl, sanitizeNextPath } from '@/lib/authRedirect';
@@ -94,9 +93,8 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <div className="flex flex-1 items-center justify-center py-12">
+    <AuthPageShell backTo="/login" backLabel="Voltar ao login">
+      <div className="flex w-full items-center justify-center py-2">
         <div className="w-full max-w-sm">
           <div className="rounded-xl border border-border bg-card p-8 shadow-card">
             <h1 className="text-center font-display text-2xl font-bold text-foreground">Redefinir Senha</h1>
@@ -128,8 +126,7 @@ const ResetPasswordPage = () => {
           </div>
         </div>
       </div>
-      <Footer />
-    </div>
+    </AuthPageShell>
   );
 };
 

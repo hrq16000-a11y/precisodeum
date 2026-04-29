@@ -1,8 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { CheckCircle2, LogIn, ShieldCheck, ArrowRight } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import AuthPageShell from '@/components/auth/AuthPageShell';
 import { Button } from '@/components/ui/button';
 import { buildLoginUrl, sanitizeNextPath } from '@/lib/authRedirect';
 
@@ -23,9 +22,8 @@ const ResetPasswordSuccessPage = () => {
   }, [location.search]);
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
+    <AuthPageShell backTo="/login" backLabel="Voltar ao login">
+      <main className="flex w-full items-center justify-center px-0 py-2">
         <div className="w-full max-w-md">
           <div className="rounded-2xl border border-border bg-card p-8 shadow-card text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
@@ -69,8 +67,7 @@ const ResetPasswordSuccessPage = () => {
           </div>
         </div>
       </main>
-      <Footer />
-    </div>
+    </AuthPageShell>
   );
 };
 
