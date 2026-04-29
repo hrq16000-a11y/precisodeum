@@ -18,6 +18,7 @@ export interface BetState {
   intent: BetIntent | null;
   city: string;
   state: string;
+  neighborhood: string;        // bairro — necessário para anúncio aparecer
   pro_kind: BetProKind | null;
   document: string;            // CPF (11) ou CNPJ (14)
   company_name: string;        // PJ apenas
@@ -31,6 +32,7 @@ export const initialBetState: BetState = {
   intent: null,
   city: '',
   state: '',
+  neighborhood: '',
   pro_kind: null,
   document: '',
   company_name: '',
