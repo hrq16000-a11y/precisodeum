@@ -507,6 +507,8 @@ const App = () => {
                 <Route path="/admin/lixeira" element={<AdminTrashPage />} />
                 <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
                 <Route path="/admin/pwa" element={<AdminPwaPage />} />
+                <Route path="/admin/regressao" element={<ProtectedRoute><AdminRegressionReportsPage /></ProtectedRoute>} />
+                <Route path="/admin/metricas-auth" element={<ProtectedRoute><AdminAuthMetricsPage /></ProtectedRoute>} />
                 
                 <Route path="/admin/midia" element={<AdminMediaPage />} />
                 <Route path="/admin/servicos" element={<AdminServicesPage />} />
