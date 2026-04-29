@@ -169,18 +169,36 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async (forceFreshChooser = false) => {
     if (from) sessionStorage.setItem('auth_redirect', from);
+    setGoogleError(null);
+    setGoogleState('loading');
     setLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: window.location.origin,
-      extraParams: { prompt: 'select_account' },
-    });
-    if (error) {
+    try {
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: window.location.origin,
+        // Se já falhou uma vez, força tela de seleção de conta
+        extraParams: { prompt: forceFreshChooser ? 'select_account consent' : 'select_account' },
+      });
+      if ((result as any).redirected) {
+        setGoogleState('redirecting');
+        return; // navegador já saiu da página
+      }
+      if ((result as any).error) {
+        const msg = (result as any).error?.message || 'Falha ao continuar com Google';
+        setGoogleError(msg);
+        setGoogleState('error');
+        setLoading(false);
+        toast.error('Não foi possível entrar com Google. Tente trocar de conta.');
+        return;
+      }
+      setGoogleState('success');
+    } catch (err: any) {
+      setGoogleError(err?.message || 'Erro inesperado no login Google');
+      setGoogleState('error');
       setLoading(false);
-      toast.error('Erro ao continuar com Google');
+      toast.error('Erro inesperado no login Google');
     }
-    // se redirected=true, o navegador já foi redirecionado — nada a fazer
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
