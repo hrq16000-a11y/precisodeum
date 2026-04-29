@@ -942,7 +942,7 @@ type RestoreStep = {
   id: string;
   title: string;
   hint: string;
-  action: "schema-integrity" | "storage-checksums" | "smoke-tests" | "manual";
+  action: "schema-integrity" | "storage-checksums" | "smoke-tests" | "manifest-compare" | "manual";
   manualText?: string;
 };
 
@@ -953,55 +953,225 @@ const RESTORE_STEPS: RestoreStep[] = [
     manualText: "psql \"$NEW_DB\" -v ON_ERROR_STOP=1 -f db/01-schema.sql" },
   { id: "import_data", title: "3. Importar dados (data-only, ordem das dependências)", hint: "Use db/per-table/*.sql ou 02-data.sql.", action: "manual",
     manualText: "psql \"$NEW_DB\" -c \"SET session_replication_role = replica;\"\nfor f in db/per-table/*.sql; do psql \"$NEW_DB\" -v ON_ERROR_STOP=1 -f \"$f\"; done\npsql \"$NEW_DB\" -c \"SET session_replication_role = DEFAULT;\"" },
-  { id: "schema_integrity", title: "4. Validar integridade do schema", hint: "Confere tabelas críticas e cobertura de user_ref.", action: "schema-integrity" },
+  { id: "schema_integrity", title: "4. Validar integridade do schema (cobertura user_ref)", hint: "Aplica a regra de cobertura mínima configurada na aba user_ref.", action: "schema-integrity" },
   { id: "recreate_cron", title: "5. Recriar cron jobs", hint: "psql -f cron/recreate-cron-jobs.sql", action: "manual",
     manualText: "psql \"$NEW_DB\" -f cron/recreate-cron-jobs.sql" },
   { id: "download_media", title: "6. Subir mídia do Storage", hint: "node scripts/download-storage.mjs --upload ./storage", action: "manual",
     manualText: "node scripts/download-storage.mjs --upload ./storage" },
-  { id: "storage_checksums", title: "7. Comparar checksums dos buckets", hint: "Recalcula SHA-256 de cada arquivo restaurado.", action: "storage-checksums" },
-  { id: "smoke_tests", title: "8. Rodar smoke tests", hint: "RPCs, tabelas críticas e listagem de buckets.", action: "smoke-tests" },
+  { id: "storage_checksums", title: "7. Recalcular checksums dos buckets restaurados", hint: "SHA-256 de cada arquivo (amostragem).", action: "storage-checksums" },
+  { id: "manifest_compare", title: "8. Comparar com manifest do ZIP original", hint: "Carregue storage-manifest.json (vindo do ZIP) e compare divergências.", action: "manifest-compare" },
+  { id: "smoke_tests", title: "9. Smoke tests estendidos (RPCs + busca)", hint: "Inclui /buscar por categoria e cidade com dados de exemplo.", action: "smoke-tests" },
 ];
 
 function RestoreTab() {
-  const [logs, setLogs] = useState<{ step: string; ts: string; level: "info" | "ok" | "error"; msg: string; data?: any }[]>([]);
+  const [logs, setLogs] = useState<{ step: string; ts: string; level: "info" | "ok" | "error"; msg: string; data?: unknown }[]>([]);
   const [running, setRunning] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, "ok" | "error" | "pending">>({});
+  const [manifest, setManifest] = useState<unknown | null>(null);
+  const [manifestName, setManifestName] = useState<string>("");
+  const [finalSummary, setFinalSummary] = useState<{ ok: number; failed: number; failures: string[] } | null>(null);
 
-  const log = (step: string, level: "info" | "ok" | "error", msg: string, data?: any) => {
+  const log = (step: string, level: "info" | "ok" | "error", msg: string, data?: unknown) => {
     setLogs((l) => [...l, { step, ts: new Date().toISOString(), level, msg, data }]);
+  };
+
+  const onManifestUpload = async (file: File) => {
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      setManifest(json);
+      setManifestName(file.name);
+      toast.success(`Manifest carregado: ${file.name}`);
+      log("manifest_compare", "info", `Manifest carregado: ${file.name}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Manifest inválido: ${msg}`);
+    }
   };
 
   const runAction = async (step: RestoreStep) => {
     if (step.action === "manual") return;
+    if (step.action === "manifest-compare" && !manifest) {
+      toast.error("Carregue o storage-manifest.json antes de comparar.");
+      return;
+    }
     setRunning(step.id);
     log(step.id, "info", `Iniciando "${step.title}"...`);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${FUNCTION_URL("portability-restore")}?action=${step.action}`, {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
+      const isPost = step.action === "manifest-compare";
+      const actionParam = step.action === "manifest-compare"
+        ? "storage-checksums-compare"
+        : step.action;
+      const res = await fetch(`${FUNCTION_URL("portability-restore")}?action=${actionParam}`, {
+        method: isPost ? "POST" : "GET",
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          ...(isPost ? { "Content-Type": "application/json" } : {}),
+        },
+        body: isPost ? JSON.stringify({ manifest }) : undefined,
       });
       const json = await res.json();
       if (json.error) throw new Error(json.error);
       const ok = json.ok !== false;
       log(step.id, ok ? "ok" : "error", ok ? "Etapa concluída com sucesso." : "Falha detectada.", json);
       setResults((r) => ({ ...r, [step.id]: ok ? "ok" : "error" }));
-      if (ok) toast.success(`${step.title} ✔`);
+      if (ok) toast.success(`${step.title} OK`);
       else toast.error(`Falha em: ${step.title}`);
-    } catch (e: any) {
-      log(step.id, "error", e.message);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      log(step.id, "error", msg);
       setResults((r) => ({ ...r, [step.id]: "error" }));
-      toast.error(e.message);
+      toast.error(msg);
     } finally {
       setRunning(null);
     }
   };
 
   const runAll = async () => {
+    setFinalSummary(null);
     for (const s of RESTORE_STEPS) {
       if (s.action !== "manual") {
+        if (s.action === "manifest-compare" && !manifest) {
+          log(s.id, "info", "Etapa pulada: nenhum manifest carregado.");
+          continue;
+        }
         await runAction(s);
       }
     }
+    // build final summary
+    setResults((current) => {
+      const failed = Object.entries(current).filter(([, v]) => v === "error").map(([k]) => k);
+      const ok = Object.values(current).filter((v) => v === "ok").length;
+      setFinalSummary({ ok, failed: failed.length, failures: failed });
+      return current;
+    });
+  };
+
+  const exportLogs = () => {
+    const text = logs.map((l) => `[${l.ts}] [${l.level.toUpperCase()}] ${l.step}: ${l.msg}${l.data ? "\n  " + JSON.stringify(l.data) : ""}`).join("\n");
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    downloadBlob(blob, `restore-log-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.txt`);
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="size-4" />Manifest do Storage (do ZIP original)
+          </CardTitle>
+          <CardDescription>
+            Necessário para a etapa 8 (comparação de divergências). Gerado pelo
+            bundle ou pelo passo 7 do host original (<code>storage-manifest.json</code>).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-3 items-start">
+          <Input
+            type="file"
+            accept="application/json"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onManifestUpload(f);
+            }}
+          />
+          {manifestName && (
+            <Badge variant="secondary">
+              <CheckCircle2 className="size-3 mr-1" />{manifestName}
+            </Badge>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+          <div>
+            <CardTitle className="flex items-center gap-2"><Rocket className="size-5" />Restaurar em novo host</CardTitle>
+            <CardDescription>
+              Fluxo sequencial. O pacote só deve ser marcado como "pronto" quando todas as etapas automáticas passarem.
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={exportLogs} disabled={logs.length === 0}>
+              <Download className="size-4 mr-2" />Exportar logs
+            </Button>
+            <Button size="sm" onClick={runAll} disabled={!!running}>
+              <PlayCircle className="size-4 mr-2" />Rodar todas as automáticas
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {RESTORE_STEPS.map((s) => {
+            const r = results[s.id];
+            return (
+              <div key={s.id} className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{s.title}</span>
+                      {r === "ok" && <Badge className="bg-green-600 hover:bg-green-700"><CheckCircle2 className="size-3 mr-1" />OK</Badge>}
+                      {r === "error" && <Badge variant="destructive"><XCircle className="size-3 mr-1" />Falhou</Badge>}
+                      {s.action === "manual" && <Badge variant="outline">manual</Badge>}
+                      {s.action !== "manual" && <Badge variant="secondary">automática</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{s.hint}</p>
+                  </div>
+                  {s.action !== "manual" && (
+                    <Button size="sm" onClick={() => runAction(s)} disabled={running === s.id}>
+                      {running === s.id ? <Loader2 className="size-4 mr-2 animate-spin" /> : <PlayCircle className="size-4 mr-2" />}
+                      Executar
+                    </Button>
+                  )}
+                </div>
+                {s.manualText && (
+                  <pre className="text-[11px] bg-muted/50 rounded p-2 overflow-x-auto font-mono">{s.manualText}</pre>
+                )}
+              </div>
+            );
+          })}
+
+          {finalSummary && (
+            <div className={`mt-3 border rounded-lg p-3 ${finalSummary.failed === 0 ? "border-green-500/40 bg-green-500/5" : "border-destructive/40 bg-destructive/5"}`}>
+              <div className="font-semibold text-sm flex items-center gap-2">
+                {finalSummary.failed === 0
+                  ? <><CheckCircle2 className="size-4 text-green-600" />Restore validado — pacote pronto.</>
+                  : <><XCircle className="size-4 text-destructive" />Restore com divergências.</>}
+              </div>
+              <div className="text-xs mt-1">
+                Etapas OK: {finalSummary.ok} · Falhas: {finalSummary.failed}
+                {finalSummary.failures.length > 0 && (
+                  <span className="ml-2">({finalSummary.failures.join(", ")})</span>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Logs detalhados</CardTitle>
+          <CardDescription>{logs.length} entrada(s).</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-muted/30 rounded-lg p-3 max-h-96 overflow-auto font-mono text-[11px] space-y-1">
+            {logs.length === 0 && <p className="text-muted-foreground">Nenhum log ainda. Execute uma etapa automática.</p>}
+            {logs.map((l, i) => (
+              <div key={i} className={l.level === "error" ? "text-destructive" : l.level === "ok" ? "text-green-600" : ""}>
+                <span className="opacity-60">[{l.ts.slice(11, 19)}]</span>{" "}
+                <span className="font-semibold">{l.step}</span>{" "}
+                {l.msg}
+                {l.data ? (
+                  <pre className="ml-4 opacity-80 whitespace-pre-wrap">{JSON.stringify(l.data, null, 2).slice(0, 800)}{JSON.stringify(l.data).length > 800 ? "…" : ""}</pre>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
   };
 
   const exportLogs = () => {
