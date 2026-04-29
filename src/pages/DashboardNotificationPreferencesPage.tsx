@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, MessageCircle, Bell, Smartphone, Send, BellRing } from 'lucide-react';
+import { Mail, MessageCircle, Bell, Smartphone, Send, BellRing, Activity, Volume2, Flame, MailCheck } from 'lucide-react';
+import { playHornBeep } from '@/lib/soundFx';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
