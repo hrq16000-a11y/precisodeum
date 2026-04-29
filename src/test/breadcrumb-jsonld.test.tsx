@@ -63,8 +63,8 @@ function buildProviderBreadcrumb(slug: string, name: string, categorySlug: strin
 
 // ---------- Helpers ----------
 
-function getInjectedLd(testId: string): any | null {
-  const node = document.querySelector(`script[type="application/ld+json"][data-jsonld-id="${testId}"]`)
+function getInjectedLd(scriptId: string): any | null {
+  const node = document.getElementById(scriptId)
     || Array.from(document.querySelectorAll('script[type="application/ld+json"]')).slice(-1)[0];
   if (!node || !node.textContent) return null;
   return JSON.parse(node.textContent);
