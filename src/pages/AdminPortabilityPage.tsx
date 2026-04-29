@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Archive, Download, ShieldCheck, Loader2, FileText,
   CheckCircle2, Circle, Eye, EyeOff, Trash2, RefreshCw, ListChecks, Server, Webhook,
+  Fingerprint, AlertTriangle,
 } from "lucide-react";
 
 // ---------------- Helpers ----------------
