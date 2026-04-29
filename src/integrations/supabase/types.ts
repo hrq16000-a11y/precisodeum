@@ -1221,6 +1221,39 @@ export type Database = {
         }
         Relationships: []
       }
+      health_check_history: {
+        Row: {
+          created_at: string
+          failed_columns: Json
+          failed_rpcs: string[]
+          id: string
+          ok: boolean
+          raw: Json | null
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          failed_columns?: Json
+          failed_rpcs?: string[]
+          id?: string
+          ok: boolean
+          raw?: Json | null
+          source?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          failed_columns?: Json
+          failed_rpcs?: string[]
+          id?: string
+          ok?: boolean
+          raw?: Json | null
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       hero_banners: {
         Row: {
           active: boolean
