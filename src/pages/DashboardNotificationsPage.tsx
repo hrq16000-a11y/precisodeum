@@ -114,8 +114,16 @@ const DashboardNotificationsPage = () => {
     return Array.from(types).sort((a, b) => a.localeCompare(b));
   }, [notifications]);
 
+  const performanceCount = useMemo(
+    () => notifications.filter(n => PERFORMANCE_TYPES.has(n.type)).length,
+    [notifications],
+  );
+
   const filteredNotifications = useMemo(() => {
     if (selectedType === 'all') return notifications;
+    if (selectedType === '__performance__') {
+      return notifications.filter(n => PERFORMANCE_TYPES.has(n.type));
+    }
     return notifications.filter(n => n.type === selectedType);
   }, [notifications, selectedType]);
 
