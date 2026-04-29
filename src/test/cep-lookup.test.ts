@@ -33,8 +33,8 @@ describe('lookupCep — fluxos principais', () => {
   it('rejeita CEP em formato inválido sem chamar a rede', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch' as any);
     const r = await lookupCep('123');
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.reason).toBe('invalid_format');
+    if (r.ok) throw new Error('expected failure');
+    expect(r.reason).toBe('invalid_format');
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -72,7 +72,7 @@ describe('lookupCep — fluxos principais', () => {
       .mockResolvedValueOnce(new Response('boom', { status: 500 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ erro: true }), { status: 200 }));
     const r = await lookupCep('99999-998');
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.reason).toBe('not_found');
+    if (r.ok) throw new Error('expected failure');
+    expect(r.reason).toBe('not_found');
   });
 });
