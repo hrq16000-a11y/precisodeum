@@ -1854,6 +1854,79 @@ export type Database = {
           },
         ]
       }
+      lead_interactions: {
+        Row: {
+          created_at: string
+          id: string
+          interaction_type: string
+          provider_id: string
+          service_id: string | null
+          source: string | null
+          ua_hash: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interaction_type: string
+          provider_id: string
+          service_id?: string | null
+          source?: string | null
+          ua_hash?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interaction_type?: string
+          provider_id?: string
+          service_id?: string | null
+          source?: string | null
+          ua_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_interactions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           client_name: string
@@ -3428,6 +3501,7 @@ export type Database = {
           ibge_code: string | null
           id: string
           is_verified: boolean
+          last_active_at: string | null
           last_response_calc_at: string | null
           latitude: number | null
           lead_followup_hours: number
@@ -3492,6 +3566,7 @@ export type Database = {
           ibge_code?: string | null
           id?: string
           is_verified?: boolean
+          last_active_at?: string | null
           last_response_calc_at?: string | null
           latitude?: number | null
           lead_followup_hours?: number
@@ -3556,6 +3631,7 @@ export type Database = {
           ibge_code?: string | null
           id?: string
           is_verified?: boolean
+          last_active_at?: string | null
           last_response_calc_at?: string | null
           latitude?: number | null
           lead_followup_hours?: number
@@ -7121,6 +7197,18 @@ export type Database = {
           image_url: string
         }[]
       }
+      get_provider_lead_stats: {
+        Args: { _provider_id: string }
+        Returns: {
+          clicks_30d: number
+          clicks_7d: number
+          last_click_at: string
+          phone_30d: number
+          phone_7d: number
+          whatsapp_30d: number
+          whatsapp_7d: number
+        }[]
+      }
       get_provider_verification_status: {
         Args: { _user_id: string }
         Returns: {
@@ -7517,6 +7605,17 @@ export type Database = {
       sponsor_has_active_plan: {
         Args: { _sponsor_id: string }
         Returns: boolean
+      }
+      touch_my_provider_activity: { Args: never; Returns: undefined }
+      track_lead_interaction: {
+        Args: {
+          _provider_id: string
+          _service_id: string
+          _source: string
+          _type: string
+          _ua_hash: string
+        }
+        Returns: string
       }
       track_presence_heartbeat: { Args: never; Returns: Json }
       track_sponsor_metric: {

@@ -51,6 +51,8 @@ import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedSta
 import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
 import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
 import DashboardAnalytics from '@/components/dashboard/DashboardAnalytics';
+import AdPerformanceWidget from '@/components/dashboard/AdPerformanceWidget';
+import { useProviderActivityHeartbeat } from '@/hooks/useProviderActivityHeartbeat';
 import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWidget';
 import RegionalDemandWidget from '@/components/dashboard/RegionalDemandWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
@@ -92,6 +94,7 @@ const DashboardPage = () => {
 
   // Heartbeat de presença persistido (alimenta get_missed_opportunities)
   usePresenceHeartbeat(user?.id, !!provider?.id);
+  useProviderActivityHeartbeat(user?.id);
 
   // PWA: missão "App Instalado" (+30 pts) + smart reminder ao abrir standalone
   usePwaMission(user?.id, provider?.id);
@@ -595,6 +598,13 @@ const DashboardPage = () => {
       <div className="mt-6">
         <DashboardAnalytics />
       </div>
+
+      {/* 1b) Desempenho do Anúncio — cliques reais + diagnóstico */}
+      {provider?.id && (
+        <div className="mt-4">
+          <AdPerformanceWidget providerId={provider.id} hasPhoto={!!provider?.photo_url} />
+        </div>
+      )}
 
       {/* Mantém UnifiedHealthScore como complemento de completude rápida */}
       <div className="mt-4">
