@@ -33,11 +33,11 @@ import ServiceWizard from '@/components/dashboard/ServiceWizard';
 describe('ServiceWizard integration', () => {
   const baseProps = {
     userId: 'u-1',
-    provider: { id: 'p-1', city: 'Curitiba', state: 'PR', neighborhood: 'Centro', slug: 'p1' },
-    categories: [],
+    provider: { id: 'p-1', city: 'Curitiba', state: 'PR', neighborhood: 'Centro', slug: 'p1' } as any,
+    categories: [] as any[],
     onComplete: vi.fn(),
     onCancel: vi.fn(),
-  } as const;
+  };
 
   it('não crasha quando providerId vem vazio', () => {
     expect(() =>
