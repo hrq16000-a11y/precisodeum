@@ -6,19 +6,15 @@ import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Mail, AlertCircle, CheckCircle2, ArrowLeft, Clock } from 'lucide-react';
+import {
+  startCooldown as startCooldownShared,
+  subscribeCooldown,
+  formatCooldown,
+} from '@/lib/forgotPasswordCooldown';
 
 type Status = 'idle' | 'sending' | 'sent' | 'cooldown' | 'not_found' | 'error';
 
 const COOLDOWN_SECONDS = 60;
-const COOLDOWN_KEY = 'forgot-password:cooldown-until';
-
-const formatCooldown = (s: number): string => {
-  if (s <= 0) return '0s';
-  const m = Math.floor(s / 60);
-  const r = s % 60;
-  if (m === 0) return `${r}s`;
-  return `${m}min ${r.toString().padStart(2, '0')}s`;
-};
 
 const ForgotPasswordPage = () => {
   const location = useLocation();
@@ -31,27 +27,16 @@ const ForgotPasswordPage = () => {
 
   useEffect(() => {
     document.title = 'Esqueci minha senha | Preciso de Um';
-    // Restaura cooldown persistido (sobrevive a reload)
-    try {
-      const until = Number(localStorage.getItem(COOLDOWN_KEY) || '0');
-      const remaining = Math.ceil((until - Date.now()) / 1000);
-      if (remaining > 0) setCooldown(remaining);
-    } catch { /* noop */ }
+    // Sincroniza cooldown entre abas via BroadcastChannel + storage events
+    const unsub = subscribeCooldown((remaining) => setCooldown(remaining));
+    return unsub;
   }, []);
 
   const startCooldown = (seconds: number) => {
-    setCooldown(seconds);
-    try { localStorage.setItem(COOLDOWN_KEY, String(Date.now() + seconds * 1000)); } catch { /* noop */ }
+    startCooldownShared(seconds);
+    // estado local será atualizado pelo subscribeCooldown; setamos imediato pra UX
+    setCooldown((prev) => Math.max(prev, seconds));
   };
-
-  useEffect(() => {
-    if (cooldown <= 0) {
-      try { localStorage.removeItem(COOLDOWN_KEY); } catch { /* noop */ }
-      return;
-    }
-    const t = setTimeout(() => setCooldown(c => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
 
   const validate = (raw: string): string | null => {
     const v = raw.trim();
