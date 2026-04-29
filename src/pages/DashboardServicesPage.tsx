@@ -1112,10 +1112,55 @@ const DashboardServicesPage = () => {
                   {formErrors.service_name && <p className="text-xs text-destructive mt-1">{formErrors.service_name}</p>}
                 </div>
 
+                {/* Auto-fill: importa Bio + Foto do perfil para acelerar o cadastro */}
+                {!editId && (provider?.description || provider?.photo_url) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const bio = (provider?.description || '').trim();
+                      const importedPhoto = !!provider?.photo_url;
+                      if (!bio && !importedPhoto) {
+                        toast.info('Seu perfil ainda não tem descrição nem foto para importar.');
+                        return;
+                      }
+                      if (bio) {
+                        setForm((prev) => ({
+                          ...prev,
+                          description: prev.description ? prev.description : bio,
+                        }));
+                      }
+                      // Roda re-linter imediatamente para mostrar se a bio "serve"
+                      const hits = bio ? lintServiceDescription(bio) : [];
+                      const slugs = selectedCategoryIds
+                        .map((id) => categories.find((c: any) => c.id === id)?.slug)
+                        .filter(Boolean) as string[];
+                      const score = computeAdScore({
+                        description: bio || form.description,
+                        hasOriginalPhoto: importedPhoto,
+                        cityValidated: isCatalogedCity(stripLegacyAreaPrefixes(form.service_area), ALL_CITIES),
+                        categorySlugs: slugs,
+                      });
+                      const tone = score.score >= 70 ? 'success' : score.score >= 40 ? 'info' : 'warning';
+                      toast[tone](`Dados importados do seu perfil — score ${score.score}%`, {
+                        description: hits.length > 0
+                          ? `Atenção: ${hits.length} termo(s) de leilão detectado(s). Use "Reescrever com qualidade".`
+                          : score.score >= 70
+                            ? 'Sua bio do perfil está boa o suficiente para um anúncio de alta performance.'
+                            : 'Sua bio precisa de ajustes para virar um anúncio de alta performance.',
+                        duration: 5000,
+                      });
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/5 hover:bg-accent/10 px-3 py-2 text-xs font-semibold text-accent transition-colors"
+                  >
+                    <UserCheck className="h-3.5 w-3.5" />
+                    Importar dados do meu perfil (Bio + Foto)
+                  </button>
+                )}
+
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-sm font-medium text-foreground">Descrição</label>
-                  </div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label></div>
+                <div style={{display:'none'}}>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
                   <DescriptionTemplatePanel
                     categorySlugs={selectedCategoryIds.map(id => {
                       const cat = categories.find((c: any) => c.id === id);
