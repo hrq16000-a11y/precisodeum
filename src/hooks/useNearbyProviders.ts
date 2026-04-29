@@ -113,6 +113,13 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
           isOnline: !!p.is_online,
           visibilityScore: Number(p.visibility_score) || 0,
           activitySignal: (p.activity_signal as any) || null,
+          accountType: (p.account_type as any) || 'autonomous',
+          businessSegment: p.business_segment ?? null,
+          street: p.street ?? null,
+          streetNumber: p.street_number ?? null,
+          complement: p.complement ?? null,
+          postalCode: p.postal_code ?? null,
+          socialLinks: (p.social_links as any) ?? null,
         };
       });
     },
