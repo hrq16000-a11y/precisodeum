@@ -177,6 +177,7 @@ const ErrorPage = lazy(() => import("./pages/ErrorPage"));
 const Index02 = lazy(() => import("./pages/Index02"));
 const Index03 = lazy(() => import("./pages/Index03"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const AccountDeletionPage = lazy(() => import("./pages/AccountDeletionPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const CookiesPage = lazy(() => import("./pages/CookiesPage"));
 const SponsorLandingPage = lazy(() => import("./pages/SponsorLandingPage"));
@@ -571,6 +572,9 @@ const App = () => {
                 <Route path="/ajuda/cadastro" element={<HelpOnboardingPage />} />
                 <Route path="/cadastro/retomar" element={<RecoveryOnboardingPage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
+                <Route path="/excluir-conta" element={<AccountDeletionPage />} />
+                <Route path="/exclusao-de-conta" element={<AccountDeletionPage />} />
+                <Route path="/delete-account" element={<AccountDeletionPage />} />
                 <Route path="/termos" element={<TermsPage />} />
                 <Route path="/cookies" element={<CookiesPage />} />
                 <Route path="/sobre" element={<AboutPage />} />

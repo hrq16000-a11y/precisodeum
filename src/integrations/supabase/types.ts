@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          admin_notes: string | null
+          cancelled_at: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          ip_address: string | null
+          processed_at: string | null
+          reason: string | null
+          requested_at: string
+          scheduled_for: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          ip_address?: string | null
+          processed_at?: string | null
+          reason?: string | null
+          requested_at?: string
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          ip_address?: string | null
+          processed_at?: string | null
+          reason?: string | null
+          requested_at?: string
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       account_types: {
         Row: {
           active: boolean
@@ -869,6 +923,45 @@ export type Database = {
           image_url?: string | null
           provider_id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      email_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          message_id: string | null
+          occurred_at: string
+          payload: Json
+          provider: string
+          recipient: string | null
+          subject: string | null
+          template: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          message_id?: string | null
+          occurred_at?: string
+          payload?: Json
+          provider?: string
+          recipient?: string | null
+          subject?: string | null
+          template?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          message_id?: string | null
+          occurred_at?: string
+          payload?: Json
+          provider?: string
+          recipient?: string | null
+          subject?: string | null
+          template?: string | null
         }
         Relationships: []
       }
