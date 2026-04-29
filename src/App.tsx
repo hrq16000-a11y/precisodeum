@@ -155,6 +155,7 @@ const SitemapRedirect = lazy(() => import("./pages/SitemapRedirect"));
 const ServiceDetailPage = lazy(() => import("./pages/ServiceDetailPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
 const HelpCenterPage = lazy(() => import("./pages/HelpCenterPage"));
+const HelpOnlineOfflinePage = lazy(() => import("./pages/HelpOnlineOfflinePage"));
 const ServicesPage = lazy(() => import("./pages/ServicesPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
