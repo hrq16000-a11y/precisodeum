@@ -43,6 +43,19 @@ import {
   clearServiceWizardDraft,
   useServiceWizardDraftAutosave,
 } from '@/hooks/useServiceWizardDraft';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { findMetroByPole, getMetroMembers } from '@/lib/metroRegions';
+import { validateWhatsapp } from '@/lib/whatsapp';
+import { ShieldAlert, UserCheck } from 'lucide-react';
 
 // Heavy editor sub-components — only loaded when the edit Dialog opens
 const SmartCategoryPicker = lazy(() => import('@/components/SmartCategoryPicker'));
