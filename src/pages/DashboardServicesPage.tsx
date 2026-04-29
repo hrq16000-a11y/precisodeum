@@ -1488,6 +1488,14 @@ const DashboardServicesPage = () => {
                       cityValidated={cityValidated}
                       categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
                     />
+
+                    {/* Checklist dinâmico do Padrão Ouro */}
+                    <GoldChecklist
+                      description={form.description}
+                      hasOriginalPhoto={!!newServicePhoto || (!!editId && !!serviceImages[editId])}
+                      cityValidated={cityValidated}
+                      categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
+                    />
                   </div>
                 </div>
               );
