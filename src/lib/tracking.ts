@@ -1,7 +1,11 @@
 /**
  * Tracking utility for provider card events.
  * Logs impressions, clicks (WhatsApp, profile, banner) for analytics & monetization.
+ *
+ * Eventos de clique em contato (whatsapp/phone/profile) também disparam
+ * `track_lead_interaction` no banco de forma assíncrona (fire-and-forget).
  */
+import { supabase } from '@/integrations/supabase/client';
 
 type TrackEvent = 'card_view' | 'click_whatsapp' | 'click_profile' | 'click_banner'
   | 'click_highlight'
