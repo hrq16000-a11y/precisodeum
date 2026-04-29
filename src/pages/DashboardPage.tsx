@@ -96,6 +96,9 @@ const DashboardPage = () => {
   usePresenceHeartbeat(user?.id, !!provider?.id);
   useProviderActivityHeartbeat(user?.id);
 
+  // Ping de Sucesso: toast em tempo real ao receber clique no WhatsApp/telefone
+  useLeadInteractionPing();
+
   // PWA: missão "App Instalado" (+30 pts) + smart reminder ao abrir standalone
   usePwaMission(user?.id, provider?.id);
 
