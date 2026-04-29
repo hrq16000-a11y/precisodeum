@@ -142,6 +142,22 @@ const DashboardMyPagePage = () => {
         setTheme((data as any).theme || 'default');
       }
       setLoading(false);
+
+      // Visitar a página de personalização já marca o passo "Personalize sua
+      // página" como concluído na esteira de onboarding (a maioria dos usuários
+      // só ajusta cor/tema e sai sem clicar em Salvar — antes disso o passo
+      // ficava preso e nunca progredia).
+      try {
+        const current = ((provider as any)?.onboarding_progress as Record<string, unknown>) || {};
+        if (!current.page_customized) {
+          await supabase
+            .from('providers')
+            .update({ onboarding_progress: { ...current, page_customized: true } })
+            .eq('id', provider.id);
+        }
+      } catch (e) {
+        console.warn('[MyPage] auto-mark page_customized falhou:', e);
+      }
     };
     fetch();
   }, [provider]);
