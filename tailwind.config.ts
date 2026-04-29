@@ -136,6 +136,15 @@ export default {
         "shimmer": {
           "100%": { transform: "translateX(100%)" },
         },
+        "online-pulse": {
+          "0%": { transform: "scale(0.85)", opacity: "0.55" },
+          "70%": { transform: "scale(1.6)", opacity: "0" },
+          "100%": { transform: "scale(1.6)", opacity: "0" },
+        },
+        "online-breath": {
+          "0%, 100%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.12)", opacity: "0.92" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -149,6 +158,8 @@ export default {
         "bounce-subtle": "bounce-subtle 2s ease-in-out infinite",
         "spin-slow": "spin-slow 8s linear infinite",
         "gradient-shift": "gradient-shift 6s ease infinite",
+        "online-pulse": "online-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "online-breath": "online-breath 2.4s ease-in-out infinite",
       },
     },
   },
