@@ -103,8 +103,9 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
   input: T,
 ): T & Record<ProviderRequiredStringField, string> {
   const out = { ...input } as Record<string, unknown>;
+  const isCompany = (out.account_type as string) === 'company';
 
-  // 1) Remove chaves proibidas (endereço detalhado fora do schema).
+  // 1) Remove chaves proibidas (aliases / colunas inexistentes em qualquer caso).
   const stripped: string[] = [];
   for (const key of PROVIDER_FORBIDDEN_ADDRESS_KEYS) {
     if (key in out) {
@@ -112,11 +113,28 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
       delete out[key];
     }
   }
+
+  // 1b) Chaves PJ — só permanecem para empresas; para PF são silenciosamente removidas
+  if (!isCompany) {
+    for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
+      if (key in out) {
+        stripped.push(key);
+        delete out[key];
+      }
+    }
+  } else {
+    // Para empresas: sanitiza (trim + nullify de strings vazias) sem deletar
+    for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
+      if (key in out) {
+        out[key] = safeOptionalString(out[key]);
+      }
+    }
+  }
+
   if (stripped.length > 0 && typeof console !== 'undefined') {
     console.warn(
-      '[providerPayload] Campos de endereço ignorados (não pertencem ao schema):',
+      '[providerPayload] Campos de endereço ignorados (não pertencem ao schema/perfil):',
       stripped.join(', '),
-      '— se você precisa salvar isso, adicione coluna explícita ou use outra tabela.',
     );
   }
 
