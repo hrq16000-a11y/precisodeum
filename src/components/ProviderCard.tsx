@@ -35,6 +35,7 @@ import {
   isDuplicateCategoryLabel,
   normalizeProviderToken,
 } from '@/lib/providerDisplay';
+import { extractSpecialties } from '@/lib/specialtyExtractor';
 
 interface ProviderCardProps {
   provider: DbProvider;
@@ -286,7 +287,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                   </motion.div>
                 )}
                 {engTier.tier === 'ouro' && (
-                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-label="Ouro" />
+                  <span
+                    title="Padrão Ouro: prestador com alto engajamento e atividade recente."
+                    className="ml-1 inline-flex items-center gap-1 rounded-full border border-amber-400/60 bg-gradient-to-r from-amber-300/30 via-yellow-200/30 to-amber-300/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 shadow-[0_0_8px_-2px_rgba(245,158,11,0.5)]"
+                  >
+                    <Sparkles className="h-3 w-3" aria-hidden="true" />
+                    Padrão Ouro
+                  </span>
                 )}
               </div>
             </Link>
@@ -299,6 +306,16 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
             {altSubtitle && (
               <p className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">{altSubtitle}</p>
             )}
+            {(() => {
+              const specialties = extractSpecialties([provider.description, provider.category, provider.businessName]);
+              if (specialties.length === 0) return null;
+              return (
+                <p className="mt-1 truncate text-[11px] text-muted-foreground" title={`Especialista em: ${specialties.join(', ')}`}>
+                  <span className="font-semibold text-foreground/80">Especialista em:</span>{' '}
+                  {specialties.join(' · ')}
+                </p>
+              );
+            })()}
             {hasLocation && (
               <div className="mt-1 flex min-w-0 max-w-full flex-wrap items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="h-3 w-3 shrink-0" />

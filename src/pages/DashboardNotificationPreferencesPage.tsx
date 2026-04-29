@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, MessageCircle, Bell, Smartphone, Send, BellRing } from 'lucide-react';
+import { Mail, MessageCircle, Bell, Smartphone, Send, BellRing, Activity, Volume2, Flame, MailCheck } from 'lucide-react';
+import { playHornBeep } from '@/lib/soundFx';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -136,8 +137,58 @@ const DashboardNotificationPreferencesPage = () => {
         })}
       </div>
 
+      {/* Eventos de Performance */}
+      <div className="mt-8">
+        <h2 className="font-display text-lg font-bold text-foreground">Eventos de performance</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Controle as notificações relacionadas à sua atividade e visibilidade na busca.
+        </p>
+      </div>
+      <div className="mt-3 space-y-3">
+        {([
+          { key: 'perf_signal', label: 'Sinal de Vida', desc: 'Lembretes para manter o perfil ativo (visibilidade +25% por 7 dias).', icon: Activity },
+          { key: 'perf_ping',   label: 'Ping de Sucesso', desc: 'Toast em tempo real quando alguém clica no seu WhatsApp/telefone.', icon: Flame },
+          { key: 'perf_sound',  label: 'Som de buzina',   desc: 'Toca um beep curto junto com o Ping de Sucesso.', icon: Volume2 },
+          { key: 'perf_email_5plus', label: 'Resumo de 5+ cliques em 24h', desc: 'Notificação no app quando seu perfil bombar (resumo por cidade).', icon: MailCheck },
+        ] as const).map(({ key, label, desc, icon: Icon }) => {
+          const value = (prefs as any)[key] ?? true;
+          return (
+            <div key={key} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${value ? 'bg-amber-500/15 text-amber-600' : 'bg-muted text-muted-foreground'}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{label}</p>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 sm:justify-end">
+                {key === 'perf_sound' && (
+                  <Button size="sm" variant="outline" onClick={() => playHornBeep()} className="gap-1">
+                    <Volume2 className="h-3.5 w-3.5" /> Testar som
+                  </Button>
+                )}
+                <Switch
+                  checked={value}
+                  disabled={saving === (key as any)}
+                  onCheckedChange={async (v) => {
+                    setSaving(key as any);
+                    const next = { ...prefs, [key]: v } as Record<string, boolean>;
+                    setPrefs(next as any);
+                    await persist(next as any);
+                    toast.success(`${v ? 'Ativado' : 'Desativado'}: ${label}`);
+                    setSaving(null);
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       <p className="mt-4 text-xs text-muted-foreground">
-        Suas preferências são aplicadas a lembretes de follow-up, novos leads e alertas do sistema. SMS está em homologação e pode não estar disponível no momento.
+        Suas preferências são aplicadas a lembretes de follow-up, novos leads, alertas do sistema e eventos de performance. SMS está em homologação e pode não estar disponível no momento.
       </p>
     </DashboardLayout>
   );
