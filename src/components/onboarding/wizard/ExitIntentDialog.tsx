@@ -209,10 +209,10 @@ export default function ExitIntentDialog({
       <DialogContent className="max-w-md" data-testid="exit-intent-dialog">
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold tracking-tight">
-            {copy.title}
+            {displayTitle}
           </DialogTitle>
           <DialogDescription className="text-base leading-relaxed text-muted-foreground">
-            {copy.body}
+            {displayBody}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col gap-2 sm:flex-col">
@@ -223,8 +223,20 @@ export default function ExitIntentDialog({
             className="w-full gap-2 bg-gradient-to-r from-emerald-500 to-green-600 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)] hover:opacity-95"
           >
             <MessageCircle className="h-4 w-4" />
-            {copy.ctaPrimary}
+            {displayPrimaryCta}
           </Button>
+          {hasFirstService && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleSaveLater}
+              data-testid="exit-intent-save-later"
+              className="w-full gap-2 font-semibold"
+            >
+              <Save className="h-4 w-4" />
+              Salvar e continuar mais tarde
+            </Button>
+          )}
           <Button asChild type="button" variant="outline" className="w-full gap-2">
             <Link to="/ajuda/cadastro" onClick={() => setOpen(false)}>
               <HelpCircle className="h-4 w-4" />
