@@ -15,6 +15,7 @@ import {
   rejectAll,
   saveConsent,
   getConsent,
+  hydrateConsentFromServer,
   type ConsentState,
 } from "@/lib/cookieConsent";
 
@@ -28,16 +29,35 @@ const CookieConsent = () => {
   });
 
   useEffect(() => {
-    const current = getConsent();
-    if (!current) {
+    let cancelled = false;
+    const init = async () => {
+      const current = getConsent();
+      if (current) {
+        setPrefs({
+          functional: current.functional,
+          analytics: current.analytics,
+          marketing: current.marketing,
+        });
+        return;
+      }
+      // Tenta restaurar do servidor (logado em outro device/depois de limpeza
+      // de cache). Se houver log anterior, NÃO mostramos o banner novamente.
+      const restored = await hydrateConsentFromServer();
+      if (cancelled) return;
+      if (restored) {
+        setPrefs({
+          functional: restored.functional,
+          analytics: restored.analytics,
+          marketing: restored.marketing,
+        });
+        return;
+      }
       setVisible(true);
-    } else {
-      setPrefs({
-        functional: current.functional,
-        analytics: current.analytics,
-        marketing: current.marketing,
-      });
-    }
+    };
+    void init();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const close = (state: ConsentState) => {
