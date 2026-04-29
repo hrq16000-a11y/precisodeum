@@ -5,7 +5,8 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 const CHANNEL_NAME = 'online-presence';
 
 let channel: RealtimeChannel | null = null;
-let onlineUsers = new Map<string, { city?: string }>();
+export type OnlinePresenceMeta = { city?: string; onlineSince?: number };
+let onlineUsers = new Map<string, OnlinePresenceMeta>();
 let listeners = new Set<() => void>();
 let subscriberCount = 0;
 
@@ -15,11 +16,16 @@ function notify() {
 
 function syncPresenceState() {
   if (!channel) return;
-  const state = channel.presenceState<{ user_id: string; city?: string }>();
-  const next = new Map<string, { city?: string }>();
+  const state = channel.presenceState<{ user_id: string; city?: string; online_since?: number }>();
+  const next = new Map<string, OnlinePresenceMeta>();
   for (const key in state) {
     for (const presence of state[key]) {
-      if (presence.user_id) next.set(presence.user_id, { city: presence.city });
+      if (!presence.user_id) continue;
+      // Preserve earliest onlineSince across multiple presences for same user
+      const prev = next.get(presence.user_id);
+      const candidate = presence.online_since ?? Date.now();
+      const onlineSince = prev?.onlineSince ? Math.min(prev.onlineSince, candidate) : candidate;
+      next.set(presence.user_id, { city: presence.city, onlineSince });
     }
   }
   onlineUsers = next;
@@ -94,7 +100,7 @@ export function usePresenceTracker(userId: string | undefined, meta?: { city?: s
     subscriberCount++;
 
     const timer = setTimeout(() => {
-      ch.track({ user_id: userId, city: meta?.city });
+      ch.track({ user_id: userId, city: meta?.city, online_since: Date.now() });
     }, 500);
 
     return () => {
@@ -128,7 +134,7 @@ function getSnapshot() {
   return onlineUsers;
 }
 
-export function useOnlineUsersMap(): Map<string, { city?: string }> {
+export function useOnlineUsersMap(): Map<string, OnlinePresenceMeta> {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
@@ -141,6 +147,12 @@ export function useOnlineProviders(): Set<string> {
 export function useIsProviderOnline(userId: string | undefined): boolean {
   const map = useOnlineUsersMap();
   return useMemo(() => !!userId && map.has(userId), [map, userId]);
+}
+
+/** Returns presence meta (including onlineSince timestamp) for a single provider */
+export function useProviderPresence(userId: string | undefined): OnlinePresenceMeta | null {
+  const map = useOnlineUsersMap();
+  return useMemo(() => (userId ? map.get(userId) ?? null : null), [map, userId]);
 }
 
 /** Count online users in a specific city */
