@@ -162,6 +162,11 @@ const DashboardPrivacyPage = () => {
               description="Categorias, finalidades e gerenciamento de consentimento."
             />
             <PrivacyLink
+              to="/dashboard/auditoria-consentimentos"
+              icon={Cookie}
+              title="Auditoria de consentimentos"
+              description="Histórico de aceites e mudanças de preferências de cookies."
+            <PrivacyLink
               to="/termos"
               icon={FileText}
               title="Termos de Uso"
