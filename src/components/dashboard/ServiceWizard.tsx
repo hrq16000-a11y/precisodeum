@@ -247,12 +247,22 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   /* ──── Save service (called when moving from step 2 → step 3) ──── */
   const handleCreate = async (): Promise<boolean> => {
     if (!serviceName.trim()) { toast.error('Nome do serviço é obrigatório'); return false; }
+    // Garante providerId — fallback para casos de prop vazio / sessão expirada
+    let pid = effectiveProviderId;
+    if (!pid) {
+      pid = await recoverProviderId({ userId, hint: effectiveProviderId });
+      if (pid) setEffectiveProviderId(pid);
+    }
+    if (!pid) {
+      toast.error('Não conseguimos identificar seu cadastro de prestador. Atualize a página.');
+      return false;
+    }
     setSaving(true);
 
     try {
       const address = [provider?.neighborhood, provider?.city, provider?.state].filter(Boolean).join(', ');
       const { data, error } = await (supabase as any).rpc('create_service_atomic', {
-        _provider_id: providerId,
+        _provider_id: pid,
         _service_name: serviceName,
         _description: description,
         _whatsapp: whatsapp || provider?.whatsapp || '',
