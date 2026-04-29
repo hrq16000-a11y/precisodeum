@@ -3,6 +3,10 @@ import { motion } from 'framer-motion';
 import { Briefcase, Search, Sparkles, Building2, Megaphone } from 'lucide-react';
 import { fieldWin } from '@/lib/betDopamine';
 import { BET_POINTS, type BetIntent, type BetState } from './types';
+import {
+  setOnboardingIntent,
+  type OnboardingIntent,
+} from '@/components/onboarding/wizard/phases/v2/telemetry';
 
 interface Props {
   state: BetState;
@@ -11,9 +15,18 @@ interface Props {
   addPoints: (n: number) => void;
 }
 
+/** Mapeia BetIntent → OnboardingIntent (telemetria normalizada). */
+function toTelemetryIntent(i: BetIntent): OnboardingIntent | null {
+  if (i === 'professional' || i === 'client' || i === 'rh') return i;
+  return null; // sponsor não entra no funil de cadastro padrão
+}
+
 export default function PhaseWho({ patch, goto, addPoints }: Props) {
   function pick(intent: BetIntent) {
     patch({ intent });
+    // Persiste intent real para auto-injeção em todos os eventos subsequentes
+    // (milestone, skip, next, error, complete) — fonte única em sessionStorage.
+    setOnboardingIntent(toTelemetryIntent(intent));
     addPoints(BET_POINTS.intent);
     fieldWin();
     window.setTimeout(() => goto(intent), 250);
