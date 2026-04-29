@@ -150,8 +150,8 @@ const ForgotPasswordPage = () => {
               >
                 {status === 'sending' && 'Enviando...'}
                 {cooldown > 0 && status !== 'sending' && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Clock className="h-4 w-4" /> Reenviar em {cooldown}s
+                  <span className="inline-flex items-center gap-1.5" aria-live="polite">
+                    <Clock className="h-4 w-4" /> Reenviar em {formatCooldown(cooldown)}
                   </span>
                 )}
                 {cooldown === 0 && status !== 'sending' && 'Enviar link de redefinição'}
