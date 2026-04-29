@@ -246,9 +246,29 @@ const DashboardPage = () => {
   const isProvider = profileType === 'provider';
   const isRH = profileType === 'rh';
 
-  const profileDone = !!provider?.description && !!provider?.city;
+  // profileDone: exige descrição, cidade E whatsapp (canal principal de contato).
+  // Sem whatsapp, lead não chega — então não é "perfil completo".
+  const hasWhatsapp = !!(profile?.whatsapp || provider?.whatsapp || profile?.phone || provider?.phone);
+  const profileDone = !!provider?.description && !!provider?.city && hasWhatsapp;
   const servicesDone = servicesCount !== null && servicesCount > 0;
   const portfolioDone = portfolioCount > 0;
+
+  // Refetch contadores ao voltar para a aba/janela do dashboard. Garante que
+  // ações feitas em outras abas (Wizard, /servicos, /minha-pagina) reflitam
+  // imediatamente no "Como funciona" sem precisar dar F5.
+  useEffect(() => {
+    const trigger = () => setReloadKey((k) => k + 1);
+    const onVisibility = () => { if (document.visibilityState === 'visible') trigger(); };
+    window.addEventListener('focus', trigger);
+    document.addEventListener('visibilitychange', onVisibility);
+    const onProgress = () => trigger();
+    window.addEventListener('onboarding-progress-changed', onProgress);
+    return () => {
+      window.removeEventListener('focus', trigger);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('onboarding-progress-changed', onProgress);
+    };
+  }, []);
 
   // Persist onboarding progress when steps complete (debounced, no loops)
   useEffect(() => {
