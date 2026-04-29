@@ -184,7 +184,7 @@ export function useOnboardingStatus(): OnboardingStatus {
       .channel(`onb-status-${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'services', filter: `provider_id=eq.${provider.id}` },
         () => { void fetchCounts(true); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'media', filter: `owner_id=eq.${user.id}` },
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'media', filter: `user_ref=eq.${user.id}` },
         () => { void fetchCounts(true); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'portfolio_albums', filter: `provider_id=eq.${provider.id}` },
         () => { void fetchCounts(true); })
