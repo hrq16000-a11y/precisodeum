@@ -599,6 +599,13 @@ const DashboardPage = () => {
         <DashboardAnalytics />
       </div>
 
+      {/* 1b) Desempenho do Anúncio — cliques reais + diagnóstico */}
+      {provider?.id && (
+        <div className="mt-4">
+          <AdPerformanceWidget providerId={provider.id} hasPhoto={!!provider?.photo_url} />
+        </div>
+      )}
+
       {/* Mantém UnifiedHealthScore como complemento de completude rápida */}
       <div className="mt-4">
         <UnifiedHealthScore score={completenessPercent} remaining={remainingItems} />
