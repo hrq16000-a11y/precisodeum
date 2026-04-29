@@ -36,6 +36,7 @@ import { useEngagementPointsValue } from '@/hooks/useEngagementPoints';
 import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { WizardProgressBar } from './WizardProgressBar';
+import ExitIntentDialog from './ExitIntentDialog';
 import { trackOnboardingEvent } from './phases/v2/telemetry';
 import {
   initialWizardState,
@@ -152,6 +153,10 @@ export default function WizardShell() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
+      <ExitIntentDialog
+        phase={state.phase}
+        enabled={state.phase !== 'triage_celebration' && state.phase !== 'main_celebration' && state.phase !== 'done'}
+      />
       <WizardProgressBar phase={state.phase} phaseOrder={progressOrder} />
       {showGlobalHud && (
         <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
