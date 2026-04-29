@@ -195,6 +195,15 @@ export default function ExitIntentDialog({
     setOpen(false);
   }, [tracker, baseMeta]);
 
+  const handleSaveLater = useCallback(() => {
+    tracker('exit_intent_save_later', baseMeta);
+    setOpen(false);
+    // Pequeno atraso para o Dialog desmontar antes da navegação.
+    window.setTimeout(() => {
+      navigate(saveLaterRedirectTo);
+    }, 50);
+  }, [tracker, baseMeta, navigate, saveLaterRedirectTo]);
+
   return (
     <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleDismiss())}>
       <DialogContent className="max-w-md" data-testid="exit-intent-dialog">
