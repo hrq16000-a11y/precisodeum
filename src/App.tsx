@@ -427,6 +427,7 @@ const App = () => {
                 <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
                 <Route path="/admin/conversao" element={<AdminConversionMetricsPage />} />
                 <Route path="/admin/onboarding-funnel" element={<AdminOnboardingFunnelPage />} />
+                <Route path="/admin/erros-500" element={<AdminError500Page />} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
                 <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
                 <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
