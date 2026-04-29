@@ -26,6 +26,8 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, LayoutDashboard, Briefcase, FolderOpen, Sparkles } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
+import { buildOnboardingV2BootstrapState } from '@/components/onboarding/wizard/phases/v2/bootstrap';
+import { fetchExistingFirstService, findExistingProvider } from '@/components/onboarding/wizard/phases/v2/findExistingRecords';
 import Step20_MoreServices from '@/components/onboarding/wizard/phases/Step20_MoreServices';
 import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21_PortfolioAlbums';
 import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
@@ -41,6 +43,7 @@ import { trackOnboardingEvent, setOnboardingIntent } from './phases/v2/telemetry
 import {
   initialWizardState,
   mapMainPhaseToUnified,
+  mapUnifiedToMainPhase,
   mapTriagePhaseToUnified,
   PROVIDER_WIZARD_PHASE_ORDER,
   unifiedPhaseIndex,
@@ -54,9 +57,10 @@ import type { BetState } from './phases/bet/types';
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
 
 export default function WizardShell() {
-  const { user } = useAuth();
+  const { user, profile, provider } = useAuth();
   const realPoints = useEngagementPointsValue(user?.id);
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
+  const resumeBootstrapRef = useRef(false);
   // Stage continua como "qual orquestrador renderizar" — é derivado da fase.
   const stage: Stage =
     state.phase.startsWith('triage_')
@@ -104,6 +108,7 @@ export default function WizardShell() {
           document: triageState.document,
           city: triageState.city,
           state: triageState.state,
+          neighborhood: triageState.neighborhood,
         },
         service: {
           ...state.service,
@@ -112,6 +117,84 @@ export default function WizardShell() {
       },
     });
   }, [state.profile, state.service]);
+
+  useEffect(() => {
+    if (resumeBootstrapRef.current) return;
+    if (state.phase !== 'triage_identity') return;
+
+    const bootstrap = buildOnboardingV2BootstrapState({ profile, provider });
+    const isProviderJourney = profile?.profile_type === 'provider' || !!provider || !!bootstrap;
+    if (!isProviderJourney) return;
+
+    let cancelled = false;
+    void (async () => {
+      const providerId =
+        bootstrap?.providerId ??
+        provider?.id ??
+        await findExistingProvider(user?.id ?? null, profile?.user_ref ?? null);
+
+      const existingService = await fetchExistingFirstService(
+        providerId ?? null,
+        profile?.user_ref ?? null,
+        bootstrap?.profile?.primary_category_id ?? null,
+      );
+
+      if (cancelled) return;
+
+      const profileSeed = bootstrap?.profile ?? state.profile;
+      const serviceSeed = bootstrap?.service ?? state.service;
+
+      resumeBootstrapRef.current = true;
+      dispatch({
+        type: 'HYDRATE',
+        state: {
+          phase: existingService
+            ? profile?.onboarding_completed === true
+              ? 'main_more_services'
+              : 'main_document'
+            : mapMainPhaseToUnified(bootstrap?.phase ?? 'phase2_service'),
+          triage: {
+            intent: 'professional',
+            phase: 'done',
+            full_name: profileSeed.full_name,
+            whatsapp: profileSeed.whatsapp,
+            city: profileSeed.city,
+            state: profileSeed.state,
+            neighborhood: profileSeed.neighborhood,
+            pro_kind: profileSeed.kind,
+            document: profileSeed.document,
+            company_name: '',
+            points: Number(profile?.engagement_points ?? state.triage.points ?? 0),
+            rewards: {
+              name: true,
+              whatsapp: true,
+              intent: true,
+              city: true,
+              pro_kind: true,
+            },
+          },
+          profile: profileSeed,
+          service: {
+            ...serviceSeed,
+            service_name: serviceSeed.service_name || existingService?.service_name || '',
+            description: serviceSeed.description || existingService?.description || '',
+            category_ids: serviceSeed.category_ids?.length
+              ? serviceSeed.category_ids
+              : existingService?.category_id
+              ? [existingService.category_id]
+              : [],
+            working_hours: serviceSeed.working_hours || existingService?.working_hours || '',
+          },
+          providerId: providerId ?? null,
+          firstServiceId: existingService?.id ?? null,
+        },
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, provider, state.phase, state.profile, state.service, user?.id]);
 
   const handleTriagePhaseChange = useCallback((betPhase: string) => {
     dispatch({ type: 'GO_TO_PHASE', phase: mapTriagePhaseToUnified(betPhase) });
@@ -252,7 +335,7 @@ export default function WizardShell() {
           internalHandoffFromTriage
           deferCompletionToParent
           seedState={{
-            phase: 'phase2_service',
+            phase: mapUnifiedToMainPhase(state.phase),
             profile: state.profile,
             service: state.service,
             providerId: state.providerId,

@@ -303,11 +303,12 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   }
 
   const onboardingStep = Number(profile?.onboarding_step ?? 0);
-  // Only redirect when profile EXISTS and is incomplete. Never when profile is null.
+  // Fonte de verdade do desbloqueio: profile_type + onboarding_completed.
+  // onboarding_step é mantido só para diagnóstico/telemetria, sem re-travar
+  // usuários que já concluíram e já possuem serviços publicados.
   const mustCompleteOnboarding = !!user && !!profile && (
     !profile.profile_type ||
-    profile.onboarding_completed !== true ||
-    onboardingStep < 5
+    profile.onboarding_completed !== true
   );
 
   // Wizard unificado: /cadastro-inicial é a porta ÚNICA. /cadastro-bet,

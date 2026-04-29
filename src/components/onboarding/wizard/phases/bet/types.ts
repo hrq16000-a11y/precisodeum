@@ -23,6 +23,13 @@ export interface BetState {
   document: string;            // CPF (11) ou CNPJ (14)
   company_name: string;        // PJ apenas
   points: number;              // contador exibido
+  rewards: {
+    name: boolean;
+    whatsapp: boolean;
+    intent: boolean;
+    city: boolean;
+    pro_kind: boolean;
+  };
   phase: BetPhase;
 }
 
@@ -37,6 +44,13 @@ export const initialBetState: BetState = {
   document: '',
   company_name: '',
   points: 0,
+  rewards: {
+    name: false,
+    whatsapp: false,
+    intent: false,
+    city: false,
+    pro_kind: false,
+  },
   phase: 'identity',
 };
 

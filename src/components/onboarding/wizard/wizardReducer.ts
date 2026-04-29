@@ -253,6 +253,13 @@ export const initialWizardState: WizardState = {
     document: '',
     company_name: '',
     points: 0,
+    rewards: {
+      name: false,
+      whatsapp: false,
+      intent: false,
+      city: false,
+      pro_kind: false,
+    },
     phase: 'identity',
   },
   profile: {

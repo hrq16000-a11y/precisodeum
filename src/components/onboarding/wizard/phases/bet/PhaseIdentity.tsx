@@ -16,27 +16,29 @@ interface Props {
 }
 
 export default function PhaseIdentity({ state, patch, next, addPoints }: Props) {
-  const [nameAwarded, setNameAwarded] = useState(false);
-  const [phoneAwarded, setPhoneAwarded] = useState(false);
+  const [nameAwarded, setNameAwarded] = useState(state.rewards.name);
+  const [phoneAwarded, setPhoneAwarded] = useState(state.rewards.whatsapp);
   const phoneRef = useRef<HTMLInputElement>(null);
 
   // Awards on validation
   useEffect(() => {
     if (!nameAwarded && state.full_name.trim().length >= 3) {
       setNameAwarded(true);
+      patch({ rewards: { ...state.rewards, name: true } });
       addPoints(BET_POINTS.name);
       fieldWin();
     }
-  }, [state.full_name, nameAwarded, addPoints]);
+  }, [state.full_name, nameAwarded, addPoints, patch, state.rewards]);
 
   useEffect(() => {
     const ok = sanitizePhone(state.whatsapp).length >= 10;
     if (ok && !phoneAwarded) {
       setPhoneAwarded(true);
+      patch({ rewards: { ...state.rewards, whatsapp: true } });
       addPoints(BET_POINTS.whatsapp);
       void stageWin('mega'); // explosão de confete + moedas
     }
-  }, [state.whatsapp, phoneAwarded, addPoints]);
+  }, [state.whatsapp, phoneAwarded, addPoints, patch, state.rewards]);
 
   const canAdvance =
     state.full_name.trim().length >= 3 && sanitizePhone(state.whatsapp).length >= 10;
