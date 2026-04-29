@@ -23,7 +23,7 @@ function toTelemetryIntent(i: BetIntent): OnboardingIntent | null {
 
 export default function PhaseWho({ patch, goto, addPoints }: Props) {
   function pick(intent: BetIntent) {
-    patch({ intent });
+    patch({ intent, rewards: { ...((arguments[0] as any)?.rewards ?? {}), intent: true } } as any);
     // Persiste intent real para auto-injeção em todos os eventos subsequentes
     // (milestone, skip, next, error, complete) — fonte única em sessionStorage.
     setOnboardingIntent(toTelemetryIntent(intent));
