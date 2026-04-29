@@ -49,11 +49,11 @@ describe('ResetPasswordPage — link inválido/expirado em pt-BR', () => {
   });
 
   it('cai em estado inválido após timeout sem evento PASSWORD_RECOVERY', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     await renderPage();
-    await vi.advanceTimersByTimeAsync(2000);
-    await waitFor(() =>
-      expect(screen.getByText(/expirou ou não é mais válido/i)).toBeInTheDocument(),
+    // O componente usa setTimeout(1800ms) — esperamos com timeout real
+    await waitFor(
+      () => expect(screen.getByText(/expirou ou não é mais válido/i)).toBeInTheDocument(),
+      { timeout: 4000 },
     );
   });
 });
