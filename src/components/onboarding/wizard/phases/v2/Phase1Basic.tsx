@@ -185,12 +185,12 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
   }
 
   return (
-    <motion.div {...wizardEnter} className={ws.container}>
-      <button onClick={onBack} className={ws.backBtn}>
-        <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+    <motion.div {...wizardEnter} className={ws.container} role="region" aria-labelledby="phase1-location-title">
+      <button onClick={onBack} className={ws.backBtn} aria-label="Voltar para a etapa anterior">
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
       </button>
       <header className={ws.headerWrap}>
-        <h1 className={ws.title}>De onde você atende?</h1>
+        <h1 id="phase1-location-title" className={ws.title}>De onde você atende?</h1>
         <p className={ws.subtitle}>Toque no botão abaixo — usamos seu GPS para acelerar.</p>
       </header>
 
@@ -335,15 +335,15 @@ export const Phase1Contact = ({
   const canSubmit = nameOk && whatsOk && !saving && !duplicateWhatsapp && !checkingWhatsapp;
 
   return (
-    <motion.div {...wizardEnter} className={ws.container}>
-      <button onClick={onBack} className={ws.backBtn}>
-        <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+    <motion.div {...wizardEnter} className={ws.container} role="region" aria-labelledby="phase1-contact-title">
+      <button onClick={onBack} className={ws.backBtn} aria-label="Voltar para a etapa anterior">
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
       </button>
       <header className={ws.headerWrap}>
         <div className={ws.chip}>
-          <Sparkles className="h-3 w-3" /> Quase lá
+          <Sparkles className="h-3 w-3" aria-hidden="true" /> Quase lá
         </div>
-        <h1 className={ws.title}>Como te chamamos?</h1>
+        <h1 id="phase1-contact-title" className={ws.title}>Como te chamamos?</h1>
         <p className={ws.subtitle}>Só nome e WhatsApp — a parte chata acaba aqui.</p>
       </header>
 
