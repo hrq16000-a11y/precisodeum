@@ -1358,10 +1358,22 @@ const DashboardServicesPage = () => {
                   serviceRadius={serviceRadius}
                   onExpandToMetro={() => {
                     setServiceRadius('metro');
-                    toast.success('Raio expandido para Região Metropolitana', { duration: 3000 });
+                    setMetroBonus(true);
+                    const members = getMetroMembers(form.service_area);
+                    toast.success(`Alcance expandido para toda a região metropolitana (+${Math.max(1, members.length - 1)} cidades)`, { duration: 4000 });
                   }}
                 />
 
+                {/* Bônus visual: Alcance Expandido (RM) */}
+                {metroBonus && serviceRadius === 'metro' && (
+                  <div className="rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-700 p-2 flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <p className="text-[11px] text-emerald-800 dark:text-emerald-200">
+                      <strong>Alcance Expandido</strong> — seu anúncio aparecerá em buscas de até{' '}
+                      <strong>{Math.max(1, getMetroMembers(form.service_area).length)} cidades</strong> da RM.
+                    </p>
+                  </div>
+                )}
                 {/* Service Radius */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Raio de Atendimento</label>
