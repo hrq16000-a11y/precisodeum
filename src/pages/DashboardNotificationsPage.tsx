@@ -98,11 +98,17 @@ const NotificationRow = ({
   </div>
 );
 
+const PAGE_SIZE = 20;
+
 const DashboardNotificationsPage = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } = useNotifications({ limit: null });
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
@@ -120,12 +126,43 @@ const DashboardNotificationsPage = () => {
   );
 
   const filteredNotifications = useMemo(() => {
-    if (selectedType === 'all') return notifications;
-    if (selectedType === '__performance__') {
-      return notifications.filter(n => PERFORMANCE_TYPES.has(n.type));
-    }
-    return notifications.filter(n => n.type === selectedType);
-  }, [notifications, selectedType]);
+    const term = searchTerm.trim().toLowerCase();
+    const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
+    const toTs = dateTo ? new Date(dateTo + 'T23:59:59').getTime() : null;
+
+    return notifications.filter(n => {
+      if (selectedType === '__performance__') {
+        if (!PERFORMANCE_TYPES.has(n.type)) return false;
+      } else if (selectedType !== 'all' && n.type !== selectedType) {
+        return false;
+      }
+      if (term) {
+        const hay = `${n.title || ''} ${n.message || ''}`.toLowerCase();
+        if (!hay.includes(term)) return false;
+      }
+      if (fromTs || toTs) {
+        const ts = new Date(n.created_at).getTime();
+        if (fromTs && ts < fromTs) return false;
+        if (toTs && ts > toTs) return false;
+      }
+      return true;
+    });
+  }, [notifications, selectedType, searchTerm, dateFrom, dateTo]);
+
+  // Reset paginação ao mudar filtros
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [selectedType, searchTerm, dateFrom, dateTo]);
+
+  const visibleNotifications = filteredNotifications.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredNotifications.length;
+
+  const clearFilters = () => {
+    setSelectedType('all');
+    setSearchTerm('');
+    setDateFrom('');
+    setDateTo('');
+  };
 
   const handleNavigate = (link: string) => {
     if (link.startsWith('http')) {
