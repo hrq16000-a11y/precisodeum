@@ -59,35 +59,30 @@ const AdminInboxPage = () => {
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [order, setOrder] = useState<'date' | 'relevance'>('date');
 
   const load = async () => {
     if (!user?.id) return;
     setLoading(true);
-    let q = (supabase
-      .from('notifications') as any)
-      .select('id, title, message, read, type, link, created_at', { count: 'exact' })
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    const trimmed = search.trim();
+    const effectiveOrder = trimmed ? order : 'date';
 
-    if (filter === 'unread') q = q.eq('read', false);
-    if (filter === 'read') q = q.eq('read', true);
+    const { data, error } = await (supabase as any).rpc('search_user_notifications', {
+      _query: trimmed || null,
+      _status: filter,
+      _order: effectiveOrder,
+      _limit: PAGE_SIZE,
+      _offset: page * PAGE_SIZE,
+    });
 
-    if (search.trim()) {
-      const safe = search.trim().replace(/[%_]/g, ' ');
-      q = q.or(`title.ilike.%${safe}%,message.ilike.%${safe}%`);
-    }
-
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    q = q.range(from, to);
-
-    const { data, error, count } = await q;
     if (error) {
       toast.error('Falha ao carregar notificações');
-      setRows([]); setTotal(0);
+      setRows([]);
+      setTotal(0);
     } else {
-      setRows((data || []) as NotifRow[]);
-      setTotal(count || 0);
+      const list = (data || []) as Array<NotifRow & { total_count?: number }>;
+      setRows(list.map(({ total_count, ...n }) => n));
+      setTotal(Number(list[0]?.total_count ?? 0));
     }
     setLoading(false);
   };
@@ -95,7 +90,7 @@ const AdminInboxPage = () => {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, filter, page]);
+  }, [user?.id, filter, page, order]);
 
   // Busca aplica reset de página
   useEffect(() => {
@@ -165,7 +160,7 @@ const AdminInboxPage = () => {
       </header>
 
       <Card className="mb-4 p-3">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-4">
           <div>
             <Label htmlFor="filter" className="text-[11px] text-muted-foreground">Status</Label>
             <Select value={filter} onValueChange={(v) => { setPage(0); setFilter(v as any); }}>
@@ -177,8 +172,23 @@ const AdminInboxPage = () => {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label htmlFor="order" className="text-[11px] text-muted-foreground">Ordenar</Label>
+            <Select
+              value={order}
+              onValueChange={(v) => { setPage(0); setOrder(v as 'date' | 'relevance'); }}
+            >
+              <SelectTrigger id="order" aria-label="Ordenação" disabled={!search.trim()}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Mais recentes</SelectItem>
+                <SelectItem value="relevance">Relevância</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="q" className="text-[11px] text-muted-foreground">Busca</Label>
+            <Label htmlFor="q" className="text-[11px] text-muted-foreground">Busca full-text</Label>
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
               <Input
@@ -186,11 +196,14 @@ const AdminInboxPage = () => {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por título ou mensagem..."
+                placeholder='Ex.: "integridade crítica", lead -spam, link...'
                 className="pl-7"
-                aria-label="Buscar notificações"
+                aria-label="Buscar notificações por título, mensagem, tipo ou link"
               />
             </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Suporta frase entre aspas, <code>-palavra</code> para excluir e busca em título, mensagem, tipo e link.
+            </p>
           </div>
         </div>
       </Card>

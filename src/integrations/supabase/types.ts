@@ -8073,6 +8073,26 @@ export type Database = {
           state_uf: string
         }[]
       }
+      search_user_notifications: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _order?: string
+          _query?: string
+          _status?: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          link: string
+          message: string
+          rank: number
+          read: boolean
+          title: string
+          total_count: number
+          type: string
+        }[]
+      }
       service_area_is_in_catalog: { Args: { p_city: string }; Returns: boolean }
       service_description_first_forbidden_term: {
         Args: { p_text: string }
