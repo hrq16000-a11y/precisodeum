@@ -113,6 +113,9 @@ const Step20_MoreServices = ({ onContinue, onSkip }: Step20Props) => {
             <p className="mt-1 text-xs text-muted-foreground">
               {reachedCap ? 'Limite atingido — perfil completo de serviços!' : `${remaining} restante${remaining === 1 ? '' : 's'}`}
             </p>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              {statusCopy}
+            </p>
           </>
         )}
       </motion.div>
@@ -141,6 +144,19 @@ const Step20_MoreServices = ({ onContinue, onSkip }: Step20Props) => {
             </Button>
           )}
 
+          <div className="grid grid-cols-2 gap-2">
+            <Button asChild type="button" variant="outline" className="gap-2">
+              <Link to="/dashboard">
+                <LayoutDashboard className="h-4 w-4" /> Ir para meu painel
+              </Link>
+            </Button>
+            <Button asChild type="button" variant="outline" className="gap-2">
+              <Link to="/dashboard/minha-pagina">
+                <UserRound className="h-4 w-4" /> Ir para meu perfil
+              </Link>
+            </Button>
+          </div>
+
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -161,7 +177,7 @@ const Step20_MoreServices = ({ onContinue, onSkip }: Step20Props) => {
             </Button>
           </div>
           <p className="text-center text-[11px] text-muted-foreground">
-            Você pode adicionar, editar ou remover serviços a qualquer momento pelo painel.
+            Serviços extras podem ser criados depois em <span className="font-medium">Painel → Serviços</span>.
           </p>
         </div>
       )}
