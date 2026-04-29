@@ -66,44 +66,83 @@ const LoginPage = () => {
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !password) {
+      toast.error('Preencha e-mail e senha.');
+      return;
+    }
+    // Validação local antes de bater no servidor — evita mensagens genéricas
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast.error('Digite um e-mail válido.');
+      return;
+    }
+    if (password.length < 6) {
+      toast.error('A senha precisa ter pelo menos 6 caracteres.');
+      return;
+    }
     setLoading(true);
 
-    const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
+      email: trimmedEmail,
+      password,
+    });
 
     if (!signInError && signInData.session) {
       setLoading(false);
       toast.success('Bem-vindo(a)!');
-      // Redirect handled by useEffect above (após profile carregar)
       return;
     }
 
-    // Conta não existe → cria silenciosamente (porta única).
-    const looksLikeNoAccount =
-      signInError && /invalid login credentials|invalid_grant|user not found/i.test(signInError.message);
+    const errMsg = signInError?.message || '';
+
+    // E-mail não confirmado → orientar verificação
+    if (/email.*not.*confirmed|email_not_confirmed/i.test(errMsg)) {
+      setLoading(false);
+      toast.error('Confirme seu e-mail antes de entrar. Enviamos o link na criação da conta.');
+      return;
+    }
+
+    // Conta não existe → cria silenciosamente (porta única)
+    const looksLikeNoAccount = signInError && /invalid login credentials|invalid_grant|user not found/i.test(errMsg);
 
     if (looksLikeNoAccount) {
       const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
-        email,
+        email: trimmedEmail,
         password,
         options: { emailRedirectTo: `${window.location.origin}/cadastro-inicial` },
       });
       setLoading(false);
       if (signUpError) {
-        toast.error('Não foi possível criar sua conta. Verifique o e-mail/senha.');
+        const m = signUpError.message || '';
+        if (/already.*registered|user.*already.*exists|already_registered/i.test(m)) {
+          // Conta existe mas a senha digitada está errada (caímos aqui via signIn=invalid)
+          toast.error('Já existe uma conta com esse e-mail. Senha incorreta — use "Esqueci minha senha".');
+        } else if (/password.*(short|6 characters|weak)/i.test(m)) {
+          toast.error('Senha muito curta. Use pelo menos 6 caracteres.');
+        } else if (/rate limit|too many/i.test(m)) {
+          toast.error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+        } else if (/invalid.*email/i.test(m)) {
+          toast.error('E-mail inválido.');
+        } else {
+          toast.error('Não foi possível criar sua conta. Tente novamente em instantes.');
+        }
         return;
       }
       if (signUpData.session) {
         toast.success('Conta criada! Vamos configurar seu perfil.');
-        // useEffect redireciona para /cadastro-bet automaticamente
       } else {
-        toast.success('Conta criada! Verifique seu e-mail para confirmar.');
+        toast.success('Conta criada! Verifique seu e-mail para confirmar e depois faça login.');
       }
       return;
     }
 
     setLoading(false);
-    toast.error('E-mail ou senha inválidos.');
+    // Erros mais explícitos para outros casos
+    if (/rate limit|too many/i.test(errMsg)) {
+      toast.error('Muitas tentativas de login. Aguarde alguns minutos.');
+    } else {
+      toast.error('E-mail ou senha inválidos.');
+    }
   };
 
   const handleGoogleLogin = async () => {
