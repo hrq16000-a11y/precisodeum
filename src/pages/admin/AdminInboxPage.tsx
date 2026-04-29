@@ -61,6 +61,22 @@ const AdminInboxPage = () => {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [order, setOrder] = useState<'date' | 'relevance'>('date');
 
+  // Filtros avançados
+  const [typeFilter, setTypeFilter] = useState<string>('__all__');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+  const [providerId, setProviderId] = useState<string>('');
+  const [typeOptions, setTypeOptions] = useState<Array<{ type: string; count: number }>>([]);
+
+  // Carrega lista de tipos disponíveis para popular o filtro
+  useEffect(() => {
+    if (!user?.id) return;
+    void (async () => {
+      const { data } = await (supabase as any).rpc('list_user_notification_types');
+      setTypeOptions(((data || []) as Array<{ type: string; count: number }>) ?? []);
+    })();
+  }, [user?.id]);
+
   const load = async () => {
     if (!user?.id) return;
     setLoading(true);
@@ -73,6 +89,10 @@ const AdminInboxPage = () => {
       _order: effectiveOrder,
       _limit: PAGE_SIZE,
       _offset: page * PAGE_SIZE,
+      _type: typeFilter === '__all__' ? null : typeFilter,
+      _from: dateFrom ? new Date(dateFrom + 'T00:00:00').toISOString() : null,
+      _to: dateTo ? new Date(dateTo + 'T23:59:59').toISOString() : null,
+      _provider_id: providerId.trim() && /^[0-9a-f-]{36}$/i.test(providerId.trim()) ? providerId.trim() : null,
     });
 
     if (error) {
@@ -90,7 +110,7 @@ const AdminInboxPage = () => {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, filter, page, order]);
+  }, [user?.id, filter, page, order, typeFilter, dateFrom, dateTo, providerId]);
 
   // Busca aplica reset de página
   useEffect(() => {
