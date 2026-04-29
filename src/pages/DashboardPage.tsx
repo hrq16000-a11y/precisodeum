@@ -51,6 +51,8 @@ import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedSta
 import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
 import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
 import DashboardAnalytics from '@/components/dashboard/DashboardAnalytics';
+import AdPerformanceWidget from '@/components/dashboard/AdPerformanceWidget';
+import { useProviderActivityHeartbeat } from '@/hooks/useProviderActivityHeartbeat';
 import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWidget';
 import RegionalDemandWidget from '@/components/dashboard/RegionalDemandWidget';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
