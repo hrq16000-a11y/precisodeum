@@ -575,6 +575,8 @@ const App = () => {
                 <Route path="/sobre" element={<AboutPage />} />
                 <Route path="/como-funciona" element={<ComoFuncionaPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/sitemap" element={<SitemapRedirect />} />
                 <Route path="/sitemap.xml" element={<SitemapRedirect />} />
                 {/* Sponsor Panel — CRM Module (protected B2B access) */}
