@@ -42,7 +42,12 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     const setSocialImageMeta = (content: string) => {
       setMeta('og:image', content, 'property');
       setMeta('og:image:secure_url', content, 'property');
+      setMeta('og:image:type', content.toLowerCase().endsWith('.jpg') || content.toLowerCase().endsWith('.jpeg') ? 'image/jpeg' : 'image/png', 'property');
+      setMeta('og:image:width', '1200', 'property');
+      setMeta('og:image:height', '630', 'property');
+      setMeta('og:image:alt', `${title} — Preciso de um`, 'property');
       setMeta('twitter:image', content);
+      setMeta('twitter:image:alt', `${title} — Preciso de um`);
     };
 
     // Open Graph

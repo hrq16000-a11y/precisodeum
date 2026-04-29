@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, ExternalLink, Trash2, Mail, Star, Briefcase, CheckCircle, MessageCircle } from 'lucide-react';
+import { Bell, Check, CheckCheck, ExternalLink, Trash2, Mail, Star, Briefcase, CheckCircle, MessageCircle, Flame, Zap, TrendingUp, Settings } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -15,16 +15,24 @@ const typeIconMap: Record<string, React.ComponentType<any>> = {
   job: Briefcase,
   approval: CheckCircle,
   message: MessageCircle,
+  lead_performance: TrendingUp,
+  lead_ping: Flame,
+  activity_signal: Zap,
 };
 
 const typeLabels: Record<string, string> = {
   lead: 'Leads',
-  review: 'Avaliacoes',
+  review: 'Avaliações',
   system: 'Sistema',
   job: 'Vagas',
-  approval: 'Aprovacoes',
+  approval: 'Aprovações',
   message: 'Mensagens',
+  lead_performance: '5+ cliques/24h',
+  lead_ping: 'Ping de Sucesso',
+  activity_signal: 'Sinal de Vida',
 };
+
+const PERFORMANCE_TYPES = new Set(['lead_performance', 'lead_ping', 'activity_signal']);
 
 const NotificationRow = ({
   notification,
@@ -106,8 +114,16 @@ const DashboardNotificationsPage = () => {
     return Array.from(types).sort((a, b) => a.localeCompare(b));
   }, [notifications]);
 
+  const performanceCount = useMemo(
+    () => notifications.filter(n => PERFORMANCE_TYPES.has(n.type)).length,
+    [notifications],
+  );
+
   const filteredNotifications = useMemo(() => {
     if (selectedType === 'all') return notifications;
+    if (selectedType === '__performance__') {
+      return notifications.filter(n => PERFORMANCE_TYPES.has(n.type));
+    }
     return notifications.filter(n => n.type === selectedType);
   }, [notifications, selectedType]);
 
@@ -130,7 +146,15 @@ const DashboardNotificationsPage = () => {
             Historico completo com {notifications.length} notificacao{notifications.length !== 1 ? 's' : ''}.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/dashboard/notificacoes/preferencias')}
+            className="gap-2"
+          >
+            <Settings className="h-4 w-4" /> Preferências
+          </Button>
           {unreadCount > 0 && (
             <Button variant="outline" size="sm" onClick={() => markAllAsRead()} className="gap-2">
               <CheckCheck className="h-4 w-4" /> Marcar todas como lidas
@@ -150,6 +174,19 @@ const DashboardNotificationsPage = () => {
         >
           Todas
         </button>
+        {performanceCount > 0 && (
+          <button
+            onClick={() => setSelectedType('__performance__')}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              selectedType === '__performance__'
+                ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                : 'border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/5'
+            }`}
+            title="Sinal de Vida + Ping de Sucesso + 5+ cliques/24h"
+          >
+            <TrendingUp className="inline h-3 w-3 mr-0.5" /> Performance ({performanceCount})
+          </button>
+        )}
         {availableTypes.map(type => (
           <button
             key={type}
