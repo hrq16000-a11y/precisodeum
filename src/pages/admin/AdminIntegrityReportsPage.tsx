@@ -10,9 +10,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle2, Loader2, RefreshCcw, ShieldAlert, Database } from 'lucide-react';
-import AdminGuard from '@/components/admin/AdminGuard';
+import { useAdmin } from '@/hooks/useAdmin';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { toast } from 'sonner';
+import { Navigate } from 'react-router-dom';
 
 interface Row {
   id: string;
@@ -34,7 +35,12 @@ const fmt = (iso: string) =>
   new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso));
 
 const AdminIntegrityReportsPage = () => {
-  useSeoHead({ title: 'Integridade de dados — Admin', noindex: true });
+  const { isAdmin, loading: adminLoading } = useAdmin();
+  useSeoHead({
+    title: 'Integridade de dados — Admin',
+    description: 'Histórico das verificações automáticas de integridade do banco.',
+    noindex: true,
+  });
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
