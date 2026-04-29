@@ -7036,6 +7036,20 @@ export type Database = {
           total_records: number
         }[]
       }
+      audit_user_ref_full_detailed: {
+        Args: never
+        Returns: {
+          coverage_pct: number
+          data_type: string
+          filled: number
+          has_index: boolean
+          is_sponsor_table: boolean
+          missing: number
+          sample_missing_ids: string[]
+          table_name: string
+          total_rows: number
+        }[]
+      }
       audit_user_ref_health: {
         Args: never
         Returns: {
@@ -7798,6 +7812,7 @@ export type Database = {
       }
       user_lead_quota: { Args: { _user_id: string }; Returns: number }
       user_lead_quota_usage: { Args: { _user_id: string }; Returns: Json }
+      validate_db_health: { Args: never; Returns: Json }
     }
     Enums: {
       app_role:
