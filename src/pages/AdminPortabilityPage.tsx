@@ -637,14 +637,15 @@ function UserRefAuditTab() {
   const saveConfig = useCallback(async () => {
     setSavingCfg(true);
     try {
-      const updates = [
+      const updates: Array<{ key: string; value: unknown }> = [
         { key: "restore_min_user_ref_coverage_pct", value: threshold },
         { key: "restore_strict_mode", value: strict },
       ];
       for (const u of updates) {
         const { error } = await supabase
           .from("site_settings")
-          .upsert(u, { onConflict: "key" });
+          // value column is jsonb at the DB level; the generated TS type is narrow
+          .upsert(u as never, { onConflict: "key" });
         if (error) throw error;
       }
       toast.success("Regra de cobertura salva.");
