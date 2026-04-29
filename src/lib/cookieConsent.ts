@@ -71,7 +71,7 @@ export async function hydrateConsentFromServer(): Promise<ConsentState | null> {
       .limit(1)
       .maybeSingle();
     if (error || !data) return null;
-    const row = data as {
+    const row = data as unknown as {
       functional: boolean;
       analytics: boolean;
       marketing: boolean;
