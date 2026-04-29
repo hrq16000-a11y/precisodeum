@@ -427,4 +427,20 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   );
 };
 
-export default ProviderCard;
+// Memoize to avoid re-rendering all cards on each Realtime presence sync.
+// Card subscribes to its own provider's online state via useIsProviderOnline;
+// other providers' presence changes don't affect rendered output.
+export default memo(ProviderCard, (prev, next) => {
+  if (prev.provider !== next.provider && prev.provider.id !== next.provider.id) return false;
+  if (prev.isFallback !== next.isFallback) return false;
+  if (prev.trackingSource !== next.trackingSource) return false;
+  if (prev.index !== next.index) return false;
+  // Provider is the same row → re-render only if a meaningful field shifted
+  return prev.provider.id === next.provider.id
+    && prev.provider.featured === next.provider.featured
+    && prev.provider.rating === next.provider.rating
+    && prev.provider.reviewCount === next.provider.reviewCount
+    && prev.provider.distanceKm === next.provider.distanceKm
+    && prev.provider.serviceImage === next.provider.serviceImage
+    && prev.provider.avatarUrl === next.provider.avatarUrl;
+});
