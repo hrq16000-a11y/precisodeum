@@ -21,8 +21,11 @@ const ScrollProgressBar = reactLazy(() => importWithRetry(() => import("./compon
 const ImpersonationBanner = reactLazy(() => importWithRetry(() => import("./components/admin/ImpersonationBanner")));
 const GlobalExitIntentDialog = reactLazy(() => importWithRetry(() => import("./components/GlobalExitIntentDialog")));
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { initializeUiFreezeMonitor } from "@/lib/uiFreezeMonitor";
 import { appendWizardResetDebugLog } from "@/lib/wizardResetDebug";
+import { hasUnlockedAppAccess, shouldForceOnboarding } from "@/lib/onboardingAccess";
+import { fetchExistingFirstService, findExistingProvider } from "@/components/onboarding/wizard/phases/v2/findExistingRecords";
 import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
@@ -278,12 +281,57 @@ const RoutePrefetcher = () => {
 };
 
 const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, provider, loading, refetchProfile } = useAuth();
   const location = useLocation();
+  const [checkingExistingService, setCheckingExistingService] = useState(false);
+  const [hasExistingService, setHasExistingService] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const recoverProviderAccess = async () => {
+      const needsRecovery = !!user && !!profile && profile.profile_type === 'provider' && profile.onboarding_completed !== true;
+      if (!needsRecovery) {
+        setCheckingExistingService(false);
+        setHasExistingService(false);
+        return;
+      }
+
+      setCheckingExistingService(true);
+      try {
+        const providerId = provider?.id ?? await findExistingProvider(user.id, profile?.user_ref ?? null);
+        const existingService = await fetchExistingFirstService(
+          providerId ?? null,
+          profile?.user_ref ?? null,
+          provider?.category_id ?? profile?.primary_category_id ?? null,
+        );
+
+        if (cancelled) return;
+
+        const unlocked = hasUnlockedAppAccess(profile, Boolean(existingService?.id));
+        setHasExistingService(Boolean(existingService?.id));
+
+        if (unlocked && profile.onboarding_completed !== true) {
+          await supabase
+            .from('profiles')
+            .update({ onboarding_step: 5, onboarding_completed: true })
+            .eq('id', user.id);
+          void refetchProfile();
+        }
+      } finally {
+        if (!cancelled) setCheckingExistingService(false);
+      }
+    };
+
+    void recoverProviderAccess();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, provider, refetchProfile, user]);
 
   // While auth is resolving, or user exists but profile not yet loaded,
   // render an accessible skeleton instead of null to avoid blank screens.
-  if (loading || (user && !profile)) {
+  if (loading || (user && !profile) || checkingExistingService) {
     return (
       <div
         role="status"
@@ -306,10 +354,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   // Fonte de verdade do desbloqueio: profile_type + onboarding_completed.
   // onboarding_step é mantido só para diagnóstico/telemetria, sem re-travar
   // usuários que já concluíram e já possuem serviços publicados.
-  const mustCompleteOnboarding = !!user && !!profile && (
-    !profile.profile_type ||
-    profile.onboarding_completed !== true
-  );
+  const mustCompleteOnboarding = !!user && !!profile && shouldForceOnboarding(profile, hasExistingService);
 
   // Wizard unificado: /cadastro-inicial é a porta ÚNICA. /cadastro-bet,
   // /onboarding-v2 e /triagem viram redirects (mantidos no Routes).
