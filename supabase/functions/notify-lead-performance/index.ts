@@ -1,6 +1,7 @@
 // notify-lead-performance
 // Cron-triggered edge function — varre prestadores que receberam 5+ cliques (whatsapp/phone)
-// nas últimas 24h e cria uma notificação in-app de celebração ("Seu trabalho está despertando interesse").
+// nas últimas 24h e cria uma notificação in-app de celebração ("Seu trabalho está chamando atenção"),
+// com resumo por cidade. Respeita providers.notification_channels.perf_email_5plus (default: true).
 // Throttle: só envia 1 notificação a cada 24h por prestador (chave em notifications.type='lead_performance').
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -21,20 +22,30 @@ Deno.serve(async (req) => {
   );
 
   try {
-    // 1) Pega contagens das últimas 24h por provider
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    // 1) Pega contagens das últimas 24h por provider, com cidade do lead (se houver)
     const { data: rows, error } = await supabase
       .from("lead_interactions")
-      .select("provider_id")
+      .select("provider_id, lead_city")
       .in("interaction_type", ["whatsapp", "phone"])
       .gte("created_at", since);
 
     if (error) throw error;
 
+    // counts: provider_id -> total
+    // perCity: provider_id -> { city -> count }
     const counts = new Map<string, number>();
+    const perCity = new Map<string, Map<string, number>>();
     for (const r of rows ?? []) {
       const id = (r as { provider_id: string }).provider_id;
+      const city = ((r as any).lead_city as string | null) || "";
       counts.set(id, (counts.get(id) ?? 0) + 1);
+      if (city) {
+        if (!perCity.has(id)) perCity.set(id, new Map());
+        const m = perCity.get(id)!;
+        m.set(city, (m.get(city) ?? 0) + 1);
+      }
     }
 
     const eligibleProviderIds = [...counts.entries()]
@@ -48,10 +59,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 2) Resolve user_id + cidade dos elegíveis
+    // 2) Resolve user_id + cidade + prefs
     const { data: provs } = await supabase
       .from("providers")
-      .select("id, user_id, city")
+      .select("id, user_id, city, notification_channels")
       .in("id", eligibleProviderIds);
 
     if (!provs || provs.length === 0) {
@@ -72,26 +83,48 @@ Deno.serve(async (req) => {
 
     const recentSet = new Set((recent ?? []).map((r) => r.user_id));
 
-    // 4) Cria notificações in-app em batch
-    const toInsert = provs
-      .filter((p) => !recentSet.has(p.user_id))
-      .map((p) => {
-        const clickCount = counts.get(p.id) ?? 0;
-        const cityLabel = p.city ? ` em ${p.city}` : "";
-        return {
-          user_id: p.user_id,
-          title: "Seu trabalho está chamando atenção",
-          message:
-            `Você recebeu ${clickCount} cliques de contato nas últimas 24h${cityLabel}. ` +
-            `Continue com seu perfil atualizado para não perder oportunidades.`,
-          type: "lead_performance",
-          link: "/dashboard/metrics",
-        };
+    // 4) Cria notificações in-app em batch (respeitando perf_email_5plus)
+    const toInsert: Array<Record<string, unknown>> = [];
+    let optedOut = 0;
+    for (const p of provs) {
+      if (recentSet.has(p.user_id)) continue;
+
+      const nc = ((p as any).notification_channels ?? {}) as Record<string, boolean>;
+      const enabled = nc.perf_email_5plus !== false; // default ON
+      if (!enabled) {
+        optedOut++;
+        continue;
+      }
+
+      const clickCount = counts.get(p.id) ?? 0;
+
+      // Resumo por cidade (top 3)
+      const cityMap = perCity.get(p.id);
+      const cityList = cityMap
+        ? [...cityMap.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([city, n]) => `${city} (${n})`)
+        : [];
+
+      const cityLabel = cityList.length > 0
+        ? ` Origens: ${cityList.join(", ")}.`
+        : (p.city ? ` Origem provável: ${p.city}.` : "");
+
+      toInsert.push({
+        user_id: p.user_id,
+        title: "Seu trabalho está chamando atenção",
+        message:
+          `Você recebeu ${clickCount} cliques de contato nas últimas 24h.${cityLabel} ` +
+          `Mantenha seu perfil atualizado (foto, áreas de atendimento e WhatsApp) para continuar bombando.`,
+        type: "lead_performance",
+        link: "/dashboard/metrics",
       });
+    }
 
     if (toInsert.length === 0) {
       return new Response(
-        JSON.stringify({ ok: true, eligible: provs.length, notified: 0, throttled: true }),
+        JSON.stringify({ ok: true, eligible: provs.length, notified: 0, optedOut, throttled: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -100,7 +133,7 @@ Deno.serve(async (req) => {
     if (insertErr) throw insertErr;
 
     return new Response(
-      JSON.stringify({ ok: true, eligible: provs.length, notified: toInsert.length }),
+      JSON.stringify({ ok: true, eligible: provs.length, notified: toInsert.length, optedOut }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
