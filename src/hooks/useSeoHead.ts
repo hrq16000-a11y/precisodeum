@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { DEFAULT_LOGO_URL, DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL, SITE_BASE_URL as SITE_URL, socialImageUrl, toAbsoluteSiteUrl } from '@/lib/siteAssets';
+import { normalizeSocialImageUrl } from '@/lib/imageUrlNormalizer';
 
 interface SeoHeadProps {
   title: string;
@@ -36,7 +37,7 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     setMeta('description', description);
     setMeta('robots', noindex ? 'noindex, nofollow' : 'index, follow');
 
-    const resolvedOgImage = socialImageUrl(ogImage);
+    const resolvedOgImage = normalizeSocialImageUrl(ogImage || socialImageUrl(ogImage), 'og:image');
     const resolvedLogo = toAbsoluteSiteUrl(DEFAULT_LOGO_URL);
 
     const setSocialImageMeta = (content: string) => {
