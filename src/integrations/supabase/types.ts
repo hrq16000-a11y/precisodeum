@@ -950,6 +950,54 @@ export type Database = {
         }
         Relationships: []
       }
+      exit_intent_events: {
+        Row: {
+          city: string | null
+          created_at: string
+          id: string
+          kind: string
+          meta: Json
+          neighborhood: string | null
+          page_kind: string | null
+          pathname: string
+          session_id: string | null
+          source: string | null
+          state: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          meta?: Json
+          neighborhood?: string | null
+          page_kind?: string | null
+          pathname: string
+          session_id?: string | null
+          source?: string | null
+          state?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          meta?: Json
+          neighborhood?: string | null
+          page_kind?: string | null
+          pathname?: string
+          session_id?: string | null
+          source?: string | null
+          state?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           active: boolean
@@ -6604,6 +6652,20 @@ export type Database = {
         }[]
       }
       admin_error_500_summary: { Args: { _hours?: number }; Returns: Json }
+      admin_exit_intent_funnel: {
+        Args: { p_since?: string; p_until?: string }
+        Returns: {
+          city: string
+          cta_secondary: number
+          cta_signup: number
+          cta_whatsapp: number
+          dismiss: number
+          impressions: number
+          page_kind: string
+          post_signup_conversion: number
+          signup_rate: number
+        }[]
+      }
       admin_export_audit_logs: {
         Args: { _days?: number }
         Returns: {
