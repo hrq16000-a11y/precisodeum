@@ -38,6 +38,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const daysLimit = Number(useSettingValue('incomplete_profile_days_limit')) || 60;
   const isProvider = !!profile && profile.profile_type !== 'client' && profile.profile_type !== 'rh';
   const onbStatus = useOnboardingStatus();
+  // Telemetria de retenção: registra acesso ao dashboard (throttle 30min no servidor).
+  useDashboardSessionPing(location.pathname);
   const onbPercent = isProvider ? onbStatus.percent : 0;
   const onbPublishable = isProvider && onbStatus.publishable;
 
