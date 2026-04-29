@@ -36,6 +36,9 @@ export function DashboardHealthCheck({
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const lastLoggedRef = useRef<number>(0);
+  // Track previous OK state so we can detect recovery transitions
+  // (failure → success) and persist a "recovered" event in history.
+  const previousOkRef = useRef<boolean | null>(null);
 
   const persistResult = async (r: HealthResult) => {
     try {
