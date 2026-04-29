@@ -17,7 +17,24 @@ interface OnlineBadgeProps {
   showOffline?: boolean;
   /** Show small "atualizado há Xs" freshness label next to the badge. */
   showFreshness?: boolean;
+  /**
+   * Time window (ms) within which an offline user still shows the "Offline" badge.
+   * After this, the badge disappears so the card falls back to neutral state.
+   * Defaults to RECENTLY_OFFLINE_WINDOW_MS (10 min).
+   */
+  offlineVisibleWindowMs?: number;
   className?: string;
+}
+
+function formatFullRelative(ms: number): string {
+  const seconds = Math.max(1, Math.floor(ms / 1000));
+  if (seconds < 60) return `${seconds} s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+  const days = Math.floor(hours / 24);
+  return `${days} ${days === 1 ? 'dia' : 'dias'}`;
 }
 
 function formatRelative(ms: number): string {
