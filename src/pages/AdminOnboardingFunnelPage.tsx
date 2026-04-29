@@ -21,6 +21,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RolloutControlCard from '@/components/admin/RolloutControlCard';
+import SignupFunnelCard from '@/components/admin/SignupFunnelCard';
 
 interface FunnelRow {
   phase: string;
@@ -181,6 +182,9 @@ const AdminOnboardingFunnelPage = () => {
           <KpiCard label="Taxa de conclusão" value={`${conversionPct}%`} loading={loading} highlight />
           <KpiCard label="Erros" value={totals.error || 0} loading={loading} tone="danger" />
         </div>
+
+        {/* Funil completo de cadastro (visitas → wizard → drafts → perfis → providers) */}
+        <SignupFunnelCard />
 
         {/* Controle de rollout + métricas A/B */}
         <RolloutControlCard />
