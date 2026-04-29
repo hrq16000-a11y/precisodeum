@@ -225,7 +225,10 @@ function track(event: string, meta: Record<string, unknown>) {
 export default function GlobalExitIntentDialog() {
   const { pathname } = useLocation();
   const { user } = useAuth();
-  const { city, state } = useGeoCity();
+  const geo = useGeoCity() as any;
+  const city: string | null = geo?.city ?? null;
+  const state: string | null = geo?.state ?? null;
+  const neighborhood: string | null = geo?.neighborhood ?? null;
   const [open, setOpen] = useState(false);
   const triggeredRef = useRef(false);
   const inactivityTimer = useRef<number | null>(null);
@@ -237,13 +240,20 @@ export default function GlobalExitIntentDialog() {
 
   const pageKind = useMemo(() => detectPageKind(pathname), [pathname]);
   const copy = useMemo(
-    () => buildCopy({ city, state, pageKind, isAuthed: !!user }),
-    [city, state, pageKind, user],
+    () => buildCopy({ city, state, neighborhood, pageKind, isAuthed: !!user }),
+    [city, state, neighborhood, pageKind, user],
   );
 
-  const baseMeta = useMemo(
-    () => ({ pathname, page_kind: pageKind, city, state, authed: !!user }),
-    [pathname, pageKind, city, state, user],
+  const baseTel = useMemo(
+    () => ({
+      pathname,
+      page_kind: pageKind,
+      city,
+      state,
+      neighborhood,
+      user_id: user?.id ?? null,
+    }),
+    [pathname, pageKind, city, state, neighborhood, user?.id],
   );
 
   const trigger = useCallback(
@@ -262,9 +272,9 @@ export default function GlobalExitIntentDialog() {
         /* noop */
       }
       setOpen(true);
-      track('global_exit_intent_shown', { ...baseMeta, source });
+      void trackExitIntent({ ...baseTel, kind: 'impression', source, meta: { authed: !!user } });
     },
-    [excluded, baseMeta],
+    [excluded, baseTel, user],
   );
 
   const resetInactivity = useCallback(() => {
@@ -298,27 +308,47 @@ export default function GlobalExitIntentDialog() {
   }, [excluded, resetInactivity, trigger]);
 
   const handlePrimary = useCallback(() => {
-    track('global_exit_intent_primary', { ...baseMeta, target: copy.primaryHref });
-    if (copy.primaryIsWhatsApp) {
+    const isWa = copy.primaryIsWhatsApp;
+    void trackExitIntent({
+      ...baseTel,
+      kind: isWa ? 'cta_whatsapp' : 'cta_signup',
+      meta: { target: copy.primaryHref, cta: 'primary' },
+    });
+    if (!isWa && copy.primaryHref.startsWith('/cadastro')) {
+      // marca pendente para casar com `post_signup_conversion` no Dashboard.
+      markPendingExitConversion({
+        pathname: baseTel.pathname,
+        page_kind: baseTel.page_kind,
+        city: baseTel.city,
+        state: baseTel.state,
+        neighborhood: baseTel.neighborhood,
+      });
+    }
+    if (isWa) {
       markSupportContacted({ source: 'other' });
       window.open(copy.primaryHref, '_blank', 'noopener,noreferrer');
     }
     setOpen(false);
-  }, [baseMeta, copy.primaryHref, copy.primaryIsWhatsApp, pageKind]);
+  }, [baseTel, copy.primaryHref, copy.primaryIsWhatsApp]);
 
   const handleSecondary = useCallback(() => {
-    track('global_exit_intent_secondary', { ...baseMeta, target: copy.secondaryHref });
-    if (copy.secondaryHref.startsWith('https://wa.me')) {
+    const isWa = copy.secondaryHref.startsWith('https://wa.me');
+    void trackExitIntent({
+      ...baseTel,
+      kind: isWa ? 'cta_whatsapp' : 'cta_secondary',
+      meta: { target: copy.secondaryHref, cta: 'secondary' },
+    });
+    if (isWa) {
       markSupportContacted({ source: 'other' });
       window.open(copy.secondaryHref, '_blank', 'noopener,noreferrer');
     }
     setOpen(false);
-  }, [baseMeta, copy.secondaryHref, pageKind]);
+  }, [baseTel, copy.secondaryHref]);
 
   const handleDismiss = useCallback(() => {
-    track('global_exit_intent_dismiss', baseMeta);
+    void trackExitIntent({ ...baseTel, kind: 'dismiss' });
     setOpen(false);
-  }, [baseMeta]);
+  }, [baseTel]);
 
   if (excluded) return null;
 
