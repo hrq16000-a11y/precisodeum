@@ -280,7 +280,7 @@ export default function GlobalExitIntentDialog() {
   const handlePrimary = useCallback(() => {
     track('global_exit_intent_primary', { ...baseMeta, target: copy.primaryHref });
     if (copy.primaryIsWhatsApp) {
-      markSupportContacted({ source: 'global_exit_intent', page_kind: pageKind });
+      markSupportContacted({ source: 'other', page_kind: pageKind, origin: 'global_exit_intent' });
       window.open(copy.primaryHref, '_blank', 'noopener,noreferrer');
     }
     setOpen(false);
@@ -289,7 +289,7 @@ export default function GlobalExitIntentDialog() {
   const handleSecondary = useCallback(() => {
     track('global_exit_intent_secondary', { ...baseMeta, target: copy.secondaryHref });
     if (copy.secondaryHref.startsWith('https://wa.me')) {
-      markSupportContacted({ source: 'global_exit_intent_secondary', page_kind: pageKind });
+      markSupportContacted({ source: 'other', page_kind: pageKind, origin: 'global_exit_intent_secondary' });
       window.open(copy.secondaryHref, '_blank', 'noopener,noreferrer');
     }
     setOpen(false);
