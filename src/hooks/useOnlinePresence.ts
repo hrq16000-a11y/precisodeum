@@ -6,7 +6,14 @@ const CHANNEL_NAME = 'online-presence';
 
 let channel: RealtimeChannel | null = null;
 export type OnlinePresenceMeta = { city?: string; onlineSince?: number };
+export type RawPresence = { user_id: string; city?: string; online_since?: number };
+export type PresenceState = Record<string, RawPresence[]>;
+
 let onlineUsers = new Map<string, OnlinePresenceMeta>();
+/** Users who were recently online but are no longer present, with the timestamp they were last seen. */
+let lastSeenMap = new Map<string, number>();
+/** Wall-clock timestamp of the last presence sync — used for the "atualizado há Xs" label. */
+let lastSyncAt = 0;
 let listeners = new Set<() => void>();
 let subscriberCount = 0;
 
@@ -14,21 +21,53 @@ function notify() {
   listeners.forEach((fn) => fn());
 }
 
-function syncPresenceState() {
-  if (!channel) return;
-  const state = channel.presenceState<{ user_id: string; city?: string; online_since?: number }>();
+/**
+ * Pure reducer: given a Supabase presence state and the previous
+ * online-users map, returns the next online map.
+ *
+ * Exposed for unit testing — keeps the multi-event merge logic
+ * isolated from React/Supabase.
+ */
+export function reducePresenceState(
+  state: PresenceState,
+  prev: Map<string, OnlinePresenceMeta>,
+  now: number = Date.now(),
+): Map<string, OnlinePresenceMeta> {
   const next = new Map<string, OnlinePresenceMeta>();
   for (const key in state) {
     for (const presence of state[key]) {
-      if (!presence.user_id) continue;
-      // Preserve earliest onlineSince across multiple presences for same user
-      const prev = next.get(presence.user_id);
-      const candidate = presence.online_since ?? Date.now();
-      const onlineSince = prev?.onlineSince ? Math.min(prev.onlineSince, candidate) : candidate;
-      next.set(presence.user_id, { city: presence.city, onlineSince });
+      if (!presence?.user_id) continue;
+      const candidate = presence.online_since ?? now;
+      // Earliest known onlineSince wins, across:
+      //   1. multiple presences for the same user in the current state
+      //   2. the previous map (presence drops + re-adds shouldn't reset the clock)
+      const fromPrev = prev.get(presence.user_id)?.onlineSince;
+      const fromCurrent = next.get(presence.user_id)?.onlineSince;
+      const onlineSince = [fromPrev, fromCurrent, candidate]
+        .filter((v): v is number => typeof v === 'number')
+        .reduce((a, b) => Math.min(a, b));
+      next.set(presence.user_id, {
+        city: presence.city ?? next.get(presence.user_id)?.city,
+        onlineSince,
+      });
     }
   }
+  return next;
+}
+
+function syncPresenceState() {
+  if (!channel) return;
+  const state = channel.presenceState<RawPresence>() as PresenceState;
+  const now = Date.now();
+  const next = reducePresenceState(state, onlineUsers, now);
+
+  // Update lastSeen for users who dropped out of presence in this sync
+  onlineUsers.forEach((_, userId) => {
+    if (!next.has(userId)) lastSeenMap.set(userId, now);
+  });
+
   onlineUsers = next;
+  lastSyncAt = now;
   notify();
 }
 
@@ -50,6 +89,7 @@ function destroyChannel() {
   supabase.removeChannel(channel);
   channel = null;
   onlineUsers = new Map();
+  // Keep lastSeenMap so badges can still show "esteve online há Xm" briefly
   notify();
 }
 
@@ -155,6 +195,22 @@ export function useProviderPresence(userId: string | undefined): OnlinePresenceM
   return useMemo(() => (userId ? map.get(userId) ?? null : null), [map, userId]);
 }
 
+/** Returns the last time a provider was seen online (after they go offline). */
+export function useProviderLastSeen(userId: string | undefined): number | null {
+  // Subscribe to the same store so this re-runs on presence changes
+  useOnlineUsersMap();
+  if (!userId) return null;
+  // If currently online, return their onlineSince via the live map
+  if (onlineUsers.has(userId)) return null;
+  return lastSeenMap.get(userId) ?? null;
+}
+
+/** Returns the wall-clock timestamp of the last presence sync. */
+export function useLastPresenceSync(): number {
+  useOnlineUsersMap();
+  return lastSyncAt;
+}
+
 /** Count online users in a specific city */
 export function useOnlineCountByCity(city: string | null): number {
   const map = useOnlineUsersMap();
@@ -168,3 +224,24 @@ export function useOnlineCountByCity(city: string | null): number {
     return count;
   }, [map, city]);
 }
+
+// ─── Test helpers ────────────────────────────────────────────────────
+/** @internal — exposed only for unit tests */
+export const __presenceInternals = {
+  reset() {
+    onlineUsers = new Map();
+    lastSeenMap = new Map();
+    lastSyncAt = 0;
+  },
+  applyState(state: PresenceState, now: number = Date.now()) {
+    const next = reducePresenceState(state, onlineUsers, now);
+    onlineUsers.forEach((_, userId) => {
+      if (!next.has(userId)) lastSeenMap.set(userId, now);
+    });
+    onlineUsers = next;
+    lastSyncAt = now;
+    notify();
+  },
+  getOnlineMap: () => onlineUsers,
+  getLastSeenMap: () => lastSeenMap,
+};
