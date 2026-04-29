@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { Button } from '@/components/ui/button';
+import { subscribeDraftChange } from './v2/crossTabSync';
 
 const MAX_SERVICES = 5;
 
@@ -75,6 +76,21 @@ const Step20_MoreServices = ({ onContinue, onSkip }: Step20Props) => {
   }, [user?.id]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    const unsubscribeDraft = subscribeDraftChange(() => { void refresh(); });
+    const onProgressChanged = () => { void refresh(); };
+    window.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('onboarding-progress-changed', onProgressChanged as EventListener);
+    return () => {
+      unsubscribeDraft();
+      window.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('onboarding-progress-changed', onProgressChanged as EventListener);
+    };
+  }, [refresh]);
 
   const remaining = count == null ? null : Math.max(0, MAX_SERVICES - count);
   const reachedCap = count != null && count >= MAX_SERVICES;
