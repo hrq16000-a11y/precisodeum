@@ -74,6 +74,7 @@ function detectPageKind(pathname: string): PageKind {
 interface CopyContext {
   city: string | null;
   state: string | null;
+  neighborhood: string | null;
   pageKind: PageKind;
   isAuthed: boolean;
 }
