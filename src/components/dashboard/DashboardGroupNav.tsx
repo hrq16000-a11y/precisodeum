@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
 import {
-  LayoutDashboard, User, Briefcase, MessageSquare, CreditCard, Layout, Megaphone, Users2, Bell, Gift, BarChart3, Trophy, ShieldCheck,
+  LayoutDashboard, User, Briefcase, MessageSquare, CreditCard, Layout, Megaphone, Users2, Bell, Gift, BarChart3, Trophy, ShieldCheck, Activity,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,6 +39,7 @@ const DashboardGroupNav = () => {
         { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes' },
         { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade' },
         { label: 'Privacidade', icon: ShieldCheck, path: '/dashboard/privacidade' },
+        { label: 'Status do cadastro', icon: Activity, path: '/dashboard/cadastro-status' },
       ],
     },
     ...(!isClient && !isRH ? [{
