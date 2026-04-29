@@ -77,6 +77,8 @@ const AdminProvidersPage = lazy(() => import("./pages/AdminProvidersPage"));
 const AdminDefaultNeighborhoodPage = lazy(() => import("./pages/admin/AdminDefaultNeighborhoodPage"));
 const AdminServiceAreaCorrectionsPage = lazy(() => import("./pages/admin/AdminServiceAreaCorrectionsPage"));
 const AdminKillSwitchBlocksPage = lazy(() => import("./pages/admin/AdminKillSwitchBlocksPage"));
+const AdminRegressionReportsPage = lazy(() => import("./pages/admin/AdminRegressionReportsPage"));
+const AdminAuthMetricsPage = lazy(() => import("./pages/admin/AdminAuthMetricsPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
@@ -505,6 +507,8 @@ const App = () => {
                 <Route path="/admin/lixeira" element={<AdminTrashPage />} />
                 <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
                 <Route path="/admin/pwa" element={<AdminPwaPage />} />
+                <Route path="/admin/regressao" element={<ProtectedRoute><AdminRegressionReportsPage /></ProtectedRoute>} />
+                <Route path="/admin/metricas-auth" element={<ProtectedRoute><AdminAuthMetricsPage /></ProtectedRoute>} />
                 
                 <Route path="/admin/midia" element={<AdminMediaPage />} />
                 <Route path="/admin/servicos" element={<AdminServicesPage />} />
