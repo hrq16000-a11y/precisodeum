@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
@@ -26,7 +26,7 @@ interface CommunityFeedProps {
   compact?: boolean;
 }
 
-const CommunityFeed = forwardRef<HTMLDivElement, CommunityFeedProps>(({ compact = false }, _ref) => {
+const CommunityFeed = ({ compact = false }: CommunityFeedProps) => {
   // DESATIVADO: o feed estava exibindo cadastros de "há 4-5 dias" com selo
   // "Ao vivo", o que era enganoso. Mantemos o componente importado para não
   // quebrar referências, mas ele não renderiza nada até termos uma fonte
@@ -191,7 +191,6 @@ const CommunityFeed = forwardRef<HTMLDivElement, CommunityFeedProps>(({ compact 
       </div>
     </motion.div>
   );
-});
-CommunityFeed.displayName = 'CommunityFeed';
+};
 
 export default CommunityFeed;
