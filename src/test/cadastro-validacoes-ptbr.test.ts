@@ -78,7 +78,8 @@ describe('Cadastro — validação de WhatsApp em pt-BR', () => {
 
 describe('Cadastro — sanitização e formatação', () => {
   it('sanitiza tirando caracteres não-numéricos e zeros à esquerda', () => {
-    expect(sanitizePhone('(041) 99745-2053')).toBe('4199745205'.length === 10 ? '4199745205' : '41997452053');
+    expect(sanitizePhone('(041) 99745-2053')).toBe('41997452053');
+    expect(sanitizePhone('  +55 (41) 99745-2053  ')).toBe('5541997452053');
   });
   it('converte para canônico 55+DDD+número', () => {
     expect(toCanonical('41997452053')).toBe('5541997452053');
