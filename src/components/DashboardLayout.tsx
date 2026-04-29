@@ -14,6 +14,7 @@ import Logo from '@/components/Logo';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DashboardHealthCheck } from '@/components/dashboard/DashboardHealthCheck';
+import NotificationPermissionGate from '@/components/dashboard/NotificationPermissionGate';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
@@ -435,6 +436,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </motion.div>
             )}
             <DashboardHealthCheck />
+            <NotificationPermissionGate />
             {children}
           </motion.div>
         </AnimatePresence>
