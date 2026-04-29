@@ -1158,9 +1158,9 @@ const DashboardServicesPage = () => {
                 )}
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label></div>
-                <div style={{display:'none'}}>
-                  <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-foreground">Descrição</label>
+                  </div>
                   <DescriptionTemplatePanel
                     categorySlugs={selectedCategoryIds.map(id => {
                       const cat = categories.find((c: any) => c.id === id);
