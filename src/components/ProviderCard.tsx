@@ -200,7 +200,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       </motion.span>
     );
   } else if (isOnline) {
-    badges.push(<OnlineBadge key="fast-online" userId={provider.userId} />);
+    badges.push(<OnlineBadge key="fast-online" userId={provider.userId} showFreshness />);
   } else if (activeToday) {
     badges.push(
       <span key="active-today" className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-400 border border-blue-500/20">
@@ -213,6 +213,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
         <Zap className="h-3 w-3" /> Responde em ~{provider.avgResponseMinutes}min
       </span>
     );
+  } else {
+    // Sem destaque ativo: se ficou offline recentemente (lastSeen), badge "Offline" com tooltip
+    badges.push(<OnlineBadge key="offline-lastseen" userId={provider.userId} showOffline />);
   }
 
   const visibleBadges = badges.slice(0, MAX_BADGES_MOBILE);
