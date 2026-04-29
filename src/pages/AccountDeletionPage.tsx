@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { CheckCircle2, AlertCircle, ShieldCheck, Mail, Trash2 } from "lucide-react";
 
 const APP_NAME = "Preciso de Um";
+const DEVELOPER_NAME = "Preciso de Um Tecnologia";
 const SUPPORT_EMAIL = "contato@precisodeum.com.br";
 
 type Status = "idle" | "sending" | "sent" | "error";
@@ -251,7 +252,7 @@ const AccountDeletionPage = () => {
         </section>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Desenvolvedor: {APP_NAME} ·{" "}
+          App: <strong>{APP_NAME}</strong> · Desenvolvedor: <strong>{DEVELOPER_NAME}</strong> ·{" "}
           <a className="underline" href={`mailto:${SUPPORT_EMAIL}`}>
             {SUPPORT_EMAIL}
           </a>{" "}
