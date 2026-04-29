@@ -102,21 +102,25 @@ export default function AdminPortabilityPage() {
         </header>
 
         <Tabs defaultValue="bundle" className="w-full">
-          <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full h-auto">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 w-full h-auto">
             <TabsTrigger value="bundle"><Archive className="size-4 mr-2" />ZIP único</TabsTrigger>
             <TabsTrigger value="env"><Server className="size-4 mr-2" />Variáveis</TabsTrigger>
+            <TabsTrigger value="secrets"><KeyRound className="size-4 mr-2" />Secrets</TabsTrigger>
             <TabsTrigger value="checklist"><ListChecks className="size-4 mr-2" />Checklist</TabsTrigger>
             <TabsTrigger value="snapshots"><Archive className="size-4 mr-2" />Snapshots</TabsTrigger>
             <TabsTrigger value="validate"><ShieldCheck className="size-4 mr-2" />Validação</TabsTrigger>
             <TabsTrigger value="userref"><Fingerprint className="size-4 mr-2" />user_ref</TabsTrigger>
+            <TabsTrigger value="restore"><Rocket className="size-4 mr-2" />Restaurar</TabsTrigger>
           </TabsList>
 
           <TabsContent value="bundle"><BundleTab /></TabsContent>
           <TabsContent value="env"><EnvTab /></TabsContent>
+          <TabsContent value="secrets"><SecretsTab /></TabsContent>
           <TabsContent value="checklist"><ChecklistTab /></TabsContent>
           <TabsContent value="snapshots"><SnapshotsTab /></TabsContent>
           <TabsContent value="validate"><ValidateTab /></TabsContent>
           <TabsContent value="userref"><UserRefAuditTab /></TabsContent>
+          <TabsContent value="restore"><RestoreTab /></TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
