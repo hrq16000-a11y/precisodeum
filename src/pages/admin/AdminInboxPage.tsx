@@ -160,7 +160,7 @@ const AdminInboxPage = () => {
       </header>
 
       <Card className="mb-4 p-3">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-4">
           <div>
             <Label htmlFor="filter" className="text-[11px] text-muted-foreground">Status</Label>
             <Select value={filter} onValueChange={(v) => { setPage(0); setFilter(v as any); }}>
@@ -172,8 +172,23 @@ const AdminInboxPage = () => {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label htmlFor="order" className="text-[11px] text-muted-foreground">Ordenar</Label>
+            <Select
+              value={order}
+              onValueChange={(v) => { setPage(0); setOrder(v as 'date' | 'relevance'); }}
+            >
+              <SelectTrigger id="order" aria-label="Ordenação" disabled={!search.trim()}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Mais recentes</SelectItem>
+                <SelectItem value="relevance">Relevância</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="q" className="text-[11px] text-muted-foreground">Busca</Label>
+            <Label htmlFor="q" className="text-[11px] text-muted-foreground">Busca full-text</Label>
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
               <Input
@@ -181,11 +196,14 @@ const AdminInboxPage = () => {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por título ou mensagem..."
+                placeholder='Ex.: "integridade crítica", lead -spam, link...'
                 className="pl-7"
-                aria-label="Buscar notificações"
+                aria-label="Buscar notificações por título, mensagem, tipo ou link"
               />
             </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Suporta frase entre aspas, <code>-palavra</code> para excluir e busca em título, mensagem, tipo e link.
+            </p>
           </div>
         </div>
       </Card>
