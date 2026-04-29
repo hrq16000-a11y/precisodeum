@@ -20,6 +20,8 @@ const GoogleIcon = () => (
   </svg>
 );
 
+type GoogleState = 'idle' | 'loading' | 'redirecting' | 'success' | 'error';
+
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +29,8 @@ const LoginPage = () => {
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [googleState, setGoogleState] = useState<GoogleState>('idle');
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
