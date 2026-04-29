@@ -210,17 +210,7 @@ function buildCopy(ctx: CopyContext): ExitCopy {
   }
 }
 
-function track(event: string, meta: Record<string, unknown>) {
-  // Telemetria leve via console + window event (consumido pelos providers globais).
-  try {
-    window.dispatchEvent(new CustomEvent('precisodeum:telemetry', { detail: { event, meta } }));
-    if (typeof console !== 'undefined') {
-      console.debug('[exit-intent-global]', event, meta);
-    }
-  } catch {
-    /* noop */
-  }
-}
+// Telemetria persistida → ver `@/lib/exitIntentTelemetry`.
 
 export default function GlobalExitIntentDialog() {
   const { pathname } = useLocation();
