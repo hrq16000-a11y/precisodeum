@@ -200,8 +200,16 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     );
   } else if (isOnline) {
     badges.push(
-      <span key="fast-online" className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
-        <Zap className="h-3 w-3" /> Disponível agora
+      <span
+        key="fast-online"
+        className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 ring-1 ring-emerald-500/30"
+        aria-label="Profissional online agora"
+      >
+        <span className="relative inline-flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+        </span>
+        Online
       </span>
     );
   } else if (activeToday) {
