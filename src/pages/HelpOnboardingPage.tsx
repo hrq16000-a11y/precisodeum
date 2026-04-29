@@ -7,12 +7,14 @@
  * Objetivo: aumentar conversão sem depender só do exit-intent — usuário pode
  * entrar aqui via link no próprio pop-up ou pelo footer/navegação.
  */
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, HelpCircle, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { markHelpPageVisited, markSupportContacted } from '@/lib/conversionFunnel';
 
 const SUPPORT_WHATSAPP = '5541997452053';
 const SUPPORT_DISPLAY = '(41) 99745-2053';
