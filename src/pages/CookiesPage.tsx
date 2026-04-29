@@ -1,11 +1,51 @@
-import { motion } from 'framer-motion';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import FadeInSection from '@/components/FadeInSection';
-import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import FadeInSection from "@/components/FadeInSection";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useSeoHead, SITE_BASE_URL } from "@/hooks/useSeoHead";
+import {
+  acceptAll,
+  rejectAll,
+  saveConsent,
+  getConsent,
+  DEFAULT_CONSENT,
+} from "@/lib/cookieConsent";
+import { toast } from "sonner";
 
 const CookiesPage = () => {
-  useSeoHead({ title: 'Política de Cookies - Preciso de um', description: 'Política de Cookies da plataforma Preciso de um.', canonical: `${SITE_BASE_URL}/cookies` });
+  useSeoHead({
+    title: "Política de Cookies - Preciso de um",
+    description:
+      "Política de Cookies da Preciso de um: tecnologias usadas, finalidades, base legal e como gerenciar seu consentimento.",
+    canonical: `${SITE_BASE_URL}/cookies`,
+  });
+
+  const initial = getConsent() ?? DEFAULT_CONSENT;
+  const [prefs, setPrefs] = useState({
+    functional: initial.functional,
+    analytics: initial.analytics,
+    marketing: initial.marketing,
+  });
+
+  const save = () => {
+    saveConsent(prefs);
+    toast.success("Preferências de cookies atualizadas.");
+  };
+
+  const reset = () => {
+    rejectAll();
+    setPrefs({ functional: false, analytics: false, marketing: false });
+    toast.success("Consentimento revogado. Apenas cookies essenciais permanecem ativos.");
+  };
+
+  const allOn = () => {
+    acceptAll();
+    setPrefs({ functional: true, analytics: true, marketing: true });
+    toast.success("Todos os cookies foram aceitos.");
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -25,27 +65,138 @@ const CookiesPage = () => {
             transition={{ delay: 0.15 }}
             className="mt-2 text-sm text-muted-foreground"
           >
-            Última atualização: Março de 2026
+            Última atualização: Abril de 2026
           </motion.p>
 
           <div className="mt-8 space-y-6 text-sm leading-relaxed text-muted-foreground">
             <section>
-              <h2 className="text-lg font-semibold text-foreground">1. O que são cookies?</h2>
-              <p className="mt-2">Cookies são pequenos arquivos de texto armazenados no seu dispositivo quando você visita um site. Eles são utilizados para lembrar suas preferências e melhorar sua experiência de navegação.</p>
+              <h2 className="text-lg font-semibold text-foreground">1. O que são cookies</h2>
+              <p className="mt-2">
+                Cookies e tecnologias similares (localStorage, sessionStorage, pixels e SDKs) são
+                pequenos identificadores armazenados no seu dispositivo para reconhecer sua sessão,
+                lembrar preferências e mensurar o uso da plataforma.
+              </p>
             </section>
+
             <section>
-              <h2 className="text-lg font-semibold text-foreground">2. Tipos de cookies que utilizamos</h2>
-              <p className="mt-2"><strong>Essenciais:</strong> Necessários para o funcionamento básico da plataforma (autenticação, sessão).</p>
-              <p className="mt-1"><strong>Funcionais:</strong> Lembram suas preferências como cidade detectada e idioma.</p>
-              <p className="mt-1"><strong>Analíticos:</strong> Nos ajudam a entender como a plataforma é utilizada para melhorias contínuas.</p>
+              <h2 className="text-lg font-semibold text-foreground">2. Categorias e finalidades</h2>
+              <p className="mt-2">Organizamos os cookies em quatro categorias:</p>
+              <div className="mt-4 overflow-hidden rounded-lg border border-border">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-muted/50 text-foreground">
+                    <tr>
+                      <th className="p-3">Categoria</th>
+                      <th className="p-3">Tecnologias</th>
+                      <th className="p-3">Finalidade</th>
+                      <th className="p-3">Base legal (LGPD)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    <tr>
+                      <td className="p-3 font-medium text-foreground">Essenciais</td>
+                      <td className="p-3">Sessão Supabase Auth, CSRF, localStorage de sessão</td>
+                      <td className="p-3">Login, segurança e funcionamento básico</td>
+                      <td className="p-3">Execução de contrato e legítimo interesse</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-medium text-foreground">Funcionais</td>
+                      <td className="p-3">localStorage (cidade, tema, rascunhos), Service Worker</td>
+                      <td className="p-3">Lembrar preferências e suporte offline</td>
+                      <td className="p-3">Consentimento</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-medium text-foreground">Analíticos</td>
+                      <td className="p-3">Telemetria interna agregada (Web Vitals, eventos UI)</td>
+                      <td className="p-3">Entender uso para melhorias de produto</td>
+                      <td className="p-3">Consentimento</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-medium text-foreground">Marketing</td>
+                      <td className="p-3">Pixels de conversão e mensuração de campanhas</td>
+                      <td className="p-3">Mensurar campanhas e exibir conteúdo de patrocinadores</td>
+                      <td className="p-3">Consentimento</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </section>
+
             <section>
-              <h2 className="text-lg font-semibold text-foreground">3. Gerenciamento de cookies</h2>
-              <p className="mt-2">Você pode gerenciar ou bloquear cookies nas configurações do seu navegador. Note que desabilitar cookies essenciais pode afetar o funcionamento da plataforma.</p>
+              <h2 className="text-lg font-semibold text-foreground">3. Suas escolhas</h2>
+              <p className="mt-2">
+                Você pode aceitar todos, recusar todos ou escolher por categoria. Cookies
+                essenciais não podem ser desativados, pois são necessários para o site funcionar.
+                Suas preferências são salvas neste navegador e podem ser alteradas a qualquer
+                momento abaixo.
+              </p>
+
+              <div className="mt-4 space-y-3">
+                <CategoryRow
+                  title="Essenciais"
+                  description="Sempre ativos. Login, segurança e roteamento."
+                  checked
+                  disabled
+                />
+                <CategoryRow
+                  title="Funcionais"
+                  description="Preferências, cidade detectada, suporte offline."
+                  checked={prefs.functional}
+                  onChange={(v) => setPrefs((p) => ({ ...p, functional: v }))}
+                />
+                <CategoryRow
+                  title="Analíticos"
+                  description="Métricas agregadas e anônimas de uso."
+                  checked={prefs.analytics}
+                  onChange={(v) => setPrefs((p) => ({ ...p, analytics: v }))}
+                />
+                <CategoryRow
+                  title="Marketing"
+                  description="Mensuração de campanhas e patrocinadores."
+                  checked={prefs.marketing}
+                  onChange={(v) => setPrefs((p) => ({ ...p, marketing: v }))}
+                />
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button variant="accent" onClick={save}>
+                  Salvar preferências
+                </Button>
+                <Button variant="outline" onClick={allOn}>
+                  Aceitar todos
+                </Button>
+                <Button variant="ghost" onClick={reset}>
+                  Revogar consentimento
+                </Button>
+              </div>
             </section>
+
             <section>
               <h2 className="text-lg font-semibold text-foreground">4. Cookies de terceiros</h2>
-              <p className="mt-2">Utilizamos serviços de terceiros que podem definir seus próprios cookies, como ferramentas de analytics e provedores de autenticação.</p>
+              <p className="mt-2">
+                Alguns recursos são fornecidos por terceiros (autenticação Google, mapas, provedor
+                de e-mails). Esses parceiros podem definir cookies próprios conforme suas próprias
+                políticas. Mantemos a lista revisada e atualizada nesta página.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-foreground">5. Gerenciamento no navegador</h2>
+              <p className="mt-2">
+                Além dos controles acima, você pode bloquear ou apagar cookies nas configurações do
+                seu navegador. Note que desativar cookies essenciais pode impedir o funcionamento
+                de partes do site.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-foreground">6. Contato</h2>
+              <p className="mt-2">
+                Dúvidas sobre cookies ou tratamento de dados? Fale com nosso encarregado em{" "}
+                <a href="mailto:contato@precisodeum.com.br" className="text-accent hover:underline">
+                  contato@precisodeum.com.br
+                </a>
+                .
+              </p>
             </section>
           </div>
         </FadeInSection>
@@ -54,5 +205,34 @@ const CookiesPage = () => {
     </div>
   );
 };
+
+function CategoryRow({
+  title,
+  description,
+  checked,
+  disabled,
+  onChange,
+}: {
+  title: string;
+  description: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange?: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-card p-3">
+      <div className="flex-1">
+        <p className="font-medium text-foreground">{title}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Switch
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onChange}
+        aria-label={`Ativar categoria ${title}`}
+      />
+    </div>
+  );
+}
 
 export default CookiesPage;
