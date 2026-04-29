@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import AuthPageShell from '@/components/auth/AuthPageShell';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Mail, AlertCircle, CheckCircle2, ArrowLeft, Clock } from 'lucide-react';
@@ -90,9 +89,8 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
+    <AuthPageShell backTo="/login" backLabel="Voltar ao login">
+      <main className="flex w-full items-center justify-center px-0 py-2">
         <div className="w-full max-w-md">
           <div className="rounded-xl border border-border bg-card p-8 shadow-card">
             <div className="mb-4 flex items-center gap-3">
@@ -182,8 +180,7 @@ const ForgotPasswordPage = () => {
           </p>
         </div>
       </main>
-      <Footer />
-    </div>
+    </AuthPageShell>
   );
 };
 
