@@ -755,6 +755,11 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
         </Button>
       </div>
 
+      {/* Reportar erro — pré-preenchido com etapa, user_id e últimos eventos */}
+      <div className="flex justify-center">
+        <ReportWizardErrorButton step={STEPS[step]?.key || 'unknown'} componentName="ServiceWizard" />
+      </div>
+
       {/* Share section (only on photos step) */}
       {isPhotosStep && createdServiceId && (
         <div className="rounded-xl border border-border bg-card p-4 shadow-card space-y-3">
