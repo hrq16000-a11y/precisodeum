@@ -161,6 +161,8 @@ export default function WizardShell() {
             neighborhood: profileSeed.neighborhood,
             pro_kind: profileSeed.kind,
             document: profileSeed.document,
+            company_name: '',
+            points: Number(profile?.engagement_points ?? state.triage.points ?? 0),
           },
           profile: profileSeed,
           service: {
