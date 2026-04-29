@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { playHorn } from '@/lib/soundFx';
+import { playHornBeep } from '@/lib/soundFx';
 
 interface Summary {
   total: number;
@@ -93,7 +93,7 @@ const AdminError500Page = () => {
             duration: 6000,
           });
           if (soundEnabled) {
-            try { void playHorn(); } catch { /* fail-soft */ }
+            try { playHornBeep(); } catch { /* fail-soft */ }
           }
           // Atualiza KPIs em background
           void load();
