@@ -44,8 +44,10 @@ describe('Deep link de redefinição → /login?next=...&message=...', () => {
       </MemoryRouter>,
     );
     const cta = screen.getByRole('link', { name: /Ir para o login/i });
-    expect(cta.getAttribute('href')).toMatch(/message=/);
-    // Garante cópia pt-BR padrão
-    expect(decodeURIComponent(cta.getAttribute('href') || '')).toMatch(/Senha atualizada com sucesso/i);
+    const href = cta.getAttribute('href') || '';
+    expect(href).toMatch(/message=/);
+    // `+` na querystring representa espaço — use replace antes de decode
+    const decoded = decodeURIComponent(href.replace(/\+/g, ' '));
+    expect(decoded).toMatch(/Senha atualizada com sucesso/i);
   });
 });
