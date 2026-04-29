@@ -109,6 +109,7 @@ const menuGroups = [
       { label: 'Revogações LGPD', icon: ShieldCheck, path: '/admin/consent-revocations' },
       { label: 'Funil Onboarding', icon: ScrollText, path: '/admin/onboarding-funnel' },
       { label: 'Integridade de Dados', icon: Database, path: '/admin/integridade' },
+      { label: 'Caixa de Notificações', icon: Bell, path: '/admin/caixa-notificacoes' },
       { label: 'Mídia & Arquivos', icon: FileImage, path: '/admin/midia' },
       { label: 'Instalar App (PWA)', icon: Smartphone, path: '/admin/pwa' },
       { label: 'Barra Inferior', icon: Smartphone, path: '/admin/barra-inferior' },
