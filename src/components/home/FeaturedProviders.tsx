@@ -16,6 +16,7 @@ import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import AdNativeCard from '@/components/ads/AdNativeCard';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import type { FeaturedProviderSort } from '@/hooks/useProviders';
+import CompanyCard from '@/components/cards/CompanyCard';
 
 interface Props {
   providers: DbProvider[];
@@ -111,7 +112,11 @@ const FeaturedProviders = ({ providers, isLoading, isFetching, hasError, sortBy 
               }
               return (
                 <div key={item.data.id} className="w-full max-w-[90%] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
-                  <ProviderCardFeatured provider={item.data} />
+                  {((item.data.accountType || '').toLowerCase() === 'company') ? (
+                    <CompanyCard provider={item.data} trackingSource="featured" />
+                  ) : (
+                    <ProviderCardFeatured provider={item.data} />
+                  )}
                 </div>
               );
             })}

@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import SearchBar from '@/components/SearchBar';
 import CategoryIcon from '@/components/CategoryIcon';
 import ProviderCard from '@/components/ProviderCard';
+import ProviderRenderer from '@/components/cards/ProviderRenderer';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import GeoFallbackNotice from '@/components/GeoFallbackNotice';
@@ -1126,7 +1127,7 @@ const SearchPage = () => {
                                   transition={{ duration: 0.3 }}
                                   layout
                                 >
-                                  <ProviderCard provider={p} isFallback={isFallback} />
+                                  <ProviderRenderer provider={p} isFallback={isFallback} />
                                 </motion.div>
                               ))}
                             </motion.div>
@@ -1147,7 +1148,7 @@ const SearchPage = () => {
                               transition={{ duration: 0.35 }}
                               layout
                             >
-                              <ProviderCard provider={p} isFallback={isFallback} />
+                              <ProviderRenderer provider={p} isFallback={isFallback} />
                             </motion.div>
                             {/* Inject sponsor ad every 5 results */}
                             {(idx + 1) % 5 === 0 && (
@@ -1196,7 +1197,7 @@ const SearchPage = () => {
                           transition={{ duration: 0.35 }}
                           layout
                         >
-                          <ProviderCard provider={p} isFallback={isFallback} />
+                          <ProviderRenderer provider={p} isFallback={isFallback} />
                         </motion.div>
                       ))}
                     </motion.div>
@@ -1255,7 +1256,7 @@ const SearchPage = () => {
                           transition={{ duration: 0.35 }}
                           layout
                         >
-                          <ProviderCard provider={p} isFallback={true} />
+                          <ProviderRenderer provider={p} isFallback={true} />
                         </motion.div>
                       ))}
                     </motion.div>

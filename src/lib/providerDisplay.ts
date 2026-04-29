@@ -57,23 +57,27 @@ export interface ResolveDisplayNameInput {
   profileFullName?: string | null;
   providerName?: string | null;
   businessName?: string | null;
+  legalName?: string | null;
   slug?: string | null;
   city?: string | null;
+  /** When 'company', business/legal name takes priority over profile full_name. */
+  accountType?: string | null;
 }
 
 /**
  * Resolution priority:
- *  1. Profile full_name (real verified name)
- *  2. provider.name (already resolved upstream — but only if not generic)
- *  3. business_name (only if not generic)
- *  4. Humanized slug
- *  5. "Profissional em {city}" or "Profissional"
+ *  - PJ (company): business_name → legal_name → profile full_name → slug → city
+ *  - PF (default): profile full_name → providerName → business_name → slug → city
  */
 export function resolveDisplayName(input: ResolveDisplayNameInput): string {
-  const candidates = [input.profileFullName, input.providerName, input.businessName];
+  const isCompany = (input.accountType || '').toLowerCase() === 'company';
+  const candidates = isCompany
+    ? [input.businessName, input.legalName, input.profileFullName, input.providerName]
+    : [input.profileFullName, input.providerName, input.businessName, input.legalName];
   for (const c of candidates) {
     const v = (c || '').trim();
-    if (v && !isGenericProviderName(v)) return v;
+    // Para PJ, business_name é o nome oficial — não aplicamos filtro de "genérico".
+    if (v && (isCompany || !isGenericProviderName(v))) return v;
   }
   const fromSlug = humanizeProviderSlug(input.slug);
   if (fromSlug) return fromSlug;

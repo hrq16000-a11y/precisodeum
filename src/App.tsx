@@ -48,6 +48,7 @@ const Index = lazy(() => import("./pages/Index"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ProviderProfile = lazy(() => import("./pages/ProviderProfile"));
+const CompanyProfile = lazy(() => import("./pages/CompanyProfile"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SignupPage = lazy(() => import("./pages/SignupPage"));
 const JobsPage = lazy(() => import("./pages/JobsPage"));
@@ -441,6 +442,7 @@ const App = () => {
                 <Route path="/buscar" element={<SearchPage />} />
                 <Route path="/categoria/:slug" element={<CategoryPage />} />
                 <Route path="/profissional/:slug" element={<ProviderProfile />} />
+                <Route path="/empresa/:slug" element={<CompanyProfile />} />
                 <Route path="/agencia/:slug" element={<AgencyPublicPage />} />
                 <Route path="/patrocinador/:slug" element={<SponsorPublicPage />} />
                 <Route path="/login" element={<LoginPage />} />

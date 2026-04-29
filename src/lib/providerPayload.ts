@@ -54,21 +54,37 @@ export type RawProviderInput = Record<string, unknown>;
  * facilitar debugging. Isso impede 1) erros 42703 (column does not exist)
  * e 2) vazamento de PII de endereço residencial.
  */
+/**
+ * Keys de endereço que NÃO existem no schema da tabela `providers` para perfis
+ * autônomos (PF). Para empresas (PJ, account_type='company'), as colunas
+ * institucionais `street`, `street_number`, `complement`, `postal_code` foram
+ * adicionadas via migration — então essas chaves devem ser preservadas.
+ *
+ * As chaves abaixo são SEMPRE removidas (aliases / colunas inexistentes).
+ */
 export const PROVIDER_FORBIDDEN_ADDRESS_KEYS = [
   'address',
-  'street',
   'logradouro',
   'cep',
-  'postal_code',
   'zipcode',
   'zip',
-  'complement',
   'complemento',
   'numero',
   'number',
   'address_line',
   'address_line_1',
   'address_line_2',
+] as const;
+
+/**
+ * Chaves de endereço institucional que SÃO colunas válidas em `providers`,
+ * mas só fazem sentido para perfis PJ. Para autônomos, são removidas.
+ */
+export const PROVIDER_PJ_ADDRESS_KEYS = [
+  'street',
+  'street_number',
+  'complement',
+  'postal_code',
 ] as const;
 
 /**
@@ -87,8 +103,9 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
   input: T,
 ): T & Record<ProviderRequiredStringField, string> {
   const out = { ...input } as Record<string, unknown>;
+  const isCompany = (out.account_type as string) === 'company';
 
-  // 1) Remove chaves proibidas (endereço detalhado fora do schema).
+  // 1) Remove chaves proibidas (aliases / colunas inexistentes em qualquer caso).
   const stripped: string[] = [];
   for (const key of PROVIDER_FORBIDDEN_ADDRESS_KEYS) {
     if (key in out) {
@@ -96,11 +113,28 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
       delete out[key];
     }
   }
+
+  // 1b) Chaves PJ — só permanecem para empresas; para PF são silenciosamente removidas
+  if (!isCompany) {
+    for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
+      if (key in out) {
+        stripped.push(key);
+        delete out[key];
+      }
+    }
+  } else {
+    // Para empresas: sanitiza (trim + nullify de strings vazias) sem deletar
+    for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
+      if (key in out) {
+        out[key] = safeOptionalString(out[key]);
+      }
+    }
+  }
+
   if (stripped.length > 0 && typeof console !== 'undefined') {
     console.warn(
-      '[providerPayload] Campos de endereço ignorados (não pertencem ao schema):',
+      '[providerPayload] Campos de endereço ignorados (não pertencem ao schema/perfil):',
       stripped.join(', '),
-      '— se você precisa salvar isso, adicione coluna explícita ou use outra tabela.',
     );
   }
 
