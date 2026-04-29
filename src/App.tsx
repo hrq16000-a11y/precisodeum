@@ -100,6 +100,7 @@ const AdminAuditRefPage = lazy(() => import("./pages/AdminAuditRefPage"));
 const AdminAuditRlsPage = lazy(() => import("./pages/AdminAuditRlsPage"));
 const AdminTrashPage = lazy(() => import("./pages/AdminTrashPage"));
 const AdminBackupPage = lazy(() => import("./pages/AdminBackupPage"));
+const AdminPortabilityPage = lazy(() => import("./pages/AdminPortabilityPage"));
 const AdminHeroBannersPage = lazy(() => import("./pages/AdminHeroBannersPage"));
 const AdminPwaPage = lazy(() => import("./pages/AdminPwaPage"));
 
