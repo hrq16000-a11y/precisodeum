@@ -100,9 +100,27 @@ export default function ExitIntentDialog({
     [variant, phase, intent],
   );
 
+  // Override de copy para o caso "profissional travado sem serviço publicado"
+  // (briefing: 'Não vá ainda!' + texto sobre serviço não publicado).
+  // Aplica-se SOMENTE ao grupo 'main' (fase de criação do 1º serviço) e quando
+  // o usuário ainda não tem firstServiceId — fora disso mantém A/B normal.
+  const stuckOnService = group === 'main' && !hasFirstService && intent !== 'client';
+  const displayTitle = stuckOnService ? 'Não vá ainda!' : copy.title;
+  const displayBody = stuckOnService
+    ? 'Notamos que você ainda não publicou seu serviço. Quer ajuda humana para configurar seu perfil?'
+    : copy.body;
+  const displayPrimaryCta = stuckOnService ? 'Falar com Consultor (WhatsApp)' : copy.ctaPrimary;
+
   const baseMeta = useMemo(
-    () => ({ phase, variant, phase_group: group, intent }),
-    [phase, variant, group, intent],
+    () => ({
+      phase,
+      variant,
+      phase_group: group,
+      intent,
+      has_first_service: hasFirstService,
+      stuck_on_service: stuckOnService,
+    }),
+    [phase, variant, group, intent, hasFirstService, stuckOnService],
   );
 
   const trigger = useCallback(
