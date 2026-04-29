@@ -109,7 +109,11 @@ const DashboardPage = () => {
 
   // Registra a visita no servidor (substitui flags em localStorage)
   useEffect(() => {
-    if (user?.id) void registerVisit();
+    if (user?.id) {
+      void registerVisit();
+      // Funil exit-intent: marca conversão se houve clique pendente.
+      void import('@/lib/exitIntentTelemetry').then((m) => m.maybeTrackPostSignupConversion(user.id));
+    }
   }, [user?.id, registerVisit]);
 
   const navigate = useNavigate();
