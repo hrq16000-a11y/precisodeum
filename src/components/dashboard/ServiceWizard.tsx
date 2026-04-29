@@ -14,6 +14,7 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCityState } from '@/lib/locationFormat';
 import { buildServiceCountdownCopy } from '@/lib/serviceWizardCopy';
+import { recoverProviderId, fetchProviderServiceCount } from '@/lib/recoverProviderId';
 
 /**
  * ServiceWizard — ONBOARDING ONLY
@@ -47,6 +48,52 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   const [createdServiceId, setCreatedServiceId] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [photoCount, setPhotoCount] = useState(0);
+
+  // ─── Fallback de providerId ───
+  // Se vier vazio (sessão expirou, draft perdido, prop tardio), recupera
+  // do banco usando userId. Mesma lógica do OnboardingV2Shell.
+  const [effectiveProviderId, setEffectiveProviderId] = useState<string | null>(providerId || null);
+  useEffect(() => {
+    if (providerId) {
+      setEffectiveProviderId(providerId);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const recovered = await recoverProviderId({ userId, hint: providerId });
+      if (!cancelled && recovered) setEffectiveProviderId(recovered);
+    })();
+    return () => { cancelled = true; };
+  }, [providerId, userId]);
+
+  // ─── Validação da contagem expressa contra o banco ───
+  // Sobrescreve o prop `serviceNumber` (que pode estar defasado após reload
+  // ou troca de aba) com a contagem real +1. Só ativa em modo CRIAÇÃO,
+  // i.e. quando o parent passa serviceNumber explicitamente.
+  const isCreatingNew = typeof serviceNumber === 'number' && serviceNumber >= 1;
+  const [verifiedServiceNumber, setVerifiedServiceNumber] = useState<number | null>(
+    isCreatingNew ? serviceNumber! : null,
+  );
+  useEffect(() => {
+    if (!isCreatingNew) { setVerifiedServiceNumber(null); return; }
+    let cancelled = false;
+    const sync = async () => {
+      const realCount = await fetchProviderServiceCount(effectiveProviderId);
+      if (cancelled) return;
+      // Próximo número = realCount + 1 (clamp ao max)
+      const next = Math.min(realCount + 1, maxServices);
+      setVerifiedServiceNumber(next);
+    };
+    void sync();
+    const onVisible = () => { if (document.visibilityState === 'visible') void sync(); };
+    window.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [isCreatingNew, effectiveProviderId, maxServices, serviceNumber]);
+
+  const displayServiceNumber = verifiedServiceNumber ?? (isCreatingNew ? serviceNumber! : null);
 
   // Step 1 — Identity
   const [serviceName, setServiceName] = useState('');
@@ -200,12 +247,22 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
   /* ──── Save service (called when moving from step 2 → step 3) ──── */
   const handleCreate = async (): Promise<boolean> => {
     if (!serviceName.trim()) { toast.error('Nome do serviço é obrigatório'); return false; }
+    // Garante providerId — fallback para casos de prop vazio / sessão expirada
+    let pid = effectiveProviderId;
+    if (!pid) {
+      pid = await recoverProviderId({ userId, hint: effectiveProviderId });
+      if (pid) setEffectiveProviderId(pid);
+    }
+    if (!pid) {
+      toast.error('Não conseguimos identificar seu cadastro de prestador. Atualize a página.');
+      return false;
+    }
     setSaving(true);
 
     try {
       const address = [provider?.neighborhood, provider?.city, provider?.state].filter(Boolean).join(', ');
       const { data, error } = await (supabase as any).rpc('create_service_atomic', {
-        _provider_id: providerId,
+        _provider_id: pid,
         _service_name: serviceName,
         _description: description,
         _whatsapp: whatsapp || provider?.whatsapp || '',
@@ -285,21 +342,21 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           <Store className="h-5 w-5 text-accent" />
           <span className="font-display text-sm font-bold text-foreground">Cadastro Express</span>
         </div>
-        {typeof serviceNumber === 'number' && serviceNumber >= 1 && (
+        {displayServiceNumber !== null && displayServiceNumber >= 1 && (
           <span
             className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent"
-            aria-label={`Serviço ${serviceNumber} de ${maxServices}`}
+            aria-label={`Serviço ${displayServiceNumber} de ${maxServices}`}
           >
             <Sparkles className="h-3 w-3" />
-            {serviceNumber}/{maxServices}
+            {displayServiceNumber}/{maxServices}
           </span>
         )}
       </div>
 
       <div className="text-center">
-        {typeof serviceNumber === 'number' && serviceNumber >= 1 ? (
+        {displayServiceNumber !== null && displayServiceNumber >= 1 ? (
           (() => {
-            const c = buildServiceCountdownCopy(serviceNumber, maxServices);
+            const c = buildServiceCountdownCopy(displayServiceNumber, maxServices);
             return (
               <>
                 <h1 className="font-display text-xl font-bold text-foreground">
