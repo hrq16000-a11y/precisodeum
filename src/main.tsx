@@ -348,4 +348,9 @@ const bootstrap = () => {
 };
 
 installBootstrapGuards();
+// Global error monitor — captura window.onerror + unhandledrejection
+// e reporta para `error_reports` (complementa o ErrorGuard React).
+import('./lib/globalErrorMonitor')
+  .then((m) => m.installGlobalErrorMonitor())
+  .catch((err) => console.warn('[bootstrap] globalErrorMonitor skip', err));
 void bootstrap();
