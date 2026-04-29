@@ -1027,6 +1027,29 @@ const ProviderProfile = () => {
     };
   }, [provider, name, category, avatarUrl, slug, effectiveWhatsApp, services, pageSettings.instagram_url, pageSettings.facebook_url, pageSettings.youtube_url, pageSettings.tiktok_url]);
 
+  // "Padrão Ouro" alinhado à mesma regra do RPC nearby_providers:
+  // nível Ouro+ E last_active_at < 7 dias.
+  const isPadraoOuro = useMemo(() => {
+    if (!provider) return false;
+    const levelName = String(provider.levelInfo?.name || '').toLowerCase();
+    const isGoldPlus = ['ouro', 'platina', 'diamante', 'mestre'].includes(levelName);
+    const lastActive = provider.last_active_at ? new Date(provider.last_active_at).getTime() : 0;
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return isGoldPlus && lastActive >= sevenDaysAgo;
+  }, [provider]);
+
+  // Especialidades técnicas extraídas (mesma lógica usada no card de busca)
+  const seoSpecialties = useMemo(() => {
+    if (!provider) return [] as string[];
+    const parts: string[] = [
+      provider.description || '',
+      category || '',
+      provider.business_name || '',
+      ...(services || []).slice(0, 10).map((s: any) => `${s.name || ''} ${s.description || ''}`),
+    ];
+    return extractSpecialties(parts, 6);
+  }, [provider, category, services]);
+
   // Person schema — habilita rich snippets quando alguém busca pelo nome do profissional
   const personLd = useMemo(() => provider ? ({
     '@context': 'https://schema.org',
@@ -1035,6 +1058,10 @@ const ProviderProfile = () => {
     url: `${SITE_BASE_URL}/profissional/${slug}`,
     ...(avatarUrl ? { image: avatarUrl } : {}),
     jobTitle: category || 'Profissional',
+    ...(seoSpecialties.length > 0 ? { knowsAbout: seoSpecialties } : {}),
+    ...(isPadraoOuro ? {
+      award: 'Padrão Ouro — Profissional ativo e bem avaliado na plataforma Preciso de um',
+    } : {}),
     ...(provider.city ? {
       address: {
         '@type': 'PostalAddress',
@@ -1044,7 +1071,7 @@ const ProviderProfile = () => {
       },
     } : {}),
     worksFor: { '@type': 'Organization', name: 'Preciso de um', url: SITE_BASE_URL },
-  }) : null, [provider, name, slug, avatarUrl, category]);
+  }) : null, [provider, name, slug, avatarUrl, category, seoSpecialties, isPadraoOuro]);
 
   useJsonLd(breadcrumbLd);
   useJsonLd(localBusinessLd);
