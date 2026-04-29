@@ -211,6 +211,17 @@ export default function ExitIntentDialog({
   }, [tracker, baseMeta]);
 
   return (
+    <>
+      {wizardState && (
+        <SaveLaterDialog
+          open={saveLaterOpen}
+          onOpenChange={setSaveLaterOpen}
+          state={wizardState}
+          source="exit_intent"
+          intent={intent}
+          variant={variant}
+        />
+      )}
     <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleDismiss())}>
       <DialogContent className="max-w-md" data-testid="exit-intent-dialog">
         <DialogHeader>
@@ -262,5 +273,6 @@ export default function ExitIntentDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
