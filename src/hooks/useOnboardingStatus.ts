@@ -137,7 +137,7 @@ export function useOnboardingStatus(): OnboardingStatus {
         providerId
           ? (supabase as any).from('services').select('id', { count: 'exact', head: true }).eq('provider_id', providerId).is('deleted_at', null)
           : Promise.resolve({ count: 0 }),
-        (supabase as any).from('media').select('id', { count: 'exact', head: true }).eq('owner_id', user.id).eq('entity_type', 'service'),
+        (supabase as any).from('media').select('id', { count: 'exact', head: true }).eq('user_ref', user.id).eq('entity_type', 'service'),
         providerId
           ? (supabase as any).from('portfolio_albums').select('id', { count: 'exact', head: true }).eq('provider_id', providerId)
           : Promise.resolve({ count: 0 }),
