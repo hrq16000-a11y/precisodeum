@@ -23,7 +23,7 @@ interface State {
 class ErrorGuard extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, reportId: null, reporting: false };
+    this.state = { hasError: false, error: null, reportId: null, reporting: false, copied: false };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
