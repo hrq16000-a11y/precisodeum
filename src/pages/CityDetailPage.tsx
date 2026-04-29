@@ -218,6 +218,23 @@ const CityDetailPage = () => {
   }, [city, providers, stateName]);
   useJsonLd(jsonLd);
 
+  // BreadcrumbList — Início → Cidades → {Estado} → {Cidade}.
+  // Melhora rastreabilidade no Google e habilita breadcrumb rich snippet.
+  const breadcrumbLd = useMemo(() => {
+    if (!city) return null;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'Cidades', item: `${SITE_BASE_URL}/cidades` },
+        { '@type': 'ListItem', position: 3, name: stateName, item: `${SITE_BASE_URL}/cidades/${estado}` },
+        { '@type': 'ListItem', position: 4, name: city.name, item: `${SITE_BASE_URL}/cidades/${estado}/${cidade}` },
+      ],
+    };
+  }, [city, stateName, estado, cidade]);
+  useJsonLd(breadcrumbLd, 'breadcrumb-city-detail');
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">

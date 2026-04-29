@@ -68,6 +68,18 @@ const StateProviderPage = () => {
   }), [stateName, citiesWithProviders, estado]);
   useJsonLd(jsonLd);
 
+  // BreadcrumbList — Início → Cidades → {Estado}.
+  const breadcrumbLd = useMemo(() => ({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
+      { '@type': 'ListItem', position: 2, name: 'Cidades', item: `${SITE_BASE_URL}/cidades` },
+      { '@type': 'ListItem', position: 3, name: stateName, item: `${SITE_BASE_URL}/cidades/${estado}` },
+    ],
+  }), [stateName, estado]);
+  useJsonLd(breadcrumbLd, 'breadcrumb-state-provider');
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
