@@ -79,6 +79,7 @@ const AdminServiceAreaCorrectionsPage = lazy(() => import("./pages/admin/AdminSe
 const AdminKillSwitchBlocksPage = lazy(() => import("./pages/admin/AdminKillSwitchBlocksPage"));
 const AdminRegressionReportsPage = lazy(() => import("./pages/admin/AdminRegressionReportsPage"));
 const AdminAuthMetricsPage = lazy(() => import("./pages/admin/AdminAuthMetricsPage"));
+const AdminConsentRevocationsPage = lazy(() => import("./pages/admin/AdminConsentRevocationsPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
@@ -181,6 +182,7 @@ const AccountDeletionPage = lazy(() => import("./pages/AccountDeletionPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const CookiesPage = lazy(() => import("./pages/CookiesPage"));
 const DashboardPrivacyPage = lazy(() => import("./pages/DashboardPrivacyPage"));
+const DashboardConsentAuditPage = lazy(() => import("./pages/DashboardConsentAuditPage"));
 const SponsorLandingPage = lazy(() => import("./pages/SponsorLandingPage"));
 const SponsorStatusPage = lazy(() => import("./pages/SponsorStatusPage"));
 const SponsorSlotsPage = lazy(() => import("./pages/SponsorSlotsPage"));
@@ -470,6 +472,7 @@ const App = () => {
                 <Route path="/dashboard/comunidade" element={<ProtectedRoute><DashboardCommunityPage /></ProtectedRoute>} />
                 <Route path="/dashboard/notificacoes" element={<ProtectedRoute><DashboardNotificationsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/privacidade" element={<ProtectedRoute><DashboardPrivacyPage /></ProtectedRoute>} />
+                <Route path="/dashboard/auditoria-consentimentos" element={<ProtectedRoute><DashboardConsentAuditPage /></ProtectedRoute>} />
                 <Route path="/dashboard/indicacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReferralsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/ranking" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRankingPage /></ProtectedRoute>} />
                 <Route path="/dashboard/sugestoes-identidade" element={<ProtectedRoute><DashboardIdentitySuggestionsPage /></ProtectedRoute>} />
@@ -514,6 +517,7 @@ const App = () => {
                 <Route path="/admin/pwa" element={<AdminPwaPage />} />
                 <Route path="/admin/regressao" element={<ProtectedRoute><AdminRegressionReportsPage /></ProtectedRoute>} />
                 <Route path="/admin/metricas-auth" element={<ProtectedRoute><AdminAuthMetricsPage /></ProtectedRoute>} />
+                <Route path="/admin/consent-revocations" element={<ProtectedRoute><AdminConsentRevocationsPage /></ProtectedRoute>} />
                 
                 <Route path="/admin/midia" element={<AdminMediaPage />} />
                 <Route path="/admin/servicos" element={<AdminServicesPage />} />
