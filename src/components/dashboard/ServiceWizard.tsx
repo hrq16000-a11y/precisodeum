@@ -428,6 +428,15 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
         })}
       </div>
 
+      {/* Mensagem clara quando faltarem dados para avançar */}
+      {missingFields.length > 0 && (
+        <StuckStepBanner
+          missing={missingFields}
+          stepLabel={STEPS[step]?.label}
+          showStatusLink
+        />
+      )}
+
       {/* Step content */}
       <AnimatePresence mode="wait">
         <motion.div
