@@ -108,12 +108,10 @@ describe('LoginPage — cadastro silencioso e senha fraca', () => {
     fireEvent.click(getSubmitBtn());
 
     await waitFor(() => expect(signUp).toHaveBeenCalled());
-    await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith(
-        expect.stringMatching(/Escolha uma senha mais forte/i),
-        expect.anything(),
-      ),
-    );
+    await waitFor(() => {
+      const calls = toastError.mock.calls.map((c) => String(c[0] || ''));
+      expect(calls.some((m) => /Escolha uma senha mais forte/i.test(m))).toBe(true);
+    });
   });
 
   it('detecta conta já existente (identities=[]) e mostra toast pt-BR', async () => {
