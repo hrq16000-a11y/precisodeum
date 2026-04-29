@@ -1646,6 +1646,22 @@ const DashboardServicesPage = () => {
                       cityValidated={cityValidated}
                       categorySlugs={selectedCategoryIds.map((id) => categories.find((c: any) => c.id === id)?.slug).filter(Boolean) as string[]}
                     />
+
+                    {/* Disclaimer final + checkbox de responsabilidade direta */}
+                    {!editId && (
+                      <label className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3 cursor-pointer">
+                        <Checkbox
+                          checked={finalConsent}
+                          onCheckedChange={(v) => setFinalConsent(v === true)}
+                          className="mt-0.5"
+                        />
+                        <span className="text-[12px] text-foreground leading-relaxed">
+                          Entendo que a plataforma é apenas uma <strong>vitrine tecnológica</strong> e que sou o
+                          <strong> único responsável pelo atendimento e garantia</strong> deste serviço. Os leads
+                          chegam direto no meu WhatsApp/telefone, sem intermediação de pagamento.
+                        </span>
+                      </label>
+                    )}
                   </div>
                 </div>
               );
