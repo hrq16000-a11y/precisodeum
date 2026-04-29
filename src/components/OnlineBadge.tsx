@@ -68,11 +68,13 @@ export function OnlineBadge({
   size = 'sm',
   showOffline = false,
   showFreshness = false,
+  offlineVisibleWindowMs = RECENTLY_OFFLINE_WINDOW_MS,
   className,
 }: OnlineBadgeProps) {
   const presence = useProviderPresence(userId);
   const lastSeen = useProviderLastSeen(userId);
   const lastSync = useLastPresenceSync();
+  const health = useRealtimeHealth();
   const [, setTick] = useState(0);
 
   // Re-render every 15s so relative/freshness labels stay fresh.
@@ -82,10 +84,17 @@ export function OnlineBadge({
     return () => clearInterval(id);
   }, [presence, lastSeen]);
 
+  // Realtime fallback: when Supabase Realtime is degraded, hide Online/Offline
+  // badges entirely so the card falls back gracefully to rating / "Disponível hoje".
+  if (health === 'degraded') return null;
+
   // Offline state with optional lastSeen tooltip
   if (!presence) {
     if (!showOffline || !lastSeen) return null;
-    const offlineRelative = formatRelative(Date.now() - lastSeen);
+    const elapsed = Date.now() - lastSeen;
+    // Hide offline badge once we're past the configured window
+    if (elapsed > offlineVisibleWindowMs) return null;
+    const offlineRelative = formatFullRelative(elapsed);
     const padding = size === 'md' ? 'px-2.5 py-1 text-xs' : 'px-2 py-0.5 text-[11px]';
     return (
       <TooltipProvider delayDuration={150}>
@@ -97,7 +106,7 @@ export function OnlineBadge({
                 padding,
                 className,
               )}
-              aria-label={`Profissional offline ${offlineRelative}`}
+              aria-label={`Visto pela última vez há ${offlineRelative}`}
               role="status"
             >
               <span className="inline-flex h-2 w-2 rounded-full bg-muted-foreground/50" />
@@ -106,7 +115,7 @@ export function OnlineBadge({
           </TooltipTrigger>
           <TooltipContent side="top" align="center" className="text-xs">
             <div className="font-medium">Offline no momento</div>
-            <div className="text-muted-foreground">Esteve online {offlineRelative}</div>
+            <div className="text-muted-foreground">Visto pela última vez há {offlineRelative}</div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
