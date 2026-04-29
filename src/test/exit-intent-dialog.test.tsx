@@ -147,4 +147,31 @@ describe('ExitIntentDialog', () => {
     expect(screen.queryByTestId('exit-intent-dialog')).not.toBeInTheDocument();
     expect(tracker).not.toHaveBeenCalledWith('exit_intent_shown', expect.anything());
   });
+
+  it('NÃO mostra "Salvar e continuar mais tarde" sem firstService', async () => {
+    renderDialog({ phase: 'main_service', hasFirstService: false });
+    await act(async () => fireMouseLeaveTop());
+    expect(screen.queryByTestId('exit-intent-save-later')).not.toBeInTheDocument();
+  });
+
+  it('mostra "Salvar e continuar mais tarde" quando hasFirstService=true e dispara exit_intent_save_later', async () => {
+    const { tracker } = renderDialog({ phase: 'main_service', hasFirstService: true });
+    await act(async () => fireMouseLeaveTop());
+    const btn = screen.getByTestId('exit-intent-save-later');
+    expect(btn).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(btn);
+    });
+    expect(tracker).toHaveBeenCalledWith(
+      'exit_intent_save_later',
+      expect.objectContaining({ has_first_service: true, phase: 'main_service' }),
+    );
+  });
+
+  it('exibe título "Não vá ainda!" no grupo main quando profissional sem firstService', async () => {
+    renderDialog({ phase: 'main_service', hasFirstService: false, intent: 'professional' });
+    await act(async () => fireMouseLeaveTop());
+    expect(screen.getByText('Não vá ainda!')).toBeInTheDocument();
+    expect(screen.getByText(/ainda não publicou seu serviço/i)).toBeInTheDocument();
+  });
 });
