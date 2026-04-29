@@ -35,6 +35,7 @@ import {
   isDuplicateCategoryLabel,
   normalizeProviderToken,
 } from '@/lib/providerDisplay';
+import { extractSpecialties } from '@/lib/specialtyExtractor';
 
 interface ProviderCardProps {
   provider: DbProvider;
