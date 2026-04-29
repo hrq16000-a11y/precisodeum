@@ -317,15 +317,40 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
           <Store className="h-5 w-5 text-accent" />
           <span className="font-display text-sm font-bold text-foreground">Cadastro Express</span>
         </div>
+        {typeof serviceNumber === 'number' && serviceNumber >= 1 && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent"
+            aria-label={`Serviço ${serviceNumber} de ${maxServices}`}
+          >
+            <Sparkles className="h-3 w-3" />
+            {serviceNumber}/{maxServices}
+          </span>
+        )}
       </div>
 
       <div className="text-center">
-        <h1 className="font-display text-xl font-bold text-foreground">
-          Seu serviço pronto em <span className="text-accent italic">2 minutos</span>
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          3 passos rápidos para criar seu anúncio profissional.
-        </p>
+        {typeof serviceNumber === 'number' && serviceNumber >= 1 ? (
+          (() => {
+            const c = buildCountdownCopy(serviceNumber, maxServices);
+            return (
+              <>
+                <h1 className="font-display text-xl font-bold text-foreground">
+                  {c.title}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">{c.subtitle}</p>
+              </>
+            );
+          })()
+        ) : (
+          <>
+            <h1 className="font-display text-xl font-bold text-foreground">
+              Seu serviço pronto em <span className="text-accent italic">2 minutos</span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              3 passos rápidos para criar seu anúncio profissional.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Progress bar */}
