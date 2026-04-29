@@ -3,7 +3,7 @@ import { ChevronRight, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useMemo } from 'react';
-import { SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { buildCanonicalUrl } from '@/lib/canonicalUrl';
 
 export interface BreadcrumbItem {
   label: string;
@@ -20,7 +20,8 @@ const Breadcrumbs = ({ items, className = '', variant = 'default' }: Breadcrumbs
   const allItems: BreadcrumbItem[] = [{ label: 'Home', url: '/' }, ...items];
   const isHero = variant === 'hero';
 
-  // BreadcrumbList JSON-LD for rich snippets
+  // BreadcrumbList JSON-LD for rich snippets — todos os ListItem precisam de
+  // position, name e item (URL absoluta) para o Google validar a marcação.
   const breadcrumbLd = useMemo(() => ({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -28,7 +29,7 @@ const Breadcrumbs = ({ items, className = '', variant = 'default' }: Breadcrumbs
       '@type': 'ListItem',
       position: i + 1,
       name: item.label,
-      ...(item.url ? { item: `${SITE_BASE_URL}${item.url}` } : {}),
+      item: buildCanonicalUrl(item.url || '/'),
     })),
   }), [allItems]);
 
