@@ -102,7 +102,9 @@ function validateBlock({ type, raw }, file) {
   const errors = [];
   const rule = RULES[type];
   for (const field of rule.required) {
-    const re = new RegExp(`['"]${field}['"]\\s*:`);
+    // Aceita chaves quoted ('name':, "name":) E identifier-style (name:),
+    // ambas presentes em objetos JS literais usados no código.
+    const re = new RegExp(`(['"]${field}['"]|\\b${field})\\s*:`);
     if (!re.test(raw)) errors.push(`${file}: ${type} sem campo obrigatório "${field}"`);
   }
   for (const m of rule.must) {
