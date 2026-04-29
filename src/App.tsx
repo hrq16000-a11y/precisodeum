@@ -177,6 +177,7 @@ const ErrorPage = lazy(() => import("./pages/ErrorPage"));
 const Index02 = lazy(() => import("./pages/Index02"));
 const Index03 = lazy(() => import("./pages/Index03"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const AccountDeletionPage = lazy(() => import("./pages/AccountDeletionPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const CookiesPage = lazy(() => import("./pages/CookiesPage"));
 const SponsorLandingPage = lazy(() => import("./pages/SponsorLandingPage"));
