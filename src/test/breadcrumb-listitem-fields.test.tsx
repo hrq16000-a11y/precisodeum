@@ -78,7 +78,8 @@ describe('BreadcrumbList JSON-LD — campos obrigatórios', () => {
     );
     assertListItemsValid(result.current);
     result.current.itemListElement.forEach((e) => {
-      expect(String(e.item)).toMatch(/^https:\/\/[^/]+\/.+/);
+      // URL absoluta: aceita raiz (https://host) ou path (https://host/...).
+      expect(String(e.item)).toMatch(/^https:\/\/[^/]+(\/.*)?$/);
     });
   });
 

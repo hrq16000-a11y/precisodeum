@@ -35,13 +35,15 @@ function readSource(file: string): string {
 function declaresNoindexTrue(src: string): boolean {
   // Procura noindex: true em qualquer chamada (objeto ou prop JSX).
   if (/noindex\s*:\s*true/.test(src)) return true;
-  if (/noindex(?!\s*[:=]\s*false)\s*\}/.test(src)) return true;
-  if (/<SeoHead[^>]*\snoindex(\s|>|=\{true)/.test(src)) return true;
+  if (/<SeoHead[^>]*\snoindex(\s|>|=\{true\})/.test(src)) return true;
   return false;
 }
 
 function declaresNoindexFalseOrAbsent(src: string): boolean {
   if (/noindex\s*:\s*false/.test(src)) return true;
+  // Expressão condicional (ex.: `noindex: !category`) é considerada aceitável,
+  // já que o default só ativa noindex em fallback (categoria ausente).
+  if (/noindex\s*:\s*[!a-zA-Z_(]/.test(src)) return true;
   // Se não menciona noindex, padrão do hook é index (false).
   if (!/noindex/.test(src)) return true;
   return false;
