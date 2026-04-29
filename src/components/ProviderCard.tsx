@@ -441,6 +441,5 @@ export default memo(ProviderCard, (prev, next) => {
     && prev.provider.rating === next.provider.rating
     && prev.provider.reviewCount === next.provider.reviewCount
     && prev.provider.distanceKm === next.provider.distanceKm
-    && prev.provider.serviceImage === next.provider.serviceImage
-    && prev.provider.avatarUrl === next.provider.avatarUrl;
+    && prev.provider.serviceImage === next.provider.serviceImage;
 });
