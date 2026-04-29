@@ -300,6 +300,7 @@ export const __presenceInternals = {
     onlineUsers = new Map();
     lastSeenMap = new Map();
     lastSyncAt = 0;
+    realtimeHealth = 'connecting';
   },
   applyState(state: PresenceState, now: number = Date.now()) {
     const next = reducePresenceState(state, onlineUsers, now);
@@ -308,8 +309,11 @@ export const __presenceInternals = {
     });
     onlineUsers = next;
     lastSyncAt = now;
+    realtimeHealth = 'healthy';
     notify();
   },
+  setHealth(h: RealtimeHealth) { realtimeHealth = h; notify(); },
   getOnlineMap: () => onlineUsers,
   getLastSeenMap: () => lastSeenMap,
+  getHealth: () => realtimeHealth,
 };
