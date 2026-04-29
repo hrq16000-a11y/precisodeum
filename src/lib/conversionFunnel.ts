@@ -20,7 +20,17 @@
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 import type { ExitIntentIntent, ExitIntentVariant } from './exitIntentVariants';
 
-export type SupportSource = 'exit_intent' | 'help_page' | 'help_card' | 'footer' | 'other';
+export type SupportSource =
+  | 'exit_intent'        // pop-up de saída do wizard
+  | 'help_page'          // /ajuda/cadastro
+  | 'recovery_page'      // /cadastro/retomar (oferece WhatsApp pra desbloquear)
+  | 'save_later_modal'   // modal de "Salvar e continuar mais tarde"
+  | 'help_card'
+  | 'footer'
+  | 'other';
+
+/** Destino do "Salvar e continuar mais tarde" — usado em métricas A/B. */
+export type SaveLaterDestination = 'dashboard' | 'recovery_page';
 
 const SUPPORT_KEY = 'wizard:support-contacted';
 const HELP_VISIT_KEY = 'wizard:help-page-visited';
@@ -79,6 +89,33 @@ export function shouldSuppressExitIntent(): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Registra clique em "Salvar e continuar mais tarde" com origem + destino.
+ * Não toca em SUPPORT_KEY — usuário não está pedindo suporte humano.
+ */
+export function markSaveLater(meta: {
+  source: SupportSource;
+  destination: SaveLaterDestination;
+  intent?: ExitIntentIntent;
+  phase?: string;
+  variant?: ExitIntentVariant;
+  /** % de progresso (0..100) — segmenta quem desistiu cedo vs tarde. */
+  progressPct?: number;
+}): void {
+  const intentMeta = meta.intent && meta.intent !== 'unknown' ? { intent: meta.intent } : {};
+  void trackOnboardingEvent({
+    phase: (meta.phase || 'unknown') as any,
+    event: 'save_later_clicked' as any,
+    meta: {
+      source: meta.source,
+      destination: meta.destination,
+      variant: meta.variant ?? null,
+      progress_pct: typeof meta.progressPct === 'number' ? Math.round(meta.progressPct) : null,
+      ...intentMeta,
+    },
+  });
 }
 
 /** Helpers de teste. */
