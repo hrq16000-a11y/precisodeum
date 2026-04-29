@@ -805,7 +805,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       return true;
     } catch (e: any) {
-      toast.error('Erro ao publicar serviço: ' + (e?.message || 'tente novamente'));
+      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'publish_first_service' } });
+      toast.error('Erro ao publicar serviço', {
+        description: (e?.message || 'tente novamente').slice(0, 160),
+        action: { label: 'Tentar novamente', onClick: () => { void persistFirstService(); } },
+      });
       return false;
     } finally {
       setSaving(false);
@@ -828,7 +832,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
       return true;
     } catch (e: any) {
-      toast.error('Não consegui salvar este passo agora. ' + (e?.message || ''));
+      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'persist_patch', keys: Object.keys(patch || {}) } });
+      toast.error('Não consegui salvar este passo agora', {
+        description: (e?.message || '').slice(0, 160) || undefined,
+        action: { label: 'Tentar novamente', onClick: () => { void persistPatch(patch); } },
+      });
       return false;
     } finally {
       setSaving(false);
