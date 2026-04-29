@@ -145,6 +145,28 @@ const Footer = () => {
         </Suspense>
 
         <div className="mt-6 border-t border-primary-foreground/10 pt-6">
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <a
+              href="https://www.instagram.com/precisodeumprofissional"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram @precisodeumprofissional"
+              title="Instagram @precisodeumprofissional"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/10 text-primary-foreground/80 transition-colors hover:bg-primary-foreground/20 hover:text-primary-foreground"
+            >
+              <Instagram className="h-4 w-4" />
+            </a>
+            <a
+              href="https://www.facebook.com/precisodeumprofissional"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook precisodeumprofissional"
+              title="Facebook precisodeumprofissional"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/10 text-primary-foreground/80 transition-colors hover:bg-primary-foreground/20 hover:text-primary-foreground"
+            >
+              <Facebook className="h-4 w-4" />
+            </a>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-primary-foreground/50 mb-4">
             <Link to="/privacidade" className="hover:text-primary-foreground/80 transition-colors">Política de Privacidade</Link>
             <span>•</span>
