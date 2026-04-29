@@ -90,10 +90,10 @@ export default function ExitIntentDialog({
   tracker = defaultTracker,
   inactivityMs = INACTIVITY_MS,
   hasFirstService = false,
-  saveLaterRedirectTo = '/dashboard',
+  wizardState,
 }: ExitIntentDialogProps) {
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [saveLaterOpen, setSaveLaterOpen] = useState(false);
   const triggeredRef = useRef(false);
   const inactivityTimer = useRef<number | null>(null);
 
@@ -107,16 +107,33 @@ export default function ExitIntentDialog({
     [variant, phase, intent],
   );
 
-  // Override de copy para o caso "profissional travado sem serviço publicado"
-  // (briefing: 'Não vá ainda!' + texto sobre serviço não publicado).
-  // Aplica-se SOMENTE ao grupo 'main' (fase de criação do 1º serviço) e quando
-  // o usuário ainda não tem firstServiceId — fora disso mantém A/B normal.
+  // Resumo de progresso pra contexto WhatsApp + alimentação do SaveLaterDialog.
+  const progress = useMemo(
+    () => (wizardState ? computeOnboardingProgress(wizardState) : null),
+    [wizardState],
+  );
+
+  // Override de copy para "profissional travado sem serviço publicado".
   const stuckOnService = group === 'main' && !hasFirstService && intent !== 'client';
   const displayTitle = stuckOnService ? 'Não vá ainda!' : copy.title;
   const displayBody = stuckOnService
     ? 'Notamos que você ainda não publicou seu serviço. Quer ajuda humana para configurar seu perfil?'
     : copy.body;
   const displayPrimaryCta = stuckOnService ? 'Falar com Consultor (WhatsApp)' : copy.ctaPrimary;
+
+  // Mensagem WhatsApp com contexto (categoria/cidade/etapa) — sobrepõe a copy
+  // genérica quando temos snapshot do wizard.
+  const whatsappUrl = useMemo(() => {
+    if (!progress) return copy.whatsappUrl;
+    const msg = buildWhatsappContextMessage({
+      categoryLabel: progress.primaryCategoryId ? 'serviço selecionado' : null,
+      city: progress.city,
+      state: progress.state,
+      stuckOnLabel: progress.nextItem?.label,
+      intent: intent === 'rh' as any ? 'unknown' : intent,
+    });
+    return `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+  }, [progress, copy.whatsappUrl, intent]);
 
   const baseMeta = useMemo(
     () => ({
@@ -126,27 +143,20 @@ export default function ExitIntentDialog({
       intent,
       has_first_service: hasFirstService,
       stuck_on_service: stuckOnService,
+      progress_pct: progress ? Math.round(progress.ratio * 100) : null,
     }),
-    [phase, variant, group, intent, hasFirstService, stuckOnService],
+    [phase, variant, group, intent, hasFirstService, stuckOnService, progress],
   );
 
   const trigger = useCallback(
     (source: 'mouseleave' | 'inactivity') => {
       if (triggeredRef.current) return;
-      // Suprime se o usuário já clicou no WhatsApp ou já visitou /ajuda/cadastro
-      // nesta sessão — evita pop-up redundante.
       if (shouldSuppressExitIntent()) return;
       try {
         if (sessionStorage.getItem(STORAGE_KEY) === '1') return;
-      } catch {
-        /* sessionStorage indisponível — segue */
-      }
+      } catch { /* noop */ }
       triggeredRef.current = true;
-      try {
-        sessionStorage.setItem(STORAGE_KEY, '1');
-      } catch {
-        /* noop */
-      }
+      try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch { /* noop */ }
       setOpen(true);
       tracker('exit_intent_shown', { ...baseMeta, source });
     },
@@ -160,23 +170,14 @@ export default function ExitIntentDialog({
 
   useEffect(() => {
     if (!enabled) return;
-
-    const onMouseLeave = (e: MouseEvent) => {
-      // Apenas quando o cursor sai pelo TOPO (em direção à URL/fechar).
-      // Em mobile não há mouseleave, então o gatilho de inatividade cobre.
-      if (e.clientY <= 0) trigger('mouseleave');
-    };
-
+    const onMouseLeave = (e: MouseEvent) => { if (e.clientY <= 0) trigger('mouseleave'); };
     const onActivity = () => resetInactivity();
-
     document.addEventListener('mouseleave', onMouseLeave);
     window.addEventListener('mousemove', onActivity, { passive: true });
     window.addEventListener('keydown', onActivity);
     window.addEventListener('touchstart', onActivity, { passive: true });
     window.addEventListener('scroll', onActivity, { passive: true });
-
     resetInactivity();
-
     return () => {
       document.removeEventListener('mouseleave', onMouseLeave);
       window.removeEventListener('mousemove', onActivity);
@@ -189,13 +190,13 @@ export default function ExitIntentDialog({
 
   const handleWhatsApp = useCallback(() => {
     tracker('exit_intent_whatsapp', baseMeta);
-    // Telemetria de funil: marca origem 'exit_intent' e suprime futuros pop-ups.
+    // Persistência: SUPPORT_KEY suprime exit-intent pelo resto da sessão.
     markSupportContacted({ source: 'exit_intent', intent, phase, variant });
     if (typeof window !== 'undefined') {
-      window.open(copy.whatsappUrl, '_blank', 'noopener,noreferrer');
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     }
     setOpen(false);
-  }, [tracker, baseMeta, copy.whatsappUrl, intent, phase, variant]);
+  }, [tracker, baseMeta, whatsappUrl, intent, phase, variant]);
 
   const handleDismiss = useCallback(() => {
     tracker('exit_intent_dismiss', baseMeta);
@@ -205,11 +206,9 @@ export default function ExitIntentDialog({
   const handleSaveLater = useCallback(() => {
     tracker('exit_intent_save_later', baseMeta);
     setOpen(false);
-    // Pequeno atraso para o Dialog desmontar antes da navegação.
-    window.setTimeout(() => {
-      navigate(saveLaterRedirectTo);
-    }, 50);
-  }, [tracker, baseMeta, navigate, saveLaterRedirectTo]);
+    // Abre modal com resumo de progresso em vez de navegar direto.
+    window.setTimeout(() => setSaveLaterOpen(true), 50);
+  }, [tracker, baseMeta]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleDismiss())}>
