@@ -673,6 +673,11 @@ const DashboardPage = () => {
         <ContactImpactWidget />
       </div>
 
+      {/* Ciclo de Fechamento — botão "Concluí um serviço" (boost +15% por 3 dias) */}
+      <div className="mt-4">
+        <ServiceCompletionCard />
+      </div>
+
       {/* Engagement Loop — guides the user to the next highest-impact action */}
       <div className="mt-4">
         <EngagementLoop
