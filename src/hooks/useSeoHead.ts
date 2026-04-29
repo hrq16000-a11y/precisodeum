@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { DEFAULT_LOGO_URL, DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL, SITE_BASE_URL as SITE_URL, socialImageUrl, toAbsoluteSiteUrl } from '@/lib/siteAssets';
+import { normalizeSocialImageUrl } from '@/lib/imageUrlNormalizer';
 
 interface SeoHeadProps {
   title: string;
