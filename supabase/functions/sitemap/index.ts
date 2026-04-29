@@ -142,7 +142,7 @@ ${entries.join('\n')}
   }
 
   if (type === 'categories') {
-    const { data } = await supabase.from('categories').select('id, slug, created_at').is('deleted_at', null).range(0, 49999);
+    const { data } = await supabase.from('categories').select('id, slug, created_at').is('deleted_at', null).range(offset, offset + limit - 1);
     for (const cat of data || []) {
       if (!eligibleCategoryIds.has(cat.id)) continue; // gate
       urls += entry(siteUrl, `/categoria/${cat.slug}`, fmtDate(cat.created_at), 'daily', '0.9');
@@ -150,7 +150,7 @@ ${entries.join('\n')}
   }
 
   if (type === 'especialidades') {
-    const { data } = await supabase.from('categories').select('id, slug, created_at').is('deleted_at', null).range(0, 49999);
+    const { data } = await supabase.from('categories').select('id, slug, created_at').is('deleted_at', null).range(offset, offset + limit - 1);
     for (const cat of data || []) {
       if (!eligibleCategoryIds.has(cat.id)) continue; // gate
       urls += entry(siteUrl, `/especialidades/${cat.slug}`, fmtDate(cat.created_at), 'weekly', '0.85');
@@ -165,7 +165,7 @@ ${entries.join('\n')}
       .select('slug, updated_at')
       .eq('status', 'approved')
       .not('slug', 'is', null)
-      .range(0, 49999);
+      .range(offset, offset + limit - 1);
     for (const p of data || []) {
       if (!eligibleProviderSlugs.has(p.slug)) continue; // gate de qualidade
       urls += entry(siteUrl, `/profissional/${p.slug}`, fmtDate(p.updated_at), 'weekly', '0.7');
@@ -173,7 +173,7 @@ ${entries.join('\n')}
   }
 
   if (type === 'cities') {
-    const { data } = await supabase.from('cities').select('slug, name, created_at').range(0, 49999);
+    const { data } = await supabase.from('cities').select('slug, name, created_at').range(offset, offset + limit - 1);
     for (const city of data || []) {
       const norm = String(city.name || city.slug || '').trim().toLowerCase();
       if (!eligibleCityNames.has(norm)) continue; // gate
