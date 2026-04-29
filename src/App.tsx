@@ -572,6 +572,9 @@ const App = () => {
                 <Route path="/ajuda/cadastro" element={<HelpOnboardingPage />} />
                 <Route path="/cadastro/retomar" element={<RecoveryOnboardingPage />} />
                 <Route path="/privacidade" element={<PrivacyPage />} />
+                <Route path="/excluir-conta" element={<AccountDeletionPage />} />
+                <Route path="/exclusao-de-conta" element={<AccountDeletionPage />} />
+                <Route path="/delete-account" element={<AccountDeletionPage />} />
                 <Route path="/termos" element={<TermsPage />} />
                 <Route path="/cookies" element={<CookiesPage />} />
                 <Route path="/sobre" element={<AboutPage />} />
