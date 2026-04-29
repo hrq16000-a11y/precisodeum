@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-const insertSpy = vi.fn(() => Promise.resolve({ error: null }));
+const insertSpy: any = vi.fn((..._args: any[]) => Promise.resolve({ error: null }));
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
