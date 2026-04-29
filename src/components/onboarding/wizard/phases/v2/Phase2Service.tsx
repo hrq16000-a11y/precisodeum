@@ -156,10 +156,18 @@ export const Phase2Service = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+      role="region"
+      aria-labelledby="phase2-service-title"
     >
-      <button onClick={onBack} className="text-xs text-muted-foreground hover:text-foreground">← Voltar</button>
+      <button
+        onClick={onBack}
+        className="text-xs text-muted-foreground hover:text-foreground"
+        aria-label="Voltar para a etapa anterior"
+      >
+        ← Voltar
+      </button>
       <header className="space-y-2 text-center">
-        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
+        <h1 id="phase2-service-title" className="font-display text-2xl font-extrabold leading-tight text-foreground">
           Qual serviço você quer cadastrar?
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -388,10 +396,18 @@ export const Phase2Details = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+      role="region"
+      aria-labelledby="phase2-details-title"
     >
-      <button onClick={onBack} className="text-xs text-muted-foreground hover:text-foreground">← Voltar</button>
+      <button
+        onClick={onBack}
+        className="text-xs text-muted-foreground hover:text-foreground"
+        aria-label="Voltar para a etapa anterior"
+      >
+        ← Voltar
+      </button>
       <header className="space-y-2 text-center">
-        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
+        <h1 id="phase2-details-title" className="font-display text-2xl font-extrabold leading-tight text-foreground">
           Para quem e por quanto?
         </h1>
         <p className="text-sm text-muted-foreground">Tudo opcional — você pode refinar depois.</p>

@@ -7380,6 +7380,7 @@ export type Database = {
       complete_mission: { Args: { _key: string; _value: Json }; Returns: Json }
       complete_onboarding_checklist: { Args: never; Returns: Json }
       complete_referral: { Args: { _referred_id: string }; Returns: boolean }
+      count_unread_notifications: { Args: never; Returns: number }
       create_album_atomic: {
         Args: { _description?: string; _name: string }
         Returns: Json
@@ -7856,6 +7857,14 @@ export type Database = {
         Returns: number
       }
       mark_lead_as_concluded: { Args: { _lead_id: string }; Returns: Json }
+      mark_notification_read: {
+        Args: { _notification_id: string }
+        Returns: boolean
+      }
+      mark_notifications_read_bulk: {
+        Args: { _ids: string[] }
+        Returns: number
+      }
       mark_provider_geo_reviewed: {
         Args: {
           _audit_id: string
