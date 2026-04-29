@@ -88,7 +88,9 @@ const ResetPasswordPage = () => {
     } else {
         try { await supabase.auth.signOut(); } catch { /* noop */ }
         toast.success('Senha redefinida com sucesso!');
-        navigate(`/senha-redefinida${successLoginUrl.replace('/login', '')}`, { replace: true });
+        // Preserva ?next= e ?message= ao redirecionar para a tela de sucesso
+        const search = successLoginUrl.includes('?') ? successLoginUrl.slice(successLoginUrl.indexOf('?')) : '';
+        navigate(`/senha-redefinida${search}`, { replace: true });
       }
   };
 
