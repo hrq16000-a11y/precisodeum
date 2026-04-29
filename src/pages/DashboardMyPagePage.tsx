@@ -293,13 +293,20 @@ const DashboardMyPagePage = () => {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto space-y-5">
+        {/* Botão Voltar — visível em mobile e desktop */}
+        <Button variant="ghost" size="sm" asChild className="-ml-2 self-start">
+          <Link to="/dashboard" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Voltar ao Dashboard
+          </Link>
+        </Button>
+
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
             <h1 className="font-display text-2xl font-bold text-foreground">Minha Página</h1>
             <p className="text-sm text-muted-foreground">Personalize sua vitrine profissional</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {provider.slug && (
               <Button variant="outline" size="sm" asChild>
                 <a href={`/profissional/${provider.slug}`} target="_blank" rel="noopener noreferrer">
@@ -308,7 +315,7 @@ const DashboardMyPagePage = () => {
               </Button>
             )}
             <Button onClick={handleSave} disabled={saving} size="sm" variant="accent">
-              {saving ? 'Salvando...' : '💾 Salvar'}
+              {saving ? 'Salvando...' : 'Salvar'}
             </Button>
           </div>
         </div>
