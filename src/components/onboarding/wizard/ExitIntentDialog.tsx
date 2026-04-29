@@ -8,35 +8,86 @@
  * Aparece NO MÁXIMO uma vez por sessão (sessionStorage). Fechado pelo usuário
  * fica suprimido para não atrapalhar quem está digitando.
  *
- * CTA principal: WhatsApp do suporte (5541997452053) com mensagem pré-pronta.
- * CTA secundário: voltar ao wizard.
+ * Conteúdo: resolvido por `resolveExitIntentCopy(variant, { phase, intent })`
+ * em `@/lib/exitIntentVariants` — 2 variações A/B (sticky por sessão) e copy
+ * por etapa (triage/main/extras) e por intent (client/professional).
  *
  * Telemetria: registra `exit_intent_shown`, `exit_intent_whatsapp`,
- * `exit_intent_dismiss` em onboarding_events via trackOnboardingEvent.
+ * `exit_intent_dismiss` em onboarding_events com meta:
+ *   { source, variant, phase_group, intent }
+ * permitindo medir conversão por criativo × etapa × tipo de usuário.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, X } from 'lucide-react';
+import { MessageCircle, X, HelpCircle } from 'lucide-react';
 import { trackOnboardingEvent } from './phases/v2/telemetry';
+import {
+  getSessionVariant,
+  phaseGroup,
+  resolveExitIntentCopy,
+  type ExitIntentIntent,
+  type ExitIntentVariant,
+} from '@/lib/exitIntentVariants';
 
-const SUPPORT_WHATSAPP = '5541997452053';
-const SUPPORT_MESSAGE =
-  'Olá! Estou tentando me cadastrar em www.precisodeumprofissional.com.br e gostaria de ajuda para finalizar meu perfil.';
 const INACTIVITY_MS = 30_000;
 const STORAGE_KEY = 'wizard:exit-intent-shown';
 
-type ExitIntentDialogProps = {
-  /** Fase atual do wizard (para telemetria). */
-  phase: string;
-  /** Permite desativar em fases finais (ex: celebração / done). */
-  enabled?: boolean;
+export type ExitIntentTracker = (
+  event: 'exit_intent_shown' | 'exit_intent_whatsapp' | 'exit_intent_dismiss',
+  meta: Record<string, unknown>,
+) => void;
+
+const defaultTracker: ExitIntentTracker = (event, meta) => {
+  void trackOnboardingEvent({
+    phase: (meta.phase as string) as any,
+    event: event as any,
+    meta,
+  });
 };
 
-export default function ExitIntentDialog({ phase, enabled = true }: ExitIntentDialogProps) {
+type ExitIntentDialogProps = {
+  /** Fase atual do wizard (para telemetria + roteamento de copy). */
+  phase: string;
+  /** Tipo de usuário detectado pela triagem. */
+  intent?: ExitIntentIntent;
+  /** Permite desativar em fases finais (ex: celebração / done). */
+  enabled?: boolean;
+  /** Forçar variante (testes / overrides admin). */
+  variantOverride?: ExitIntentVariant;
+  /** Tracker injetável — usado pelos testes para validar telemetria. */
+  tracker?: ExitIntentTracker;
+  /** Tempo (ms) de inatividade que dispara o pop-up. */
+  inactivityMs?: number;
+};
+
+export default function ExitIntentDialog({
+  phase,
+  intent = 'unknown',
+  enabled = true,
+  variantOverride,
+  tracker = defaultTracker,
+  inactivityMs = INACTIVITY_MS,
+}: ExitIntentDialogProps) {
   const [open, setOpen] = useState(false);
   const triggeredRef = useRef(false);
   const inactivityTimer = useRef<number | null>(null);
+
+  const variant: ExitIntentVariant = useMemo(
+    () => variantOverride ?? getSessionVariant(),
+    [variantOverride],
+  );
+  const group = phaseGroup(phase);
+  const copy = useMemo(
+    () => resolveExitIntentCopy(variant, { phase, intent }),
+    [variant, phase, intent],
+  );
+
+  const baseMeta = useMemo(
+    () => ({ phase, variant, phase_group: group, intent }),
+    [phase, variant, group, intent],
+  );
 
   const trigger = useCallback(
     (source: 'mouseleave' | 'inactivity') => {
@@ -53,19 +104,15 @@ export default function ExitIntentDialog({ phase, enabled = true }: ExitIntentDi
         /* noop */
       }
       setOpen(true);
-      void trackOnboardingEvent({
-        phase: phase as any,
-        event: 'exit_intent_shown' as any,
-        meta: { source },
-      });
+      tracker('exit_intent_shown', { ...baseMeta, source });
     },
-    [phase],
+    [tracker, baseMeta],
   );
 
   const resetInactivity = useCallback(() => {
     if (inactivityTimer.current) window.clearTimeout(inactivityTimer.current);
-    inactivityTimer.current = window.setTimeout(() => trigger('inactivity'), INACTIVITY_MS);
-  }, [trigger]);
+    inactivityTimer.current = window.setTimeout(() => trigger('inactivity'), inactivityMs);
+  }, [trigger, inactivityMs]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -97,58 +144,54 @@ export default function ExitIntentDialog({ phase, enabled = true }: ExitIntentDi
   }, [enabled, resetInactivity, trigger]);
 
   const handleWhatsApp = useCallback(() => {
-    void trackOnboardingEvent({
-      phase: phase as any,
-      event: 'exit_intent_whatsapp' as any,
-      meta: {},
-    });
-    const url = `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(SUPPORT_MESSAGE)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    tracker('exit_intent_whatsapp', baseMeta);
+    if (typeof window !== 'undefined') {
+      window.open(copy.whatsappUrl, '_blank', 'noopener,noreferrer');
+    }
     setOpen(false);
-  }, [phase]);
+  }, [tracker, baseMeta, copy.whatsappUrl]);
 
   const handleDismiss = useCallback(() => {
-    void trackOnboardingEvent({
-      phase: phase as any,
-      event: 'exit_intent_dismiss' as any,
-      meta: {},
-    });
+    tracker('exit_intent_dismiss', baseMeta);
     setOpen(false);
-  }, [phase]);
+  }, [tracker, baseMeta]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleDismiss())}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" data-testid="exit-intent-dialog">
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold tracking-tight">
-            Está com alguma dificuldade?
+            {copy.title}
           </DialogTitle>
           <DialogDescription className="text-base leading-relaxed text-muted-foreground">
-            Não queremos que você perca a chance de aparecer em{' '}
-            <span className="font-semibold text-foreground">www.precisodeumprofissional.com.br</span>.
-            <br />
-            <br />
-            Se preferir, fale com nosso suporte agora pelo WhatsApp e finalizamos o cadastro
-            <span className="font-semibold text-foreground"> juntos com você</span>.
+            {copy.body}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col gap-2 sm:flex-col">
           <Button
             type="button"
             onClick={handleWhatsApp}
+            data-testid="exit-intent-whatsapp"
             className="w-full gap-2 bg-gradient-to-r from-emerald-500 to-green-600 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.6)] hover:opacity-95"
           >
             <MessageCircle className="h-4 w-4" />
-            Falar com o suporte no WhatsApp
+            {copy.ctaPrimary}
+          </Button>
+          <Button asChild type="button" variant="outline" className="w-full gap-2">
+            <Link to="/ajuda/cadastro" onClick={() => setOpen(false)}>
+              <HelpCircle className="h-4 w-4" />
+              Ver perguntas frequentes do cadastro
+            </Link>
           </Button>
           <Button
             type="button"
             variant="ghost"
             onClick={handleDismiss}
+            data-testid="exit-intent-dismiss"
             className="w-full gap-2 text-muted-foreground"
           >
             <X className="h-4 w-4" />
-            Continuar sozinho
+            {copy.ctaDismiss}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -155,6 +155,13 @@ export default function WizardShell() {
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
       <ExitIntentDialog
         phase={state.phase}
+        intent={
+          state.triage.intent === 'client'
+            ? 'client'
+            : state.triage.intent === 'professional'
+            ? 'professional'
+            : 'unknown'
+        }
         enabled={state.phase !== 'triage_celebration' && state.phase !== 'main_celebration' && state.phase !== 'done'}
       />
       <WizardProgressBar phase={state.phase} phaseOrder={progressOrder} />
