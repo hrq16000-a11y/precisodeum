@@ -448,18 +448,58 @@ const DashboardServicesPage = () => {
     }
     // Linter anti-leilão: avisa para qualquer hit, mas só BLOQUEIA o save
     // quando a descrição contém mais que LEILAO_BLOCK_THRESHOLD termos.
-    // Esta regra dá margem educativa para o prestador antes de barrar.
     const forbiddenHits = lintServiceDescription(form.description);
-    if (shouldBlockByLeilao(forbiddenHits)) {
-      errors.description = `Foram detectados ${forbiddenHits.length} termos de leilão (limite: ${LEILAO_BLOCK_THRESHOLD}). Use o botão "Reescrever com qualidade" ou substitua manualmente.`;
-    } else if (forbiddenHits.length > 0) {
-      // Apenas exibe alerta no toast — não bloqueia o save
+    if (forbiddenHits.length > 0 && !shouldBlockByLeilao(forbiddenHits)) {
       toast.warning(`Atenção: ${forbiddenHits.length} termo(s) de leilão na descrição`, {
         description: `Sugestão para "${forbiddenHits[0].term}": ${forbiddenHits[0].suggestion}`,
         duration: 5000,
       });
     }
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+
+    // ── KILL-SWITCH (HARD STOP) ─────────────────────────────────────────────
+    // Bloqueia fisicamente o save quando o anúncio não atinge o padrão mínimo.
+    // Regras: score < 50% OU mais de 3 termos de leilão.
+    const selectedSlugsForGate = selectedCategoryIds
+      .map((id) => categories.find((c: any) => c.id === id)?.slug)
+      .filter(Boolean) as string[];
+    const cityValidatedForGate = isCatalogedCity(cleanedArea, ALL_CITIES);
+    const gateScore = computeAdScore({
+      description: form.description,
+      hasOriginalPhoto: !!newServicePhoto || (!!editId && !!serviceImages[editId]),
+      cityValidated: cityValidatedForGate,
+      categorySlugs: selectedSlugsForGate,
+    });
+    const blockReasons: string[] = [];
+    if (gateScore.score < 50) blockReasons.push(`Score atual ${gateScore.score}% (mínimo 50%)`);
+    if (forbiddenHits.length > LEILAO_BLOCK_THRESHOLD) {
+      blockReasons.push(`${forbiddenHits.length} termos de leilão (limite ${LEILAO_BLOCK_THRESHOLD})`);
+    }
+    if (blockReasons.length > 0) {
+      // Auditoria fail-soft da tentativa bloqueada
+      try {
+        const providerId = provider?.id || null;
+        await (supabase.from as any)('service_quality_log').insert({
+          service_id: null,
+          provider_id: providerId,
+          user_id: user?.id,
+          initial_score: gateScore.score,
+          final_score: gateScore.score,
+          forbidden_hits: gateScore.forbiddenHits.map((h) => h.term),
+          category_keywords_hit: gateScore.matchedKeywords,
+          description_length: form.description.trim().length,
+          reason: 'blocked_by_policy',
+        });
+      } catch { /* fail-soft */ }
+      setBlockModal({ open: true, score: gateScore.score, hits: forbiddenHits.length, reasons: blockReasons });
+      return;
+    }
+    // Final consent é obrigatório para publicação (apenas em criação)
+    if (!editId && !finalConsent) {
+      toast.error('Confirme o termo de responsabilidade direta antes de publicar.');
+      return;
+    }
+
     // Coerência radius=city: trava service_area = provider.city
     let finalArea = cleanedArea;
     if (serviceRadius === 'city' && provider?.city) {
