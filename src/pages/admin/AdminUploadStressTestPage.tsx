@@ -417,6 +417,31 @@ export default function AdminUploadStressTestPage() {
       </Card>
 
       <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-base">Exportar relatório</CardTitle>
+          <span className="text-xs text-muted-foreground">{allRows.length} resultados disponíveis</span>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportCSV}
+            disabled={exporting || allRows.length === 0}
+          >
+            <Download className="mr-1 h-4 w-4" /> CSV (cenário × dispositivo × data)
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportPDF}
+            disabled={exporting || allRows.length === 0}
+          >
+            <FileText className="mr-1 h-4 w-4" /> PDF resumido
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Taxa de sucesso por cenário</CardTitle>
         </CardHeader>
