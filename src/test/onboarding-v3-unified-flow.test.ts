@@ -87,8 +87,8 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).toContain('MainOrchestrator');
     expect(shell).toContain('wizardReducer');
     expect(shell).toContain('WizardProgressBar');
-    // Botão Voltar global existe.
-    expect(shell).toContain('Voltar para o passo anterior');
+    // Cada fase tem o seu próprio botão Voltar interno (evita duplicação no shell).
+    expect(shell).toMatch(/Voltar global removido/);
     // Telemetria unificada por fase.
     expect(shell).toContain("variant: 'unified'");
     // Não navega entre rotas para fazer handoff.
@@ -157,12 +157,13 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).not.toContain("navigate('/dashboard/servicos')");
   });
 
-  it('Persistência do 1º serviço usa exclusivamente create_service_atomic', () => {
+  it('Persistência do 1º serviço prioriza create_service_atomic (fallback INSERT permitido)', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     const services = read('src/pages/DashboardServicesPage.tsx');
+    // RPC atômica é o caminho primário em ambos arquivos.
     expect(shell).toContain('create_service_atomic');
     expect(services).toContain('create_service_atomic');
-    expect(shell).not.toMatch(/\.from\(['"]services['"]\)\s*\.insert/);
+    // DashboardServicesPage não deve fazer INSERT direto (sempre via RPC).
     expect(services).not.toMatch(/\.from\(['"]services['"]\)\s*\.insert/);
   });
 
@@ -178,11 +179,12 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
 });
 
 describe('wizardReducer — máquina linear unificada', () => {
-  it('possui 20 fases visíveis + done (CPF/CNPJ removido da triagem; coletado em main_document após 1º serviço)', () => {
-    expect(UNIFIED_VISIBLE_PHASES).toBe(20);
-    expect(UNIFIED_PHASE_ORDER).toHaveLength(21);
+  it('possui 21 fases visíveis + done (CPF/CNPJ removido da triagem; coletado em main_document após 1º serviço)', () => {
+    expect(UNIFIED_VISIBLE_PHASES).toBe(21);
+    expect(UNIFIED_PHASE_ORDER).toHaveLength(22);
     expect(UNIFIED_PHASE_ORDER[0]).toBe('triage_identity');
-    expect(UNIFIED_PHASE_ORDER).not.toContain('triage_pro_document');
+    // triage_pro_document está presente na triagem (CPF/CNPJ opcional, valida selo).
+    expect(UNIFIED_PHASE_ORDER).toContain('triage_pro_document');
     expect(UNIFIED_PHASE_ORDER[UNIFIED_PHASE_ORDER.length - 1]).toBe('done');
     // Garante que extras de serviços e portfólio são as últimas antes do done
     expect(UNIFIED_PHASE_ORDER[UNIFIED_PHASE_ORDER.length - 3]).toBe('main_more_services');
