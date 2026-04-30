@@ -51,15 +51,28 @@ import { toast } from 'sonner';
 
 const ITEMS_PER_PAGE = 12;
 
-type SortOption = 'relevance' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
+type SortOption = 'relevance' | 'best' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
 
 const SORT_CHIPS: { value: SortOption; label: string; icon: typeof Star }[] = [
   { value: 'relevance', label: 'Relevância', icon: Trophy },
+  { value: 'best', label: 'Melhor combinação', icon: Sparkles },
   { value: 'nearest', label: 'Mais perto', icon: Compass },
   { value: 'rating', label: 'Avaliação', icon: Star },
   { value: 'reviews', label: 'Avaliações', icon: Award },
   { value: 'experience', label: 'Experiência', icon: GraduationCap },
 ];
+
+/** Texto curto do critério ativo, exibido no badge da UI. */
+const SORT_CRITERIA_HINT: Record<SortOption, string> = {
+  relevance: 'Padrão do site',
+  best: 'Rating + proximidade',
+  nearest: 'Distância (km)',
+  rating: 'Maior avaliação',
+  reviews: 'Mais avaliações',
+  experience: 'Mais experientes',
+  name_asc: 'Nome A→Z',
+  name_desc: 'Nome Z→A',
+};
 
 /** Raios disponíveis (km) para o seletor de proximidade. */
 const RADIUS_CHIPS: { km: number; label: string }[] = [
