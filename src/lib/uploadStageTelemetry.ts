@@ -58,11 +58,12 @@ export async function recordStageTelemetry(input: StageTelemetryInput): Promise<
       stage_latency_ms: Math.round(input.latencyMs),
       file_size_bytes: input.fileSizeBytes ?? null,
       error_code: input.errorCode ?? null,
+      error_kind: input.errorKind ?? null,
       fallback_level: input.fallbackLevel ?? null,
       device_ua: dev.ua,
       effective_type: dev.effectiveType,
       downlink_mbps: dev.downlink,
-    });
+    } as any);
   } catch (err) {
     console.warn('[uploadStageTelemetry] failed', err);
   }
