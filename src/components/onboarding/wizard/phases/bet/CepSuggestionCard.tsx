@@ -54,6 +54,8 @@ export default function CepSuggestionCard({
   currentValue,
   onApply,
   debounceMs = 600,
+  phase = 'pro_location',
+  userId = null,
 }: CepSuggestionCardProps) {
   const [status, setStatus] = useState<Status>('idle');
   const [hit, setHit] = useState<Hit | null>(null);
@@ -72,6 +74,7 @@ export default function CepSuggestionCard({
     }
     let cancelled = false;
     setStatus('loading');
+    const timer = startCepTimer();
     const t = window.setTimeout(async () => {
       try {
         const r = await lookupCepFromCity({
@@ -80,17 +83,45 @@ export default function CepSuggestionCard({
           neighborhood: bairroTrim,
         });
         if (cancelled) return;
+        const latency_ms = timer.stop();
         if (r.ok === true) {
           setHit(r.match);
           setStatus('success');
+          trackCepAttempt({
+            phase,
+            userId,
+            ok: true,
+            latency_ms,
+            city_len: cityTrim.length,
+            neighborhood_len: bairroTrim.length,
+          });
         } else {
           setHit(null);
-          setStatus(r.reason === 'not_found' ? 'notFound' : 'error');
+          const code: CepErrorCode = r.reason === 'not_found' ? 'not_found' : (r.reason as CepErrorCode);
+          setStatus(code === 'not_found' ? 'notFound' : 'error');
+          trackCepAttempt({
+            phase,
+            userId,
+            ok: false,
+            latency_ms,
+            error_code: code,
+            city_len: cityTrim.length,
+            neighborhood_len: bairroTrim.length,
+          });
         }
       } catch {
         if (!cancelled) {
           setHit(null);
           setStatus('error');
+          trackCepAttempt({
+            phase,
+            userId,
+            ok: false,
+            latency_ms: timer.stop(),
+            error_code: 'unknown',
+            city_len: cityTrim.length,
+            neighborhood_len: bairroTrim.length,
+          });
         }
       }
     }, debounceMs);
@@ -98,7 +129,7 @@ export default function CepSuggestionCard({
       cancelled = true;
       window.clearTimeout(t);
     };
-  }, [cityTrim, ufTrim, bairroTrim, ready, debounceMs, retryToken]);
+  }, [cityTrim, ufTrim, bairroTrim, ready, debounceMs, retryToken, phase, userId]);
 
   // Já aplicado — feedback discreto e fim.
   if (status === 'success' && hit && currentValue && currentValue.replace(/\D/g, '') === hit.cep.replace(/\D/g, '')) {
