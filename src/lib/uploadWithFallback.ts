@@ -19,6 +19,8 @@
 import { compressImage } from './compressImage';
 import { resilientUpload } from './uploadResilient';
 import { withStageTelemetry, recordStageTelemetry, type UploadStage } from './uploadStageTelemetry';
+import { resolveAdaptiveProfile, type AdaptiveProfile } from './adaptiveCompression';
+import { classifyUploadError, CompressionError } from './uploadErrors';
 
 export interface UploadFallbackResult<T> {
   data: T;
@@ -26,6 +28,8 @@ export interface UploadFallbackResult<T> {
   fallbackLevel: number;
   /** Tamanho final (bytes) do arquivo enviado. */
   finalSize: number;
+  /** Perfil adaptativo aplicado na primeira tentativa (debug/telemetria). */
+  adaptiveProfile?: AdaptiveProfile;
 }
 
 export interface UploadStageEvent {
@@ -70,18 +74,33 @@ export async function uploadWithFallback<T = any>(
   const baseMaxDim = opts.baseMaxDimension ?? 1200;
   const baseTarget = opts.baseTargetKB ?? 300;
 
+  // ── Calibração adaptativa baseada em métricas recentes ──
+  // Se a coorte (rede/dispositivo) está falhando muito, já entramos com perfil
+  // mais agressivo na 1ª tentativa, reduzindo retries.
+  const adaptive = resolveAdaptiveProfile(baseMaxDim, baseTarget);
+  const effectiveMaxDim = adaptive.maxDimension;
+  const effectiveTarget = adaptive.targetKB;
+
   const compressForLevel = async (level: number, recipe?: FallbackRecipe): Promise<File> => {
     if (recipe?.raw) return rawFile;
+    const maxDimension = recipe?.maxDimension ?? (level === 0 ? effectiveMaxDim : baseMaxDim);
+    const targetKB = recipe?.targetKB ?? (level === 0 ? effectiveTarget : baseTarget);
     return withStageTelemetry(
       'compress',
-      () =>
-        compressImage(rawFile, {
-          maxDimension: recipe?.maxDimension ?? baseMaxDim,
-          targetKB: recipe?.targetKB ?? baseTarget,
-          onStage: (stage, status) => {
-            opts.onStage?.({ stage, status });
-          },
-        }),
+      async () => {
+        try {
+          return await compressImage(rawFile, {
+            maxDimension,
+            targetKB,
+            onStage: (stage, status) => {
+              opts.onStage?.({ stage, status });
+            },
+          });
+        } catch (err) {
+          const stage = (err as any)?.message?.includes('decode') ? 'convert' : 'compress';
+          throw new CompressionError(stage as 'convert' | 'compress', err);
+        }
+      },
       { fileSizeBytes: rawFile.size, fallbackLevel: level }
     );
   };
@@ -111,7 +130,7 @@ export async function uploadWithFallback<T = any>(
   try {
     const file = await compressForLevel(0);
     const data = await tryUpload(file, 0);
-    return { data, fallbackLevel: 0, finalSize: file.size };
+    return { data, fallbackLevel: 0, finalSize: file.size, adaptiveProfile: adaptive };
   } catch (err) {
     lastError = err;
   }
@@ -130,7 +149,7 @@ export async function uploadWithFallback<T = any>(
         fallbackLevel: recipe.level,
       });
       opts.onStage?.({ stage: 'fallback', status: 'done' });
-      return { data, fallbackLevel: recipe.level, finalSize: file.size };
+      return { data, fallbackLevel: recipe.level, finalSize: file.size, adaptiveProfile: adaptive };
     } catch (err) {
       lastError = err;
       recordStageTelemetry({
@@ -139,6 +158,7 @@ export async function uploadWithFallback<T = any>(
         latencyMs: 0,
         fileSizeBytes: rawFile.size,
         errorCode: (err as any)?.message?.slice(0, 200) || 'unknown',
+        errorKind: classifyUploadError(err),
         fallbackLevel: recipe.level,
       });
     }

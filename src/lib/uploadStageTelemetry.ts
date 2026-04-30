@@ -18,6 +18,8 @@ export interface StageTelemetryInput {
   latencyMs: number;
   fileSizeBytes?: number;
   errorCode?: string;
+  /** Classificação padronizada do erro (timeout/network/server/convert/...). */
+  errorKind?: string;
   fallbackLevel?: number;
 }
 
@@ -56,11 +58,12 @@ export async function recordStageTelemetry(input: StageTelemetryInput): Promise<
       stage_latency_ms: Math.round(input.latencyMs),
       file_size_bytes: input.fileSizeBytes ?? null,
       error_code: input.errorCode ?? null,
+      error_kind: input.errorKind ?? null,
       fallback_level: input.fallbackLevel ?? null,
       device_ua: dev.ua,
       effective_type: dev.effectiveType,
       downlink_mbps: dev.downlink,
-    });
+    } as any);
   } catch (err) {
     console.warn('[uploadStageTelemetry] failed', err);
   }
@@ -84,12 +87,15 @@ export async function withStageTelemetry<T>(
     });
     return result;
   } catch (err: any) {
+    // Lazy import pra evitar ciclo (uploadErrors importa UploadTimeoutError de uploadResilient)
+    const { classifyUploadError } = await import('./uploadErrors');
     recordStageTelemetry({
       stage,
       success: false,
       latencyMs: performance.now() - start,
       fileSizeBytes: meta?.fileSizeBytes,
       errorCode: err?.message?.slice(0, 200) || 'unknown',
+      errorKind: classifyUploadError(err),
       fallbackLevel: meta?.fallbackLevel,
     });
     throw err;
