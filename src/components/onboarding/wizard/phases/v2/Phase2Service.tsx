@@ -217,9 +217,9 @@ export const Phase2Service = ({
             </div>
           )}
           {selectedId && !invariantOk && (
-            <p className="mt-1 inline-flex items-start gap-1 text-[11px] text-destructive">
+            <p className="mt-1 inline-flex items-start gap-1 text-[11px] text-amber-700 dark:text-amber-300">
               <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
-              O título do serviço deve ser igual à categoria escolhida. Reselecione a categoria para corrigir.
+              O título do serviço será ajustado para "{selectedName}" ao continuar.
             </p>
           )}
         </label>
