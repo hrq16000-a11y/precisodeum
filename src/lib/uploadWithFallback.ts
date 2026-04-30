@@ -74,6 +74,13 @@ export async function uploadWithFallback<T = any>(
   const baseMaxDim = opts.baseMaxDimension ?? 1200;
   const baseTarget = opts.baseTargetKB ?? 300;
 
+  // ── Calibração adaptativa baseada em métricas recentes ──
+  // Se a coorte (rede/dispositivo) está falhando muito, já entramos com perfil
+  // mais agressivo na 1ª tentativa, reduzindo retries.
+  const adaptive = resolveAdaptiveProfile(baseMaxDim, baseTarget);
+  const effectiveMaxDim = adaptive.maxDimension;
+  const effectiveTarget = adaptive.targetKB;
+
   const compressForLevel = async (level: number, recipe?: FallbackRecipe): Promise<File> => {
     if (recipe?.raw) return rawFile;
     return withStageTelemetry(
