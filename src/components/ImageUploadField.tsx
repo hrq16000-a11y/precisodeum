@@ -1,13 +1,19 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { Upload, Link as LinkIcon, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
-import { compressImage, generateBlurDataUrl } from '@/lib/compressImage';
-import { resilientUpload, UploadTimeoutError } from '@/lib/uploadResilient';
+import { generateBlurDataUrl } from '@/lib/compressImage';
+import { UploadTimeoutError } from '@/lib/uploadResilient';
+import { uploadWithFallback } from '@/lib/uploadWithFallback';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
+import {
+  UploadProgressIndicator,
+  makeInitialStages,
+  type UploadStagesState,
+} from '@/components/upload/UploadProgressIndicator';
 
 interface ImageUploadFieldProps {
   value: string;
@@ -34,22 +40,17 @@ const ImageUploadField = ({
 }: ImageUploadFieldProps) => {
   const [uploading, setUploading] = useState(false);
   const [mode, setMode] = useState<'url' | 'upload'>('url');
+  const [stages, setStages] = useState<UploadStagesState>(makeInitialStages());
+  const [hasFailed, setHasFailed] = useState(false);
+  const lastFileRef = useRef<File | null>(null);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.files?.[0];
-    if (!raw) return;
-
-    if (raw.size > 5 * 1024 * 1024) {
-      toast.error('Imagem deve ter no máximo 5MB');
-      return;
-    }
-
+  const runUpload = async (raw: File) => {
+    lastFileRef.current = raw;
     setUploading(true);
+    setHasFailed(false);
+    setStages(makeInitialStages());
+
     try {
-      // Padrão mobile-first: 1200px / ~300KB. Edge `optimize-image` ainda
-      // re-encoda em WebP no servidor para entrega final.
-      const file = await compressImage(raw, { maxDimension: 1200, targetKB: 300 });
-      // Get current session for auth
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast.error('Você precisa estar logado para enviar imagens');
@@ -57,40 +58,54 @@ const ImageUploadField = ({
         return;
       }
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('bucket', bucket);
-      if (folder) formData.append('folder', folder);
-
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const data = await resilientUpload<{ url: string; path?: string; deduplicated?: boolean; error?: string }>(
-        `https://${projectId}.supabase.co/functions/v1/optimize-image`,
-        formData,
-        {
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          'Authorization': `Bearer ${session.access_token}`,
+      const result = await uploadWithFallback<{
+        url: string;
+        path?: string;
+        deduplicated?: boolean;
+        error?: string;
+      }>(raw, {
+        url: `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session.access_token}`,
         },
-        {
-          onAttempt: (a, max) => {
-            if (a > 1) toast.message(`Conexão lenta. Tentando novamente (${a}/${max})…`);
-          },
-        }
-      );
-      if (data.error) throw new Error(data.error);
+        baseMaxDimension: 1200,
+        baseTargetKB: 300,
+        buildFormData: (file) => {
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('bucket', bucket);
+          if (folder) fd.append('folder', folder);
+          return fd;
+        },
+        onStage: ({ stage, status }) => {
+          setStages((prev) => {
+            if (stage === 'fallback') return prev;
+            return {
+              ...prev,
+              [stage]: status === 'start' ? 'active' : status === 'error' ? 'error' : 'done',
+            };
+          });
+        },
+        onAttempt: (a, max) => {
+          if (a > 1) toast.message(`Conexão lenta. Tentando novamente (${a}/${max})…`);
+        },
+      });
 
-      onChange(data.url);
+      if (result.data.error) throw new Error(result.data.error);
+      onChange(result.data.url);
 
-      // Sync to media library if entityType provided
-      if (entityType && data.path) {
+      if (entityType && result.data.path) {
         const identity = await resolveIdentity(session.user.id);
         if (identity.userRef) {
           const blurDataUrl = await generateBlurDataUrl(raw);
           upsertMedia({
-            storagePath: data.path,
-            publicUrl: data.url,
+            storagePath: result.data.path,
+            publicUrl: result.data.url,
             originalName: raw.name,
-            mimeType: file.type || 'image/webp',
-            entityType: entityType,
+            mimeType: raw.type || 'image/webp',
+            entityType,
             entityRef: entityRef || 'admin',
             userRef: identity.userRef,
             sizeOriginal: raw.size,
@@ -99,16 +114,35 @@ const ImageUploadField = ({
         }
       }
 
-      if (data.deduplicated) toast.info('Imagem já existente reutilizada!');
+      if (result.data.deduplicated) toast.info('Imagem já existente reutilizada!');
+      else if (result.fallbackLevel > 0)
+        toast.success(`Imagem enviada (qualidade reduzida — nível ${result.fallbackLevel}).`);
       else toast.success('Imagem enviada!');
     } catch (err) {
+      setStages((prev) => ({ ...prev, upload: 'error' }));
+      setHasFailed(true);
       if (err instanceof UploadTimeoutError) {
-        toast.error('Conexão muito lenta. Tente novamente.');
+        toast.error('Conexão muito lenta. Toque em "Tentar novamente".');
       } else {
-        toast.error('Erro ao enviar imagem. Verifique sua conexão.');
+        toast.error('Erro ao enviar imagem. Toque em "Tentar novamente".');
       }
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.files?.[0];
+    if (!raw) return;
+    if (raw.size > 5 * 1024 * 1024) {
+      toast.error('Imagem deve ter no máximo 5MB');
+      return;
+    }
+    await runUpload(raw);
+  };
+
+  const handleRetry = async () => {
+    if (lastFileRef.current) await runUpload(lastFileRef.current);
   };
 
   return (
@@ -119,14 +153,22 @@ const ImageUploadField = ({
           <button
             type="button"
             onClick={() => setMode('url')}
-            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${mode === 'url' ? 'bg-accent/10 text-accent' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+              mode === 'url'
+                ? 'bg-accent/10 text-accent'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
             <LinkIcon className="inline h-3 w-3 mr-0.5" /> URL
           </button>
           <button
             type="button"
             onClick={() => setMode('upload')}
-            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${mode === 'upload' ? 'bg-accent/10 text-accent' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+              mode === 'upload'
+                ? 'bg-accent/10 text-accent'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
             <Upload className="inline h-3 w-3 mr-0.5" /> Upload
           </button>
@@ -134,26 +176,39 @@ const ImageUploadField = ({
       </div>
 
       {mode === 'url' ? (
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-        />
+        <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
       ) : (
-        <div className="relative">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileUpload}
-            disabled={uploading}
-            className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-accent/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent hover:file:bg-accent/20 disabled:opacity-50"
-          />
-          {uploading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-accent" />}
+        <div className="space-y-2">
+          <div className="relative">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              disabled={uploading}
+              className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-accent/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent hover:file:bg-accent/20 disabled:opacity-50"
+            />
+            {uploading && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-accent" />
+            )}
+          </div>
+
+          {(uploading || hasFailed) && <UploadProgressIndicator stages={stages} />}
+
+          {hasFailed && !uploading && (
+            <Button type="button" variant="outline" size="sm" onClick={handleRetry}>
+              <RefreshCw className="mr-1 h-3 w-3" /> Tentar novamente
+            </Button>
+          )}
         </div>
       )}
 
       {value && (
-        <img src={value} alt="Preview" className="mt-1 h-20 w-auto rounded-lg object-cover border border-border" onError={handleImageError} />
+        <img
+          src={value}
+          alt="Preview"
+          className="mt-1 h-20 w-auto rounded-lg object-cover border border-border"
+          onError={handleImageError}
+        />
       )}
     </div>
   );
