@@ -279,12 +279,13 @@ export default function DailyPostCard() {
               </span>
             </div>
             {imageUrl && !uploading && (
-              <div className="overflow-hidden rounded-lg border border-fuchsia-500/20">
-                <img
+              <div className="relative overflow-hidden rounded-lg border border-fuchsia-500/20" style={{ aspectRatio: '16/9', maxHeight: '10rem' }}>
+                <LazyImage
                   src={imageUrl}
                   alt="Pré-visualização da Obra do Dia"
-                  className="max-h-40 w-full object-cover"
-                  loading="lazy"
+                  sizesPreset="card-wide"
+                  surface="daily-post-preview"
+                  className="h-full w-full object-cover"
                 />
               </div>
             )}
