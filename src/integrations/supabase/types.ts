@@ -6515,6 +6515,7 @@ export type Database = {
           downlink_mbps: number | null
           effective_type: string | null
           error_code: string | null
+          error_kind: string | null
           fallback_level: number | null
           file_size_bytes: number | null
           id: string
@@ -6532,6 +6533,7 @@ export type Database = {
           downlink_mbps?: number | null
           effective_type?: string | null
           error_code?: string | null
+          error_kind?: string | null
           fallback_level?: number | null
           file_size_bytes?: number | null
           id?: string
@@ -6549,6 +6551,7 @@ export type Database = {
           downlink_mbps?: number | null
           effective_type?: string | null
           error_code?: string | null
+          error_kind?: string | null
           fallback_level?: number | null
           file_size_bytes?: number | null
           id?: string
@@ -8646,6 +8649,19 @@ export type Database = {
       update_site_setting_audited: {
         Args: { p_key: string; p_value: string }
         Returns: undefined
+      }
+      upload_failure_stats: {
+        Args: { _lookback_hours?: number }
+        Returns: {
+          avg_attempts: number
+          avg_total_ms: number
+          device_family: string
+          downlink_band: string
+          effective_type: string
+          fail_rate: number
+          failures: number
+          total: number
+        }[]
       }
       user_lead_quota: { Args: { _user_id: string }; Returns: number }
       user_lead_quota_usage: { Args: { _user_id: string }; Returns: Json }
