@@ -140,6 +140,23 @@ const SearchPage = () => {
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  // Pesos do score híbrido (sortBy='best'). Admin define em site_settings com a
+  // chave `search_score_weights` como JSON `{"rating":0.7,"distance":0.3}`.
+  const scoreWeightsRaw = useSettingValue('search_score_weights');
+  const scoreWeights = useMemo<SearchScoreWeights>(() => {
+    if (!scoreWeightsRaw) return DEFAULT_SCORE_WEIGHTS;
+    try {
+      const parsed = JSON.parse(scoreWeightsRaw);
+      const r = Number(parsed?.rating);
+      const d = Number(parsed?.distance);
+      if (Number.isFinite(r) && Number.isFinite(d) && r >= 0 && d >= 0 && r + d > 0) {
+        return { rating: r, distance: d };
+      }
+    } catch {
+      /* fallback */
+    }
+    return DEFAULT_SCORE_WEIGHTS;
+  }, [scoreWeightsRaw]);
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
   const onlineSet = useOnlineProviders();
   const activeTodaySet = useActiveTodayProviders();
