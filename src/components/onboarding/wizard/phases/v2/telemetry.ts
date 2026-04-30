@@ -105,3 +105,82 @@ export async function trackOnboardingEvent(opts: TrackOptions): Promise<void> {
     /* fail-soft */
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Draft source — origem do rascunho carregado na sessão atual.
+ * Persistido em sessionStorage para que TODOS os eventos subsequentes
+ * carreguem essa dimensão (igual ao `intent`).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+const DRAFT_SOURCE_KEY = 'onboarding_v2_draft_source';
+
+export function setOnboardingDraftSource(src: OnboardingDraftSource | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (!src) sessionStorage.removeItem(DRAFT_SOURCE_KEY);
+    else sessionStorage.setItem(DRAFT_SOURCE_KEY, src);
+  } catch { /* fail-soft */ }
+}
+
+export function getOnboardingDraftSource(): OnboardingDraftSource | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const v = sessionStorage.getItem(DRAFT_SOURCE_KEY) as OnboardingDraftSource | null;
+    return v || null;
+  } catch { return null; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Phase timer — mede tempo gasto em cada fase.
+ *
+ * API:
+ *  - markPhaseEnter(phase): registra timestamp de entrada
+ *  - markPhaseExit(phase, opts?): calcula duração e dispara evento `phase_exit`
+ *    com meta { duration_ms, draft_source, ...opts.meta }
+ *
+ * Idempotente: se markPhaseExit for chamado sem enter prévio, ignora.
+ * Fail-soft: nunca lança.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+const phaseStartedAt = new Map<string, number>();
+
+export function markPhaseEnter(phase: OnboardingPhase): void {
+  try {
+    phaseStartedAt.set(String(phase), Date.now());
+  } catch { /* fail-soft */ }
+}
+
+export interface PhaseExitOptions {
+  userId?: string | null;
+  meta?: Record<string, unknown>;
+  /** Override do draft source — se omitido, lê do sessionStorage. */
+  draftSource?: OnboardingDraftSource | null;
+}
+
+export async function markPhaseExit(
+  phase: OnboardingPhase,
+  opts: PhaseExitOptions = {},
+): Promise<void> {
+  try {
+    const startedAt = phaseStartedAt.get(String(phase));
+    if (!startedAt) return; // sem enter prévio — não emite duração espúria
+    const duration_ms = Math.max(0, Date.now() - startedAt);
+    phaseStartedAt.delete(String(phase));
+    const draft_source = opts.draftSource ?? getOnboardingDraftSource() ?? 'none';
+    await trackOnboardingEvent({
+      phase,
+      event: 'phase_exit',
+      userId: opts.userId,
+      meta: {
+        duration_ms,
+        draft_source,
+        ...(opts.meta || {}),
+      },
+    });
+  } catch { /* fail-soft */ }
+}
+
+/** Limpa todos os timers (útil em testes / reset de wizard). */
+export function resetPhaseTimers(): void {
+  phaseStartedAt.clear();
+}
