@@ -51,6 +51,26 @@ interface StatsPayload {
   pro_location_stuck: StuckSummary;
 }
 
+interface BySourceFunnelRow {
+  draft_source: string;
+  phase: string;
+  enters: number;
+  advances: number;
+  errors: number;
+  unique_users: number;
+}
+
+interface UserFunnelRow {
+  user_id: string;
+  phases_entered: number;
+  phases_advanced: number;
+  errors_total: number;
+  last_phase: string | null;
+  completed: boolean;
+  draft_source: string;
+  first_seen: string;
+  last_seen: string;
+
 const SOURCE_LABEL: Record<string, string> = {
   gps: "GPS",
   cep: "CEP",
