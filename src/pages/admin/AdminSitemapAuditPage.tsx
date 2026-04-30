@@ -1,5 +1,5 @@
 /**
- * AdminSeoAuditPage — Roda auditoria do sitemap.xml e robots.txt e mostra
+ * AdminSitemapAuditPage — Roda auditoria do sitemap.xml e robots.txt e mostra
  * findings (canonical inválido, noindex em URL indexável, HTTP errors).
  * Persiste histórico em public.seo_audit_reports.
  */
@@ -45,8 +45,8 @@ interface Report {
   duration_ms: number | null;
 }
 
-export default function AdminSeoAuditPage() {
-  useSeoHead({ title: 'Auditoria SEO — Admin', description: 'Auditoria de sitemap.xml e robots.txt.' });
+export default function AdminSitemapAuditPage() {
+  useSeoHead({ title: 'Auditoria Sitemap Auditoria SEO — Admin Robots — Admin', description: 'Auditoria de sitemap.xml e robots.txt.' });
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);

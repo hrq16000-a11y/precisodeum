@@ -85,7 +85,7 @@ const AdminAuthMetricsPage = lazy(() => import("./pages/admin/AdminAuthMetricsPa
 const AdminConsentRevocationsPage = lazy(() => import("./pages/admin/AdminConsentRevocationsPage"));
 const AdminIntegrityReportsPage = lazy(() => import("./pages/admin/AdminIntegrityReportsPage"));
 const AdminInboxPage = lazy(() => import("./pages/admin/AdminInboxPage"));
-const AdminSeoAuditPage = lazy(() => import("./pages/admin/AdminSeoAuditPage"));
+const AdminSitemapAuditPage = lazy(() => import("./pages/admin/AdminSitemapAuditPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
@@ -505,7 +505,7 @@ const App = () => {
                 <Route path="/admin/onboarding-funnel" element={<AdminGuard><AdminOnboardingFunnelPage /></AdminGuard>} />
                 <Route path="/admin/integridade" element={<AdminGuard><AdminIntegrityReportsPage /></AdminGuard>} />
                 <Route path="/admin/caixa-notificacoes" element={<AdminGuard><AdminInboxPage /></AdminGuard>} />
-                <Route path="/admin/seo-audit" element={<AdminGuard><AdminSeoAuditPage /></AdminGuard>} />
+                <Route path="/admin/sitemap-audit" element={<AdminGuard><AdminSitemapAuditPage /></AdminGuard>} />
                 <Route path="/admin/erros-500" element={<AdminError500Page />} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
                 <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
