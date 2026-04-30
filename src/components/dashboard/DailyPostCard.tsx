@@ -189,12 +189,15 @@ export default function DailyPostCard() {
           >
             <div className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-3">
               {active.image_url ? (
-                <img
-                  src={active.image_url}
-                  alt="Obra do Dia"
-                  loading="lazy"
-                  className="mb-2 max-h-48 w-full rounded-lg object-cover"
-                />
+                <div className="relative mb-2 max-h-48 w-full overflow-hidden rounded-lg" style={{ aspectRatio: '16/9' }}>
+                  <LazyImage
+                    src={active.image_url}
+                    alt="Obra do Dia"
+                    sizesPreset="card-wide"
+                    surface="daily-post-active"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
               ) : null}
               <p className="text-sm text-foreground">{active.caption}</p>
               <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
