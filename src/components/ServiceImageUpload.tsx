@@ -8,6 +8,7 @@ import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils'
 import { generateBlurDataUrl } from '@/lib/compressImage';
 import { uploadWithFallback } from '@/lib/uploadWithFallback';
 import { UploadTimeoutError } from '@/lib/uploadResilient';
+import { validateImageFile } from '@/lib/imageValidation';
 import {
   UploadProgressIndicator,
   makeInitialStages,
