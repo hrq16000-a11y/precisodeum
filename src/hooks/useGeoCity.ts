@@ -327,11 +327,12 @@ function getSnapshot(): GeoData {
 export function useGeoCity(): GeoStore {
   const data = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const setCity = useCallback((city: string, state?: string, latitude?: number | null, longitude?: number | null) => {
+  const setCity = useCallback((city: string, state?: string, latitude?: number | null, longitude?: number | null, neighborhood?: string | null) => {
     const uf = normalizeUF(state) || undefined;
     safeSet(CITY_KEY, city);
     safeSet(OVERRIDE_KEY, 'true');
     if (uf) safeSet(STATE_KEY, uf);
+    if (typeof neighborhood === 'string') safeSet(NEIGHBORHOOD_KEY, neighborhood);
 
     if (latitude !== undefined && latitude !== null) safeSet(LAT_KEY, String(latitude));
     else {
@@ -349,6 +350,7 @@ export function useGeoCity(): GeoStore {
     setGeoState({
       city,
       state: uf || geoState.state,
+      neighborhood: typeof neighborhood === 'string' ? neighborhood : geoState.neighborhood,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
       manualOverride: true,
@@ -361,19 +363,19 @@ export function useGeoCity(): GeoStore {
   const requestPreciseLocation = useCallback(async (options?: { force?: boolean }) => {
     const force = !!options?.force;
     if (typeof window === 'undefined' || !navigator.geolocation) {
-      return { ok: false, city: null, state: null };
+      return { ok: false, city: null, state: null, neighborhood: null };
     }
-    if (!force && geoState.manualOverride) return { ok: false, city: null, state: null };
+    if (!force && geoState.manualOverride) return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood };
     if (!force && geoState.precise && geoState.latitude !== null && geoState.longitude !== null) {
-      return { ok: true, city: geoState.city, state: geoState.state };
+      return { ok: true, city: geoState.city, state: geoState.state, neighborhood: geoState.neighborhood };
     }
 
     if (!force) {
       try {
-        if (sessionStorage.getItem(GEO_ASKED_KEY)) return { ok: false, city: null, state: null };
+          if (sessionStorage.getItem(GEO_ASKED_KEY)) return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood };
         sessionStorage.setItem(GEO_ASKED_KEY, '1');
       } catch {
-        return { ok: false, city: null, state: null };
+        return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood };
       }
     } else {
       // Explicit user-triggered request: clear the once-per-session guard so
@@ -407,6 +409,7 @@ export function useGeoCity(): GeoStore {
 
           if (city) safeSet(CITY_KEY, city);
           if (state) safeSet(STATE_KEY, state);
+          if (neighborhood) safeSet(NEIGHBORHOOD_KEY, neighborhood);
           if (temp !== null) safeSet(TEMP_KEY, String(temp));
           safeSet(LAT_KEY, String(latitude));
           safeSet(LON_KEY, String(longitude));
@@ -416,7 +419,7 @@ export function useGeoCity(): GeoStore {
           safeSet(LAST_KNOWN_KEY, ts2);
           try { localStorage.removeItem(OVERRIDE_KEY); sessionStorage.removeItem(OVERRIDE_KEY); } catch {}
 
-          setGeoState({ city, state, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2, manualOverride: false });
+          setGeoState({ city, state, neighborhood, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2, manualOverride: false });
           resolve({ ok: true, city, state, accuracyMeters, neighborhood });
         },
         () => {
