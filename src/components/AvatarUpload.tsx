@@ -74,18 +74,28 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
               fd.append('folder', userId);
               return fd;
             },
-            onStage: ({ stage, status }) => {
+            onStage: ({ stage, status, errorKind, errorMessage }) => {
               setStages((prev) => {
                 if (stage === 'fallback') return prev;
+                if (status === 'error') {
+                  return {
+                    ...prev,
+                    [stage]: 'error',
+                    errorStage: stage as any,
+                    errorKind: errorKind ?? 'unknown',
+                    errorMessage: errorMessage ?? null,
+                  };
+                }
                 return {
                   ...prev,
-                  [stage]: status === 'start' ? 'active' : status === 'error' ? 'error' : 'done',
+                  [stage]: status === 'start' ? 'active' : 'done',
                 };
               });
             },
             onAttempt: (a, max, reason) => {
               setAttemptInfo({ attempt: a, max, reason });
               if (a > 1) {
+                setStages((prev) => ({ ...prev, retry: 'active' }));
                 const msg =
                   reason === 'timeout'
                     ? `Tempo esgotado. Tentando novamente (${a}/${max})…`
@@ -127,13 +137,17 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
           toast.success('Foto atualizada!');
         }
       } catch (err) {
-        setStages((prev) => ({ ...prev, upload: 'error' }));
+        const kind = classifyUploadError(err);
+        setStages((prev) => ({
+          ...prev,
+          upload: prev.errorStage ? prev.upload : 'error',
+          errorStage: prev.errorStage ?? 'upload',
+          errorKind: prev.errorKind ?? kind,
+          errorMessage: prev.errorMessage ?? (err as any)?.message ?? null,
+          retry: 'pending',
+        }));
         setHasFailed(true);
-        if (err instanceof UploadTimeoutError) {
-          toast.error('Conexão muito lenta. Toque em "Tentar novamente".');
-        } else {
-          toast.error('Erro ao enviar imagem. Toque em "Tentar novamente".');
-        }
+        toast.error(userMessageFor(kind));
       } finally {
         setUploading(false);
       }
