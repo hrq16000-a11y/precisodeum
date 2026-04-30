@@ -111,9 +111,13 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
   const [params] = useSearchParams();
   const next = params.get('next') || '/dashboard';
   const { user, profile, refetchProfile } = useAuth();
-  const [state, dispatch] = useReducer(reducer, initialBetState);
+  const [state, dispatch] = useReducer(reducer, undefined as unknown as BetState, () => loadBetDraft());
 
   useSeoHead({ title: 'Cadastro express', description: 'Cadastro rápido para começar agora.', noindex: true });
+
+  // Persiste rascunho local — preserva nome/WhatsApp/cidade/bairro através de
+  // reload, troca de aba e do botão "Voltar" do navegador.
+  useBetDraft(state);
 
   // Reporta mudanças de fase para a barra de progresso global do WizardShell.
   useEffect(() => {
@@ -134,6 +138,17 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
     }});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
+
+  // Listener do "Voltar" global emitido pelo WizardShell. Sem isso o botão era
+  // no-op em todas as fases do Bet Mode (V2Shell já tinha listener próprio).
+  useEffect(() => {
+    function handleBack() {
+      const prev = BET_BACK_MAP[state.phase];
+      if (prev) dispatch({ type: 'GOTO', phase: prev });
+    }
+    window.addEventListener('wizard:request-back', handleBack as EventListener);
+    return () => window.removeEventListener('wizard:request-back', handleBack as EventListener);
+  }, [state.phase]);
 
   const patch = (p: Partial<BetState>) => dispatch({ type: 'PATCH', patch: p });
   const goto = (phase: BetPhase) => dispatch({ type: 'GOTO', phase });
