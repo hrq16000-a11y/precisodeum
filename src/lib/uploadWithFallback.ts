@@ -28,6 +28,8 @@ export interface UploadFallbackResult<T> {
   fallbackLevel: number;
   /** Tamanho final (bytes) do arquivo enviado. */
   finalSize: number;
+  /** Perfil adaptativo aplicado na primeira tentativa (debug/telemetria). */
+  adaptiveProfile?: AdaptiveProfile;
 }
 
 export interface UploadStageEvent {
