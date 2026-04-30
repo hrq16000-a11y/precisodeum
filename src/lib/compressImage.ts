@@ -204,20 +204,19 @@ export async function compressImage(
     const result = await canvasToFile(canvas, format.mime, q, file.name, format.ext);
     if (!result) continue;
 
-    // Keep track of smallest successful result
     if (!bestResult || result.size < bestResult.size) {
       bestResult = result;
     }
-
-    // If under target, we're done
     if (result.size <= targetBytes) {
+      onStage?.('compress', 'done');
       return result;
     }
   }
 
   // Pass 2: if AVIF/WebP didn't hit target, try the other format
   if (bestResult && bestResult.size > targetBytes && format.mime !== 'image/webp') {
-    const webpSupported = formatSupportCache.get('image/webp') ?? await supportsFormat('image/webp');
+    const webpSupported =
+      formatSupportCache.get('image/webp') ?? (await supportsFormat('image/webp'));
     if (webpSupported) {
       for (const q of qualitySteps) {
         const result = await canvasToFile(canvas, 'image/webp', q, file.name, 'webp');
@@ -225,7 +224,10 @@ export async function compressImage(
         if (!bestResult || result.size < bestResult.size) {
           bestResult = result;
         }
-        if (result.size <= targetBytes) return result;
+        if (result.size <= targetBytes) {
+          onStage?.('compress', 'done');
+          return result;
+        }
       }
     }
   }
@@ -247,14 +249,16 @@ export async function compressImage(
       if (result.size < bestResult.size) {
         bestResult = result;
       }
-      if (result.size <= targetBytes) return result;
+      if (result.size <= targetBytes) {
+        onStage?.('compress', 'done');
+        return result;
+      }
     }
   }
 
-  // Return best result if it's smaller than original, otherwise original
+  onStage?.('compress', 'done');
   if (bestResult && bestResult.size < file.size) {
     return bestResult;
   }
-
   return file;
 }
