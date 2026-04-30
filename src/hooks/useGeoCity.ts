@@ -138,6 +138,39 @@ async function reverseGeocode(latitude: number, longitude: number) {
   }
 }
 
+/**
+ * Reverse geocode via Nominatim (OpenStreetMap). Mais preciso para bairros no Brasil
+ * que o BigDataCloud. Usado como fallback quando o bairro não veio na primeira tentativa.
+ */
+async function reverseGeocodeNominatim(latitude: number, longitude: number): Promise<{ city: string | null; state: string | null; neighborhood: string | null } | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=jsonv2&accept-language=pt-BR&zoom=18&addressdetails=1`,
+      { signal: controller.signal, headers: { 'Accept': 'application/json' } }
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    const addr = data?.address || {};
+    const neighborhood =
+      addr.neighbourhood ||
+      addr.suburb ||
+      addr.quarter ||
+      addr.city_district ||
+      addr.residential ||
+      addr.hamlet ||
+      null;
+    const city = addr.city || addr.town || addr.village || addr.municipality || null;
+    const state = addr.state_code || addr.state || null;
+    return { city, state, neighborhood };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function fetchGeoFromEdge(): Promise<{ city: string | null; state: string | null; temp: number | null }> {
   const baseUrl = import.meta.env.VITE_SUPABASE_URL;
   const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
