@@ -197,6 +197,7 @@ const AdminCoursesPage = lazy(() => import("./pages/AdminCoursesPage"));
 const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
 const AgencyPublicPage = lazy(() => import("./pages/AgencyPublicPage"));
 const DashboardAgencyDataPage = lazy(() => import("./pages/DashboardAgencyDataPage"));
+const DashboardCompanyDataPage = lazy(() => import("./pages/DashboardCompanyDataPage"));
 const SponsorPublicPage = lazy(() => import("./pages/SponsorPublicPage"));
 const SponsorPublicProfilePage = lazy(() => import("./pages/sponsor/SponsorPublicProfilePage"));
 const CadastroInicialPage = lazy(() => import("./pages/CadastroInicialPage"));
@@ -475,6 +476,7 @@ const App = () => {
                 <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMyPagePage /></ProtectedRoute>} />
                 <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/agencia" element={<ProtectedRoute allowedTypes={['rh']}><DashboardAgencyDataPage /></ProtectedRoute>} />
+                <Route path="/dashboard/empresa" element={<ProtectedRoute allowedTypes={['provider']}><DashboardCompanyDataPage /></ProtectedRoute>} />
                 <Route path="/dashboard/comunidade" element={<ProtectedRoute><DashboardCommunityPage /></ProtectedRoute>} />
                 <Route path="/dashboard/notificacoes" element={<ProtectedRoute><DashboardNotificationsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/privacidade" element={<ProtectedRoute><DashboardPrivacyPage /></ProtectedRoute>} />

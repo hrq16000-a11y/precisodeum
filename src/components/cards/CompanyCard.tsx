@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, MapPin, MessageCircle, ExternalLink, Star } from 'lucide-react';
+import { Building2, MapPin, MessageCircle, ExternalLink, Star, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { DbProvider } from '@/hooks/useProviders';
@@ -53,15 +53,29 @@ const CompanyCard = memo(function CompanyCard({
   );
 
   const logoSrc = (p.photo || '').trim();
-  const fullAddress = [
-    [p.street, p.streetNumber].filter(Boolean).join(', '),
-    p.complement,
-    p.neighborhood,
-    [p.city, p.state].filter(Boolean).join(' - '),
-    p.postalCode,
-  ]
-    .filter((s) => !!s && String(s).trim().length > 0)
-    .join(' • ');
+
+  // Detecta se há ponto físico (qualquer dado de endereço institucional).
+  const hasPhysicalLocation = Boolean(
+    (p.street && p.street.trim()) ||
+    (p.streetNumber && p.streetNumber.trim()) ||
+    (p.postalCode && p.postalCode.trim()),
+  );
+  const showFull = p.showFullAddress === true;
+
+  // Endereço público completo apenas com toggle ON; senão, bairro/cidade.
+  const publicAddress = showFull
+    ? [
+        [p.street, p.streetNumber].filter(Boolean).join(', '),
+        p.complement,
+        p.neighborhood,
+        [p.city, p.state].filter(Boolean).join(' - '),
+        p.postalCode,
+      ]
+        .filter((s) => !!s && String(s).trim().length > 0)
+        .join(' • ')
+    : [p.neighborhood, [p.city, p.state].filter(Boolean).join(' - ')]
+        .filter((s) => !!s && String(s).trim().length > 0)
+        .join(' • ');
 
   const profileHref = `/empresa/${p.slug || p.id}`;
 
@@ -168,26 +182,46 @@ const CompanyCard = memo(function CompanyCard({
         </div>
       </div>
 
-      {/* Banda inferior — endereço institucional (Maps) */}
-      {fullAddress && (
-        <a
-          href={buildMapsHref([
-            p.street,
-            p.streetNumber,
-            p.neighborhood,
-            p.city,
-            p.state,
-            p.postalCode,
-          ])}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-2.5 text-[12px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-          aria-label={`Abrir endereço de ${displayName} no Google Maps`}
-        >
-          <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="min-w-0 flex-1 truncate">{fullAddress}</span>
-          <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
-        </a>
+      {/* Badge — indica unidade física, sem revelar endereço quando privacidade off */}
+      {hasPhysicalLocation && (
+        <div className="flex items-center gap-2 border-t border-border bg-amber-500/5 px-4 py-2 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+          <Store className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>Ponto de Atendimento Físico</span>
+        </div>
+      )}
+
+      {/* Banda inferior — endereço (público ou parcial conforme privacidade). */}
+      {publicAddress && (
+        showFull ? (
+          <a
+            href={buildMapsHref([
+              p.street,
+              p.streetNumber,
+              p.neighborhood,
+              p.city,
+              p.state,
+              p.postalCode,
+            ])}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-2.5 text-[12px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            aria-label={`Abrir endereço de ${displayName} no Google Maps`}
+          >
+            <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate">{publicAddress}</span>
+            <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
+          </a>
+        ) : (
+          <div
+            className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-2.5 text-[12px] text-muted-foreground"
+            aria-label={`Localização aproximada de ${displayName}`}
+          >
+            <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate">
+              {hasPhysicalLocation ? `Atende em ${publicAddress}` : publicAddress}
+            </span>
+          </div>
+        )
       )}
     </article>
   );

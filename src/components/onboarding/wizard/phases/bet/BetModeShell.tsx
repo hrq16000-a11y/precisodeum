@@ -321,6 +321,17 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         state: state.state,
         neighborhood: (state.neighborhood || '').trim(),
         description: '',
+        // PJ — endereço institucional (opcional). normalizeProviderPayload
+        // remove silenciosamente para PF e sanitiza para PJ.
+        ...(isPj
+          ? {
+              street: state.street,
+              street_number: state.street_number,
+              complement: state.complement,
+              postal_code: state.postal_code,
+              show_full_address: state.show_full_address === true,
+            }
+          : {}),
       });
 
       const upsertResult = await safeWizardSave({

@@ -77,15 +77,38 @@ export const PROVIDER_FORBIDDEN_ADDRESS_KEYS = [
 ] as const;
 
 /**
- * Chaves de endereço institucional que SÃO colunas válidas em `providers`,
- * mas só fazem sentido para perfis PJ. Para autônomos, são removidas.
+ * Chaves institucionais (endereço + identidade da empresa) que SÃO colunas
+ * válidas em `providers`, mas só fazem sentido para perfis PJ. Para autônomos
+ * são silenciosamente removidas.
+ *
+ * Inclui:
+ *  - `show_full_address` — toggle de privacidade do endereço.
+ *  - `business_segment`, `cnpj`, `business_name`, `legal_name` — identidade.
+ *  - `street`, `street_number`, `complement`, `postal_code` — endereço.
  */
 export const PROVIDER_PJ_ADDRESS_KEYS = [
   'street',
   'street_number',
   'complement',
   'postal_code',
+  'show_full_address',
+  'business_segment',
+  'cnpj',
+  'business_name',
+  'legal_name',
 ] as const;
+
+/** Subconjunto das chaves PJ que são strings opcionais (vs boolean). */
+const PROVIDER_PJ_STRING_KEYS = new Set<string>([
+  'street',
+  'street_number',
+  'complement',
+  'postal_code',
+  'business_segment',
+  'cnpj',
+  'business_name',
+  'legal_name',
+]);
 
 /**
  * Normaliza um payload de provider antes do insert/update.
@@ -114,19 +137,33 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
     }
   }
 
-  // 1b) Chaves PJ — só permanecem para empresas; para PF são silenciosamente removidas
+  // 1b) Chaves institucionais — `business_name` e `legal_name` valem para
+  //     PF e PJ (apenas saneadas). As demais (endereço, segmento, CNPJ,
+  //     show_full_address) são removidas silenciosamente para PF.
+  const PJ_ONLY_KEYS = new Set<string>([
+    'street', 'street_number', 'complement', 'postal_code',
+    'show_full_address', 'business_segment', 'cnpj',
+  ]);
+
   if (!isCompany) {
     for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
-      if (key in out) {
+      if (PJ_ONLY_KEYS.has(key) && key in out) {
         stripped.push(key);
         delete out[key];
+      } else if (key in out && PROVIDER_PJ_STRING_KEYS.has(key)) {
+        // PF mantém business_name/legal_name, apenas saneia.
+        out[key] = safeOptionalString(out[key]);
       }
     }
   } else {
-    // Para empresas: sanitiza (trim + nullify de strings vazias) sem deletar
+    // PJ: sanitiza strings (trim + null em vazias). show_full_address
+    //      permanece booleano — não passar por safeOptionalString.
     for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
-      if (key in out) {
+      if (!(key in out)) continue;
+      if (PROVIDER_PJ_STRING_KEYS.has(key)) {
         out[key] = safeOptionalString(out[key]);
+      } else if (key === 'show_full_address') {
+        out[key] = out[key] === true;
       }
     }
   }

@@ -164,6 +164,11 @@ export default function WizardShell() {
             pro_kind: profileSeed.kind,
             document: profileSeed.document,
             company_name: '',
+            street: '',
+            street_number: '',
+            complement: '',
+            postal_code: '',
+            show_full_address: false,
             points: Number(profile?.engagement_points ?? state.triage.points ?? 0),
             rewards: {
               name: true,

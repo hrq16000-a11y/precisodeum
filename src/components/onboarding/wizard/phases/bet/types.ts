@@ -22,6 +22,13 @@ export interface BetState {
   pro_kind: BetProKind | null;
   document: string;            // CPF (11) ou CNPJ (14)
   company_name: string;        // PJ apenas
+  /** PJ — endereço institucional opcional ("ponto de atendimento físico"). */
+  street: string;
+  street_number: string;
+  complement: string;
+  postal_code: string;
+  /** PJ — toggle de privacidade. Se true exibe rua/nº no card; se false só bairro/cidade. */
+  show_full_address: boolean;
   points: number;              // contador exibido
   rewards: {
     name: boolean;
@@ -43,6 +50,11 @@ export const initialBetState: BetState = {
   pro_kind: null,
   document: '',
   company_name: '',
+  street: '',
+  street_number: '',
+  complement: '',
+  postal_code: '',
+  show_full_address: false,
   points: 0,
   rewards: {
     name: false,

@@ -124,6 +124,7 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
           complement: p.complement ?? null,
           postalCode: p.postal_code ?? null,
           socialLinks: (p.social_links as any) ?? null,
+          showFullAddress: p.show_full_address === true,
         };
       });
     },

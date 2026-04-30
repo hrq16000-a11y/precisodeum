@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText, RotateCcw } from 'lucide-react';
+import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText, RotateCcw, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
@@ -947,6 +947,39 @@ const DashboardPage = () => {
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold text-foreground">Ver Minha Página</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Veja como seu perfil aparece para os clientes</p>
+                </div>
+              </div>
+            </GlassCard>
+          )}
+
+          {profile?.profile_type === 'provider' && (provider as any)?.account_type === 'company' && (
+            <GlassCard
+              variant="default"
+              delay={0.65}
+              className="cursor-pointer"
+              onClick={() => navigate('/dashboard/empresa')}
+              data-tour="company-data"
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-foreground">
+                    Minha Empresa <span className="text-[10px] font-medium text-muted-foreground">(Opcional)</span>
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Endereço, segmento e privacidade do seu ponto físico.
+                  </p>
+                  {(provider as any)?.show_full_address ? (
+                    <span className="inline-block mt-1.5 text-[11px] font-medium text-emerald-600">
+                      Endereço público ativo
+                    </span>
+                  ) : (
+                    <span className="inline-block mt-1.5 text-[11px] font-medium text-muted-foreground">
+                      Endereço completo oculto
+                    </span>
+                  )}
                 </div>
               </div>
             </GlassCard>

@@ -80,6 +80,8 @@ export interface DbProvider {
   socialLinks?: Record<string, string> | null;
   /** PJ: razão social. */
   legalName?: string | null;
+  /** PJ: indica se rua/número devem ser exibidos publicamente. */
+  showFullAddress?: boolean;
 }
 
 export type FeaturedProviderSort = 'proximity' | 'category' | 'availability';
