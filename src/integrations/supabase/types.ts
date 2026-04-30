@@ -6725,6 +6725,51 @@ export type Database = {
         }
         Relationships: []
       }
+      web_vitals_log: {
+        Row: {
+          connection_type: string | null
+          created_at: string
+          device_pixel_ratio: number | null
+          id: string
+          metric: string
+          navigation_type: string | null
+          rating: string | null
+          route: string
+          user_agent: string | null
+          user_id: string | null
+          value: number
+          viewport: string | null
+        }
+        Insert: {
+          connection_type?: string | null
+          created_at?: string
+          device_pixel_ratio?: number | null
+          id?: string
+          metric: string
+          navigation_type?: string | null
+          rating?: string | null
+          route: string
+          user_agent?: string | null
+          user_id?: string | null
+          value: number
+          viewport?: string | null
+        }
+        Update: {
+          connection_type?: string | null
+          created_at?: string
+          device_pixel_ratio?: number | null
+          id?: string
+          metric?: string
+          navigation_type?: string | null
+          rating?: string | null
+          route?: string
+          user_agent?: string | null
+          user_id?: string | null
+          value?: number
+          viewport?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_templates: {
         Row: {
           content: string
