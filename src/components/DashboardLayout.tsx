@@ -16,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { DashboardHealthCheck } from '@/components/dashboard/DashboardHealthCheck';
 import NotificationPermissionGate from '@/components/dashboard/NotificationPermissionGate';
 import { useDashboardSessionPing } from '@/hooks/useDashboardSessionPing';
+import ErrorGuard from '@/components/ErrorGuard';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
@@ -440,7 +441,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             )}
             <DashboardHealthCheck />
             <NotificationPermissionGate />
-            {children}
+            <ErrorGuard componentName="DashboardLayout" fallbackRoute="/dashboard">
+              {children}
+            </ErrorGuard>
           </motion.div>
         </AnimatePresence>
       </main>

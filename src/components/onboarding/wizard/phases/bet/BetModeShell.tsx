@@ -19,7 +19,7 @@
  *  - Profissional: completa identificação básica e segue no fluxo único para
  *    criar o 1º serviço sem repetir nome, WhatsApp e cidade já capturados.
  */
-import { useEffect, useMemo, useReducer } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,6 +28,7 @@ import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
 import { useSeoHead } from '@/hooks/useSeoHead';
+import { betDraftPayloadSchema, providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
 
 import PointsHud from './PointsHud';
 import PhaseIdentity from './PhaseIdentity';
@@ -41,6 +42,7 @@ import PhaseCelebration from './PhaseCelebration';
 import { initialBetState, type BetState, type BetIntent, type BetPhase } from './types';
 import { setOnboardingIntent } from '../v2/telemetry';
 import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
+import { useBetRemoteDraft, fetchRemoteBetDraft, clearRemoteBetDraft } from './useBetRemoteDraft';
 
 /** Ordem das fases — usado para resolver o "Voltar" global em uma fase anterior. */
 const BET_BACK_MAP: Partial<Record<BetPhase, BetPhase>> = {
@@ -119,6 +121,43 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
   // reload, troca de aba e do botão "Voltar" do navegador.
   useBetDraft(state);
 
+  // Hidratação remota (cross-device): se o user tem draft no banco mais recente
+  // que o local, mescla. Fail-soft. `remoteReady` libera persistência remota.
+  const [remoteReady, setRemoteReady] = useState(false);
+  const hydratedFromRemote = useRef(false);
+  useEffect(() => {
+    if (!user?.id || hydratedFromRemote.current) return;
+    hydratedFromRemote.current = true;
+    void (async () => {
+      try {
+        const remote = await fetchRemoteBetDraft(user.id);
+        if (remote?.payload) {
+          const parsed = safeParse(betDraftPayloadSchema, remote.payload);
+          if (parsed.ok) {
+            // Merge não-destrutivo: só preenche campos vazios localmente.
+            const incoming = parsed.data as Partial<BetState>;
+            const patchObj: Partial<BetState> = {};
+            (Object.keys(incoming) as Array<keyof BetState>).forEach((k) => {
+              const cur = (state as any)[k];
+              const inc = (incoming as any)[k];
+              const isEmpty = cur === '' || cur === null || cur === undefined;
+              if (isEmpty && inc !== undefined && inc !== null && inc !== '') {
+                (patchObj as any)[k] = inc;
+              }
+            });
+            if (Object.keys(patchObj).length > 0) dispatch({ type: 'PATCH', patch: patchObj });
+          }
+        }
+      } finally {
+        setRemoteReady(true);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Persistência remota (debounced) — só liga após hidratação inicial.
+  useBetRemoteDraft(state, user?.id, { ready: remoteReady });
+
   // Reporta mudanças de fase para a barra de progresso global do WizardShell.
   useEffect(() => {
     onPhaseChange?.(state.phase);
@@ -139,15 +178,52 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
 
-  // Listener do "Voltar" global emitido pelo WizardShell. Sem isso o botão era
-  // no-op em todas as fases do Bet Mode (V2Shell já tinha listener próprio).
+  // Listener do "Voltar" global emitido pelo WizardShell + suporte ao botão
+  // "Voltar" do NAVEGADOR via history.pushState/popstate. Cada mudança de fase
+  // empurra um state com a fase atual; o popstate restaura a fase anterior.
+  const lastPushedPhase = useRef<BetPhase | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (state.phase === 'done') return;
+    // Pula a primeira fase (já está na URL atual). Apenas push em mudanças.
+    if (lastPushedPhase.current === null) {
+      lastPushedPhase.current = state.phase;
+      // Substitui o state atual com a fase para o popstate poder ler.
+      try { window.history.replaceState({ wizardPhase: state.phase }, ''); } catch {}
+      return;
+    }
+    if (lastPushedPhase.current !== state.phase) {
+      lastPushedPhase.current = state.phase;
+      try { window.history.pushState({ wizardPhase: state.phase }, ''); } catch {}
+    }
+  }, [state.phase]);
+
   useEffect(() => {
     function handleBack() {
       const prev = BET_BACK_MAP[state.phase];
       if (prev) dispatch({ type: 'GOTO', phase: prev });
     }
+    function handlePopState(ev: PopStateEvent) {
+      const target = ev.state?.wizardPhase as BetPhase | undefined;
+      if (target && target !== state.phase) {
+        // Restaura a fase do history sem empurrar nova entrada.
+        lastPushedPhase.current = target;
+        dispatch({ type: 'GOTO', phase: target });
+      } else {
+        // Fallback: comporta-se como o "Voltar" do wizard.
+        const prev = BET_BACK_MAP[state.phase];
+        if (prev) {
+          lastPushedPhase.current = prev;
+          dispatch({ type: 'GOTO', phase: prev });
+        }
+      }
+    }
     window.addEventListener('wizard:request-back', handleBack as EventListener);
-    return () => window.removeEventListener('wizard:request-back', handleBack as EventListener);
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('wizard:request-back', handleBack as EventListener);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [state.phase]);
 
   const patch = (p: Partial<BetState>) => dispatch({ type: 'PATCH', patch: p });
@@ -180,6 +256,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await addSessionPointsToProfile();
       await refetchProfile?.();
       clearBetDraft();
+      void clearRemoteBetDraft(user.id);
       navigate('/dashboard/agencia', { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_rh' } });
@@ -213,6 +290,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await addSessionPointsToProfile();
       await refetchProfile?.();
       clearBetDraft();
+      void clearRemoteBetDraft(user.id);
       navigate('/quero-ser-patrocinador', { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_sponsor' } });
@@ -277,6 +355,8 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
           whatsapp: state.whatsapp,
           city: state.city,
           state: state.state,
+          // Bairro do cliente (opcional) — refina a busca por proximidade.
+          neighborhood: (state.neighborhood || '').trim() || null,
           profile_type: 'client',
           onboarding_step: 5,
           onboarding_completed: true,
@@ -287,6 +367,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await refetchProfile?.();
       toast.success(`+${state.points} pts conquistados!`, { description: 'Bem-vindo. Levando você ao destino…' });
       clearBetDraft();
+      void clearRemoteBetDraft(user.id);
       navigate(next, { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_client' } });
@@ -361,6 +442,17 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
             }
           : {}),
       });
+
+      // Validação Zod ANTES de bater no banco — falha cedo e clara.
+      const validation = safeParse(providerWritePayloadSchema, providerPayload);
+      if (validation.ok === false) {
+        toast.error('Dados incompletos', { description: validation.message });
+        logWizardError({
+          phase: 'phase1_contact', userId: user.id, error: new Error('zod_validation_failed'),
+          variant: 'v1', context: { action: 'bet_finish_pro_validation', issues: validation.issues.slice(0, 3) },
+        });
+        return;
+      }
 
       const upsertResult = await safeWizardSave({
         phase: 'phase1_contact',
@@ -437,11 +529,13 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       // Limpamos o draft do Bet para evitar reidratação fantasma se o usuário
       // voltar ao /cadastro-inicial mais tarde.
       clearBetDraft();
+      if (user?.id) void clearRemoteBetDraft(user.id);
       onInternalHandoff(state);
     } else {
       // Fallback (não deve ocorrer no fluxo unificado): mantém o usuário na
       // mesma rota e força um reload — impede loop em rotas legadas.
       clearBetDraft();
+      if (user?.id) void clearRemoteBetDraft(user.id);
       navigate('/cadastro-inicial', { replace: true });
     }
   }

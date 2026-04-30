@@ -1,12 +1,13 @@
 /** Phase Pro Location — cidade + bairro do profissional. */
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Home, LocateFixed, Info } from 'lucide-react';
+import { ArrowRight, MapPin, Home, LocateFixed, Info, AlertTriangle, Search } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { fieldWin } from '@/lib/betDopamine';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { lookupCepFromCity } from '@/lib/cepReverseLookup';
 import { toast } from 'sonner';
 import { BET_POINTS, type BetState } from './types';
 
@@ -21,6 +22,9 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
   const [awarded, setAwarded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requestingGps, setRequestingGps] = useState(false);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [cepSuggestion, setCepSuggestion] = useState<string | null>(null);
+  const [cepLoading, setCepLoading] = useState(false);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
   const autoFilledRef = useRef(false);
@@ -37,6 +41,27 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     }
   }, [geo.city, geo.state, state.city, patch]);
 
+  // Auto-busca de CEP quando cidade + bairro estão preenchidos.
+  // Debounce 600ms para não bater no ViaCEP a cada tecla.
+  useEffect(() => {
+    const city = state.city.trim();
+    const uf = state.state.trim().toUpperCase();
+    const bairro = (state.neighborhood || '').trim();
+    if (city.length < 2 || uf.length !== 2 || bairro.length < 3) {
+      setCepSuggestion(null);
+      return;
+    }
+    let cancelled = false;
+    setCepLoading(true);
+    const t = window.setTimeout(async () => {
+      const r = await lookupCepFromCity({ city, state: uf, neighborhood: bairro });
+      if (cancelled) return;
+      setCepLoading(false);
+      setCepSuggestion(r.ok ? r.match.cep : null);
+    }, 600);
+    return () => { cancelled = true; window.clearTimeout(t); setCepLoading(false); };
+  }, [state.city, state.state, state.neighborhood]);
+
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
     autoFilledRef.current = true; // edição manual cancela auto-preenchimento
@@ -52,6 +77,12 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     patch({ neighborhood: e.target.value });
   }
 
+  function applyCepSuggestion() {
+    if (!cepSuggestion) return;
+    patch({ postal_code: cepSuggestion });
+    toast.success('CEP preenchido automaticamente', { description: cepSuggestion });
+  }
+
   async function handleUseGps() {
     if (requestingGps) return;
     setRequestingGps(true);
@@ -60,14 +91,22 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
       if (result.ok && result.city && result.state) {
         autoFilledRef.current = true;
         patch({ city: result.city, state: result.state });
+        setGpsAccuracy(result.accuracyMeters ?? null);
         if (!awarded) {
           setAwarded(true);
           addPoints(BET_POINTS.city);
           fieldWin();
         }
-        toast.success('Localização detectada por GPS', {
-          description: `${result.city} / ${result.state}. Confira e ajuste o bairro se precisar.`,
-        });
+        const acc = result.accuracyMeters;
+        if (acc != null && acc > 500) {
+          toast.warning('GPS impreciso', {
+            description: `Margem de ~${Math.round(acc)}m. Confirme bairro e cidade manualmente.`,
+          });
+        } else {
+          toast.success('Localização detectada por GPS', {
+            description: `${result.city} / ${result.state}${acc != null ? ` (±${Math.round(acc)}m)` : ''}. Confira o bairro.`,
+          });
+        }
       } else {
         toast.error('Não consegui acessar o GPS', {
           description: 'Permita a localização no navegador ou digite a cidade manualmente.',
@@ -86,6 +125,7 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     geo.source === 'ip' ? 'aproximada (IP)' :
     geo.source === 'manual' ? 'manual' :
     geo.source === 'cache' ? 'salva' : null;
+  const gpsImprecise = gpsAccuracy != null && gpsAccuracy > 500;
 
   async function onFinish() {
     if (!canFinish || submitting) return;
@@ -175,7 +215,34 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
         <p className="mt-1 text-[11px] text-muted-foreground">
           O bairro ajuda clientes da sua região a te encontrar mais rápido.
         </p>
+
+        {/* Sugestão automática de CEP a partir de cidade + bairro */}
+        {cepLoading && (
+          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Search className="h-3 w-3 animate-pulse" /> Procurando CEP do seu bairro…
+          </p>
+        )}
+        {!cepLoading && cepSuggestion && state.postal_code !== cepSuggestion && (
+          <button
+            type="button"
+            onClick={applyCepSuggestion}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+          >
+            <Search className="h-3 w-3" /> CEP encontrado: {cepSuggestion} — usar
+          </button>
+        )}
       </div>
+
+      {/* Aviso de GPS impreciso */}
+      {gpsImprecise && (
+        <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-xs text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-100">
+          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <p className="leading-snug">
+            GPS impreciso (margem de ~{Math.round(gpsAccuracy!)}m). <strong>Confirme o bairro</strong> manualmente
+            para garantir que clientes próximos te encontrem.
+          </p>
+        </div>
+      )}
 
       <Button
         size="lg"

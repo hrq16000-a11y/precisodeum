@@ -1,9 +1,10 @@
-/** Phase Client City — fast-pass: cidade e cadastro liberado. */
+/** Phase Client City — fast-pass: cidade + bairro (opcional) e cadastro liberado. */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Zap } from 'lucide-react';
+import { ArrowRight, MapPin, Zap, Home } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { fieldWin } from '@/lib/betDopamine';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { BET_POINTS, type BetState } from './types';
@@ -80,6 +81,22 @@ export default function PhaseClientCity({ state, patch, finish, addPoints }: Pro
             statusText={preferredUF ? `Mostrando primeiro cidades de ${preferredUF}` : undefined}
           />
         </div>
+      </div>
+
+      {/* Bairro opcional — refina a busca por proximidade. */}
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <label htmlFor="client-neighborhood" className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <Home className="h-3.5 w-3.5" /> Bairro
+          <span className="ml-1 text-[10px] font-normal normal-case text-muted-foreground/70">(opcional, melhora seu match)</span>
+        </label>
+        <Input
+          id="client-neighborhood"
+          value={state.neighborhood}
+          onChange={(e) => patch({ neighborhood: e.target.value })}
+          placeholder="Ex: Centro, Vila Nova"
+          autoComplete="address-level3"
+          maxLength={80}
+        />
       </div>
 
       <Button
