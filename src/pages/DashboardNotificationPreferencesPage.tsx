@@ -288,12 +288,37 @@ function NewLeadAlertSettings() {
             );
           })}
         </div>
+
+        {/* Resumo claro das regras vigentes */}
+        <div className="mt-3 rounded-lg border border-dashed border-border/70 bg-muted/30 p-3 text-[11px] leading-relaxed text-muted-foreground">
+          <p className="font-semibold text-foreground">Como funciona agora:</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-4">
+            <li>
+              {mode === 'off'
+                ? 'Modo silencioso ativo — nenhum alerta visual ou sonoro será emitido.'
+                : mode === 'sound'
+                ? 'Apenas o bip toca. Sem toast visual.'
+                : mode === 'toast'
+                ? 'Apenas o toast aparece. Sem som.'
+                : 'Toast + bip a cada novo lead.'}
+            </li>
+            <li>
+              {minIntervalSeconds === 0
+                ? 'Sem janela anti-spam — todo lead novo gera alerta imediatamente.'
+                : `Após um alerta, os próximos ficam suprimidos por ${minIntervalSeconds}s. A lista continua atualizada em tempo real.`}
+            </li>
+            <li>O sino e a inbox sempre recebem a notificação, mesmo em modo silencioso.</li>
+          </ul>
+        </div>
+
         {mode === 'off' && (
           <p className="mt-2 text-[11px] text-muted-foreground">
             O modo silencioso ignora o intervalo — nenhum alerta será emitido.
           </p>
         )}
       </div>
+
+      <RecentLeadsHistory />
     </>
   );
 }
