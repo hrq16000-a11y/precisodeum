@@ -54,16 +54,16 @@ function makeState(overrides: Partial<BetState> = {}): BetState {
 function renderPhase(state: BetState = makeState()) {
   const patch = vi.fn();
   const finish = vi.fn();
-  const addPoints = vi.fn();
+  const awardReward = vi.fn();
   const utils = render(
     <PhaseProLocation
       state={state}
       patch={patch}
       finish={finish}
-      addPoints={addPoints}
+      awardReward={awardReward}
     />,
   );
-  return { ...utils, patch, finish, addPoints };
+  return { ...utils, patch, finish, awardReward };
 }
 
 describe('PhaseProLocation — GPS imprecision & denial', () => {
@@ -119,7 +119,7 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
       state: null,
       accuracyMeters: null,
     });
-    const { patch, addPoints } = renderPhase();
+    const { patch, awardReward } = renderPhase();
     fireEvent.click(screen.getByRole('button', { name: /Usar minha localização/i }));
 
     await waitFor(() => {
@@ -130,6 +130,6 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
     });
     // Não pode patchar cidade nem dar pontos quando o GPS falha.
     expect(patch).not.toHaveBeenCalledWith(expect.objectContaining({ city: expect.any(String) }));
-    expect(addPoints).not.toHaveBeenCalled();
+    expect(awardReward).not.toHaveBeenCalled();
   });
 });
