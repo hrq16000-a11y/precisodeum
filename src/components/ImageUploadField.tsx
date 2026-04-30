@@ -6,7 +6,7 @@ import { Upload, Link as LinkIcon, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
 import { generateBlurDataUrl } from '@/lib/compressImage';
-import { UploadTimeoutError } from '@/lib/uploadResilient';
+import { classifyUploadError, userMessageFor } from '@/lib/uploadErrors';
 import { uploadWithFallback } from '@/lib/uploadWithFallback';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
 import { validateImageFile } from '@/lib/imageValidation';
@@ -86,18 +86,28 @@ const ImageUploadField = ({
           if (folder) fd.append('folder', folder);
           return fd;
         },
-        onStage: ({ stage, status }) => {
+        onStage: ({ stage, status, errorKind, errorMessage }) => {
           setStages((prev) => {
             if (stage === 'fallback') return prev;
+            if (status === 'error') {
+              return {
+                ...prev,
+                [stage]: 'error',
+                errorStage: stage as any,
+                errorKind: errorKind ?? 'unknown',
+                errorMessage: errorMessage ?? null,
+              };
+            }
             return {
               ...prev,
-              [stage]: status === 'start' ? 'active' : status === 'error' ? 'error' : 'done',
+              [stage]: status === 'start' ? 'active' : 'done',
             };
           });
         },
         onAttempt: (a, max, reason) => {
           setAttemptInfo({ attempt: a, max, reason });
           if (a > 1) {
+            setStages((prev) => ({ ...prev, retry: 'active' }));
             const msg =
               reason === 'timeout'
                 ? `Tempo esgotado. Tentando novamente (${a}/${max})…`
