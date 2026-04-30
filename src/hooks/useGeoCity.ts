@@ -5,6 +5,7 @@ import { normalizeUF } from '@/lib/locationFormat';
 interface GeoData {
   city: string | null;
   state: string | null;
+  neighborhood: string | null;
   temp: number | null;
   latitude: number | null;
   longitude: number | null;
@@ -20,7 +21,7 @@ interface GeoData {
 }
 
 interface GeoStore extends GeoData {
-  setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null) => void;
+  setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null, neighborhood?: string | null) => void;
   setRadius: (km: number) => void;
   requestPreciseLocation: (options?: { force?: boolean }) => Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null }>;
   /** Limpa o estado de erro (ex.: após o usuário ver o aviso). */
@@ -29,6 +30,7 @@ interface GeoStore extends GeoData {
 
 const CITY_KEY = 'geo_city';
 const STATE_KEY = 'geo_state';
+const NEIGHBORHOOD_KEY = 'geo_neighborhood';
 const TEMP_KEY = 'geo_temp';
 const LAT_KEY = 'geo_lat';
 const LON_KEY = 'geo_lon';
@@ -70,6 +72,7 @@ const initialSource: GeoData['source'] =
 let geoState: GeoData = {
   city: initialCity,
   state: normalizeUF(safeGet(STATE_KEY)),
+  neighborhood: safeGet(NEIGHBORHOOD_KEY),
   temp: parseNumber(safeGet(TEMP_KEY)),
   latitude: initialLat,
   longitude: initialLon,
