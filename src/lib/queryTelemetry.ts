@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export async function measureQuery<T>(
   label: string,
-  fn: () => Promise<T>,
+  fn: () => PromiseLike<T>,
   meta: Record<string, unknown> = {},
 ): Promise<T> {
   const t0 =
