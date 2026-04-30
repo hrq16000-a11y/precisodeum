@@ -350,39 +350,50 @@ export default function CompanyProfile() {
         {fullAddress && (
           <section className="border-t border-border bg-muted/20 py-8">
             <div className="container max-w-4xl">
-              <h2 className="mb-3 font-display text-xl font-bold">Endereço e localização</h2>
-              <a
-                href={buildMapsHref([
-                  company.street,
-                  company.street_number,
-                  company.neighborhood,
-                  company.city,
-                  company.state,
-                  company.postal_code,
-                ])}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-foreground hover:text-accent"
-              >
-                <MapPin className="h-4 w-4" aria-hidden="true" />
-                <span>{fullAddress}</span>
-                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-              </a>
-              <div className="mt-4 overflow-hidden rounded-xl border border-border">
-                <iframe
-                  title={`Mapa da empresa ${displayName}`}
-                  src={buildMapsEmbed([
+              <h2 className="mb-3 font-display text-xl font-bold">
+                {showFull ? 'Endereço e localização' : 'Ponto de Atendimento Físico'}
+              </h2>
+              {showFull ? (
+                <a
+                  href={buildMapsHref([
                     company.street,
                     company.street_number,
+                    company.neighborhood,
                     company.city,
                     company.state,
                     company.postal_code,
                   ])}
-                  className="h-72 w-full border-0"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-foreground hover:text-accent"
+                >
+                  <MapPin className="h-4 w-4" aria-hidden="true" />
+                  <span>{fullAddress}</span>
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                </a>
+              ) : (
+                <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" aria-hidden="true" />
+                  <span>Atende em {fullAddress}</span>
+                </p>
+              )}
+              {showFull && (
+                <div className="mt-4 overflow-hidden rounded-xl border border-border">
+                  <iframe
+                    title={`Mapa da empresa ${displayName}`}
+                    src={buildMapsEmbed([
+                      company.street,
+                      company.street_number,
+                      company.city,
+                      company.state,
+                      company.postal_code,
+                    ])}
+                    className="h-72 w-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              )}
             </div>
           </section>
         )}
