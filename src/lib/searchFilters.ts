@@ -69,6 +69,13 @@ export interface SearchFilterOptions {
   routeCorridor?: RouteCorridor | null;
   /** When false (default), online providers are pulled to the top after sorting (stable partition). */
   disableOnlineBoost?: boolean;
+  /**
+   * Açúcar para combinar `activeTodaySet`/`onlineSet`/`recentlyOfflineSet`.
+   * - 'today': mantém apenas online agora OU activeToday
+   * - 'this_week' / 'recent': online OR activeToday OR recentlyOffline
+   * - 'any' (padrão): não filtra
+   */
+  availabilityWindow?: AvailabilityWindow;
 }
 
 export function applySearchFilters<T extends FilterableProvider>(
@@ -91,6 +98,7 @@ export function applySearchFilters<T extends FilterableProvider>(
     statusFilter = 'all',
     routeCorridor = null,
     disableOnlineBoost = false,
+    availabilityWindow = 'any',
   } = opts;
 
   let results = [...list];
