@@ -64,6 +64,8 @@ export default function AdminUploadStressTestPage() {
   const [progress, setProgress] = useState(0);
   const [aggregates, setAggregates] = useState<AggregateRow[]>([]);
   const [recentRows, setRecentRows] = useState<any[]>([]);
+  const [allRows, setAllRows] = useState<any[]>([]);
+  const [exporting, setExporting] = useState(false);
 
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
   const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -71,15 +73,16 @@ export default function AdminUploadStressTestPage() {
   const loadAggregates = async () => {
     const { data, error } = await supabase
       .from('upload_test_results')
-      .select('scenario, success, total_ms, attempts, effective_type, device_ua, created_at')
+      .select('scenario, success, total_ms, attempts, effective_type, downlink_mbps, device_ua, file_size_bytes, error_code, created_at')
       .order('created_at', { ascending: false })
-      .limit(500);
+      .limit(2000);
     if (error) {
       console.error(error);
       return;
     }
     const rows = data ?? [];
     setRecentRows(rows.slice(0, 25));
+    setAllRows(rows);
 
     const groups = new Map<string, { total: number; success: number; sumMs: number; sumAttempts: number }>();
     for (const r of rows) {
@@ -99,6 +102,170 @@ export default function AdminUploadStressTestPage() {
         avgAttempts: +(g.sumAttempts / Math.max(1, g.total)).toFixed(2),
       })),
     );
+  };
+
+  /** Detecta família do dispositivo a partir do UA (mobile / tablet / desktop). */
+  const deviceFamily = (ua: string | null | undefined): string => {
+    if (!ua) return 'desconhecido';
+    const s = ua.toLowerCase();
+    if (/ipad|tablet/.test(s)) return 'tablet';
+    if (/android|iphone|mobile/.test(s)) return 'mobile';
+    return 'desktop';
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const a = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const exportCSV = () => {
+    setExporting(true);
+    try {
+      const headers = [
+        'created_at', 'scenario', 'device_family', 'success', 'attempts',
+        'total_ms', 'effective_type', 'downlink_mbps', 'file_size_bytes', 'error_code', 'device_ua',
+      ];
+      const escape = (v: unknown) => {
+        if (v == null) return '';
+        const s = String(v).replace(/"/g, '""');
+        return /[",\n;]/.test(s) ? `"${s}"` : s;
+      };
+      const lines = [headers.join(',')];
+      for (const r of allRows) {
+        lines.push([
+          r.created_at,
+          r.scenario,
+          deviceFamily(r.device_ua),
+          r.success ? 'sim' : 'nao',
+          r.attempts,
+          r.total_ms,
+          r.effective_type ?? '',
+          r.downlink_mbps ?? '',
+          r.file_size_bytes ?? '',
+          r.error_code ?? '',
+          r.device_ua ?? '',
+        ].map(escape).join(','));
+      }
+      const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `upload-stress-test-${stamp}.csv`);
+      toast.success(`CSV exportado (${allRows.length} linhas).`);
+    } catch (err: any) {
+      toast.error('Falha ao exportar CSV: ' + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportPDF = () => {
+    setExporting(true);
+    try {
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      const margin = 36;
+      let y = margin;
+
+      doc.setFontSize(16);
+      doc.text('Relatório — Upload Stress Test', margin, y);
+      y += 18;
+      doc.setFontSize(9);
+      doc.setTextColor(120);
+      doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')} · ${allRows.length} resultados`, margin, y);
+      y += 18;
+      doc.setTextColor(0);
+
+      // Agregados por cenário
+      doc.setFontSize(12);
+      doc.text('Resumo por cenário', margin, y);
+      y += 14;
+      doc.setFontSize(9);
+      doc.text('Cenário', margin, y);
+      doc.text('Total', margin + 140, y);
+      doc.text('Sucesso', margin + 200, y);
+      doc.text('Taxa', margin + 270, y);
+      doc.text('ms méd.', margin + 320, y);
+      doc.text('Tentativas', margin + 390, y);
+      y += 12;
+      for (const a of aggregates) {
+        const rate = a.total === 0 ? 0 : Math.round((a.success / a.total) * 100);
+        doc.text(a.scenario, margin, y);
+        doc.text(String(a.total), margin + 140, y);
+        doc.text(String(a.success), margin + 200, y);
+        doc.text(`${rate}%`, margin + 270, y);
+        doc.text(String(a.avgMs), margin + 320, y);
+        doc.text(String(a.avgAttempts), margin + 390, y);
+        y += 12;
+        if (y > 780) { doc.addPage(); y = margin; }
+      }
+
+      // Agregados por dispositivo
+      y += 10;
+      doc.setFontSize(12);
+      doc.text('Resumo por dispositivo', margin, y);
+      y += 14;
+      doc.setFontSize(9);
+      const byDevice = new Map<string, { total: number; success: number; sumMs: number }>();
+      for (const r of allRows) {
+        const k = deviceFamily(r.device_ua);
+        const g = byDevice.get(k) ?? { total: 0, success: 0, sumMs: 0 };
+        g.total += 1; if (r.success) g.success += 1; g.sumMs += r.total_ms;
+        byDevice.set(k, g);
+      }
+      doc.text('Dispositivo', margin, y);
+      doc.text('Total', margin + 140, y);
+      doc.text('Taxa', margin + 200, y);
+      doc.text('ms méd.', margin + 270, y);
+      y += 12;
+      for (const [k, g] of byDevice) {
+        const rate = g.total === 0 ? 0 : Math.round((g.success / g.total) * 100);
+        doc.text(k, margin, y);
+        doc.text(String(g.total), margin + 140, y);
+        doc.text(`${rate}%`, margin + 200, y);
+        doc.text(String(Math.round(g.sumMs / Math.max(1, g.total))), margin + 270, y);
+        y += 12;
+        if (y > 780) { doc.addPage(); y = margin; }
+      }
+
+      // Agregados por dia
+      y += 10;
+      doc.setFontSize(12);
+      doc.text('Resumo por data', margin, y);
+      y += 14;
+      doc.setFontSize(9);
+      const byDay = new Map<string, { total: number; success: number }>();
+      for (const r of allRows) {
+        const k = String(r.created_at).slice(0, 10);
+        const g = byDay.get(k) ?? { total: 0, success: 0 };
+        g.total += 1; if (r.success) g.success += 1;
+        byDay.set(k, g);
+      }
+      const sortedDays = Array.from(byDay.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
+      doc.text('Data', margin, y);
+      doc.text('Total', margin + 140, y);
+      doc.text('Sucesso', margin + 200, y);
+      doc.text('Taxa', margin + 270, y);
+      y += 12;
+      for (const [k, g] of sortedDays) {
+        const rate = g.total === 0 ? 0 : Math.round((g.success / g.total) * 100);
+        doc.text(k, margin, y);
+        doc.text(String(g.total), margin + 140, y);
+        doc.text(String(g.success), margin + 200, y);
+        doc.text(`${rate}%`, margin + 270, y);
+        y += 12;
+        if (y > 780) { doc.addPage(); y = margin; }
+      }
+
+      const stamp = new Date().toISOString().slice(0, 10);
+      doc.save(`upload-stress-test-${stamp}.pdf`);
+      toast.success('PDF exportado.');
+    } catch (err: any) {
+      toast.error('Falha ao exportar PDF: ' + err.message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   useEffect(() => {
