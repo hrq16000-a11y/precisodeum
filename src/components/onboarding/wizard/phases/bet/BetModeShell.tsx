@@ -345,6 +345,21 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
           const { error } = await (supabase as any)
             .from('providers').upsert(providerPayload, { onConflict: 'user_id' });
           if (error) {
+            // Observabilidade: registra o motivo REAL do upsert antes do fallback.
+            // Sem isso, o usuário só vê "erro genérico" e perdemos a constraint culpada.
+            console.warn('[BetModeShell] providers.upsert falhou — caindo para insert puro', {
+              code: (error as any).code,
+              message: (error as any).message,
+              details: (error as any).details,
+              hint: (error as any).hint,
+            });
+            logWizardError({
+              phase: 'phase1_contact',
+              userId: user?.id,
+              error,
+              variant: 'v1',
+              context: { action: 'bet_finish_pro_upsert_failed', isPj, hasDoc: !!taxIdValue },
+            });
             // Fallback: tenta insert puro
             const { error: insErr } = await (supabase as any).from('providers').insert(providerPayload);
             if (insErr) throw insErr;
