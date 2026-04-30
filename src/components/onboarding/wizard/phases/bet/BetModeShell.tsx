@@ -295,6 +295,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
     dispatch({ type: 'AWARD_REWARD', reward, points });
   };
 
+  const addDocumentPoints = (points: number) => {
+    awardReward('document', points);
+  };
+
   async function finishRh() {
     if (!user) { toast.error('Faça login antes de continuar'); return; }
     // Defesa: nome/WhatsApp deveriam estar preenchidos pela fase 'identity'.
@@ -626,7 +630,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         <PhaseProKind state={state} patch={patch} next={afterProKind} awardReward={awardReward} />
       )}
       {state.phase === 'pro_document' && (
-        <PhaseProDocument state={state} patch={patch} next={() => goto('pro_location')} addPoints={addSessionPointsToProfile as any} />
+        <PhaseProDocument state={state} patch={patch} next={() => goto('pro_location')} addPoints={addDocumentPoints} />
       )}
       {state.phase === 'pro_location' && (
         <PhaseProLocation state={state} patch={patch} finish={finishPro} awardReward={awardReward} />
