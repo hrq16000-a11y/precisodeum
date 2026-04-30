@@ -13,7 +13,12 @@ import { useEffect, useRef } from 'react';
 import type { OnboardingState } from './types';
 import { broadcastDraftChange } from './crossTabSync';
 
-const DRAFT_KEY = 'onboarding_v2_draft_v1';
+/**
+ * Versão de RUPTURA (V3): trocamos a chave para invalidar instantaneamente
+ * qualquer rascunho "zumbi" salvo em versões antigas e bugadas. A purga
+ * automática das chaves legadas é feita em `CadastroInicialPage` no boot.
+ */
+const DRAFT_KEY = 'onboarding_v3_institutional_final';
 const DEBOUNCE_MS = 600;
 const MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7; // 7 dias
 
