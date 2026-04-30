@@ -12,18 +12,37 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { LeadContext } from '@/hooks/useLeadFollowup';
 import { useLeadAlertPreference, type LeadAlertMode } from '@/hooks/useLeadAlertPreference';
+import { playHornBeep } from '@/lib/soundFx';
 
 // Som curto embutido (mesmo beep usado em DashboardLeadsPage)
 const ALERT_SOUND_DATA_URI =
   'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
 
+/**
+ * Resilient sound playback.
+ *
+ * Browser autoplay policies may block <audio> playback when there's no
+ * recent user gesture. WebAudio (used by playHornBeep) tends to be more
+ * permissive after the user has interacted with the page once. We try the
+ * cheap data-URI beep first; on failure we fall back to the WebAudio horn.
+ *
+ * In all cases, the visual toast (handled by the caller) remains the
+ * absolute fallback — the user always sees the alert even if every
+ * sound channel is blocked.
+ */
 const playSound = () => {
   try {
     const audio = new Audio(ALERT_SOUND_DATA_URI);
     audio.volume = 0.6;
-    void audio.play().catch(() => {});
+    const result = audio.play();
+    if (result && typeof result.then === 'function') {
+      result.catch(() => {
+        // Autoplay blocked — try WebAudio fallback (gesture-permissive).
+        try { playHornBeep(); } catch { /* visual toast still fires */ }
+      });
+    }
   } catch {
-    /* no-op */
+    try { playHornBeep(); } catch { /* visual toast still fires */ }
   }
 };
 
