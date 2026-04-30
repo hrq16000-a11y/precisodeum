@@ -42,6 +42,7 @@ import PhaseCelebration from './PhaseCelebration';
 import { initialBetState, type BetState, type BetIntent, type BetPhase } from './types';
 import { setOnboardingIntent } from '../v2/telemetry';
 import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
+import { useBetRemoteDraft, fetchRemoteBetDraft, clearRemoteBetDraft } from './useBetRemoteDraft';
 
 /** Ordem das fases — usado para resolver o "Voltar" global em uma fase anterior. */
 const BET_BACK_MAP: Partial<Record<BetPhase, BetPhase>> = {
