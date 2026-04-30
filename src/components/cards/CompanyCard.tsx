@@ -10,6 +10,7 @@ import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { resolveDisplayName } from '@/lib/providerDisplay';
 import { capitalizeName } from '@/lib/normalize';
+import LazyImage from '@/components/ui/LazyImage';
 
 /**
  * CompanyCard — card específico para perfis empresariais (account_type='company').
@@ -92,13 +93,13 @@ const CompanyCard = memo(function CompanyCard({
         className="relative block aspect-[16/9] w-full overflow-hidden bg-muted"
       >
         {logoSrc ? (
-          <img
+          <LazyImage
             src={logoSrc}
             alt={`Logo ${displayName}`}
-            // First image of a company gallery → priority hint for LCP
-            fetchPriority="high"
-            loading="eager"
-            decoding="async"
+            // Hero do card → priority + sizes wide
+            priority
+            sizesPreset="card-wide"
+            surface="company-card"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           />
         ) : (

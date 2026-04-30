@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import LazyImage from '@/components/ui/LazyImage';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -483,7 +484,7 @@ const DashboardPortfolioPage = () => {
                     className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted cursor-pointer"
                     onClick={() => handleOpenCaption(photo)}
                   >
-                    <img src={photo.image_url} alt={photo.original_name || 'Trabalho do portfólio'} loading="lazy" decoding="async" width={400} height={400} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    <LazyImage src={photo.image_url} alt={photo.original_name || 'Trabalho do portfólio'} width={400} height={400} sizesPreset="gallery-thumb" surface="portfolio-grid" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
 
                     {/* Hover overlay com legenda */}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/80 via-foreground/40 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -556,8 +557,8 @@ const DashboardPortfolioPage = () => {
             </DialogHeader>
             {captionPhoto && (
               <div className="space-y-3">
-                <div className="overflow-hidden rounded-lg border border-border bg-muted">
-                  <img src={captionPhoto.image_url} alt="" loading="lazy" decoding="async" width={600} height={256} className="w-full max-h-64 object-contain bg-foreground/5" />
+                <div className="relative overflow-hidden rounded-lg border border-border bg-muted" style={{ aspectRatio: '16/9', maxHeight: '16rem' }}>
+                  <LazyImage src={captionPhoto.image_url} alt="" width={600} height={256} sizesPreset="card-wide" surface="portfolio-caption" className="h-full w-full object-contain bg-foreground/5" />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
@@ -652,7 +653,7 @@ const DashboardPortfolioPage = () => {
                 >
                   <div className="aspect-video bg-muted relative overflow-hidden">
                     {album.cover_image_url ? (
-                      <img src={album.cover_image_url} alt={album.name} loading="lazy" decoding="async" width={400} height={300} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <LazyImage src={album.cover_image_url} alt={album.name} width={400} height={300} priority={i < 2} sizesPreset="card-wide" surface="portfolio-album-cover" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <div className="flex h-full items-center justify-center">
                         <ImagePlus className="h-10 w-10 text-muted-foreground/40" />

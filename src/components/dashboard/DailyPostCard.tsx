@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import GlassCard from '@/components/ui/GlassCard';
 import { toast } from 'sonner';
 import { celebrate } from '@/lib/celebrate';
+import LazyImage from '@/components/ui/LazyImage';
 
 interface ActivePost {
   id: string;
@@ -188,12 +189,15 @@ export default function DailyPostCard() {
           >
             <div className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-3">
               {active.image_url ? (
-                <img
-                  src={active.image_url}
-                  alt="Obra do Dia"
-                  loading="lazy"
-                  className="mb-2 max-h-48 w-full rounded-lg object-cover"
-                />
+                <div className="relative mb-2 max-h-48 w-full overflow-hidden rounded-lg" style={{ aspectRatio: '16/9' }}>
+                  <LazyImage
+                    src={active.image_url}
+                    alt="Obra do Dia"
+                    sizesPreset="card-wide"
+                    surface="daily-post-active"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
               ) : null}
               <p className="text-sm text-foreground">{active.caption}</p>
               <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
@@ -275,12 +279,13 @@ export default function DailyPostCard() {
               </span>
             </div>
             {imageUrl && !uploading && (
-              <div className="overflow-hidden rounded-lg border border-fuchsia-500/20">
-                <img
+              <div className="relative overflow-hidden rounded-lg border border-fuchsia-500/20" style={{ aspectRatio: '16/9', maxHeight: '10rem' }}>
+                <LazyImage
                   src={imageUrl}
                   alt="Pré-visualização da Obra do Dia"
-                  className="max-h-40 w-full object-cover"
-                  loading="lazy"
+                  sizesPreset="card-wide"
+                  surface="daily-post-preview"
+                  className="h-full w-full object-cover"
                 />
               </div>
             )}
