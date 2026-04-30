@@ -9,6 +9,8 @@ import { fieldWin } from '@/lib/betDopamine';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { toast } from 'sonner';
 import CepSuggestionCard from './CepSuggestionCard';
+import { startGpsTimer, trackGpsAttempt, mapGeolocationError } from '@/lib/locationTelemetry';
+import { useAuth } from '@/hooks/useAuth';
 import { BET_POINTS, type BetState } from './types';
 
 interface Props {
