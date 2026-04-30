@@ -14,9 +14,13 @@ interface SeoHeadProps {
   articlePublishedTime?: string;
   articleModifiedTime?: string;
   articleAuthor?: string;
+  /** URL absoluta da página anterior em listagens paginadas (rel="prev"). */
+  prevUrl?: string;
+  /** URL absoluta da próxima página em listagens paginadas (rel="next"). */
+  nextUrl?: string;
 }
 
-export function useSeoHead({ title, description, canonical, ogImage, noindex, ogType, articlePublishedTime, articleModifiedTime, articleAuthor }: SeoHeadProps) {
+export function useSeoHead({ title, description, canonical, ogImage, noindex, ogType, articlePublishedTime, articleModifiedTime, articleAuthor, prevUrl, nextUrl }: SeoHeadProps) {
   const gscId = useSettingValue('google_search_console_id');
   const gaId = useSettingValue('google_analytics_id');
 
