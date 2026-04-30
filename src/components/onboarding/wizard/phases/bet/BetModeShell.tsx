@@ -163,6 +163,53 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
     onPhaseChange?.(state.phase);
   }, [state.phase, onPhaseChange]);
 
+  // ── Telemetria de funil (Bet Mode + draft remoto) ───────────────────────────
+  // Emite `enter` toda vez que o usuário entra numa fase (nova ou volta).
+  // Também mede o tempo gasto na fase anterior (`dwell_ms`) para identificar
+  // onde o usuário trava (ex.: pro_document com média alta = atrito alto).
+  // Privacy: nunca envia PII — apenas a fase, dwell, has_remote_draft e variant.
+  const phaseEnteredAt = useRef<number>(Date.now());
+  const previousPhase = useRef<BetPhase | null>(null);
+  useEffect(() => {
+    const now = Date.now();
+    const dwell = previousPhase.current ? now - phaseEnteredAt.current : 0;
+    void trackOnboardingEvent({
+      phase: state.phase as any,
+      event: 'enter',
+      userId: user?.id || null,
+      variant: 'v2',
+      meta: {
+        track: 'bet_mode',
+        from: previousPhase.current,
+        dwell_ms: dwell,
+        has_local_draft: Boolean(state.full_name || state.whatsapp || state.city),
+        remote_ready: remoteReady,
+      },
+    });
+    previousPhase.current = state.phase;
+    phaseEnteredAt.current = now;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.phase]);
+
+  // Emite `complete` exatamente uma vez quando o wizard chega a 'done'.
+  const completedRef = useRef(false);
+  useEffect(() => {
+    if (state.phase !== 'done' || completedRef.current) return;
+    completedRef.current = true;
+    void trackOnboardingEvent({
+      phase: 'done' as any,
+      event: 'complete',
+      userId: user?.id || null,
+      variant: 'v2',
+      meta: {
+        track: 'bet_mode',
+        intent: state.intent,
+        had_remote_draft: remoteReady,
+        total_points: state.points,
+      },
+    });
+  }, [state.phase, state.intent, state.points, remoteReady, user?.id]);
+
   // Pré-preenche com o que já existe (ex: nome do Google) + hidrata HUD com saldo real do banco.
   useEffect(() => {
     if (!profile) return;
