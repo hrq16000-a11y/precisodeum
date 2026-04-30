@@ -7,7 +7,7 @@ import { handleImageError } from '@/lib/imageResolver';
 import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
 import { generateBlurDataUrl } from '@/lib/compressImage';
 import { uploadWithFallback } from '@/lib/uploadWithFallback';
-import { UploadTimeoutError } from '@/lib/uploadResilient';
+import { classifyUploadError, userMessageFor } from '@/lib/uploadErrors';
 import { validateImageFile } from '@/lib/imageValidation';
 import {
   UploadProgressIndicator,
@@ -145,18 +145,28 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
               fd.append('folder', `${userId}/${serviceId}`);
               return fd;
             },
-            onStage: ({ stage, status }) => {
+            onStage: ({ stage, status, errorKind, errorMessage }) => {
               setStages((prev) => {
                 if (stage === 'fallback') return prev;
+                if (status === 'error') {
+                  return {
+                    ...prev,
+                    [stage]: 'error',
+                    errorStage: stage as any,
+                    errorKind: errorKind ?? 'unknown',
+                    errorMessage: errorMessage ?? null,
+                  };
+                }
                 return {
                   ...prev,
-                  [stage]: status === 'start' ? 'active' : status === 'error' ? 'error' : 'done',
+                  [stage]: status === 'start' ? 'active' : 'done',
                 };
               });
             },
             onAttempt: (a, max, reason) => {
               setAttemptInfo({ attempt: a, max, reason });
               if (a > 1) {
+                setStages((prev) => ({ ...prev, retry: 'active' }));
                 const msg =
                   reason === 'timeout'
                     ? `${raw.name}: tempo esgotado, retentando (${a}/${max})…`
@@ -201,11 +211,8 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
           }
         } catch (err) {
           failed.push(raw);
-          if (err instanceof UploadTimeoutError) {
-            toast.error(`${raw.name}: conexão muito lenta.`);
-          } else {
-            toast.error(`Falha ao enviar ${raw.name}.`);
-          }
+          const kind = classifyUploadError(err);
+          toast.error(`${raw.name}: ${userMessageFor(kind)}`);
         }
       }
 

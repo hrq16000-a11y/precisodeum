@@ -20,7 +20,7 @@ import { compressImage } from './compressImage';
 import { resilientUpload } from './uploadResilient';
 import { withStageTelemetry, recordStageTelemetry, type UploadStage } from './uploadStageTelemetry';
 import { resolveAdaptiveProfile, type AdaptiveProfile } from './adaptiveCompression';
-import { classifyUploadError, CompressionError } from './uploadErrors';
+import { classifyUploadError, CompressionError, type UploadErrorKind } from './uploadErrors';
 
 export interface UploadFallbackResult<T> {
   data: T;
@@ -35,6 +35,10 @@ export interface UploadFallbackResult<T> {
 export interface UploadStageEvent {
   stage: UploadStage;
   status: 'start' | 'done' | 'error';
+  /** Quando status === 'error', traz o tipo classificado da falha. */
+  errorKind?: UploadErrorKind;
+  /** Mensagem opaca pro debugging (não user-facing). */
+  errorMessage?: string;
 }
 
 export interface UploadWithFallbackOptions {
@@ -97,8 +101,16 @@ export async function uploadWithFallback<T = any>(
             },
           });
         } catch (err) {
-          const stage = (err as any)?.message?.includes('decode') ? 'convert' : 'compress';
-          throw new CompressionError(stage as 'convert' | 'compress', err);
+          const stageGuess = (err as any)?.message?.includes('decode') ? 'convert' : 'compress';
+          const compErr = new CompressionError(stageGuess as 'convert' | 'compress', err);
+          const kind = classifyUploadError(compErr);
+          opts.onStage?.({
+            stage: stageGuess,
+            status: 'error',
+            errorKind: kind,
+            errorMessage: (err as any)?.message,
+          });
+          throw compErr;
         }
       },
       { fileSizeBytes: rawFile.size, fallbackLevel: level }
@@ -120,7 +132,12 @@ export async function uploadWithFallback<T = any>(
       opts.onStage?.({ stage: 'upload', status: 'done' });
       return data;
     } catch (err) {
-      opts.onStage?.({ stage: 'upload', status: 'error' });
+      opts.onStage?.({
+        stage: 'upload',
+        status: 'error',
+        errorKind: classifyUploadError(err),
+        errorMessage: (err as any)?.message,
+      });
       throw err;
     }
   };

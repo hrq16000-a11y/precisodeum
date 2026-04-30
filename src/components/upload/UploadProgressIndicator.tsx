@@ -1,25 +1,38 @@
 /**
  * UploadProgressIndicator — barra com 4 etapas durante upload de imagem.
  *
- * Etapas: Redimensionar → Converter → Comprimir → Enviar.
- * Cada etapa exibe ícone (pendente/ativo/ok/erro) e percentual da etapa atual.
+ * Etapas: Validar → Redimensionar → Converter → Comprimir → Enviar (+ Retry).
+ * Cada etapa exibe ícone (pendente/ativo/ok/erro) e, em caso de falha, o motivo
+ * classificado (timeout/network/server/convert/compress/aborted/validation).
  * Layout compacto, mobile-first, usa apenas tokens semânticos.
  */
 
-import { Loader2, Check, X, Circle } from 'lucide-react';
+import { Loader2, Check, X, Circle, AlertTriangle } from 'lucide-react';
+import type { UploadErrorKind } from '@/lib/uploadErrors';
+import { UPLOAD_ERROR_LABEL } from '@/lib/uploadErrors';
 
 export type UploadStageState = 'pending' | 'active' | 'done' | 'error';
 
+export type UploadStageKey = 'validate' | 'resize' | 'convert' | 'compress' | 'upload' | 'retry';
+
 export interface UploadStagesState {
+  validate?: UploadStageState;
   resize: UploadStageState;
   convert: UploadStageState;
   compress: UploadStageState;
   upload: UploadStageState;
-  /** 0..100 da etapa atual (usado no upload em modo retry). */
+  retry?: UploadStageState;
+  /** Motivo classificado quando uma etapa falhou. */
+  errorStage?: UploadStageKey | null;
+  errorKind?: UploadErrorKind | null;
+  /** Mensagem livre sobreposta (ex.: "tempo esgotado, reenviando…"). */
+  errorMessage?: string | null;
+  /** 0..100 da etapa atual (usado em retry). */
   activePercent?: number;
 }
 
-const STAGE_ORDER: Array<{ key: keyof Omit<UploadStagesState, 'activePercent'>; label: string }> = [
+const STAGE_ORDER: Array<{ key: Exclude<UploadStageKey, 'retry'>; label: string }> = [
+  { key: 'validate', label: 'Validar' },
   { key: 'resize',   label: 'Redimensionar' },
   { key: 'convert',  label: 'Converter' },
   { key: 'compress', label: 'Comprimir' },
@@ -27,7 +40,17 @@ const STAGE_ORDER: Array<{ key: keyof Omit<UploadStagesState, 'activePercent'>; 
 ];
 
 export function makeInitialStages(): UploadStagesState {
-  return { resize: 'pending', convert: 'pending', compress: 'pending', upload: 'pending' };
+  return {
+    validate: 'done', // validação acontece antes do indicador aparecer
+    resize: 'pending',
+    convert: 'pending',
+    compress: 'pending',
+    upload: 'pending',
+    retry: 'pending',
+    errorStage: null,
+    errorKind: null,
+    errorMessage: null,
+  };
 }
 
 interface Props {
@@ -45,6 +68,11 @@ const StageIcon = ({ state }: { state: UploadStageState }) => {
 export function UploadProgressIndicator({ stages, className = '' }: Props) {
   const completed = STAGE_ORDER.filter((s) => stages[s.key] === 'done').length;
   const overall = Math.round((completed / STAGE_ORDER.length) * 100);
+  const isRetrying = stages.retry === 'active';
+  const errorKind = stages.errorKind ?? null;
+  const errorMessage =
+    stages.errorMessage ??
+    (errorKind ? UPLOAD_ERROR_LABEL[errorKind] : null);
 
   return (
     <div
@@ -54,27 +82,36 @@ export function UploadProgressIndicator({ stages, className = '' }: Props) {
       className={`rounded-md border border-border bg-card/60 p-2 text-xs ${className}`}
     >
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="font-medium text-foreground">Processando imagem</span>
+        <span className="font-medium text-foreground">
+          {isRetrying ? 'Tentando novamente…' : 'Processando imagem'}
+        </span>
         <span className="tabular-nums text-muted-foreground">{overall}%</span>
       </div>
 
       {/* Barra geral */}
       <div className="mb-2 h-1 overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full bg-accent transition-[width] duration-300"
+          className={`h-full transition-[width] duration-300 ${
+            errorKind ? 'bg-destructive' : 'bg-accent'
+          }`}
           style={{ width: `${overall}%` }}
         />
       </div>
 
       {/* Lista de etapas */}
-      <ul className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-5">
         {STAGE_ORDER.map(({ key, label }) => {
-          const state = stages[key];
+          const state = stages[key] ?? 'pending';
+          const isErrorStage = stages.errorStage === key;
           return (
             <li
               key={key}
               className={`flex items-center gap-1.5 ${
-                state === 'active' ? 'text-foreground' : 'text-muted-foreground'
+                state === 'active'
+                  ? 'text-foreground'
+                  : isErrorStage
+                  ? 'text-destructive'
+                  : 'text-muted-foreground'
               }`}
             >
               <StageIcon state={state} />
@@ -83,6 +120,14 @@ export function UploadProgressIndicator({ stages, className = '' }: Props) {
           );
         })}
       </ul>
+
+      {/* Mensagem específica do erro */}
+      {errorMessage && (
+        <div className="mt-2 flex items-start gap-1.5 rounded border border-destructive/30 bg-destructive/5 p-1.5 text-[11px] text-destructive">
+          <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
+          <span className="leading-tight">{errorMessage}</span>
+        </div>
+      )}
     </div>
   );
 }
