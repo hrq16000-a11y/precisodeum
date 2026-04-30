@@ -23,8 +23,6 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
   const [submitting, setSubmitting] = useState(false);
   const [requestingGps, setRequestingGps] = useState(false);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
-  const [cepSuggestion, setCepSuggestion] = useState<string | null>(null);
-  const [cepLoading, setCepLoading] = useState(false);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
   const autoFilledRef = useRef(false);
