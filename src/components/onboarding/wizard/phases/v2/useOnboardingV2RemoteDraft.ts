@@ -59,9 +59,9 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
     if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(async () => {
       // Anti-duplicação: se um flush imediato (clique "Salvar e continuar")
-      // já gravou esta mesma fase nos últimos 2s, pulamos o upsert para
-      // evitar 2 chamadas redundantes ao Supabase no mesmo gesto.
-      if (wasRemoteDraftWrittenRecently(state.phase as any)) return;
+      // já gravou esta mesma fase nos últimos 2s para ESTE userId, pulamos
+      // o upsert para evitar 2 chamadas redundantes ao Supabase.
+      if (wasRemoteDraftWrittenRecently(state.phase as any, userId)) return;
       try {
         await supabase.from('onboarding_v2_drafts' as any).upsert({
           user_id: userId,
@@ -74,7 +74,8 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
           },
           phase: state.phase,
         } as any, { onConflict: 'user_id' });
-        markRemoteDraftWritten(state.phase as any);
+        markRemoteDraftWritten(state.phase as any, userId);
+        recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
       } catch {
         /* fail-soft — local draft já cobre */
       }
