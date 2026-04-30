@@ -41,6 +41,7 @@ import PhaseCelebration from './PhaseCelebration';
 
 import { initialBetState, type BetState, type BetIntent, type BetPhase } from './types';
 import { setOnboardingIntent, trackOnboardingEvent } from '../v2/telemetry';
+import { getDeviceKind } from '@/lib/locationTelemetry';
 import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
 import { useBetRemoteDraft, fetchRemoteBetDraft, clearRemoteBetDraft } from './useBetRemoteDraft';
 
@@ -125,6 +126,13 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
   // que o local, mescla. Fail-soft. `remoteReady` libera persistência remota.
   const [remoteReady, setRemoteReady] = useState(false);
   const hydratedFromRemote = useRef(false);
+  // Rastreia a origem do rascunho hidratado (telemetria):
+  //   'remote'        → mesclamos algo vindo do banco
+  //   'localStorage'  → tinha rascunho local salvo na primeira render
+  //   'none'          → nada hidratado, sessão limpa
+  const draftOrigin = useRef<'remote' | 'localStorage' | 'none'>(
+    (state.full_name || state.whatsapp || state.city) ? 'localStorage' : 'none'
+  );
   useEffect(() => {
     if (!user?.id || hydratedFromRemote.current) return;
     hydratedFromRemote.current = true;
@@ -145,7 +153,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
                 (patchObj as any)[k] = inc;
               }
             });
-            if (Object.keys(patchObj).length > 0) dispatch({ type: 'PATCH', patch: patchObj });
+            if (Object.keys(patchObj).length > 0) {
+              dispatch({ type: 'PATCH', patch: patchObj });
+              draftOrigin.current = 'remote';
+            }
           }
         }
       } finally {
@@ -184,6 +195,8 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         dwell_ms: dwell,
         has_local_draft: Boolean(state.full_name || state.whatsapp || state.city),
         remote_ready: remoteReady,
+        draft_origin: draftOrigin.current,
+        device: getDeviceKind(),
       },
     });
     previousPhase.current = state.phase;
@@ -205,6 +218,8 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         track: 'bet_mode',
         intent: state.intent,
         had_remote_draft: remoteReady,
+        draft_origin: draftOrigin.current,
+        device: getDeviceKind(),
         total_points: state.points,
       },
     });

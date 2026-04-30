@@ -211,6 +211,9 @@ ${entries.join('\n')}
 
   if (type === 'seo') {
     // Apenas combinações categoria × cidade com pelo menos 1 serviço elegível.
+    // Emite a rota canônica `/categoria/:slug/em/:cidade-slug` consumida por
+    // CategoryCityPage. A página é noindex automático quando 0 resultados,
+    // então só listamos pares com elegibilidade comprovada (gate forte).
     const [{ data: cats }, { data: cities }] = await Promise.all([
       supabase.from('categories').select('id, slug').is('deleted_at', null),
       supabase.from('cities').select('slug, name'),
@@ -225,7 +228,7 @@ ${entries.join('\n')}
       for (const city of cities || []) {
         const cityNorm = String(city.name || city.slug || '').trim().toLowerCase();
         if (!eligiblePairs.has(`${cat.id}::${cityNorm}`)) continue;
-        urls += entry(siteUrl, `/${cat.slug}-${city.slug}`, today, 'weekly', '0.6');
+        urls += entry(siteUrl, `/categoria/${cat.slug}/em/${city.slug}`, today, 'weekly', '0.65');
       }
     }
   }
