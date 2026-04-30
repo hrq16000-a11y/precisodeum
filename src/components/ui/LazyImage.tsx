@@ -227,7 +227,7 @@ const LazyImage = ({
           loading="eager"
           className={cn(
             'absolute inset-0 h-full w-full object-cover',
-            'transition-opacity duration-[400ms] ease-out',
+            'transition-opacity duration-500 ease-out',
             'scale-[1.06]',
           )}
           style={{
@@ -265,7 +265,7 @@ const LazyImage = ({
         fetchPriority={resolvedFetchPriority}
         className={cn(
           'h-full w-full',
-          'transition-opacity duration-[400ms] ease-out',
+          'transition-opacity duration-500 ease-out',
           loaded ? 'opacity-100' : 'opacity-0',
           className,
         )}
