@@ -119,8 +119,23 @@ export function useNewLeadAlerts(providerId: string | undefined, filters: Filter
         const outsideFilter = !(cityOk && catOk && ufOk);
 
         if (outsideFilter) setOutsideFilterCount((n) => n + 1);
-        if (wantsSound(currentMode)) playSound();
-        if (!wantsToast(currentMode)) return;
+
+        const soundRequested = wantsSound(currentMode);
+        const toastRequested = wantsToast(currentMode);
+
+        // Visual fallback ABSOLUTO: se o usuário pediu apenas som mas o
+        // navegador bloqueou todas as camadas de áudio, ainda exibimos um
+        // toast curto para que a notificação não passe despercebida.
+        if (soundRequested) {
+          void playSound().then((ok) => {
+            if (!ok && !toastRequested) {
+              toast('Novo lead recebido', {
+                description: 'Som bloqueado pelo navegador — toque para ouvir o alerta nas próximas vezes.',
+              });
+            }
+          });
+        }
+        if (!toastRequested) return;
 
         if (outsideFilter) {
           toast('Novo lead fora do filtro atual', {
