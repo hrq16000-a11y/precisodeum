@@ -109,6 +109,36 @@ export default function AdminOnboardingStatsPage() {
     staleTime: 60_000,
   });
 
+  // Funnel segmentado por draft_source (local/remote/seed/none)
+  const { data: bySourceFunnel } = useQuery({
+    queryKey: ["admin-onboarding-funnel-by-source", days],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)(
+        "admin_onboarding_funnel_by_source",
+        { _days: days },
+      );
+      if (error) throw error;
+      return (data || []) as BySourceFunnelRow[];
+    },
+    enabled: !!isAdmin,
+    staleTime: 60_000,
+  });
+
+  // Funnel por usuário — quem está stuck em qual fase
+  const { data: userFunnel } = useQuery({
+    queryKey: ["admin-onboarding-user-funnel", days],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)(
+        "admin_onboarding_user_funnel",
+        { _days: days, _limit: 200 },
+      );
+      if (error) throw error;
+      return (data || []) as UserFunnelRow[];
+    },
+    enabled: !!isAdmin,
+    staleTime: 60_000,
+  });
+
   const sourceRows = useMemo<SourceRow[]>(() => {
     const rows = data?.by_source || [];
     return [...rows].sort((a, b) => (b.submits || 0) - (a.submits || 0));
