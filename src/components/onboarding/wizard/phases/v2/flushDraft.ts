@@ -85,6 +85,18 @@ export async function flushRemoteDraft(
   userId: string | undefined,
 ): Promise<void> {
   if (!userId || state.phase === 'done') return;
+  // Guarda simétrica: se o hook debounced (ou outro flush) já gravou esta
+  // mesma fase para este userId nos últimos 2s, pulamos para eliminar a 2ª
+  // escrita redundante no Supabase quando o usuário avança rápido.
+  if (wasRemoteDraftWrittenRecently(state.phase as any, userId)) {
+    if (typeof window !== 'undefined') {
+      try {
+        const { recordWizardSupabaseCall } = await import('./diagnostics');
+        recordWizardSupabaseCall('flushRemoteDraft.skipped', state.phase as any, userId);
+      } catch { /* fail-soft */ }
+    }
+    return;
+  }
   try {
     await supabase.from('onboarding_v2_drafts' as any).upsert({
       user_id: userId,

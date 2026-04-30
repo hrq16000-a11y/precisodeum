@@ -17,7 +17,9 @@
 
 export type WizardSupabaseSource =
   | 'flushRemoteDraft'
+  | 'flushRemoteDraft.skipped'
   | 'useRemoteDraft.debounced'
+  | 'useRemoteDraft.skipped'
   | 'persistPatch';
 
 export interface WizardSupabaseCallEntry {

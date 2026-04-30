@@ -390,6 +390,18 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       return;
     }
 
+    // Performance: evita HYDRATE redundante quando o `resolved` é
+    // estruturalmente igual ao snapshot atual (caso comum quando refetchProfile
+    // retorna o mesmo objeto e este efeito re-roda sem mudança real).
+    const samePhase = (resolved.phase || currentPhase) === currentPhase;
+    const sameProvider = (resolved.providerId ?? state.providerId ?? null) === (state.providerId ?? null);
+    const sameService = (resolved.firstServiceId ?? state.firstServiceId ?? null) === (state.firstServiceId ?? null);
+    const sameProfile = !resolved.profile || JSON.stringify({ ...state.profile, ...resolved.profile }) === JSON.stringify(state.profile);
+    const sameServicePayload = !resolved.service || JSON.stringify({ ...state.service, ...resolved.service }) === JSON.stringify(state.service);
+    if (samePhase && sameProvider && sameService && sameProfile && sameServicePayload) {
+      return;
+    }
+
     appendWizardResetDebugLog({
       source: 'onboarding-v2-bootstrap',
       route: `${location.pathname}${location.search}`,
