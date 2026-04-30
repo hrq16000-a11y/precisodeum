@@ -477,7 +477,7 @@ export function useGeoCity(): GeoStore {
           }).catch(() => {});
           resolve({ ok: false, city: null, state: null, accuracyMeters: null, neighborhood: null });
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
       );
     });
   }, []);
