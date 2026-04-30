@@ -41,7 +41,7 @@ vi.mock('@/lib/cepReverseLookup', () => ({
   lookupCepFromCity: vi.fn(async () => ({ ok: false, reason: 'not_found' as const })),
 }));
 
-vi.mock('../components/onboarding/wizard/phases/v2/telemetry', () => ({
+vi.mock('@/components/onboarding/wizard/phases/v2/telemetry', () => ({
   trackOnboardingEvent: (...a: any[]) => trackEvent(...a),
 }));
 
