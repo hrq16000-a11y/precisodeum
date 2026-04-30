@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { normalizeUF } from '@/lib/locationFormat';
-import { parseReverseGeocodeLocation } from '@/lib/geoReverseGeocode';
+import { parseReverseGeocodeLocation, sanitizeNeighborhood } from '@/lib/geoReverseGeocode';
 
 
 interface GeoData {
