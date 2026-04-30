@@ -433,10 +433,15 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       },
     });
     if (onInternalHandoff) {
+      // Handoff para o V2: o V2Shell tem seu próprio draft remoto/local.
+      // Limpamos o draft do Bet para evitar reidratação fantasma se o usuário
+      // voltar ao /cadastro-inicial mais tarde.
+      clearBetDraft();
       onInternalHandoff(state);
     } else {
       // Fallback (não deve ocorrer no fluxo unificado): mantém o usuário na
       // mesma rota e força um reload — impede loop em rotas legadas.
+      clearBetDraft();
       navigate('/cadastro-inicial', { replace: true });
     }
   }
