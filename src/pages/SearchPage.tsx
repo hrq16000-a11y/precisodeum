@@ -24,13 +24,13 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@
 import { useSearchProvidersGrouped, useCategories, useSearchSuggestions, useGeoCategories, normalizeCityName, matchesGeoContext, type DbProvider } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap, ArrowRight, RefreshCcw, Star, Compass, Award, Trophy, GraduationCap } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap, ArrowRight, RefreshCcw, Star, Compass, Award, Trophy, GraduationCap, Sparkles } from 'lucide-react';
 import { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
 const RouteSearchModal = lazy(() => import('@/components/RouteSearchModal'));
 import { calculateDistanceKm } from '@/lib/geoDistance';
-import { applySearchFilters, countActiveFilters } from '@/lib/searchFilters';
+import { applySearchFilters, countActiveFilters, DEFAULT_SCORE_WEIGHTS, type SearchScoreWeights } from '@/lib/searchFilters';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const ProvidersMap = lazy(() => import('@/components/ProvidersMap'));
@@ -51,15 +51,28 @@ import { toast } from 'sonner';
 
 const ITEMS_PER_PAGE = 12;
 
-type SortOption = 'relevance' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
+type SortOption = 'relevance' | 'best' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
 
 const SORT_CHIPS: { value: SortOption; label: string; icon: typeof Star }[] = [
   { value: 'relevance', label: 'Relevância', icon: Trophy },
+  { value: 'best', label: 'Melhor combinação', icon: Sparkles },
   { value: 'nearest', label: 'Mais perto', icon: Compass },
   { value: 'rating', label: 'Avaliação', icon: Star },
   { value: 'reviews', label: 'Avaliações', icon: Award },
   { value: 'experience', label: 'Experiência', icon: GraduationCap },
 ];
+
+/** Texto curto do critério ativo, exibido no badge da UI. */
+const SORT_CRITERIA_HINT: Record<SortOption, string> = {
+  relevance: 'Padrão do site',
+  best: 'Rating + proximidade',
+  nearest: 'Distância (km)',
+  rating: 'Maior avaliação',
+  reviews: 'Mais avaliações',
+  experience: 'Mais experientes',
+  name_asc: 'Nome A→Z',
+  name_desc: 'Nome Z→A',
+};
 
 /** Raios disponíveis (km) para o seletor de proximidade. */
 const RADIUS_CHIPS: { km: number; label: string }[] = [
@@ -88,7 +101,7 @@ const SearchPage = () => {
   const [minRating, setMinRating] = useState(0);
   // Default sort: 'nearest' quando há GPS preciso, senão 'relevance'.
   // O usuário pode sobrescrever via ?ordem=... ou pelos chips.
-  const initialSort = (searchParams.get('ordem') as SortOption) || (userLat && userLon ? 'nearest' : 'relevance');
+  const initialSort = (searchParams.get('ordem') as SortOption) || (userLat && userLon ? 'best' : 'relevance');
   const [sortBy, setSortBy] = useState<SortOption>(initialSort);
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -127,6 +140,23 @@ const SearchPage = () => {
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  // Pesos do score híbrido (sortBy='best'). Admin define em site_settings com a
+  // chave `search_score_weights` como JSON `{"rating":0.7,"distance":0.3}`.
+  const scoreWeightsRaw = useSettingValue('search_score_weights');
+  const scoreWeights = useMemo<SearchScoreWeights>(() => {
+    if (!scoreWeightsRaw) return DEFAULT_SCORE_WEIGHTS;
+    try {
+      const parsed = JSON.parse(scoreWeightsRaw);
+      const r = Number(parsed?.rating);
+      const d = Number(parsed?.distance);
+      if (Number.isFinite(r) && Number.isFinite(d) && r >= 0 && d >= 0 && r + d > 0) {
+        return { rating: r, distance: d };
+      }
+    } catch {
+      /* fallback */
+    }
+    return DEFAULT_SCORE_WEIGHTS;
+  }, [scoreWeightsRaw]);
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
   const onlineSet = useOnlineProviders();
   const activeTodaySet = useActiveTodayProviders();
@@ -199,6 +229,7 @@ const SearchPage = () => {
       recentlyOfflineSet,
       statusFilter: effectiveStatusFilter,
       availabilityWindow,
+      scoreWeights,
       routeCorridor: routeCorridor
         ? {
             midLat: routeCorridor.midLat,
@@ -207,7 +238,7 @@ const SearchPage = () => {
           }
         : null,
     }) as DbProvider[];
-  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, recentlyOfflineSet, effectiveStatusFilter, onlineOnly, acceptingOnly, activeTodayOnly, availabilityWindow]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, recentlyOfflineSet, effectiveStatusFilter, onlineOnly, acceptingOnly, activeTodayOnly, availabilityWindow, scoreWeights]);
 
   const stateFilterFn = useCallback((list: DbProvider[]) =>
     selectedState ? list.filter(p => safeUF(p.state) === selectedState) : list,
@@ -676,6 +707,9 @@ const SearchPage = () => {
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="relevance">Relevância</SelectItem>
+              <SelectItem value="best">
+                <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3 w-3" strokeWidth={1.75} /> Melhor combinação</span>
+              </SelectItem>
               <SelectItem value="nearest">
                 <span className="inline-flex items-center gap-1.5"><Compass className="h-3 w-3" strokeWidth={1.75} /> Mais perto</span>
               </SelectItem>
@@ -1000,6 +1034,18 @@ const SearchPage = () => {
                     {filteredLocal.length} na sua região
                   </span>
                 )}
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-medium text-muted-foreground"
+                  title={
+                    sortBy === 'best'
+                      ? `Score: rating ${(scoreWeights.rating).toFixed(2)} + distância ${(scoreWeights.distance).toFixed(2)}`
+                      : SORT_CRITERIA_HINT[sortBy]
+                  }
+                  aria-label={`Critério de ordenação: ${SORT_CRITERIA_HINT[sortBy]}`}
+                >
+                  <ArrowUpDown className="h-3 w-3" />
+                  Ordenando por: <span className="font-semibold text-foreground">{SORT_CRITERIA_HINT[sortBy]}</span>
+                </span>
                 <Button
                   variant="outline"
                   size="sm"
