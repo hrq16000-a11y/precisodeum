@@ -131,8 +131,8 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
         expect.any(Object),
       );
     });
-    // Não pode patchar cidade nem dar pontos quando o GPS falha.
-    expect(patch).not.toHaveBeenCalledWith(expect.objectContaining({ city: expect.any(String) }));
+    // Não pode aplicar patch de GPS nem dar pontos quando o GPS falha.
+    expect(patch).not.toHaveBeenCalledWith(expect.objectContaining({ location_source: 'gps' }));
     expect(awardReward).not.toHaveBeenCalled();
   });
 
