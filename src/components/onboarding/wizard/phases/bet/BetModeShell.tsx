@@ -19,7 +19,7 @@
  *  - Profissional: completa identificação básica e segue no fluxo único para
  *    criar o 1º serviço sem repetir nome, WhatsApp e cidade já capturados.
  */
-import { useEffect, useMemo, useReducer } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,6 +28,7 @@ import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
 import { useSeoHead } from '@/hooks/useSeoHead';
+import { betDraftPayloadSchema, safeParse } from '@/lib/wizardSchemas';
 
 import PointsHud from './PointsHud';
 import PhaseIdentity from './PhaseIdentity';
