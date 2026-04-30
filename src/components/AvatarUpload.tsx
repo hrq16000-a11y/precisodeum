@@ -88,8 +88,12 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, cu
       // immediately reflect the new avatar.
       invalidateProviderCaches(queryClient, { reason: 'avatar-upload', userId });
       toast.success('Foto atualizada!');
-    } catch {
-      toast.error('Erro ao enviar imagem');
+    } catch (err) {
+      if (err instanceof UploadTimeoutError) {
+        toast.error('Conexão muito lenta. Tente novamente em uma rede melhor.');
+      } else {
+        toast.error('Erro ao enviar imagem. Verifique sua conexão e tente novamente.');
+      }
     }
     setUploading(false);
   };
