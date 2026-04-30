@@ -403,7 +403,13 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           >
             {previewConfirmed ? <><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Confirmada</> : 'Confirmar prévia'}
           </Button>
-          {!previewConfirmed && (
+          {!previewConfirmed && cityOk && (state.location_source === 'manual' || state.location_source === 'cep' || geoFailed) && (
+            <p className="mt-1.5 flex items-start gap-1 text-[11px] font-medium text-sky-800 dark:text-sky-200">
+              <Info className="mt-0.5 h-3 w-3 flex-shrink-0" />
+              Localização definida manualmente. Por favor, confirme para finalizar.
+            </p>
+          )}
+          {!previewConfirmed && !cityOk && (
             <p className="mt-1.5 text-[11px] opacity-80">
               Confirme a prévia para liberar o GPS refinado e o botão de finalizar.
             </p>
