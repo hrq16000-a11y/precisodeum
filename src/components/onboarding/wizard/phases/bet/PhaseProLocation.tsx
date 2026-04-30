@@ -468,7 +468,9 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           {!previewConfirmed && cityOk && (state.location_source === 'manual' || state.location_source === 'cep' || geoFailed) && (
             <p className="mt-1.5 flex items-start gap-1 text-[11px] font-medium text-sky-800 dark:text-sky-200">
               <Info className="mt-0.5 h-3 w-3 flex-shrink-0" />
-              Localização definida manualmente. Por favor, confirme para finalizar.
+              {geoFailed
+                ? 'GPS indisponível — sua localização foi definida manualmente. Você já pode finalizar; confirmar a prévia é opcional.'
+                : 'Localização selecionada manualmente. Por favor, confirme para finalizar.'}
             </p>
           )}
           {!previewConfirmed && !cityOk && (
