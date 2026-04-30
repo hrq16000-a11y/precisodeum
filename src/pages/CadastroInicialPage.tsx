@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import WizardShell from '@/components/onboarding/wizard/WizardShell';
+import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 
 /**
  * /cadastro-inicial — porta única do onboarding (V3 + V2 fundidos).
@@ -83,6 +84,29 @@ function hasLocalDraft(): boolean {
   }
 }
 
+/** Inspeciona o rascunho local para extrair sinais úteis para telemetria. */
+function inspectLocalDraft(): { exists: boolean; phase: string | null; savedAt: number | null; key: string | null } {
+  if (typeof window === 'undefined') return { exists: false, phase: null, savedAt: null, key: null };
+  try {
+    for (const key of DRAFT_STORAGE_KEYS) {
+      const raw = window.localStorage.getItem(key);
+      if (!raw || raw.length <= 2) continue;
+      try {
+        const parsed = JSON.parse(raw);
+        const phase =
+          (parsed && typeof parsed === 'object' && (parsed.phase || parsed?.state?.phase)) || null;
+        const savedAt = (parsed && typeof parsed === 'object' && parsed.savedAt) || null;
+        return { exists: true, phase: phase ? String(phase) : null, savedAt, key };
+      } catch {
+        return { exists: true, phase: null, savedAt: null, key };
+      }
+    }
+    return { exists: false, phase: null, savedAt: null, key: null };
+  } catch {
+    return { exists: false, phase: null, savedAt: null, key: null };
+  }
+}
+
 
 export default function CadastroInicialPage() {
   const { user, profile, loading } = useAuth();
@@ -149,16 +173,43 @@ export default function CadastroInicialPage() {
   useEffect(() => {
     if (loading || !authSettled) return;
     if (user) return;
+    // Race-guard: ref-flag idempotente. Mesmo que o efeito reexecute por
+    // mudança de params/location, só dispara navegação+toast UMA vez por mount.
     if (redirectedRef.current) return;
     redirectedRef.current = true;
 
     const nextParam =
       params.get('next') || `${location.pathname}${location.search || ''}` || '/cadastro-inicial';
+    const loginUrl = `/login?next=${encodeURIComponent(nextParam)}`;
 
-    if (hasLocalDraft()) {
+    const draft = inspectLocalDraft();
+
+    // Telemetria de expiração de sessão durante onboarding — fail-soft.
+    void trackOnboardingEvent({
+      phase: (draft.phase as any) || 'unknown',
+      event: 'error',
+      meta: {
+        reason: 'session_expired_during_onboarding',
+        had_draft: draft.exists,
+        draft_phase: draft.phase,
+        draft_age_ms: draft.savedAt ? Date.now() - draft.savedAt : null,
+        next_param: nextParam,
+        error_code: 'AUTH_SESSION_EXPIRED',
+        error_message: 'User redirected to /login without active session',
+      },
+    });
+
+    if (draft.exists) {
+      // Toast com ação direta para o usuário voltar ao cadastro (link com ?next=).
       toast.warning(
-        'Sua sessão expirou por segurança, mas não se preocupe: salvamos seu progresso. Entre novamente para continuar de onde parou.',
-        { duration: 8000 },
+        'Sua sessão expirou por segurança. Salvamos seu progresso — você tem 7 dias para retomar de onde parou.',
+        {
+          duration: 10000,
+          action: {
+            label: 'Voltar ao cadastro',
+            onClick: () => navigate(loginUrl, { replace: true }),
+          },
+        },
       );
     } else {
       toast.message('Faça login para iniciar seu cadastro. Vamos te levar de volta para cá.', {
@@ -166,7 +217,7 @@ export default function CadastroInicialPage() {
       });
     }
 
-    navigate(`/login?next=${encodeURIComponent(nextParam)}`, { replace: true });
+    navigate(loginUrl, { replace: true });
   }, [loading, authSettled, user, navigate, params, location.pathname, location.search]);
 
   if (loading || !authSettled || !user) return null;
