@@ -449,7 +449,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // - O evento `enter` também carrega `draft_source` para segmentação.
   useEffect(() => {
     const draftSource = getOnboardingDraftSource() || 'none';
-    void trackOnboardingEvent({
+    void trackEvent({
       phase: state.phase,
       event: state.phase === 'done' ? 'complete' : 'enter',
       userId: user?.id,
@@ -719,7 +719,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           primaryMismatch,
         };
         console.warn('[onboardingV2] divergência categoria/serviço detectada e auto-corrigida:', divergence);
-        void trackOnboardingEvent({
+        void trackEvent({
           phase: state.phase,
           event: 'error',
           userId: user?.id,
@@ -763,7 +763,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           );
           if (realignErr || !realignData?.success) {
             console.warn('[onboardingV2] realign_first_service falhou:', realignErr || realignData);
-            void trackOnboardingEvent({
+            void trackEvent({
               phase: state.phase,
               event: 'error',
               userId: user?.id,
@@ -792,7 +792,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           if (!categoryId) preflightFailures.push('category_id');
           if (!resolvedCategoryName) preflightFailures.push('service_name');
           if (preflightFailures.length > 0) {
-            void trackOnboardingEvent({
+            void trackEvent({
               phase: state.phase,
               event: 'error',
               userId: user?.id,
@@ -837,7 +837,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
           if (error || !data?.success) {
             // ── OBSERVABILIDADE TOTAL (Hotfix #1) ─────────────────────────────
-            void trackOnboardingEvent({
+            void trackEvent({
               phase: state.phase,
               event: 'error',
               userId: user?.id,
@@ -879,7 +879,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 .single();
 
               if (insertErr || !insertRow?.id) {
-                void trackOnboardingEvent({
+                void trackEvent({
                   phase: state.phase,
                   event: 'error',
                   userId: user?.id,
@@ -899,7 +899,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               }
 
               // Fallback bem-sucedido → registra e segue como criação válida
-              void trackOnboardingEvent({
+              void trackEvent({
                 phase: state.phase,
                 event: 'submit',
                 userId: user?.id,
@@ -963,7 +963,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               dbProviderCategoryId: dbProvCat,
             };
             console.warn('[onboardingV2] read-back drift detectado, aplicando correção:', drift);
-            void trackOnboardingEvent({
+            void trackEvent({
               phase: state.phase,
               event: 'error',
               userId: user?.id,
@@ -1059,7 +1059,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   /* ───── Telemetria helpers ───── */
   const track = (event: 'next' | 'back' | 'skip' | 'submit' | 'error', meta: Record<string, unknown> = {}) =>
-    void trackOnboardingEvent({ phase: state.phase, event, userId: user?.id, meta });
+    void trackEvent({ phase: state.phase, event, userId: user?.id, meta });
 
   /* ───── Render por fase ───── */
 
