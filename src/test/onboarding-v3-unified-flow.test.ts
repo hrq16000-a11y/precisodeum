@@ -183,7 +183,8 @@ describe('wizardReducer — máquina linear unificada', () => {
     expect(UNIFIED_VISIBLE_PHASES).toBe(21);
     expect(UNIFIED_PHASE_ORDER).toHaveLength(22);
     expect(UNIFIED_PHASE_ORDER[0]).toBe('triage_identity');
-    expect(UNIFIED_PHASE_ORDER).not.toContain('triage_pro_document');
+    // triage_pro_document está presente na triagem (CPF/CNPJ opcional, valida selo).
+    expect(UNIFIED_PHASE_ORDER).toContain('triage_pro_document');
     expect(UNIFIED_PHASE_ORDER[UNIFIED_PHASE_ORDER.length - 1]).toBe('done');
     // Garante que extras de serviços e portfólio são as últimas antes do done
     expect(UNIFIED_PHASE_ORDER[UNIFIED_PHASE_ORDER.length - 3]).toBe('main_more_services');
