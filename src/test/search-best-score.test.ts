@@ -42,9 +42,10 @@ describe("sortBy='best' (score híbrido rating+distância)", () => {
     expect(sorted.map((x) => x.id)).toEqual(['B', 'C', 'A']);
   });
 
-  it('rating tem prioridade sobre proximidade com pesos default (0.7/0.3)', () => {
-    // A: rating top, longe.   B: rating médio, perto.
-    const list = [p('A', 5.0, 40), p('B', 3.5, 1)];
+  it('rating tem prioridade sobre proximidade quando o gap de rating é grande', () => {
+    // A: rating top, longe.   B: rating bem mais baixo, perto.
+    // Com pesos default 0.7/0.3, gap de rating de 2.5 estrelas supera 40km.
+    const list = [p('A', 5.0, 40), p('B', 2.0, 1)];
     const sorted = applySearchFilters(list, { sortBy: 'best' });
     expect(sorted[0].id).toBe('A');
   });
