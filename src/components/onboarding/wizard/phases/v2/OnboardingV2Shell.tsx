@@ -77,7 +77,13 @@ import {
   fetchRemoteDraft,
   clearRemoteDraft,
 } from './useOnboardingV2RemoteDraft';
-import { trackOnboardingEvent } from './telemetry';
+import {
+  trackOnboardingEvent,
+  markPhaseEnter,
+  markPhaseExit,
+  setOnboardingDraftSource,
+  getOnboardingDraftSource,
+} from './telemetry';
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
 import {
   buildOnboardingCoreLocks,
@@ -196,13 +202,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // Aviso de "rascunho restaurado" do LOCAL (mesmo dispositivo)
   useEffect(() => {
-    if (skipDraftRestore) return;
+    if (skipDraftRestore) {
+      // Quando entramos via handoff da triagem, marcamos a fonte como "seed".
+      if (!getOnboardingDraftSource()) setOnboardingDraftSource('seed');
+      return;
+    }
     const draft = readOnboardingV2Draft();
     if (draft && draft.phase && draft.phase !== 'phase1_action') {
       setDraftRestored({ source: 'local' });
+      setOnboardingDraftSource('local');
       const t = setTimeout(() => setDraftRestored(null), 5000);
       return () => clearTimeout(t);
     }
+    // Sessão limpa: marca explicitamente como "none" para diferenciar de
+    // sessões antigas onde a chave estava ausente.
+    if (!getOnboardingDraftSource()) setOnboardingDraftSource('none');
   }, [skipDraftRestore]);
 
   // Detecta rascunho REMOTO (troca de dispositivo) e ABRE MODAL para o usuário decidir.
@@ -246,6 +260,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         },
       });
       setDraftRestored({ source: 'remote', at: remoteDraft.updated_at });
+      setOnboardingDraftSource('remote');
       setTimeout(() => setDraftRestored(null), 6000);
     }
     setShowRemoteModal(false);
@@ -255,6 +270,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   const handleRemoteDiscard = async () => {
     if (user?.id) await clearRemoteDraft(user.id);
     clearOnboardingV2Draft();
+    setOnboardingDraftSource('none');
     toast.success('Rascunho descartado. Vamos começar do zero.');
     setShowRemoteModal(false);
     setRemoteDraft(null);
@@ -405,13 +421,25 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, state.userRef, state.providerId, state.firstServiceId]);
 
-  // Telemetria: dispara 'enter' a cada troca de fase
+  // Telemetria: dispara 'enter' a cada troca de fase + mede tempo na fase anterior.
+  // - Cada fase recebe `markPhaseEnter` no mount/troca.
+  // - Ao trocar de fase (cleanup), `markPhaseExit` emite o evento `phase_exit`
+  //   com `duration_ms` e `draft_source` (local/remote/seed/none).
+  // - O evento `enter` também carrega `draft_source` para segmentação.
   useEffect(() => {
+    const draftSource = getOnboardingDraftSource() || 'none';
     void trackOnboardingEvent({
       phase: state.phase,
       event: state.phase === 'done' ? 'complete' : 'enter',
       userId: user?.id,
+      meta: { draft_source: draftSource },
     });
+    markPhaseEnter(state.phase);
+    const exitingPhase = state.phase;
+    return () => {
+      // Emite duração da fase que está sendo deixada.
+      void markPhaseExit(exitingPhase, { userId: user?.id });
+    };
   }, [state.phase, user?.id]);
 
   // Reporta a fase para a barra de progresso global do WizardShell.
