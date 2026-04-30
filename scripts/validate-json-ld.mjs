@@ -13,8 +13,11 @@
  *
  * Uso: `node scripts/validate-json-ld.mjs` — exit 1 em qualquer erro.
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+
+const REPORT_PATH = process.env.JSONLD_REPORT_PATH || join(new URL('..', import.meta.url).pathname, 'dist', 'jsonld-report.json');
+const STRICT = process.argv.includes('--strict') || process.env.JSONLD_STRICT === '1';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const SRC_DIR = join(ROOT, 'src');
