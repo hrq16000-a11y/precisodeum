@@ -288,7 +288,7 @@ const DashboardPage = () => {
     }).eq('id', provider.id);
   }, [provider?.id, profileDone, servicesDone, portfolioDone]);
 
-  if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
+  if (loading) return <DashboardLayout><DashboardSkeleton /></DashboardLayout>;
 
   // Onboarding redirect is owned exclusively by `OnboardingGate` in App.tsx.
   // We only guard against the brief instant where `profile_type` hasn't loaded yet.
