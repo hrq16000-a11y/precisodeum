@@ -3,7 +3,7 @@ import { providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 
 function assertSafeParseOk<T>(result: { ok: true; data: T } | { ok: false; message: string; issues: unknown[] }) {
-  if (!result.ok) {
+  if (result.ok === false) {
     throw new Error(`${result.message} ${JSON.stringify(result.issues)}`);
   }
   expect(result.ok).toBe(true);
