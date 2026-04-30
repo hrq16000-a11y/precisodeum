@@ -193,20 +193,13 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
         </p>
 
         {/* Sugestão automática de CEP a partir de cidade + bairro */}
-        {cepLoading && (
-          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Search className="h-3 w-3 animate-pulse" /> Procurando CEP do seu bairro…
-          </p>
-        )}
-        {!cepLoading && cepSuggestion && state.postal_code !== cepSuggestion && (
-          <button
-            type="button"
-            onClick={applyCepSuggestion}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
-          >
-            <Search className="h-3 w-3" /> CEP encontrado: {cepSuggestion} — usar
-          </button>
-        )}
+        <CepSuggestionCard
+          city={state.city}
+          state={state.state}
+          neighborhood={state.neighborhood || ''}
+          currentValue={state.postal_code || null}
+          onApply={(cep) => applyCepSuggestion(cep)}
+        />
       </div>
 
       {/* Aviso de GPS impreciso */}
