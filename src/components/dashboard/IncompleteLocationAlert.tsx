@@ -35,9 +35,20 @@ export default function IncompleteLocationAlert({ provider }: Props) {
 
   if (!isDefaultCentro && !noCoords) return null;
 
+  // Mostrar APENAS pendências reais (sem genéricos).
   const issues: string[] = [];
   if (isDefaultCentro) issues.push('bairro real');
   if (noCoords) issues.push('coordenadas GPS');
+
+  // CTA contextual aponta para a primeira pendência específica.
+  // Quando ambas faltam, o fluxo guiado (`/dashboard/localizacao-guiada`)
+  // resolve as duas em sequência — então o rótulo reflete isso.
+  const ctaLabel =
+    issues.length === 2
+      ? 'Completar localização'
+      : isDefaultCentro
+      ? 'Definir bairro real'
+      : 'Ativar GPS / coordenadas';
 
   const handleDismiss = () => {
     sessionStorage.setItem(DISMISS_KEY, '1');
