@@ -199,6 +199,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     [isCompany],
   );
 
+  // Reflete o flow atual num sticky de sessão para que callers externos
+  // (BetModeShell, WizardShell, ExitIntentDialog, etc.) que ainda chamam
+  // `trackOnboardingEvent` diretamente também recebam `meta.flow` automaticamente.
+  useEffect(() => {
+    setOnboardingFlow(isCompany ? 'company' : 'default');
+  }, [isCompany]);
+
   // Auto-save em localStorage com debounce (rápido)
   useOnboardingV2Draft(state);
   // Auto-save remoto com debounce (cross-device)
