@@ -19,16 +19,82 @@ import {
 } from './uploadTestMode';
 
 export interface ResilientUploadOptions {
-  /** Tamanho do arquivo em bytes (opcional, usado só pra telemetria de teste). */
+  /** Tamanho do arquivo em bytes (usado pra telemetria E pra calibração adaptativa). */
   fileSizeBytes?: number;
-  /** Timeout por tentativa (ms). Default 25s — 3G real demora pra subir 300KB. */
+  /** Timeout por tentativa (ms). Quando omitido, é calculado a partir da rede + tamanho. */
   timeoutMs?: number;
-  /** Número máx. de tentativas (incluindo a primeira). Default 3. */
+  /** Número máx. de tentativas. Quando omitido, é calculado a partir da rede. */
   maxAttempts?: number;
-  /** Backoff base (ms). Tentativa N espera base * 2^(N-1) + jitter. Default 800. */
+  /** Backoff base (ms). Quando omitido, é calculado a partir da rede. */
   backoffBaseMs?: number;
-  /** Callback opcional para feedback de UI (ex: toast). */
-  onAttempt?: (attempt: number, max: number) => void;
+  /** Callback opcional para feedback de UI (ex: toast). Recebe motivo no retry (timeout/network/5xx). */
+  onAttempt?: (attempt: number, max: number, reason?: 'initial' | 'timeout' | 'network' | 'server') => void;
+}
+
+/** Lê hints da Network Information API (Chrome/Android). */
+interface NetworkHints {
+  effectiveType: '4g' | '3g' | '2g' | 'slow-2g' | 'unknown';
+  downlinkMbps: number | null;
+  saveData: boolean;
+}
+
+function readNetworkHints(): NetworkHints {
+  if (typeof navigator === 'undefined') {
+    return { effectiveType: 'unknown', downlinkMbps: null, saveData: false };
+  }
+  const conn = (navigator as any).connection;
+  if (!conn) return { effectiveType: 'unknown', downlinkMbps: null, saveData: false };
+  return {
+    effectiveType: (conn.effectiveType as NetworkHints['effectiveType']) ?? 'unknown',
+    downlinkMbps: typeof conn.downlink === 'number' ? conn.downlink : null,
+    saveData: !!conn.saveData,
+  };
+}
+
+/**
+ * Calibra timeout/maxAttempts/backoff com base em:
+ *   - effectiveType (slow-2g/2g/3g/4g)
+ *   - downlinkMbps (quando disponível)
+ *   - tamanho do arquivo (timeout proporcional)
+ *
+ * Retorna defaults razoáveis quando o browser não expõe Network Information.
+ */
+export function calibrateUploadProfile(
+  fileSizeBytes: number | undefined,
+  hints: NetworkHints = readNetworkHints()
+): { timeoutMs: number; maxAttempts: number; backoffBaseMs: number } {
+  const sizeMB = (fileSizeBytes ?? 0) / (1024 * 1024);
+
+  // Bandwidth efetiva (Mbps) — usa downlink real se disponível, senão estima por effectiveType
+  let bandwidthMbps: number;
+  switch (hints.effectiveType) {
+    case 'slow-2g': bandwidthMbps = 0.05; break;
+    case '2g':      bandwidthMbps = 0.25; break;
+    case '3g':      bandwidthMbps = 1.0;  break;
+    case '4g':      bandwidthMbps = 5.0;  break;
+    default:        bandwidthMbps = 4.0;  break; // assume 4G/Wi-Fi quando desconhecido
+  }
+  if (hints.downlinkMbps && hints.downlinkMbps > 0) {
+    bandwidthMbps = Math.max(0.05, hints.downlinkMbps);
+  }
+
+  // Timeout = tempo estimado (s) × overhead (3×) + piso de 8s, teto de 90s
+  // sizeMB×8 = megabits; /Mbps = segundos teóricos
+  const estSeconds = sizeMB > 0 ? (sizeMB * 8) / bandwidthMbps : 8;
+  const timeoutMs = Math.min(90_000, Math.max(8_000, Math.round(estSeconds * 3 * 1000)));
+
+  // Tentativas: redes ruins merecem mais
+  let maxAttempts = 3;
+  if (hints.effectiveType === '3g' || hints.effectiveType === '2g') maxAttempts = 4;
+  if (hints.effectiveType === 'slow-2g') maxAttempts = 5;
+  if (hints.saveData) maxAttempts = Math.max(maxAttempts, 4);
+
+  // Backoff base: começa mais alto em redes lentas (evita re-disparar antes da rede acordar)
+  let backoffBaseMs = 800;
+  if (hints.effectiveType === '3g') backoffBaseMs = 1_200;
+  if (hints.effectiveType === '2g' || hints.effectiveType === 'slow-2g') backoffBaseMs = 2_000;
+
+  return { timeoutMs, maxAttempts, backoffBaseMs };
 }
 
 export class UploadTimeoutError extends Error {
@@ -59,14 +125,17 @@ export async function resilientUpload<T = any>(
   headers: Record<string, string>,
   opts: ResilientUploadOptions = {}
 ): Promise<T> {
+  // Calibração adaptativa quando os params não foram fornecidos manualmente.
+  const calibrated = calibrateUploadProfile(opts.fileSizeBytes);
   const {
-    timeoutMs = 25_000,
-    maxAttempts = 3,
-    backoffBaseMs = 800,
+    timeoutMs = calibrated.timeoutMs,
+    maxAttempts = calibrated.maxAttempts,
+    backoffBaseMs = calibrated.backoffBaseMs,
     onAttempt,
   } = opts;
 
   let lastError: unknown = null;
+  let lastReason: 'initial' | 'timeout' | 'network' | 'server' = 'initial';
   const testActive = isUploadTestActive();
   const testScenario = getUploadTestMode().scenario;
   const startedAt = performance.now();
@@ -74,7 +143,7 @@ export async function resilientUpload<T = any>(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     attemptsUsed = attempt;
-    onAttempt?.(attempt, maxAttempts);
+    onAttempt?.(attempt, maxAttempts, lastReason);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -102,7 +171,6 @@ export async function resilientUpload<T = any>(
       clearTimeout(timer);
 
       if (!res.ok) {
-        // 4xx terminal — não tenta de novo
         if (res.status < 500) {
           let errMsg = `upload_failed_${res.status}`;
           try {
@@ -113,8 +181,8 @@ export async function resilientUpload<T = any>(
           }
           throw new Error(errMsg);
         }
-        // 5xx → retry
         lastError = new Error(`upload_status_${res.status}`);
+        lastReason = 'server';
         if (!isRetryable(lastError, res.status) || attempt === maxAttempts) {
           throw lastError;
         }
@@ -136,6 +204,11 @@ export async function resilientUpload<T = any>(
       const isAbort = (err as any)?.name === 'AbortError';
       const normalized = isAbort ? new UploadTimeoutError() : err;
       lastError = normalized;
+      lastReason = isAbort
+        ? 'timeout'
+        : normalized instanceof TypeError
+        ? 'network'
+        : 'server';
 
       if (!isRetryable(normalized) || attempt === maxAttempts) {
         if (testActive) {
@@ -152,7 +225,7 @@ export async function resilientUpload<T = any>(
       }
     }
 
-    // Backoff com jitter
+    // Backoff com jitter (proporcional ao backoffBaseMs adaptativo)
     const wait = backoffBaseMs * 2 ** (attempt - 1) + Math.floor(Math.random() * 250);
     await sleep(wait);
   }

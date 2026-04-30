@@ -8,6 +8,7 @@ import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils'
 import { generateBlurDataUrl } from '@/lib/compressImage';
 import { uploadWithFallback } from '@/lib/uploadWithFallback';
 import { UploadTimeoutError } from '@/lib/uploadResilient';
+import { validateImageFile } from '@/lib/imageValidation';
 import {
   UploadProgressIndicator,
   makeInitialStages,
@@ -30,7 +31,18 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [stages, setStages] = useState<UploadStagesState>(makeInitialStages());
   const [hasFailed, setHasFailed] = useState(false);
+  const [attemptInfo, setAttemptInfo] = useState<{ attempt: number; max: number; reason?: string } | null>(null);
+  const [localPreviews, setLocalPreviews] = useState<string[]>([]);
   const pendingFilesRef = useRef<File[]>([]);
+  const previewUrlsRef = useRef<string[]>([]);
+
+  // Cleanup das object URLs ao desmontar.
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+      previewUrlsRef.current = [];
+    };
+  }, []);
 
   const fetchImages = async () => {
     const { data } = await supabase
@@ -58,10 +70,36 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       return;
     }
 
-    const toUpload = Array.from(files).slice(0, remaining);
+    const candidates = Array.from(files).slice(0, remaining);
     if (files.length > remaining) {
       toast.warning(`Só ${remaining} foto(s) restantes. Apenas as primeiras serão enviadas.`);
     }
+
+    // Valida tipo/tamanho/dimensões de cada arquivo ANTES de iniciar o batch
+    const toUpload: File[] = [];
+    for (const f of candidates) {
+      const v = await validateImageFile(f, {
+        maxSizeBytes: 5 * 1024 * 1024,
+        minDimension: 64,
+        maxDimension: 6000,
+      });
+      if (!v.ok) {
+        toast.error(`${f.name}: ${v.message}`);
+        continue;
+      }
+      toUpload.push(f);
+    }
+
+    if (toUpload.length === 0) {
+      e.target.value = '';
+      return;
+    }
+
+    // Prévia local IMEDIATA (mantém UI responsiva enquanto comprime/envia)
+    previewUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    const newPreviews = toUpload.map((f) => URL.createObjectURL(f));
+    previewUrlsRef.current = newPreviews;
+    setLocalPreviews(newPreviews);
 
     await runBatch(toUpload);
     e.target.value = '';
@@ -71,6 +109,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
     pendingFilesRef.current = toUpload;
     setUploading(true);
     setHasFailed(false);
+    setAttemptInfo(null);
     setStages(makeInitialStages());
 
     try {
@@ -87,11 +126,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       const failed: File[] = [];
 
       for (const raw of toUpload) {
-        if (raw.size > 5 * 1024 * 1024) {
-          toast.error(`${raw.name} excede 5MB`);
-          continue;
-        }
-
+        // Validação já foi feita no handleUpload — sem dupla checagem aqui.
         setStages(makeInitialStages());
 
         try {
@@ -119,8 +154,17 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
                 };
               });
             },
-            onAttempt: (a, max) => {
-              if (a > 1) toast.message(`Conexão lenta. Tentando novamente (${a}/${max})…`);
+            onAttempt: (a, max, reason) => {
+              setAttemptInfo({ attempt: a, max, reason });
+              if (a > 1) {
+                const msg =
+                  reason === 'timeout'
+                    ? `${raw.name}: tempo esgotado, retentando (${a}/${max})…`
+                    : reason === 'network'
+                    ? `${raw.name}: sem rede, reenviando (${a}/${max})…`
+                    : `${raw.name}: tentando novamente (${a}/${max})…`;
+                toast.message(msg);
+              }
             },
           });
 
@@ -172,6 +216,10 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       } else {
         toast.success('Imagens enviadas!');
         pendingFilesRef.current = [];
+        // Limpa prévias locais — agora as fotos reais aparecem no grid.
+        previewUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+        previewUrlsRef.current = [];
+        setLocalPreviews([]);
       }
       fetchImages();
     } catch (err: any) {
@@ -236,7 +284,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
         <label className={reachedMax ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/*"
             multiple
             onChange={handleUpload}
             className="hidden"
@@ -251,9 +299,37 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
         </label>
       </div>
 
+      {/* Prévias locais instantâneas — visíveis enquanto o batch processa. */}
+      {localPreviews.length > 0 && (uploading || hasFailed) && (
+        <div className="flex gap-2 overflow-x-auto rounded-md border border-dashed border-border bg-muted/20 p-2">
+          {localPreviews.map((src, i) => (
+            <div key={src} className="relative flex-shrink-0">
+              <img
+                src={src}
+                alt={`Prévia ${i + 1}`}
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded object-cover opacity-80"
+              />
+              <span className="absolute bottom-0 left-0 right-0 bg-foreground/60 text-center text-[9px] text-background">
+                local
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {(uploading || hasFailed) && (
         <div className="space-y-2">
           <UploadProgressIndicator stages={stages} />
+          {attemptInfo && attemptInfo.attempt > 1 && (
+            <p className="text-[11px] text-muted-foreground" aria-live="polite">
+              Tentativa {attemptInfo.attempt}/{attemptInfo.max}
+              {attemptInfo.reason === 'timeout' && ' — tempo esgotado, reenviando…'}
+              {attemptInfo.reason === 'network' && ' — sem rede, aguardando reconexão…'}
+              {attemptInfo.reason === 'server' && ' — servidor instável, retentando…'}
+            </p>
+          )}
           {hasFailed && !uploading && pendingFilesRef.current.length > 0 && (
             <Button type="button" variant="outline" size="sm" onClick={handleRetry}>
               <RefreshCw className="mr-1 h-3 w-3" /> Tentar novamente ({pendingFilesRef.current.length})

@@ -45,8 +45,8 @@ export interface UploadWithFallbackOptions {
   baseTargetKB?: number;
   /** Callback de progresso por etapa. */
   onStage?: (event: UploadStageEvent) => void;
-  /** Callback ao iniciar/repetir upload (para mostrar "Tentando novamente N/M"). */
-  onAttempt?: (attempt: number, max: number) => void;
+  /** Callback ao iniciar/repetir upload (mostra "Tentando novamente N/M" e o motivo). */
+  onAttempt?: (attempt: number, max: number, reason?: 'initial' | 'timeout' | 'network' | 'server') => void;
 }
 
 interface FallbackRecipe {

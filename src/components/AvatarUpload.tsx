@@ -8,6 +8,8 @@ import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
 import { generateBlurDataUrl } from '@/lib/compressImage';
 import { UploadTimeoutError } from '@/lib/uploadResilient';
 import { uploadWithFallback } from '@/lib/uploadWithFallback';
+import { validateImageFile } from '@/lib/imageValidation';
+import { useLocalThumbnail } from '@/hooks/useLocalThumbnail';
 import {
   UploadProgressIndicator,
   makeInitialStages,
@@ -28,14 +30,19 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
     const [uploading, setUploading] = useState(false);
     const [stages, setStages] = useState<UploadStagesState>(makeInitialStages());
     const [hasFailed, setHasFailed] = useState(false);
+    const [attemptInfo, setAttemptInfo] = useState<{ attempt: number; max: number; reason?: string } | null>(null);
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
     const lastFileRef = useRef<File | null>(null);
     const queryClient = useQueryClient();
+    const localPreview = useLocalThumbnail(pendingFile);
 
     const runUpload = async (raw: File) => {
       lastFileRef.current = raw;
+      setPendingFile(raw);
       setUploading(true);
       setHasFailed(false);
+      setAttemptInfo(null);
       setStages(makeInitialStages());
 
       try {
@@ -75,8 +82,17 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
                 };
               });
             },
-            onAttempt: (a, max) => {
-              if (a > 1) toast.message(`Conexão lenta. Tentando novamente (${a}/${max})…`);
+            onAttempt: (a, max, reason) => {
+              setAttemptInfo({ attempt: a, max, reason });
+              if (a > 1) {
+                const msg =
+                  reason === 'timeout'
+                    ? `Tempo esgotado. Tentando novamente (${a}/${max})…`
+                    : reason === 'network'
+                    ? `Sem rede. Reenviando (${a}/${max})…`
+                    : `Tentando novamente (${a}/${max})…`;
+                toast.message(msg);
+              }
             },
           }
         );
@@ -125,8 +141,13 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.files?.[0];
       if (!raw) return;
-      if (raw.size > 5 * 1024 * 1024) {
-        toast.error('Imagem deve ter no máximo 5MB');
+      const v = await validateImageFile(raw, {
+        maxSizeBytes: 5 * 1024 * 1024,
+        minDimension: 64,
+        maxDimension: 6000,
+      });
+      if (!v.ok) {
+        toast.error(v.message ?? 'Arquivo inválido');
         return;
       }
       await runUpload(raw);
@@ -136,11 +157,14 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
       if (lastFileRef.current) await runUpload(lastFileRef.current);
     };
 
+    // Avatar exibido: prévia local IMEDIATA quando há arquivo pendente, senão URL atual.
+    const displaySrc = localPreview || currentUrl || undefined;
+
     return (
       <div ref={ref} className="inline-block">
         <div className="relative inline-block">
           <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-            <AvatarImage src={currentUrl || undefined} alt="Avatar" />
+            <AvatarImage src={displaySrc} alt="Avatar" />
             <AvatarFallback className="bg-gradient-to-br from-accent/20 to-primary/15 text-accent text-2xl font-bold tracking-wide">
               {initials || '?'}
             </AvatarFallback>
@@ -150,13 +174,14 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
             className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md hover:bg-accent/90 transition-colors"
+            aria-label="Trocar foto"
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
           </button>
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/*"
             className="hidden"
             onChange={handleUpload}
           />
@@ -165,6 +190,14 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
         {(uploading || hasFailed) && (
           <div className="mt-2 w-56 max-w-full">
             <UploadProgressIndicator stages={stages} />
+            {attemptInfo && attemptInfo.attempt > 1 && (
+              <p className="mt-1 text-[11px] text-muted-foreground" aria-live="polite">
+                Tentativa {attemptInfo.attempt}/{attemptInfo.max}
+                {attemptInfo.reason === 'timeout' && ' — tempo esgotado, reenviando…'}
+                {attemptInfo.reason === 'network' && ' — sem rede, aguardando reconexão…'}
+                {attemptInfo.reason === 'server' && ' — servidor instável, retentando…'}
+              </p>
+            )}
             {hasFailed && !uploading && (
               <Button
                 type="button"

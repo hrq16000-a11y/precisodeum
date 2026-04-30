@@ -9,6 +9,8 @@ import { generateBlurDataUrl } from '@/lib/compressImage';
 import { UploadTimeoutError } from '@/lib/uploadResilient';
 import { uploadWithFallback } from '@/lib/uploadWithFallback';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
+import { validateImageFile } from '@/lib/imageValidation';
+import { useLocalThumbnail } from '@/hooks/useLocalThumbnail';
 import {
   UploadProgressIndicator,
   makeInitialStages,
@@ -42,12 +44,17 @@ const ImageUploadField = ({
   const [mode, setMode] = useState<'url' | 'upload'>('url');
   const [stages, setStages] = useState<UploadStagesState>(makeInitialStages());
   const [hasFailed, setHasFailed] = useState(false);
+  const [attemptInfo, setAttemptInfo] = useState<{ attempt: number; max: number; reason?: string } | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const lastFileRef = useRef<File | null>(null);
+  const localPreview = useLocalThumbnail(pendingFile);
 
   const runUpload = async (raw: File) => {
     lastFileRef.current = raw;
+    setPendingFile(raw);
     setUploading(true);
     setHasFailed(false);
+    setAttemptInfo(null);
     setStages(makeInitialStages());
 
     try {
@@ -88,8 +95,17 @@ const ImageUploadField = ({
             };
           });
         },
-        onAttempt: (a, max) => {
-          if (a > 1) toast.message(`Conexão lenta. Tentando novamente (${a}/${max})…`);
+        onAttempt: (a, max, reason) => {
+          setAttemptInfo({ attempt: a, max, reason });
+          if (a > 1) {
+            const msg =
+              reason === 'timeout'
+                ? `Tempo esgotado. Tentando novamente (${a}/${max})…`
+                : reason === 'network'
+                ? `Sem rede. Reenviando (${a}/${max})…`
+                : `Tentando novamente (${a}/${max})…`;
+            toast.message(msg);
+          }
         },
       });
 
@@ -134,8 +150,14 @@ const ImageUploadField = ({
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.files?.[0];
     if (!raw) return;
-    if (raw.size > 5 * 1024 * 1024) {
-      toast.error('Imagem deve ter no máximo 5MB');
+    const v = await validateImageFile(raw, {
+      maxSizeBytes: 5 * 1024 * 1024,
+      minDimension: 64,
+      maxDimension: 6000,
+    });
+    if (!v.ok) {
+      toast.error(v.message ?? 'Arquivo inválido');
+      e.target.value = '';
       return;
     }
     await runUpload(raw);
@@ -182,7 +204,7 @@ const ImageUploadField = ({
           <div className="relative">
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/*"
               onChange={handleFileUpload}
               disabled={uploading}
               className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-accent/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent hover:file:bg-accent/20 disabled:opacity-50"
@@ -192,7 +214,33 @@ const ImageUploadField = ({
             )}
           </div>
 
+          {/* Prévia local instantânea — aparece antes mesmo da compressão começar. */}
+          {localPreview && (uploading || hasFailed) && (
+            <div className="flex items-center gap-2 rounded-md border border-border bg-card/40 p-2">
+              <img
+                src={localPreview}
+                alt="Prévia"
+                width={56}
+                height={56}
+                className="h-14 w-14 rounded object-cover"
+              />
+              <div className="text-[11px] text-muted-foreground">
+                <p className="font-medium text-foreground">Prévia local</p>
+                <p>Versão otimizada está sendo enviada…</p>
+              </div>
+            </div>
+          )}
+
           {(uploading || hasFailed) && <UploadProgressIndicator stages={stages} />}
+
+          {attemptInfo && attemptInfo.attempt > 1 && (
+            <p className="text-[11px] text-muted-foreground" aria-live="polite">
+              Tentativa {attemptInfo.attempt}/{attemptInfo.max}
+              {attemptInfo.reason === 'timeout' && ' — tempo esgotado, reenviando…'}
+              {attemptInfo.reason === 'network' && ' — sem rede, aguardando reconexão…'}
+              {attemptInfo.reason === 'server' && ' — servidor instável, retentando…'}
+            </p>
+          )}
 
           {hasFailed && !uploading && (
             <Button type="button" variant="outline" size="sm" onClick={handleRetry}>
@@ -202,10 +250,12 @@ const ImageUploadField = ({
         </div>
       )}
 
-      {value && (
+      {value && !localPreview && (
         <img
           src={value}
           alt="Preview"
+          width={80}
+          height={80}
           className="mt-1 h-20 w-auto rounded-lg object-cover border border-border"
           onError={handleImageError}
         />
