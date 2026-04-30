@@ -30,9 +30,22 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   }
 
   const mustCompleteOnboarding = !!user && !!profile && shouldForceOnboarding(profile, hasExistingService);
+  const isOnboardingRoute =
+    location.pathname === "/cadastro-inicial" ||
+    location.pathname === "/onboarding-v2/sucesso";
 
-  if (mustCompleteOnboarding && location.pathname !== "/cadastro-inicial") {
+  if (mustCompleteOnboarding && !isOnboardingRoute) {
     return <Navigate to="/cadastro-inicial" replace />;
+  }
+
+  // Mirror App.tsx: bloqueia volta a /cadastro-inicial após conclusão.
+  const alreadyCompleted = !!profile && profile.onboarding_completed === true;
+  if (alreadyCompleted && location.pathname === "/cadastro-inicial") {
+    const params = new URLSearchParams(location.search);
+    const nextRaw = params.get("next");
+    const isSafeNext = !!nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//") && nextRaw !== "/cadastro-inicial";
+    const target = isSafeNext ? nextRaw! : "/dashboard";
+    return <Navigate to={target} replace />;
   }
 
   return <>{children}</>;
@@ -43,6 +56,8 @@ const renderAt = (path = "/dashboard") =>
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/cadastro-inicial" element={<div>CADASTRO_PAGE</div>} />
+        <Route path="/dashboard" element={<div>DASHBOARD_PAGE</div>} />
+        <Route path="/dashboard/leads" element={<div>LEADS_PAGE</div>} />
         <Route
           path="*"
           element={
