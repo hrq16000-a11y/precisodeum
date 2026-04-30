@@ -125,14 +125,17 @@ export async function resilientUpload<T = any>(
   headers: Record<string, string>,
   opts: ResilientUploadOptions = {}
 ): Promise<T> {
+  // Calibração adaptativa quando os params não foram fornecidos manualmente.
+  const calibrated = calibrateUploadProfile(opts.fileSizeBytes);
   const {
-    timeoutMs = 25_000,
-    maxAttempts = 3,
-    backoffBaseMs = 800,
+    timeoutMs = calibrated.timeoutMs,
+    maxAttempts = calibrated.maxAttempts,
+    backoffBaseMs = calibrated.backoffBaseMs,
     onAttempt,
   } = opts;
 
   let lastError: unknown = null;
+  let lastReason: 'initial' | 'timeout' | 'network' | 'server' = 'initial';
   const testActive = isUploadTestActive();
   const testScenario = getUploadTestMode().scenario;
   const startedAt = performance.now();
@@ -140,7 +143,7 @@ export async function resilientUpload<T = any>(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     attemptsUsed = attempt;
-    onAttempt?.(attempt, maxAttempts);
+    onAttempt?.(attempt, maxAttempts, lastReason);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -168,7 +171,6 @@ export async function resilientUpload<T = any>(
       clearTimeout(timer);
 
       if (!res.ok) {
-        // 4xx terminal — não tenta de novo
         if (res.status < 500) {
           let errMsg = `upload_failed_${res.status}`;
           try {
@@ -179,8 +181,8 @@ export async function resilientUpload<T = any>(
           }
           throw new Error(errMsg);
         }
-        // 5xx → retry
         lastError = new Error(`upload_status_${res.status}`);
+        lastReason = 'server';
         if (!isRetryable(lastError, res.status) || attempt === maxAttempts) {
           throw lastError;
         }
@@ -202,6 +204,11 @@ export async function resilientUpload<T = any>(
       const isAbort = (err as any)?.name === 'AbortError';
       const normalized = isAbort ? new UploadTimeoutError() : err;
       lastError = normalized;
+      lastReason = isAbort
+        ? 'timeout'
+        : normalized instanceof TypeError
+        ? 'network'
+        : 'server';
 
       if (!isRetryable(normalized) || attempt === maxAttempts) {
         if (testActive) {
@@ -218,7 +225,7 @@ export async function resilientUpload<T = any>(
       }
     }
 
-    // Backoff com jitter
+    // Backoff com jitter (proporcional ao backoffBaseMs adaptativo)
     const wait = backoffBaseMs * 2 ** (attempt - 1) + Math.floor(Math.random() * 250);
     await sleep(wait);
   }
