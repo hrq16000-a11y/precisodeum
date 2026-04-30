@@ -28,7 +28,8 @@ import {
 } from '@/lib/uploadTestMode';
 import { resilientUpload } from '@/lib/uploadResilient';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, Loader2, Download, FileText } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 interface AggregateRow {
   scenario: string;
