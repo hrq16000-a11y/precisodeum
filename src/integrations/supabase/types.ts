@@ -4427,6 +4427,36 @@ export type Database = {
         }
         Relationships: []
       }
+      query_telemetry: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          id: string
+          label: string
+          meta: Json
+          rows_returned: number | null
+          user_ref: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms: number
+          id?: string
+          label: string
+          meta?: Json
+          rows_returned?: number | null
+          user_ref?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          label?: string
+          meta?: Json
+          rows_returned?: number | null
+          user_ref?: string | null
+        }
+        Relationships: []
+      }
       rate_limits: {
         Row: {
           action_key: string
@@ -7371,6 +7401,12 @@ export type Database = {
           signup_rate: number
         }[]
       }
+      admin_explain_query: {
+        Args: { _sql: string }
+        Returns: {
+          plan: string
+        }[]
+      }
       admin_export_audit_logs: {
         Args: { _days?: number }
         Returns: {
@@ -8292,6 +8328,15 @@ export type Database = {
           }
       log_pwa_install_event: {
         Args: { _event: string; _meta?: Json }
+        Returns: undefined
+      }
+      log_query_telemetry: {
+        Args: {
+          _duration_ms: number
+          _label: string
+          _meta?: Json
+          _rows?: number
+        }
         Returns: undefined
       }
       log_sponsor_access_event: {

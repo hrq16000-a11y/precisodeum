@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { DbProvider } from '@/hooks/useProviders';
 import { logCoverageSearch } from '@/lib/coverageLog';
 import { useOnlineUsersMap } from '@/hooks/useOnlinePresence';
+import { measureQuery } from '@/lib/queryTelemetry';
 import { useMemo } from 'react';
 
 interface NearbyParams {
@@ -24,14 +25,24 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
     // Mudanças finas (entrada/saída individual) usam staleTime para não floodar.
     queryKey: ['nearby-providers', lat, lng, radiusM, categorySlug, limit, onlineIds.length],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('nearby_providers', {
-        _lat: lat ?? null,
-        _lng: lng ?? null,
-        _radius_m: radiusM,
-        _category_slug: categorySlug || null,
-        _limit: limit,
-        _online_user_ids: onlineIds.length > 0 ? onlineIds : null,
-      });
+      const { data, error } = await measureQuery(
+        'search.nearby_providers',
+        () =>
+          supabase.rpc('nearby_providers', {
+            _lat: lat ?? null,
+            _lng: lng ?? null,
+            _radius_m: radiusM,
+            _category_slug: categorySlug || null,
+            _limit: limit,
+            _online_user_ids: onlineIds.length > 0 ? onlineIds : null,
+          }),
+        {
+          has_geo: lat != null && lng != null,
+          radius_m: radiusM,
+          category: categorySlug || null,
+          online_count: onlineIds.length,
+        },
+      );
 
       if (error) throw error;
 
