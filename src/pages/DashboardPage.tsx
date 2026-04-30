@@ -46,6 +46,7 @@ import SmartNextStepCTA from '@/components/dashboard/SmartNextStepCTA';
 import OnboardingCompletionTracker from '@/components/dashboard/OnboardingCompletionTracker';
 import LeadFollowupWidget from '@/components/dashboard/LeadFollowupWidget';
 import EmptyStateBanner from '@/components/dashboard/EmptyStateBanner';
+import DashboardSkeleton from '@/components/dashboard/DashboardSkeleton';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
 import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
