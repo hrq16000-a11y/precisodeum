@@ -426,17 +426,17 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         </p>
       </div>
 
-      {/* Botão GPS — destravado só após confirmar a prévia */}
+      {/* Botão GPS — disponível assim que houver cidade ou prévia preenchida (refino opcional). */}
       <Button
         type="button"
         variant="outline"
         size="sm"
         onClick={handleUseGps}
-        disabled={requestingGps || !previewConfirmed}
+        disabled={requestingGps}
         className="w-full justify-center gap-2 border-orange-300 text-orange-700 hover:bg-orange-50 disabled:opacity-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-950/40"
       >
         <LocateFixed className={`h-4 w-4 ${requestingGps ? 'animate-pulse' : ''}`} />
-        {requestingGps ? 'Detectando…' : state.location_source === 'gps' ? 'GPS confirmado — refinar de novo' : !previewConfirmed ? 'Confirme a prévia para usar o GPS' : 'Usar minha localização (GPS refinado)'}
+        {requestingGps ? 'Detectando…' : state.location_source === 'gps' ? 'GPS confirmado — refinar de novo' : 'Usar minha localização (GPS refinado)'}
       </Button>
 
 
