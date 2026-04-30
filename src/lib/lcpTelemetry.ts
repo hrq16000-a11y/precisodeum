@@ -35,7 +35,7 @@ function logRow(label: string, durationMs: number, meta: Record<string, unknown>
         _label: label.slice(0, 64),
         _duration_ms: Math.max(0, Math.min(600000, Math.round(durationMs))),
         _rows: null,
-        _meta: meta,
+        _meta: meta as never,
       }),
     ).then(
       () => undefined,
