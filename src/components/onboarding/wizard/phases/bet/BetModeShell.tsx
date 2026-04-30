@@ -121,6 +121,43 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
   // reload, troca de aba e do botão "Voltar" do navegador.
   useBetDraft(state);
 
+  // Hidratação remota (cross-device): se o user tem draft no banco mais recente
+  // que o local, mescla. Fail-soft. `remoteReady` libera persistência remota.
+  const [remoteReady, setRemoteReady] = useState(false);
+  const hydratedFromRemote = useRef(false);
+  useEffect(() => {
+    if (!user?.id || hydratedFromRemote.current) return;
+    hydratedFromRemote.current = true;
+    void (async () => {
+      try {
+        const remote = await fetchRemoteBetDraft(user.id);
+        if (remote?.payload) {
+          const parsed = safeParse(betDraftPayloadSchema, remote.payload);
+          if (parsed.ok) {
+            // Merge não-destrutivo: só preenche campos vazios localmente.
+            const incoming = parsed.data as Partial<BetState>;
+            const patchObj: Partial<BetState> = {};
+            (Object.keys(incoming) as Array<keyof BetState>).forEach((k) => {
+              const cur = (state as any)[k];
+              const inc = (incoming as any)[k];
+              const isEmpty = cur === '' || cur === null || cur === undefined;
+              if (isEmpty && inc !== undefined && inc !== null && inc !== '') {
+                (patchObj as any)[k] = inc;
+              }
+            });
+            if (Object.keys(patchObj).length > 0) dispatch({ type: 'PATCH', patch: patchObj });
+          }
+        }
+      } finally {
+        setRemoteReady(true);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Persistência remota (debounced) — só liga após hidratação inicial.
+  useBetRemoteDraft(state, user?.id, { ready: remoteReady });
+
   // Reporta mudanças de fase para a barra de progresso global do WizardShell.
   useEffect(() => {
     onPhaseChange?.(state.phase);
@@ -141,15 +178,52 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
 
-  // Listener do "Voltar" global emitido pelo WizardShell. Sem isso o botão era
-  // no-op em todas as fases do Bet Mode (V2Shell já tinha listener próprio).
+  // Listener do "Voltar" global emitido pelo WizardShell + suporte ao botão
+  // "Voltar" do NAVEGADOR via history.pushState/popstate. Cada mudança de fase
+  // empurra um state com a fase atual; o popstate restaura a fase anterior.
+  const lastPushedPhase = useRef<BetPhase | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (state.phase === 'done') return;
+    // Pula a primeira fase (já está na URL atual). Apenas push em mudanças.
+    if (lastPushedPhase.current === null) {
+      lastPushedPhase.current = state.phase;
+      // Substitui o state atual com a fase para o popstate poder ler.
+      try { window.history.replaceState({ wizardPhase: state.phase }, ''); } catch {}
+      return;
+    }
+    if (lastPushedPhase.current !== state.phase) {
+      lastPushedPhase.current = state.phase;
+      try { window.history.pushState({ wizardPhase: state.phase }, ''); } catch {}
+    }
+  }, [state.phase]);
+
   useEffect(() => {
     function handleBack() {
       const prev = BET_BACK_MAP[state.phase];
       if (prev) dispatch({ type: 'GOTO', phase: prev });
     }
+    function handlePopState(ev: PopStateEvent) {
+      const target = ev.state?.wizardPhase as BetPhase | undefined;
+      if (target && target !== state.phase) {
+        // Restaura a fase do history sem empurrar nova entrada.
+        lastPushedPhase.current = target;
+        dispatch({ type: 'GOTO', phase: target });
+      } else {
+        // Fallback: comporta-se como o "Voltar" do wizard.
+        const prev = BET_BACK_MAP[state.phase];
+        if (prev) {
+          lastPushedPhase.current = prev;
+          dispatch({ type: 'GOTO', phase: prev });
+        }
+      }
+    }
     window.addEventListener('wizard:request-back', handleBack as EventListener);
-    return () => window.removeEventListener('wizard:request-back', handleBack as EventListener);
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('wizard:request-back', handleBack as EventListener);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [state.phase]);
 
   const patch = (p: Partial<BetState>) => dispatch({ type: 'PATCH', patch: p });
