@@ -9,19 +9,19 @@
  */
 
 export const wizardStyles = {
-  /** Container externo de cada fase — largura, padding e espaçamentos. */
-  container: 'mx-auto w-full max-w-md space-y-3 px-4 py-3',
+  /** Container externo de cada fase — denso, sem scroll desnecessário em mobile. */
+  container: 'mx-auto w-full max-w-md space-y-2.5 px-4 py-2',
   /** Header centralizado com título e subtítulo. */
-  headerWrap: 'space-y-1 text-center',
+  headerWrap: 'space-y-0.5 text-center',
   /** Chip pequeno acima do título (ex.: "Cadastro express"). */
   chip:
     'mx-auto inline-flex items-center gap-2 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
   /** Título principal (h1). */
-  title: 'font-display text-xl font-extrabold leading-tight text-foreground',
+  title: 'font-display text-lg font-extrabold leading-tight text-foreground',
   /** Subtítulo abaixo do título. */
   subtitle: 'text-xs text-muted-foreground',
   /** Card padronizado para agrupar inputs. */
-  card: 'space-y-3 rounded-xl border border-border bg-card p-3 shadow-card',
+  card: 'space-y-2 rounded-xl border border-border bg-card p-3 shadow-card',
   /** Label de campo (uppercase, ícone à esquerda, slot para badge à direita). */
   fieldLabel:
     'mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground',
