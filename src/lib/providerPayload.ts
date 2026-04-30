@@ -96,9 +96,10 @@ export const PROVIDER_PJ_ADDRESS_KEYS = [
   'cnpj',
   'business_name',
   'legal_name',
+  'social_links',
 ] as const;
 
-/** Subconjunto das chaves PJ que são strings opcionais (vs boolean). */
+/** Subconjunto das chaves PJ que são strings opcionais (vs boolean/jsonb). */
 const PROVIDER_PJ_STRING_KEYS = new Set<string>([
   'street',
   'street_number',
