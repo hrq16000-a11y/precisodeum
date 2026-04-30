@@ -104,12 +104,12 @@ export default function CategoryCityPage() {
 
   const breadcrumbs = useMemo(
     () => [
-      { name: 'Início', url: '/' },
-      { name: 'Categorias', url: '/categorias' },
+      { label: 'Início', url: '/' },
+      { label: 'Categorias', url: '/categorias' },
       ...(category
-        ? [{ name: categoryHuman, url: `/categoria/${category.slug}` }]
+        ? [{ label: categoryHuman, url: `/categoria/${category.slug}` }]
         : []),
-      ...(cityKnown ? [{ name: cityHuman, url: `/categoria/${slug}/em/${cidade}` }] : []),
+      ...(cityKnown ? [{ label: cityHuman, url: `/categoria/${slug}/em/${cidade}` }] : []),
     ],
     [category, categoryHuman, cityHuman, cityKnown, slug, cidade],
   );
