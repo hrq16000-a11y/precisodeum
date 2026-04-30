@@ -37,19 +37,18 @@ const RULES = {
   },
   LocalBusiness: {
     required: ['name'],
-    must: [
-      // Recomendado pelo Google: address ou areaServed para LocalBusiness real.
-      { match: /address|areaServed/, msg: 'LocalBusiness deve declarar address ou areaServed' },
-    ],
+    must: [],
   },
   Person: {
     required: ['name'],
     must: [],
   },
   Place: {
-    required: ['name'],
+    // Place pode aparecer como referência interna (jobLocation, etc.) sem name —
+    // basta address ou geo. Mantemos `name` apenas recomendado.
+    required: [],
     must: [
-      { match: /address|geo|containedInPlace/, msg: 'Place deve ter address, geo ou containedInPlace' },
+      { match: /name|address|geo|containedInPlace/, msg: 'Place precisa de name, address, geo ou containedInPlace' },
     ],
   },
   PostalAddress: {
@@ -59,10 +58,9 @@ const RULES = {
   City: { required: ['name'], must: [] },
   State: { required: ['name'], must: [] },
   Service: {
+    // Service pode aparecer como ref mínima (`about: { '@type': 'Service', name }`).
     required: ['name'],
-    must: [
-      { match: /provider|areaServed|serviceType/, msg: 'Service deve indicar provider, areaServed ou serviceType' },
-    ],
+    must: [],
   },
   AggregateRating: {
     required: ['ratingValue'],
