@@ -39,9 +39,15 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     if (state.city && state.city.trim().length > 0) return; // respeita o que já foi digitado
     if (geo.city && geo.state) {
       autoFilledRef.current = true;
-      patch({ city: geo.city, state: geo.state });
+      patch({
+        city: geo.city,
+        state: geo.state,
+        ...(!(state.neighborhood && state.neighborhood.trim()) && geo.neighborhood
+          ? { neighborhood: geo.neighborhood }
+          : {}),
+      });
     }
-  }, [geo.city, geo.state, state.city, patch]);
+  }, [geo.city, geo.state, geo.neighborhood, state.city, state.neighborhood, patch]);
 
   function awardCityOnce() {
     if (state.rewards.city) return;
@@ -140,6 +146,7 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     geo.source === 'ip' ? 'aproximada (IP)' :
     geo.source === 'manual' ? 'manual' :
     geo.source === 'cache' ? 'salva' : null;
+  const hasApproximatePrefill = geo.source === 'ip' || geo.source === 'cache';
   const gpsImprecise = gpsAccuracy != null && gpsAccuracy > 500;
 
   async function onFinish() {
@@ -185,6 +192,12 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
         <LocateFixed className={`h-4 w-4 ${requestingGps ? 'animate-pulse' : ''}`} />
         {requestingGps ? 'Detectando…' : 'Usar minha localização (GPS)'}
       </Button>
+
+      {hasApproximatePrefill && state.city && (
+        <p className="-mt-2 text-center text-[11px] text-muted-foreground">
+          Sugerimos sua cidade aproximada automaticamente. Use o GPS só para tentar refinar o bairro.
+        </p>
+      )}
 
       <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
         <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
