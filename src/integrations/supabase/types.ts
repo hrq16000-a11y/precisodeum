@@ -377,6 +377,30 @@ export type Database = {
         }
         Relationships: []
       }
+      bet_drafts: {
+        Row: {
+          created_at: string
+          payload: Json
+          phase: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          payload?: Json
+          phase?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          payload?: Json
+          phase?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       blog_discover_previews: {
         Row: {
           created_at: string
