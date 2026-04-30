@@ -75,7 +75,7 @@ export default function CepSuggestionCard({
           neighborhood: bairroTrim,
         });
         if (cancelled) return;
-        if (r.ok) {
+        if (r.ok === true) {
           setHit(r.match);
           setStatus('success');
         } else {
