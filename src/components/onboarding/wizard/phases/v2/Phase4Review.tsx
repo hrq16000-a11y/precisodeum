@@ -131,6 +131,27 @@ export const Phase4Review = ({ profile, service, saving, onEdit, onConfirm }: Ph
         <Row label={profile.kind === 'pj' ? 'CNPJ' : 'CPF'} value={docFormatted} />
       </Section>
 
+      {profile.kind === 'pj' &&
+        (profile.street || profile.street_number || profile.complement || profile.postal_code) && (
+          <Section config={REVIEW_SECTIONS.pjAddress} onEdit={onEdit}>
+            <Row
+              label="Logradouro"
+              value={[profile.street, profile.street_number].filter(Boolean).join(', ')}
+            />
+            {profile.complement && <Row label="Complemento" value={profile.complement} />}
+            {profile.postal_code && (
+              <Row
+                label="CEP"
+                value={profile.postal_code.replace(/^(\d{5})(\d{3})$/, '$1-$2')}
+              />
+            )}
+            <Row
+              label="Visibilidade"
+              value={profile.show_full_address ? 'Endereço completo no perfil' : 'Apenas bairro/cidade'}
+            />
+          </Section>
+        )}
+
       <Section config={REVIEW_SECTIONS.service} onEdit={onEdit}>
         <Row label="Categoria" value={service.service_name} />
       </Section>

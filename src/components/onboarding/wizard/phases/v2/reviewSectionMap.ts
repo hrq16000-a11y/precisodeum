@@ -20,13 +20,15 @@ export interface ReviewSectionConfig {
 }
 
 export const REVIEW_SECTIONS: Record<string, ReviewSectionConfig> = {
-  identity:    { key: 'identity',    label: 'Identidade',     phase: 'phase1_contact',  focusField: 'full_name' },
-  document:    { key: 'document',    label: 'Documento',      phase: 'phase4_document', focusField: 'document' },
-  service:     { key: 'service',     label: 'Serviço',        phase: 'phase2_service',  focusField: 'service_name' },
-  logistics:   { key: 'logistics',   label: 'Logística',      phase: 'phase2_details',  focusField: 'cities_served' },
-  bioBairro:   { key: 'bioBairro',   label: 'Bairro & Bio',   phase: 'phase4_extras_a', focusField: 'bio' },
-  avatar:      { key: 'avatar',      label: 'Foto de perfil', phase: 'phase4_avatar',   focusField: 'avatar_url' },
-  socials:     { key: 'socials',     label: 'Redes sociais',  phase: 'phase4_extras_b', focusField: 'instagram_url' },
+  identity:    { key: 'identity',    label: 'Identidade',         phase: 'phase1_contact',  focusField: 'full_name' },
+  document:    { key: 'document',    label: 'Documento',          phase: 'phase4_document', focusField: 'document' },
+  /** Endereço comercial PJ — opcional, exibido apenas se preenchido. */
+  pjAddress:   { key: 'pjAddress',   label: 'Endereço comercial', phase: 'phase4_document', focusField: 'street' },
+  service:     { key: 'service',     label: 'Serviço',            phase: 'phase2_service',  focusField: 'service_name' },
+  logistics:   { key: 'logistics',   label: 'Logística',          phase: 'phase2_details',  focusField: 'cities_served' },
+  bioBairro:   { key: 'bioBairro',   label: 'Bairro & Bio',       phase: 'phase4_extras_a', focusField: 'bio' },
+  avatar:      { key: 'avatar',      label: 'Foto de perfil',     phase: 'phase4_avatar',   focusField: 'avatar_url' },
+  socials:     { key: 'socials',     label: 'Redes sociais',      phase: 'phase4_extras_b', focusField: 'instagram_url' },
 };
 
 /** Lista de campos focáveis conhecidos — útil para validação. */

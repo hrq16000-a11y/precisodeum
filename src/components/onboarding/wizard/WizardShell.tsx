@@ -109,6 +109,18 @@ export default function WizardShell() {
           city: triageState.city,
           state: triageState.state,
           neighborhood: triageState.neighborhood,
+          // Endereço comercial PJ (opcional) — propagado da triagem para
+          // que apareça na Review e seja persistido em providers.*.
+          ...(triageState.pro_kind === 'pj' && {
+            street: triageState.street || state.profile.street,
+            street_number: triageState.street_number || state.profile.street_number,
+            complement: triageState.complement || state.profile.complement,
+            postal_code: triageState.postal_code || state.profile.postal_code,
+            show_full_address:
+              typeof triageState.show_full_address === 'boolean'
+                ? triageState.show_full_address
+                : state.profile.show_full_address,
+          }),
         },
         service: {
           ...state.service,
