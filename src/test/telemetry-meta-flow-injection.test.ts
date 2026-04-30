@@ -63,7 +63,7 @@ describe('telemetry — meta.flow injection', () => {
   it('injeta meta.flow do sticky quando o caller omite', async () => {
     setOnboardingFlow('company');
     await trackOnboardingEvent({
-      phase: 'phase1_basic',
+      phase: 'phase1_contact',
       event: 'enter',
       userId: 'u1',
     });
@@ -75,7 +75,7 @@ describe('telemetry — meta.flow injection', () => {
   it('cai em "unknown" quando nem caller nem sticky têm flow', async () => {
     // sessionStorage limpo no beforeEach
     await trackOnboardingEvent({
-      phase: 'phase1_basic',
+      phase: 'phase1_contact',
       event: 'enter',
       userId: 'u1',
     });
