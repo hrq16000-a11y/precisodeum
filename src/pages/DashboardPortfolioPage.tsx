@@ -557,8 +557,8 @@ const DashboardPortfolioPage = () => {
             </DialogHeader>
             {captionPhoto && (
               <div className="space-y-3">
-                <div className="overflow-hidden rounded-lg border border-border bg-muted">
-                  <img src={captionPhoto.image_url} alt="" loading="lazy" decoding="async" width={600} height={256} className="w-full max-h-64 object-contain bg-foreground/5" />
+                <div className="relative overflow-hidden rounded-lg border border-border bg-muted" style={{ aspectRatio: '16/9', maxHeight: '16rem' }}>
+                  <LazyImage src={captionPhoto.image_url} alt="" width={600} height={256} sizesPreset="card-wide" surface="portfolio-caption" className="h-full w-full object-contain bg-foreground/5" />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
