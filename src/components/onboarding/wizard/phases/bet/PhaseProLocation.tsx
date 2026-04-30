@@ -313,7 +313,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     >
       <header className="space-y-2 text-center">
         <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
-          Onde você atende?
+          De onde você é?
         </h1>
         <p className="text-sm text-muted-foreground">
           Sua cidade-base e bairro aparecem para clientes próximos.

@@ -557,10 +557,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       });
       if (!upsertResult.ok) return;
 
-      await addSessionPointsToProfile();
-      await refetchProfile?.();
       clearBetDraft();
       if (user?.id) await clearRemoteBetDraft(user.id);
+      await addSessionPointsToProfile();
+      await refetchProfile?.();
       goto('celebration');
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'bet_finish_pro_outer' } });
