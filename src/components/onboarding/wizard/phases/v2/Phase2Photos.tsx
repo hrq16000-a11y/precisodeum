@@ -25,7 +25,7 @@ export const Phase2Photos = ({
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4 }}
-    className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+    className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
     aria-labelledby="phase2-photos-title"
     role="region"
   >

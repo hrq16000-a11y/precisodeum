@@ -309,7 +309,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+      className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
     >
       <header className="space-y-2 text-center">
         <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
