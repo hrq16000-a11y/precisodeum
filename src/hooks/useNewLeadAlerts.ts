@@ -86,9 +86,12 @@ const matchesCityLabel = (ctx: LeadContext | null | undefined, label: string): b
 
 export function useNewLeadAlerts(providerId: string | undefined, filters: Filters) {
   const qc = useQueryClient();
-  const { mode } = useLeadAlertPreference();
+  const { mode, minIntervalSeconds } = useLeadAlertPreference();
   const modeRef = useRef<LeadAlertMode>(mode);
   modeRef.current = mode;
+  const intervalRef = useRef<number>(minIntervalSeconds);
+  intervalRef.current = minIntervalSeconds;
+  const lastAlertAtRef = useRef<number>(0);
   const [outsideFilterCount, setOutsideFilterCount] = useState(0);
   const [lastNewLead, setLastNewLead] = useState<NewLeadPayload | null>(null);
   const filtersRef = useRef(filters);
