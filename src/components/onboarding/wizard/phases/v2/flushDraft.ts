@@ -4,6 +4,13 @@
  *
  * Usado pelos handlers de "Salvar e continuar" para garantir que o usuário
  * não perca dados se fechar a aba logo após avançar.
+ *
+ * Coordenação anti-duplicação (refactor 2026):
+ *  - Quando este módulo escreve no remoto, registra `lastRemoteWriteAt` e a
+ *    fase escrita. O hook `useOnboardingV2RemoteDraft` consulta esse marcador
+ *    via `wasRemoteDraftWrittenRecently` e pula o próprio upsert debounced
+ *    se a mesma fase já foi gravada nos últimos 2s — eliminando a chamada
+ *    dupla ao Supabase no clique de "Salvar e continuar".
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { OnboardingState } from './types';
@@ -11,6 +18,24 @@ import { broadcastDraftChange } from './crossTabSync';
 
 // Mantido em sincronia com `useOnboardingV2Draft.ts` (versão V3 de ruptura).
 const DRAFT_KEY = 'onboarding_v3_institutional_final';
+
+// Marcador in-memory da última escrita remota imediata. Evita duplicação
+// com o autosave debounced sem precisar de localStorage (mesma aba já basta:
+// abas diferentes têm seus próprios debouncers, então não há conflito real).
+let lastRemoteWriteAt = 0;
+let lastRemoteWritePhase: string | null = null;
+const REMOTE_DEDUPE_MS = 2000;
+
+export function markRemoteDraftWritten(phase: string | null | undefined): void {
+  lastRemoteWriteAt = Date.now();
+  lastRemoteWritePhase = phase ? String(phase) : null;
+}
+
+export function wasRemoteDraftWrittenRecently(phase: string | null | undefined): boolean {
+  if (!lastRemoteWritePhase) return false;
+  if (Date.now() - lastRemoteWriteAt > REMOTE_DEDUPE_MS) return false;
+  return lastRemoteWritePhase === String(phase ?? '');
+}
 
 export function flushLocalDraft(state: OnboardingState) {
   if (typeof window === 'undefined') return;
@@ -46,6 +71,7 @@ export async function flushRemoteDraft(
       },
       phase: state.phase,
     } as any, { onConflict: 'user_id' });
+    markRemoteDraftWritten(state.phase as any);
   } catch { /* fail-soft */ }
 }
 
@@ -61,3 +87,4 @@ export function flushOnboardingV2Draft(
   // Fire-and-forget, mas captura erros para não estourar Promise não tratada.
   void flushRemoteDraft(state, userId).catch(() => { /* fail-soft */ });
 }
+

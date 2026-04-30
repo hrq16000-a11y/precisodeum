@@ -20,7 +20,7 @@
  * ao concluir a Fase 2 — destravando o usuário para o dashboard.
  */
 
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -176,6 +176,27 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // Frente 4 — duplicidade inline (whatsapp + tax_id)
   const dup = useWizardDuplicateCheck();
+
+  // ── ISOLAMENTO DE GATILHOS (refactor 2026) ────────────────────────────────
+  // `isCompany` é a CONDIÇÃO MESTRE para diferenciar o fluxo PJ/Empresa do
+  // fluxo padrão (PF). Toda telemetria emitida pelo V2Shell carrega
+  // `meta.flow` automaticamente para que segmentações no admin não dependam
+  // de inferência heurística posterior.
+  const isCompany = useMemo(() => {
+    const acc = ((profile as any)?.account_type || '').toString().toLowerCase();
+    if (acc === 'company' || acc === 'pj') return true;
+    return state.profile.kind === 'pj';
+  }, [profile, state.profile.kind]);
+
+  /** Wrapper único que injeta a dimensão `flow` em todo evento de telemetria. */
+  const trackEvent = useCallback(
+    (args: Parameters<typeof trackOnboardingEvent>[0]) =>
+      trackOnboardingEvent({
+        ...args,
+        meta: { flow: isCompany ? 'company' : 'default', ...(args.meta || {}) },
+      }),
+    [isCompany],
+  );
 
   // Auto-save em localStorage com debounce (rápido)
   useOnboardingV2Draft(state);
@@ -428,7 +449,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // - O evento `enter` também carrega `draft_source` para segmentação.
   useEffect(() => {
     const draftSource = getOnboardingDraftSource() || 'none';
-    void trackOnboardingEvent({
+    void trackEvent({
       phase: state.phase,
       event: state.phase === 'done' ? 'complete' : 'enter',
       userId: user?.id,
@@ -599,7 +620,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         userId: user?.id,
         error: e,
         variant: 'v2',
-        context: { action: 'persist_phase1', has_provider_id: !!state.providerId },
+        context: { action: 'persist_phase1', has_provider_id: !!state.providerId, flow: isCompany ? 'company' : 'default' },
       });
       toast.error('Não consegui salvar agora', {
         description: (e?.message || 'Tente novamente em instantes.').slice(0, 160),
@@ -698,7 +719,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           primaryMismatch,
         };
         console.warn('[onboardingV2] divergência categoria/serviço detectada e auto-corrigida:', divergence);
-        void trackOnboardingEvent({
+        void trackEvent({
           phase: state.phase,
           event: 'error',
           userId: user?.id,
@@ -742,7 +763,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           );
           if (realignErr || !realignData?.success) {
             console.warn('[onboardingV2] realign_first_service falhou:', realignErr || realignData);
-            void trackOnboardingEvent({
+            void trackEvent({
               phase: state.phase,
               event: 'error',
               userId: user?.id,
@@ -771,7 +792,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           if (!categoryId) preflightFailures.push('category_id');
           if (!resolvedCategoryName) preflightFailures.push('service_name');
           if (preflightFailures.length > 0) {
-            void trackOnboardingEvent({
+            void trackEvent({
               phase: state.phase,
               event: 'error',
               userId: user?.id,
@@ -816,7 +837,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
           if (error || !data?.success) {
             // ── OBSERVABILIDADE TOTAL (Hotfix #1) ─────────────────────────────
-            void trackOnboardingEvent({
+            void trackEvent({
               phase: state.phase,
               event: 'error',
               userId: user?.id,
@@ -858,7 +879,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 .single();
 
               if (insertErr || !insertRow?.id) {
-                void trackOnboardingEvent({
+                void trackEvent({
                   phase: state.phase,
                   event: 'error',
                   userId: user?.id,
@@ -878,7 +899,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               }
 
               // Fallback bem-sucedido → registra e segue como criação válida
-              void trackOnboardingEvent({
+              void trackEvent({
                 phase: state.phase,
                 event: 'submit',
                 userId: user?.id,
@@ -942,7 +963,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               dbProviderCategoryId: dbProvCat,
             };
             console.warn('[onboardingV2] read-back drift detectado, aplicando correção:', drift);
-            void trackOnboardingEvent({
+            void trackEvent({
               phase: state.phase,
               event: 'error',
               userId: user?.id,
@@ -992,7 +1013,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       return true;
     } catch (e: any) {
-      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'publish_first_service' } });
+      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'publish_first_service', flow: isCompany ? 'company' : 'default' } });
       toast.error('Não conseguimos registrar seu serviço principal.', {
         description: 'Verifique se a categoria está correta e tente novamente. Seu progresso foi salvo como rascunho — você pode continuar a qualquer momento.',
         duration: 12000,
@@ -1025,7 +1046,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
       return true;
     } catch (e: any) {
-      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'persist_patch', keys: Object.keys(patch || {}) } });
+      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'persist_patch', keys: Object.keys(patch || {}), flow: isCompany ? 'company' : 'default' } });
       toast.error('Não consegui salvar este passo agora', {
         description: (e?.message || '').slice(0, 160) || undefined,
         action: { label: 'Tentar novamente', onClick: () => { void persistPatch(patch); } },
@@ -1038,7 +1059,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   /* ───── Telemetria helpers ───── */
   const track = (event: 'next' | 'back' | 'skip' | 'submit' | 'error', meta: Record<string, unknown> = {}) =>
-    void trackOnboardingEvent({ phase: state.phase, event, userId: user?.id, meta });
+    void trackEvent({ phase: state.phase, event, userId: user?.id, meta });
 
   /* ───── Render por fase ───── */
 
