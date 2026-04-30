@@ -1,12 +1,13 @@
 /** Phase Pro Location — cidade + bairro do profissional. */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Home } from 'lucide-react';
+import { ArrowRight, MapPin, Home, LocateFixed, Info } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { fieldWin } from '@/lib/betDopamine';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { toast } from 'sonner';
 import { BET_POINTS, type BetState } from './types';
 
 interface Props {
@@ -19,11 +20,26 @@ interface Props {
 export default function PhaseProLocation({ state, patch, finish, addPoints }: Props) {
   const [awarded, setAwarded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [requestingGps, setRequestingGps] = useState(false);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
+  const autoFilledRef = useRef(false);
+
+  // Sugestão automática (não-destrutiva): se o usuário NUNCA digitou cidade,
+  // pré-preenche com o que veio do IP/GPS — visível e editável. Se já tinha
+  // cidade salva (rascunho/banco), NÃO sobrescreve.
+  useEffect(() => {
+    if (autoFilledRef.current) return;
+    if (state.city && state.city.trim().length > 0) return; // respeita o que já foi digitado
+    if (geo.city && geo.state) {
+      autoFilledRef.current = true;
+      patch({ city: geo.city, state: geo.state });
+    }
+  }, [geo.city, geo.state, state.city, patch]);
 
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
+    autoFilledRef.current = true; // edição manual cancela auto-preenchimento
     patch({ city, state: uf });
     if (city && uf && !awarded) {
       setAwarded(true);
@@ -36,9 +52,40 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     patch({ neighborhood: e.target.value });
   }
 
+  async function handleUseGps() {
+    if (requestingGps) return;
+    setRequestingGps(true);
+    try {
+      const result = await geo.requestPreciseLocation({ force: true });
+      if (result.ok && result.city && result.state) {
+        autoFilledRef.current = true;
+        patch({ city: result.city, state: result.state });
+        if (!awarded) {
+          setAwarded(true);
+          addPoints(BET_POINTS.city);
+          fieldWin();
+        }
+        toast.success('Localização detectada por GPS', {
+          description: `${result.city} / ${result.state}. Confira e ajuste o bairro se precisar.`,
+        });
+      } else {
+        toast.error('Não consegui acessar o GPS', {
+          description: 'Permita a localização no navegador ou digite a cidade manualmente.',
+        });
+      }
+    } finally {
+      setRequestingGps(false);
+    }
+  }
+
   const cityOk = state.city.trim().length > 0 && state.state.trim().length === 2;
   const neighborhoodOk = (state.neighborhood || '').trim().length >= 2;
   const canFinish = cityOk && neighborhoodOk;
+  const sourceLabel =
+    geo.source === 'gps' ? 'GPS' :
+    geo.source === 'ip' ? 'aproximada (IP)' :
+    geo.source === 'manual' ? 'manual' :
+    geo.source === 'cache' ? 'salva' : null;
 
   async function onFinish() {
     if (!canFinish || submitting) return;
@@ -62,6 +109,28 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
         </p>
       </header>
 
+      {/* Aviso curto de importância da localização */}
+      <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+        <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
+        <p className="leading-snug">
+          A <strong>localização correta</strong> aumenta seu match com clientes próximos. Use o GPS
+          para precisão de bairro — você ainda pode editar tudo abaixo.
+        </p>
+      </div>
+
+      {/* Botão GPS — sempre disponível e visível */}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={handleUseGps}
+        disabled={requestingGps}
+        className="w-full justify-center gap-2 border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-950/40"
+      >
+        <LocateFixed className={`h-4 w-4 ${requestingGps ? 'animate-pulse' : ''}`} />
+        {requestingGps ? 'Detectando…' : 'Usar minha localização (GPS)'}
+      </Button>
+
       <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
         <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
           <MapPin className="h-3.5 w-3.5" /> Cidade base
@@ -77,7 +146,15 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
             onChange={handleCity}
             placeholder="Digite sua cidade"
             preferredUF={preferredUF}
-            statusText={preferredUF ? `Mostrando primeiro cidades de ${preferredUF}` : undefined}
+            statusText={
+              state.city
+                ? sourceLabel
+                  ? `Detectada ${sourceLabel}. Edite se estiver errado.`
+                  : undefined
+                : preferredUF
+                ? `Mostrando primeiro cidades de ${preferredUF}`
+                : undefined
+            }
           />
         </div>
       </div>
