@@ -41,6 +41,7 @@ import PhaseCelebration from './PhaseCelebration';
 
 import { initialBetState, type BetState, type BetIntent, type BetPhase } from './types';
 import { setOnboardingIntent, trackOnboardingEvent } from '../v2/telemetry';
+import { getDeviceKind } from '@/lib/locationTelemetry';
 import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
 import { useBetRemoteDraft, fetchRemoteBetDraft, clearRemoteBetDraft } from './useBetRemoteDraft';
 
