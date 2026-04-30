@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { normalizeUF } from '@/lib/locationFormat';
+import { parseReverseGeocodeLocation } from '@/lib/geoReverseGeocode';
 
 
 interface GeoData {
@@ -126,19 +127,7 @@ async function reverseGeocode(latitude: number, longitude: number) {
     );
     if (!response.ok) throw new Error(`reverse-geocode ${response.status}`);
     const data = await response.json();
-    // bigdatacloud entrega o bairro em locality/localityInfo.administrative
-    // (varia por país). Tentamos múltiplos campos para máxima cobertura no Brasil.
-    const adminInfo = data?.localityInfo?.administrative as Array<{ name?: string; description?: string; order?: number }> | undefined;
-    const neighborhoodCandidate =
-      data?.locality ||
-      adminInfo?.find((a) => a?.description?.toLowerCase()?.includes('bairro'))?.name ||
-      data?.localityInfo?.informative?.find?.((a: any) => a?.description?.toLowerCase?.()?.includes('bairro'))?.name ||
-      null;
-    return {
-      city: data?.city || data?.locality || null,
-      state: data?.principalSubdivision || null,
-      neighborhood: typeof neighborhoodCandidate === 'string' ? neighborhoodCandidate : null,
-    };
+    return parseReverseGeocodeLocation(data);
   } finally {
     clearTimeout(timeout);
   }
