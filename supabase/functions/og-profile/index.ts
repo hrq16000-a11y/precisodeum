@@ -19,12 +19,21 @@
 // Public endpoint (verify_jwt = false). Safe: only reads public_profiles view.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import {
+  buildOgImage,
+  OG_IMAGE_SPECS,
+  pickOgRatio,
+  type OgImageRatio,
+} from "./buildOgImage.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
+/** Slug válido: 2–80 chars, lowercase, dígitos e hífen. */
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,79}$/;
 
 // Crawlers that need server-rendered OG tags. Match is case-insensitive
 // and uses simple substring tests (each value is normalized to lowercase).
