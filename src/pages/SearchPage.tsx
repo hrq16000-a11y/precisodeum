@@ -707,6 +707,9 @@ const SearchPage = () => {
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="relevance">Relevância</SelectItem>
+              <SelectItem value="best">
+                <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3 w-3" strokeWidth={1.75} /> Melhor combinação</span>
+              </SelectItem>
               <SelectItem value="nearest">
                 <span className="inline-flex items-center gap-1.5"><Compass className="h-3 w-3" strokeWidth={1.75} /> Mais perto</span>
               </SelectItem>
