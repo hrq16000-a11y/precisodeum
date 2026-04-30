@@ -13,6 +13,7 @@ import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { OnboardingState } from './types';
 import { wasRemoteDraftWrittenRecently, markRemoteDraftWritten } from './flushDraft';
+import { recordWizardSupabaseCall } from './diagnostics';
 
 const REMOTE_DEBOUNCE_MS = 1500;
 
