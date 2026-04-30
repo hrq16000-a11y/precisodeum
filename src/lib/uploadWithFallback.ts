@@ -83,16 +83,24 @@ export async function uploadWithFallback<T = any>(
 
   const compressForLevel = async (level: number, recipe?: FallbackRecipe): Promise<File> => {
     if (recipe?.raw) return rawFile;
+    const maxDimension = recipe?.maxDimension ?? (level === 0 ? effectiveMaxDim : baseMaxDim);
+    const targetKB = recipe?.targetKB ?? (level === 0 ? effectiveTarget : baseTarget);
     return withStageTelemetry(
       'compress',
-      () =>
-        compressImage(rawFile, {
-          maxDimension: recipe?.maxDimension ?? baseMaxDim,
-          targetKB: recipe?.targetKB ?? baseTarget,
-          onStage: (stage, status) => {
-            opts.onStage?.({ stage, status });
-          },
-        }),
+      async () => {
+        try {
+          return await compressImage(rawFile, {
+            maxDimension,
+            targetKB,
+            onStage: (stage, status) => {
+              opts.onStage?.({ stage, status });
+            },
+          });
+        } catch (err) {
+          const stage = (err as any)?.message?.includes('decode') ? 'convert' : 'compress';
+          throw new CompressionError(stage as 'convert' | 'compress', err);
+        }
+      },
       { fileSizeBytes: rawFile.size, fallbackLevel: level }
     );
   };
