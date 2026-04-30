@@ -443,6 +443,21 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
           : {}),
       });
 
+      // Validação Zod ANTES de bater no banco — falha cedo e clara.
+      // (Schema é tolerante, apenas barra inputs grosseiramente inválidos.)
+      const validation = (await import('@/lib/wizardSchemas')).safeParse(
+        (await import('@/lib/wizardSchemas')).providerWritePayloadSchema,
+        providerPayload,
+      );
+      if (!validation.ok) {
+        toast.error('Dados incompletos', { description: validation.message });
+        logWizardError({
+          phase: 'phase1_contact', userId: user.id, error: new Error('zod_validation_failed'),
+          variant: 'v1', context: { action: 'bet_finish_pro_validation', issues: validation.issues.slice(0, 3) },
+        });
+        return;
+      }
+
       const upsertResult = await safeWizardSave({
         phase: 'phase1_contact',
         userId: user.id,
