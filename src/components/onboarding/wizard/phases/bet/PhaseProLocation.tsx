@@ -239,11 +239,17 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   // após uma tentativa explícita. Também consideramos negação quando geo.error existir.
   const geoFailed = Boolean((geo as any).error) || (geo.source && geo.source !== 'gps');
 
-  // canFinish é tolerante a falha de GPS:
-  //  - se a prévia foi confirmada explicitamente, libera (caminho feliz).
-  //  - se o GPS falhou/foi negado mas o usuário tem cidade+UF válidos no state,
-  //    libera (Hotfix #G2.3 — remove bloqueio invisível do previewSeededRef).
-  const canFinish = cityOk && (previewConfirmed || geoFailed);
+  // canFinish é tolerante a falha/ausência de GPS (Hotfix #G2):
+  //  - prévia confirmada explicitamente (caminho feliz).
+  //  - GPS falhou/foi negado e há cidade+UF válidos.
+  //  - localização veio de fonte manual confiável (CEP/manual) — usuário não
+  //    deve ficar preso esperando GPS quando já informou de outra forma.
+  //  - previewSeededRef NUNCA atua como trava: basta cityOk + fonte válida.
+  const hasReliableManualSource =
+    state.location_source === 'cep' ||
+    state.location_source === 'manual' ||
+    state.location_source === 'gps';
+  const canFinish = cityOk && (previewConfirmed || geoFailed || hasReliableManualSource);
   const sourceLabel =
     state.location_source === 'gps' ? 'GPS preciso' :
     state.location_source === 'cep' ? 'CEP' :
