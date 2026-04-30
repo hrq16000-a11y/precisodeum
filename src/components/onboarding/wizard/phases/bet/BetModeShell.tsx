@@ -256,6 +256,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await addSessionPointsToProfile();
       await refetchProfile?.();
       clearBetDraft();
+      void clearRemoteBetDraft(user.id);
       navigate('/dashboard/agencia', { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_rh' } });
@@ -289,6 +290,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await addSessionPointsToProfile();
       await refetchProfile?.();
       clearBetDraft();
+      void clearRemoteBetDraft(user.id);
       navigate('/quero-ser-patrocinador', { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_sponsor' } });
