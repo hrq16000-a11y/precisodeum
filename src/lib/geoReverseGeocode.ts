@@ -54,15 +54,29 @@ export function parseReverseGeocodeLocation(data: ReverseGeocodeResponse) {
     (!isRegionalLabel(data?.city) ? data?.city ?? null : null) ||
     (!isRegionalLabel(data?.locality) ? data?.locality ?? null : null);
 
+  const neighborhoodMatcher = (entry: LocalityInfoEntry) => {
+    const desc = normalize(entry.description);
+    const name = normalize(entry.name);
+    return (
+      desc.includes('bairro') ||
+      desc.includes('suburb') ||
+      desc.includes('quarter') ||
+      desc.includes('district') ||
+      desc.includes('neighborhood') ||
+      desc.includes('neighbourhood') ||
+      desc.includes('city_district') ||
+      desc.includes('city district') ||
+      desc.includes('residential') ||
+      // adminLevel 10 in OSM/BDC often corresponds to neighborhoods in BR
+      entry.adminLevel === 10 ||
+      // some BDC payloads tag the entry only by name
+      name.startsWith('bairro ')
+    );
+  };
+
   const explicitNeighborhood =
-    firstNamed(administrative, (entry) => {
-      const desc = normalize(entry.description);
-      return desc.includes('bairro') || desc.includes('suburb') || desc.includes('district') || desc.includes('neighborhood');
-    }) ||
-    firstNamed(informative, (entry) => {
-      const desc = normalize(entry.description);
-      return desc.includes('bairro') || desc.includes('suburb') || desc.includes('district') || desc.includes('neighborhood');
-    });
+    firstNamed(administrative, neighborhoodMatcher) ||
+    firstNamed(informative, neighborhoodMatcher);
 
   const locality = data?.locality ?? null;
   const candidateNeighborhood =
