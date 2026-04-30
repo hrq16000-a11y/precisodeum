@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, MessageCircle, Bell, Smartphone, Send, BellRing, Activity, Volume2, Flame, MailCheck } from 'lucide-react';
+import { Mail, MessageCircle, Bell, Smartphone, Send, BellRing, Activity, Volume2, Flame, MailCheck, Zap } from 'lucide-react';
 import { playHornBeep } from '@/lib/soundFx';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { usePwaNotifications } from '@/hooks/usePwaNotifications';
 import { whatsappLink } from '@/lib/whatsapp';
+import { useLeadAlertPreference, type LeadAlertMode } from '@/hooks/useLeadAlertPreference';
 
 type ChannelKey = 'email' | 'whatsapp' | 'push' | 'in_app' | 'sms';
 
