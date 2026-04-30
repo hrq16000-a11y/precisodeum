@@ -23,6 +23,13 @@ export default function IncompleteLocationAlert({ provider }: Props) {
 
   if (!provider || dismissed) return null;
 
+  // Guard anti-zumbi: se o provider já está ativo (cadastro aprovado),
+  // não exibir alerta de pendência mesmo que `neighborhood_source` seja
+  // legado/ausente. Empresas e prestadores aprovados não devem ver "sombra"
+  // de pendência já resolvida.
+  const status = String((provider as any)?.status || '').toLowerCase();
+  if (status === 'active') return null;
+
   const isDefaultCentro = provider.neighborhood_source === 'default_centro';
   const noCoords = !(typeof provider.latitude === 'number' && typeof provider.longitude === 'number');
 
