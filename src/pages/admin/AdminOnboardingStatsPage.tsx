@@ -522,6 +522,7 @@ export default function AdminOnboardingStatsPage() {
             </CardContent>
           </Card>
 
+          {data?.since ? (
             <p className="text-xs text-muted-foreground">
               Janela: últimos {data.days} dias (desde {new Date(data.since).toLocaleString("pt-BR")}).
             </p>
