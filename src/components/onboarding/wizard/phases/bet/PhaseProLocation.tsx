@@ -22,6 +22,9 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
   const [awarded, setAwarded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requestingGps, setRequestingGps] = useState(false);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [cepSuggestion, setCepSuggestion] = useState<string | null>(null);
+  const [cepLoading, setCepLoading] = useState(false);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
   const autoFilledRef = useRef(false);
@@ -38,6 +41,27 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     }
   }, [geo.city, geo.state, state.city, patch]);
 
+  // Auto-busca de CEP quando cidade + bairro estão preenchidos.
+  // Debounce 600ms para não bater no ViaCEP a cada tecla.
+  useEffect(() => {
+    const city = state.city.trim();
+    const uf = state.state.trim().toUpperCase();
+    const bairro = (state.neighborhood || '').trim();
+    if (city.length < 2 || uf.length !== 2 || bairro.length < 3) {
+      setCepSuggestion(null);
+      return;
+    }
+    let cancelled = false;
+    setCepLoading(true);
+    const t = window.setTimeout(async () => {
+      const r = await lookupCepFromCity({ city, state: uf, neighborhood: bairro });
+      if (cancelled) return;
+      setCepLoading(false);
+      setCepSuggestion(r.ok ? r.match.cep : null);
+    }, 600);
+    return () => { cancelled = true; window.clearTimeout(t); setCepLoading(false); };
+  }, [state.city, state.state, state.neighborhood]);
+
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
     autoFilledRef.current = true; // edição manual cancela auto-preenchimento
@@ -53,6 +77,12 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     patch({ neighborhood: e.target.value });
   }
 
+  function applyCepSuggestion() {
+    if (!cepSuggestion) return;
+    patch({ postal_code: cepSuggestion });
+    toast.success('CEP preenchido automaticamente', { description: cepSuggestion });
+  }
+
   async function handleUseGps() {
     if (requestingGps) return;
     setRequestingGps(true);
@@ -61,14 +91,22 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
       if (result.ok && result.city && result.state) {
         autoFilledRef.current = true;
         patch({ city: result.city, state: result.state });
+        setGpsAccuracy(result.accuracyMeters ?? null);
         if (!awarded) {
           setAwarded(true);
           addPoints(BET_POINTS.city);
           fieldWin();
         }
-        toast.success('Localização detectada por GPS', {
-          description: `${result.city} / ${result.state}. Confira e ajuste o bairro se precisar.`,
-        });
+        const acc = result.accuracyMeters;
+        if (acc != null && acc > 500) {
+          toast.warning('GPS impreciso', {
+            description: `Margem de ~${Math.round(acc)}m. Confirme bairro e cidade manualmente.`,
+          });
+        } else {
+          toast.success('Localização detectada por GPS', {
+            description: `${result.city} / ${result.state}${acc != null ? ` (±${Math.round(acc)}m)` : ''}. Confira o bairro.`,
+          });
+        }
       } else {
         toast.error('Não consegui acessar o GPS', {
           description: 'Permita a localização no navegador ou digite a cidade manualmente.',
@@ -87,6 +125,7 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     geo.source === 'ip' ? 'aproximada (IP)' :
     geo.source === 'manual' ? 'manual' :
     geo.source === 'cache' ? 'salva' : null;
+  const gpsImprecise = gpsAccuracy != null && gpsAccuracy > 500;
 
   async function onFinish() {
     if (!canFinish || submitting) return;
