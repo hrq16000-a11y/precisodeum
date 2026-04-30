@@ -28,6 +28,9 @@ interface ServiceImageUploadProps {
 const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
   const [images, setImages] = useState<ServiceImage[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [stages, setStages] = useState<UploadStagesState>(makeInitialStages());
+  const [hasFailed, setHasFailed] = useState(false);
+  const pendingFilesRef = useRef<File[]>([]);
 
   const fetchImages = async () => {
     const { data } = await supabase
@@ -60,14 +63,28 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       toast.warning(`Só ${remaining} foto(s) restantes. Apenas as primeiras serão enviadas.`);
     }
 
+    await runBatch(toUpload);
+    e.target.value = '';
+  };
+
+  const runBatch = async (toUpload: File[]) => {
+    pendingFilesRef.current = toUpload;
     setUploading(true);
+    setHasFailed(false);
+    setStages(makeInitialStages());
+
     try {
       const { userRef } = await resolveIdentity(userId);
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Você precisa estar logado');
+        return;
+      }
 
       let nextOrder = images.length > 0 ? Math.max(...images.map(i => i.display_order)) + 1 : 0;
+      const failed: File[] = [];
 
       for (const raw of toUpload) {
         if (raw.size > 5 * 1024 * 1024) {
@@ -75,77 +92,99 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
           continue;
         }
 
-        // Mobile-first: 1200px / ~300KB cobre 99% dos casos visuais sem
-        // estourar banda em 3G/4G. AVIF/WebP escolhidos automaticamente.
-        const file = await compressImage(raw, { maxDimension: 1200, targetKB: 300 });
+        setStages(makeInitialStages());
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('bucket', 'service-images');
-        formData.append('folder', `${userId}/${serviceId}`);
-
-        const res = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/optimize-image`,
-          {
-            method: 'POST',
-            body: formData,
+        try {
+          const result = await uploadWithFallback<any>(raw, {
+            url: `https://${projectId}.supabase.co/functions/v1/optimize-image`,
             headers: {
-              'apikey': anonKey,
-              'Authorization': `Bearer ${session?.access_token}`,
+              apikey: anonKey,
+              Authorization: `Bearer ${session.access_token}`,
             },
-          }
-        );
-
-        const data = await res.json();
-        if (data.error) {
-          toast.error('Erro no upload: ' + data.error);
-          continue;
-        }
-
-        const publicUrl = data.url;
-        const storagePath = data.path;
-
-        if (data.deduplicated) {
-          toast.info(`${file.name}: imagem reutilizada (duplicada)`);
-        } else if (data.savings_percent > 0) {
-          const origKB = Math.round((data.original_size || 0) / 1024);
-          const optKB = Math.round((data.optimized_size || 0) / 1024);
-          const origLabel = origKB >= 1024 ? `${(origKB / 1024).toFixed(1)}MB` : `${origKB}KB`;
-          const optLabel = optKB >= 1024 ? `${(optKB / 1024).toFixed(1)}MB` : `${optKB}KB`;
-          toast.success(`Imagem otimizada: ${origLabel} → ${optLabel} (-${data.savings_percent}%)`);
-        }
-
-        await supabase.from('service_images').insert({
-          service_id: serviceId,
-          image_url: publicUrl,
-          display_order: nextOrder,
-        });
-        nextOrder++;
-
-        // Idempotent media upsert
-        if (userRef) {
-          const blurDataUrl = await generateBlurDataUrl(raw);
-          await upsertMedia({
-            storagePath: `service-images/${storagePath}`,
-            publicUrl,
-            originalName: file.name,
-            mimeType: file.type || 'image/jpeg',
-            entityType: 'service',
-            entityRef: serviceId,
-            userRef,
-            sizeOriginal: file.size,
-            blurDataUrl: blurDataUrl || undefined,
+            baseMaxDimension: 1200,
+            baseTargetKB: 300,
+            buildFormData: (file) => {
+              const fd = new FormData();
+              fd.append('file', file);
+              fd.append('bucket', 'service-images');
+              fd.append('folder', `${userId}/${serviceId}`);
+              return fd;
+            },
+            onStage: ({ stage, status }) => {
+              setStages((prev) => {
+                if (stage === 'fallback') return prev;
+                return {
+                  ...prev,
+                  [stage]: status === 'start' ? 'active' : status === 'error' ? 'error' : 'done',
+                };
+              });
+            },
+            onAttempt: (a, max) => {
+              if (a > 1) toast.message(`Conexão lenta. Tentando novamente (${a}/${max})…`);
+            },
           });
+
+          const data = result.data;
+          if (data.error) {
+            failed.push(raw);
+            continue;
+          }
+
+          await supabase.from('service_images').insert({
+            service_id: serviceId,
+            image_url: data.url,
+            display_order: nextOrder,
+          });
+          nextOrder++;
+
+          if (userRef && data.path) {
+            const blurDataUrl = await generateBlurDataUrl(raw);
+            await upsertMedia({
+              storagePath: `service-images/${data.path}`,
+              publicUrl: data.url,
+              originalName: raw.name,
+              mimeType: raw.type || 'image/jpeg',
+              entityType: 'service',
+              entityRef: serviceId,
+              userRef,
+              sizeOriginal: raw.size,
+              blurDataUrl: blurDataUrl || undefined,
+            });
+          }
+
+          if (result.fallbackLevel > 0) {
+            toast.success(`${raw.name} enviada (qualidade reduzida — nível ${result.fallbackLevel}).`);
+          }
+        } catch (err) {
+          failed.push(raw);
+          if (err instanceof UploadTimeoutError) {
+            toast.error(`${raw.name}: conexão muito lenta.`);
+          } else {
+            toast.error(`Falha ao enviar ${raw.name}.`);
+          }
         }
       }
 
-      toast.success('Imagens enviadas!');
+      if (failed.length > 0) {
+        pendingFilesRef.current = failed;
+        setHasFailed(true);
+        setStages((prev) => ({ ...prev, upload: 'error' }));
+      } else {
+        toast.success('Imagens enviadas!');
+        pendingFilesRef.current = [];
+      }
       fetchImages();
     } catch (err: any) {
       toast.error('Erro: ' + err.message);
+      setHasFailed(true);
     } finally {
       setUploading(false);
-      e.target.value = '';
+    }
+  };
+
+  const handleRetry = async () => {
+    if (pendingFilesRef.current.length > 0) {
+      await runBatch(pendingFilesRef.current);
     }
   };
 
