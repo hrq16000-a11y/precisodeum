@@ -47,6 +47,7 @@ const isTransientNetworkError = (error: unknown) => {
 const Index = lazy(() => import("./pages/Index"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const CategoryCityPage = lazy(() => import("./pages/CategoryCityPage"));
 const ProviderProfile = lazy(() => import("./pages/ProviderProfile"));
 const CompanyProfile = lazy(() => import("./pages/CompanyProfile"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -442,6 +443,7 @@ const App = () => {
                 <Route path="/index03" element={<Index03 />} />
                 <Route path="/buscar" element={<SearchPage />} />
                 <Route path="/categoria/:slug" element={<CategoryPage />} />
+                <Route path="/categoria/:slug/em/:cidade" element={<CategoryCityPage />} />
                 <Route path="/profissional/:slug" element={<ProviderProfile />} />
                 <Route path="/empresa/:slug" element={<CompanyProfile />} />
                 <Route path="/agencia/:slug" element={<AgencyPublicPage />} />

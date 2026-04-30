@@ -1,14 +1,14 @@
 /** Phase Pro Location — cidade + bairro do profissional. */
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Home, LocateFixed, Info, AlertTriangle, Search } from 'lucide-react';
+import { ArrowRight, MapPin, Home, LocateFixed, Info, AlertTriangle } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { fieldWin } from '@/lib/betDopamine';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { lookupCepFromCity } from '@/lib/cepReverseLookup';
 import { toast } from 'sonner';
+import CepSuggestionCard from './CepSuggestionCard';
 import { BET_POINTS, type BetState } from './types';
 
 interface Props {
@@ -23,8 +23,6 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
   const [submitting, setSubmitting] = useState(false);
   const [requestingGps, setRequestingGps] = useState(false);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
-  const [cepSuggestion, setCepSuggestion] = useState<string | null>(null);
-  const [cepLoading, setCepLoading] = useState(false);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
   const autoFilledRef = useRef(false);
@@ -41,27 +39,6 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     }
   }, [geo.city, geo.state, state.city, patch]);
 
-  // Auto-busca de CEP quando cidade + bairro estão preenchidos.
-  // Debounce 600ms para não bater no ViaCEP a cada tecla.
-  useEffect(() => {
-    const city = state.city.trim();
-    const uf = state.state.trim().toUpperCase();
-    const bairro = (state.neighborhood || '').trim();
-    if (city.length < 2 || uf.length !== 2 || bairro.length < 3) {
-      setCepSuggestion(null);
-      return;
-    }
-    let cancelled = false;
-    setCepLoading(true);
-    const t = window.setTimeout(async () => {
-      const r = await lookupCepFromCity({ city, state: uf, neighborhood: bairro });
-      if (cancelled) return;
-      setCepLoading(false);
-      setCepSuggestion(r.ok ? r.match.cep : null);
-    }, 600);
-    return () => { cancelled = true; window.clearTimeout(t); setCepLoading(false); };
-  }, [state.city, state.state, state.neighborhood]);
-
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
     autoFilledRef.current = true; // edição manual cancela auto-preenchimento
@@ -77,10 +54,9 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     patch({ neighborhood: e.target.value });
   }
 
-  function applyCepSuggestion() {
-    if (!cepSuggestion) return;
-    patch({ postal_code: cepSuggestion });
-    toast.success('CEP preenchido automaticamente', { description: cepSuggestion });
+  function applyCepSuggestion(cep: string) {
+    patch({ postal_code: cep });
+    toast.success('CEP preenchido automaticamente', { description: cep });
   }
 
   async function handleUseGps() {
@@ -217,20 +193,13 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
         </p>
 
         {/* Sugestão automática de CEP a partir de cidade + bairro */}
-        {cepLoading && (
-          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Search className="h-3 w-3 animate-pulse" /> Procurando CEP do seu bairro…
-          </p>
-        )}
-        {!cepLoading && cepSuggestion && state.postal_code !== cepSuggestion && (
-          <button
-            type="button"
-            onClick={applyCepSuggestion}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
-          >
-            <Search className="h-3 w-3" /> CEP encontrado: {cepSuggestion} — usar
-          </button>
-        )}
+        <CepSuggestionCard
+          city={state.city}
+          state={state.state}
+          neighborhood={state.neighborhood || ''}
+          currentValue={state.postal_code || null}
+          onApply={(cep) => applyCepSuggestion(cep)}
+        />
       </div>
 
       {/* Aviso de GPS impreciso */}
