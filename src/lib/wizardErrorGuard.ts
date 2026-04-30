@@ -41,9 +41,55 @@ interface LogErrorArgs {
   variant?: 'v1' | 'v2';
 }
 
-/** Registra um erro no funil sem bloquear o usuário. */
+/* ─────────────────────────────────────────────────────────────────────────
+ * Attempt counter — conta tentativas de erro por (phase + action key) na
+ * sessão atual. Útil para detectar usuários que estão "presos" tentando o
+ * mesmo passo várias vezes. Persistido em sessionStorage (não compartilhado
+ * entre abas, mas suficiente para correlacionar uma jornada).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+const ATTEMPT_KEY = 'wizard_error_attempts_v1';
+
+function readAttempts(): Record<string, number> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = sessionStorage.getItem(ATTEMPT_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function writeAttempts(map: Record<string, number>): void {
+  if (typeof window === 'undefined') return;
+  try { sessionStorage.setItem(ATTEMPT_KEY, JSON.stringify(map)); } catch { /* fail-soft */ }
+}
+
+/** Incrementa contador de tentativas para `phase:actionKey` e devolve o novo total. */
+export function bumpErrorAttempt(phase: string, actionKey = 'default'): number {
+  const map = readAttempts();
+  const k = `${phase}:${actionKey}`;
+  const next = (map[k] || 0) + 1;
+  map[k] = next;
+  writeAttempts(map);
+  return next;
+}
+
+/** Lê o contador atual (sem incrementar). */
+export function getErrorAttempt(phase: string, actionKey = 'default'): number {
+  return readAttempts()[`${phase}:${actionKey}`] || 0;
+}
+
+/** Reseta contador — chamar após sucesso. */
+export function resetErrorAttempt(phase: string, actionKey = 'default'): void {
+  const map = readAttempts();
+  delete map[`${phase}:${actionKey}`];
+  writeAttempts(map);
+}
+
+/** Registra um erro no funil sem bloquear o usuário. Inclui contagem por tentativa. */
 export function logWizardError({ phase, userId, error, context, variant }: LogErrorArgs): void {
   const err = error as any;
+  const actionKey = (context?.action as string) || 'default';
+  const attempt = bumpErrorAttempt(String(phase), actionKey);
   void trackOnboardingEvent({
     phase: phase as OnboardingPhase,
     event: 'error',
@@ -54,6 +100,8 @@ export function logWizardError({ phase, userId, error, context, variant }: LogEr
       code: err?.code || err?.status || null,
       details: err?.details ? String(err.details).slice(0, 300) : null,
       hint: err?.hint || null,
+      attempt,
+      action: actionKey,
       context: stripPii(context),
       ts: new Date().toISOString(),
     },
@@ -109,8 +157,10 @@ interface SafeWizardSaveOpts<T> {
 export async function safeWizardSave<T>(opts: SafeWizardSaveOpts<T>):
   Promise<{ ok: true; data: T } | { ok: false; error: unknown }>
 {
+  const actionKey = (opts.context?.action as string) || 'default';
   try {
     const data = await opts.fn();
+    resetErrorAttempt(String(opts.phase), actionKey);
     return { ok: true, data };
   } catch (error) {
     logWizardError({
