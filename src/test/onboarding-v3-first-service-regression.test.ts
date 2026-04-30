@@ -12,6 +12,9 @@ describe('V3→V2 first service continuity (handoff interno)', () => {
   it('BetModeShell delega o handoff via prop interna (sem navegar para rota legada)', () => {
     const bet = read('src/components/onboarding/wizard/phases/bet/BetModeShell.tsx');
     expect(bet).toContain('onInternalHandoff');
+    expect(bet).toContain("goto('pro_document')");
+    expect(bet).toContain("state.phase === 'pro_document'");
+    expect(bet).toContain("next={() => goto('pro_location')}");
     expect(bet).not.toContain('source=bet-first-service');
     expect(bet).not.toMatch(/navigate\(['"]\/onboarding-v2/);
   });
@@ -32,6 +35,12 @@ describe('V3→V2 first service continuity (handoff interno)', () => {
     expect(shell).not.toContain("searchParams.get('source')");
   });
 
+  it('wizardReducer mantém triage_pro_document na ordem visual do profissional', () => {
+    const reducer = read('src/components/onboarding/wizard/wizardReducer.ts');
+    expect(reducer).toMatch(/'triage_pro_kind',[\s\S]*'triage_pro_document',[\s\S]*'triage_pro_location'/);
+    expect(reducer).toMatch(/'triage_pro_kind',[\s\S]*'triage_pro_document',[\s\S]*'triage_pro_location',[\s\S]*'triage_celebration'/);
+  });
+
   it('limpa drafts da triagem antes da celebração/handoff para não reabrir pro_location', () => {
     const bet = read('src/components/onboarding/wizard/phases/bet/BetModeShell.tsx');
     expect(bet).toMatch(/clearBetDraft\(\);\s*if \(user\?\.id\) await clearRemoteBetDraft\(user\.id\);\s*await addSessionPointsToProfile\(\);\s*await refetchProfile\?\.\(\);\s*goto\('celebration'\);/s);
@@ -43,14 +52,14 @@ describe('V3→V2 first service continuity (handoff interno)', () => {
     const phase = read('src/components/onboarding/wizard/phases/v2/Phase1Basic.tsx');
     expect(phase).toContain('disabled={!!locks?.full_name}');
     expect(phase).toContain('disabled={!!locks?.whatsapp}');
-    expect(phase).toContain('disabled={!!locks?.city}');
+    expect(phase).toContain('disabled={!data.state || !!locks?.city}');
   });
 
   it('Skip do 1º serviço mantém o usuário dentro do wizard', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(shell).toContain("source: 'onboarding-v2-skip-first-service'");
     expect(shell).toContain("nextRoute: 'phase4_document'");
-    expect(shell).toContain("track('skip', { exit: 'phase4_document' })");
-    expect(shell).not.toContain("navigate('/dashboard/servicos')");
+    expect(shell).toContain("dispatch({ type: 'GO_TO', phase: 'phase4_document' })");
+    expect(shell).not.toContain("navigate('/onboarding-v2')");
   });
 });
