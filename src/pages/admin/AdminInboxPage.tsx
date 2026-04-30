@@ -101,7 +101,10 @@ const AdminInboxPage = () => {
       setRows([]);
       setTotal(0);
     } else {
-      const list = (data || []) as Array<NotifRow & { total_count?: number }>;
+      // Defensivo: a RPC pode devolver null, [], objeto único ou erro silencioso.
+      // Sem o guard de Array.isArray um payload inesperado quebrava com
+      // "list.map is not a function" e travava a inbox para o admin.
+      const list: Array<NotifRow & { total_count?: number }> = Array.isArray(data) ? data : [];
       setRows(list.map(({ total_count, ...n }) => n));
       setTotal(Number(list[0]?.total_count ?? 0));
     }
