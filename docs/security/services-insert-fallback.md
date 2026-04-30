@@ -1,5 +1,7 @@
 # Segurança do fallback INSERT em `public.services`
 
+> **Status (2026-04-30)**: Auditado e seguro. RLS ativa, três camadas independentes (sessão JWT, ownership do `provider_id` via `providers.user_id = auth.uid()`, `profile_type <> 'rh'` ou admin). Nenhuma ação de hardening adicional é necessária. Telemetria via `logWizardError(meta.reason='realign_first_service_failed')`.
+
 ## Contexto
 
 `OnboardingV2Shell.finishWizard` e fluxos de criação de serviço no wizard
