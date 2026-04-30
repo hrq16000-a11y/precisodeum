@@ -83,12 +83,16 @@ function buildHtml(opts: {
   description: string;
   image: string;
   canonical: string;
+  ratio: OgImageRatio;
 }): string {
-  const { title, description, image, canonical } = opts;
+  const { title, description, image, canonical, ratio } = opts;
   const safeTitle = escapeHtml(title);
   const safeDesc = escapeHtml(description);
   const safeImage = escapeHtml(image);
   const safeUrl = escapeHtml(canonical);
+  const dims = OG_IMAGE_SPECS[ratio];
+  // Twitter usa "summary" para 1:1, "summary_large_image" para 1200x630.
+  const twitterCard = ratio === "square" ? "summary" : "summary_large_image";
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -108,12 +112,12 @@ function buildHtml(opts: {
 <meta property="og:url" content="${safeUrl}" />
 <meta property="og:image" content="${safeImage}" />
 <meta property="og:image:secure_url" content="${safeImage}" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
+<meta property="og:image:width" content="${dims.width}" />
+<meta property="og:image:height" content="${dims.height}" />
 <meta property="og:image:alt" content="${safeTitle}" />
 
 <!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:card" content="${twitterCard}" />
 <meta name="twitter:title" content="${safeTitle}" />
 <meta name="twitter:description" content="${safeDesc}" />
 <meta name="twitter:image" content="${safeImage}" />
