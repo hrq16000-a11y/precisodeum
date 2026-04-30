@@ -7466,7 +7466,32 @@ export type Database = {
           unique_users: number
         }[]
       }
+      admin_onboarding_funnel_by_source: {
+        Args: { _days?: number }
+        Returns: {
+          advances: number
+          draft_source: string
+          enters: number
+          errors: number
+          phase: string
+          unique_users: number
+        }[]
+      }
       admin_onboarding_stats: { Args: { _days?: number }; Returns: Json }
+      admin_onboarding_user_funnel: {
+        Args: { _days?: number; _limit?: number }
+        Returns: {
+          completed: boolean
+          draft_source: string
+          errors_total: number
+          first_seen: string
+          last_phase: string
+          last_seen: string
+          phases_advanced: number
+          phases_entered: number
+          user_id: string
+        }[]
+      }
       admin_providers_same_ip: {
         Args: { _min_count?: number }
         Returns: {
