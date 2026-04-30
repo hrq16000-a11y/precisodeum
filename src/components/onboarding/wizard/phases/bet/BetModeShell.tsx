@@ -353,6 +353,8 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
           whatsapp: state.whatsapp,
           city: state.city,
           state: state.state,
+          // Bairro do cliente (opcional) — refina a busca por proximidade.
+          neighborhood: (state.neighborhood || '').trim() || null,
           profile_type: 'client',
           onboarding_step: 5,
           onboarding_completed: true,
@@ -363,6 +365,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await refetchProfile?.();
       toast.success(`+${state.points} pts conquistados!`, { description: 'Bem-vindo. Levando você ao destino…' });
       clearBetDraft();
+      void clearRemoteBetDraft(user.id);
       navigate(next, { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_client' } });
