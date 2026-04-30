@@ -86,9 +86,31 @@ import { useFirstContactAutoMission } from '@/hooks/useFirstContactAutoMission';
 import UnifiedHealthScore from '@/components/dashboard/UnifiedHealthScore';
 import QuickActionsHero from '@/components/dashboard/QuickActionsHero';
 import ImpactSection from '@/components/dashboard/ImpactSection';
+import {
+  startDashboardTimers,
+  reportFirstRender,
+  attachBlockedClickProbe,
+} from '@/lib/dashboardTelemetry';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
+
+  // Telemetria do Dashboard: tempo de carga, primeiro render e cliques bloqueados
+  // por overlays. Falhas de envio são silenciosas — não impactam UX.
+  useEffect(() => {
+    const stopTimers = startDashboardTimers();
+    const detachProbe = attachBlockedClickProbe();
+    return () => {
+      stopTimers();
+      detachProbe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      reportFirstRender({ has_provider: !!provider?.id });
+    }
+  }, [loading, provider?.id]);
   const { registerVisit } = useDashboardState();
   const { isAtLeast, tier } = useMaturityTier();
 
