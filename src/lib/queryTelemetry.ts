@@ -43,14 +43,20 @@ export async function measureQuery<T>(
         : Date.now();
     const duration = Math.max(0, Math.round(t1 - t0));
     // fire-and-forget
-    void supabase
-      .rpc('log_query_telemetry', {
-        _label: label.slice(0, 64),
-        _duration_ms: duration,
-        _rows: rows,
-        _meta: { ok, ...meta },
-      })
-      .then(() => undefined)
-      .catch(() => undefined);
+    try {
+      void Promise.resolve(
+        supabase.rpc('log_query_telemetry', {
+          _label: label.slice(0, 64),
+          _duration_ms: duration,
+          _rows: rows,
+          _meta: { ok, ...meta },
+        }),
+      ).then(
+        () => undefined,
+        () => undefined,
+      );
+    } catch {
+      // noop
+    }
   }
 }
