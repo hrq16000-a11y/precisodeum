@@ -176,6 +176,7 @@ export default function WizardShell() {
               intent: true,
               city: true,
               pro_kind: true,
+              document: Boolean(profileSeed.document),
             },
           },
           profile: profileSeed,

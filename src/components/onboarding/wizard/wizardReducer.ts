@@ -264,6 +264,7 @@ export const initialWizardState: WizardState = {
       intent: false,
       city: false,
       pro_kind: false,
+      document: false,
     },
     phase: 'identity',
   },
