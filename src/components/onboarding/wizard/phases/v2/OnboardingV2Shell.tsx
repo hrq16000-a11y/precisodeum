@@ -860,6 +860,17 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               workingProviderId = await ensureProviderId();
             }
             if (!workingProviderId || !categoryId || !resolvedCategoryName) {
+              void trackEvent({
+                phase: state.phase,
+                event: 'error',
+                userId: user?.id,
+                meta: {
+                  reason: 'persist_first_service_precondition_failed',
+                  has_provider_id: Boolean(workingProviderId),
+                  has_category_id: Boolean(categoryId),
+                  has_category_name: Boolean(resolvedCategoryName),
+                },
+              });
               toast.error('Não conseguimos registrar seu serviço principal.', {
                 description: 'Verifique se a categoria está correta e tente novamente.',
                 duration: 10000,
