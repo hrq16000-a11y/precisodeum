@@ -28,7 +28,7 @@ import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
 import { useSeoHead } from '@/hooks/useSeoHead';
-import { betDraftPayloadSchema, safeParse } from '@/lib/wizardSchemas';
+import { betDraftPayloadSchema, providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
 
 import PointsHud from './PointsHud';
 import PhaseIdentity from './PhaseIdentity';
@@ -445,10 +445,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
 
       // Validação Zod ANTES de bater no banco — falha cedo e clara.
       // (Schema é tolerante, apenas barra inputs grosseiramente inválidos.)
-      const validation = (await import('@/lib/wizardSchemas')).safeParse(
-        (await import('@/lib/wizardSchemas')).providerWritePayloadSchema,
-        providerPayload,
-      );
+      const validation = safeParse(providerWritePayloadSchema, providerPayload);
       if (!validation.ok) {
         toast.error('Dados incompletos', { description: validation.message });
         logWizardError({
