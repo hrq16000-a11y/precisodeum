@@ -95,6 +95,13 @@ const SearchPage = () => {
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [acceptingOnly, setAcceptingOnly] = useState(false);
   const [activeTodayOnly, setActiveTodayOnly] = useState(false);
+  const initialAvailability = (() => {
+    const v = (searchParams.get('disponivel') || 'any').toLowerCase();
+    return (['any', 'today', 'this_week', 'recent'] as const).includes(v as any)
+      ? (v as 'any' | 'today' | 'this_week' | 'recent')
+      : 'any';
+  })();
+  const [availabilityWindow, setAvailabilityWindow] = useState<'any' | 'today' | 'this_week' | 'recent'>(initialAvailability);
 
   const [showOutOfState, setShowOutOfState] = useState(false);
   const initialPage = (() => {
@@ -109,11 +116,13 @@ const SearchPage = () => {
     const next = new URLSearchParams(searchParams);
     if (page > 1) next.set('page', String(page));
     else next.delete('page');
+    if (availabilityWindow !== 'any') next.set('disponivel', availabilityWindow);
+    else next.delete('disponivel');
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, availabilityWindow]);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
@@ -189,6 +198,7 @@ const SearchPage = () => {
       activeTodaySet,
       recentlyOfflineSet,
       statusFilter: effectiveStatusFilter,
+      availabilityWindow,
       routeCorridor: routeCorridor
         ? {
             midLat: routeCorridor.midLat,
@@ -197,7 +207,7 @@ const SearchPage = () => {
           }
         : null,
     }) as DbProvider[];
-  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, recentlyOfflineSet, effectiveStatusFilter, onlineOnly, acceptingOnly, activeTodayOnly]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, recentlyOfflineSet, effectiveStatusFilter, onlineOnly, acceptingOnly, activeTodayOnly, availabilityWindow]);
 
   const stateFilterFn = useCallback((list: DbProvider[]) =>
     selectedState ? list.filter(p => safeUF(p.state) === selectedState) : list,
@@ -532,6 +542,38 @@ const SearchPage = () => {
             </span>
             <span className="text-[10px] font-semibold">{acceptingOnly ? 'ATIVO' : 'OFF'}</span>
           </button>
+        </div>
+
+        {/* Janela de disponibilidade (período) — persistida em ?disponivel= */}
+        <div className="mt-2">
+          <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+            Disponibilidade
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {([
+              { v: 'any', label: 'Qualquer' },
+              { v: 'today', label: 'Hoje' },
+              { v: 'this_week', label: 'Esta semana' },
+              { v: 'recent', label: 'Recente' },
+            ] as const).map((opt) => {
+              const active = availabilityWindow === opt.v;
+              return (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => { setAvailabilityWindow(opt.v); setPage(1); }}
+                  aria-pressed={active}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
+                    active
+                      ? 'border-primary/50 bg-primary/10 text-primary font-semibold'
+                      : 'border-border bg-background text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 

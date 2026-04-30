@@ -15,6 +15,18 @@ export type FeaturedFilter = 'all' | 'featured' | 'normal';
  */
 export type StatusFilter = 'all' | 'online_first' | 'online_only' | 'recently_offline';
 
+/**
+ * Janela de disponibilidade que o usuário pode escolher na UI:
+ *  - 'any': sem restrição
+ *  - 'today': profissional ativo hoje (online agora ou houve heartbeat hoje)
+ *  - 'this_week': ativo hoje OU offline há pouco tempo (recentlyOfflineSet)
+ *  - 'recent': ativo recentemente (online ou recently offline) — alias mais brando de this_week
+ *
+ * É um açúcar para os flags low-level (`activeTodayOnly`, `statusFilter='online_only'`,
+ * `recently_offline`) e fica persistido em `?disponivel=` na URL.
+ */
+export type AvailabilityWindow = 'any' | 'today' | 'this_week' | 'recent';
+
 export interface FilterableProvider {
   id: string;
   userId: string;
@@ -57,6 +69,13 @@ export interface SearchFilterOptions {
   routeCorridor?: RouteCorridor | null;
   /** When false (default), online providers are pulled to the top after sorting (stable partition). */
   disableOnlineBoost?: boolean;
+  /**
+   * Açúcar para combinar `activeTodaySet`/`onlineSet`/`recentlyOfflineSet`.
+   * - 'today': mantém apenas online agora OU activeToday
+   * - 'this_week' / 'recent': online OR activeToday OR recentlyOffline
+   * - 'any' (padrão): não filtra
+   */
+  availabilityWindow?: AvailabilityWindow;
 }
 
 export function applySearchFilters<T extends FilterableProvider>(
@@ -79,6 +98,7 @@ export function applySearchFilters<T extends FilterableProvider>(
     statusFilter = 'all',
     routeCorridor = null,
     disableOnlineBoost = false,
+    availabilityWindow = 'any',
   } = opts;
 
   let results = [...list];
@@ -132,6 +152,20 @@ export function applySearchFilters<T extends FilterableProvider>(
   }
   if (acceptingOnly) {
     results = results.filter((p) => !!p.whatsapp && p.whatsapp.trim().length > 0);
+  }
+
+  // Janela de disponibilidade — açúcar das listas online/activeToday/recentlyOffline.
+  if (availabilityWindow === 'today') {
+    results = results.filter(
+      (p) => onlineSet.has(p.userId) || activeTodaySet.has(p.userId)
+    );
+  } else if (availabilityWindow === 'this_week' || availabilityWindow === 'recent') {
+    results = results.filter(
+      (p) =>
+        onlineSet.has(p.userId) ||
+        activeTodaySet.has(p.userId) ||
+        recentlyOfflineSet.has(p.userId)
+    );
   }
 
   if (sortBy === 'nearest') {
