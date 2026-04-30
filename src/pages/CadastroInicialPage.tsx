@@ -85,11 +85,36 @@ function hasLocalDraft(): boolean {
 
 
 export default function CadastroInicialPage() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
   const redirectedRef = useRef(false);
+
+  // PURGA ÚNICA das chaves antigas — roda no primeiro boot e nunca mais.
+  // Garante que o reducer atual nunca tente "mesclar" payloads bugados.
+  const purgedRef = useRef(false);
+  if (!purgedRef.current) {
+    purgedRef.current = true;
+    purgeLegacyDraftsOnce();
+  }
+
+  // PRIORIDADE DE SHELL: se o perfil é PJ/empresa (account_type=company),
+  // sinalizamos via sessionStorage para que o BetModeShell e o restante do
+  // wizard ignorem qualquer resquício do fluxo V2 padrão e usem estritamente
+  // o fluxo Institucional/Bet.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const accountType = ((profile as any)?.account_type || '').toString().toLowerCase();
+    const isCompany = accountType === 'company' || accountType === 'pj';
+    try {
+      window.sessionStorage.setItem(
+        'onboarding_current_flow',
+        isCompany ? 'company' : 'default',
+      );
+    } catch { /* noop */ }
+  }, [profile]);
+
 
   // "Settled" guard: aguarda um tick após `loading=false` para distinguir
   // o estado inicial (Auth ainda hidratando) de uma sessão de fato ausente.
