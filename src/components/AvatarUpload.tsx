@@ -39,8 +39,10 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
 
     const runUpload = async (raw: File) => {
       lastFileRef.current = raw;
+      setPendingFile(raw);
       setUploading(true);
       setHasFailed(false);
+      setAttemptInfo(null);
       setStages(makeInitialStages());
 
       try {
