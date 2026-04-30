@@ -67,7 +67,15 @@ export const betDraftPayloadSchema = z.object({
  * Helper: retorna { ok: true, data } | { ok: false, message } sem lançar.
  * Use SEMPRE antes de chamadas ao Supabase no wizard.
  */
-export function safeParse<T>(schema: z.ZodType<T>, input: unknown): { ok: true; data: T } | { ok: false; message: string; issues: z.ZodIssue[] } {
+/**
+ * Helper: retorna { ok: true, data } | { ok: false, message } sem lançar.
+ * Use SEMPRE antes de chamadas ao Supabase no wizard.
+ */
+export type SafeParseResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; message: string; issues: z.ZodIssue[] };
+
+export function safeParse<T>(schema: z.ZodType<T>, input: unknown): SafeParseResult<T> {
   const r = schema.safeParse(input);
   if (r.success) return { ok: true, data: r.data };
   const first = r.error.issues[0];
