@@ -7,6 +7,7 @@ import { startWebVitalsCapture } from "./lib/lcpTelemetry";
 
 installConsentBridge();
 installWebVitalsPerRoute();
+startWebVitalsCapture();
 
 const rootElement = document.getElementById("root");
 const shellElement = document.getElementById("app-shell");
