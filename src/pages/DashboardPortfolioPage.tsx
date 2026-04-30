@@ -653,7 +653,7 @@ const DashboardPortfolioPage = () => {
                 >
                   <div className="aspect-video bg-muted relative overflow-hidden">
                     {album.cover_image_url ? (
-                      <img src={album.cover_image_url} alt={album.name} loading="lazy" decoding="async" width={400} height={300} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <LazyImage src={album.cover_image_url} alt={album.name} width={400} height={300} priority={i < 2} sizesPreset="card-wide" surface="portfolio-album-cover" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <div className="flex h-full items-center justify-center">
                         <ImagePlus className="h-10 w-10 text-muted-foreground/40" />
