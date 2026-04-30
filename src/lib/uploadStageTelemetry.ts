@@ -87,12 +87,15 @@ export async function withStageTelemetry<T>(
     });
     return result;
   } catch (err: any) {
+    // Lazy import pra evitar ciclo (uploadErrors importa UploadTimeoutError de uploadResilient)
+    const { classifyUploadError } = await import('./uploadErrors');
     recordStageTelemetry({
       stage,
       success: false,
       latencyMs: performance.now() - start,
       fileSizeBytes: meta?.fileSizeBytes,
       errorCode: err?.message?.slice(0, 200) || 'unknown',
+      errorKind: classifyUploadError(err),
       fallbackLevel: meta?.fallbackLevel,
     });
     throw err;
