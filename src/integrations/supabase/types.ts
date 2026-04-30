@@ -8075,6 +8075,24 @@ export type Database = {
           version: number
         }[]
       }
+      list_my_geo_audit: {
+        Args: { _limit?: number }
+        Returns: {
+          accuracy_m: number
+          city: string
+          created_at: string
+          error_message: string
+          event_type: string
+          id: string
+          latency_ms: number
+          latitude: number
+          longitude: number
+          neighborhood: string
+          source: string
+          state: string
+          status: string
+        }[]
+      }
       list_provider_geo_fallbacks: {
         Args: { _limit?: number; _status?: string }
         Returns: {
@@ -8305,6 +8323,22 @@ export type Database = {
       record_dashboard_session: {
         Args: { _route?: string; _ua?: string }
         Returns: undefined
+      }
+      record_my_geo_event: {
+        Args: {
+          _accuracy_m?: number
+          _city?: string
+          _error_message?: string
+          _event_type: string
+          _latency_ms?: number
+          _latitude?: number
+          _longitude?: number
+          _neighborhood?: string
+          _source: string
+          _state?: string
+          _status?: string
+        }
+        Returns: string
       }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
       register_click_lead: {
