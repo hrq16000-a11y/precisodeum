@@ -157,8 +157,10 @@ interface SafeWizardSaveOpts<T> {
 export async function safeWizardSave<T>(opts: SafeWizardSaveOpts<T>):
   Promise<{ ok: true; data: T } | { ok: false; error: unknown }>
 {
+  const actionKey = (opts.context?.action as string) || 'default';
   try {
     const data = await opts.fn();
+    resetErrorAttempt(String(opts.phase), actionKey);
     return { ok: true, data };
   } catch (error) {
     logWizardError({
