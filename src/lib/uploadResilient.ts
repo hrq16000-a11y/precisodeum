@@ -4,9 +4,23 @@
  * Foco: redes 3G/4G instáveis. Detecta timeout, falhas de rede e respostas 5xx
  * e re-tenta automaticamente com backoff. Não trata erros 4xx (problema do
  * cliente — re-tentar não vai resolver).
+ *
+ * Também observa `uploadTestMode`: quando ativo, injeta latência e falhas
+ * simuladas e grava a métrica em `upload_test_results`. Em produção normal
+ * o overhead é zero (test mode inativo = curto-circuito).
  */
 
+import {
+  applyTestLatency,
+  getUploadTestMode,
+  isUploadTestActive,
+  recordUploadTestResult,
+  shouldSimulateFailure,
+} from './uploadTestMode';
+
 export interface ResilientUploadOptions {
+  /** Tamanho do arquivo em bytes (opcional, usado só pra telemetria de teste). */
+  fileSizeBytes?: number;
   /** Timeout por tentativa (ms). Default 25s — 3G real demora pra subir 300KB. */
   timeoutMs?: number;
   /** Número máx. de tentativas (incluindo a primeira). Default 3. */
@@ -53,14 +67,32 @@ export async function resilientUpload<T = any>(
   } = opts;
 
   let lastError: unknown = null;
+  const testActive = isUploadTestActive();
+  const testScenario = getUploadTestMode().scenario;
+  const startedAt = performance.now();
+  let attemptsUsed = 0;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    attemptsUsed = attempt;
     onAttempt?.(attempt, maxAttempts);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
+      // ── Test mode: latência + falha simulada ──
+      if (testActive) {
+        await applyTestLatency();
+        const sim = shouldSimulateFailure();
+        if (sim === 'timeout') {
+          // Aborta artificialmente — vira UploadTimeoutError no catch
+          controller.abort();
+        } else if (sim === 'network') {
+          clearTimeout(timer);
+          throw new TypeError('test_mode_network_failure');
+        }
+      }
+
       const res = await fetch(url, {
         method: 'POST',
         body,
@@ -87,7 +119,17 @@ export async function resilientUpload<T = any>(
           throw lastError;
         }
       } else {
-        return (await res.json()) as T;
+        const json = (await res.json()) as T;
+        if (testActive) {
+          recordUploadTestResult({
+            scenario: testScenario,
+            attempts: attemptsUsed,
+            success: true,
+            totalMs: performance.now() - startedAt,
+            fileSizeBytes: opts.fileSizeBytes,
+          });
+        }
+        return json;
       }
     } catch (err) {
       clearTimeout(timer);
@@ -96,6 +138,16 @@ export async function resilientUpload<T = any>(
       lastError = normalized;
 
       if (!isRetryable(normalized) || attempt === maxAttempts) {
+        if (testActive) {
+          recordUploadTestResult({
+            scenario: testScenario,
+            attempts: attemptsUsed,
+            success: false,
+            totalMs: performance.now() - startedAt,
+            fileSizeBytes: opts.fileSizeBytes,
+            errorCode: (normalized as any)?.message || 'unknown',
+          });
+        }
         throw normalized;
       }
     }
@@ -105,5 +157,15 @@ export async function resilientUpload<T = any>(
     await sleep(wait);
   }
 
+  if (testActive) {
+    recordUploadTestResult({
+      scenario: testScenario,
+      attempts: attemptsUsed,
+      success: false,
+      totalMs: performance.now() - startedAt,
+      fileSizeBytes: opts.fileSizeBytes,
+      errorCode: (lastError as any)?.message || 'exhausted',
+    });
+  }
   throw lastError ?? new Error('upload_failed');
 }
