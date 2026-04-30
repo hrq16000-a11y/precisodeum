@@ -95,8 +95,17 @@ const ImageUploadField = ({
             };
           });
         },
-        onAttempt: (a, max) => {
-          if (a > 1) toast.message(`Conexão lenta. Tentando novamente (${a}/${max})…`);
+        onAttempt: (a, max, reason) => {
+          setAttemptInfo({ attempt: a, max, reason });
+          if (a > 1) {
+            const msg =
+              reason === 'timeout'
+                ? `Tempo esgotado. Tentando novamente (${a}/${max})…`
+                : reason === 'network'
+                ? `Sem rede. Reenviando (${a}/${max})…`
+                : `Tentando novamente (${a}/${max})…`;
+            toast.message(msg);
+          }
         },
       });
 
