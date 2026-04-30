@@ -54,9 +54,7 @@ export const UNIFIED_PHASE_ORDER: UnifiedPhase[] = [
   'triage_who',
   'triage_client_city',
   'triage_pro_kind',
-  // 'triage_pro_document' REMOVIDO da triagem — CPF/CNPJ é coletado em main_document
-  // (após o 1º serviço estar criado). A fase ainda existe no enum por compatibilidade
-  // com drafts antigos, mas não é navegada pelo BetModeShell.
+  'triage_pro_document',
   'triage_pro_location',
   'triage_celebration',
   'main_action',
@@ -80,6 +78,7 @@ export const PROVIDER_WIZARD_PHASE_ORDER: UnifiedPhase[] = [
   'triage_identity',
   'triage_who',
   'triage_pro_kind',
+  'triage_pro_document',
   'triage_pro_location',
   'triage_celebration',
   'main_service',
