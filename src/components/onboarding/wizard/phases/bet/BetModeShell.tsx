@@ -286,6 +286,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await addSessionPointsToProfile();
       await refetchProfile?.();
       toast.success(`+${state.points} pts conquistados!`, { description: 'Bem-vindo. Levando você ao destino…' });
+      clearBetDraft();
       navigate(next, { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_client' } });
