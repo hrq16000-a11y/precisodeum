@@ -12,19 +12,48 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { LeadContext } from '@/hooks/useLeadFollowup';
 import { useLeadAlertPreference, type LeadAlertMode } from '@/hooks/useLeadAlertPreference';
+import { playHornBeep } from '@/lib/soundFx';
 
 // Som curto embutido (mesmo beep usado em DashboardLeadsPage)
 const ALERT_SOUND_DATA_URI =
   'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
 
-const playSound = () => {
-  try {
-    const audio = new Audio(ALERT_SOUND_DATA_URI);
-    audio.volume = 0.6;
-    void audio.play().catch(() => {});
-  } catch {
-    /* no-op */
-  }
+/**
+ * Resilient sound playback.
+ *
+ * Browser autoplay policies may block <audio> playback when there's no
+ * recent user gesture. WebAudio (used by playHornBeep) tends to be more
+ * permissive after the user has interacted with the page once. We try the
+ * cheap data-URI beep first; on failure we fall back to the WebAudio horn.
+ *
+ * In all cases, the visual toast (handled by the caller) remains the
+ * absolute fallback — the user always sees the alert even if every
+ * sound channel is blocked.
+ */
+/**
+ * Tenta tocar o beep e devolve uma Promise que resolve `true` se ao menos
+ * uma camada (data-URI ou WebAudio) saiu — `false` se ambas foram bloqueadas
+ * pelo navegador. O caller pode então acionar um fallback visual mínimo.
+ */
+const playSound = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    try {
+      const audio = new Audio(ALERT_SOUND_DATA_URI);
+      audio.volume = 0.6;
+      const result = audio.play();
+      if (result && typeof result.then === 'function') {
+        result
+          .then(() => resolve(true))
+          .catch(() => {
+            try { playHornBeep(); resolve(true); } catch { resolve(false); }
+          });
+        return;
+      }
+      resolve(true);
+    } catch {
+      try { playHornBeep(); resolve(true); } catch { resolve(false); }
+    }
+  });
 };
 
 const wantsSound = (mode: LeadAlertMode) => mode === 'sound' || mode === 'both';
@@ -90,8 +119,23 @@ export function useNewLeadAlerts(providerId: string | undefined, filters: Filter
         const outsideFilter = !(cityOk && catOk && ufOk);
 
         if (outsideFilter) setOutsideFilterCount((n) => n + 1);
-        if (wantsSound(currentMode)) playSound();
-        if (!wantsToast(currentMode)) return;
+
+        const soundRequested = wantsSound(currentMode);
+        const toastRequested = wantsToast(currentMode);
+
+        // Visual fallback ABSOLUTO: se o usuário pediu apenas som mas o
+        // navegador bloqueou todas as camadas de áudio, ainda exibimos um
+        // toast curto para que a notificação não passe despercebida.
+        if (soundRequested) {
+          void playSound().then((ok) => {
+            if (!ok && !toastRequested) {
+              toast('Novo lead recebido', {
+                description: 'Som bloqueado pelo navegador — toque para ouvir o alerta nas próximas vezes.',
+              });
+            }
+          });
+        }
+        if (!toastRequested) return;
 
         if (outsideFilter) {
           toast('Novo lead fora do filtro atual', {
