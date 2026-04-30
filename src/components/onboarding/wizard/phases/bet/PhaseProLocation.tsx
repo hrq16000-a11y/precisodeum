@@ -41,27 +41,6 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     }
   }, [geo.city, geo.state, state.city, patch]);
 
-  // Auto-busca de CEP quando cidade + bairro estão preenchidos.
-  // Debounce 600ms para não bater no ViaCEP a cada tecla.
-  useEffect(() => {
-    const city = state.city.trim();
-    const uf = state.state.trim().toUpperCase();
-    const bairro = (state.neighborhood || '').trim();
-    if (city.length < 2 || uf.length !== 2 || bairro.length < 3) {
-      setCepSuggestion(null);
-      return;
-    }
-    let cancelled = false;
-    setCepLoading(true);
-    const t = window.setTimeout(async () => {
-      const r = await lookupCepFromCity({ city, state: uf, neighborhood: bairro });
-      if (cancelled) return;
-      setCepLoading(false);
-      setCepSuggestion(r.ok ? r.match.cep : null);
-    }, 600);
-    return () => { cancelled = true; window.clearTimeout(t); setCepLoading(false); };
-  }, [state.city, state.state, state.neighborhood]);
-
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
     autoFilledRef.current = true; // edição manual cancela auto-preenchimento
