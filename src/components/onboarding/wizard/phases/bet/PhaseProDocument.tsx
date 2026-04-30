@@ -131,10 +131,11 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
             >
               <Store className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
               <span className="flex-1">
-                <span className="font-semibold">Você possui ponto de atendimento físico?</span>{' '}
+                <span className="font-semibold">
+                  Possui ponto de atendimento físico (loja, oficina, salão)?
+                </span>{' '}
                 <span className="text-muted-foreground">
-                  (oficina, salão, loja). Adicione o endereço para aparecer com indicação de unidade física no card.{' '}
-                  <span className="font-medium text-amber-700">Opcional.</span>
+                  Adicionar endereço <span className="font-medium text-amber-700">(Opcional)</span>
                 </span>
               </span>
               <ChevronDown
