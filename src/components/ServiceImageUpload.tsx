@@ -251,6 +251,16 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
         </label>
       </div>
 
+      {(uploading || hasFailed) && (
+        <div className="space-y-2">
+          <UploadProgressIndicator stages={stages} />
+          {hasFailed && !uploading && pendingFilesRef.current.length > 0 && (
+            <Button type="button" variant="outline" size="sm" onClick={handleRetry}>
+              <RefreshCw className="mr-1 h-3 w-3" /> Tentar novamente ({pendingFilesRef.current.length})
+            </Button>
+          )}
+        </div>
+      )}
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {images.map((img, idx) => (
