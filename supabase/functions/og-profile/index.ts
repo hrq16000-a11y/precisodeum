@@ -230,7 +230,11 @@ Deno.serve(async (req) => {
           : cityState
           ? `${name} — ${category} em ${cityState}. Veja o perfil completo, portfólio e entre em contato direto.`
           : `${name} — ${category}. Veja o perfil completo, portfólio e entre em contato direto.`;
-        if (prof.avatar_url) image = prof.avatar_url;
+        if (prof.avatar_url) {
+          // Aplica transform por ratio quando avatar está no Storage;
+          // URLs externas (Google, etc.) caem no fallback original.
+          image = buildOgImage(prof.avatar_url, ratio) || prof.avatar_url;
+        }
       }
     } catch (err) {
       // Never let a DB hiccup break the crawler response.
@@ -238,7 +242,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  const html = buildHtml({ title, description, image, canonical });
+  const html = buildHtml({ title, description, image, canonical, ratio });
 
   // ETag estável baseado no conteúdo: permite If-None-Match → 304 Not Modified
   // (resposta de ~80 bytes em vez de ~2KB de HTML por hit do crawler).
