@@ -543,6 +543,38 @@ const SearchPage = () => {
             <span className="text-[10px] font-semibold">{acceptingOnly ? 'ATIVO' : 'OFF'}</span>
           </button>
         </div>
+
+        {/* Janela de disponibilidade (período) — persistida em ?disponivel= */}
+        <div className="mt-2">
+          <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+            Disponibilidade
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {([
+              { v: 'any', label: 'Qualquer' },
+              { v: 'today', label: 'Hoje' },
+              { v: 'this_week', label: 'Esta semana' },
+              { v: 'recent', label: 'Recente' },
+            ] as const).map((opt) => {
+              const active = availabilityWindow === opt.v;
+              return (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => { setAvailabilityWindow(opt.v); setPage(1); }}
+                  aria-pressed={active}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
+                    active
+                      ? 'border-primary/50 bg-primary/10 text-primary font-semibold'
+                      : 'border-border bg-background text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Status (presença em tempo real) */}
