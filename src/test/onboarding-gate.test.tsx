@@ -54,19 +54,14 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
 const renderAt = (path = "/dashboard") =>
   render(
     <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/cadastro-inicial" element={<div>CADASTRO_PAGE</div>} />
-        <Route path="/dashboard" element={<div>DASHBOARD_PAGE</div>} />
-        <Route path="/dashboard/leads" element={<div>LEADS_PAGE</div>} />
-        <Route
-          path="*"
-          element={
-            <OnboardingGate>
-              <div>CHILDREN_RENDERED</div>
-            </OnboardingGate>
-          }
-        />
-      </Routes>
+      <OnboardingGate>
+        <Routes>
+          <Route path="/cadastro-inicial" element={<div>CADASTRO_PAGE</div>} />
+          <Route path="/dashboard" element={<div>DASHBOARD_PAGE</div>} />
+          <Route path="/dashboard/leads" element={<div>LEADS_PAGE</div>} />
+          <Route path="*" element={<div>CHILDREN_RENDERED</div>} />
+        </Routes>
+      </OnboardingGate>
     </MemoryRouter>
   );
 
