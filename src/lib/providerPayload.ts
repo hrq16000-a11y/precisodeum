@@ -137,19 +137,33 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
     }
   }
 
-  // 1b) Chaves PJ — só permanecem para empresas; para PF são silenciosamente removidas
+  // 1b) Chaves institucionais — `business_name` e `legal_name` valem para
+  //     PF e PJ (apenas saneadas). As demais (endereço, segmento, CNPJ,
+  //     show_full_address) são removidas silenciosamente para PF.
+  const PJ_ONLY_KEYS = new Set<string>([
+    'street', 'street_number', 'complement', 'postal_code',
+    'show_full_address', 'business_segment', 'cnpj',
+  ]);
+
   if (!isCompany) {
     for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
-      if (key in out) {
+      if (PJ_ONLY_KEYS.has(key) && key in out) {
         stripped.push(key);
         delete out[key];
+      } else if (key in out && PROVIDER_PJ_STRING_KEYS.has(key)) {
+        // PF mantém business_name/legal_name, apenas saneia.
+        out[key] = safeOptionalString(out[key]);
       }
     }
   } else {
-    // Para empresas: sanitiza (trim + nullify de strings vazias) sem deletar
+    // PJ: sanitiza strings (trim + null em vazias). show_full_address
+    //      permanece booleano — não passar por safeOptionalString.
     for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
-      if (key in out) {
+      if (!(key in out)) continue;
+      if (PROVIDER_PJ_STRING_KEYS.has(key)) {
         out[key] = safeOptionalString(out[key]);
+      } else if (key === 'show_full_address') {
+        out[key] = out[key] === true;
       }
     }
   }
