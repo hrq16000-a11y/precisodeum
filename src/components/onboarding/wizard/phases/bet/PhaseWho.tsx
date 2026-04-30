@@ -7,12 +7,13 @@ import {
   setOnboardingIntent,
   type OnboardingIntent,
 } from '@/components/onboarding/wizard/phases/v2/telemetry';
+import type { BetRewardKey } from './betRewards';
 
 interface Props {
   state: BetState;
   patch: (p: Partial<BetState>) => void;
   goto: (intent: BetIntent) => void;
-  addPoints: (n: number) => void;
+  awardReward: (reward: BetRewardKey, points: number) => void;
 }
 
 /** Mapeia BetIntent → OnboardingIntent (telemetria normalizada). */
@@ -21,13 +22,15 @@ function toTelemetryIntent(i: BetIntent): OnboardingIntent | null {
   return null; // sponsor não entra no funil de cadastro padrão
 }
 
-export default function PhaseWho({ patch, goto, addPoints }: Props) {
+export default function PhaseWho({ state, patch, goto, awardReward }: Props) {
   function pick(intent: BetIntent) {
-    patch({ intent, rewards: { ...((arguments[0] as any)?.rewards ?? {}), intent: true } } as any);
+    patch({ intent });
     // Persiste intent real para auto-injeção em todos os eventos subsequentes
     // (milestone, skip, next, error, complete) — fonte única em sessionStorage.
     setOnboardingIntent(toTelemetryIntent(intent));
-    addPoints(BET_POINTS.intent);
+    if (!state.rewards.intent) {
+      awardReward('intent', BET_POINTS.intent);
+    }
     fieldWin();
     window.setTimeout(() => goto(intent), 250);
   }

@@ -113,3 +113,15 @@ export function sanitizeNeighborhood(neighborhood?: string | null, city?: string
   if (city && normalize(trimmed) === normalize(city)) return null;
   return trimmed;
 }
+
+export function isNeighborhoodConsistentWithCity(
+  neighborhood?: string | null,
+  city?: string | null,
+  state?: string | null,
+) {
+  const cleanNeighborhood = sanitizeNeighborhood(neighborhood, city);
+  const cleanCity = (city || '').trim();
+  const cleanState = (state || '').trim().toUpperCase();
+
+  return Boolean(cleanNeighborhood && cleanCity && cleanState.length === 2);
+}

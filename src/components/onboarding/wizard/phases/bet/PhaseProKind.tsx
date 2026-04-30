@@ -3,18 +3,21 @@ import { motion } from 'framer-motion';
 import { User, Building2, Sparkles } from 'lucide-react';
 import { fieldWin } from '@/lib/betDopamine';
 import { BET_POINTS, type BetProKind, type BetState } from './types';
+import type { BetRewardKey } from './betRewards';
 
 interface Props {
   state: BetState;
   patch: (p: Partial<BetState>) => void;
   next: () => void;
-  addPoints: (n: number) => void;
+  awardReward: (reward: BetRewardKey, points: number) => void;
 }
 
-export default function PhaseProKind({ patch, next, addPoints }: Props) {
+export default function PhaseProKind({ state, patch, next, awardReward }: Props) {
   function pick(kind: BetProKind) {
     patch({ pro_kind: kind });
-    addPoints(BET_POINTS.pro_kind);
+    if (!state.rewards.pro_kind) {
+      awardReward('pro_kind', BET_POINTS.pro_kind);
+    }
     fieldWin();
     window.setTimeout(next, 250);
   }

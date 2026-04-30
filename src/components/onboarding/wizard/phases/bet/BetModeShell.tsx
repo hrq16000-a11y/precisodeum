@@ -44,6 +44,7 @@ import { setOnboardingIntent, trackOnboardingEvent } from '../v2/telemetry';
 import { getDeviceKind } from '@/lib/locationTelemetry';
 import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
 import { useBetRemoteDraft, fetchRemoteBetDraft, clearRemoteBetDraft } from './useBetRemoteDraft';
+import { awardBetReward, type BetRewardKey } from './betRewards';
 
 /** Ordem das fases — usado para resolver o "Voltar" global em uma fase anterior. */
 const BET_BACK_MAP: Partial<Record<BetPhase, BetPhase>> = {
@@ -57,13 +58,13 @@ const BET_BACK_MAP: Partial<Record<BetPhase, BetPhase>> = {
 type Action =
   | { type: 'PATCH'; patch: Partial<BetState> }
   | { type: 'GOTO'; phase: BetPhase }
-  | { type: 'POINTS'; n: number };
+  | { type: 'AWARD_REWARD'; reward: BetRewardKey; points: number };
 
 function reducer(s: BetState, a: Action): BetState {
   switch (a.type) {
     case 'PATCH': return { ...s, ...a.patch };
     case 'GOTO': return { ...s, phase: a.phase };
-    case 'POINTS': return { ...s, points: s.points + a.n };
+    case 'AWARD_REWARD': return awardBetReward(s, a.reward, a.points);
     default: return s;
   }
 }
@@ -290,7 +291,9 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
 
   const patch = (p: Partial<BetState>) => dispatch({ type: 'PATCH', patch: p });
   const goto = (phase: BetPhase) => dispatch({ type: 'GOTO', phase });
-  const addPoints = (n: number) => dispatch({ type: 'POINTS', n });
+  const awardReward = (reward: BetRewardKey, points: number) => {
+    dispatch({ type: 'AWARD_REWARD', reward, points });
+  };
 
   async function finishRh() {
     if (!user) { toast.error('Faça login antes de continuar'); return; }
@@ -613,20 +616,20 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         progress={PHASE_PROGRESS[state.phase]}
       />
       {state.phase === 'identity' && (
-        <PhaseIdentity state={state} patch={patch} next={() => goto('who')} addPoints={addPoints} />
+        <PhaseIdentity state={state} patch={patch} next={() => goto('who')} awardReward={awardReward} />
       )}
       {state.phase === 'who' && (
-        <PhaseWho state={state} patch={patch} goto={pickIntent} addPoints={addPoints} />
+        <PhaseWho state={state} patch={patch} goto={pickIntent} awardReward={awardReward} />
       )}
       {state.phase === 'client_city' && (
-        <PhaseClientCity state={state} patch={patch} finish={finishClient} addPoints={addPoints} />
+        <PhaseClientCity state={state} patch={patch} finish={finishClient} awardReward={awardReward} />
       )}
       {state.phase === 'pro_kind' && (
-        <PhaseProKind state={state} patch={patch} next={afterProKind} addPoints={addPoints} />
+        <PhaseProKind state={state} patch={patch} next={afterProKind} awardReward={awardReward} />
       )}
       {/* pro_document removido da triagem — CPF/CNPJ é coletado em main_document, após o 1º serviço */}
       {state.phase === 'pro_location' && (
-        <PhaseProLocation state={state} patch={patch} finish={finishPro} addPoints={addPoints} />
+        <PhaseProLocation state={state} patch={patch} finish={finishPro} awardReward={awardReward} />
       )}
       {state.phase === 'celebration' && (
         <PhaseCelebration totalPoints={state.points} ctaLabel={ctaLabel} onCta={handleCelebrationCta} />

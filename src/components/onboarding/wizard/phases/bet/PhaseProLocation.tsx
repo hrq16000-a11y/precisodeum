@@ -23,15 +23,16 @@ import { validateBaseCityVsServiceArea, hasBlockingBaseCityIssue } from '@/lib/l
 import { recordMyGeoEvent } from '@/lib/providerGeoAudit';
 import { lookupCep, normalizeCep } from '@/lib/cepLookup';
 import { BET_POINTS, type BetState } from './types';
+import type { BetRewardKey } from './betRewards';
 
 interface Props {
   state: BetState;
   patch: (p: Partial<BetState>) => void;
   finish: () => Promise<void> | void;
-  addPoints: (n: number) => void;
+  awardReward: (reward: BetRewardKey, points: number) => void;
 }
 
-export default function PhaseProLocation({ state, patch, finish, addPoints }: Props) {
+export default function PhaseProLocation({ state, patch, finish, awardReward }: Props) {
   const awarded = state.rewards.city;
   const [submitting, setSubmitting] = useState(false);
   const [requestingGps, setRequestingGps] = useState(false);
@@ -72,8 +73,7 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
 
   function awardCityOnce() {
     if (state.rewards.city) return;
-    patch({ rewards: { ...state.rewards, city: true } });
-    addPoints(BET_POINTS.city);
+    awardReward('city', BET_POINTS.city);
     fieldWin();
   }
 
