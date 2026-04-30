@@ -1,14 +1,14 @@
 /** Phase Pro Location — cidade + bairro do profissional. */
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Home, LocateFixed, Info, AlertTriangle, Search } from 'lucide-react';
+import { ArrowRight, MapPin, Home, LocateFixed, Info, AlertTriangle } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { fieldWin } from '@/lib/betDopamine';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { lookupCepFromCity } from '@/lib/cepReverseLookup';
 import { toast } from 'sonner';
+import CepSuggestionCard from './CepSuggestionCard';
 import { BET_POINTS, type BetState } from './types';
 
 interface Props {
