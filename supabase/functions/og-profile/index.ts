@@ -146,14 +146,34 @@ Deno.serve(async (req) => {
     const last = segments[segments.length - 1];
     if (last && last !== "og-profile") slug = last;
   }
+  // Sanitiza para shape canônica antes de validar
   slug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 80);
+
+  const ua = req.headers.get("user-agent");
+  const crawler = isCrawler(ua);
+  const ratio = pickOgRatio(ua);
+
+  // Slug inválido (vazio ou shape errada): rejeita com 400 para crawlers
+  // — evita que abusadores chamem com URLs randômicas só pra forçar carga.
+  // Humanos sem slug ainda recebem 302 para a home (comportamento amigável).
+  const slugValid = !!slug && SLUG_RE.test(slug);
+  if (!slugValid && crawler) {
+    return new Response(
+      JSON.stringify({ error: "invalid_slug" }),
+      {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=3600",
+        },
+      },
+    );
+  }
 
   const canonical = slug
     ? `${PUBLIC_SITE}/profissional/${slug}`
     : PUBLIC_SITE;
-
-  const ua = req.headers.get("user-agent");
-  const crawler = isCrawler(ua);
 
   // Real users: redirect immediately to the SPA. Crawlers will fall through.
   if (!crawler) {
