@@ -106,7 +106,27 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     cepLookupRef.current = norm;
     const r = await lookupCep(norm);
     if (!r.ok) return;
-    const cleanNeighborhood = sanitizeNeighborhood(r.neighborhood, r.city);
+    let cleanNeighborhood = sanitizeNeighborhood(r.neighborhood, r.city);
+
+    // Fallback: se o CEP não trouxe bairro confiável (ex: zona rural ou bairro
+    // inconsistente com a cidade), tenta Nominatim usando a cidade/UF como pivô.
+    if (!cleanNeighborhood && r.city && r.state) {
+      try {
+        const q = encodeURIComponent(`${r.city}, ${r.state}, Brasil`);
+        const resp = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q=${q}`,
+          { headers: { Accept: 'application/json' } },
+        );
+        if (resp.ok) {
+          const list = await resp.json();
+          const addr = list?.[0]?.address || {};
+          const candidate =
+            addr.neighbourhood || addr.suburb || addr.quarter || addr.city_district || null;
+          cleanNeighborhood = sanitizeNeighborhood(candidate, r.city) || null;
+        }
+      } catch { /* silencioso — bairro continua opcional */ }
+    }
+
     patch({
       city: r.city,
       state: r.state,
