@@ -86,9 +86,12 @@ const matchesCityLabel = (ctx: LeadContext | null | undefined, label: string): b
 
 export function useNewLeadAlerts(providerId: string | undefined, filters: Filters) {
   const qc = useQueryClient();
-  const { mode } = useLeadAlertPreference();
+  const { mode, minIntervalSeconds } = useLeadAlertPreference();
   const modeRef = useRef<LeadAlertMode>(mode);
   modeRef.current = mode;
+  const intervalRef = useRef<number>(minIntervalSeconds);
+  intervalRef.current = minIntervalSeconds;
+  const lastAlertAtRef = useRef<number>(0);
   const [outsideFilterCount, setOutsideFilterCount] = useState(0);
   const [lastNewLead, setLastNewLead] = useState<NewLeadPayload | null>(null);
   const filtersRef = useRef(filters);
@@ -119,6 +122,14 @@ export function useNewLeadAlerts(providerId: string | undefined, filters: Filter
         const outsideFilter = !(cityOk && catOk && ufOk);
 
         if (outsideFilter) setOutsideFilterCount((n) => n + 1);
+
+        // Anti-spam: throttle entre alertas audíveis/visuais consecutivos.
+        // Se ainda estamos dentro da janela, atualizamos o estado (contador
+        // e lastNewLead já foram setados) mas NÃO emitimos beep/toast.
+        const now = Date.now();
+        const interval = Math.max(0, intervalRef.current) * 1000;
+        if (interval > 0 && now - lastAlertAtRef.current < interval) return;
+        lastAlertAtRef.current = now;
 
         const soundRequested = wantsSound(currentMode);
         const toastRequested = wantsToast(currentMode);

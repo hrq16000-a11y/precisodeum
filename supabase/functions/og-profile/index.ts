@@ -207,14 +207,46 @@ Deno.serve(async (req) => {
 
   const html = buildHtml({ title, description, image, canonical });
 
+  // ETag estável baseado no conteúdo: permite If-None-Match → 304 Not Modified
+  // (resposta de ~80 bytes em vez de ~2KB de HTML por hit do crawler).
+  const etag = `W/"${await sha1Short(html)}"`;
+  const ifNoneMatch = req.headers.get("if-none-match");
+  if (ifNoneMatch && ifNoneMatch === etag) {
+    return new Response(null, {
+      status: 304,
+      headers: {
+        ...corsHeaders,
+        ETag: etag,
+        "Cache-Control":
+          "public, max-age=300, s-maxage=600, stale-while-revalidate=86400",
+        "X-Robots-Tag": "all",
+      },
+    });
+  }
+
   return new Response(html, {
     status: 200,
     headers: {
       ...corsHeaders,
       "Content-Type": "text/html; charset=utf-8",
-      // Allow CDN caching for 5min; crawlers re-scrape periodically anyway.
-      "Cache-Control": "public, max-age=300, s-maxage=300",
+      // Edge cache 10min, browser/crawler 5min, stale-while-revalidate 24h.
+      // Crawlers do WhatsApp/Facebook re-scrapeiam ~7 dias; SWR cobre o gap
+      // sem que ninguém veja preview frio mesmo após mudança de avatar.
+      "Cache-Control":
+        "public, max-age=300, s-maxage=600, stale-while-revalidate=86400",
+      ETag: etag,
+      Vary: "User-Agent, Accept-Encoding",
       "X-Robots-Tag": "all",
     },
   });
 });
+
+/** SHA-1 truncado (20 hex chars) — suficiente para ETag fraco por slug. */
+async function sha1Short(input: string): Promise<string> {
+  const buf = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest("SHA-1", buf);
+  return Array.from(new Uint8Array(hash))
+    .slice(0, 10)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
