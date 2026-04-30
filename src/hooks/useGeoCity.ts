@@ -57,6 +57,11 @@ function safeSet(key: string, value: string) {
   try { sessionStorage.setItem(key, value); } catch {}
 }
 
+function safeRemove(key: string) {
+  try { localStorage.removeItem(key); } catch {}
+  try { sessionStorage.removeItem(key); } catch {}
+}
+
 function parseNumber(value: string | null) {
   return value !== null && Number.isFinite(Number(value)) ? Number(value) : null;
 }
@@ -219,10 +224,11 @@ function startFetchIfNeeded() {
     let success = false;
     try {
       const edgeGeo = await fetchGeoFromEdge();
-      if (edgeGeo.city || edgeGeo.state || edgeGeo.temp !== null) {
+        if (edgeGeo.city || edgeGeo.state || edgeGeo.temp !== null) {
         const uf = normalizeUF(edgeGeo.state);
         if (edgeGeo.city) safeSet(CITY_KEY, edgeGeo.city);
         if (uf) safeSet(STATE_KEY, uf);
+          safeRemove(NEIGHBORHOOD_KEY);
         if (edgeGeo.temp !== null) safeSet(TEMP_KEY, String(edgeGeo.temp));
         const now = String(Date.now());
         safeSet(FETCH_TS_KEY, now);
@@ -250,6 +256,7 @@ function startFetchIfNeeded() {
         const uf = normalizeUF(result.state);
         if (result.city) safeSet(CITY_KEY, result.city);
         if (uf) safeSet(STATE_KEY, uf);
+        safeRemove(NEIGHBORHOOD_KEY);
         if (result.lat !== null) safeSet(LAT_KEY, String(result.lat));
         if (result.lon !== null) safeSet(LON_KEY, String(result.lon));
         if (temp !== null) safeSet(TEMP_KEY, String(temp));
@@ -294,9 +301,9 @@ function startFetchIfNeeded() {
   })(); };
 
   if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(startGeoFetch, { timeout: 8000 });
+    (window as any).requestIdleCallback(startGeoFetch, { timeout: 1200 });
   } else {
-    setTimeout(startGeoFetch, 5000);
+    setTimeout(startGeoFetch, 300);
   }
 }
 
