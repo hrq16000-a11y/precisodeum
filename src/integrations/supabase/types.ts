@@ -6507,6 +6507,51 @@ export type Database = {
           },
         ]
       }
+      upload_test_results: {
+        Row: {
+          attempts: number
+          created_at: string
+          device_ua: string | null
+          downlink_mbps: number | null
+          effective_type: string | null
+          error_code: string | null
+          file_size_bytes: number | null
+          id: string
+          scenario: string
+          success: boolean
+          total_ms: number
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          device_ua?: string | null
+          downlink_mbps?: number | null
+          effective_type?: string | null
+          error_code?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          scenario: string
+          success: boolean
+          total_ms: number
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          device_ua?: string | null
+          downlink_mbps?: number | null
+          effective_type?: string | null
+          error_code?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          scenario?: string
+          success?: boolean
+          total_ms?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_access_logs: {
         Row: {
           browser: string | null
