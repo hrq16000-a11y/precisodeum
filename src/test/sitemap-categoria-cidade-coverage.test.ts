@@ -51,7 +51,7 @@ describe('sitemap coverage — categoria/cidade/profissional', () => {
   });
 
   it('filtra providers aprovados com slug não-nulo (canonical apenas perfis públicos)', () => {
-    expect(src).toMatch(/status[^,]*approved/);
-    expect(src).toMatch(/slug.*not.*null|not\(['"]slug['"],\s*['"]is['"],\s*null\)/);
+    expect(src).toMatch(/eq\(['"]status['"],\s*['"]approved['"]\)/);
+    expect(src).toMatch(/not\(['"]slug['"],\s*['"]is['"],\s*null\)/);
   });
 });
