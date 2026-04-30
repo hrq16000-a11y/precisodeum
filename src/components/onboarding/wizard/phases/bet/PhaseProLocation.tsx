@@ -19,6 +19,8 @@ import CepSuggestionCard from './CepSuggestionCard';
 import { startGpsTimer, trackGpsAttempt, mapGeolocationError } from '@/lib/locationTelemetry';
 import { useAuth } from '@/hooks/useAuth';
 import { sanitizeNeighborhood } from '@/lib/geoReverseGeocode';
+import { validateBaseCityVsServiceArea, hasBlockingBaseCityIssue } from '@/lib/locationConsistency';
+import { recordMyGeoEvent } from '@/lib/providerGeoAudit';
 import { lookupCep, normalizeCep } from '@/lib/cepLookup';
 import { BET_POINTS, type BetState } from './types';
 
