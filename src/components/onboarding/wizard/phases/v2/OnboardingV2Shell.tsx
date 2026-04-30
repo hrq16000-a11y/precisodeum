@@ -20,7 +20,7 @@
  * ao concluir a Fase 2 — destravando o usuário para o dashboard.
  */
 
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
