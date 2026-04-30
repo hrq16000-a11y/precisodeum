@@ -254,7 +254,7 @@ export default function WizardShell() {
   }, [state.triage.intent]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
+    <div className="min-h-[100svh] text-[15px] leading-snug bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
       <ExitIntentDialog
         phase={state.phase}
         intent={
