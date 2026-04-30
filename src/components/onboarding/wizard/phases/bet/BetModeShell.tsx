@@ -52,7 +52,7 @@ const BET_BACK_MAP: Partial<Record<BetPhase, BetPhase>> = {
   client_city: 'who',
   pro_kind: 'who',
   pro_document: 'pro_kind',
-  pro_location: 'pro_kind',
+  pro_location: 'pro_document',
 };
 
 type Action =
@@ -386,13 +386,9 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
     void finishSponsor();
   }
 
-  /**
-   * Após escolher PF/PJ, pular direto para cidade base.
-   * O CPF/CNPJ é coletado APÓS o 1º serviço estar criado (Phase4Document),
-   * conforme reordenação do fluxo linear (cadastro completo só depois do serviço).
-   */
+  /** Após escolher PF/PJ, segue para CPF/CNPJ + endereço PJ opcional. */
   function afterProKind() {
-    goto('pro_location');
+    goto('pro_document');
   }
 
   /** Soma incremento de pontos ganhos NESTA sessão ao saldo do banco. */
@@ -629,7 +625,9 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       {state.phase === 'pro_kind' && (
         <PhaseProKind state={state} patch={patch} next={afterProKind} awardReward={awardReward} />
       )}
-      {/* pro_document removido da triagem — CPF/CNPJ é coletado em main_document, após o 1º serviço */}
+      {state.phase === 'pro_document' && (
+        <PhaseProDocument state={state} patch={patch} next={() => goto('pro_location')} addPoints={addSessionPointsToProfile as any} />
+      )}
       {state.phase === 'pro_location' && (
         <PhaseProLocation state={state} patch={patch} finish={finishPro} awardReward={awardReward} />
       )}
