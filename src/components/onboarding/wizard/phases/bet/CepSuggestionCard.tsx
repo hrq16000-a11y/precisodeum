@@ -19,6 +19,7 @@
 import { useEffect, useState } from 'react';
 import { Search, Loader2, MapPin, AlertTriangle, Check, RotateCw } from 'lucide-react';
 import { lookupCepFromCity } from '@/lib/cepReverseLookup';
+import { startCepTimer, trackCepAttempt, type CepErrorCode } from '@/lib/locationTelemetry';
 
 export interface CepSuggestionCardProps {
   city: string;
