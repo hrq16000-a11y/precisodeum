@@ -20,14 +20,12 @@ describe('Wizard PJ — endereço opcional (PhaseProDocument)', () => {
     expect(PHASE).toMatch(/Opcional/i);
   });
 
-  it('importa o CompanyAddressForm isolado (não reutiliza o form do RH)', () => {
-    expect(PHASE).toMatch(/CompanyAddressForm/);
-    // Garante que NÃO importa nenhum form da pasta de Agency/RH
+  it('NÃO importa nenhum form da pasta de Agency/RH (isolamento)', () => {
     expect(PHASE).not.toMatch(/from\s+["'][^"']*Agency[^"']*["']/);
     expect(PHASE).not.toMatch(/AgencyAddressForm|AgencyDataForm/);
   });
 
-  it('o componente isolado existe em src/components/company/', () => {
+  it('o componente isolado CompanyAddressForm existe em src/components/company/', () => {
     const path = resolve(__dirname, '../components/company/CompanyAddressForm.tsx');
     expect(existsSync(path)).toBe(true);
   });
@@ -37,8 +35,6 @@ describe('Wizard PJ — endereço opcional (PhaseProDocument)', () => {
       resolve(__dirname, '../components/company/CompanyAddressForm.tsx'),
       'utf8',
     );
-    // Heurística: nenhum input de endereço deve carregar atributo `required`
-    // junto a name="street" / "postal_code" / "complement" / "street_number".
     const offending = FORM.match(/name="(street|street_number|complement|postal_code)"[^>]*\brequired\b/);
     expect(offending).toBeNull();
   });

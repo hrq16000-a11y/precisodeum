@@ -50,11 +50,28 @@ describe('normalizeProviderPayload — PJ social_links & institucionais', () => 
     expect(safeOptionalString(null)).toBeNull();
   });
 
-  it('update parcial só com show_full_address não força sobrescrever NOT NULL inexistentes', () => {
-    const out = normalizeProviderPayload({ show_full_address: true } as any);
-    // Não pode introduzir city/description/state vazios em payload de UPDATE parcial
-    // se não foram informados — deixa pro caller decidir; a função apenas não
-    // deve lançar e deve preservar a flag.
+  it('preserva show_full_address quando account_type=company (PJ)', () => {
+    const out = normalizeProviderPayload({
+      account_type: 'company',
+      show_full_address: true,
+    } as any);
     expect(out.show_full_address).toBe(true);
+  });
+
+  it('descarta show_full_address quando account_type não é company (PF)', () => {
+    const out = normalizeProviderPayload({
+      account_type: 'autonomo',
+      show_full_address: true,
+    } as any);
+    // PF não tem essa coluna no schema institucional → removida silenciosamente
+    expect((out as any).show_full_address).toBeUndefined();
+  });
+
+  it('PJ: social_links só com chaves vazias é normalizado para null', () => {
+    const out = normalizeProviderPayload({
+      account_type: 'company',
+      social_links: { instagram: '', facebook: '   ' },
+    } as any);
+    expect((out as any).social_links).toBeNull();
   });
 });
