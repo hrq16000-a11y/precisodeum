@@ -215,7 +215,34 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
         <p className="mt-1 text-[11px] text-muted-foreground">
           O bairro ajuda clientes da sua região a te encontrar mais rápido.
         </p>
+
+        {/* Sugestão automática de CEP a partir de cidade + bairro */}
+        {cepLoading && (
+          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Search className="h-3 w-3 animate-pulse" /> Procurando CEP do seu bairro…
+          </p>
+        )}
+        {!cepLoading && cepSuggestion && state.postal_code !== cepSuggestion && (
+          <button
+            type="button"
+            onClick={applyCepSuggestion}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+          >
+            <Search className="h-3 w-3" /> CEP encontrado: {cepSuggestion} — usar
+          </button>
+        )}
       </div>
+
+      {/* Aviso de GPS impreciso */}
+      {gpsImprecise && (
+        <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-xs text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-100">
+          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <p className="leading-snug">
+            GPS impreciso (margem de ~{Math.round(gpsAccuracy!)}m). <strong>Confirme o bairro</strong> manualmente
+            para garantir que clientes próximos te encontrem.
+          </p>
+        </div>
+      )}
 
       <Button
         size="lg"
