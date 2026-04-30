@@ -101,7 +101,7 @@ const SearchPage = () => {
   const [minRating, setMinRating] = useState(0);
   // Default sort: 'nearest' quando há GPS preciso, senão 'relevance'.
   // O usuário pode sobrescrever via ?ordem=... ou pelos chips.
-  const initialSort = (searchParams.get('ordem') as SortOption) || (userLat && userLon ? 'nearest' : 'relevance');
+  const initialSort = (searchParams.get('ordem') as SortOption) || (userLat && userLon ? 'best' : 'relevance');
   const [sortBy, setSortBy] = useState<SortOption>(initialSort);
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
