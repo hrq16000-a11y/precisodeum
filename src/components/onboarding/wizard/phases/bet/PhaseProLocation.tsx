@@ -326,9 +326,33 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
 
   const gpsImprecise = gpsAccuracy != null && gpsAccuracy > 500;
 
+  // Origem efetiva da localização — usada na UI e na telemetria.
+  const effectiveSource: 'gps' | 'cep' | 'manual' | 'ip' | 'unknown' =
+    state.location_source === 'gps' ? 'gps' :
+    state.location_source === 'cep' ? 'cep' :
+    state.location_source === 'manual' ? 'manual' :
+    state.location_source === 'ip' ? 'ip' :
+    geo.source === 'gps' ? 'gps' :
+    geo.source === 'ip' ? 'ip' :
+    geo.source === 'manual' ? 'manual' : 'unknown';
+
   async function onFinish() {
     if (!canFinish || submitting) return;
     setSubmitting(true);
+    // Telemetria: rastreia tentativas de finalização por origem para detectar
+    // novamente travamentos no canFinish/previewConfirmed (Tarefa #3).
+    void trackOnboardingEvent({
+      phase: 'pro_location' as any,
+      event: 'submit',
+      userId: user?.id || null,
+      meta: {
+        location_source: effectiveSource,
+        preview_confirmed: previewConfirmed,
+        geo_failed: Boolean(geoFailed),
+        has_neighborhood: neighborhoodOk,
+        gps_accuracy_m: gpsAccuracy,
+      },
+    });
     try { await finish(); } finally { setSubmitting(false); }
   }
 
