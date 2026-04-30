@@ -725,8 +725,41 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           resolvedServiceId = reusedId;
           dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
         } else {
+          // ── PRÉ-VALIDAÇÃO LOCAL (Hotfix #2) ─────────────────────────────────
+          // Garante que os campos NOT NULL chegam preenchidos. Se faltar algo,
+          // registra telemetria detalhada e tenta recuperar do state global.
+          const preflightFailures: string[] = [];
+          if (!workingProviderId) preflightFailures.push('provider_id');
+          if (!categoryId) preflightFailures.push('category_id');
+          if (!resolvedCategoryName) preflightFailures.push('service_name');
+          if (preflightFailures.length > 0) {
+            void trackOnboardingEvent({
+              phase: state.phase,
+              event: 'error',
+              userId: user?.id,
+              meta: {
+                reason: 'persist_first_service_preflight_fail',
+                missing: preflightFailures,
+                provider_id: workingProviderId || null,
+                category_id: categoryId || null,
+                has_service_name: Boolean(resolvedCategoryName),
+              },
+            });
+            // Tentativa de recuperação: re-resolve providerId via state/banco
+            if (!workingProviderId) {
+              workingProviderId = await ensureProviderId();
+            }
+            if (!workingProviderId || !categoryId || !resolvedCategoryName) {
+              toast.error('Não conseguimos registrar seu serviço principal.', {
+                description: 'Verifique se a categoria está correta e tente novamente.',
+                duration: 10000,
+              });
+              return false;
+            }
+          }
+
           // 1) RPC oficial — cria serviço atomicamente
-          const { data, error } = await (supabase as any).rpc('create_service_atomic', {
+          const rpcPayload = {
             _provider_id: workingProviderId,
             _service_name: resolvedCategoryName, // ← invariante reforçada
             _description: s.description || '',
@@ -740,12 +773,97 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             _youtube_url: '',
             _category_id: categoryId,
             _category_ids: [categoryId, ...s.category_ids.slice(1)],
-          });
+          };
+          const { data, error } = await (supabase as any).rpc('create_service_atomic', rpcPayload);
+
           if (error || !data?.success) {
-            throw new Error(error?.message || data?.error || 'Falha ao criar serviço');
+            // ── OBSERVABILIDADE TOTAL (Hotfix #1) ─────────────────────────────
+            void trackOnboardingEvent({
+              phase: state.phase,
+              event: 'error',
+              userId: user?.id,
+              meta: {
+                reason: 'create_service_atomic_failed',
+                error_code: error?.code || null,
+                error_message: error?.message || data?.error || null,
+                error_details: error?.details ? String(error.details).slice(0, 300) : null,
+                error_hint: error?.hint || null,
+                rpc_success: data?.success ?? null,
+                provider_id: workingProviderId,
+                category_id: categoryId,
+                has_whatsapp: Boolean(p.whatsapp),
+                cities_count: s.cities_served.length,
+              },
+            });
+            console.warn('[onboardingV2] create_service_atomic falhou — tentando fallback INSERT direto', {
+              error, data,
+            });
+
+            // ── FALLBACK RESILIENTE (Hotfix #3) ───────────────────────────────
+            // Plano B: INSERT direto na tabela `services`. As políticas RLS
+            // permitem o dono do provider inserir seu próprio serviço.
+            try {
+              const { data: insertRow, error: insertErr } = await supabase
+                .from('services')
+                .insert({
+                  provider_id: workingProviderId,
+                  service_name: resolvedCategoryName,
+                  description: s.description || '',
+                  whatsapp: p.whatsapp || null,
+                  service_area: serviceArea || null,
+                  address: cityForAddress || null,
+                  working_hours: workingHoursSummary || null,
+                  category_id: categoryId,
+                  category_ids: [categoryId, ...s.category_ids.slice(1)],
+                } as any)
+                .select('id')
+                .single();
+
+              if (insertErr || !insertRow?.id) {
+                void trackOnboardingEvent({
+                  phase: state.phase,
+                  event: 'error',
+                  userId: user?.id,
+                  meta: {
+                    reason: 'fallback_insert_services_failed',
+                    error_code: (insertErr as any)?.code || null,
+                    error_message: insertErr?.message || null,
+                    error_details: (insertErr as any)?.details
+                      ? String((insertErr as any).details).slice(0, 300) : null,
+                    provider_id: workingProviderId,
+                    category_id: categoryId,
+                  },
+                });
+                throw new Error(
+                  insertErr?.message || error?.message || data?.error || 'Falha ao criar serviço',
+                );
+              }
+
+              // Fallback bem-sucedido → registra e segue como criação válida
+              void trackOnboardingEvent({
+                phase: state.phase,
+                event: 'submit',
+                userId: user?.id,
+                meta: {
+                  reason: 'fallback_insert_services_succeeded',
+                  service_id: insertRow.id,
+                  provider_id: workingProviderId,
+                  category_id: categoryId,
+                },
+              });
+              resolvedServiceId = insertRow.id;
+              dispatch({ type: 'SET_FIRST_SERVICE_ID', id: insertRow.id });
+            } catch (fallbackErr: any) {
+              // Plano C — feedback amigável (Hotfix #4) e propaga para o catch externo
+              throw new Error(
+                fallbackErr?.message ||
+                'Não conseguimos registrar seu serviço principal. Verifique se a categoria está correta e tente novamente.',
+              );
+            }
+          } else {
+            resolvedServiceId = data.service_id;
+            dispatch({ type: 'SET_FIRST_SERVICE_ID', id: data.service_id });
           }
-          resolvedServiceId = data.service_id;
-          dispatch({ type: 'SET_FIRST_SERVICE_ID', id: data.service_id });
         }
       }
 
@@ -837,8 +955,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       return true;
     } catch (e: any) {
       logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'publish_first_service' } });
-      toast.error('Erro ao publicar serviço', {
-        description: `${(e?.message || 'tente novamente').slice(0, 140)} — Tire um print desta tela e envie ao suporte para resolvermos rapidamente.`,
+      toast.error('Não conseguimos registrar seu serviço principal.', {
+        description: 'Verifique se a categoria está correta e tente novamente. Seu progresso foi salvo como rascunho — você pode continuar a qualquer momento.',
         duration: 12000,
         action: { label: 'Tentar novamente', onClick: () => { void persistFirstService(); } },
       });
