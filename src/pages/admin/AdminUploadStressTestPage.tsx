@@ -697,6 +697,9 @@ export default function AdminUploadStressTestPage() {
             <p className="text-sm text-muted-foreground">Nenhum resultado.</p>
           ) : (
             <div className="overflow-x-auto">
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                Clique em uma linha para ver os detalhes completos do evento.
+              </p>
               <table className="w-full text-xs">
                 <thead className="text-muted-foreground">
                   <tr className="text-left">
@@ -712,7 +715,20 @@ export default function AdminUploadStressTestPage() {
                 </thead>
                 <tbody>
                   {recentRows.map((r, i) => (
-                    <tr key={i} className="border-t">
+                    <tr
+                      key={i}
+                      className="border-t cursor-pointer hover:bg-muted/40 focus-visible:bg-muted/60 focus-visible:outline-none"
+                      onClick={() => setSelectedRow(r)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedRow(r);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Detalhes do evento ${i + 1}`}
+                    >
                       <td className="py-1 pr-2">{new Date(r.created_at).toLocaleTimeString('pt-BR')}</td>
                       <td className="py-1 pr-2">{r.scenario}</td>
                       <td className="py-1 pr-2">{r.stage ?? '—'}</td>
@@ -731,6 +747,8 @@ export default function AdminUploadStressTestPage() {
           )}
         </CardContent>
       </Card>
+
+      <UploadEventDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
     </div>
   );
 }
