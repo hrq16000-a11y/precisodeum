@@ -45,7 +45,9 @@ const ImageUploadField = ({
 
     setUploading(true);
     try {
-      const file = await compressImage(raw);
+      // Padrão mobile-first: 1200px / ~300KB. Edge `optimize-image` ainda
+      // re-encoda em WebP no servidor para entrega final.
+      const file = await compressImage(raw, { maxDimension: 1200, targetKB: 300 });
       // Get current session for auth
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
