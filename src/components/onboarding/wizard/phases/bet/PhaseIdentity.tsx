@@ -57,7 +57,7 @@ export default function PhaseIdentity({ state, patch, next, awardReward }: Props
         </p>
       </header>
 
-      <div className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-card">
+      <div className="space-y-2 rounded-xl border border-border bg-card p-3 shadow-card">
         <label className="block">
           <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
             <User className="h-3.5 w-3.5" /> Nome completo

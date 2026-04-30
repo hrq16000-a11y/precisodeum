@@ -64,7 +64,7 @@ export const Phase2Photos = ({
     </aside>
 
     <div
-      className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-card"
+      className="space-y-2 rounded-xl border border-border bg-card p-3 shadow-card"
       role="group"
       aria-label={`Fotos do serviço ${serviceName || ''}`.trim()}
     >
