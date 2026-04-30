@@ -20,6 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import {
@@ -143,6 +150,9 @@ export default function AdminUploadStressTestPage() {
   const [fErrorCode, setFErrorCode] = useState<string>('');
   const [fScenario, setFScenario] = useState<string>('all');
   const [fDevice, setFDevice] = useState<string>('all');
+
+  // Drawer de detalhes do evento
+  const [selectedRow, setSelectedRow] = useState<UploadRow | null>(null);
 
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
   const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -687,6 +697,9 @@ export default function AdminUploadStressTestPage() {
             <p className="text-sm text-muted-foreground">Nenhum resultado.</p>
           ) : (
             <div className="overflow-x-auto">
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                Clique em uma linha para ver os detalhes completos do evento.
+              </p>
               <table className="w-full text-xs">
                 <thead className="text-muted-foreground">
                   <tr className="text-left">
@@ -702,7 +715,20 @@ export default function AdminUploadStressTestPage() {
                 </thead>
                 <tbody>
                   {recentRows.map((r, i) => (
-                    <tr key={i} className="border-t">
+                    <tr
+                      key={i}
+                      className="border-t cursor-pointer hover:bg-muted/40 focus-visible:bg-muted/60 focus-visible:outline-none"
+                      onClick={() => setSelectedRow(r)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedRow(r);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Detalhes do evento ${i + 1}`}
+                    >
                       <td className="py-1 pr-2">{new Date(r.created_at).toLocaleTimeString('pt-BR')}</td>
                       <td className="py-1 pr-2">{r.scenario}</td>
                       <td className="py-1 pr-2">{r.stage ?? '—'}</td>
@@ -721,6 +747,8 @@ export default function AdminUploadStressTestPage() {
           )}
         </CardContent>
       </Card>
+
+      <UploadEventDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
     </div>
   );
 }
@@ -743,6 +771,169 @@ function FilterSelect({ label, value, onChange, options }: FilterSelectProps) {
           ))}
         </SelectContent>
       </Select>
+    </div>
+  );
+}
+
+interface UploadEventDrawerProps {
+  row: UploadRow | null;
+  onClose: () => void;
+}
+function UploadEventDrawer({ row, onClose }: UploadEventDrawerProps) {
+  const open = !!row;
+  // Tenta extrair stack/payload de error_code (algumas falhas serializam JSON ali)
+  const parsedExtra = useMemo(() => {
+    if (!row?.error_code) return null;
+    try {
+      const parsed = JSON.parse(row.error_code);
+      return typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }, [row?.error_code]);
+
+  return (
+    <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        {row && (
+          <>
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                {row.success ? (
+                  <CheckCircle2 className="h-5 w-5 text-success" />
+                ) : (
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                )}
+                Evento de upload
+              </SheetTitle>
+              <SheetDescription>
+                {new Date(row.created_at).toLocaleString('pt-BR')} · {row.scenario}
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-4 space-y-4 text-sm">
+              {/* Status & estágio */}
+              <section>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Resultado
+                </h3>
+                <dl className="grid grid-cols-2 gap-2 rounded-md border border-border bg-card/40 p-3">
+                  <DetailRow label="Estágio" value={row.stage ?? '—'} />
+                  <DetailRow
+                    label="Status"
+                    value={row.success ? 'sucesso' : 'falha'}
+                    valueClassName={row.success ? 'text-success' : 'text-destructive'}
+                  />
+                  <DetailRow label="Tentativa(s)" value={String(row.attempts ?? 1)} />
+                  <DetailRow label="Latência total" value={`${row.total_ms} ms`} />
+                  <DetailRow
+                    label="Latência do estágio"
+                    value={row.stage_latency_ms != null ? `${row.stage_latency_ms} ms` : '—'}
+                  />
+                  <DetailRow
+                    label="Nível fallback"
+                    value={row.fallback_level != null ? String(row.fallback_level) : 'sem fallback'}
+                  />
+                </dl>
+              </section>
+
+              {/* Erro */}
+              {!row.success && (
+                <section>
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Erro
+                  </h3>
+                  <dl className="grid grid-cols-1 gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                    <DetailRow label="Tipo (error_kind)" value={row.error_kind ?? 'unknown'} />
+                    <div>
+                      <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        error_code
+                      </dt>
+                      <dd className="mt-1 break-all rounded bg-background/60 p-2 font-mono text-[11px] leading-snug">
+                        {row.error_code ?? '—'}
+                      </dd>
+                    </div>
+                    {parsedExtra?.stack && (
+                      <div>
+                        <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                          Stack trace
+                        </dt>
+                        <dd className="mt-1">
+                          <pre className="max-h-60 overflow-auto whitespace-pre-wrap rounded bg-background/60 p-2 font-mono text-[10px] leading-snug">
+                            {String(parsedExtra.stack)}
+                          </pre>
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </section>
+              )}
+
+              {/* Rede / dispositivo */}
+              <section>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Rede & dispositivo
+                </h3>
+                <dl className="grid grid-cols-2 gap-2 rounded-md border border-border bg-card/40 p-3">
+                  <DetailRow label="effective_type" value={row.effective_type ?? '—'} />
+                  <DetailRow
+                    label="downlink (Mbps)"
+                    value={row.downlink_mbps != null ? String(row.downlink_mbps) : '—'}
+                  />
+                  <DetailRow label="Faixa" value={downlinkBand(row.downlink_mbps)} />
+                  <DetailRow label="Dispositivo" value={deviceFamily(row.device_ua)} />
+                </dl>
+                {row.device_ua && (
+                  <p className="mt-2 break-all rounded bg-muted/30 p-2 font-mono text-[10px] leading-snug text-muted-foreground">
+                    {row.device_ua}
+                  </p>
+                )}
+              </section>
+
+              {/* Payload do arquivo */}
+              <section>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Arquivo
+                </h3>
+                <dl className="grid grid-cols-2 gap-2 rounded-md border border-border bg-card/40 p-3">
+                  <DetailRow
+                    label="Tamanho"
+                    value={
+                      row.file_size_bytes != null
+                        ? `${Math.round(row.file_size_bytes / 1024)} KB`
+                        : '—'
+                    }
+                  />
+                  <DetailRow label="Cenário (test mode)" value={row.scenario} />
+                </dl>
+              </section>
+
+              {/* JSON bruto (debug) */}
+              <section>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Payload bruto
+                </h3>
+                <pre className="max-h-72 overflow-auto rounded bg-muted/30 p-3 font-mono text-[10px] leading-snug">
+                  {JSON.stringify(row, null, 2)}
+                </pre>
+              </section>
+            </div>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  valueClassName = '',
+}: { label: string; value: string; valueClassName?: string }) {
+  return (
+    <div>
+      <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className={`mt-0.5 font-medium tabular-nums ${valueClassName}`}>{value}</dd>
     </div>
   );
 }
