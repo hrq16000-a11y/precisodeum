@@ -123,6 +123,14 @@ export function useNewLeadAlerts(providerId: string | undefined, filters: Filter
 
         if (outsideFilter) setOutsideFilterCount((n) => n + 1);
 
+        // Anti-spam: throttle entre alertas audíveis/visuais consecutivos.
+        // Se ainda estamos dentro da janela, atualizamos o estado (contador
+        // e lastNewLead já foram setados) mas NÃO emitimos beep/toast.
+        const now = Date.now();
+        const interval = Math.max(0, intervalRef.current) * 1000;
+        if (interval > 0 && now - lastAlertAtRef.current < interval) return;
+        lastAlertAtRef.current = now;
+
         const soundRequested = wantsSound(currentMode);
         const toastRequested = wantsToast(currentMode);
 
