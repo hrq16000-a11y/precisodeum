@@ -4,7 +4,46 @@
  */
 import { calculateDistanceKm } from '@/lib/geoDistance';
 
-export type SortMode = 'relevance' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
+export type SortMode = 'relevance' | 'best' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
+
+/**
+ * Pesos do score híbrido usado pelo modo `'best'`. Soma livre — normalizada
+ * internamente. Valores padrão privilegiam **rating** com **distância como
+ * desempate**, conforme a regra de negócio (anti-leilão de preços).
+ */
+export interface SearchScoreWeights {
+  rating: number;
+  distance: number;
+}
+export const DEFAULT_SCORE_WEIGHTS: SearchScoreWeights = { rating: 0.7, distance: 0.3 };
+
+/** Normaliza distância km → score 0..1 (≤0km=1, ≥50km=0, linear). */
+function distanceScore(distanceKm: number | null | undefined): number {
+  if (distanceKm == null || !Number.isFinite(distanceKm)) return 0;
+  if (distanceKm <= 0) return 1;
+  if (distanceKm >= 50) return 0;
+  return 1 - distanceKm / 50;
+}
+
+/** Normaliza rating 0..5 → 0..1. */
+function ratingScore(rating: number): number {
+  return Math.max(0, Math.min(1, (rating || 0) / 5));
+}
+
+/**
+ * Score híbrido (0..1). Rating tem prioridade; distância funciona como
+ * desempate quando dois prestadores têm avaliações próximas.
+ */
+export function computeProviderScore(
+  p: { rating: number; distanceKm?: number | null },
+  weights: SearchScoreWeights = DEFAULT_SCORE_WEIGHTS,
+): number {
+  const wr = Math.max(0, weights.rating);
+  const wd = Math.max(0, weights.distance);
+  const total = wr + wd || 1;
+  return (ratingScore(p.rating) * wr + distanceScore(p.distanceKm) * wd) / total;
+}
+
 export type FeaturedFilter = 'all' | 'featured' | 'normal';
 /**
  * Status filter:
