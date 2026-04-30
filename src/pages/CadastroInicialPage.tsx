@@ -173,16 +173,43 @@ export default function CadastroInicialPage() {
   useEffect(() => {
     if (loading || !authSettled) return;
     if (user) return;
+    // Race-guard: ref-flag idempotente. Mesmo que o efeito reexecute por
+    // mudança de params/location, só dispara navegação+toast UMA vez por mount.
     if (redirectedRef.current) return;
     redirectedRef.current = true;
 
     const nextParam =
       params.get('next') || `${location.pathname}${location.search || ''}` || '/cadastro-inicial';
+    const loginUrl = `/login?next=${encodeURIComponent(nextParam)}`;
 
-    if (hasLocalDraft()) {
+    const draft = inspectLocalDraft();
+
+    // Telemetria de expiração de sessão durante onboarding — fail-soft.
+    void trackOnboardingEvent({
+      phase: (draft.phase as any) || 'unknown',
+      event: 'error',
+      meta: {
+        reason: 'session_expired_during_onboarding',
+        had_draft: draft.exists,
+        draft_phase: draft.phase,
+        draft_age_ms: draft.savedAt ? Date.now() - draft.savedAt : null,
+        next_param: nextParam,
+        error_code: 'AUTH_SESSION_EXPIRED',
+        error_message: 'User redirected to /login without active session',
+      },
+    });
+
+    if (draft.exists) {
+      // Toast com ação direta para o usuário voltar ao cadastro (link com ?next=).
       toast.warning(
-        'Sua sessão expirou por segurança, mas não se preocupe: salvamos seu progresso. Entre novamente para continuar de onde parou.',
-        { duration: 8000 },
+        'Sua sessão expirou por segurança. Salvamos seu progresso — você tem 7 dias para retomar de onde parou.',
+        {
+          duration: 10000,
+          action: {
+            label: 'Voltar ao cadastro',
+            onClick: () => navigate(loginUrl, { replace: true }),
+          },
+        },
       );
     } else {
       toast.message('Faça login para iniciar seu cadastro. Vamos te levar de volta para cá.', {
@@ -190,7 +217,7 @@ export default function CadastroInicialPage() {
       });
     }
 
-    navigate(`/login?next=${encodeURIComponent(nextParam)}`, { replace: true });
+    navigate(loginUrl, { replace: true });
   }, [loading, authSettled, user, navigate, params, location.pathname, location.search]);
 
   if (loading || !authSettled || !user) return null;
