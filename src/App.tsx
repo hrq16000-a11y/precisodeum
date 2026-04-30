@@ -86,6 +86,7 @@ const AdminConsentRevocationsPage = lazy(() => import("./pages/admin/AdminConsen
 const AdminIntegrityReportsPage = lazy(() => import("./pages/admin/AdminIntegrityReportsPage"));
 const AdminInboxPage = lazy(() => import("./pages/admin/AdminInboxPage"));
 const AdminSitemapAuditPage = lazy(() => import("./pages/admin/AdminSitemapAuditPage"));
+const AdminOnboardingStatsPage = lazy(() => import("./pages/admin/AdminOnboardingStatsPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
@@ -503,6 +504,7 @@ const App = () => {
                 <Route path="/admin/estatisticas" element={<AdminGuard><AdminStatsPage /></AdminGuard>} />
                 <Route path="/admin/conversao" element={<AdminGuard><AdminConversionMetricsPage /></AdminGuard>} />
                 <Route path="/admin/onboarding-funnel" element={<AdminGuard><AdminOnboardingFunnelPage /></AdminGuard>} />
+                <Route path="/admin/onboarding-stats" element={<AdminGuard><AdminOnboardingStatsPage /></AdminGuard>} />
                 <Route path="/admin/integridade" element={<AdminGuard><AdminIntegrityReportsPage /></AdminGuard>} />
                 <Route path="/admin/caixa-notificacoes" element={<AdminGuard><AdminInboxPage /></AdminGuard>} />
                 <Route path="/admin/sitemap-audit" element={<AdminGuard><AdminSitemapAuditPage /></AdminGuard>} />

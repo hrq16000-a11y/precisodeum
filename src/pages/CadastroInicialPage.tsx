@@ -53,6 +53,23 @@ export default function CadastroInicialPage() {
     return () => window.clearTimeout(t);
   }, [loading]);
 
+  // Tarefa #1: ao logar de volta, se houver rascunho salvo, avisar que o
+  // progresso foi recuperado. Dispara uma vez por aba/sessão, evitando spam.
+  const welcomeShownRef = useRef(false);
+  useEffect(() => {
+    if (loading || !authSettled || !user) return;
+    if (welcomeShownRef.current) return;
+    let raw: string | null = null;
+    try { raw = window.sessionStorage.getItem('onboarding_welcome_back_shown'); } catch { /* noop */ }
+    if (raw === '1') { welcomeShownRef.current = true; return; }
+    if (!hasLocalDraft()) return;
+    welcomeShownRef.current = true;
+    try { window.sessionStorage.setItem('onboarding_welcome_back_shown', '1'); } catch { /* noop */ }
+    toast.success('Bem-vindo de volta! Recuperamos seu progresso e você continuará de onde parou.', {
+      duration: 6000,
+    });
+  }, [loading, authSettled, user]);
+
   useEffect(() => {
     if (loading || !authSettled) return;
     if (user) return;
