@@ -1181,7 +1181,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     clearSessionTouched();
     if (user?.id) void clearRemoteDraft(user.id);
 
-    if (user?.id && !state.firstServiceId) {
+    // BUGFIX: idempotente — sempre garante que o perfil esteja marcado como
+    // concluído ANTES de navegar, independente de ter ou não firstServiceId.
+    // Sem isso, o OnboardingGate podia repor o usuário em /cadastro-inicial
+    // (ou em rota errada) por uma race entre profile cache e a checagem
+    // de `hasUnlockedAppAccess`. Aguardar o refetch garante que o estado
+    // global de auth esteja coerente quando a próxima rota montar.
+    if (user?.id) {
       const { error } = await supabase.from('profiles')
         .update({ onboarding_step: 5, onboarding_completed: true })
         .eq('id', user.id);
@@ -1191,11 +1197,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         return;
       }
 
-      await refetchProfile?.();
+      try { await refetchProfile?.(); } catch { /* noop — navegação ainda ocorre */ }
     }
 
     toast.success('Perfil completo! Bem-vindo.');
-    navigate('/onboarding-v2/sucesso');
+    navigate('/onboarding-v2/sucesso', { replace: true });
   };
 
   const continueWithoutFirstService = async () => {
