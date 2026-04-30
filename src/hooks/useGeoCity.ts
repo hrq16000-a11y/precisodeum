@@ -7,6 +7,7 @@ interface GeoData {
   city: string | null;
   state: string | null;
   neighborhood: string | null;
+  neighborhoodSource: 'bigdatacloud' | 'nominatim' | 'cep' | 'manual' | 'none';
   temp: number | null;
   latitude: number | null;
   longitude: number | null;
@@ -42,6 +43,7 @@ const RADIUS_KEY = 'geo_radius';
 const FETCH_TS_KEY = 'geo_fetch_ts';
 const SOURCE_KEY = 'geo_source';
 const LAST_KNOWN_KEY = 'geo_last_known_at';
+const NEIGHBORHOOD_SOURCE_KEY = 'geo_neighborhood_source';
 const GEO_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 function safeGet(key: string): string | null {
@@ -79,6 +81,7 @@ let geoState: GeoData = {
   city: initialCity,
   state: normalizeUF(safeGet(STATE_KEY)),
   neighborhood: safeGet(NEIGHBORHOOD_KEY),
+  neighborhoodSource: (safeGet(NEIGHBORHOOD_SOURCE_KEY) as GeoData['neighborhoodSource']) || 'none',
   temp: parseNumber(safeGet(TEMP_KEY)),
   latitude: initialLat,
   longitude: initialLon,
@@ -422,12 +425,14 @@ export function useGeoCity(): GeoStore {
           let state = geoState.state;
           let temp = geoState.temp;
           let neighborhood: string | null = null;
+          let neighborhoodSource: GeoData['neighborhoodSource'] = 'none';
 
           try {
             const location = await reverseGeocode(latitude, longitude);
             city = location.city || city;
             state = normalizeUF(location.state) || state;
             neighborhood = location.neighborhood || null;
+            if (neighborhood) neighborhoodSource = 'bigdatacloud';
           } catch {
             // keep existing city/state when reverse geocoding fails
           }
@@ -439,7 +444,10 @@ export function useGeoCity(): GeoStore {
               if (!city && osm.city) city = osm.city;
               if (!state && osm.state) state = normalizeUF(osm.state) || state;
               const osmNeighborhood = sanitizeNeighborhood(osm.neighborhood, osm.city || city);
-              if (osmNeighborhood) neighborhood = osmNeighborhood;
+              if (osmNeighborhood) {
+                neighborhood = osmNeighborhood;
+                neighborhoodSource = 'nominatim';
+              }
             }
           }
 
@@ -453,6 +461,7 @@ export function useGeoCity(): GeoStore {
           if (city) safeSet(CITY_KEY, city);
           if (state) safeSet(STATE_KEY, state);
           if (neighborhood) safeSet(NEIGHBORHOOD_KEY, neighborhood);
+          safeSet(NEIGHBORHOOD_SOURCE_KEY, neighborhood ? neighborhoodSource : 'none');
           if (temp !== null) safeSet(TEMP_KEY, String(temp));
           safeSet(LAT_KEY, String(latitude));
           safeSet(LON_KEY, String(longitude));
@@ -462,7 +471,7 @@ export function useGeoCity(): GeoStore {
           safeSet(LAST_KNOWN_KEY, ts2);
           try { localStorage.removeItem(OVERRIDE_KEY); sessionStorage.removeItem(OVERRIDE_KEY); } catch {}
 
-          setGeoState({ city, state, neighborhood, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2, manualOverride: false });
+          setGeoState({ city, state, neighborhood, neighborhoodSource, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2, manualOverride: false });
           resolve({ ok: true, city, state, accuracyMeters, neighborhood });
         },
         () => {
