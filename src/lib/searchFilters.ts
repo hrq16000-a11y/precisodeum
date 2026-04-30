@@ -212,6 +212,16 @@ export function applySearchFilters<T extends FilterableProvider>(
 
   if (sortBy === 'nearest') {
     results.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
+  } else if (sortBy === 'best') {
+    // Score híbrido (rating prioritário, distância como desempate). Em empate
+    // de score, mantém ordem por rating desc, depois reviews desc.
+    results.sort((a, b) => {
+      const sb = computeProviderScore(b, scoreWeights);
+      const sa = computeProviderScore(a, scoreWeights);
+      if (sb !== sa) return sb - sa;
+      if (b.rating !== a.rating) return b.rating - a.rating;
+      return b.reviewCount - a.reviewCount;
+    });
   } else if (sortBy !== 'relevance') {
     results.sort((a, b) => {
       switch (sortBy) {
