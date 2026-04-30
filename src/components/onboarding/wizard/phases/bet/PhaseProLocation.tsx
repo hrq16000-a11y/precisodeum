@@ -54,10 +54,9 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     patch({ neighborhood: e.target.value });
   }
 
-  function applyCepSuggestion() {
-    if (!cepSuggestion) return;
-    patch({ postal_code: cepSuggestion });
-    toast.success('CEP preenchido automaticamente', { description: cepSuggestion });
+  function applyCepSuggestion(cep: string) {
+    patch({ postal_code: cep });
+    toast.success('CEP preenchido automaticamente', { description: cep });
   }
 
   async function handleUseGps() {
