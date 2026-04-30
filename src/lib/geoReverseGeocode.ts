@@ -22,7 +22,7 @@ function normalize(value?: string | null) {
     .toLowerCase();
 }
 
-function isRegionalLabel(value?: string | null) {
+export function isRegionalLabel(value?: string | null) {
   const text = normalize(value);
   return Boolean(text) && [
     'regiao metropolitana',
@@ -37,6 +37,10 @@ function isRegionalLabel(value?: string | null) {
 
 function firstNamed(entries: LocalityInfoEntry[] | undefined, matcher: (entry: LocalityInfoEntry) => boolean) {
   return entries?.find((entry) => matcher(entry) && typeof entry.name === 'string' && entry.name.trim())?.name ?? null;
+}
+
+export function normalizeGeoLabel(value?: string | null) {
+  return normalize(value);
 }
 
 export function parseReverseGeocodeLocation(data: ReverseGeocodeResponse) {
