@@ -178,7 +178,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex items-center gap-2.5">
             {profile?.avatar_url ? (
               <div className="relative shrink-0">
-                <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-xl object-cover border border-sidebar-border/50" />
+                <img src={profile.avatar_url} alt="" loading="lazy" decoding="async" className="h-9 w-9 rounded-xl object-cover border border-sidebar-border/50" />
                 <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border-2 border-sidebar" />
                 </span>

@@ -52,9 +52,9 @@ const SponsorPublicPage = () => {
               <div className="flex items-start gap-4">
                 <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/10 overflow-hidden">
                   {sponsor.logo_url ? (
-                    <img src={sponsor.logo_url} alt={name} className="h-full w-full object-cover" />
+                    <img src={sponsor.logo_url} alt={name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                   ) : sponsor.image_url ? (
-                    <img src={sponsor.image_url} alt={name} className="h-full w-full object-cover" />
+                    <img src={sponsor.image_url} alt={name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                   ) : (
                     <Megaphone className="h-10 w-10 text-primary" />
                   )}
