@@ -119,7 +119,17 @@ export async function resilientUpload<T = any>(
           throw lastError;
         }
       } else {
-        return (await res.json()) as T;
+        const json = (await res.json()) as T;
+        if (testActive) {
+          recordUploadTestResult({
+            scenario: testScenario,
+            attempts: attemptsUsed,
+            success: true,
+            totalMs: performance.now() - startedAt,
+            fileSizeBytes: opts.fileSizeBytes,
+          });
+        }
+        return json;
       }
     } catch (err) {
       clearTimeout(timer);
@@ -128,6 +138,16 @@ export async function resilientUpload<T = any>(
       lastError = normalized;
 
       if (!isRetryable(normalized) || attempt === maxAttempts) {
+        if (testActive) {
+          recordUploadTestResult({
+            scenario: testScenario,
+            attempts: attemptsUsed,
+            success: false,
+            totalMs: performance.now() - startedAt,
+            fileSizeBytes: opts.fileSizeBytes,
+            errorCode: (normalized as any)?.message || 'unknown',
+          });
+        }
         throw normalized;
       }
     }
@@ -137,5 +157,15 @@ export async function resilientUpload<T = any>(
     await sleep(wait);
   }
 
+  if (testActive) {
+    recordUploadTestResult({
+      scenario: testScenario,
+      attempts: attemptsUsed,
+      success: false,
+      totalMs: performance.now() - startedAt,
+      fileSizeBytes: opts.fileSizeBytes,
+      errorCode: (lastError as any)?.message || 'exhausted',
+    });
+  }
   throw lastError ?? new Error('upload_failed');
 }
