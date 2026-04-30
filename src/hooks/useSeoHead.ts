@@ -142,6 +142,23 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     }
     link.setAttribute('href', canonicalUrl);
 
+    // rel=prev / rel=next para paginação (Google usa como dica + Bing/outros)
+    const setOrRemoveRel = (rel: 'prev' | 'next', href: string | undefined) => {
+      let el = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
+      if (href) {
+        if (!el) {
+          el = document.createElement('link');
+          el.setAttribute('rel', rel);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('href', href);
+      } else if (el) {
+        el.parentNode?.removeChild(el);
+      }
+    };
+    setOrRemoveRel('prev', prevUrl);
+    setOrRemoveRel('next', nextUrl);
+
     return () => {
       cancelled = true;
       headController?.abort();
@@ -150,9 +167,12 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
         imageProbe.onload = null;
         imageProbe.onerror = null;
       }
+      // Limpa rel=prev/next ao desmontar (outras rotas não devem herdar).
+      document.querySelector('link[rel="prev"]')?.remove();
+      document.querySelector('link[rel="next"]')?.remove();
       document.title = 'Preciso de um | Encontre um profissional para qualquer tipo de serviço no Brasil';
     };
-  }, [title, description, canonical, ogImage, noindex, gscId, gaId, ogType, articlePublishedTime, articleModifiedTime, articleAuthor]);
+  }, [title, description, canonical, ogImage, noindex, gscId, gaId, ogType, articlePublishedTime, articleModifiedTime, articleAuthor, prevUrl, nextUrl]);
 }
 
 export const SITE_BASE_URL = SITE_URL;
