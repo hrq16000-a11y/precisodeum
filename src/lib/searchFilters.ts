@@ -140,6 +140,7 @@ export function applySearchFilters<T extends FilterableProvider>(
     routeCorridor = null,
     disableOnlineBoost = false,
     availabilityWindow = 'any',
+    scoreWeights = DEFAULT_SCORE_WEIGHTS,
   } = opts;
 
   let results = [...list];
