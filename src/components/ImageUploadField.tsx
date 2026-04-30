@@ -150,8 +150,14 @@ const ImageUploadField = ({
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.files?.[0];
     if (!raw) return;
-    if (raw.size > 5 * 1024 * 1024) {
-      toast.error('Imagem deve ter no máximo 5MB');
+    const v = await validateImageFile(raw, {
+      maxSizeBytes: 5 * 1024 * 1024,
+      minDimension: 64,
+      maxDimension: 6000,
+    });
+    if (!v.ok) {
+      toast.error(v.message ?? 'Arquivo inválido');
+      e.target.value = '';
       return;
     }
     await runUpload(raw);
