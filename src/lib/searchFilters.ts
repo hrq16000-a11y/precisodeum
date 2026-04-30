@@ -15,6 +15,18 @@ export type FeaturedFilter = 'all' | 'featured' | 'normal';
  */
 export type StatusFilter = 'all' | 'online_first' | 'online_only' | 'recently_offline';
 
+/**
+ * Janela de disponibilidade que o usuário pode escolher na UI:
+ *  - 'any': sem restrição
+ *  - 'today': profissional ativo hoje (online agora ou houve heartbeat hoje)
+ *  - 'this_week': ativo hoje OU offline há pouco tempo (recentlyOfflineSet)
+ *  - 'recent': ativo recentemente (online ou recently offline) — alias mais brando de this_week
+ *
+ * É um açúcar para os flags low-level (`activeTodayOnly`, `statusFilter='online_only'`,
+ * `recently_offline`) e fica persistido em `?disponivel=` na URL.
+ */
+export type AvailabilityWindow = 'any' | 'today' | 'this_week' | 'recent';
+
 export interface FilterableProvider {
   id: string;
   userId: string;
