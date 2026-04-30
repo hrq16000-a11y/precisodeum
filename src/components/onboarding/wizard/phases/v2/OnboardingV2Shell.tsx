@@ -260,6 +260,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         },
       });
       setDraftRestored({ source: 'remote', at: remoteDraft.updated_at });
+      setOnboardingDraftSource('remote');
       setTimeout(() => setDraftRestored(null), 6000);
     }
     setShowRemoteModal(false);
@@ -269,6 +270,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   const handleRemoteDiscard = async () => {
     if (user?.id) await clearRemoteDraft(user.id);
     clearOnboardingV2Draft();
+    setOnboardingDraftSource('none');
     toast.success('Rascunho descartado. Vamos começar do zero.');
     setShowRemoteModal(false);
     setRemoteDraft(null);
