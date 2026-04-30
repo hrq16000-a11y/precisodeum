@@ -4788,6 +4788,51 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_audit_reports: {
+        Row: {
+          duration_ms: number | null
+          error_count: number
+          findings: Json
+          id: string
+          ok_count: number
+          ran_at: string
+          robots_issues: Json
+          robots_ok: boolean
+          sitemap_url: string | null
+          total_urls: number
+          triggered_by: string | null
+          warning_count: number
+        }
+        Insert: {
+          duration_ms?: number | null
+          error_count?: number
+          findings?: Json
+          id?: string
+          ok_count?: number
+          ran_at?: string
+          robots_issues?: Json
+          robots_ok?: boolean
+          sitemap_url?: string | null
+          total_urls?: number
+          triggered_by?: string | null
+          warning_count?: number
+        }
+        Update: {
+          duration_ms?: number | null
+          error_count?: number
+          findings?: Json
+          id?: string
+          ok_count?: number
+          ran_at?: string
+          robots_issues?: Json
+          robots_ok?: boolean
+          sitemap_url?: string | null
+          total_urls?: number
+          triggered_by?: string | null
+          warning_count?: number
+        }
+        Relationships: []
+      }
       service_area_corrections: {
         Row: {
           attempt_payload: Json | null
