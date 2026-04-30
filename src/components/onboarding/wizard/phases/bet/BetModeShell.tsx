@@ -40,6 +40,16 @@ import PhaseCelebration from './PhaseCelebration';
 
 import { initialBetState, type BetState, type BetIntent, type BetPhase } from './types';
 import { setOnboardingIntent } from '../v2/telemetry';
+import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
+
+/** Ordem das fases — usado para resolver o "Voltar" global em uma fase anterior. */
+const BET_BACK_MAP: Partial<Record<BetPhase, BetPhase>> = {
+  who: 'identity',
+  client_city: 'who',
+  pro_kind: 'who',
+  pro_document: 'pro_kind',
+  pro_location: 'pro_kind',
+};
 
 type Action =
   | { type: 'PATCH'; patch: Partial<BetState> }
