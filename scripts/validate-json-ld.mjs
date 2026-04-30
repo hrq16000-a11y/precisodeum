@@ -35,15 +35,50 @@ const RULES = {
       { match: /position/, msg: 'BreadcrumbList ListItem precisa de "position"' },
     ],
   },
-  LocalBusiness: { required: ['name'], must: [] },
+  LocalBusiness: {
+    required: ['name'],
+    must: [
+      // Recomendado pelo Google: address ou areaServed para LocalBusiness real.
+      { match: /address|areaServed/, msg: 'LocalBusiness deve declarar address ou areaServed' },
+    ],
+  },
+  Person: {
+    required: ['name'],
+    must: [],
+  },
+  Place: {
+    required: ['name'],
+    must: [
+      { match: /address|geo|containedInPlace/, msg: 'Place deve ter address, geo ou containedInPlace' },
+    ],
+  },
+  PostalAddress: {
+    required: ['addressLocality'],
+    must: [],
+  },
   City: { required: ['name'], must: [] },
   State: { required: ['name'], must: [] },
-  Service: { required: ['name'], must: [] },
+  Service: {
+    required: ['name'],
+    must: [
+      { match: /provider|areaServed|serviceType/, msg: 'Service deve indicar provider, areaServed ou serviceType' },
+    ],
+  },
   AggregateRating: {
     required: ['ratingValue'],
     must: [{ match: /reviewCount|ratingCount/, msg: 'AggregateRating precisa de reviewCount ou ratingCount' }],
   },
   ItemList: { required: ['itemListElement'], must: [] },
+  ListItem: {
+    required: ['position'],
+    must: [
+      { match: /name|item/, msg: 'ListItem precisa de name e/ou item (URL)' },
+    ],
+  },
+  Question: {
+    required: ['name'],
+    must: [{ match: /acceptedAnswer/, msg: 'Question precisa de acceptedAnswer' }],
+  },
 };
 
 function* walk(dir) {
