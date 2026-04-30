@@ -84,9 +84,9 @@ function* walk(dir) {
     const path = join(dir, name);
     const s = statSync(path);
     if (s.isDirectory()) {
-      if (name === 'node_modules' || name === '.git') continue;
+      if (name === 'node_modules' || name === '.git' || name === 'test' || name === '__tests__') continue;
       yield* walk(path);
-    } else if (/\.(ts|tsx)$/.test(name)) {
+    } else if (/\.(ts|tsx)$/.test(name) && !/\.(test|spec)\.(ts|tsx)$/.test(name)) {
       yield path;
     }
   }
