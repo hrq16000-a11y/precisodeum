@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import GlassCard from '@/components/ui/GlassCard';
 import { toast } from 'sonner';
 import { celebrate } from '@/lib/celebrate';
+import LazyImage from '@/components/ui/LazyImage';
 
 interface ActivePost {
   id: string;
