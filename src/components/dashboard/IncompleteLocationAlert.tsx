@@ -85,7 +85,7 @@ export default function IncompleteLocationAlert({ provider }: Props) {
               to="/dashboard/localizacao-guiada"
               className="inline-flex h-9 items-center rounded-md bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 px-3 text-xs font-bold text-white hover:opacity-95"
             >
-              Completar agora <ArrowRight className="ml-1.5 h-4 w-4" />
+              {ctaLabel} <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
             <Link
               to="/dashboard/auditoria-bairro"
