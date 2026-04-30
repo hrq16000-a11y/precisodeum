@@ -53,15 +53,29 @@ const CompanyCard = memo(function CompanyCard({
   );
 
   const logoSrc = (p.photo || '').trim();
-  const fullAddress = [
-    [p.street, p.streetNumber].filter(Boolean).join(', '),
-    p.complement,
-    p.neighborhood,
-    [p.city, p.state].filter(Boolean).join(' - '),
-    p.postalCode,
-  ]
-    .filter((s) => !!s && String(s).trim().length > 0)
-    .join(' • ');
+
+  // Detecta se há ponto físico (qualquer dado de endereço institucional).
+  const hasPhysicalLocation = Boolean(
+    (p.street && p.street.trim()) ||
+    (p.streetNumber && p.streetNumber.trim()) ||
+    (p.postalCode && p.postalCode.trim()),
+  );
+  const showFull = p.showFullAddress === true;
+
+  // Endereço público completo apenas com toggle ON; senão, bairro/cidade.
+  const publicAddress = showFull
+    ? [
+        [p.street, p.streetNumber].filter(Boolean).join(', '),
+        p.complement,
+        p.neighborhood,
+        [p.city, p.state].filter(Boolean).join(' - '),
+        p.postalCode,
+      ]
+        .filter((s) => !!s && String(s).trim().length > 0)
+        .join(' • ')
+    : [p.neighborhood, [p.city, p.state].filter(Boolean).join(' - ')]
+        .filter((s) => !!s && String(s).trim().length > 0)
+        .join(' • ');
 
   const profileHref = `/empresa/${p.slug || p.id}`;
 
