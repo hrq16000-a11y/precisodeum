@@ -399,6 +399,32 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/cadastro-inicial" replace />;
   }
 
+  // Bloqueia retorno indevido a /cadastro-inicial após conclusão.
+  // Cobre links residuais (favoritos, e-mails, ?next=...) que tentam reabrir
+  // o wizard de quem já completou o onboarding. O destino preserva ?next=
+  // se for um caminho interno seguro; caso contrário cai no /dashboard.
+  const alreadyCompleted = !!profile && profile.onboarding_completed === true;
+  if (alreadyCompleted && location.pathname === '/cadastro-inicial') {
+    const params = new URLSearchParams(location.search);
+    const nextRaw = params.get('next');
+    const isSafeNext = !!nextRaw && nextRaw.startsWith('/') && !nextRaw.startsWith('//') && nextRaw !== '/cadastro-inicial';
+    const target = isSafeNext ? nextRaw! : '/dashboard';
+    appendWizardResetDebugLog({
+      source: 'onboarding-gate-block-completed',
+      route: `${location.pathname}${location.search}`,
+      nextRoute: target,
+      phase: null,
+      reason: 'already-completed-blocking-cadastro-inicial',
+      meta: {
+        profile_type: profile?.profile_type ?? null,
+        onboarding_completed: true,
+        had_next_param: !!nextRaw,
+      },
+    });
+    return <Navigate to={target} replace />;
+  }
+
+
   return <>{children}</>;
 };
 
