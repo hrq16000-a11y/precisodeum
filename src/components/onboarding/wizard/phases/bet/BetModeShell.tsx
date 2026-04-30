@@ -557,6 +557,8 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       });
       if (!upsertResult.ok) return;
 
+      clearBetDraft();
+      if (user?.id) await clearRemoteBetDraft(user.id);
       await addSessionPointsToProfile();
       await refetchProfile?.();
       goto('celebration');

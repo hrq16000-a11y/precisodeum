@@ -21,7 +21,7 @@ export const providerWritePayloadSchema = z.object({
     .trim()
     .length(2, 'UF deve ter 2 letras.')
     .regex(/^[A-Z]{2}$/, 'UF inválida.'),
-  neighborhood: trimmedString(120).min(2, 'Informe o bairro.'),
+  neighborhood: trimmedString(120).nullable().optional(),
   whatsapp: z
     .string()
     .trim()

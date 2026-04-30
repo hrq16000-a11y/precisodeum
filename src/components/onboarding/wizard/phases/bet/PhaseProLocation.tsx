@@ -232,7 +232,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
 
   const cityOk = state.city.trim().length > 0 && state.state.trim().length === 2;
   const neighborhoodOk = (state.neighborhood || '').trim().length >= 2;
-  const canFinish = cityOk && neighborhoodOk && previewConfirmed;
+  const canFinish = cityOk && previewConfirmed;
   const sourceLabel =
     state.location_source === 'gps' ? 'GPS preciso' :
     state.location_source === 'cep' ? 'CEP' :
@@ -313,10 +313,10 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     >
       <header className="space-y-2 text-center">
         <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
-          Onde você atende?
+          De onde você é?
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sua cidade-base e bairro aparecem para clientes próximos.
+          Sua cidade-base aparece para clientes próximos, e o bairro é sugerido quando houver dado confiável.
         </p>
       </header>
 

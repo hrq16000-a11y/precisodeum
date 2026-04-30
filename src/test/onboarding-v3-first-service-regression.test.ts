@@ -32,6 +32,13 @@ describe('V3→V2 first service continuity (handoff interno)', () => {
     expect(shell).not.toContain("searchParams.get('source')");
   });
 
+  it('limpa drafts da triagem antes da celebração/handoff para não reabrir pro_location', () => {
+    const bet = read('src/components/onboarding/wizard/phases/bet/BetModeShell.tsx');
+    expect(bet).toMatch(/clearBetDraft\(\);\s*if \(user\?\.id\) await clearRemoteBetDraft\(user\.id\);\s*await addSessionPointsToProfile\(\);\s*await refetchProfile\?\.\(\);\s*goto\('celebration'\);/s);
+    expect(bet).toContain('clearBetDraft();');
+    expect(bet).toContain('clearRemoteBetDraft(user.id)');
+  });
+
   it('Locks já travam nome/WhatsApp/cidade no Phase1Basic', () => {
     const phase = read('src/components/onboarding/wizard/phases/v2/Phase1Basic.tsx');
     expect(phase).toContain('disabled={!!locks?.full_name}');
