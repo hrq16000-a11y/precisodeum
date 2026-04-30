@@ -191,13 +191,62 @@ export default function CategoryCityPage() {
             </Button>
           </div>
         ) : (
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {providers.map((p) => (
-              <li key={p.id}>
-                <ProviderCard provider={p as any} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+              data-testid="category-city-list"
+            >
+              {providers.map((p) => {
+                const profileSlug = p.slug || p.id;
+                return (
+                  <li key={p.id} className="flex flex-col gap-2">
+                    <ProviderCard provider={p as any} />
+                    <Link
+                      to={`/profissional/${profileSlug}`}
+                      className="inline-flex items-center justify-center gap-1 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                      data-testid="provider-cta"
+                      aria-label={`Ver perfil de ${p.business_name || p.full_name || categoryHuman}`}
+                    >
+                      Ver perfil <ChevronRight className="h-3 w-3" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Faixa de CTAs consistentes para /buscar com diferentes filtros */}
+            <section
+              aria-label="Buscas relacionadas"
+              className="mt-8 rounded-xl border border-border bg-card p-5 space-y-3"
+              data-testid="category-city-cta-section"
+            >
+              <h2 className="text-sm font-semibold text-foreground">
+                Não achou o ideal? Refine sua busca:
+              </h2>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Button asChild size="sm" variant="default" data-testid="cta-search-here">
+                  <Link to={`/buscar?q=${encodeURIComponent(categoryHuman)}&cidade=${encodeURIComponent(cityHuman)}`}>
+                    <Search className="h-3 w-3 mr-1" /> Buscar em {cityHuman}
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline" data-testid="cta-search-broad">
+                  <Link to={`/buscar?q=${encodeURIComponent(categoryHuman)}`}>
+                    <Search className="h-3 w-3 mr-1" /> {categoryHuman} em todo o Brasil
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline" data-testid="cta-category-list">
+                  <Link to={`/categoria/${category!.slug}`}>
+                    <Users className="h-3 w-3 mr-1" /> Ver todos {categoryHuman}
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline" data-testid="cta-city-page">
+                  <Link to={`/cidades/${(cidade || '').toLowerCase()}`}>
+                    <MapPin className="h-3 w-3 mr-1" /> Outras categorias em {cityHuman}
+                  </Link>
+                </Button>
+              </div>
+            </section>
+          </>
         )}
       </main>
 
