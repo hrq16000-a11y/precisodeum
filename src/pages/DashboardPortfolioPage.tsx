@@ -484,7 +484,7 @@ const DashboardPortfolioPage = () => {
                     className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted cursor-pointer"
                     onClick={() => handleOpenCaption(photo)}
                   >
-                    <img src={photo.image_url} alt={photo.original_name || 'Trabalho do portfólio'} loading="lazy" decoding="async" width={400} height={400} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    <LazyImage src={photo.image_url} alt={photo.original_name || 'Trabalho do portfólio'} width={400} height={400} sizesPreset="gallery-thumb" surface="portfolio-grid" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
 
                     {/* Hover overlay com legenda */}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/80 via-foreground/40 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
