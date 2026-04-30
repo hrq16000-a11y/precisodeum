@@ -95,6 +95,13 @@ const SearchPage = () => {
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [acceptingOnly, setAcceptingOnly] = useState(false);
   const [activeTodayOnly, setActiveTodayOnly] = useState(false);
+  const initialAvailability = (() => {
+    const v = (searchParams.get('disponivel') || 'any').toLowerCase();
+    return (['any', 'today', 'this_week', 'recent'] as const).includes(v as any)
+      ? (v as 'any' | 'today' | 'this_week' | 'recent')
+      : 'any';
+  })();
+  const [availabilityWindow, setAvailabilityWindow] = useState<'any' | 'today' | 'this_week' | 'recent'>(initialAvailability);
 
   const [showOutOfState, setShowOutOfState] = useState(false);
   const initialPage = (() => {
