@@ -9,6 +9,8 @@ import { generateBlurDataUrl } from '@/lib/compressImage';
 import { UploadTimeoutError } from '@/lib/uploadResilient';
 import { uploadWithFallback } from '@/lib/uploadWithFallback';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
+import { validateImageFile } from '@/lib/imageValidation';
+import { useLocalThumbnail } from '@/hooks/useLocalThumbnail';
 import {
   UploadProgressIndicator,
   makeInitialStages,
