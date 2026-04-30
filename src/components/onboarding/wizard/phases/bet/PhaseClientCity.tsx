@@ -54,10 +54,10 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
         <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
           <Zap className="h-3 w-3" /> Fast-pass do cliente
         </div>
-        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
+        <h1 className="font-display text-lg font-extrabold leading-tight text-foreground">
           Onde você está?
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Mostramos profissionais da sua cidade. É só isso — você já entra no app.
         </p>
       </header>
