@@ -40,7 +40,7 @@ import PhaseProLocation from './PhaseProLocation';
 import PhaseCelebration from './PhaseCelebration';
 
 import { initialBetState, type BetState, type BetIntent, type BetPhase } from './types';
-import { setOnboardingIntent } from '../v2/telemetry';
+import { setOnboardingIntent, trackOnboardingEvent } from '../v2/telemetry';
 import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
 import { useBetRemoteDraft, fetchRemoteBetDraft, clearRemoteBetDraft } from './useBetRemoteDraft';
 
