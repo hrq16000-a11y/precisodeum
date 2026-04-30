@@ -15,11 +15,61 @@ import WizardShell from '@/components/onboarding/wizard/WizardShell';
  * salvo para que ele saiba que o progresso não foi perdido.
  */
 
+/**
+ * Chave atual (V3 — versão de ruptura). Mantida em sincronia com
+ * `useOnboardingV2Draft.ts` e `flushDraft.ts`.
+ */
+const CURRENT_DRAFT_KEY = 'onboarding_v3_institutional_final';
+
+/** Chaves consideradas "draft válido" para fins de UX (avisos pós-login). */
 const DRAFT_STORAGE_KEYS = [
-  'onboarding_v2_draft_v1',
-  'service_wizard_draft_v1',
-  'wizard_state_v1',
+  CURRENT_DRAFT_KEY,
+  'bet_wizard_draft_v1',
 ] as const;
+
+/**
+ * Chaves LEGADAS de rascunho que devem ser purgadas no primeiro boot da V3.
+ * Inclui prefixos para chaves dinâmicas (ex.: `service_wizard_draft_v1:<id>`).
+ */
+const LEGACY_DRAFT_KEYS_EXACT = [
+  'onboarding_v2_draft_v1',
+  'wizard_state_v1',
+  'wizard-state-v1',
+  'bet_draft_v1',
+] as const;
+const LEGACY_DRAFT_KEY_PREFIXES = [
+  'service_wizard_draft_v1:',
+] as const;
+
+/** Flag idempotente — purga única por dispositivo. */
+const PURGE_FLAG = 'onboarding_purge_v3_done';
+
+/**
+ * Remove rascunhos antigos uma única vez para evitar que o Reducer atual
+ * tente "misturar" payloads de versões bugadas com a estrutura V3.
+ * Idempotente: marca a flag e nunca mais roda nesse dispositivo.
+ */
+function purgeLegacyDraftsOnce(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (window.localStorage.getItem(PURGE_FLAG) === '1') return;
+    // Chaves exatas
+    for (const key of LEGACY_DRAFT_KEYS_EXACT) {
+      try { window.localStorage.removeItem(key); } catch { /* noop */ }
+    }
+    // Chaves dinâmicas (varredura única do storage)
+    const toRemove: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (!k) continue;
+      if (LEGACY_DRAFT_KEY_PREFIXES.some((p) => k.startsWith(p))) toRemove.push(k);
+    }
+    for (const k of toRemove) {
+      try { window.localStorage.removeItem(k); } catch { /* noop */ }
+    }
+    window.localStorage.setItem(PURGE_FLAG, '1');
+  } catch { /* fail-soft */ }
+}
 
 function hasLocalDraft(): boolean {
   if (typeof window === 'undefined') return false;
@@ -32,6 +82,7 @@ function hasLocalDraft(): boolean {
     return false;
   }
 }
+
 
 export default function CadastroInicialPage() {
   const { user, loading } = useAuth();
