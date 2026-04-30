@@ -19,22 +19,48 @@ import { broadcastDraftChange } from './crossTabSync';
 // Mantido em sincronia com `useOnboardingV2Draft.ts` (versão V3 de ruptura).
 const DRAFT_KEY = 'onboarding_v3_institutional_final';
 
-// Marcador in-memory da última escrita remota imediata. Evita duplicação
-// com o autosave debounced sem precisar de localStorage (mesma aba já basta:
-// abas diferentes têm seus próprios debouncers, então não há conflito real).
-let lastRemoteWriteAt = 0;
-let lastRemoteWritePhase: string | null = null;
+/**
+ * Dedupe escopado por usuário (Map<userId, {phase, at}>).
+ *
+ * Por que escopado: múltiplos wizards podem coexistir na mesma aba (ex.: dev
+ * tools, testes, futuras flows admin "acessar como"). Variáveis globais
+ * causariam falso-positivo ("já gravei essa fase") entre instâncias distintas.
+ *
+ * Para callers sem userId (raro, fluxo anônimo de inspeção), usamos a chave
+ * sentinela `'__anon__'` — preserva o comportamento antigo de bloqueio.
+ */
+type RemoteWriteMark = { phase: string | null; at: number };
+const remoteWriteByUser = new Map<string, RemoteWriteMark>();
 const REMOTE_DEDUPE_MS = 2000;
+const ANON_KEY = '__anon__';
 
-export function markRemoteDraftWritten(phase: string | null | undefined): void {
-  lastRemoteWriteAt = Date.now();
-  lastRemoteWritePhase = phase ? String(phase) : null;
+function userKey(userId: string | null | undefined): string {
+  return userId && userId.length > 0 ? userId : ANON_KEY;
 }
 
-export function wasRemoteDraftWrittenRecently(phase: string | null | undefined): boolean {
-  if (!lastRemoteWritePhase) return false;
-  if (Date.now() - lastRemoteWriteAt > REMOTE_DEDUPE_MS) return false;
-  return lastRemoteWritePhase === String(phase ?? '');
+export function markRemoteDraftWritten(
+  phase: string | null | undefined,
+  userId?: string | null,
+): void {
+  remoteWriteByUser.set(userKey(userId), {
+    phase: phase ? String(phase) : null,
+    at: Date.now(),
+  });
+}
+
+export function wasRemoteDraftWrittenRecently(
+  phase: string | null | undefined,
+  userId?: string | null,
+): boolean {
+  const mark = remoteWriteByUser.get(userKey(userId));
+  if (!mark || !mark.phase) return false;
+  if (Date.now() - mark.at > REMOTE_DEDUPE_MS) return false;
+  return mark.phase === String(phase ?? '');
+}
+
+/** Test-only: limpa marcadores entre testes. */
+export function __resetRemoteDraftDedupe(): void {
+  remoteWriteByUser.clear();
 }
 
 export function flushLocalDraft(state: OnboardingState) {
@@ -71,7 +97,13 @@ export async function flushRemoteDraft(
       },
       phase: state.phase,
     } as any, { onConflict: 'user_id' });
-    markRemoteDraftWritten(state.phase as any);
+    markRemoteDraftWritten(state.phase as any, userId);
+    if (typeof window !== 'undefined') {
+      try {
+        const { recordWizardSupabaseCall } = await import('./diagnostics');
+        recordWizardSupabaseCall('flushRemoteDraft', state.phase as any, userId);
+      } catch { /* fail-soft */ }
+    }
   } catch { /* fail-soft */ }
 }
 
