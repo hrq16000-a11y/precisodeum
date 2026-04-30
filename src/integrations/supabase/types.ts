@@ -6515,9 +6515,12 @@ export type Database = {
           downlink_mbps: number | null
           effective_type: string | null
           error_code: string | null
+          fallback_level: number | null
           file_size_bytes: number | null
           id: string
           scenario: string
+          stage: string | null
+          stage_latency_ms: number | null
           success: boolean
           total_ms: number
           user_id: string | null
@@ -6529,9 +6532,12 @@ export type Database = {
           downlink_mbps?: number | null
           effective_type?: string | null
           error_code?: string | null
+          fallback_level?: number | null
           file_size_bytes?: number | null
           id?: string
           scenario: string
+          stage?: string | null
+          stage_latency_ms?: number | null
           success: boolean
           total_ms: number
           user_id?: string | null
@@ -6543,9 +6549,12 @@ export type Database = {
           downlink_mbps?: number | null
           effective_type?: string | null
           error_code?: string | null
+          fallback_level?: number | null
           file_size_bytes?: number | null
           id?: string
           scenario?: string
+          stage?: string | null
+          stage_latency_ms?: number | null
           success?: boolean
           total_ms?: number
           user_id?: string | null
