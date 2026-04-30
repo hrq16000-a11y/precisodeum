@@ -83,7 +83,7 @@ const ThemePreview = ({ theme, accentColor, headline, tagline, ctaText, ctaWhats
       {/* Mini cover */}
       {coverImageUrl ? (
         <div className="relative w-full h-20 overflow-hidden">
-          <img src={coverImageUrl} alt="" className="h-full w-full object-cover" />
+          <img src={coverImageUrl} alt="" loading="lazy" decoding="async" width={400} height={120} className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="absolute bottom-2 left-3 text-white">
             <p className={`${tc.fontHeading} text-xs font-bold drop-shadow`}>{headline || 'Sua headline aqui'}</p>

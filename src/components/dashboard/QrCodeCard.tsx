@@ -58,7 +58,7 @@ const QrCodeCard = () => {
           className="flex flex-col items-center gap-3 pt-2"
         >
           <div className="rounded-xl bg-white p-3 shadow-sm">
-            <img src={qrApiUrl} alt="QR Code" className="w-40 h-40" loading="lazy" />
+            <img src={qrApiUrl} alt="QR Code" width={160} height={160} className="w-40 h-40" loading="lazy" decoding="async" />
           </div>
           <p className="text-[10px] text-muted-foreground text-center max-w-[200px] truncate">{profileUrl}</p>
           <div className="flex gap-2">
