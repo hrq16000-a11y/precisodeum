@@ -7466,6 +7466,7 @@ export type Database = {
           unique_users: number
         }[]
       }
+      admin_onboarding_stats: { Args: { _days?: number }; Returns: Json }
       admin_providers_same_ip: {
         Args: { _min_count?: number }
         Returns: {
