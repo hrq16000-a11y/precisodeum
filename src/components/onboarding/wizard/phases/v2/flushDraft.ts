@@ -31,7 +31,7 @@ const DRAFT_KEY = 'onboarding_v3_institutional_final';
  */
 type RemoteWriteMark = { phase: string | null; at: number };
 const remoteWriteByUser = new Map<string, RemoteWriteMark>();
-const REMOTE_DEDUPE_MS = 3000;
+const REMOTE_DEDUPE_MS = 2000;
 const ANON_KEY = '__anon__';
 
 function userKey(userId: string | null | undefined): string {
