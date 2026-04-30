@@ -78,12 +78,9 @@ export default function CepSuggestionCard({
         if (r.ok) {
           setHit(r.match);
           setStatus('success');
-        } else if (r.reason === 'not_found') {
-          setHit(null);
-          setStatus('notFound');
         } else {
           setHit(null);
-          setStatus('error');
+          setStatus(r.reason === 'not_found' ? 'notFound' : 'error');
         }
       } catch {
         if (!cancelled) {
