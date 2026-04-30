@@ -73,18 +73,21 @@ function makeState(overrides: Partial<BetState> = {}): BetState {
 }
 
 function renderPhase(initial: BetState = makeState()) {
-  // Simula o reducer real: aplica patches no state e re-renderiza.
-  let current = initial;
-  const patch = vi.fn((p: Partial<BetState>) => {
-    current = { ...current, ...p };
-    rerender(<PhaseProLocation state={current} patch={patch} finish={finish} awardReward={awardReward} />);
-  });
+  const ctx = { current: initial };
   const finish = vi.fn();
   const awardReward = vi.fn();
-  const { rerender, ...utils } = render(
-    <PhaseProLocation state={current} patch={patch} finish={finish} awardReward={awardReward} />,
+  const rerenderRef: { fn: ((el: any) => void) | null } = { fn: null };
+  const patch = vi.fn((p: Partial<BetState>) => {
+    ctx.current = { ...ctx.current, ...p };
+    rerenderRef.fn?.(
+      <PhaseProLocation state={ctx.current} patch={patch} finish={finish} awardReward={awardReward} />,
+    );
+  });
+  const utils = render(
+    <PhaseProLocation state={ctx.current} patch={patch} finish={finish} awardReward={awardReward} />,
   );
-  return { ...utils, rerender, patch, finish, awardReward, getState: () => current };
+  rerenderRef.fn = utils.rerender;
+  return { ...utils, patch, finish, awardReward, getState: () => ctx.current };
 }
 
 describe('PhaseProLocation — fallback IP + escolha manual', () => {
