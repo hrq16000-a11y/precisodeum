@@ -70,10 +70,36 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       return;
     }
 
-    const toUpload = Array.from(files).slice(0, remaining);
+    const candidates = Array.from(files).slice(0, remaining);
     if (files.length > remaining) {
       toast.warning(`Só ${remaining} foto(s) restantes. Apenas as primeiras serão enviadas.`);
     }
+
+    // Valida tipo/tamanho/dimensões de cada arquivo ANTES de iniciar o batch
+    const toUpload: File[] = [];
+    for (const f of candidates) {
+      const v = await validateImageFile(f, {
+        maxSizeBytes: 5 * 1024 * 1024,
+        minDimension: 64,
+        maxDimension: 6000,
+      });
+      if (!v.ok) {
+        toast.error(`${f.name}: ${v.message}`);
+        continue;
+      }
+      toUpload.push(f);
+    }
+
+    if (toUpload.length === 0) {
+      e.target.value = '';
+      return;
+    }
+
+    // Prévia local IMEDIATA (mantém UI responsiva enquanto comprime/envia)
+    previewUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    const newPreviews = toUpload.map((f) => URL.createObjectURL(f));
+    previewUrlsRef.current = newPreviews;
+    setLocalPreviews(newPreviews);
 
     await runBatch(toUpload);
     e.target.value = '';
