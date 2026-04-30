@@ -81,7 +81,8 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
       state: 'PR',
       accuracyMeters: 1200,
     });
-    renderPhase();
+    renderPhase(makeState({ city: 'Curitiba', state: 'PR', location_source: 'manual' }));
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar prévia/i }));
     fireEvent.click(screen.getByRole('button', { name: /Usar minha localização/i }));
 
     await waitFor(() => {
@@ -102,7 +103,8 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
       state: 'PR',
       accuracyMeters: 80,
     });
-    const { container } = renderPhase();
+    const { container } = renderPhase(makeState({ city: 'Curitiba', state: 'PR', location_source: 'manual' }));
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar prévia/i }));
     fireEvent.click(screen.getByRole('button', { name: /Usar minha localização/i }));
 
     await waitFor(() => expect(toastSuccess).toHaveBeenCalled());
@@ -119,7 +121,8 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
       state: null,
       accuracyMeters: null,
     });
-    const { patch, awardReward } = renderPhase();
+    const { patch, awardReward } = renderPhase(makeState({ city: 'Curitiba', state: 'PR', location_source: 'manual' }));
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar prévia/i }));
     fireEvent.click(screen.getByRole('button', { name: /Usar minha localização/i }));
 
     await waitFor(() => {
@@ -131,5 +134,13 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
     // Não pode patchar cidade nem dar pontos quando o GPS falha.
     expect(patch).not.toHaveBeenCalledWith(expect.objectContaining({ city: expect.any(String) }));
     expect(awardReward).not.toHaveBeenCalled();
+  });
+
+  it('permite finalizar sem bairro quando a cidade-base foi revisada', async () => {
+    const { finish } = renderPhase(makeState({ city: 'São José dos Pinhais', state: 'PR', neighborhood: '' }));
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar prévia/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Finalizar cadastro express/i }));
+
+    await waitFor(() => expect(finish).toHaveBeenCalled());
   });
 });
