@@ -284,7 +284,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
         <label className={reachedMax ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/*"
             multiple
             onChange={handleUpload}
             className="hidden"
@@ -299,9 +299,37 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
         </label>
       </div>
 
+      {/* Prévias locais instantâneas — visíveis enquanto o batch processa. */}
+      {localPreviews.length > 0 && (uploading || hasFailed) && (
+        <div className="flex gap-2 overflow-x-auto rounded-md border border-dashed border-border bg-muted/20 p-2">
+          {localPreviews.map((src, i) => (
+            <div key={src} className="relative flex-shrink-0">
+              <img
+                src={src}
+                alt={`Prévia ${i + 1}`}
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded object-cover opacity-80"
+              />
+              <span className="absolute bottom-0 left-0 right-0 bg-foreground/60 text-center text-[9px] text-background">
+                local
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {(uploading || hasFailed) && (
         <div className="space-y-2">
           <UploadProgressIndicator stages={stages} />
+          {attemptInfo && attemptInfo.attempt > 1 && (
+            <p className="text-[11px] text-muted-foreground" aria-live="polite">
+              Tentativa {attemptInfo.attempt}/{attemptInfo.max}
+              {attemptInfo.reason === 'timeout' && ' — tempo esgotado, reenviando…'}
+              {attemptInfo.reason === 'network' && ' — sem rede, aguardando reconexão…'}
+              {attemptInfo.reason === 'server' && ' — servidor instável, retentando…'}
+            </p>
+          )}
           {hasFailed && !uploading && pendingFilesRef.current.length > 0 && (
             <Button type="button" variant="outline" size="sm" onClick={handleRetry}>
               <RefreshCw className="mr-1 h-3 w-3" /> Tentar novamente ({pendingFilesRef.current.length})
