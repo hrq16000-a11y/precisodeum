@@ -444,9 +444,8 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       });
 
       // Validação Zod ANTES de bater no banco — falha cedo e clara.
-      // (Schema é tolerante, apenas barra inputs grosseiramente inválidos.)
       const validation = safeParse(providerWritePayloadSchema, providerPayload);
-      if (!validation.ok) {
+      if (validation.ok === false) {
         toast.error('Dados incompletos', { description: validation.message });
         logWizardError({
           phase: 'phase1_contact', userId: user.id, error: new Error('zod_validation_failed'),
