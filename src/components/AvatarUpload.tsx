@@ -30,9 +30,12 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
     const [uploading, setUploading] = useState(false);
     const [stages, setStages] = useState<UploadStagesState>(makeInitialStages());
     const [hasFailed, setHasFailed] = useState(false);
+    const [attemptInfo, setAttemptInfo] = useState<{ attempt: number; max: number; reason?: string } | null>(null);
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
     const lastFileRef = useRef<File | null>(null);
     const queryClient = useQueryClient();
+    const localPreview = useLocalThumbnail(pendingFile);
 
     const runUpload = async (raw: File) => {
       lastFileRef.current = raw;
