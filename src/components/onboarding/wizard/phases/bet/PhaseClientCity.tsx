@@ -48,7 +48,7 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+      className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
     >
       <header className="space-y-2 text-center">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">

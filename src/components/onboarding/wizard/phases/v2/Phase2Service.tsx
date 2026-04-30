@@ -155,7 +155,7 @@ export const Phase2Service = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+      className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
       role="region"
       aria-labelledby="phase2-service-title"
     >
@@ -175,7 +175,7 @@ export const Phase2Service = ({
         </p>
       </header>
 
-      <div className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-card">
+      <div className="space-y-2 rounded-xl border border-border bg-card p-3 shadow-card">
         <label className="block">
           <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
             <Tag className="h-3.5 w-3.5" /> Categoria
@@ -395,7 +395,7 @@ export const Phase2Details = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+      className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
       role="region"
       aria-labelledby="phase2-details-title"
     >
@@ -416,7 +416,7 @@ export const Phase2Details = ({
       {/* Cidades atendidas */}
       <div
         ref={focusCities.ref as any}
-        className={`space-y-3 rounded-2xl border border-border bg-card p-4 shadow-card ${focusCities.highlightClass}`}
+        className={`space-y-2 rounded-xl border border-border bg-card p-3 shadow-card ${focusCities.highlightClass}`}
       >
         <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
           <MapPin className="h-3.5 w-3.5" /> Cidades atendidas <span className="font-normal normal-case text-muted-foreground/70">(até 5)</span>
@@ -454,7 +454,7 @@ export const Phase2Details = ({
       </div>
 
       {/* Valores (a partir de) */}
-      <div className="space-y-2 rounded-2xl border border-border bg-card p-4 shadow-card">
+      <div className="space-y-2 rounded-xl border border-border bg-card p-3 shadow-card">
         <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
           <DollarSign className="h-3.5 w-3.5" /> Valores (a partir de)
         </span>
@@ -474,7 +474,7 @@ export const Phase2Details = ({
       </div>
 
       {/* Horários */}
-      <div className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-card">
+      <div className="space-y-2 rounded-xl border border-border bg-card p-3 shadow-card">
         <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
           <Clock className="h-3.5 w-3.5" /> Horários de atendimento
         </span>

@@ -277,19 +277,7 @@ export default function WizardShell() {
       {showGlobalHud && (
         <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
       )}
-      {showGlobalBack && (
-        <div className="mx-auto mt-2 flex w-full max-w-md justify-start px-4">
-          <button
-            type="button"
-            onClick={handleGlobalBack}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="Voltar para o passo anterior"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Voltar
-          </button>
-        </div>
-      )}
+      {/* Botão Voltar global removido — cada fase já tem o seu interno (evita duplicação). */}
       {stage === 'triage' ? (
         <TriageOrchestrator
           onInternalHandoff={handleTriageDone}

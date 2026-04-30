@@ -25,7 +25,7 @@ export const Phase2Photos = ({
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4 }}
-    className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+    className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
     aria-labelledby="phase2-photos-title"
     role="region"
   >
@@ -64,7 +64,7 @@ export const Phase2Photos = ({
     </aside>
 
     <div
-      className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-card"
+      className="space-y-2 rounded-xl border border-border bg-card p-3 shadow-card"
       role="group"
       aria-label={`Fotos do serviço ${serviceName || ''}`.trim()}
     >

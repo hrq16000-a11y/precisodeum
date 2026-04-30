@@ -43,7 +43,7 @@ export default function PhaseIdentity({ state, patch, next, awardReward }: Props
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mx-auto w-full max-w-md space-y-5 px-4 py-6"
+      className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
     >
       <header className="space-y-2 text-center">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
@@ -57,7 +57,7 @@ export default function PhaseIdentity({ state, patch, next, awardReward }: Props
         </p>
       </header>
 
-      <div className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-card">
+      <div className="space-y-2 rounded-xl border border-border bg-card p-3 shadow-card">
         <label className="block">
           <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
             <User className="h-3.5 w-3.5" /> Nome completo

@@ -10,18 +10,18 @@
 
 export const wizardStyles = {
   /** Container externo de cada fase — largura, padding e espaçamentos. */
-  container: 'mx-auto w-full max-w-md space-y-5 px-4 py-6',
+  container: 'mx-auto w-full max-w-md space-y-3 px-4 py-3',
   /** Header centralizado com título e subtítulo. */
-  headerWrap: 'space-y-2 text-center',
+  headerWrap: 'space-y-1 text-center',
   /** Chip pequeno acima do título (ex.: "Cadastro express"). */
   chip:
-    'mx-auto inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
+    'mx-auto inline-flex items-center gap-2 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
   /** Título principal (h1). */
-  title: 'font-display text-2xl font-extrabold leading-tight text-foreground',
+  title: 'font-display text-xl font-extrabold leading-tight text-foreground',
   /** Subtítulo abaixo do título. */
-  subtitle: 'text-sm text-muted-foreground',
+  subtitle: 'text-xs text-muted-foreground',
   /** Card padronizado para agrupar inputs. */
-  card: 'space-y-4 rounded-2xl border border-border bg-card p-4 shadow-card',
+  card: 'space-y-3 rounded-xl border border-border bg-card p-3 shadow-card',
   /** Label de campo (uppercase, ícone à esquerda, slot para badge à direita). */
   fieldLabel:
     'mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground',
