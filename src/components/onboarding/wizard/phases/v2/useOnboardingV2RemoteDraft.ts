@@ -61,7 +61,10 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
       // Anti-duplicação: se um flush imediato (clique "Salvar e continuar")
       // já gravou esta mesma fase nos últimos 2s para ESTE userId, pulamos
       // o upsert para evitar 2 chamadas redundantes ao Supabase.
-      if (wasRemoteDraftWrittenRecently(state.phase as any, userId)) return;
+      if (wasRemoteDraftWrittenRecently(state.phase as any, userId)) {
+        recordWizardSupabaseCall('useRemoteDraft.skipped', state.phase as any, userId);
+        return;
+      }
       try {
         await supabase.from('onboarding_v2_drafts' as any).upsert({
           user_id: userId,
