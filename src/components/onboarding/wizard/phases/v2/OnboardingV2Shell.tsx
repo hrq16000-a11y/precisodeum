@@ -620,7 +620,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         userId: user?.id,
         error: e,
         variant: 'v2',
-        context: { action: 'persist_phase1', has_provider_id: !!state.providerId },
+        context: { action: 'persist_phase1', has_provider_id: !!state.providerId, flow: isCompany ? 'company' : 'default' },
       });
       toast.error('Não consegui salvar agora', {
         description: (e?.message || 'Tente novamente em instantes.').slice(0, 160),
@@ -1013,7 +1013,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       return true;
     } catch (e: any) {
-      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'publish_first_service' } });
+      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'publish_first_service', flow: isCompany ? 'company' : 'default' } });
       toast.error('Não conseguimos registrar seu serviço principal.', {
         description: 'Verifique se a categoria está correta e tente novamente. Seu progresso foi salvo como rascunho — você pode continuar a qualquer momento.',
         duration: 12000,
@@ -1046,7 +1046,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
       return true;
     } catch (e: any) {
-      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'persist_patch', keys: Object.keys(patch || {}) } });
+      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'persist_patch', keys: Object.keys(patch || {}), flow: isCompany ? 'company' : 'default' } });
       toast.error('Não consegui salvar este passo agora', {
         description: (e?.message || '').slice(0, 160) || undefined,
         action: { label: 'Tentar novamente', onClick: () => { void persistPatch(patch); } },
