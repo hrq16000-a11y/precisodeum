@@ -20,7 +20,12 @@ const REPORT_PATH = process.env.JSONLD_REPORT_PATH || join(new URL('..', import.
 const STRICT = process.argv.includes('--strict') || process.env.JSONLD_STRICT === '1';
 
 const ROOT = new URL('..', import.meta.url).pathname;
-const SRC_DIR = join(ROOT, 'src');
+// Permite override do diretório varrido (útil para CI e testes isolados em sandbox).
+const SRC_DIR = process.env.JSONLD_SRC_DIR
+  ? (process.env.JSONLD_SRC_DIR.startsWith('/')
+      ? process.env.JSONLD_SRC_DIR
+      : join(process.cwd(), process.env.JSONLD_SRC_DIR))
+  : join(ROOT, 'src');
 
 /** Regras mínimas por @type. Cada regra recebe o objeto literal (string raw). */
 const RULES = {
