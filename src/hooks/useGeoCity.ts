@@ -432,6 +432,20 @@ export function useGeoCity(): GeoStore {
             // keep existing city/state when reverse geocoding fails
           }
 
+          // Fallback: se o BigDataCloud não trouxe bairro confiável, tenta Nominatim (OSM).
+          if (!neighborhood) {
+            const osm = await reverseGeocodeNominatim(latitude, longitude);
+            if (osm) {
+              if (!city && osm.city) city = osm.city;
+              if (!state && osm.state) state = normalizeUF(osm.state) || state;
+              const osmNeighborhood = sanitizeNeighborhood(osm.neighborhood, osm.city || city);
+              if (osmNeighborhood) neighborhood = osmNeighborhood;
+            }
+          }
+
+          // Sanitiza o bairro final contra a cidade resolvida.
+          neighborhood = sanitizeNeighborhood(neighborhood, city);
+
           if (temp === null) {
             temp = await fetchTemp(latitude, longitude);
           }
