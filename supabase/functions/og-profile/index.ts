@@ -19,12 +19,21 @@
 // Public endpoint (verify_jwt = false). Safe: only reads public_profiles view.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import {
+  buildOgImage,
+  OG_IMAGE_SPECS,
+  pickOgRatio,
+  type OgImageRatio,
+} from "./buildOgImage.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
+/** Slug válido: 2–80 chars, lowercase, dígitos e hífen. */
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,79}$/;
 
 // Crawlers that need server-rendered OG tags. Match is case-insensitive
 // and uses simple substring tests (each value is normalized to lowercase).
@@ -74,12 +83,16 @@ function buildHtml(opts: {
   description: string;
   image: string;
   canonical: string;
+  ratio: OgImageRatio;
 }): string {
-  const { title, description, image, canonical } = opts;
+  const { title, description, image, canonical, ratio } = opts;
   const safeTitle = escapeHtml(title);
   const safeDesc = escapeHtml(description);
   const safeImage = escapeHtml(image);
   const safeUrl = escapeHtml(canonical);
+  const dims = OG_IMAGE_SPECS[ratio];
+  // Twitter usa "summary" para 1:1, "summary_large_image" para 1200x630.
+  const twitterCard = ratio === "square" ? "summary" : "summary_large_image";
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -99,12 +112,12 @@ function buildHtml(opts: {
 <meta property="og:url" content="${safeUrl}" />
 <meta property="og:image" content="${safeImage}" />
 <meta property="og:image:secure_url" content="${safeImage}" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
+<meta property="og:image:width" content="${dims.width}" />
+<meta property="og:image:height" content="${dims.height}" />
 <meta property="og:image:alt" content="${safeTitle}" />
 
 <!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:card" content="${twitterCard}" />
 <meta name="twitter:title" content="${safeTitle}" />
 <meta name="twitter:description" content="${safeDesc}" />
 <meta name="twitter:image" content="${safeImage}" />
@@ -133,14 +146,34 @@ Deno.serve(async (req) => {
     const last = segments[segments.length - 1];
     if (last && last !== "og-profile") slug = last;
   }
+  // Sanitiza para shape canônica antes de validar
   slug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 80);
+
+  const ua = req.headers.get("user-agent");
+  const crawler = isCrawler(ua);
+  const ratio = pickOgRatio(ua);
+
+  // Slug inválido (vazio ou shape errada): rejeita com 400 para crawlers
+  // — evita que abusadores chamem com URLs randômicas só pra forçar carga.
+  // Humanos sem slug ainda recebem 302 para a home (comportamento amigável).
+  const slugValid = !!slug && SLUG_RE.test(slug);
+  if (!slugValid && crawler) {
+    return new Response(
+      JSON.stringify({ error: "invalid_slug" }),
+      {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=3600",
+        },
+      },
+    );
+  }
 
   const canonical = slug
     ? `${PUBLIC_SITE}/profissional/${slug}`
     : PUBLIC_SITE;
-
-  const ua = req.headers.get("user-agent");
-  const crawler = isCrawler(ua);
 
   // Real users: redirect immediately to the SPA. Crawlers will fall through.
   if (!crawler) {
@@ -197,7 +230,11 @@ Deno.serve(async (req) => {
           : cityState
           ? `${name} — ${category} em ${cityState}. Veja o perfil completo, portfólio e entre em contato direto.`
           : `${name} — ${category}. Veja o perfil completo, portfólio e entre em contato direto.`;
-        if (prof.avatar_url) image = prof.avatar_url;
+        if (prof.avatar_url) {
+          // Aplica transform por ratio quando avatar está no Storage;
+          // URLs externas (Google, etc.) caem no fallback original.
+          image = buildOgImage(prof.avatar_url, ratio) || prof.avatar_url;
+        }
       }
     } catch (err) {
       // Never let a DB hiccup break the crawler response.
@@ -205,7 +242,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  const html = buildHtml({ title, description, image, canonical });
+  const html = buildHtml({ title, description, image, canonical, ratio });
 
   // ETag estável baseado no conteúdo: permite If-None-Match → 304 Not Modified
   // (resposta de ~80 bytes em vez de ~2KB de HTML por hit do crawler).

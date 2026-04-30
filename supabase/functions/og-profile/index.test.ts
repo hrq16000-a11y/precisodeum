@@ -1,18 +1,21 @@
-// Deno test for `og-profile` edge function.
+// Deno test for `og-profile` edge function (E2E contra endpoint deployado).
 //
-// We cannot easily import the function module here because it binds
-// `Deno.serve` at module top-level. Instead we test against the deployed
-// endpoint, asserting that:
-//   - Real-user UAs get a 302 redirect to /profissional/:slug
-//   - Crawler UAs (WhatsApp, Facebook, Twitter, Telegram, generic bot)
-//     get text/html with og:title, og:description, og:image, twitter:card
-//     and proper Cache-Control + ETag headers
-//   - Repeating a request with the previous ETag returns 304
+// Cobertura:
+//   1. Humano (UA Chrome) → 302 redirect para /profissional/:slug
+//   2. Crawlers de paisagem (Facebook, Twitter) → 200 + og:image 1200x630 +
+//      twitter:card="summary_large_image"
+//   3. Crawlers de quadrado (WhatsApp, LinkedIn, Telegram) → 200 + og:image
+//      1080x1080 + twitter:card="summary"
+//   4. Slug inválido + crawler → 400 invalid_slug
+//   5. ETag revalidation → 304 Not Modified
+//   6. Headers de cache (max-age, s-maxage, stale-while-revalidate)
+//   7. Vary: User-Agent presente (crítico — sem isso CDN pode servir HTML
+//      do Facebook para WhatsApp e estourar o crop).
 //
 // Run:
 //   supabase functions test og-profile
 //
-// Requires .env at the project root with VITE_SUPABASE_URL.
+// Requer .env na raiz com VITE_SUPABASE_URL.
 
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 import {
@@ -32,20 +35,28 @@ const FN_URL = `${SUPABASE_URL}/functions/v1/og-profile`;
 // dependente de dados de produção.
 const FALLBACK_SLUG = "ci-test-nonexistent-profile-slug";
 
-const CRAWLER_UAS: Record<string, string> = {
-  whatsapp: "WhatsApp/2.23.20.0 A",
+const WIDE_CRAWLER_UAS: Record<string, string> = {
   facebook:
     "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
   twitter: "Twitterbot/1.0",
-  telegram: "TelegramBot (like TwitterBot)",
+};
+
+const SQUARE_CRAWLER_UAS: Record<string, string> = {
+  whatsapp: "WhatsApp/2.23.20.0 A",
   linkedin: "LinkedInBot/1.0 (compatible; Mozilla/5.0; +http://www.linkedin.com)",
+  telegram: "TelegramBot (like TwitterBot)",
+  discord: "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)",
 };
 
 const HUMAN_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
-async function fetchOg(ua: string, headers: Record<string, string> = {}) {
-  return await fetch(`${FN_URL}?slug=${FALLBACK_SLUG}`, {
+async function fetchOg(
+  ua: string,
+  slug: string = FALLBACK_SLUG,
+  headers: Record<string, string> = {},
+) {
+  return await fetch(`${FN_URL}?slug=${slug}`, {
     method: "GET",
     redirect: "manual",
     headers: { "User-Agent": ua, ...headers },
@@ -60,51 +71,114 @@ Deno.test("og-profile: human user is redirected (302) to SPA", async () => {
   assertMatch(location, /\/profissional\/[a-z0-9-]+$/);
 });
 
-for (const [name, ua] of Object.entries(CRAWLER_UAS)) {
-  Deno.test(`og-profile: ${name} crawler receives full OG meta tags`, async () => {
+for (const [name, ua] of Object.entries(WIDE_CRAWLER_UAS)) {
+  Deno.test(`og-profile: ${name} (wide) gets 1200x630 + summary_large_image`, async () => {
     const res = await fetchOg(ua);
     assertEquals(res.status, 200);
 
+    // Nota: o gateway do Supabase pode reescrever Content-Type para text/plain
+    // mesmo quando a edge envia text/html (sandbox CSP). O importante é o body.
     const ct = res.headers.get("content-type") ?? "";
-    assertStringIncludes(ct, "text/html");
+    assert(
+      ct.startsWith("text/"),
+      `expected text/* content-type, got ${ct}`,
+    );
 
     const cache = res.headers.get("cache-control") ?? "";
     assertStringIncludes(cache, "max-age=");
+    assertStringIncludes(cache, "s-maxage=");
     assertStringIncludes(cache, "stale-while-revalidate");
 
-    const etag = res.headers.get("etag");
-    assert(etag && etag.length > 0, "ETag header should be present");
+    const vary = res.headers.get("vary") ?? "";
+    assertStringIncludes(vary, "User-Agent");
 
     const html = await res.text();
+    // OG tags obrigatórias
     assertStringIncludes(html, '<meta property="og:title"');
     assertStringIncludes(html, '<meta property="og:description"');
     assertStringIncludes(html, '<meta property="og:image"');
     assertStringIncludes(html, '<meta property="og:url"');
-    assertStringIncludes(html, '<meta name="twitter:card" content="summary_large_image"');
     assertStringIncludes(html, '<link rel="canonical"');
+    // Dimensões wide (1200x630)
+    assertStringIncludes(html, '<meta property="og:image:width" content="1200"');
+    assertStringIncludes(html, '<meta property="og:image:height" content="630"');
+    // Twitter card grande
+    assertStringIncludes(
+      html,
+      '<meta name="twitter:card" content="summary_large_image"',
+    );
+  });
+}
+
+for (const [name, ua] of Object.entries(SQUARE_CRAWLER_UAS)) {
+  Deno.test(`og-profile: ${name} (square) gets 1080x1080 + summary`, async () => {
+    const res = await fetchOg(ua);
+    assertEquals(res.status, 200);
+
+    const html = await res.text();
+    // Dimensões square (1080x1080)
+    assertStringIncludes(html, '<meta property="og:image:width" content="1080"');
+    assertStringIncludes(html, '<meta property="og:image:height" content="1080"');
+    // Twitter card pequeno (1:1)
+    assertStringIncludes(html, '<meta name="twitter:card" content="summary"');
+    // Mas NÃO o "summary_large_image" — match exato
+    assert(
+      !html.includes('twitter:card" content="summary_large_image"'),
+      "square crawler should NOT receive summary_large_image",
+    );
   });
 }
 
 Deno.test("og-profile: ETag revalidation returns 304 Not Modified", async () => {
-  const first = await fetchOg(CRAWLER_UAS.whatsapp);
+  const first = await fetchOg(WIDE_CRAWLER_UAS.facebook);
   await first.text();
   const etag = first.headers.get("etag");
   assert(etag, "first response must include ETag");
 
-  const second = await fetchOg(CRAWLER_UAS.whatsapp, { "If-None-Match": etag });
+  const second = await fetchOg(
+    WIDE_CRAWLER_UAS.facebook,
+    FALLBACK_SLUG,
+    { "If-None-Match": etag },
+  );
   await second.body?.cancel();
   assertEquals(second.status, 304);
   assertEquals(second.headers.get("etag"), etag);
 });
 
-Deno.test("og-profile: empty/invalid slug still returns valid OG fallback for crawlers", async () => {
+Deno.test("og-profile: invalid slug + crawler → 400 invalid_slug", async () => {
+  // Slug com caracteres inválidos depois da sanitização vira string vazia
+  const res = await fetch(`${FN_URL}?slug=___`, {
+    method: "GET",
+    redirect: "manual",
+    headers: { "User-Agent": WIDE_CRAWLER_UAS.facebook },
+  });
+  const body = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(body.error, "invalid_slug");
+});
+
+Deno.test("og-profile: empty slug + human → 302 to home (friendly)", async () => {
   const res = await fetch(`${FN_URL}?slug=`, {
     method: "GET",
     redirect: "manual",
-    headers: { "User-Agent": CRAWLER_UAS.facebook },
+    headers: { "User-Agent": HUMAN_UA },
   });
-  const html = await res.text();
-  assertEquals(res.status, 200);
-  assertStringIncludes(html, '<meta property="og:title"');
-  assertStringIncludes(html, '<meta property="og:image"');
+  await res.body?.cancel();
+  assertEquals(res.status, 302);
+});
+
+Deno.test("og-profile: ETag differs between wide and square crawlers", async () => {
+  // Mesma rota, UAs diferentes → HTML diferente (dimensões e twitter:card)
+  // → ETags diferentes. Garantia para o CDN respeitar Vary: User-Agent.
+  const wide = await fetchOg(WIDE_CRAWLER_UAS.facebook);
+  await wide.text();
+  const sq = await fetchOg(SQUARE_CRAWLER_UAS.whatsapp);
+  await sq.text();
+  const wideTag = wide.headers.get("etag");
+  const sqTag = sq.headers.get("etag");
+  assert(wideTag && sqTag, "both responses must include ETag");
+  assert(
+    wideTag !== sqTag,
+    "wide and square crawlers must produce distinct ETags",
+  );
 });
