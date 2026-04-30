@@ -109,6 +109,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
     pendingFilesRef.current = toUpload;
     setUploading(true);
     setHasFailed(false);
+    setAttemptInfo(null);
     setStages(makeInitialStages());
 
     try {
@@ -125,11 +126,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       const failed: File[] = [];
 
       for (const raw of toUpload) {
-        if (raw.size > 5 * 1024 * 1024) {
-          toast.error(`${raw.name} excede 5MB`);
-          continue;
-        }
-
+        // Validação já foi feita no handleUpload — sem dupla checagem aqui.
         setStages(makeInitialStages());
 
         try {
@@ -157,8 +154,17 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
                 };
               });
             },
-            onAttempt: (a, max) => {
-              if (a > 1) toast.message(`Conexão lenta. Tentando novamente (${a}/${max})…`);
+            onAttempt: (a, max, reason) => {
+              setAttemptInfo({ attempt: a, max, reason });
+              if (a > 1) {
+                const msg =
+                  reason === 'timeout'
+                    ? `${raw.name}: tempo esgotado, retentando (${a}/${max})…`
+                    : reason === 'network'
+                    ? `${raw.name}: sem rede, reenviando (${a}/${max})…`
+                    : `${raw.name}: tentando novamente (${a}/${max})…`;
+                toast.message(msg);
+              }
             },
           });
 
@@ -210,6 +216,10 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       } else {
         toast.success('Imagens enviadas!');
         pendingFilesRef.current = [];
+        // Limpa prévias locais — agora as fotos reais aparecem no grid.
+        previewUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+        previewUrlsRef.current = [];
+        setLocalPreviews([]);
       }
       fetchImages();
     } catch (err: any) {
