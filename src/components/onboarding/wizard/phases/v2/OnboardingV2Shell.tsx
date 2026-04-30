@@ -98,19 +98,6 @@ function slugify(input: string): string {
     .slice(0, 50);
 }
 
-// G5: ordem canônica das fases para comparar rascunhos local vs remoto.
-const PHASE_ORDER: readonly string[] = [
-  'phase1_action', 'phase1_kind', 'phase1_location', 'phase1_contact',
-  'phase2_service', 'phase2_details', 'phase2_photos',
-  'phase3_celebration',
-  'phase4_document', 'phase4_avatar', 'phase4_extras_a', 'phase4_extras_b', 'phase4_review',
-  'done',
-];
-function phaseIndex(p: string | null | undefined): number {
-  if (!p) return -1;
-  const idx = PHASE_ORDER.indexOf(p);
-  return idx >= 0 ? idx : -1;
-}
 
 interface OnboardingV2ShellProps {
   /**
