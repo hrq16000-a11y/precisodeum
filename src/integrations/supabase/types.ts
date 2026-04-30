@@ -4048,6 +4048,7 @@ export type Database = {
           review_count: number
           service_radius: string | null
           services_count: number
+          show_full_address: boolean
           slug: string | null
           social_links: Json
           state: string
@@ -4121,6 +4122,7 @@ export type Database = {
           review_count?: number
           service_radius?: string | null
           services_count?: number
+          show_full_address?: boolean
           slug?: string | null
           social_links?: Json
           state?: string
@@ -4194,6 +4196,7 @@ export type Database = {
           review_count?: number
           service_radius?: string | null
           services_count?: number
+          show_full_address?: boolean
           slug?: string | null
           social_links?: Json
           state?: string
