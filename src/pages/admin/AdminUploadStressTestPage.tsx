@@ -44,6 +44,9 @@ import {
   FileText,
   Filter,
   X,
+  Copy,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import {
