@@ -84,6 +84,29 @@ function hasLocalDraft(): boolean {
   }
 }
 
+/** Inspeciona o rascunho local para extrair sinais úteis para telemetria. */
+function inspectLocalDraft(): { exists: boolean; phase: string | null; savedAt: number | null; key: string | null } {
+  if (typeof window === 'undefined') return { exists: false, phase: null, savedAt: null, key: null };
+  try {
+    for (const key of DRAFT_STORAGE_KEYS) {
+      const raw = window.localStorage.getItem(key);
+      if (!raw || raw.length <= 2) continue;
+      try {
+        const parsed = JSON.parse(raw);
+        const phase =
+          (parsed && typeof parsed === 'object' && (parsed.phase || parsed?.state?.phase)) || null;
+        const savedAt = (parsed && typeof parsed === 'object' && parsed.savedAt) || null;
+        return { exists: true, phase: phase ? String(phase) : null, savedAt, key };
+      } catch {
+        return { exists: true, phase: null, savedAt: null, key };
+      }
+    }
+    return { exists: false, phase: null, savedAt: null, key: null };
+  } catch {
+    return { exists: false, phase: null, savedAt: null, key: null };
+  }
+}
+
 
 export default function CadastroInicialPage() {
   const { user, profile, loading } = useAuth();
