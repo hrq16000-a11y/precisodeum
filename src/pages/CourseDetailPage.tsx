@@ -213,7 +213,7 @@ const CourseDetailPage = () => {
         >
           <div className="flex items-center gap-2">
             {course.provider_logo_url ? (
-              <img src={course.provider_logo_url} alt={course.provider} className="h-8 w-8 rounded-full object-cover border border-border" />
+              <img src={course.provider_logo_url} alt={course.provider} loading="lazy" decoding="async" className="h-8 w-8 rounded-full object-cover border border-border" />
             ) : (
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <BookOpen className="h-4 w-4 text-primary" />
