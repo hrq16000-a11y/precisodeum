@@ -87,6 +87,31 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      // ── Escala única de z-index (Fonte da verdade) ──
+      // Use sempre estes tokens em vez de números avulsos para evitar
+      // conflitos entre Select / Popover / Tooltip / Modais.
+      //   base       — conteúdo padrão
+      //   dropdown   — Select / Combobox / Dropdown menu
+      //   sticky     — headers/abas grudentos
+      //   bottomNav  — navegação inferior mobile
+      //   overlay    — backdrop de modais
+      //   modal      — Dialog / Sheet
+      //   popover    — Popover (acima de Modal quando aberto dentro)
+      //   tooltip    — Tooltip (sempre no topo da pilha interativa)
+      //   toast      — Notificações transitórias
+      //   max        — Reservado para banners de impersonation/alertas críticos
+      zIndex: {
+        base: "1",
+        dropdown: "40",
+        sticky: "45",
+        bottomNav: "50",
+        overlay: "55",
+        modal: "60",
+        popover: "65",
+        tooltip: "70",
+        toast: "80",
+        max: "90",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
