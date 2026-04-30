@@ -51,6 +51,7 @@ interface CompanyRow {
   street_number: string | null;
   complement: string | null;
   postal_code: string | null;
+  show_full_address?: boolean | null;
   social_links: Record<string, string> | null;
   founded_year?: number | null;
   team_size?: number | null;
@@ -76,7 +77,7 @@ export default function CompanyProfile() {
       const { data, error } = await (supabase as any)
         .from('providers')
         .select(
-          'id, user_id, slug, business_name, legal_name, description, photo_url, city, state, neighborhood, phone, whatsapp, latitude, longitude, rating_avg, review_count, account_type, business_segment, street, street_number, complement, postal_code, social_links, founded_year, team_size',
+          'id, user_id, slug, business_name, legal_name, description, photo_url, city, state, neighborhood, phone, whatsapp, latitude, longitude, rating_avg, review_count, account_type, business_segment, street, street_number, complement, postal_code, show_full_address, social_links, founded_year, team_size',
         )
         .eq('slug', slug || '')
         .eq('status', 'approved')
@@ -114,8 +115,14 @@ export default function CompanyProfile() {
       (company?.city ? `Empresa em ${company.city}` : 'Empresa'),
   );
 
+  const showFull = company?.show_full_address === true;
   const fullAddress = useMemo(() => {
     if (!company) return '';
+    if (!showFull) {
+      return [company.neighborhood, [company.city, company.state].filter(Boolean).join(' - ')]
+        .filter((s) => !!s && String(s).trim().length > 0)
+        .join(' • ');
+    }
     return [
       [company.street, company.street_number].filter(Boolean).join(', '),
       company.complement,
@@ -125,7 +132,7 @@ export default function CompanyProfile() {
     ]
       .filter((s) => !!s && String(s).trim().length > 0)
       .join(' • ');
-  }, [company]);
+  }, [company, showFull]);
 
   // SEO: JSON-LD LocalBusiness
   const jsonLd = useMemo(() => {
@@ -141,10 +148,10 @@ export default function CompanyProfile() {
       telephone: company.phone || company.whatsapp || undefined,
       address: {
         '@type': 'PostalAddress',
-        streetAddress: [company.street, company.street_number].filter(Boolean).join(', ') || undefined,
+        streetAddress: showFull ? ([company.street, company.street_number].filter(Boolean).join(', ') || undefined) : undefined,
         addressLocality: company.city || undefined,
         addressRegion: company.state || undefined,
-        postalCode: company.postal_code || undefined,
+        postalCode: showFull ? (company.postal_code || undefined) : undefined,
         addressCountry: 'BR',
       },
       geo:
