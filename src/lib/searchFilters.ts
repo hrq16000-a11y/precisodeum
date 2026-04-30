@@ -154,6 +154,20 @@ export function applySearchFilters<T extends FilterableProvider>(
     results = results.filter((p) => !!p.whatsapp && p.whatsapp.trim().length > 0);
   }
 
+  // Janela de disponibilidade — açúcar das listas online/activeToday/recentlyOffline.
+  if (availabilityWindow === 'today') {
+    results = results.filter(
+      (p) => onlineSet.has(p.userId) || activeTodaySet.has(p.userId)
+    );
+  } else if (availabilityWindow === 'this_week' || availabilityWindow === 'recent') {
+    results = results.filter(
+      (p) =>
+        onlineSet.has(p.userId) ||
+        activeTodaySet.has(p.userId) ||
+        recentlyOfflineSet.has(p.userId)
+    );
+  }
+
   if (sortBy === 'nearest') {
     results.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
   } else if (sortBy !== 'relevance') {
