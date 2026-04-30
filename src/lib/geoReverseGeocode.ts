@@ -30,7 +30,9 @@ export function isRegionalLabel(value?: string | null) {
     'regiao imediata',
     'regiao intermediaria',
     'microregiao',
+    'microrregiao',
     'mesorregiao',
+    'mesoregiao',
     'area metropolitana',
   ].some((token) => text.includes(token));
 }
