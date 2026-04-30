@@ -18,6 +18,8 @@ export interface StageTelemetryInput {
   latencyMs: number;
   fileSizeBytes?: number;
   errorCode?: string;
+  /** Classificação padronizada do erro (timeout/network/server/convert/...). */
+  errorKind?: string;
   fallbackLevel?: number;
 }
 
