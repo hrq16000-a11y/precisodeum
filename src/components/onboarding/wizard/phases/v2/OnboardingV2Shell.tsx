@@ -202,13 +202,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // Aviso de "rascunho restaurado" do LOCAL (mesmo dispositivo)
   useEffect(() => {
-    if (skipDraftRestore) return;
+    if (skipDraftRestore) {
+      // Quando entramos via handoff da triagem, marcamos a fonte como "seed".
+      if (!getOnboardingDraftSource()) setOnboardingDraftSource('seed');
+      return;
+    }
     const draft = readOnboardingV2Draft();
     if (draft && draft.phase && draft.phase !== 'phase1_action') {
       setDraftRestored({ source: 'local' });
+      setOnboardingDraftSource('local');
       const t = setTimeout(() => setDraftRestored(null), 5000);
       return () => clearTimeout(t);
     }
+    // Sessão limpa: marca explicitamente como "none" para diferenciar de
+    // sessões antigas onde a chave estava ausente.
+    if (!getOnboardingDraftSource()) setOnboardingDraftSource('none');
   }, [skipDraftRestore]);
 
   // Detecta rascunho REMOTO (troca de dispositivo) e ABRE MODAL para o usuário decidir.
