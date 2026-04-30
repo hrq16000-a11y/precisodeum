@@ -44,7 +44,6 @@ describe('CepSuggestionCard', () => {
       />,
     );
     expect(await screen.findByTestId('cep-suggestion-success')).toBeInTheDocument();
-    expect(await screen.findByTestId('cep-suggestion-success')).toBeInTheDocument();
     expect(screen.getByText(/CEP encontrado: 80010-000/)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('cep-suggestion-apply'));
     expect(onApply).toHaveBeenCalledWith('80010-000', expect.objectContaining({ neighborhood: 'Centro' }));
