@@ -107,10 +107,10 @@ const Step20_MoreServices = ({ onContinue, onSkip }: Step20Props) => {
   }, [refresh]);
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-6 space-y-5">
-      <header className="text-center space-y-1">
-        <h2 className="text-xl font-semibold">Quer cadastrar mais serviços?</h2>
-        <p className="text-sm text-muted-foreground">
+    <div className="mx-auto w-full max-w-md px-4 py-2 space-y-2.5">
+      <header className="text-center space-y-0.5">
+        <h2 className="font-display text-lg font-extrabold leading-tight text-foreground">Quer cadastrar mais serviços?</h2>
+        <p className="text-xs text-muted-foreground">
           Você pode ter até <span className="font-medium text-foreground">{MAX_SERVICES} serviços</span> no perfil.
           Cadastrar agora aumenta suas chances de receber leads. Pode pular e fazer depois pelo painel.
         </p>

@@ -110,10 +110,10 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
   }, [refresh]);
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-6 space-y-5">
-      <header className="text-center space-y-1">
-        <h2 className="text-xl font-semibold">Crie seus álbuns de portfólio</h2>
-        <p className="text-sm text-muted-foreground">
+    <div className="mx-auto w-full max-w-md px-4 py-2 space-y-2.5">
+      <header className="text-center space-y-0.5">
+        <h2 className="font-display text-lg font-extrabold leading-tight text-foreground">Crie seus álbuns de portfólio</h2>
+        <p className="text-xs text-muted-foreground">
           Organize seus trabalhos por tema (ex: "Reformas", "Eventos"). Até{' '}
           <span className="font-medium text-foreground">{MAX_ALBUMS} álbuns</span>.
           Crie um álbum e toque nele para abrir o envio de fotos agora mesmo.
