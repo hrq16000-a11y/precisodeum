@@ -87,8 +87,8 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).toContain('MainOrchestrator');
     expect(shell).toContain('wizardReducer');
     expect(shell).toContain('WizardProgressBar');
-    // Botão Voltar global existe.
-    expect(shell).toContain('Voltar para o passo anterior');
+    // Cada fase tem o seu próprio botão Voltar interno (evita duplicação no shell).
+    expect(shell).toMatch(/Voltar global removido/);
     // Telemetria unificada por fase.
     expect(shell).toContain("variant: 'unified'");
     // Não navega entre rotas para fazer handoff.
