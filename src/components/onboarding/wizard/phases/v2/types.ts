@@ -32,6 +32,22 @@ export interface OnboardingProfileData {
   primary_category_id: string | null;
   /** Horários escolhidos na Fase 2 — herda automaticamente para o perfil. */
   working_hours: string;
+
+  // ---- PJ-only (institucional). Persistidos no draft remoto p/ não perder em troca de dispositivo.
+  /** Logradouro (Rua/Av) — opcional, só PJ. */
+  street?: string;
+  /** Número do endereço — opcional, só PJ. */
+  street_number?: string;
+  /** Complemento — opcional, só PJ. */
+  complement?: string;
+  /** CEP (somente dígitos) — opcional, só PJ. */
+  postal_code?: string;
+  /** Segmento de negócio — opcional, só PJ. */
+  business_segment?: string;
+  /** Toggle de privacidade do endereço completo — só PJ. */
+  show_full_address?: boolean;
+  /** Redes sociais institucionais (chave→URL) — só PJ. */
+  social_links?: Record<string, string> | null;
 }
 
 export type OnboardingCoreField = 'full_name' | 'whatsapp' | 'city' | 'state' | 'document';

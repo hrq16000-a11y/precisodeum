@@ -129,6 +129,14 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
   const out = { ...input } as Record<string, unknown>;
   const isCompany = (out.account_type as string) === 'company';
 
+  // 0) Coluna GENERATED ALWAYS — o Postgres calcula sozinho a partir de
+  //    street/street_number/neighborhood/city/state. Enviar valor explícito
+  //    dispara erro 42601 ("cannot insert a non-DEFAULT value into column").
+  //    Removemos silenciosamente para blindar contra payloads legados/UI antiga.
+  if ('address_complete' in out) {
+    delete out.address_complete;
+  }
+
   // 1) Remove chaves proibidas (aliases / colunas inexistentes em qualquer caso).
   const stripped: string[] = [];
   for (const key of PROVIDER_FORBIDDEN_ADDRESS_KEYS) {
