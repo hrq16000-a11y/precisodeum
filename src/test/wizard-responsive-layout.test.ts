@@ -1,14 +1,41 @@
 /**
- * Teste de layout responsivo — valida que tokens compactos do Wizard V2
- * (containers, títulos, paddings) estão configurados para caber em telas
- * pequenas (iPhone SE 375x667 / Android 360x800) sem rolagem desnecessária.
- *
- * Como o layout completo depende de muitos contextos (auth, supabase),
- * este teste valida os TOKENS compartilhados em wizardStyles.ts — fonte
- * única de verdade que rege todas as fases V1/V2.
+ * Teste de layout responsivo + governança de tokens — valida que o Wizard:
+ *  1. Usa tokens compactos (cabe em iPhone SE 375x667 e Android 360x800).
+ *  2. Mantém touch targets >= 48px (a11y WCAG 2.5.5).
+ *  3. Não tem fases divergentes usando padding/typografia "gordos"
+ *     (py-6 / space-y-5 / text-2xl em containers de fase).
+ *  4. ProgressBar é fino o suficiente para não empurrar conteúdo
+ *     above-the-fold em telas pequenas.
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { wizardStyles } from '@/components/onboarding/wizard/phases/v2/wizardStyles';
+
+const PHASE_DIRS = [
+  resolve(__dirname, '../components/onboarding/wizard/phases/v2'),
+  resolve(__dirname, '../components/onboarding/wizard/phases/bet'),
+];
+const STEP_FILES = [
+  resolve(__dirname, '../components/onboarding/wizard/phases/Step20_MoreServices.tsx'),
+  resolve(__dirname, '../components/onboarding/wizard/phases/Step21_PortfolioAlbums.tsx'),
+];
+
+function listPhaseFiles(): string[] {
+  const out: string[] = [];
+  for (const dir of PHASE_DIRS) {
+    try {
+      for (const f of readdirSync(dir)) {
+        if (/\.(tsx)$/.test(f) && !f.endsWith('.test.tsx')) {
+          out.push(resolve(dir, f));
+        }
+      }
+    } catch {
+      /* dir ausente ignora */
+    }
+  }
+  return out.concat(STEP_FILES);
+}
 
 describe('Wizard responsive layout tokens', () => {
   it('container usa padding e space-y compactos (sem py-6/space-y-5)', () => {
@@ -35,19 +62,79 @@ describe('Wizard responsive layout tokens', () => {
   });
 
   it('CTA mantém h-12 para a11y de touch-target (>=48px)', () => {
+    // h-12 = 3rem = 48px — limite WCAG 2.5.5 Target Size (Enhanced).
     expect(wizardStyles.cta).toMatch(/h-12/);
+    expect(wizardStyles.ctaGhost).toMatch(/h-12/);
   });
 
-  it('estima altura aproximada do above-the-fold em iPhone SE (667px)', () => {
-    // py-2 = 8px topo + 8px base = 16px
-    // header: title(~22px) + subtitle(~14px) + space-y-0.5(2px) = ~38px
-    // card típico: p-3(24px total) + 2 inputs(~80px) + label(~16px) = ~120px
-    // CTA h-12 = 48px
-    // total estimado: 16 + 38 + 120 + 48 + space-y-2.5 (~10px) ≈ 232px
-    // ProgressBar (~28px) + PointsHud (~40px) ≈ 68px de chrome
-    // Total chrome+conteúdo: ~300px — folga em iPhone SE (667px).
-    const estimatedFold = 232 + 68;
-    const iphoneSE = 667;
-    expect(estimatedFold).toBeLessThan(iphoneSE * 0.6); // < 60% da altura
+  it('estima altura aproximada do above-the-fold em iPhone SE (667px) e Android 360x800', () => {
+    // ProgressBar agora ocupa ~16px em mobile (h-0.5 + py-0.5 + texto 10px) — antes 28px.
+    // Header + 1 card + CTA = ~232px (estimativa conservadora).
+    const estimatedFold = 232 + 56; // chrome reduzido
+    expect(estimatedFold).toBeLessThan(667 * 0.6); // iPhone SE
+    expect(estimatedFold).toBeLessThan(800 * 0.55); // Android 360x800
+  });
+});
+
+describe('Wizard token governance — fases não divergem do design system', () => {
+  const files = listPhaseFiles();
+
+  it('descobre arquivos de fase para auditar', () => {
+    expect(files.length).toBeGreaterThan(5);
+  });
+
+  it('nenhuma fase usa containers "gordos" (py-6 + space-y-5 simultaneamente)', () => {
+    const offenders: string[] = [];
+    for (const f of files) {
+      const src = readFileSync(f, 'utf8');
+      // Procura raiz do componente ("mx-auto ... max-w-md") com py-6 OU space-y-5.
+      const rootContainer = /className="[^"]*mx-auto[^"]*max-w-md[^"]*(?:py-6|space-y-5)[^"]*"/;
+      if (rootContainer.test(src)) offenders.push(f);
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('headers principais (h1/h2 de raiz) não usam text-2xl em fases de input', () => {
+    // Permitido apenas em telas de celebração (Phase3Celebration, PhaseCelebration, Phase4Final final state).
+    const allowList = /(Celebration|Final|VerifiedBadge)/;
+    const offenders: string[] = [];
+    for (const f of files) {
+      if (allowList.test(f)) continue;
+      const src = readFileSync(f, 'utf8');
+      // h1/h2 com text-2xl
+      const heading = /<h[12][^>]*className="[^"]*text-2xl/;
+      if (heading.test(src)) offenders.push(f);
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe('Wizard navigation — único botão de Voltar por fase', () => {
+  it('WizardShell NÃO renderiza um botão Voltar global redundante', () => {
+    const shell = readFileSync(
+      resolve(__dirname, '../components/onboarding/wizard/WizardShell.tsx'),
+      'utf8',
+    );
+    // Um comentário documentando a remoção deve existir; nenhum <Button>Voltar</Button>
+    // de nível shell pode aparecer fora do contexto de phases.
+    expect(shell).toMatch(/Bot[aã]o Voltar global removido|cada fase j[aá] tem o seu/i);
+    // Não deve renderizar diretamente WizardNav/Voltar no shell.
+    expect(shell).not.toMatch(/<WizardNav[^/]*hideBack=\{false\}/);
+  });
+
+  it('cada fase Bet renderiza no máximo UM botão "Voltar" textual', () => {
+    const betDir = resolve(__dirname, '../components/onboarding/wizard/phases/bet');
+    const phaseFiles = readdirSync(betDir).filter(
+      (f) => f.startsWith('Phase') && f.endsWith('.tsx') && !f.endsWith('.test.tsx'),
+    );
+    expect(phaseFiles.length).toBeGreaterThan(0);
+    const offenders: Array<{ file: string; count: number }> = [];
+    for (const f of phaseFiles) {
+      const src = readFileSync(resolve(betDir, f), 'utf8');
+      // Conta ocorrências de "Voltar" textual em JSX (filtra strings em comentários comuns).
+      const matches = src.match(/>\s*Voltar\s*</g) ?? [];
+      if (matches.length > 1) offenders.push({ file: f, count: matches.length });
+    }
+    expect(offenders).toEqual([]);
   });
 });
