@@ -30,20 +30,30 @@ const ALERT_SOUND_DATA_URI =
  * absolute fallback — the user always sees the alert even if every
  * sound channel is blocked.
  */
-const playSound = () => {
-  try {
-    const audio = new Audio(ALERT_SOUND_DATA_URI);
-    audio.volume = 0.6;
-    const result = audio.play();
-    if (result && typeof result.then === 'function') {
-      result.catch(() => {
-        // Autoplay blocked — try WebAudio fallback (gesture-permissive).
-        try { playHornBeep(); } catch { /* visual toast still fires */ }
-      });
+/**
+ * Tenta tocar o beep e devolve uma Promise que resolve `true` se ao menos
+ * uma camada (data-URI ou WebAudio) saiu — `false` se ambas foram bloqueadas
+ * pelo navegador. O caller pode então acionar um fallback visual mínimo.
+ */
+const playSound = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    try {
+      const audio = new Audio(ALERT_SOUND_DATA_URI);
+      audio.volume = 0.6;
+      const result = audio.play();
+      if (result && typeof result.then === 'function') {
+        result
+          .then(() => resolve(true))
+          .catch(() => {
+            try { playHornBeep(); resolve(true); } catch { resolve(false); }
+          });
+        return;
+      }
+      resolve(true);
+    } catch {
+      try { playHornBeep(); resolve(true); } catch { resolve(false); }
     }
-  } catch {
-    try { playHornBeep(); } catch { /* visual toast still fires */ }
-  }
+  });
 };
 
 const wantsSound = (mode: LeadAlertMode) => mode === 'sound' || mode === 'both';
