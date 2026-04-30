@@ -174,9 +174,7 @@ export default function CategoryCityPage() {
         {!valid ? (
           <EmptyStateFallback
             title="Página não disponível"
-            description="Verifique a URL ou volte para o diretório de categorias."
-            actionLabel="Voltar às categorias"
-            actionHref="/categorias"
+            message="Verifique a URL ou volte para o diretório de categorias."
           />
         ) : isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando profissionais…</p>
