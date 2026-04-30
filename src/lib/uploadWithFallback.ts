@@ -20,7 +20,7 @@ import { compressImage } from './compressImage';
 import { resilientUpload } from './uploadResilient';
 import { withStageTelemetry, recordStageTelemetry, type UploadStage } from './uploadStageTelemetry';
 import { resolveAdaptiveProfile, type AdaptiveProfile } from './adaptiveCompression';
-import { classifyUploadError, CompressionError } from './uploadErrors';
+import { classifyUploadError, CompressionError, type UploadErrorKind } from './uploadErrors';
 
 export interface UploadFallbackResult<T> {
   data: T;
@@ -35,6 +35,10 @@ export interface UploadFallbackResult<T> {
 export interface UploadStageEvent {
   stage: UploadStage;
   status: 'start' | 'done' | 'error';
+  /** Quando status === 'error', traz o tipo classificado da falha. */
+  errorKind?: UploadErrorKind;
+  /** Mensagem opaca pro debugging (não user-facing). */
+  errorMessage?: string;
 }
 
 export interface UploadWithFallbackOptions {
