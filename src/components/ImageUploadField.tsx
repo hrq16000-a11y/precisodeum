@@ -102,7 +102,11 @@ const ImageUploadField = ({
       if (data.deduplicated) toast.info('Imagem já existente reutilizada!');
       else toast.success('Imagem enviada!');
     } catch (err) {
-      toast.error('Erro ao enviar imagem');
+      if (err instanceof UploadTimeoutError) {
+        toast.error('Conexão muito lenta. Tente novamente.');
+      } else {
+        toast.error('Erro ao enviar imagem. Verifique sua conexão.');
+      }
     }
     setUploading(false);
   };
