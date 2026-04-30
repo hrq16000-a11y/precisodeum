@@ -130,7 +130,7 @@ export async function uploadWithFallback<T = any>(
   try {
     const file = await compressForLevel(0);
     const data = await tryUpload(file, 0);
-    return { data, fallbackLevel: 0, finalSize: file.size };
+    return { data, fallbackLevel: 0, finalSize: file.size, adaptiveProfile: adaptive };
   } catch (err) {
     lastError = err;
   }
@@ -149,7 +149,7 @@ export async function uploadWithFallback<T = any>(
         fallbackLevel: recipe.level,
       });
       opts.onStage?.({ stage: 'fallback', status: 'done' });
-      return { data, fallbackLevel: recipe.level, finalSize: file.size };
+      return { data, fallbackLevel: recipe.level, finalSize: file.size, adaptiveProfile: adaptive };
     } catch (err) {
       lastError = err;
       recordStageTelemetry({
@@ -158,6 +158,7 @@ export async function uploadWithFallback<T = any>(
         latencyMs: 0,
         fileSizeBytes: rawFile.size,
         errorCode: (err as any)?.message?.slice(0, 200) || 'unknown',
+        errorKind: classifyUploadError(err),
         fallbackLevel: recipe.level,
       });
     }
