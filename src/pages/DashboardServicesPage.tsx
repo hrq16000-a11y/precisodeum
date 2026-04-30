@@ -395,7 +395,7 @@ const DashboardServicesPage = () => {
     if (!newServicePhoto || !user) return;
     setUploadingPhoto(true);
     try {
-      const compressed = await compressImage(newServicePhoto);
+      const compressed = await compressImage(newServicePhoto, { maxDimension: 1200, targetKB: 300 });
       const ext = compressed.name.split('.').pop();
       const path = `${user.id}/${serviceId}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from('service-images').upload(path, compressed);
