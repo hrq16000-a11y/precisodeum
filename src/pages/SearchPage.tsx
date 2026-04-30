@@ -297,7 +297,10 @@ const SearchPage = () => {
 
   const seoDesc = `Encontre ${seoSubject}${seoCity ? ` em ${seoCity}` : ' no Brasil'}${seoFilterSuffix}. ${totalDisplay > 0 ? `${totalDisplay} ${totalDisplay === 1 ? 'profissional disponível' : 'profissionais disponíveis'}.` : ''} Compare avaliações e solicite orçamentos.`.trim();
 
-  // Build canonical with stable filter params (only meaningful ones)
+  // Canonical estável: NÃO inclui `page` nem `disponivel` (filtros voláteis/de UI).
+  // Toda página paginada e qualquer recorte por disponibilidade aponta canonical
+  // para a versão "raiz" da combinação (q+categoria+cidade+ordem). Isso evita
+  // duplicação de conteúdo no índice do Google.
   const canonicalUrl = useMemo(() => {
     const params = new URLSearchParams();
     if (query) params.set('q', query);
@@ -308,10 +311,29 @@ const SearchPage = () => {
     return `${SITE_BASE_URL}/buscar${qs ? `?${qs}` : ''}`;
   }, [query, selectedCategory, seoCity, sortBy]);
 
-  // Noindex when no meaningful query/category/city to avoid thin SERPs
-  const noindex = !query && !selectedCategory && !seoCity;
+  // rel=prev / rel=next para paginação. Os links incluem TODOS os params atuais
+  // (inclusive `disponivel`) porque apontam para variantes navegáveis pelo bot.
+  const totalPages = Math.max(1, Math.ceil(totalDisplay / ITEMS_PER_PAGE));
+  const buildPagedUrl = useCallback((targetPage: number) => {
+    const params = new URLSearchParams(searchParams);
+    if (targetPage > 1) params.set('page', String(targetPage));
+    else params.delete('page');
+    const qs = params.toString();
+    return `${SITE_BASE_URL}/buscar${qs ? `?${qs}` : ''}`;
+  }, [searchParams]);
+  const prevUrl = page > 1 ? buildPagedUrl(page - 1) : undefined;
+  const nextUrl = page < totalPages ? buildPagedUrl(page + 1) : undefined;
 
-  useSeoHead({ title: seoTitle, description: seoDesc, canonical: canonicalUrl, noindex });
+  // Noindex quando:
+  //  - não há recorte editorial (sem q, categoria nem cidade) → SERP fina
+  //  - é uma página paginada (page > 1) → Google segue o canonical da página 1
+  //  - há filtro de disponibilidade ativo → recorte volátil, não indexável
+  const noindex =
+    (!query && !selectedCategory && !seoCity) ||
+    page > 1 ||
+    availabilityWindow !== 'any';
+
+  useSeoHead({ title: seoTitle, description: seoDesc, canonical: canonicalUrl, noindex, prevUrl, nextUrl });
 
   // JSON-LD ItemList of visible local providers (top 10)
   const jsonLdData = useMemo(() => {
