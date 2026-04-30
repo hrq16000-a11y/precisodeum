@@ -103,6 +103,8 @@ async function canvasToFile(
   return new File([blob], name, { type: mime });
 }
 
+export type CompressStage = 'resize' | 'convert' | 'compress';
+
 export interface CompressOptions {
   /** Maximum width or height in pixels (default 1920) */
   maxDimension?: number;
@@ -110,6 +112,8 @@ export interface CompressOptions {
   targetKB?: number;
   /** Force a specific output format ('avif' | 'webp' | 'jpeg') */
   forceFormat?: string;
+  /** Callback invocado quando uma etapa começa/termina (telemetria + UI). */
+  onStage?: (stage: CompressStage, status: 'start' | 'done') => void;
 }
 
 /**
@@ -155,7 +159,10 @@ export async function compressImage(
   }
 
   const maxDim = opts?.maxDimension ?? DEFAULT_MAX_DIMENSION;
+  const onStage = opts?.onStage;
 
+  // ── Stage 1: resize ──────────────────────────────────────
+  onStage?.('resize', 'start');
   const img = await loadImage(file);
   const { width, height } = calcDimensions(img.naturalWidth, img.naturalHeight, maxDim);
 
@@ -171,8 +178,10 @@ export async function compressImage(
 
   // Release object URL
   URL.revokeObjectURL(img.src);
+  onStage?.('resize', 'done');
 
-  // Determine best output format
+  // ── Stage 2: convert (decide best format) ────────────────
+  onStage?.('convert', 'start');
   let format: { mime: string; ext: string };
   if (opts?.forceFormat) {
     const m = opts.forceFormat === 'avif' ? 'image/avif'
@@ -182,6 +191,10 @@ export async function compressImage(
   } else {
     format = await getBestFormat();
   }
+  onStage?.('convert', 'done');
+
+  // ── Stage 3: compress (multi-pass quality + format + dims) ──
+  onStage?.('compress', 'start');
 
   const qualitySteps = getQualitySteps(file.size);
   let bestResult: File | null = null;
