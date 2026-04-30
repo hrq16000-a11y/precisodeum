@@ -263,10 +263,26 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
 
   useEffect(() => {
     function handleBack() {
+      // Guarda rígida: só responde quando o BetModeShell é o orquestrador
+      // ativo (fase de triagem). Em fluxos PJ/empresa ou já no V2, o Main
+      // tem seus próprios controles de back e o Bet NÃO deve interferir.
+      if (state.phase === 'done' || state.phase === 'celebration') return;
       const prev = BET_BACK_MAP[state.phase];
       if (prev) dispatch({ type: 'GOTO', phase: prev });
     }
     function handlePopState(ev: PopStateEvent) {
+      // GUARDA UNIFICADA — antes existia um listener "passivo" no
+      // globalErrorMonitor + este aqui ativo, o que provocava puxões
+      // do navegador quando o usuário clicava em "Voltar" já estando no
+      // fluxo principal (V2/RH/empresa). A guarda abaixo garante que o
+      // popstate do Bet só atua em fases de triagem.
+      let currentFlow: string | null = null;
+      try { currentFlow = window.sessionStorage.getItem('onboarding_current_flow'); } catch { /* noop */ }
+      // Se o fluxo é "company", o Bet jamais deve reagir ao popstate —
+      // o orquestrador principal cuida do back próprio.
+      if (currentFlow === 'company') return;
+      if (state.phase === 'done' || state.phase === 'celebration') return;
+
       const target = ev.state?.wizardPhase as BetPhase | undefined;
       if (target && target !== state.phase) {
         // Restaura a fase do history sem empurrar nova entrada.
