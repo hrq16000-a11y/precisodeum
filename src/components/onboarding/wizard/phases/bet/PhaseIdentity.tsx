@@ -7,38 +7,33 @@ import { Button } from '@/components/ui/button';
 import { sanitizePhone } from '@/lib/whatsapp';
 import { fieldWin, stageWin } from '@/lib/betDopamine';
 import { BET_POINTS, type BetState } from './types';
+import type { BetRewardKey } from './betRewards';
 
 interface Props {
   state: BetState;
   patch: (p: Partial<BetState>) => void;
   next: () => void;
-  addPoints: (n: number) => void;
+  awardReward: (reward: BetRewardKey, points: number) => void;
 }
 
-export default function PhaseIdentity({ state, patch, next, addPoints }: Props) {
-  const [nameAwarded, setNameAwarded] = useState(state.rewards.name);
-  const [phoneAwarded, setPhoneAwarded] = useState(state.rewards.whatsapp);
+export default function PhaseIdentity({ state, patch, next, awardReward }: Props) {
   const phoneRef = useRef<HTMLInputElement>(null);
 
   // Awards on validation
   useEffect(() => {
-    if (!nameAwarded && state.full_name.trim().length >= 3) {
-      setNameAwarded(true);
-      patch({ rewards: { ...state.rewards, name: true } });
-      addPoints(BET_POINTS.name);
+    if (!state.rewards.name && state.full_name.trim().length >= 3) {
+      awardReward('name', BET_POINTS.name);
       fieldWin();
     }
-  }, [state.full_name, nameAwarded, addPoints, patch, state.rewards]);
+  }, [state.full_name, state.rewards.name, awardReward]);
 
   useEffect(() => {
     const ok = sanitizePhone(state.whatsapp).length >= 10;
-    if (ok && !phoneAwarded) {
-      setPhoneAwarded(true);
-      patch({ rewards: { ...state.rewards, whatsapp: true } });
-      addPoints(BET_POINTS.whatsapp);
+    if (ok && !state.rewards.whatsapp) {
+      awardReward('whatsapp', BET_POINTS.whatsapp);
       void stageWin('mega'); // explosão de confete + moedas
     }
-  }, [state.whatsapp, phoneAwarded, addPoints, patch, state.rewards]);
+  }, [state.whatsapp, state.rewards.whatsapp, awardReward]);
 
   const canAdvance =
     state.full_name.trim().length >= 3 && sanitizePhone(state.whatsapp).length >= 10;
@@ -66,7 +61,7 @@ export default function PhaseIdentity({ state, patch, next, addPoints }: Props) 
         <label className="block">
           <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
             <User className="h-3.5 w-3.5" /> Nome completo
-            {nameAwarded && (
+            {state.rewards.name && (
               <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                 +{BET_POINTS.name} pts
               </span>
@@ -80,7 +75,7 @@ export default function PhaseIdentity({ state, patch, next, addPoints }: Props) 
             onBlur={() => phoneRef.current?.focus()}
             placeholder="Seu nome aqui"
             className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
-              nameAwarded
+              state.rewards.name
                 ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
                 : 'border-input focus:border-amber-400 focus:ring-amber-300/40'
             }`}
@@ -90,7 +85,7 @@ export default function PhaseIdentity({ state, patch, next, addPoints }: Props) 
         <label className="block">
           <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
             <Phone className="h-3.5 w-3.5" /> WhatsApp
-            {phoneAwarded && (
+            {state.rewards.whatsapp && (
               <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                 +{BET_POINTS.whatsapp} pts
               </span>
@@ -102,7 +97,7 @@ export default function PhaseIdentity({ state, patch, next, addPoints }: Props) 
             value={state.whatsapp}
             onChange={(_, raw) => patch({ whatsapp: raw })}
             className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
-              phoneAwarded
+              state.rewards.whatsapp
                 ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
                 : 'border-input focus:border-amber-400 focus:ring-amber-300/40'
             }`}
