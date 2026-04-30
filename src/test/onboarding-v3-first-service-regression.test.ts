@@ -52,14 +52,14 @@ describe('V3→V2 first service continuity (handoff interno)', () => {
     const phase = read('src/components/onboarding/wizard/phases/v2/Phase1Basic.tsx');
     expect(phase).toContain('disabled={!!locks?.full_name}');
     expect(phase).toContain('disabled={!!locks?.whatsapp}');
-    expect(phase).toContain('disabled={!!locks?.city}');
+    expect(phase).toContain('disabled={!data.state || !!locks?.city}');
   });
 
   it('Skip do 1º serviço mantém o usuário dentro do wizard', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(shell).toContain("source: 'onboarding-v2-skip-first-service'");
     expect(shell).toContain("nextRoute: 'phase4_document'");
-    expect(shell).toContain("track('skip', { exit: 'phase4_document' })");
-    expect(shell).not.toContain("navigate('/dashboard/servicos')");
+    expect(shell).toContain("dispatch({ type: 'GO_TO', phase: 'phase4_document' })");
+    expect(shell).not.toContain("navigate('/onboarding-v2')");
   });
 });
