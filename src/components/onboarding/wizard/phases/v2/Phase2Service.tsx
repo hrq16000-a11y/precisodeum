@@ -357,6 +357,18 @@ export const Phase2Details = ({
   const [customHours, setCustomHours] = useState(service.working_hours);
   const focusCities = useFocusFieldFromReview('cities_served');
 
+  // G13: dedupe defensivo de cliques em "Salvar e continuar".
+  const submittingRef = useRef(false);
+  const handleSubmitDeduped = () => {
+    if (submittingRef.current || saving) return;
+    submittingRef.current = true;
+    try {
+      onSubmit();
+    } finally {
+      window.setTimeout(() => { submittingRef.current = false; }, 1500);
+    }
+  };
+
   // Pré-popula com cidade do perfil
   useEffect(() => {
     if (!service.cities_served.length && profile.city) {
