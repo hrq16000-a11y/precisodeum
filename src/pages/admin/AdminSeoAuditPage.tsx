@@ -58,7 +58,7 @@ export default function AdminSeoAuditPage() {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('seo_audit_reports')
       .select('*')
       .order('ran_at', { ascending: false })
