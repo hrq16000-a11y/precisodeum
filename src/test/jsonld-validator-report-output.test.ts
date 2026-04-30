@@ -17,13 +17,14 @@ import path from 'node:path';
 
 const SCRIPT = path.resolve(__dirname, '../../scripts/validate-json-ld.mjs');
 
-function runValidator(srcDirOverride: string, reportPath: string) {
-  // O validador atualmente varre src/ relativo à raiz do projeto. Para isolar,
-  // criamos um workspace temporário com src/ contendo apenas nossos fixtures
-  // e executamos o script com cwd nesse diretório.
+function runValidator(workspaceDir: string, reportPath: string) {
   const result = spawnSync('node', [SCRIPT], {
-    cwd: srcDirOverride,
-    env: { ...process.env, JSONLD_REPORT_PATH: reportPath },
+    cwd: workspaceDir,
+    env: {
+      ...process.env,
+      JSONLD_REPORT_PATH: reportPath,
+      JSONLD_SRC_DIR: path.join(workspaceDir, 'src'),
+    },
     encoding: 'utf-8',
   });
   return result;
