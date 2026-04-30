@@ -40,16 +40,16 @@ export function WizardProgressBar({ phase, phaseOrder, forceComplete = false }: 
       aria-valuemax={100}
       aria-label={`Etapa ${stepNumber} de ${total} — ${label}`}
     >
-      <div className="h-1 w-full bg-muted">
+      <div className="h-0.5 w-full bg-muted sm:h-1">
         <motion.div
           className="h-full bg-gradient-to-r from-accent to-primary"
           animate={{ width: `${pct}%` }}
           transition={{ type: 'spring', stiffness: 120, damping: 22 }}
         />
       </div>
-      <div className="mx-auto flex max-w-md items-center justify-between px-4 py-1.5 text-[11px] text-muted-foreground">
+      <div className="mx-auto flex max-w-md items-center justify-between px-4 py-0.5 text-[10px] text-muted-foreground sm:py-1.5 sm:text-[11px]">
         <span className="font-medium text-foreground">
-          Etapa {stepNumber} de {total}
+          Etapa {stepNumber}/{total}
         </span>
         <span className="truncate pl-3">{label}</span>
       </div>
