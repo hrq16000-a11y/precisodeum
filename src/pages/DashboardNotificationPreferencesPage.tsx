@@ -138,6 +138,9 @@ const DashboardNotificationPreferencesPage = () => {
         })}
       </div>
 
+      {/* Alertas de novos leads — modo + intervalo anti-spam */}
+      <NewLeadAlertSettings />
+
       {/* Eventos de Performance */}
       <div className="mt-8">
         <h2 className="font-display text-lg font-bold text-foreground">Eventos de performance</h2>
