@@ -784,6 +784,9 @@ interface UploadEventDrawerProps {
 }
 function UploadEventDrawer({ row, onClose }: UploadEventDrawerProps) {
   const open = !!row;
+  const [stackOpen, setStackOpen] = useState(false);
+  const [rawOpen, setRawOpen] = useState(false);
+
   // Tenta extrair stack/payload de error_code (algumas falhas serializam JSON ali)
   const parsedExtra = useMemo(() => {
     if (!row?.error_code) return null;
@@ -795,32 +798,112 @@ function UploadEventDrawer({ row, onClose }: UploadEventDrawerProps) {
     }
   }, [row?.error_code]);
 
+  // Sanitização do stack: corta em 8 KB e força string para evitar render perigoso.
+  const safeStack = useMemo(() => {
+    const s = parsedExtra && typeof parsedExtra === 'object' ? (parsedExtra as Record<string, unknown>).stack : null;
+    if (s == null) return null;
+    const str = typeof s === 'string' ? s : String(s);
+    return str.length > 8192 ? `${str.slice(0, 8192)}\n… [truncado]` : str;
+  }, [parsedExtra]);
+
+  const rawJson = useMemo(() => (row ? JSON.stringify(row, null, 2) : ''), [row]);
+  const errorJson = useMemo(() => {
+    if (!row) return '';
+    return JSON.stringify(
+      {
+        error_kind: row.error_kind ?? null,
+        error_code: row.error_code ?? null,
+        stage: row.stage ?? null,
+        attempts: row.attempts ?? null,
+        fallback_level: row.fallback_level ?? null,
+      },
+      null,
+      2,
+    );
+  }, [row]);
+
+  async function copyToClipboard(text: string, label: string) {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      toast.success(`${label} copiado`);
+    } catch {
+      toast.error('Falha ao copiar');
+    }
+  }
+
   return (
     <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto p-0">
         {row && (
           <>
-            <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                {row.success ? (
-                  <CheckCircle2 className="h-5 w-5 text-success" />
-                ) : (
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
+            {/* Header sticky com ações de cópia rápidas */}
+            <div className="sticky top-0 z-10 border-b border-border bg-background/95 px-6 py-4 backdrop-blur">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  {row.success ? (
+                    <CheckCircle2 className="h-5 w-5 text-success" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                  )}
+                  Evento de upload
+                </SheetTitle>
+                <SheetDescription>
+                  {new Date(row.created_at).toLocaleString('pt-BR')} · {row.scenario}
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  onClick={() => copyToClipboard(rawJson, 'Payload')}
+                >
+                  <Copy className="mr-1.5 h-3.5 w-3.5" />
+                  Copiar payload
+                </Button>
+                {!row.success && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    onClick={() => copyToClipboard(errorJson, 'Erro')}
+                  >
+                    <Copy className="mr-1.5 h-3.5 w-3.5" />
+                    Copiar erro
+                  </Button>
                 )}
-                Evento de upload
-              </SheetTitle>
-              <SheetDescription>
-                {new Date(row.created_at).toLocaleString('pt-BR')} · {row.scenario}
-              </SheetDescription>
-            </SheetHeader>
+                {safeStack && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    onClick={() => copyToClipboard(safeStack, 'Stack')}
+                  >
+                    <Copy className="mr-1.5 h-3.5 w-3.5" />
+                    Copiar stack
+                  </Button>
+                )}
+              </div>
+            </div>
 
-            <div className="mt-4 space-y-4 text-sm">
-              {/* Status & estágio */}
+            <div className="space-y-4 px-6 pb-8 pt-4 text-sm">
+              {/* Bloco unificado: Tentativa + Estágio (reduz scroll) */}
               <section>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Resultado
+                  Tentativa & estágio
                 </h3>
-                <dl className="grid grid-cols-2 gap-2 rounded-md border border-border bg-card/40 p-3">
+                <dl className="grid grid-cols-3 gap-2 rounded-md border border-border bg-card/40 p-3">
                   <DetailRow label="Estágio" value={row.stage ?? '—'} />
                   <DetailRow
                     label="Status"
@@ -830,17 +913,17 @@ function UploadEventDrawer({ row, onClose }: UploadEventDrawerProps) {
                   <DetailRow label="Tentativa(s)" value={String(row.attempts ?? 1)} />
                   <DetailRow label="Latência total" value={`${row.total_ms} ms`} />
                   <DetailRow
-                    label="Latência do estágio"
+                    label="Estágio (ms)"
                     value={row.stage_latency_ms != null ? `${row.stage_latency_ms} ms` : '—'}
                   />
                   <DetailRow
-                    label="Nível fallback"
-                    value={row.fallback_level != null ? String(row.fallback_level) : 'sem fallback'}
+                    label="Fallback"
+                    value={row.fallback_level != null ? `nível ${row.fallback_level}` : 'sem fallback'}
                   />
                 </dl>
               </section>
 
-              {/* Erro */}
+              {/* Erro + stack colapsável (pré-render seguro) */}
               {!row.success && (
                 <section>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -856,16 +939,32 @@ function UploadEventDrawer({ row, onClose }: UploadEventDrawerProps) {
                         {row.error_code ?? '—'}
                       </dd>
                     </div>
-                    {parsedExtra?.stack && (
+                    {safeStack && (
                       <div>
-                        <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          Stack trace
-                        </dt>
-                        <dd className="mt-1">
-                          <pre className="max-h-60 overflow-auto whitespace-pre-wrap rounded bg-background/60 p-2 font-mono text-[10px] leading-snug">
-                            {String(parsedExtra.stack)}
+                        <button
+                          type="button"
+                          onClick={() => setStackOpen((o) => !o)}
+                          className="flex w-full items-center justify-between rounded bg-background/60 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hover:bg-background/80"
+                          aria-expanded={stackOpen}
+                        >
+                          <span className="flex items-center gap-1">
+                            {stackOpen ? (
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            )}
+                            Stack trace
+                          </span>
+                          <span className="text-[10px] normal-case text-muted-foreground/70">
+                            {safeStack.length.toLocaleString('pt-BR')} chars
+                          </span>
+                        </button>
+                        {stackOpen && (
+                          // Render seguro: <pre> + texto puro (não dangerouslySetInnerHTML), tamanho limitado.
+                          <pre className="mt-1 max-h-60 overflow-auto whitespace-pre-wrap break-words rounded bg-background/60 p-2 font-mono text-[10px] leading-snug">
+                            {safeStack}
                           </pre>
-                        </dd>
+                        )}
                       </div>
                     )}
                   </dl>
@@ -893,7 +992,7 @@ function UploadEventDrawer({ row, onClose }: UploadEventDrawerProps) {
                 )}
               </section>
 
-              {/* Payload do arquivo */}
+              {/* Arquivo */}
               <section>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Arquivo
@@ -911,14 +1010,31 @@ function UploadEventDrawer({ row, onClose }: UploadEventDrawerProps) {
                 </dl>
               </section>
 
-              {/* JSON bruto (debug) */}
+              {/* JSON bruto colapsável */}
               <section>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Payload bruto
-                </h3>
-                <pre className="max-h-72 overflow-auto rounded bg-muted/30 p-3 font-mono text-[10px] leading-snug">
-                  {JSON.stringify(row, null, 2)}
-                </pre>
+                <button
+                  type="button"
+                  onClick={() => setRawOpen((o) => !o)}
+                  className="flex w-full items-center justify-between rounded-md border border-border bg-card/40 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:bg-card/60"
+                  aria-expanded={rawOpen}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {rawOpen ? (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    )}
+                    Payload bruto
+                  </span>
+                  <span className="text-[10px] normal-case text-muted-foreground/70">
+                    {rawJson.length.toLocaleString('pt-BR')} chars
+                  </span>
+                </button>
+                {rawOpen && (
+                  <pre className="mt-2 max-h-72 overflow-auto rounded bg-muted/30 p-3 font-mono text-[10px] leading-snug">
+                    {rawJson}
+                  </pre>
+                )}
               </section>
             </div>
           </>
