@@ -42,7 +42,7 @@ import PhaseCelebration from './PhaseCelebration';
 import { initialBetState, type BetState, type BetIntent, type BetPhase } from './types';
 import { setOnboardingIntent, trackOnboardingEvent } from '../v2/telemetry';
 import { getDeviceKind } from '@/lib/locationTelemetry';
-import { useBetDraft, loadBetDraft, clearBetDraft, persistBetDraftNow } from './useBetDraft';
+import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
 import { useBetRemoteDraft, fetchRemoteBetDraft, clearRemoteBetDraft } from './useBetRemoteDraft';
 import { awardBetReward, type BetRewardKey } from './betRewards';
 
@@ -595,7 +595,6 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       },
     });
     if (onInternalHandoff) {
-      persistBetDraftNow({ ...state, phase: 'celebration' });
       // Handoff para o V2: o V2Shell tem seu próprio draft remoto/local.
       // Limpamos o draft do Bet para evitar reidratação fantasma se o usuário
       // voltar ao /cadastro-inicial mais tarde.

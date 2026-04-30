@@ -35,10 +35,6 @@ export function clearBetDraft(): void {
   try { localStorage.removeItem(KEY); } catch { /* noop */ }
 }
 
-export function persistBetDraftNow(state: BetState): void {
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* noop */ }
-}
-
 /** Persiste o estado com debounce. Não persiste fases finais ('celebration'/'done'). */
 export function useBetDraft(state: BetState) {
   const timer = useRef<number | null>(null);
