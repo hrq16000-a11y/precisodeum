@@ -77,15 +77,38 @@ export const PROVIDER_FORBIDDEN_ADDRESS_KEYS = [
 ] as const;
 
 /**
- * Chaves de endereço institucional que SÃO colunas válidas em `providers`,
- * mas só fazem sentido para perfis PJ. Para autônomos, são removidas.
+ * Chaves institucionais (endereço + identidade da empresa) que SÃO colunas
+ * válidas em `providers`, mas só fazem sentido para perfis PJ. Para autônomos
+ * são silenciosamente removidas.
+ *
+ * Inclui:
+ *  - `show_full_address` — toggle de privacidade do endereço.
+ *  - `business_segment`, `cnpj`, `business_name`, `legal_name` — identidade.
+ *  - `street`, `street_number`, `complement`, `postal_code` — endereço.
  */
 export const PROVIDER_PJ_ADDRESS_KEYS = [
   'street',
   'street_number',
   'complement',
   'postal_code',
+  'show_full_address',
+  'business_segment',
+  'cnpj',
+  'business_name',
+  'legal_name',
 ] as const;
+
+/** Subconjunto das chaves PJ que são strings opcionais (vs boolean). */
+const PROVIDER_PJ_STRING_KEYS = new Set<string>([
+  'street',
+  'street_number',
+  'complement',
+  'postal_code',
+  'business_segment',
+  'cnpj',
+  'business_name',
+  'legal_name',
+]);
 
 /**
  * Normaliza um payload de provider antes do insert/update.
