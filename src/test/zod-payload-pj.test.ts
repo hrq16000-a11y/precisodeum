@@ -2,6 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 
+function assertSafeParseOk<T>(result: { ok: true; data: T } | { ok: false; message: string; issues: unknown[] }) {
+  if (result.ok === false) {
+    throw new Error(`${result.message} ${JSON.stringify(result.issues)}`);
+  }
+  expect(result.ok).toBe(true);
+}
+
 describe('schema validation', () => {
   it('accepts PJ payload with empty optional fields (becomes null after normalize)', () => {
     const payload = normalizeProviderPayload({
@@ -24,8 +31,7 @@ describe('schema validation', () => {
       show_full_address: false,
     });
     const r = safeParse(providerWritePayloadSchema, payload);
-    if (!r.ok) console.log('FAIL:', r.message, r.issues);
-    expect(r.ok).toBe(true);
+    assertSafeParseOk(r);
   });
 
   it('accepts PF payload', () => {
@@ -44,7 +50,6 @@ describe('schema validation', () => {
       description: '',
     });
     const r = safeParse(providerWritePayloadSchema, payload);
-    if (!r.ok) console.log('FAIL:', r.message, r.issues);
-    expect(r.ok).toBe(true);
+    assertSafeParseOk(r);
   });
 });
