@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
 import { generateBlurDataUrl } from '@/lib/compressImage';
 import { UploadTimeoutError } from '@/lib/uploadResilient';
+import { classifyUploadError, userMessageFor } from '@/lib/uploadErrors';
 import { uploadWithFallback } from '@/lib/uploadWithFallback';
 import { validateImageFile } from '@/lib/imageValidation';
 import { useLocalThumbnail } from '@/hooks/useLocalThumbnail';
