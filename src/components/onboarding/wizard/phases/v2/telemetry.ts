@@ -27,7 +27,11 @@ export type OnboardingEventName =
   | 'submit'     // chamou persistência (fim de fase 1, criação serviço, patches)
   | 'error'      // falha de persistência
   | 'complete'   // wizard concluído
+  | 'phase_exit' // saída de uma fase com duração medida (time-on-phase)
   | 'abandon';   // ainda não usado — reservado para detector de saída
+
+/** Origem do rascunho carregado para a sessão atual. */
+export type OnboardingDraftSource = 'none' | 'local' | 'remote' | 'seed';
 
 function getSessionId(): string {
   if (typeof window === 'undefined') return 'ssr';
