@@ -417,7 +417,7 @@ const DashboardMyPagePage = () => {
               <h2 className="font-semibold text-foreground">🖼️ Imagem de Capa</h2>
               {coverImageUrl ? (
                 <div className="relative aspect-[16/5] overflow-hidden rounded-lg border border-border">
-                  <img src={coverImageUrl} alt="Capa" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                  <img src={coverImageUrl} alt="Capa" loading="lazy" decoding="async" width={1200} height={300} className="aspect-[4/1] h-full w-full object-cover" />
                   <button
                     onClick={() => setCoverImageUrl('')}
                     className="absolute top-2 right-2 rounded-full bg-background/80 p-1.5 hover:bg-background shadow"

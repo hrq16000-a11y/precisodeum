@@ -2,8 +2,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { installConsentBridge } from "./lib/consentBridge";
+import { installWebVitalsPerRoute } from "./lib/webVitalsPerRoute";
 
 installConsentBridge();
+installWebVitalsPerRoute();
 
 const rootElement = document.getElementById("root");
 const shellElement = document.getElementById("app-shell");

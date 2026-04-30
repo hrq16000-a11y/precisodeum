@@ -6,6 +6,7 @@ import { Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
 import { compressImage, generateBlurDataUrl } from '@/lib/compressImage';
+import { resilientUpload, UploadTimeoutError } from '@/lib/uploadResilient';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
 
 interface ImageUploadFieldProps {
@@ -62,19 +63,19 @@ const ImageUploadField = ({
       if (folder) formData.append('folder', folder);
 
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
+      const data = await resilientUpload<{ url: string; path?: string; deduplicated?: boolean; error?: string }>(
         `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+        formData,
         {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        {
+          onAttempt: (a, max) => {
+            if (a > 1) toast.message(`Conexão lenta. Tentando novamente (${a}/${max})…`);
           },
         }
       );
-
-      const data = await res.json();
       if (data.error) throw new Error(data.error);
 
       onChange(data.url);
@@ -101,7 +102,11 @@ const ImageUploadField = ({
       if (data.deduplicated) toast.info('Imagem já existente reutilizada!');
       else toast.success('Imagem enviada!');
     } catch (err) {
-      toast.error('Erro ao enviar imagem');
+      if (err instanceof UploadTimeoutError) {
+        toast.error('Conexão muito lenta. Tente novamente.');
+      } else {
+        toast.error('Erro ao enviar imagem. Verifique sua conexão.');
+      }
     }
     setUploading(false);
   };
