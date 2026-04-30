@@ -68,54 +68,68 @@ const OnboardingV2SuccessPage = () => {
     });
   }, [user?.id]);
 
-  // Carrega resumo
+  // Carrega resumo — fail-soft em CADA query para nunca derrubar a página.
+  // Mesmo que o provider/serviço/foto/álbum falhem, o dashboard CTA permanece visível.
   useEffect(() => {
     if (authLoading) return;
     if (!user?.id) {
-      navigate('/login');
+      navigate('/login?next=/onboarding-v2/sucesso', { replace: true });
       return;
     }
     let alive = true;
     (async () => {
       setLoading(true);
       try {
-        const { data: prof } = await supabase
-          .from('profiles')
-          .select('full_name, user_ref')
-          .eq('id', user.id)
-          .maybeSingle();
-        if (alive && prof?.full_name) setProfileName(prof.full_name);
-        if (alive && (prof as any)?.user_ref) setUserRef((prof as any).user_ref);
+        try {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('full_name, user_ref')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (alive && prof?.full_name) setProfileName(prof.full_name);
+          if (alive && (prof as any)?.user_ref) setUserRef((prof as any).user_ref);
+        } catch (e) { console.debug('[success] profile load failed', e); }
 
-        const { data: prov } = await supabase
-          .from('providers')
-          .select('id, slug, city, state, status')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        if (!alive) return;
-        if (prov) setProvider(prov as ProviderSummary);
+        let prov: ProviderSummary | null = null;
+        try {
+          const { data } = await supabase
+            .from('providers')
+            .select('id, slug, city, state, status')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (alive && data) {
+            prov = data as ProviderSummary;
+            setProvider(prov);
+          }
+        } catch (e) { console.debug('[success] provider load failed', e); }
 
         if (prov?.id) {
-          const { data: svc } = await supabase
-            .from('services')
-            .select('id, service_name, service_area')
-            .eq('provider_id', prov.id)
-            .order('created_at', { ascending: true })
-            .limit(1);
-          if (alive && svc && svc[0]) setService(svc[0] as ServiceSummary);
+          try {
+            const { data: svc } = await supabase
+              .from('services')
+              .select('id, service_name, service_area')
+              .eq('provider_id', prov.id)
+              .order('created_at', { ascending: true })
+              .limit(1);
+            if (alive && svc && svc[0]) setService(svc[0] as ServiceSummary);
+          } catch (e) { console.debug('[success] service load failed', e); }
 
-          const photoRes: any = await (supabase as any)
-            .from('media')
-            .select('id', { count: 'exact', head: true })
-            .eq('owner_id', user.id)
-            .eq('entity_type', 'service');
-          if (alive) setHasPhotos(((photoRes?.count as number) || 0) > 0);
+          try {
+            const photoRes: any = await (supabase as any)
+              .from('media')
+              .select('id', { count: 'exact', head: true })
+              .eq('owner_id', user.id)
+              .eq('entity_type', 'service');
+            if (alive) setHasPhotos(((photoRes?.count as number) || 0) > 0);
+          } catch (e) { console.debug('[success] photos load failed', e); }
 
-          const albumRes: any = await (supabase as any)
-            .from('portfolio_albums')
-            .select('id', { count: 'exact', head: true })
-            .eq('provider_id', prov.id);
-          if (alive) setHasPortfolio(((albumRes?.count as number) || 0) > 0);
+          try {
+            const albumRes: any = await (supabase as any)
+              .from('portfolio_albums')
+              .select('id', { count: 'exact', head: true })
+              .eq('provider_id', prov.id);
+            if (alive) setHasPortfolio(((albumRes?.count as number) || 0) > 0);
+          } catch (e) { console.debug('[success] albums load failed', e); }
         }
       } finally {
         if (alive) setLoading(false);
