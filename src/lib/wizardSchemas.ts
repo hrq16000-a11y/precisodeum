@@ -32,13 +32,14 @@ export const providerWritePayloadSchema = z.object({
   business_name: trimmedString(160).nullable().optional(),
   legal_name: trimmedString(160).nullable().optional(),
   phone: trimmedString(20).nullable().optional(),
-  description: trimmedString(2000).optional(),
-  // Campos PJ opcionais
-  street: trimmedString(160).optional(),
-  street_number: trimmedString(20).optional(),
-  complement: trimmedString(120).optional(),
-  postal_code: trimmedString(12).optional(),
-  show_full_address: z.boolean().optional(),
+  description: trimmedString(2000).nullable().optional(),
+  // Campos PJ opcionais — aceitar null porque normalizeProviderPayload converte
+  // strings vazias em null via safeOptionalString.
+  street: trimmedString(160).nullable().optional(),
+  street_number: trimmedString(20).nullable().optional(),
+  complement: trimmedString(120).nullable().optional(),
+  postal_code: trimmedString(12).nullable().optional(),
+  show_full_address: z.boolean().nullable().optional(),
 }).passthrough(); // permite extras (social_links etc.) sem quebrar
 
 export type ProviderWritePayload = z.infer<typeof providerWritePayloadSchema>;
