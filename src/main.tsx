@@ -3,6 +3,7 @@ import App from "./App.tsx";
 import "./index.css";
 import { installConsentBridge } from "./lib/consentBridge";
 import { installWebVitalsPerRoute } from "./lib/webVitalsPerRoute";
+import { startWebVitalsCapture } from "./lib/lcpTelemetry";
 
 installConsentBridge();
 installWebVitalsPerRoute();
