@@ -19,6 +19,8 @@
 import { compressImage } from './compressImage';
 import { resilientUpload } from './uploadResilient';
 import { withStageTelemetry, recordStageTelemetry, type UploadStage } from './uploadStageTelemetry';
+import { resolveAdaptiveProfile, type AdaptiveProfile } from './adaptiveCompression';
+import { classifyUploadError, CompressionError } from './uploadErrors';
 
 export interface UploadFallbackResult<T> {
   data: T;
