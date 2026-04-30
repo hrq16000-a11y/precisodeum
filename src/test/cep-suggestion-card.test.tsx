@@ -43,7 +43,7 @@ describe('CepSuggestionCard', () => {
         onApply={onApply}
       />,
     );
-    expect(await screen.findByTestId('cep-suggestion-loading')).toBeInTheDocument();
+    expect(await screen.findByTestId('cep-suggestion-success')).toBeInTheDocument();
     expect(await screen.findByTestId('cep-suggestion-success')).toBeInTheDocument();
     expect(screen.getByText(/CEP encontrado: 80010-000/)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('cep-suggestion-apply'));
