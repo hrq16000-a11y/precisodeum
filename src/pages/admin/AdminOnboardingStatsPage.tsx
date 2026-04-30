@@ -70,6 +70,7 @@ interface UserFunnelRow {
   draft_source: string;
   first_seen: string;
   last_seen: string;
+}
 
 const SOURCE_LABEL: Record<string, string> = {
   gps: "GPS",
