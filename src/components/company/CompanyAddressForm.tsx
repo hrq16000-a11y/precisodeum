@@ -5,7 +5,7 @@
  * institucionais opcionais (endereço físico + identidade) de prestadores PJ.
  *
  * REGRAS DE SEGURANÇA:
- *  - NÃO é usado por RH/Agências (DashboardAgencyDataPage tem seu próprio fluxo).
+ *  - NÃO é usado por fluxos de RH (que têm seu próprio formulário).
  *  - NÃO substitui formulários existentes; é aditivo (opt-in).
  *  - É totalmente controlado (controlled component) — não persiste sozinho.
  *  - Todos os campos são OPCIONAIS. Strings vazias são aceitas.
