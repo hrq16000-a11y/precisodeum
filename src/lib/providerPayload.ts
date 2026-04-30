@@ -143,7 +143,7 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
   //     show_full_address) são removidas silenciosamente para PF.
   const PJ_ONLY_KEYS = new Set<string>([
     'street', 'street_number', 'complement', 'postal_code',
-    'show_full_address', 'business_segment', 'cnpj',
+    'show_full_address', 'business_segment', 'cnpj', 'social_links',
   ]);
 
   if (!isCompany) {
@@ -158,13 +158,26 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
     }
   } else {
     // PJ: sanitiza strings (trim + null em vazias). show_full_address
-    //      permanece booleano — não passar por safeOptionalString.
+    //      permanece booleano. social_links: objeto vazio → null.
     for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
       if (!(key in out)) continue;
       if (PROVIDER_PJ_STRING_KEYS.has(key)) {
         out[key] = safeOptionalString(out[key]);
       } else if (key === 'show_full_address') {
         out[key] = out[key] === true;
+      } else if (key === 'social_links') {
+        const v = out[key];
+        if (v == null) { out[key] = null; }
+        else if (typeof v === 'object' && !Array.isArray(v)) {
+          const cleaned: Record<string, string> = {};
+          for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+            const s = safeOptionalString(val);
+            if (s) cleaned[k] = s;
+          }
+          out[key] = Object.keys(cleaned).length === 0 ? null : cleaned;
+        } else {
+          out[key] = null;
+        }
       }
     }
   }
