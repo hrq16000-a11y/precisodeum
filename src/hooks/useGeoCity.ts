@@ -22,7 +22,7 @@ interface GeoData {
 interface GeoStore extends GeoData {
   setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null) => void;
   setRadius: (km: number) => void;
-  requestPreciseLocation: (options?: { force?: boolean }) => Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null }>;
+  requestPreciseLocation: (options?: { force?: boolean }) => Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null }>;
   /** Limpa o estado de erro (ex.: após o usuário ver o aviso). */
   dismissGeoFailure: () => void;
 }
@@ -123,9 +123,18 @@ async function reverseGeocode(latitude: number, longitude: number) {
     );
     if (!response.ok) throw new Error(`reverse-geocode ${response.status}`);
     const data = await response.json();
+    // bigdatacloud entrega o bairro em locality/localityInfo.administrative
+    // (varia por país). Tentamos múltiplos campos para máxima cobertura no Brasil.
+    const adminInfo = data?.localityInfo?.administrative as Array<{ name?: string; description?: string; order?: number }> | undefined;
+    const neighborhoodCandidate =
+      data?.locality ||
+      adminInfo?.find((a) => a?.description?.toLowerCase()?.includes('bairro'))?.name ||
+      data?.localityInfo?.informative?.find?.((a: any) => a?.description?.toLowerCase?.()?.includes('bairro'))?.name ||
+      null;
     return {
       city: data?.city || data?.locality || null,
       state: data?.principalSubdivision || null,
+      neighborhood: typeof neighborhoodCandidate === 'string' ? neighborhoodCandidate : null,
     };
   } finally {
     clearTimeout(timeout);
@@ -369,22 +378,22 @@ export function useGeoCity(): GeoStore {
       try { sessionStorage.removeItem(GEO_ASKED_KEY); } catch {}
     }
 
-    return await new Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null }>((resolve) => {
+    return await new Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null }>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const latitude = position.coords.latitude;
           const longitude = position.coords.longitude;
-          // accuracy é o raio (em metros) do círculo de 95% de confiança.
-          // Em Wi-Fi/celular costuma ficar < 50m; > 500m sugere localização imprecisa.
           const accuracyMeters = typeof position.coords.accuracy === 'number' ? position.coords.accuracy : null;
           let city = geoState.city;
           let state = geoState.state;
           let temp = geoState.temp;
+          let neighborhood: string | null = null;
 
           try {
             const location = await reverseGeocode(latitude, longitude);
             city = location.city || city;
             state = normalizeUF(location.state) || state;
+            neighborhood = location.neighborhood || null;
           } catch {
             // keep existing city/state when reverse geocoding fails
           }
@@ -402,11 +411,10 @@ export function useGeoCity(): GeoStore {
           const ts2 = new Date().toISOString();
           safeSet(SOURCE_KEY, 'gps');
           safeSet(LAST_KNOWN_KEY, ts2);
-          // Clear manual override so the GPS reading becomes the canonical source.
           try { localStorage.removeItem(OVERRIDE_KEY); sessionStorage.removeItem(OVERRIDE_KEY); } catch {}
 
           setGeoState({ city, state, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2, manualOverride: false });
-          resolve({ ok: true, city, state, accuracyMeters });
+          resolve({ ok: true, city, state, accuracyMeters, neighborhood });
         },
         () => {
           if (geoState.latitude === null && !geoState.city) {
@@ -418,7 +426,7 @@ export function useGeoCity(): GeoStore {
           import('@/lib/tracking').then(({ trackGeoEvent }) => {
             trackGeoEvent('geo_failed', { stage: 'gps', had_cache: geoState.city ? 'true' : 'false' });
           }).catch(() => {});
-          resolve({ ok: false, city: null, state: null, accuracyMeters: null });
+          resolve({ ok: false, city: null, state: null, accuracyMeters: null, neighborhood: null });
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
       );

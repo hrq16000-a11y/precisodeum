@@ -21,7 +21,9 @@ interface Props {
 }
 
 export default function PhaseProLocation({ state, patch, finish, addPoints }: Props) {
-  const [awarded, setAwarded] = useState(false);
+  // Pontuação persistida em state.rewards.city — sobrevive ao "Voltar" do wizard
+  // (usar useState local fazia os pontos serem somados de novo a cada retorno).
+  const awarded = state.rewards.city;
   const [submitting, setSubmitting] = useState(false);
   const [requestingGps, setRequestingGps] = useState(false);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
@@ -41,15 +43,18 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     }
   }, [geo.city, geo.state, state.city, patch]);
 
+  function awardCityOnce() {
+    if (state.rewards.city) return;
+    patch({ rewards: { ...state.rewards, city: true } });
+    addPoints(BET_POINTS.city);
+    fieldWin();
+  }
+
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
     autoFilledRef.current = true; // edição manual cancela auto-preenchimento
     patch({ city, state: uf });
-    if (city && uf && !awarded) {
-      setAwarded(true);
-      addPoints(BET_POINTS.city);
-      fieldWin();
-    }
+    if (city && uf) awardCityOnce();
   }
 
   function handleNeighborhood(e: React.ChangeEvent<HTMLInputElement>) {
@@ -72,13 +77,17 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
       const latency_ms = timer.stop();
       if (result.ok && result.city && result.state) {
         autoFilledRef.current = true;
-        patch({ city: result.city, state: result.state });
-        setGpsAccuracy(result.accuracyMeters ?? null);
-        if (!awarded) {
-          setAwarded(true);
-          addPoints(BET_POINTS.city);
-          fieldWin();
+        // Preenche cidade/UF e — se o GPS retornou bairro e o campo está vazio —
+        // também o bairro, para o usuário não precisar digitar.
+        const patchObj: Partial<BetState> = { city: result.city, state: result.state };
+        const incomingNeighborhood = (result.neighborhood || '').trim();
+        const currentNeighborhood = (state.neighborhood || '').trim();
+        if (incomingNeighborhood && !currentNeighborhood) {
+          patchObj.neighborhood = incomingNeighborhood;
         }
+        patch(patchObj);
+        setGpsAccuracy(result.accuracyMeters ?? null);
+        awardCityOnce();
         const acc = result.accuracyMeters;
         trackGpsAttempt({
           phase: 'pro_location',
@@ -93,7 +102,7 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           });
         } else {
           toast.success('Localização detectada por GPS', {
-            description: `${result.city} / ${result.state}${acc != null ? ` (±${Math.round(acc)}m)` : ''}. Confira o bairro.`,
+            description: `${result.city} / ${result.state}${incomingNeighborhood ? ` — ${incomingNeighborhood}` : ''}${acc != null ? ` (±${Math.round(acc)}m)` : ''}.`,
           });
         }
       } else {
