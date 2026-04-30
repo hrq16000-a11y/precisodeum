@@ -24,8 +24,7 @@ describe('schema validation', () => {
       show_full_address: false,
     });
     const r = safeParse(providerWritePayloadSchema, payload);
-    if (!r.ok) console.log('FAIL:', r.message, r.issues);
-    expect(r.ok).toBe(true);
+    expect(r.ok, r.ok ? 'validation succeeded' : `${r.message} ${JSON.stringify(r.issues)}`).toBe(true);
   });
 
   it('accepts PF payload', () => {
@@ -44,7 +43,6 @@ describe('schema validation', () => {
       description: '',
     });
     const r = safeParse(providerWritePayloadSchema, payload);
-    if (!r.ok) console.log('FAIL:', r.message, r.issues);
-    expect(r.ok).toBe(true);
+    expect(r.ok, r.ok ? 'validation succeeded' : `${r.message} ${JSON.stringify(r.issues)}`).toBe(true);
   });
 });
