@@ -229,6 +229,7 @@ const SearchPage = () => {
       recentlyOfflineSet,
       statusFilter: effectiveStatusFilter,
       availabilityWindow,
+      scoreWeights,
       routeCorridor: routeCorridor
         ? {
             midLat: routeCorridor.midLat,
@@ -237,7 +238,7 @@ const SearchPage = () => {
           }
         : null,
     }) as DbProvider[];
-  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, recentlyOfflineSet, effectiveStatusFilter, onlineOnly, acceptingOnly, activeTodayOnly, availabilityWindow]);
+  }, [selectedNeighborhood, businessNameFilter, phoneFilter, featuredFilter, sortBy, routeCorridor, urgencyMode, onlineSet, activeTodaySet, recentlyOfflineSet, effectiveStatusFilter, onlineOnly, acceptingOnly, activeTodayOnly, availabilityWindow, scoreWeights]);
 
   const stateFilterFn = useCallback((list: DbProvider[]) =>
     selectedState ? list.filter(p => safeUF(p.state) === selectedState) : list,
