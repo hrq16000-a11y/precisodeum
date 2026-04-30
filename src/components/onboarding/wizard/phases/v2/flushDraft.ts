@@ -97,7 +97,13 @@ export async function flushRemoteDraft(
       },
       phase: state.phase,
     } as any, { onConflict: 'user_id' });
-    markRemoteDraftWritten(state.phase as any);
+    markRemoteDraftWritten(state.phase as any, userId);
+    if (typeof window !== 'undefined') {
+      try {
+        const { recordWizardSupabaseCall } = await import('./diagnostics');
+        recordWizardSupabaseCall('flushRemoteDraft', state.phase as any, userId);
+      } catch { /* fail-soft */ }
+    }
   } catch { /* fail-soft */ }
 }
 
