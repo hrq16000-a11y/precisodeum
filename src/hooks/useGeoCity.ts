@@ -22,7 +22,7 @@ interface GeoData {
 interface GeoStore extends GeoData {
   setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null) => void;
   setRadius: (km: number) => void;
-  requestPreciseLocation: (options?: { force?: boolean }) => Promise<{ ok: boolean; city: string | null; state: string | null }>;
+  requestPreciseLocation: (options?: { force?: boolean }) => Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null }>;
   /** Limpa o estado de erro (ex.: após o usuário ver o aviso). */
   dismissGeoFailure: () => void;
 }
@@ -369,11 +369,14 @@ export function useGeoCity(): GeoStore {
       try { sessionStorage.removeItem(GEO_ASKED_KEY); } catch {}
     }
 
-    return await new Promise<{ ok: boolean; city: string | null; state: string | null }>((resolve) => {
+    return await new Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null }>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const latitude = position.coords.latitude;
           const longitude = position.coords.longitude;
+          // accuracy é o raio (em metros) do círculo de 95% de confiança.
+          // Em Wi-Fi/celular costuma ficar < 50m; > 500m sugere localização imprecisa.
+          const accuracyMeters = typeof position.coords.accuracy === 'number' ? position.coords.accuracy : null;
           let city = geoState.city;
           let state = geoState.state;
           let temp = geoState.temp;
@@ -403,7 +406,7 @@ export function useGeoCity(): GeoStore {
           try { localStorage.removeItem(OVERRIDE_KEY); sessionStorage.removeItem(OVERRIDE_KEY); } catch {}
 
           setGeoState({ city, state, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2, manualOverride: false });
-          resolve({ ok: true, city, state });
+          resolve({ ok: true, city, state, accuracyMeters });
         },
         () => {
           if (geoState.latitude === null && !geoState.city) {
@@ -415,7 +418,7 @@ export function useGeoCity(): GeoStore {
           import('@/lib/tracking').then(({ trackGeoEvent }) => {
             trackGeoEvent('geo_failed', { stage: 'gps', had_cache: geoState.city ? 'true' : 'false' });
           }).catch(() => {});
-          resolve({ ok: false, city: null, state: null });
+          resolve({ ok: false, city: null, state: null, accuracyMeters: null });
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
       );
