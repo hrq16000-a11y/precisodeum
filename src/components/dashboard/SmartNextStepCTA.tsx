@@ -50,28 +50,11 @@ const SmartNextStepCTA = ({ servicesCount, portfolioAlbumsCount, className = '' 
   );
   const stats = checklistStats(items);
 
+  // Dedup: quando o cadastro está 100% completo, não exibimos card de
+  // "Próximos Passos". O Dashboard prioriza Leads/Resultados, e o
+  // ActionQueue já mostra "Tudo em dia" sem duplicar a mensagem.
   if (stats.completed === stats.total) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-card to-primary/5 p-5 ${className}`}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg">
-            <CheckCircle2 className="h-6 w-6" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-display text-base font-bold text-foreground">
-              Perfil completo. Você está no topo!
-            </h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Continue ativo para manter seu destaque nas buscas.
-            </p>
-          </div>
-        </div>
-      </motion.div>
-    );
+    return null;
   }
 
   const next = stats.firstMissing!;
