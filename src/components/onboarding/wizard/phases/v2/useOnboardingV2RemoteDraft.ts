@@ -12,6 +12,7 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { OnboardingState } from './types';
+import { wasRemoteDraftWrittenRecently, markRemoteDraftWritten } from './flushDraft';
 
 const REMOTE_DEBOUNCE_MS = 1500;
 
@@ -56,6 +57,10 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
 
     if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(async () => {
+      // Anti-duplicação: se um flush imediato (clique "Salvar e continuar")
+      // já gravou esta mesma fase nos últimos 2s, pulamos o upsert para
+      // evitar 2 chamadas redundantes ao Supabase no mesmo gesto.
+      if (wasRemoteDraftWrittenRecently(state.phase as any)) return;
       try {
         await supabase.from('onboarding_v2_drafts' as any).upsert({
           user_id: userId,
@@ -68,6 +73,7 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
           },
           phase: state.phase,
         } as any, { onConflict: 'user_id' });
+        markRemoteDraftWritten(state.phase as any);
       } catch {
         /* fail-soft — local draft já cobre */
       }
