@@ -119,35 +119,45 @@ export const Phase2Service = ({
     onChangeService({ description: text });
   };
 
-  // Invariante: o nome do serviço precisa ser exatamente o nome da categoria
-  // selecionada e o primary_category_id do perfil precisa apontar para o mesmo id.
+  // Invariante: o nome do serviço deve refletir a categoria selecionada e o
+  // primary_category_id do perfil deve apontar para o mesmo id. G13: a invariante
+  // continua sendo a verdade final, mas o avanço NÃO depende mais dela — se o
+  // usuário tem categoria + descrição válidas, normalizamos automaticamente
+  // o nome no clique e seguimos. O botão nunca fica "morto sem explicação".
   const invariantOk =
     !!selectedId &&
     service.service_name.trim().toLowerCase() === selectedName.trim().toLowerCase() &&
     profile.primary_category_id === selectedId;
 
-  const canAdvance =
-    !!selectedId &&
-    service.description.trim().length >= 10 &&
-    invariantOk;
+  const descriptionOk = service.description.trim().length >= 10;
+
+  // G13: dedupe de cliques no botão "Salvar e continuar".
+  const advancingRef = useRef(false);
 
   const handleAdvance = () => {
+    if (advancingRef.current) return;
     if (!selectedId) {
-      toast.error('Escolha uma categoria antes de continuar.');
+      toast.error('Por favor, selecione uma categoria de serviço para continuar.');
+      return;
+    }
+    if (!descriptionOk) {
+      toast.error('Escreva uma descrição com pelo menos 10 caracteres para o seu serviço.');
       return;
     }
     if (!invariantOk) {
-      // Auto-corrige silenciosamente e bloqueia o avanço com aviso claro.
+      // Auto-corrige no clique (sem bloquear): alinhamos service_name +
+      // primary_category_id à categoria escolhida e seguimos para o próximo passo.
       onChangeService({ category_ids: [selectedId], service_name: selectedName });
       onChangeProfile({ primary_category_id: selectedId });
-      toast.error('Categoria e nome do serviço estavam fora de sincronia. Já corrigimos — confirme e clique em Continuar de novo.');
-      return;
     }
-    if (service.description.trim().length < 10) {
-      toast.error('Escreva uma descrição com pelo menos 10 caracteres.');
-      return;
+    advancingRef.current = true;
+    try {
+      onNext();
+    } finally {
+      // Libera o lock no próximo tick — o shell já avançou de phase, mas
+      // protegemos contra duplo-clique muito rápido.
+      window.setTimeout(() => { advancingRef.current = false; }, 600);
     }
-    onNext();
   };
 
   return (
