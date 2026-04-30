@@ -90,7 +90,13 @@ export async function trackOnboardingEvent(opts: TrackOptions): Promise<void> {
     const baseMeta = opts.meta || {};
     // Auto-injeta `intent` em meta para que eventos antigos no analytics
     // ganhem essa dimensão automaticamente (sem migração de schema).
-    const meta = intent && !('intent' in baseMeta) ? { ...baseMeta, intent } : baseMeta;
+    let meta = intent && !('intent' in baseMeta) ? { ...baseMeta, intent } : baseMeta;
+    // Garante a dimensão `flow` em TODO evento. Se o caller não fornecer,
+    // lê do sticky em sessionStorage (definido pelo shell ao detectar PJ/PF);
+    // fallback `'unknown'` deixa explícito que o caller é antigo/sem contexto.
+    if (!('flow' in meta)) {
+      meta = { ...meta, flow: getOnboardingFlow() ?? 'unknown' };
+    }
     const payload = {
       user_id: opts.userId || null,
       session_id: getSessionId(),
