@@ -73,7 +73,8 @@ const AdminInboxPage = () => {
     if (!user?.id) return;
     void (async () => {
       const { data } = await (supabase as any).rpc('list_user_notification_types');
-      setTypeOptions(((data || []) as Array<{ type: string; count: number }>) ?? []);
+      // Hardening: RPC pode retornar objeto/null em ambientes mockados — só array é renderizável.
+      setTypeOptions(Array.isArray(data) ? (data as Array<{ type: string; count: number }>) : []);
     })();
   }, [user?.id]);
 
