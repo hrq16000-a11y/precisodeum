@@ -781,45 +781,49 @@ const DashboardPage = () => {
         <LeadFollowupWidget />
       </div>
 
-      {/* Sinal de demanda (FOMO) — apenas Engajado+ */}
-      <div className="mt-4">
-        <DemandSignalAlert />
-      </div>
-
-      {/* Resumo Semanal (FOMO comparativo + métricas 7d) */}
-      <div className="mt-4">
-        <WeeklySummary />
-      </div>
-
-      {/* Força do Perfil — score já exibido no topo via UnifiedHealthScore */}
-      <div className="mt-4" data-tour="profile-strength">
-        <ProfileStrength />
-      </div>
-
-      {/* Benchmark de engagement vs. média da categoria */}
-      <div className="mt-4">
-        <CategoryBenchmarkWidget />
-      </div>
-
-      {/* Onde estão os Clientes? — top regiões com buscas na categoria */}
-      <div className="mt-4">
-        <RegionalDemandWidget />
-      </div>
-
-      {/* Ranking Status */}
-      <div className="mt-4">
-        <RankingStatus />
-      </div>
-
-      {/* Ranking Alert — Position Drop Detection */}
-      <div className="mt-4">
-        <RankingAlertWidget />
-      </div>
-
-      {/* Avatar Reminder */}
-      <div className="mt-4">
-        <AvatarReminder avatarUrl={profile?.avatar_url} />
-      </div>
+      {/* ===== INSIGHTS SECUNDÁRIOS — colapsáveis para reduzir scroll mobile =====
+          Cada widget interno já tem guarda própria de "sem dados". Aqui apenas
+          agrupamos atrás de um único toggle persistido em localStorage para
+          achatar a página e diminuir cansaço visual no mobile. */}
+      <details
+        className="group mt-4 rounded-2xl border border-border bg-card/60 [&_summary::-webkit-details-marker]:hidden"
+        open={typeof window !== 'undefined' && localStorage.getItem('dash_more_insights_open') === '1'}
+        onToggle={(e) => {
+          try {
+            localStorage.setItem(
+              'dash_more_insights_open',
+              (e.currentTarget as HTMLDetailsElement).open ? '1' : '0',
+            );
+          } catch {}
+        }}
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-left">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+              <TrendingUp className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-display text-sm font-bold text-foreground">Mais insights</h3>
+              <p className="text-[11px] text-muted-foreground truncate">
+                Demanda, ranking, benchmark e força do perfil
+              </p>
+            </div>
+          </div>
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="space-y-4 px-4 pb-4 pt-1">
+          <DemandSignalAlert />
+          <WeeklySummary />
+          <div data-tour="profile-strength">
+            <ProfileStrength />
+          </div>
+          <CategoryBenchmarkWidget />
+          <RegionalDemandWidget />
+          <RankingStatus />
+          <RankingAlertWidget />
+          <AvatarReminder avatarUrl={profile?.avatar_url} />
+        </div>
+      </details>
 
       {/* Share Profile Card & QR Code */}
       {provider?.slug && (
