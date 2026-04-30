@@ -31,7 +31,18 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [stages, setStages] = useState<UploadStagesState>(makeInitialStages());
   const [hasFailed, setHasFailed] = useState(false);
+  const [attemptInfo, setAttemptInfo] = useState<{ attempt: number; max: number; reason?: string } | null>(null);
+  const [localPreviews, setLocalPreviews] = useState<string[]>([]);
   const pendingFilesRef = useRef<File[]>([]);
+  const previewUrlsRef = useRef<string[]>([]);
+
+  // Cleanup das object URLs ao desmontar.
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+      previewUrlsRef.current = [];
+    };
+  }, []);
 
   const fetchImages = async () => {
     const { data } = await supabase
