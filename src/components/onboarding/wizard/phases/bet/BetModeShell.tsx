@@ -518,11 +518,13 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       // Limpamos o draft do Bet para evitar reidratação fantasma se o usuário
       // voltar ao /cadastro-inicial mais tarde.
       clearBetDraft();
+      if (user?.id) void clearRemoteBetDraft(user.id);
       onInternalHandoff(state);
     } else {
       // Fallback (não deve ocorrer no fluxo unificado): mantém o usuário na
       // mesma rota e força um reload — impede loop em rotas legadas.
       clearBetDraft();
+      if (user?.id) void clearRemoteBetDraft(user.id);
       navigate('/cadastro-inicial', { replace: true });
     }
   }
