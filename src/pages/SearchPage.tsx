@@ -116,11 +116,13 @@ const SearchPage = () => {
     const next = new URLSearchParams(searchParams);
     if (page > 1) next.set('page', String(page));
     else next.delete('page');
+    if (availabilityWindow !== 'any') next.set('disponivel', availabilityWindow);
+    else next.delete('disponivel');
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, availabilityWindow]);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
