@@ -14,6 +14,7 @@ import AdminFlashSummary from '@/components/admin/AdminFlashSummary';
 import AdminRealtimeToasts from '@/components/admin/AdminRealtimeToasts';
 import { runPostDeployAudit } from '@/lib/postDeployAudit';
 import Logo from '@/components/Logo';
+import ErrorGuard from '@/components/ErrorGuard';
 
 const normalizeAdminSearch = (value: string) =>
   value
@@ -468,7 +469,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             })()}
           </div>
           <AdminGroupNav />
-          {children}
+          <ErrorGuard componentName="AdminLayout" fallbackRoute="/admin">
+            {children}
+          </ErrorGuard>
         </motion.div>
       </main>
       <AdminFlashSummary />
