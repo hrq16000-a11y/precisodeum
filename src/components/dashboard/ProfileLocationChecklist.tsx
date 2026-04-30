@@ -25,6 +25,7 @@ interface Props {
     neighborhood_source?: string | null;
     latitude?: number | null;
     longitude?: number | null;
+    status?: string | null;
   } | null | undefined;
 }
 
@@ -39,6 +40,12 @@ interface ChecklistItem {
 
 export default function ProfileLocationChecklist({ provider }: Props) {
   if (!provider) return null;
+
+  // Guard anti-zumbi: prestadores/empresas com cadastro já ativo não
+  // devem ver checklist de localização — caso contrário o card aparece
+  // como "pendência fantasma" mesmo após aprovação no Wizard.
+  const status = String(provider.status || '').toLowerCase();
+  if (status === 'active') return null;
 
   const hasCity = !!(provider.city && provider.city.trim().length > 0);
   const hasState = !!(provider.state && provider.state.trim().length === 2);
