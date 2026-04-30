@@ -19,6 +19,8 @@ import CepSuggestionCard from './CepSuggestionCard';
 import { startGpsTimer, trackGpsAttempt, mapGeolocationError } from '@/lib/locationTelemetry';
 import { useAuth } from '@/hooks/useAuth';
 import { sanitizeNeighborhood } from '@/lib/geoReverseGeocode';
+import { validateBaseCityVsServiceArea, hasBlockingBaseCityIssue } from '@/lib/locationConsistency';
+import { recordMyGeoEvent } from '@/lib/providerGeoAudit';
 import { lookupCep, normalizeCep } from '@/lib/cepLookup';
 import { BET_POINTS, type BetState } from './types';
 
@@ -38,6 +40,13 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
   const preferredUF = state.state || geo.state || '';
   const autoFilledRef = useRef(false);
   const cepLookupRef = useRef<string>('');
+  // Prévia editável + confirmação. O GPS e o "Finalizar" ficam bloqueados
+  // até o usuário revisar e confirmar a cidade aproximada e o bairro (se houver).
+  const [previewCity, setPreviewCity] = useState('');
+  const [previewState, setPreviewStateField] = useState('');
+  const [previewNeighborhood, setPreviewNeighborhood] = useState('');
+  const [previewConfirmed, setPreviewConfirmed] = useState<boolean>(() => state.location_source === 'gps');
+  const previewSeededRef = useRef(false);
 
   // Auto-sugestão (não-destrutiva): pré-preenche cidade/UF se vazios.
   // Bairro só auto-preenche se vier sanitizado (≠ cidade, não-regional).
@@ -143,6 +152,24 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           latency_ms,
           accuracy_m: acc ?? null,
         });
+        // Histórico de origem da localização (audit trail por prestador).
+        void recordMyGeoEvent({
+          event_type: 'gps_attempt',
+          source: 'gps',
+          city: result.city,
+          state: result.state,
+          neighborhood: cleanNeighborhood || null,
+          latitude: geo.latitude ?? null,
+          longitude: geo.longitude ?? null,
+          accuracy_m: acc ?? null,
+          latency_ms,
+          status: 'ok',
+        });
+        // GPS confirmado também valida a prévia automaticamente.
+        setPreviewConfirmed(true);
+        setPreviewCity(result.city);
+        setPreviewStateField(result.state);
+        if (cleanNeighborhood) setPreviewNeighborhood(cleanNeighborhood);
         if (acc != null && acc > 500) {
           toast.warning('GPS impreciso', {
             description: `Margem de ~${Math.round(acc)}m. Confirme bairro e cidade manualmente.`,
@@ -185,7 +212,7 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
 
   const cityOk = state.city.trim().length > 0 && state.state.trim().length === 2;
   const neighborhoodOk = (state.neighborhood || '').trim().length >= 2;
-  const canFinish = cityOk && neighborhoodOk;
+  const canFinish = cityOk && neighborhoodOk && previewConfirmed;
   const sourceLabel =
     state.location_source === 'gps' ? 'GPS preciso' :
     state.location_source === 'cep' ? 'CEP' :
@@ -196,11 +223,58 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     geo.source === 'manual' ? 'manual' :
     geo.source === 'cache' ? 'salva' : null;
 
-  // Prévia ANTES do GPS — mostra o que sabemos sem GPS preciso.
-  const previewCity = state.city || geo.city || '';
-  const previewState = state.state || geo.state || '';
-  const previewNeighborhood = sanitizeNeighborhood(state.neighborhood || geo.neighborhood, previewCity) || '';
   const showPreview = !state.location_source || state.location_source !== 'gps';
+
+  // Seed da prévia editável a partir do que já temos (state ou geo aproximado).
+  useEffect(() => {
+    if (previewSeededRef.current) return;
+    const seedCity = state.city || geo.city || '';
+    const seedState = state.state || geo.state || '';
+    if (!seedCity && !seedState) return;
+    previewSeededRef.current = true;
+    setPreviewCity(seedCity);
+    setPreviewStateField(seedState);
+    const seedNeigh = sanitizeNeighborhood(state.neighborhood || geo.neighborhood, seedCity) || '';
+    setPreviewNeighborhood(seedNeigh);
+  }, [state.city, state.state, state.neighborhood, geo.city, geo.state, geo.neighborhood]);
+
+  // Validação cidade-base vs área de atendimento (cidade não pode ser regional).
+  const previewIssues = validateBaseCityVsServiceArea({
+    city: previewCity,
+    state: previewState,
+    neighborhood: previewNeighborhood,
+  });
+  const previewBlocked = hasBlockingBaseCityIssue(previewIssues);
+
+  function handleConfirmPreview() {
+    if (previewBlocked) {
+      toast.error('Verifique a cidade-base', {
+        description: previewIssues[0]?.message || 'Cidade ou UF inválida.',
+      });
+      return;
+    }
+    const cleanNeigh = sanitizeNeighborhood(previewNeighborhood, previewCity) || '';
+    const cityChanged = previewCity !== state.city || previewState !== state.state;
+    patch({
+      city: previewCity,
+      state: previewState,
+      neighborhood: cleanNeigh,
+      ...(cityChanged ? { latitude: null, longitude: null, ibge_code: null } : {}),
+      location_source: state.location_source ?? 'manual',
+    });
+    if (previewCity && previewState) awardCityOnce();
+    setPreviewConfirmed(true);
+    toast.success('Prévia confirmada', { description: 'Agora você pode refinar com GPS ou finalizar.' });
+    void recordMyGeoEvent({
+      event_type: 'manual_edit',
+      source: state.location_source ?? 'manual',
+      city: previewCity,
+      state: previewState,
+      neighborhood: cleanNeigh || null,
+      status: 'logged',
+    });
+  }
+
 
   const gpsImprecise = gpsAccuracy != null && gpsAccuracy > 500;
 
@@ -226,26 +300,68 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
         </p>
       </header>
 
-      {/* Prévia "cidade aproximada / bairro (se disponível)" antes do GPS */}
-      {showPreview && previewCity && (
-        <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-3 text-xs text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100">
-          <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide opacity-70">
-            <Sparkles className="h-3.5 w-3.5" /> Prévia da sua localização
+      {/* Prévia EDITÁVEL — usuário precisa confirmar antes de habilitar GPS/Finalizar */}
+      {showPreview && (
+        <div className={`rounded-xl border p-3 text-xs ${previewConfirmed
+          ? 'border-emerald-200 bg-emerald-50/70 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100'
+          : 'border-sky-200 bg-sky-50/70 text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100'}`}>
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide opacity-80">
+            <Sparkles className="h-3.5 w-3.5" />
+            {previewConfirmed ? 'Prévia confirmada' : 'Revise a prévia da sua localização'}
           </div>
-          <div className="space-y-0.5 text-[13px] leading-snug">
+          <div className="space-y-2">
             <div>
-              <strong>Cidade aproximada:</strong> {previewCity}{previewState ? ` / ${previewState}` : ''}
+              <label className="mb-1 block text-[11px] font-semibold opacity-80">Cidade aproximada</label>
+              <div className="flex gap-2">
+                <Input
+                  value={previewCity}
+                  onChange={(e) => { setPreviewCity(e.target.value); setPreviewConfirmed(false); }}
+                  placeholder="Município"
+                  className="h-8 flex-1 text-xs"
+                  maxLength={120}
+                />
+                <Input
+                  value={previewState}
+                  onChange={(e) => { setPreviewStateField(e.target.value.toUpperCase().slice(0, 2)); setPreviewConfirmed(false); }}
+                  placeholder="UF"
+                  className="h-8 w-14 text-xs uppercase"
+                  maxLength={2}
+                />
+              </div>
             </div>
             <div>
-              <strong>Bairro:</strong>{' '}
-              {previewNeighborhood
-                ? <span>{previewNeighborhood}</span>
-                : <span className="italic opacity-80">não detectado — toque no GPS para refinar</span>}
+              <label className="mb-1 block text-[11px] font-semibold opacity-80">
+                Bairro <span className="opacity-60">(se disponível)</span>
+              </label>
+              <Input
+                value={previewNeighborhood}
+                onChange={(e) => { setPreviewNeighborhood(e.target.value); setPreviewConfirmed(false); }}
+                placeholder="Ex: Centro — deixe vazio se não souber"
+                className="h-8 text-xs"
+                maxLength={80}
+              />
             </div>
           </div>
-          <p className="mt-1.5 text-[11px] opacity-80">
-            Use o GPS abaixo para confirmar com precisão de bairro.
-          </p>
+          {previewIssues.length > 0 && (
+            <ul className="mt-2 space-y-0.5 text-[11px] text-rose-700 dark:text-rose-300">
+              {previewIssues.map((iss) => <li key={iss.code}>• {iss.message}</li>)}
+            </ul>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleConfirmPreview}
+            disabled={previewConfirmed || previewBlocked}
+            className="mt-2 h-8 w-full text-xs"
+            variant={previewConfirmed ? 'secondary' : 'default'}
+          >
+            {previewConfirmed ? <><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Confirmada</> : 'Confirmar prévia'}
+          </Button>
+          {!previewConfirmed && (
+            <p className="mt-1.5 text-[11px] opacity-80">
+              Confirme a prévia para liberar o GPS refinado e o botão de finalizar.
+            </p>
+          )}
         </div>
       )}
 
@@ -258,18 +374,19 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
         </p>
       </div>
 
-      {/* Botão GPS */}
+      {/* Botão GPS — destravado só após confirmar a prévia */}
       <Button
         type="button"
         variant="outline"
         size="sm"
         onClick={handleUseGps}
-        disabled={requestingGps}
-        className="w-full justify-center gap-2 border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-950/40"
+        disabled={requestingGps || !previewConfirmed}
+        className="w-full justify-center gap-2 border-orange-300 text-orange-700 hover:bg-orange-50 disabled:opacity-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-950/40"
       >
         <LocateFixed className={`h-4 w-4 ${requestingGps ? 'animate-pulse' : ''}`} />
-        {requestingGps ? 'Detectando…' : state.location_source === 'gps' ? 'GPS confirmado — refinar de novo' : 'Usar minha localização (GPS)'}
+        {requestingGps ? 'Detectando…' : state.location_source === 'gps' ? 'GPS confirmado — refinar de novo' : !previewConfirmed ? 'Confirme a prévia para usar o GPS' : 'Usar minha localização (GPS refinado)'}
       </Button>
+
 
       {state.location_source === 'gps' && (
         <p className="-mt-2 flex items-center justify-center gap-1 text-center text-[11px] text-emerald-700 dark:text-emerald-400">
