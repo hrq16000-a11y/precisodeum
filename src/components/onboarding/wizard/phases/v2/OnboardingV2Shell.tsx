@@ -421,13 +421,25 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, state.userRef, state.providerId, state.firstServiceId]);
 
-  // Telemetria: dispara 'enter' a cada troca de fase
+  // Telemetria: dispara 'enter' a cada troca de fase + mede tempo na fase anterior.
+  // - Cada fase recebe `markPhaseEnter` no mount/troca.
+  // - Ao trocar de fase (cleanup), `markPhaseExit` emite o evento `phase_exit`
+  //   com `duration_ms` e `draft_source` (local/remote/seed/none).
+  // - O evento `enter` também carrega `draft_source` para segmentação.
   useEffect(() => {
+    const draftSource = getOnboardingDraftSource() || 'none';
     void trackOnboardingEvent({
       phase: state.phase,
       event: state.phase === 'done' ? 'complete' : 'enter',
       userId: user?.id,
+      meta: { draft_source: draftSource },
     });
+    markPhaseEnter(state.phase);
+    const exitingPhase = state.phase;
+    return () => {
+      // Emite duração da fase que está sendo deixada.
+      void markPhaseExit(exitingPhase, { userId: user?.id });
+    };
   }, [state.phase, user?.id]);
 
   // Reporta a fase para a barra de progresso global do WizardShell.
