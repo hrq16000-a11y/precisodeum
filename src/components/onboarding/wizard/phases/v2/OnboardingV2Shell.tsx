@@ -923,7 +923,37 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             // ── FALLBACK RESILIENTE (Hotfix #3) ───────────────────────────────
             // Plano B: INSERT direto na tabela `services`. As políticas RLS
             // permitem o dono do provider inserir seu próprio serviço.
+            //
+            // ── IDEMPOTÊNCIA (Hotfix #5) ──────────────────────────────────────
+            // Antes do INSERT, refaz o lookup. Se o RPC falhou parcialmente
+            // (ex: timeout depois de inserir a row, ou rede caindo no retorno),
+            // o serviço pode JÁ existir. Sem essa guarda, um reenvio do usuário
+            // criaria um registro duplicado e estouraria a cota do plano.
             try {
+              const preInsertReusedId = await findExistingFirstService(
+                workingProviderId,
+                categoryId,
+                resolvedCategoryName,
+              );
+              if (preInsertReusedId) {
+                void trackEvent({
+                  phase: state.phase,
+                  event: 'submit',
+                  userId: user?.id,
+                  meta: {
+                    reason: 'fallback_insert_skipped_idempotent',
+                    service_id: preInsertReusedId,
+                    provider_id: workingProviderId,
+                    category_id: categoryId,
+                  },
+                });
+                resolvedServiceId = preInsertReusedId;
+                dispatch({ type: 'SET_FIRST_SERVICE_ID', id: preInsertReusedId });
+                // Pula o INSERT inteiro — segue o fluxo de herança/conclusão.
+                // (O bloco `else` do RPC abaixo é só para o caminho feliz; aqui
+                // já temos o serviço resolvido por idempotência, então o
+                // try/catch do fallback simplesmente termina sem inserir.)
+              } else {
               const { data: insertRow, error: insertErr } = await supabase
                 .from('services')
                 .insert({
@@ -974,6 +1004,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               });
               resolvedServiceId = insertRow.id;
               dispatch({ type: 'SET_FIRST_SERVICE_ID', id: insertRow.id });
+              }
             } catch (fallbackErr: any) {
               // Plano C — feedback amigável (Hotfix #4) e propaga para o catch externo
               throw new Error(

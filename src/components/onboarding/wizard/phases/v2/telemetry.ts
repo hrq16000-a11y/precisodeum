@@ -97,6 +97,17 @@ export async function trackOnboardingEvent(opts: TrackOptions): Promise<void> {
     if (!('flow' in meta)) {
       meta = { ...meta, flow: getOnboardingFlow() ?? 'unknown' };
     }
+    // ── PADRONIZAÇÃO DE META PARA EVENTOS DE ERRO ─────────────────────────
+    // Garante que dashboards/queries possam fazer GROUP BY meta->>'error_code'
+    // sem se preocupar com NULL vs ausente. Para eventos `error`, força a
+    // presença das chaves canônicas (com valor null se o caller omitir).
+    if (opts.event === 'error') {
+      meta = {
+        error_code: null,
+        error_message: null,
+        ...meta,
+      };
+    }
     const payload = {
       user_id: opts.userId || null,
       session_id: getSessionId(),
