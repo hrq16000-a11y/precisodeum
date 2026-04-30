@@ -8,16 +8,16 @@ import { Input } from '@/components/ui/input';
 import { fieldWin } from '@/lib/betDopamine';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { BET_POINTS, type BetState } from './types';
+import type { BetRewardKey } from './betRewards';
 
 interface Props {
   state: BetState;
   patch: (p: Partial<BetState>) => void;
   finish: () => Promise<void> | void;
-  addPoints: (n: number) => void;
+  awardReward: (reward: BetRewardKey, points: number) => void;
 }
 
-export default function PhaseClientCity({ state, patch, finish, addPoints }: Props) {
-  const [awarded, setAwarded] = useState(false);
+export default function PhaseClientCity({ state, patch, finish, awardReward }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
@@ -25,9 +25,8 @@ export default function PhaseClientCity({ state, patch, finish, addPoints }: Pro
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
     patch({ city, state: uf });
-    if (city && uf && !awarded) {
-      setAwarded(true);
-      addPoints(BET_POINTS.city);
+    if (city && uf && !state.rewards.city) {
+      awardReward('city', BET_POINTS.city);
       fieldWin();
     }
   }
@@ -66,13 +65,13 @@ export default function PhaseClientCity({ state, patch, finish, addPoints }: Pro
       <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
         <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
           <MapPin className="h-3.5 w-3.5" /> Sua cidade
-          {awarded && (
+          {state.rewards.city && (
             <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
               +{BET_POINTS.city} pts
             </span>
           )}
         </span>
-        <div className={`rounded-lg transition ${awarded ? 'ring-2 ring-emerald-300/60 shadow-[0_0_14px_rgba(16,185,129,0.35)]' : ''}`}>
+        <div className={`rounded-lg transition ${state.rewards.city ? 'ring-2 ring-emerald-300/60 shadow-[0_0_14px_rgba(16,185,129,0.35)]' : ''}`}>
           <CityAutocomplete
             value={{ city: state.city, state: state.state }}
             onChange={handleCity}
