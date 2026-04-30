@@ -71,7 +71,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
       return (
         <section className="relative overflow-hidden rounded-lg mx-4" style={{ minHeight: content.height || '200px' }}>
           {content.image_url && (
-            <img src={content.image_url} alt={block.title} className="w-full h-full object-cover absolute inset-0" />
+            <img src={content.image_url} alt={block.title} loading="lazy" decoding="async" className="w-full h-full object-cover absolute inset-0" />
           )}
           <div className="relative z-10 flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: content.overlay ? `rgba(0,0,0,${content.overlay_opacity || 0.5})` : undefined }}>
             {block.title && <h2 className="text-2xl font-bold text-white mb-2">{block.title}</h2>}
@@ -125,7 +125,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
       return (
         <section className="container mx-auto px-4">
           {content.image_url && (
-            <img src={content.image_url} alt={block.title || ''} className="w-full rounded-lg object-cover" style={{ maxHeight: content.max_height || '400px' }} />
+            <img src={content.image_url} alt={block.title || ''} loading="lazy" decoding="async" className="w-full rounded-lg object-cover" style={{ maxHeight: content.max_height || '400px' }} />
           )}
           {block.title && <p className="text-sm text-muted-foreground mt-2 text-center">{block.title}</p>}
         </section>

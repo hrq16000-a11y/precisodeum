@@ -68,7 +68,9 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
           continue;
         }
 
-        const file = await compressImage(raw);
+        // Mobile-first: 1200px / ~300KB cobre 99% dos casos visuais sem
+        // estourar banda em 3G/4G. AVIF/WebP escolhidos automaticamente.
+        const file = await compressImage(raw, { maxDimension: 1200, targetKB: 300 });
 
         const formData = new FormData();
         formData.append('file', file);

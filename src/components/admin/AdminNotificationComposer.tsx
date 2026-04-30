@@ -65,7 +65,7 @@ const AdminNotificationComposer = () => {
       // Upload image if file selected
       let finalImageUrl = imageUrl;
       if (imageFile) {
-        const compressed = await compressImage(imageFile);
+        const compressed = await compressImage(imageFile, { maxDimension: 1200, targetKB: 300 });
         const ext = compressed.name.split('.').pop();
         const path = `notifications/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage

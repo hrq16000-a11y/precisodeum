@@ -77,7 +77,7 @@ const ShareProfileCard = () => {
             <div className="relative text-center">
               {/* Avatar */}
               {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt={name} className="h-20 w-20 rounded-2xl object-cover mx-auto border-3 border-card shadow-lg" />
+                <img src={profile.avatar_url} alt={name} loading="lazy" decoding="async" className="h-20 w-20 rounded-2xl object-cover mx-auto border-3 border-card shadow-lg" />
               ) : (
                 <div className="h-20 w-20 rounded-2xl bg-accent/20 flex items-center justify-center mx-auto text-2xl font-bold text-accent border-3 border-card shadow-lg">
                   {name[0]?.toUpperCase()}

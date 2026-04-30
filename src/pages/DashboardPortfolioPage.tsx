@@ -557,7 +557,7 @@ const DashboardPortfolioPage = () => {
             {captionPhoto && (
               <div className="space-y-3">
                 <div className="overflow-hidden rounded-lg border border-border bg-muted">
-                  <img src={captionPhoto.image_url} alt="" className="w-full max-h-64 object-contain bg-foreground/5" />
+                  <img src={captionPhoto.image_url} alt="" loading="lazy" decoding="async" className="w-full max-h-64 object-contain bg-foreground/5" />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Descrição</label>
@@ -652,7 +652,7 @@ const DashboardPortfolioPage = () => {
                 >
                   <div className="aspect-video bg-muted relative overflow-hidden">
                     {album.cover_image_url ? (
-                      <img src={album.cover_image_url} alt={album.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <img src={album.cover_image_url} alt={album.name} loading="lazy" decoding="async" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <div className="flex h-full items-center justify-center">
                         <ImagePlus className="h-10 w-10 text-muted-foreground/40" />

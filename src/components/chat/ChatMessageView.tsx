@@ -192,7 +192,7 @@ export default function ChatMessageView({ conversationId, onBack }: Props) {
                     : 'bg-muted text-foreground rounded-bl-md'
                 }`}>
                   {msg.image_url && (
-                    <img src={msg.image_url} alt="" className="rounded-lg mb-1 max-h-40 object-cover" />
+                    <img src={msg.image_url} alt="" loading="lazy" decoding="async" className="rounded-lg mb-1 max-h-40 object-cover" />
                   )}
                   {msg.content && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
                   <p className={`text-[9px] mt-1 ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground/60'}`}>

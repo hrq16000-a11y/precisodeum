@@ -395,7 +395,7 @@ const DashboardServicesPage = () => {
     if (!newServicePhoto || !user) return;
     setUploadingPhoto(true);
     try {
-      const compressed = await compressImage(newServicePhoto);
+      const compressed = await compressImage(newServicePhoto, { maxDimension: 1200, targetKB: 300 });
       const ext = compressed.name.split('.').pop();
       const path = `${user.id}/${serviceId}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from('service-images').upload(path, compressed);
@@ -895,7 +895,7 @@ const DashboardServicesPage = () => {
             <div key={s.id} className="rounded-xl border border-border bg-card shadow-sm overflow-hidden group">
               <div className="relative aspect-[4/3] bg-muted">
                 {imgUrl ? (
-                  <img src={imgUrl} alt={s.service_name} className="w-full h-full object-cover" onError={handleImageError} />
+                  <img src={imgUrl} alt={s.service_name} loading="lazy" decoding="async" className="w-full h-full object-cover" onError={handleImageError} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     <ImagePlus className="h-10 w-10 opacity-30" />

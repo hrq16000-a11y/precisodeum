@@ -41,7 +41,8 @@ const SponsorBannersPage = () => {
 
     setUploading(true);
     try {
-      const compressed = await compressImage(file, { maxDimension: 1920, targetKB: 350 });
+      // Banner display real ≤1200px. Reduzido de 1920 para economizar banda.
+      const compressed = await compressImage(file, { maxDimension: 1200, targetKB: 300 });
       const ext = compressed.name.split('.').pop();
       const path = `${sponsor.id}/banner_${Date.now()}.${ext}`;
 
