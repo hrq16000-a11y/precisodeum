@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, MapPin, MessageCircle, ExternalLink, Star } from 'lucide-react';
+import { Building2, MapPin, MessageCircle, ExternalLink, Star, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { DbProvider } from '@/hooks/useProviders';
