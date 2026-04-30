@@ -31,6 +31,10 @@ export interface CepSuggestionCardProps {
   onApply: (cep: string, hit: { city: string; state: string; neighborhood: string; street: string }) => void;
   /** Debounce em ms — útil para reduzir chamadas. Default: 600ms. */
   debounceMs?: number;
+  /** Fase atual do wizard (para telemetria). Default: 'pro_location'. */
+  phase?: string;
+  /** ID do usuário (telemetria). */
+  userId?: string | null;
 }
 
 type Status = 'idle' | 'loading' | 'success' | 'notFound' | 'error';
