@@ -206,6 +206,37 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     setOnboardingFlow(isCompany ? 'company' : 'default');
   }, [isCompany]);
 
+  // Auditoria de consistência: detectamos `isCompany` por DOIS sinais
+  // (profile.account_type vindo do banco e state.profile.kind do reducer).
+  // Quando divergem, registramos um evento dedicado para que o admin
+  // (/admin/onboarding-stats) consiga identificar imediatamente PJs que
+  // estão caindo no fluxo PF (e vice-versa) — sintoma clássico do bug em
+  // que a triagem inicial setou um kind diferente do tipo de conta.
+  const lastFlowMismatchRef = useRef<string | null>(null);
+  useEffect(() => {
+    const acc = ((profile as any)?.account_type || '').toString().toLowerCase();
+    const accIsCompany = acc === 'company' || acc === 'pj';
+    const kindIsCompany = state.profile.kind === 'pj';
+    if (!acc) return; // ainda carregando profile — sem ruído
+    if (accIsCompany === kindIsCompany) return; // consistente
+    const fingerprint = `${acc}|${state.profile.kind || 'null'}|${state.phase}`;
+    if (lastFlowMismatchRef.current === fingerprint) return; // dedup por sessão
+    lastFlowMismatchRef.current = fingerprint;
+    void trackOnboardingEvent({
+      phase: state.phase,
+      event: 'error',
+      userId: user?.id,
+      meta: {
+        flow: isCompany ? 'company' : 'default',
+        kind: 'flow_mismatch',
+        account_type: acc,
+        profile_kind: state.profile.kind || null,
+        resolved_as: isCompany ? 'company' : 'default',
+      },
+    });
+  }, [profile, state.profile.kind, state.phase, user?.id, isCompany]);
+
+
   // Auto-save em localStorage com debounce (rápido)
   useOnboardingV2Draft(state);
   // Auto-save remoto com debounce (cross-device)
