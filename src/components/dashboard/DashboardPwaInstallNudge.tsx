@@ -87,13 +87,13 @@ const DashboardPwaInstallNudge = () => {
             <div className="min-w-0 flex-1 pr-4">
               <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-primary">
                 <Sparkles className="h-3 w-3" />
-                <span>Missão exclusiva</span>
+                <span>Alertas de leads instantâneos</span>
               </div>
               <h3 className="mt-1 text-sm font-bold leading-tight">
-                Instale o App e ganhe +30 pontos de visibilidade
+                Instale o app e receba o "bip" de novos leads em tempo real
               </h3>
               <p className="mt-1 text-xs text-muted-foreground leading-snug">
-                Acesse com 1 toque na tela inicial e fique online sem precisar abrir o navegador.
+                Notificação na tela de bloqueio + som de alerta + bônus de +30 pontos de visibilidade.
               </p>
               <Button
                 size="sm"
