@@ -34,6 +34,10 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
   const isPf = state.pro_kind === 'pf';
   const [showBadge, setShowBadge] = useState(false);
   const [awarded, setAwarded] = useState(false);
+  // Convite opcional ao "ponto de atendimento físico" (PJ apenas).
+  const [showAddress, setShowAddress] = useState(
+    !isPf && Boolean(state.street || state.street_number || state.postal_code),
+  );
 
   const docDigits = useMemo(() => state.document.replace(/\D/g, ''), [state.document]);
   const docValid = isPf ? isValidCpf(docDigits) : isValidCnpj(docDigits);
