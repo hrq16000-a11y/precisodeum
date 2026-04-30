@@ -20,7 +20,7 @@
  * ao concluir a Fase 2 — destravando o usuário para o dashboard.
  */
 
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -176,6 +176,27 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // Frente 4 — duplicidade inline (whatsapp + tax_id)
   const dup = useWizardDuplicateCheck();
+
+  // ── ISOLAMENTO DE GATILHOS (refactor 2026) ────────────────────────────────
+  // `isCompany` é a CONDIÇÃO MESTRE para diferenciar o fluxo PJ/Empresa do
+  // fluxo padrão (PF). Toda telemetria emitida pelo V2Shell carrega
+  // `meta.flow` automaticamente para que segmentações no admin não dependam
+  // de inferência heurística posterior.
+  const isCompany = useMemo(() => {
+    const acc = ((profile as any)?.account_type || '').toString().toLowerCase();
+    if (acc === 'company' || acc === 'pj') return true;
+    return state.profile.kind === 'pj';
+  }, [profile, state.profile.kind]);
+
+  /** Wrapper único que injeta a dimensão `flow` em todo evento de telemetria. */
+  const trackEvent = useCallback(
+    (args: Parameters<typeof trackOnboardingEvent>[0]) =>
+      trackOnboardingEvent({
+        ...args,
+        meta: { flow: isCompany ? 'company' : 'default', ...(args.meta || {}) },
+      }),
+    [isCompany],
+  );
 
   // Auto-save em localStorage com debounce (rápido)
   useOnboardingV2Draft(state);
