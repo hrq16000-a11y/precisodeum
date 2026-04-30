@@ -232,7 +232,16 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
 
   const cityOk = state.city.trim().length > 0 && state.state.trim().length === 2;
   const neighborhoodOk = (state.neighborhood || '').trim().length >= 2;
-  const canFinish = cityOk && previewConfirmed;
+
+  // Detecta se o GPS falhou/foi negado: hook indica erro ou source diferente de 'gps'
+  // após uma tentativa explícita. Também consideramos negação quando geo.error existir.
+  const geoFailed = Boolean((geo as any).error) || (geo.source && geo.source !== 'gps');
+
+  // canFinish é tolerante a falha de GPS:
+  //  - se a prévia foi confirmada explicitamente, libera (caminho feliz).
+  //  - se o GPS falhou/foi negado mas o usuário tem cidade+UF válidos no state,
+  //    libera (Hotfix #G2.3 — remove bloqueio invisível do previewSeededRef).
+  const canFinish = cityOk && (previewConfirmed || geoFailed);
   const sourceLabel =
     state.location_source === 'gps' ? 'GPS preciso' :
     state.location_source === 'cep' ? 'CEP' :
@@ -257,6 +266,23 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     const seedNeigh = sanitizeNeighborhood(state.neighborhood || geo.neighborhood, seedCity) || '';
     setPreviewNeighborhood(seedNeigh);
   }, [state.city, state.state, state.neighborhood, geo.city, geo.state, geo.neighborhood]);
+
+  // Hotfix #G2.1 — Sincronização bidirecional:
+  // Quando o usuário escolhe cidade manualmente via CityAutocomplete, propagamos
+  // automaticamente para o estado da prévia, sem exigir digitação duplicada.
+  // Marca a prévia como NÃO confirmada para forçar revisão consciente — exceto
+  // se o GPS já tiver confirmado anteriormente.
+  useEffect(() => {
+    if (!state.city || !state.state) return;
+    const cityChanged = state.city !== previewCity;
+    const ufChanged = state.state !== previewState;
+    if (cityChanged) setPreviewCity(state.city);
+    if (ufChanged) setPreviewStateField(state.state);
+    if ((cityChanged || ufChanged) && state.location_source !== 'gps') {
+      setPreviewConfirmed(false);
+    }
+  }, [state.city, state.state, state.location_source]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   // Validação cidade-base vs área de atendimento (cidade não pode ser regional).
   const previewIssues = validateBaseCityVsServiceArea({
