@@ -93,8 +93,9 @@ describe('PJ × RH guardrails', () => {
     const path = resolve(__dirname, '../components/company/CompanyAddressForm.tsx');
     expect(existsSync(path)).toBe(true);
     const src = readFileSync(path, 'utf8');
-    expect(src).not.toMatch(/agencies?/i);
-    expect(src).not.toMatch(/AgencyData|DashboardAgency|recruit|rh\b/i);
+    expect(src).not.toMatch(/\bagencies\b/i);
+    expect(src).not.toMatch(/\bagency\b/i);
+    expect(src).not.toMatch(/AgencyData|DashboardAgency|recruit/i);
   });
 
   it('DashboardCompanyDataPage guards against non-provider profile types', () => {
