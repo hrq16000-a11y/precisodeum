@@ -197,7 +197,27 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
     );
   }
 
-  // 2) Garante NOT NULL strings.
+  // 2) Sanitiza bairro: nunca pode ser igual à cidade nem label de região metropolitana.
+  //    Se o cliente enviou um bairro inválido (auto-fill ruim, GPS impreciso ou copiou
+  //    "Região Metropolitana de X"), descartamos para o trigger preencher com 'Centro'.
+  const rawCity = typeof out.city === 'string' ? out.city.trim() : '';
+  const rawNeighborhood = typeof out.neighborhood === 'string' ? out.neighborhood.trim() : '';
+  if (rawNeighborhood) {
+    const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const isRegionalLabel = [
+      'regiao metropolitana', 'regiao geografica', 'regiao imediata',
+      'regiao intermediaria', 'microregiao', 'mesorregiao', 'area metropolitana',
+    ].some((token) => norm(rawNeighborhood).includes(token));
+    const equalsCity = rawCity && norm(rawNeighborhood) === norm(rawCity);
+    if (isRegionalLabel || equalsCity) {
+      if (typeof console !== 'undefined') {
+        console.warn('[providerPayload] Bairro inválido descartado:', rawNeighborhood, '(cidade:', rawCity, ')');
+      }
+      out.neighborhood = '';
+    }
+  }
+
+  // 3) Garante NOT NULL strings.
   for (const key of PROVIDER_REQUIRED_STRING_FIELDS) {
     out[key] = safeRequiredString(out[key]);
   }
