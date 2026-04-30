@@ -61,11 +61,15 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     toast.success('CEP preenchido automaticamente', { description: cep });
   }
 
+  const { user } = useAuth();
+
   async function handleUseGps() {
     if (requestingGps) return;
     setRequestingGps(true);
+    const timer = startGpsTimer();
     try {
       const result = await geo.requestPreciseLocation({ force: true });
+      const latency_ms = timer.stop();
       if (result.ok && result.city && result.state) {
         autoFilledRef.current = true;
         patch({ city: result.city, state: result.state });
@@ -76,6 +80,13 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           fieldWin();
         }
         const acc = result.accuracyMeters;
+        trackGpsAttempt({
+          phase: 'pro_location',
+          userId: user?.id || null,
+          ok: true,
+          latency_ms,
+          accuracy_m: acc ?? null,
+        });
         if (acc != null && acc > 500) {
           toast.warning('GPS impreciso', {
             description: `Margem de ~${Math.round(acc)}m. Confirme bairro e cidade manualmente.`,
@@ -86,10 +97,27 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           });
         }
       } else {
+        trackGpsAttempt({
+          phase: 'pro_location',
+          userId: user?.id || null,
+          ok: false,
+          latency_ms,
+          error_code: 'permission_denied',
+        });
         toast.error('Não consegui acessar o GPS', {
           description: 'Permita a localização no navegador ou digite a cidade manualmente.',
         });
       }
+    } catch (err) {
+      const latency_ms = timer.stop();
+      trackGpsAttempt({
+        phase: 'pro_location',
+        userId: user?.id || null,
+        ok: false,
+        latency_ms,
+        error_code: mapGeolocationError(err),
+      });
+      toast.error('Falha inesperada no GPS');
     } finally {
       setRequestingGps(false);
     }
