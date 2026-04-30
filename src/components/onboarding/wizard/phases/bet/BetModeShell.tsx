@@ -40,6 +40,16 @@ import PhaseCelebration from './PhaseCelebration';
 
 import { initialBetState, type BetState, type BetIntent, type BetPhase } from './types';
 import { setOnboardingIntent } from '../v2/telemetry';
+import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
+
+/** Ordem das fases — usado para resolver o "Voltar" global em uma fase anterior. */
+const BET_BACK_MAP: Partial<Record<BetPhase, BetPhase>> = {
+  who: 'identity',
+  client_city: 'who',
+  pro_kind: 'who',
+  pro_document: 'pro_kind',
+  pro_location: 'pro_kind',
+};
 
 type Action =
   | { type: 'PATCH'; patch: Partial<BetState> }
@@ -101,9 +111,13 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
   const [params] = useSearchParams();
   const next = params.get('next') || '/dashboard';
   const { user, profile, refetchProfile } = useAuth();
-  const [state, dispatch] = useReducer(reducer, initialBetState);
+  const [state, dispatch] = useReducer(reducer, undefined as unknown as BetState, () => loadBetDraft());
 
   useSeoHead({ title: 'Cadastro express', description: 'Cadastro rápido para começar agora.', noindex: true });
+
+  // Persiste rascunho local — preserva nome/WhatsApp/cidade/bairro através de
+  // reload, troca de aba e do botão "Voltar" do navegador.
+  useBetDraft(state);
 
   // Reporta mudanças de fase para a barra de progresso global do WizardShell.
   useEffect(() => {
@@ -124,6 +138,17 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
     }});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
+
+  // Listener do "Voltar" global emitido pelo WizardShell. Sem isso o botão era
+  // no-op em todas as fases do Bet Mode (V2Shell já tinha listener próprio).
+  useEffect(() => {
+    function handleBack() {
+      const prev = BET_BACK_MAP[state.phase];
+      if (prev) dispatch({ type: 'GOTO', phase: prev });
+    }
+    window.addEventListener('wizard:request-back', handleBack as EventListener);
+    return () => window.removeEventListener('wizard:request-back', handleBack as EventListener);
+  }, [state.phase]);
 
   const patch = (p: Partial<BetState>) => dispatch({ type: 'PATCH', patch: p });
   const goto = (phase: BetPhase) => dispatch({ type: 'GOTO', phase });
@@ -154,6 +179,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       if (error) throw error;
       await addSessionPointsToProfile();
       await refetchProfile?.();
+      clearBetDraft();
       navigate('/dashboard/agencia', { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_rh' } });
@@ -186,6 +212,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       if (error) throw error;
       await addSessionPointsToProfile();
       await refetchProfile?.();
+      clearBetDraft();
       navigate('/quero-ser-patrocinador', { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_sponsor' } });
@@ -259,6 +286,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       await addSessionPointsToProfile();
       await refetchProfile?.();
       toast.success(`+${state.points} pts conquistados!`, { description: 'Bem-vindo. Levando você ao destino…' });
+      clearBetDraft();
       navigate(next, { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_client' } });
@@ -405,10 +433,15 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       },
     });
     if (onInternalHandoff) {
+      // Handoff para o V2: o V2Shell tem seu próprio draft remoto/local.
+      // Limpamos o draft do Bet para evitar reidratação fantasma se o usuário
+      // voltar ao /cadastro-inicial mais tarde.
+      clearBetDraft();
       onInternalHandoff(state);
     } else {
       // Fallback (não deve ocorrer no fluxo unificado): mantém o usuário na
       // mesma rota e força um reload — impede loop em rotas legadas.
+      clearBetDraft();
       navigate('/cadastro-inicial', { replace: true });
     }
   }
