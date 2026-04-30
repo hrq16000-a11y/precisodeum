@@ -323,4 +323,99 @@ function NewLeadAlertSettings() {
   );
 }
 
+/**
+ * Histórico curto dos últimos leads recebidos pelo profissional, conforme o
+ * canal in-app. Permite confirmar visualmente que o pipeline de notificação
+ * está funcionando mesmo após mudar mode/intervalo.
+ *
+ * Lê direto da tabela `leads` (RLS já garante que o profissional só vê os
+ * próprios) e atualiza em tempo real via Realtime. Limite 10 itens.
+ */
+function RecentLeadsHistory() {
+  const { provider } = useAuth();
+  const navigate = useNavigate();
+  const [leads, setLeads] = useState<Array<{
+    id: string;
+    client_name: string;
+    service_needed: string | null;
+    created_at: string;
+    lead_context: any;
+  }>>([]);
+
+  useEffect(() => {
+    if (!provider?.id) return;
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from('leads')
+        .select('id, client_name, service_needed, created_at, lead_context')
+        .eq('provider_id', provider.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (active && data) setLeads(data as any);
+    })();
+
+    const channel = supabase
+      .channel(`leads-history-${provider.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'leads',
+        filter: `provider_id=eq.${provider.id}`,
+      }, (payload) => {
+        setLeads((prev) => [payload.new as any, ...prev].slice(0, 10));
+      })
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, [provider?.id]);
+
+  if (!provider?.id) return null;
+
+  return (
+    <div className="mt-6">
+      <h3 className="font-display text-base font-bold text-foreground">Últimos leads recebidos</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Histórico em tempo real — confirma que as notificações estão chegando.
+      </p>
+      {leads.length === 0 ? (
+        <div className="mt-3 rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center text-xs text-muted-foreground">
+          Nenhum lead recebido ainda. Quando chegar, aparecerá aqui automaticamente.
+        </div>
+      ) : (
+        <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-card">
+          {leads.map((l) => {
+            const ctx = l.lead_context || {};
+            const city = String(ctx.city || '').trim();
+            const uf = String(ctx.state || '').trim().toUpperCase();
+            const origin = [city, uf].filter(Boolean).join(' • ');
+            const when = new Date(l.created_at);
+            return (
+              <li
+                key={l.id}
+                className="flex cursor-pointer items-center justify-between gap-3 p-3 hover:bg-muted/40"
+                onClick={() => navigate(`/dashboard/leads/${l.id}`)}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">{l.client_name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {l.service_needed || 'Solicitação recebida'}
+                    {origin ? ` • ${origin}` : ''}
+                  </p>
+                </div>
+                <time className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                  {when.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                </time>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default DashboardNotificationPreferencesPage;
