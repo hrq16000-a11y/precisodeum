@@ -206,7 +206,8 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
     const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const isRegionalLabel = [
       'regiao metropolitana', 'regiao geografica', 'regiao imediata',
-      'regiao intermediaria', 'microregiao', 'mesorregiao', 'area metropolitana',
+      'regiao intermediaria', 'microregiao', 'microrregiao',
+      'mesorregiao', 'mesoregiao', 'area metropolitana',
     ].some((token) => norm(rawNeighborhood).includes(token));
     const equalsCity = rawCity && norm(rawNeighborhood) === norm(rawCity);
     if (isRegionalLabel || equalsCity) {
