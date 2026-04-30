@@ -9,7 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import type { OnboardingState } from './types';
 import { broadcastDraftChange } from './crossTabSync';
 
-const DRAFT_KEY = 'onboarding_v2_draft_v1';
+// Mantido em sincronia com `useOnboardingV2Draft.ts` (versão V3 de ruptura).
+const DRAFT_KEY = 'onboarding_v3_institutional_final';
 
 export function flushLocalDraft(state: OnboardingState) {
   if (typeof window === 'undefined') return;
