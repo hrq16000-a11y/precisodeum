@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
 import { compressImage, generateBlurDataUrl } from '@/lib/compressImage';
+import { resilientUpload, UploadTimeoutError } from '@/lib/uploadResilient';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateProviderCaches } from '@/lib/providerCacheInvalidation';
 
@@ -46,19 +47,19 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(({ userId, cu
       formData.append('folder', userId);
 
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
+      const data = await resilientUpload<{ url: string; path?: string; error?: string }>(
         `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+        formData,
         {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        {
+          onAttempt: (a, max) => {
+            if (a > 1) toast.message(`Conexão lenta. Tentando novamente (${a}/${max})…`);
           },
         }
       );
-
-      const data = await res.json();
       if (data.error) throw new Error(data.error);
 
       const publicUrl = data.url;
