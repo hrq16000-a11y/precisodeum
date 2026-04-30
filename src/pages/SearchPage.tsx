@@ -24,7 +24,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@
 import { useSearchProvidersGrouped, useCategories, useSearchSuggestions, useGeoCategories, normalizeCityName, matchesGeoContext, type DbProvider } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { Search, SlidersHorizontal, X, ArrowUpDown, MapPin, Building2, Phone, Globe, ChevronRight, Users, Navigation, Map as MapIcon, List, Circle, Zap, ArrowRight, RefreshCcw, Star, Compass, Award, Trophy, GraduationCap, Sparkles } from 'lucide-react';
 import { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchModal';
