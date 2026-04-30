@@ -232,7 +232,16 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
 
   const cityOk = state.city.trim().length > 0 && state.state.trim().length === 2;
   const neighborhoodOk = (state.neighborhood || '').trim().length >= 2;
-  const canFinish = cityOk && previewConfirmed;
+
+  // Detecta se o GPS falhou/foi negado: hook indica erro ou source diferente de 'gps'
+  // após uma tentativa explícita. Também consideramos negação quando geo.error existir.
+  const geoFailed = Boolean((geo as any).error) || (geo.source && geo.source !== 'gps');
+
+  // canFinish é tolerante a falha de GPS:
+  //  - se a prévia foi confirmada explicitamente, libera (caminho feliz).
+  //  - se o GPS falhou/foi negado mas o usuário tem cidade+UF válidos no state,
+  //    libera (Hotfix #G2.3 — remove bloqueio invisível do previewSeededRef).
+  const canFinish = cityOk && (previewConfirmed || geoFailed);
   const sourceLabel =
     state.location_source === 'gps' ? 'GPS preciso' :
     state.location_source === 'cep' ? 'CEP' :
@@ -257,6 +266,23 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     const seedNeigh = sanitizeNeighborhood(state.neighborhood || geo.neighborhood, seedCity) || '';
     setPreviewNeighborhood(seedNeigh);
   }, [state.city, state.state, state.neighborhood, geo.city, geo.state, geo.neighborhood]);
+
+  // Hotfix #G2.1 — Sincronização bidirecional:
+  // Quando o usuário escolhe cidade manualmente via CityAutocomplete, propagamos
+  // automaticamente para o estado da prévia, sem exigir digitação duplicada.
+  // Marca a prévia como NÃO confirmada para forçar revisão consciente — exceto
+  // se o GPS já tiver confirmado anteriormente.
+  useEffect(() => {
+    if (!state.city || !state.state) return;
+    const cityChanged = state.city !== previewCity;
+    const ufChanged = state.state !== previewState;
+    if (cityChanged) setPreviewCity(state.city);
+    if (ufChanged) setPreviewStateField(state.state);
+    if ((cityChanged || ufChanged) && state.location_source !== 'gps') {
+      setPreviewConfirmed(false);
+    }
+  }, [state.city, state.state, state.location_source]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   // Validação cidade-base vs área de atendimento (cidade não pode ser regional).
   const previewIssues = validateBaseCityVsServiceArea({
@@ -377,7 +403,13 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           >
             {previewConfirmed ? <><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Confirmada</> : 'Confirmar prévia'}
           </Button>
-          {!previewConfirmed && (
+          {!previewConfirmed && cityOk && (state.location_source === 'manual' || state.location_source === 'cep' || geoFailed) && (
+            <p className="mt-1.5 flex items-start gap-1 text-[11px] font-medium text-sky-800 dark:text-sky-200">
+              <Info className="mt-0.5 h-3 w-3 flex-shrink-0" />
+              Localização definida manualmente. Por favor, confirme para finalizar.
+            </p>
+          )}
+          {!previewConfirmed && !cityOk && (
             <p className="mt-1.5 text-[11px] opacity-80">
               Confirme a prévia para liberar o GPS refinado e o botão de finalizar.
             </p>
@@ -394,17 +426,17 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         </p>
       </div>
 
-      {/* Botão GPS — destravado só após confirmar a prévia */}
+      {/* Botão GPS — disponível assim que houver cidade ou prévia preenchida (refino opcional). */}
       <Button
         type="button"
         variant="outline"
         size="sm"
         onClick={handleUseGps}
-        disabled={requestingGps || !previewConfirmed}
+        disabled={requestingGps}
         className="w-full justify-center gap-2 border-orange-300 text-orange-700 hover:bg-orange-50 disabled:opacity-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-950/40"
       >
         <LocateFixed className={`h-4 w-4 ${requestingGps ? 'animate-pulse' : ''}`} />
-        {requestingGps ? 'Detectando…' : state.location_source === 'gps' ? 'GPS confirmado — refinar de novo' : !previewConfirmed ? 'Confirme a prévia para usar o GPS' : 'Usar minha localização (GPS refinado)'}
+        {requestingGps ? 'Detectando…' : state.location_source === 'gps' ? 'GPS confirmado — refinar de novo' : 'Usar minha localização (GPS refinado)'}
       </Button>
 
 
