@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import WizardShell from '@/components/onboarding/wizard/WizardShell';
+import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 
 /**
  * /cadastro-inicial — porta única do onboarding (V3 + V2 fundidos).
