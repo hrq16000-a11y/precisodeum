@@ -10,6 +10,7 @@ import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { resolveDisplayName } from '@/lib/providerDisplay';
 import { capitalizeName } from '@/lib/normalize';
+import LazyImage from '@/components/ui/LazyImage';
 
 /**
  * CompanyCard — card específico para perfis empresariais (account_type='company').
