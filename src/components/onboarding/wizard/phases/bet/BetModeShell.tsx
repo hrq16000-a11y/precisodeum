@@ -212,6 +212,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       if (error) throw error;
       await addSessionPointsToProfile();
       await refetchProfile?.();
+      clearBetDraft();
       navigate('/quero-ser-patrocinador', { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_sponsor' } });
