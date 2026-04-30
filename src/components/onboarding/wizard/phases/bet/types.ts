@@ -36,6 +36,7 @@ export interface BetState {
     intent: boolean;
     city: boolean;
     pro_kind: boolean;
+    document: boolean;
   };
   phase: BetPhase;
 }
@@ -62,6 +63,7 @@ export const initialBetState: BetState = {
     intent: false,
     city: false,
     pro_kind: false,
+    document: false,
   },
   phase: 'identity',
 };
