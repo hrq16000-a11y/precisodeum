@@ -115,6 +115,8 @@ export interface SearchFilterOptions {
    * - 'any' (padrão): não filtra
    */
   availabilityWindow?: AvailabilityWindow;
+  /** Pesos do modo `sortBy='best'`. Default: rating 0.7 / distância 0.3. */
+  scoreWeights?: SearchScoreWeights;
 }
 
 export function applySearchFilters<T extends FilterableProvider>(
