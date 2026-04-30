@@ -1004,6 +1004,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               });
               resolvedServiceId = insertRow.id;
               dispatch({ type: 'SET_FIRST_SERVICE_ID', id: insertRow.id });
+              }
             } catch (fallbackErr: any) {
               // Plano C — feedback amigável (Hotfix #4) e propaga para o catch externo
               throw new Error(
