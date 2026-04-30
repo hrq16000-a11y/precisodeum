@@ -119,35 +119,45 @@ export const Phase2Service = ({
     onChangeService({ description: text });
   };
 
-  // Invariante: o nome do serviço precisa ser exatamente o nome da categoria
-  // selecionada e o primary_category_id do perfil precisa apontar para o mesmo id.
+  // Invariante: o nome do serviço deve refletir a categoria selecionada e o
+  // primary_category_id do perfil deve apontar para o mesmo id. G13: a invariante
+  // continua sendo a verdade final, mas o avanço NÃO depende mais dela — se o
+  // usuário tem categoria + descrição válidas, normalizamos automaticamente
+  // o nome no clique e seguimos. O botão nunca fica "morto sem explicação".
   const invariantOk =
     !!selectedId &&
     service.service_name.trim().toLowerCase() === selectedName.trim().toLowerCase() &&
     profile.primary_category_id === selectedId;
 
-  const canAdvance =
-    !!selectedId &&
-    service.description.trim().length >= 10 &&
-    invariantOk;
+  const descriptionOk = service.description.trim().length >= 10;
+
+  // G13: dedupe de cliques no botão "Salvar e continuar".
+  const advancingRef = useRef(false);
 
   const handleAdvance = () => {
+    if (advancingRef.current) return;
     if (!selectedId) {
-      toast.error('Escolha uma categoria antes de continuar.');
+      toast.error('Por favor, selecione uma categoria de serviço para continuar.');
+      return;
+    }
+    if (!descriptionOk) {
+      toast.error('Escreva uma descrição com pelo menos 10 caracteres para o seu serviço.');
       return;
     }
     if (!invariantOk) {
-      // Auto-corrige silenciosamente e bloqueia o avanço com aviso claro.
+      // Auto-corrige no clique (sem bloquear): alinhamos service_name +
+      // primary_category_id à categoria escolhida e seguimos para o próximo passo.
       onChangeService({ category_ids: [selectedId], service_name: selectedName });
       onChangeProfile({ primary_category_id: selectedId });
-      toast.error('Categoria e nome do serviço estavam fora de sincronia. Já corrigimos — confirme e clique em Continuar de novo.');
-      return;
     }
-    if (service.description.trim().length < 10) {
-      toast.error('Escreva uma descrição com pelo menos 10 caracteres.');
-      return;
+    advancingRef.current = true;
+    try {
+      onNext();
+    } finally {
+      // Libera o lock no próximo tick — o shell já avançou de phase, mas
+      // protegemos contra duplo-clique muito rápido.
+      window.setTimeout(() => { advancingRef.current = false; }, 600);
     }
-    onNext();
   };
 
   return (
@@ -207,9 +217,9 @@ export const Phase2Service = ({
             </div>
           )}
           {selectedId && !invariantOk && (
-            <p className="mt-1 inline-flex items-start gap-1 text-[11px] text-destructive">
+            <p className="mt-1 inline-flex items-start gap-1 text-[11px] text-amber-700 dark:text-amber-300">
               <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
-              O título do serviço deve ser igual à categoria escolhida. Reselecione a categoria para corrigir.
+              O título do serviço será ajustado para "{selectedName}" ao continuar.
             </p>
           )}
         </label>
@@ -287,8 +297,8 @@ export const Phase2Service = ({
           type="button"
           size="lg"
           onClick={handleAdvance}
-          disabled={!canAdvance}
-          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50 disabled:shadow-none"
+          aria-disabled={!selectedId || !descriptionOk}
+          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95"
         >
           Salvar e continuar
           <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />
@@ -346,6 +356,18 @@ export const Phase2Details = ({
   const [priceText, setPriceText] = useState(service.starting_price_brl != null ? String(service.starting_price_brl) : '');
   const [customHours, setCustomHours] = useState(service.working_hours);
   const focusCities = useFocusFieldFromReview('cities_served');
+
+  // G13: dedupe defensivo de cliques em "Salvar e continuar".
+  const submittingRef = useRef(false);
+  const handleSubmitDeduped = () => {
+    if (submittingRef.current || saving) return;
+    submittingRef.current = true;
+    try {
+      onSubmit();
+    } finally {
+      window.setTimeout(() => { submittingRef.current = false; }, 1500);
+    }
+  };
 
   // Pré-popula com cidade do perfil
   useEffect(() => {
@@ -527,7 +549,7 @@ export const Phase2Details = ({
         <Button
           type="button"
           size="lg"
-          onClick={onSubmit}
+          onClick={handleSubmitDeduped}
           disabled={saving}
           className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50 disabled:shadow-none"
         >

@@ -98,6 +98,7 @@ function slugify(input: string): string {
     .slice(0, 50);
 }
 
+
 interface OnboardingV2ShellProps {
   /**
    * Marca verdade quando o V2 Shell é aberto logo após a triagem (V3) dentro
@@ -206,16 +207,25 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // Detecta rascunho REMOTO (troca de dispositivo) e ABRE MODAL para o usuário decidir.
   // Não auto-hidrata mais — evita "salto" silencioso de etapa.
+  // G5: comparação inteligente — se o rascunho remoto está numa fase MAIS AVANÇADA
+  // que a local, ainda assim oferecemos a recuperação (caso contrário o usuário
+  // poderia repetir etapas já concluídas em outro dispositivo).
   useEffect(() => {
     if (!user?.id) return;
     if (skipDraftRestore) return;
     const local = readOnboardingV2Draft();
-    if (local && local.phase && local.phase !== 'phase1_action') return;
+    const localPhase = (local?.phase as any) || 'phase1_action';
     let alive = true;
     (async () => {
       const remote = await fetchRemoteDraft(user.id);
       if (!alive || !remote) return;
-      // Se já está vazio (phase inicial), só oferece restaurar; caso contrário pergunta.
+      const remotePhase = remote.phase as any;
+      const remoteIdx = phaseIndex(remotePhase);
+      const localIdx = phaseIndex(localPhase);
+      const remoteIsAhead = remoteIdx > localIdx;
+      const localIsEmpty = !local || localPhase === 'phase1_action';
+      // Pergunta sempre que (a) local vazio, ou (b) remoto está mais à frente.
+      if (!localIsEmpty && !remoteIsAhead) return;
       setRemoteDraft(remote);
       setShowRemoteModal(true);
     })();
