@@ -1,9 +1,10 @@
-/** Phase Client City — fast-pass: cidade e cadastro liberado. */
+/** Phase Client City — fast-pass: cidade + bairro (opcional) e cadastro liberado. */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Zap } from 'lucide-react';
+import { ArrowRight, MapPin, Zap, Home } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { fieldWin } from '@/lib/betDopamine';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { BET_POINTS, type BetState } from './types';
