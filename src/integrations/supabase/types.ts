@@ -8500,22 +8500,39 @@ export type Database = {
         Args: { _route?: string; _ua?: string }
         Returns: undefined
       }
-      record_my_geo_event: {
-        Args: {
-          _accuracy_m?: number
-          _city?: string
-          _error_message?: string
-          _event_type: string
-          _latency_ms?: number
-          _latitude?: number
-          _longitude?: number
-          _neighborhood?: string
-          _source: string
-          _state?: string
-          _status?: string
-        }
-        Returns: string
-      }
+      record_my_geo_event:
+        | {
+            Args: {
+              _accuracy_m?: number
+              _city?: string
+              _error_message?: string
+              _event_type: string
+              _latency_ms?: number
+              _latitude?: number
+              _longitude?: number
+              _neighborhood?: string
+              _source: string
+              _state?: string
+              _status?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _accuracy_m?: number
+              _city?: string
+              _error_message?: string
+              _event_type: string
+              _latency_ms?: number
+              _latitude?: number
+              _longitude?: number
+              _neighborhood?: string
+              _source: string
+              _state?: string
+              _status?: string
+            }
+            Returns: string
+          }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
       register_click_lead: {
         Args: {
