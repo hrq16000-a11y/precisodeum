@@ -145,13 +145,17 @@ const ImageUploadField = ({
         toast.success(`Imagem enviada (qualidade reduzida — nível ${result.fallbackLevel}).`);
       else toast.success('Imagem enviada!');
     } catch (err) {
-      setStages((prev) => ({ ...prev, upload: 'error' }));
+      const kind = classifyUploadError(err);
+      setStages((prev) => ({
+        ...prev,
+        upload: prev.errorStage ? prev.upload : 'error',
+        errorStage: prev.errorStage ?? 'upload',
+        errorKind: prev.errorKind ?? kind,
+        errorMessage: prev.errorMessage ?? (err as any)?.message ?? null,
+        retry: 'pending',
+      }));
       setHasFailed(true);
-      if (err instanceof UploadTimeoutError) {
-        toast.error('Conexão muito lenta. Toque em "Tentar novamente".');
-      } else {
-        toast.error('Erro ao enviar imagem. Toque em "Tentar novamente".');
-      }
+      toast.error(userMessageFor(kind));
     } finally {
       setUploading(false);
     }
