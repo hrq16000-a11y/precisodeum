@@ -47,7 +47,6 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
   const [previewNeighborhood, setPreviewNeighborhood] = useState('');
   const [previewConfirmed, setPreviewConfirmed] = useState<boolean>(() => state.location_source === 'gps');
   const previewSeededRef = useRef(false);
-  const cepLookupRef = useRef<string>('');
 
   // Auto-sugestão (não-destrutiva): pré-preenche cidade/UF se vazios.
   // Bairro só auto-preenche se vier sanitizado (≠ cidade, não-regional).
