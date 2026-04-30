@@ -12,6 +12,9 @@ describe('V3→V2 first service continuity (handoff interno)', () => {
   it('BetModeShell delega o handoff via prop interna (sem navegar para rota legada)', () => {
     const bet = read('src/components/onboarding/wizard/phases/bet/BetModeShell.tsx');
     expect(bet).toContain('onInternalHandoff');
+    expect(bet).toContain("goto('pro_document')");
+    expect(bet).toContain("state.phase === 'pro_document'");
+    expect(bet).toContain("next={() => goto('pro_location')}");
     expect(bet).not.toContain('source=bet-first-service');
     expect(bet).not.toMatch(/navigate\(['"]\/onboarding-v2/);
   });
@@ -30,6 +33,12 @@ describe('V3→V2 first service continuity (handoff interno)', () => {
     expect(shell).toContain('onboarding-v2-phase-regression-blocked');
     expect(shell).toContain('Já preenchido:');
     expect(shell).not.toContain("searchParams.get('source')");
+  });
+
+  it('wizardReducer mantém triage_pro_document na ordem visual do profissional', () => {
+    const reducer = read('src/components/onboarding/wizard/wizardReducer.ts');
+    expect(reducer).toMatch(/'triage_pro_kind',[\s\S]*'triage_pro_document',[\s\S]*'triage_pro_location'/);
+    expect(reducer).toMatch(/'triage_pro_kind',[\s\S]*'triage_pro_document',[\s\S]*'triage_pro_location',[\s\S]*'triage_celebration'/);
   });
 
   it('limpa drafts da triagem antes da celebração/handoff para não reabrir pro_location', () => {
