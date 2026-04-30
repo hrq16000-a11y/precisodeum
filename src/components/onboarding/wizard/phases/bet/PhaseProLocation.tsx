@@ -409,9 +409,27 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
 
 
       {state.location_source === 'gps' && (
-        <p className="-mt-2 flex items-center justify-center gap-1 text-center text-[11px] text-emerald-700 dark:text-emerald-400">
-          <CheckCircle2 className="h-3 w-3" /> Localização confirmada por GPS
-        </p>
+        <div className="-mt-2 space-y-1 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-[11px] text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
+          <p className="flex items-center gap-1 font-semibold">
+            <CheckCircle2 className="h-3 w-3" />
+            {gpsAccuracy != null && gpsAccuracy <= 100
+              ? `GPS exato (±${Math.round(gpsAccuracy)}m)`
+              : gpsAccuracy != null
+              ? `GPS aproximado (±${Math.round(gpsAccuracy)}m)`
+              : 'GPS confirmado'}
+          </p>
+          {geo.neighborhoodSource && geo.neighborhoodSource !== 'none' && (
+            <p className="opacity-80">
+              Bairro detectado via {geo.neighborhoodSource === 'bigdatacloud'
+                ? 'BigDataCloud'
+                : geo.neighborhoodSource === 'nominatim'
+                ? 'OpenStreetMap (fallback)'
+                : geo.neighborhoodSource === 'cep'
+                ? 'CEP'
+                : 'manual'}.
+            </p>
+          )}
+        </div>
       )}
 
       <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
