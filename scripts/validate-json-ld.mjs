@@ -151,20 +151,62 @@ function validateBlock({ type, raw }, file) {
 
 let totalBlocks = 0;
 const allErrors = [];
+const errorsByType = {};
+const errorsByFile = {};
 for (const file of walk(SRC_DIR)) {
   const src = readFileSync(file, 'utf8');
   if (!src.includes("'@type'") && !src.includes('"@type"')) continue;
   const blocks = extractBlocks(src);
   totalBlocks += blocks.length;
   for (const b of blocks) {
-    allErrors.push(...validateBlock(b, file.replace(ROOT, '')));
+    const errs = validateBlock(b, file.replace(ROOT, ''));
+    if (errs.length) {
+      errorsByType[b.type] = (errorsByType[b.type] || 0) + errs.length;
+      const key = file.replace(ROOT, '');
+      errorsByFile[key] = (errorsByFile[key] || []).concat(errs);
+    }
+    allErrors.push(...errs);
   }
+}
+
+// Sempre emite relatório estruturado para CI consumir como artefato.
+try {
+  if (!existsSync(dirname(REPORT_PATH))) {
+    mkdirSync(dirname(REPORT_PATH), { recursive: true });
+  }
+  writeFileSync(
+    REPORT_PATH,
+    JSON.stringify(
+      {
+        ok: allErrors.length === 0,
+        totalBlocks,
+        errorCount: allErrors.length,
+        errorsByType,
+        errorsByFile,
+        errors: allErrors,
+        strict: STRICT,
+        generatedAt: new Date().toISOString(),
+      },
+      null,
+      2,
+    ),
+  );
+} catch (e) {
+  console.warn('[validate-json-ld] não foi possível salvar relatório:', e?.message || e);
 }
 
 if (allErrors.length) {
   console.error(`✗ JSON-LD inválido (${allErrors.length} erro(s) em ${totalBlocks} bloco(s)):`);
+  // Agrupa por @type para diagnóstico mais rápido em CI.
+  const byType = Object.entries(errorsByType).sort((a, b) => b[1] - a[1]);
+  if (byType.length) {
+    console.error('  Por @type:');
+    for (const [type, count] of byType) console.error(`    - ${type}: ${count}`);
+  }
+  console.error('  Detalhes:');
   for (const e of allErrors) console.error('  •', e);
+  console.error(`\n  Relatório completo: ${REPORT_PATH}`);
   process.exit(1);
 }
 
-console.log(`✓ JSON-LD OK — ${totalBlocks} bloco(s) validado(s) em src/`);
+console.log(`✓ JSON-LD OK — ${totalBlocks} bloco(s) validado(s) em src/ (relatório: ${REPORT_PATH})`);
