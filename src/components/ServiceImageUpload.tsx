@@ -1,11 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ImagePlus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { ImagePlus, Trash2, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
 import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
-import { compressImage, generateBlurDataUrl } from '@/lib/compressImage';
+import { generateBlurDataUrl } from '@/lib/compressImage';
+import { uploadWithFallback } from '@/lib/uploadWithFallback';
+import { UploadTimeoutError } from '@/lib/uploadResilient';
+import {
+  UploadProgressIndicator,
+  makeInitialStages,
+  type UploadStagesState,
+} from '@/components/upload/UploadProgressIndicator';
 
 interface ServiceImage {
   id: string;
