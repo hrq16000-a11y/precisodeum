@@ -152,6 +152,24 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           latency_ms,
           accuracy_m: acc ?? null,
         });
+        // Histórico de origem da localização (audit trail por prestador).
+        void recordMyGeoEvent({
+          event_type: 'gps_attempt',
+          source: 'gps',
+          city: result.city,
+          state: result.state,
+          neighborhood: cleanNeighborhood || null,
+          latitude: geo.latitude ?? null,
+          longitude: geo.longitude ?? null,
+          accuracy_m: acc ?? null,
+          latency_ms,
+          status: 'ok',
+        });
+        // GPS confirmado também valida a prévia automaticamente.
+        setPreviewConfirmed(true);
+        setPreviewCity(result.city);
+        setPreviewStateField(result.state);
+        if (cleanNeighborhood) setPreviewNeighborhood(cleanNeighborhood);
         if (acc != null && acc > 500) {
           toast.warning('GPS impreciso', {
             description: `Margem de ~${Math.round(acc)}m. Confirme bairro e cidade manualmente.`,
