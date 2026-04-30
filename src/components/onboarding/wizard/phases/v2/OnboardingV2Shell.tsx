@@ -860,6 +860,17 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               workingProviderId = await ensureProviderId();
             }
             if (!workingProviderId || !categoryId || !resolvedCategoryName) {
+              void trackEvent({
+                phase: state.phase,
+                event: 'error',
+                userId: user?.id,
+                meta: {
+                  reason: 'persist_first_service_precondition_failed',
+                  has_provider_id: Boolean(workingProviderId),
+                  has_category_id: Boolean(categoryId),
+                  has_category_name: Boolean(resolvedCategoryName),
+                },
+              });
               toast.error('Não conseguimos registrar seu serviço principal.', {
                 description: 'Verifique se a categoria está correta e tente novamente.',
                 duration: 10000,
@@ -1064,7 +1075,27 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       return true;
     } catch (e: any) {
-      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'publish_first_service', flow: isCompany ? 'company' : 'default' } });
+      // Telemetria final (Hotfix #1 — observabilidade total).
+      // Mantém o erro COMPLETO (até 600 chars) na telemetria para análise técnica
+      // mesmo quando o toast exibido ao usuário precisa ser curto.
+      const fullMessage = String(e?.message || e || 'unknown');
+      const truncatedMessage = fullMessage.length > 140
+        ? fullMessage.slice(0, 137) + '...'
+        : fullMessage;
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: {
+          reason: 'persist_first_service_terminal_catch',
+          error_code: e?.code || null,
+          error_message: fullMessage.slice(0, 600),
+          error_details: e?.details ? String(e.details).slice(0, 300) : null,
+          error_hint: e?.hint || null,
+          error_name: e?.name || null,
+        },
+      });
+      logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'publish_first_service', flow: isCompany ? 'company' : 'default', error_message_truncated: truncatedMessage } });
       toast.error('Não conseguimos registrar seu serviço principal.', {
         description: 'Verifique se a categoria está correta e tente novamente. Seu progresso foi salvo como rascunho — você pode continuar a qualquer momento.',
         duration: 12000,
