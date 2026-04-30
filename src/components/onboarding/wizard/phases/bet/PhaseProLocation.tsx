@@ -229,6 +229,8 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           neighborhood={state.neighborhood || ''}
           currentValue={state.postal_code || null}
           onApply={(cep) => applyCepSuggestion(cep)}
+          phase="pro_location"
+          userId={user?.id || null}
         />
       </div>
 
