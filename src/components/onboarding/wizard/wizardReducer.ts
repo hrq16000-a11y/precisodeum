@@ -252,6 +252,11 @@ export const initialWizardState: WizardState = {
     pro_kind: null,
     document: '',
     company_name: '',
+    street: '',
+    street_number: '',
+    complement: '',
+    postal_code: '',
+    show_full_address: false,
     points: 0,
     rewards: {
       name: false,
