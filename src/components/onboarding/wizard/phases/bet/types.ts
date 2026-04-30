@@ -19,6 +19,13 @@ export interface BetState {
   city: string;
   state: string;
   neighborhood: string;        // bairro — necessário para anúncio aparecer
+  /** Coordenadas da cidade-base (GPS preciso ou centro do CEP). Persistidas no draft. */
+  latitude: number | null;
+  longitude: number | null;
+  /** Código IBGE do município (quando disponível via CEP/normalização). */
+  ibge_code: string | null;
+  /** Origem da localização atualmente persistida. */
+  location_source: 'gps' | 'cep' | 'ip' | 'manual' | null;
   pro_kind: BetProKind | null;
   document: string;            // CPF (11) ou CNPJ (14)
   company_name: string;        // PJ apenas
@@ -48,6 +55,10 @@ export const initialBetState: BetState = {
   city: '',
   state: '',
   neighborhood: '',
+  latitude: null,
+  longitude: null,
+  ibge_code: null,
+  location_source: null,
   pro_kind: null,
   document: '',
   company_name: '',

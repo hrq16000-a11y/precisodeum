@@ -491,6 +491,9 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         city: state.city,
         state: state.state,
         neighborhood: (state.neighborhood || '').trim(),
+        ...(state.latitude != null && state.longitude != null
+          ? { latitude: state.latitude, longitude: state.longitude }
+          : {}),
         description: '',
         // PJ — endereço institucional (opcional). normalizeProviderPayload
         // remove silenciosamente para PF e sanitiza para PJ.

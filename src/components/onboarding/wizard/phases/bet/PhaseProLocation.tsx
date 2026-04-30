@@ -1,7 +1,14 @@
-/** Phase Pro Location — cidade + bairro do profissional. */
+/** Phase Pro Location — cidade-base + bairro do profissional.
+ *
+ *  Regras:
+ *  - Cidade-base = MUNICÍPIO oficial (nunca "Região Metropolitana" — isso é área).
+ *  - Bairro nunca pode ser igual à cidade nem label regional (sanitizeNeighborhood).
+ *  - Lat/Lng/IBGE são persistidos no draft (sobrevivem a Voltar/Avançar e troca de aba).
+ *  - Prévia explícita antes do GPS mostrando o que será preenchido.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Home, LocateFixed, Info, AlertTriangle } from 'lucide-react';
+import { ArrowRight, MapPin, Home, LocateFixed, Info, AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +18,8 @@ import { toast } from 'sonner';
 import CepSuggestionCard from './CepSuggestionCard';
 import { startGpsTimer, trackGpsAttempt, mapGeolocationError } from '@/lib/locationTelemetry';
 import { useAuth } from '@/hooks/useAuth';
+import { sanitizeNeighborhood } from '@/lib/geoReverseGeocode';
+import { lookupCep, normalizeCep } from '@/lib/cepLookup';
 import { BET_POINTS, type BetState } from './types';
 
 interface Props {
@@ -21,8 +30,6 @@ interface Props {
 }
 
 export default function PhaseProLocation({ state, patch, finish, addPoints }: Props) {
-  // Pontuação persistida em state.rewards.city — sobrevive ao "Voltar" do wizard
-  // (usar useState local fazia os pontos serem somados de novo a cada retorno).
   const awarded = state.rewards.city;
   const [submitting, setSubmitting] = useState(false);
   const [requestingGps, setRequestingGps] = useState(false);
@@ -30,24 +37,29 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
   const autoFilledRef = useRef(false);
+  const cepLookupRef = useRef<string>('');
 
-  // Sugestão automática (não-destrutiva): se o usuário NUNCA digitou cidade,
-  // pré-preenche com o que veio do IP/GPS — visível e editável. Se já tinha
-  // cidade salva (rascunho/banco), NÃO sobrescreve.
+  // Auto-sugestão (não-destrutiva): pré-preenche cidade/UF se vazios.
+  // Bairro só auto-preenche se vier sanitizado (≠ cidade, não-regional).
   useEffect(() => {
     if (autoFilledRef.current) return;
-    if (state.city && state.city.trim().length > 0) return; // respeita o que já foi digitado
+    if (state.city && state.city.trim().length > 0) return;
     if (geo.city && geo.state) {
       autoFilledRef.current = true;
+      const cleanNeighborhood = sanitizeNeighborhood(geo.neighborhood, geo.city);
       patch({
         city: geo.city,
         state: geo.state,
-        ...(!(state.neighborhood && state.neighborhood.trim()) && geo.neighborhood
-          ? { neighborhood: geo.neighborhood }
+        location_source: state.location_source ?? (geo.source === 'gps' ? 'gps' : 'ip'),
+        ...(geo.latitude != null && geo.longitude != null
+          ? { latitude: geo.latitude, longitude: geo.longitude }
+          : {}),
+        ...(!(state.neighborhood && state.neighborhood.trim()) && cleanNeighborhood
+          ? { neighborhood: cleanNeighborhood }
           : {}),
       });
     }
-  }, [geo.city, geo.state, geo.neighborhood, state.city, state.neighborhood, patch]);
+  }, [geo.city, geo.state, geo.neighborhood, geo.latitude, geo.longitude, geo.source, state.city, state.neighborhood, state.location_source, patch]);
 
   function awardCityOnce() {
     if (state.rewards.city) return;
@@ -58,8 +70,14 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
 
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
-    autoFilledRef.current = true; // edição manual cancela auto-preenchimento
-    patch({ city, state: uf });
+    autoFilledRef.current = true;
+    // Edição manual invalida lat/lng/ibge antigos da cidade anterior.
+    const cityChanged = city !== state.city || uf !== state.state;
+    patch({
+      city,
+      state: uf,
+      ...(cityChanged ? { latitude: null, longitude: null, ibge_code: null, location_source: 'manual' } : {}),
+    });
     if (city && uf) awardCityOnce();
   }
 
@@ -67,9 +85,28 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     patch({ neighborhood: e.target.value });
   }
 
-  function applyCepSuggestion(cep: string) {
+  async function applyCepSuggestion(cep: string) {
     patch({ postal_code: cep });
     toast.success('CEP preenchido automaticamente', { description: cep });
+    await lookupAndApplyCep(cep);
+  }
+
+  async function lookupAndApplyCep(rawCep: string) {
+    const norm = normalizeCep(rawCep);
+    if (!norm || cepLookupRef.current === norm) return;
+    cepLookupRef.current = norm;
+    const r = await lookupCep(norm);
+    if (!r.ok) return;
+    const cleanNeighborhood = sanitizeNeighborhood(r.neighborhood, r.city);
+    patch({
+      city: r.city,
+      state: r.state,
+      ...(cleanNeighborhood && !state.neighborhood?.trim() ? { neighborhood: cleanNeighborhood } : {}),
+      // BrasilAPI v2 traz ibge em data.city_ibge; lookupCep não expõe. Mantemos null aqui — o
+      // backend fará a normalização final via sync_cidade trigger. Coordenadas só por GPS.
+      location_source: 'cep',
+    });
+    if (r.city && r.state) awardCityOnce();
   }
 
   const { user } = useAuth();
@@ -83,13 +120,17 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
       const latency_ms = timer.stop();
       if (result.ok && result.city && result.state) {
         autoFilledRef.current = true;
-        // Preenche cidade/UF e — se o GPS retornou bairro e o campo está vazio —
-        // também o bairro, para o usuário não precisar digitar.
-        const patchObj: Partial<BetState> = { city: result.city, state: result.state };
-        const incomingNeighborhood = (result.neighborhood || '').trim();
+        const cleanNeighborhood = sanitizeNeighborhood(result.neighborhood, result.city);
         const currentNeighborhood = (state.neighborhood || '').trim();
-        if (incomingNeighborhood && !currentNeighborhood) {
-          patchObj.neighborhood = incomingNeighborhood;
+        const patchObj: Partial<BetState> = {
+          city: result.city,
+          state: result.state,
+          latitude: geo.latitude,
+          longitude: geo.longitude,
+          location_source: 'gps',
+        };
+        if (cleanNeighborhood && !currentNeighborhood) {
+          patchObj.neighborhood = cleanNeighborhood;
         }
         patch(patchObj);
         setGpsAccuracy(result.accuracyMeters ?? null);
@@ -106,9 +147,13 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           toast.warning('GPS impreciso', {
             description: `Margem de ~${Math.round(acc)}m. Confirme bairro e cidade manualmente.`,
           });
-        } else {
+        } else if (cleanNeighborhood) {
           toast.success('Localização detectada por GPS', {
-            description: `${result.city} / ${result.state}${incomingNeighborhood ? ` — ${incomingNeighborhood}` : ''}${acc != null ? ` (±${Math.round(acc)}m)` : ''}.`,
+            description: `${result.city} / ${result.state} — ${cleanNeighborhood}${acc != null ? ` (±${Math.round(acc)}m)` : ''}.`,
+          });
+        } else {
+          toast.success('Cidade detectada por GPS', {
+            description: `${result.city} / ${result.state}. Informe o bairro manualmente — não conseguimos detectá-lo com precisão.`,
           });
         }
       } else {
@@ -142,11 +187,21 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
   const neighborhoodOk = (state.neighborhood || '').trim().length >= 2;
   const canFinish = cityOk && neighborhoodOk;
   const sourceLabel =
+    state.location_source === 'gps' ? 'GPS preciso' :
+    state.location_source === 'cep' ? 'CEP' :
+    state.location_source === 'ip' ? 'aproximada (IP)' :
+    state.location_source === 'manual' ? 'manual' :
     geo.source === 'gps' ? 'GPS' :
     geo.source === 'ip' ? 'aproximada (IP)' :
     geo.source === 'manual' ? 'manual' :
     geo.source === 'cache' ? 'salva' : null;
-  const hasApproximatePrefill = geo.source === 'ip' || geo.source === 'cache';
+
+  // Prévia ANTES do GPS — mostra o que sabemos sem GPS preciso.
+  const previewCity = state.city || geo.city || '';
+  const previewState = state.state || geo.state || '';
+  const previewNeighborhood = sanitizeNeighborhood(state.neighborhood || geo.neighborhood, previewCity) || '';
+  const showPreview = !state.location_source || state.location_source !== 'gps';
+
   const gpsImprecise = gpsAccuracy != null && gpsAccuracy > 500;
 
   async function onFinish() {
@@ -167,20 +222,43 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           Onde você atende?
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sua cidade e bairro aparecem para clientes próximos.
+          Sua cidade-base e bairro aparecem para clientes próximos.
         </p>
       </header>
 
-      {/* Aviso curto de importância da localização */}
+      {/* Prévia "cidade aproximada / bairro (se disponível)" antes do GPS */}
+      {showPreview && previewCity && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-3 text-xs text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100">
+          <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide opacity-70">
+            <Sparkles className="h-3.5 w-3.5" /> Prévia da sua localização
+          </div>
+          <div className="space-y-0.5 text-[13px] leading-snug">
+            <div>
+              <strong>Cidade aproximada:</strong> {previewCity}{previewState ? ` / ${previewState}` : ''}
+            </div>
+            <div>
+              <strong>Bairro:</strong>{' '}
+              {previewNeighborhood
+                ? <span>{previewNeighborhood}</span>
+                : <span className="italic opacity-80">não detectado — toque no GPS para refinar</span>}
+            </div>
+          </div>
+          <p className="mt-1.5 text-[11px] opacity-80">
+            Use o GPS abaixo para confirmar com precisão de bairro.
+          </p>
+        </div>
+      )}
+
+      {/* Aviso curto */}
       <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
         <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
         <p className="leading-snug">
-          A <strong>localização correta</strong> aumenta seu match com clientes próximos. Use o GPS
-          para precisão de bairro — você ainda pode editar tudo abaixo.
+          A <strong>cidade-base</strong> deve ser o seu município (ex: <em>São José dos Pinhais</em>) — não a região metropolitana.
+          Você poderá adicionar a região como <strong>área de atendimento</strong> depois.
         </p>
       </div>
 
-      {/* Botão GPS — sempre disponível e visível */}
+      {/* Botão GPS */}
       <Button
         type="button"
         variant="outline"
@@ -190,18 +268,18 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
         className="w-full justify-center gap-2 border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-950/40"
       >
         <LocateFixed className={`h-4 w-4 ${requestingGps ? 'animate-pulse' : ''}`} />
-        {requestingGps ? 'Detectando…' : 'Usar minha localização (GPS)'}
+        {requestingGps ? 'Detectando…' : state.location_source === 'gps' ? 'GPS confirmado — refinar de novo' : 'Usar minha localização (GPS)'}
       </Button>
 
-      {hasApproximatePrefill && state.city && (
-        <p className="-mt-2 text-center text-[11px] text-muted-foreground">
-          Sugerimos sua cidade aproximada automaticamente. Use o GPS só para tentar refinar o bairro.
+      {state.location_source === 'gps' && (
+        <p className="-mt-2 flex items-center justify-center gap-1 text-center text-[11px] text-emerald-700 dark:text-emerald-400">
+          <CheckCircle2 className="h-3 w-3" /> Localização confirmada por GPS
         </p>
       )}
 
       <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
         <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5" /> Cidade base
+          <MapPin className="h-3.5 w-3.5" /> Cidade-base
           {awarded && (
             <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
               +{BET_POINTS.city} pts
@@ -217,7 +295,7 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
             statusText={
               state.city
                 ? sourceLabel
-                  ? `Detectada ${sourceLabel}. Edite se estiver errado.`
+                  ? `Detectada via ${sourceLabel}. Edite se estiver errado.`
                   : undefined
                 : preferredUF
                 ? `Mostrando primeiro cidades de ${preferredUF}`
@@ -244,7 +322,6 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
           O bairro ajuda clientes da sua região a te encontrar mais rápido.
         </p>
 
-        {/* Sugestão automática de CEP a partir de cidade + bairro */}
         <CepSuggestionCard
           city={state.city}
           state={state.state}
@@ -256,7 +333,6 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
         />
       </div>
 
-      {/* Aviso de GPS impreciso */}
       {gpsImprecise && (
         <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-xs text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-100">
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
