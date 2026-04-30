@@ -67,10 +67,10 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
       className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
     >
       <header className="space-y-2 text-center">
-        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
+        <h1 className="font-display text-lg font-extrabold leading-tight text-foreground">
           {isPf ? 'Confirme seu CPF' : 'Confirme seu CNPJ'}
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {isPf ? `Troca direta: CPF → Selo de Confiança + ${BET_POINTS.cpf_badge} pts.` : `Troca direta: CNPJ + Nome Fantasia → Selo Empresa Verificada + ${BET_POINTS.cnpj_badge} pts.`}
         </p>
       </header>

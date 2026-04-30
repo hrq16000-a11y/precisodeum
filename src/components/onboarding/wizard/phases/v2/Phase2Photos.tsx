@@ -38,11 +38,11 @@ export const Phase2Photos = ({
       </div>
       <h1
         id="phase2-photos-title"
-        className="font-display text-2xl font-extrabold leading-tight text-foreground"
+        className="font-display text-lg font-extrabold leading-tight text-foreground"
       >
         Adicione fotos do serviço
       </h1>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         Até <span className="font-semibold text-foreground">5 imagens</span> — a primeira é a capa.
         Perfis com fotos recebem 3× mais contatos.
       </p>

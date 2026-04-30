@@ -46,10 +46,10 @@ export default function PhaseWho({ state, patch, goto, awardReward }: Props) {
         <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
           <Sparkles className="h-3 w-3" /> +{BET_POINTS.intent} pts ao escolher
         </div>
-        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
+        <h1 className="font-display text-lg font-extrabold leading-tight text-foreground">
           Quem é você?
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Escolha como vai usar a plataforma.
         </p>
       </header>

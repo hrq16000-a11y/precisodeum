@@ -32,7 +32,7 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
         <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
           <Sparkles className="h-3 w-3" /> Escolha seu perfil profissional
         </div>
-        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
+        <h1 className="font-display text-lg font-extrabold leading-tight text-foreground">
           Como você atua?
         </h1>
       </header>

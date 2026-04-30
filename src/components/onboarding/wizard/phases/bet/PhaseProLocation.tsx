@@ -312,10 +312,10 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
       className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
     >
       <header className="space-y-2 text-center">
-        <h1 className="font-display text-2xl font-extrabold leading-tight text-foreground">
+        <h1 className="font-display text-lg font-extrabold leading-tight text-foreground">
           De onde você é?
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Sua cidade-base aparece para clientes próximos, e o bairro é sugerido quando houver dado confiável.
         </p>
       </header>

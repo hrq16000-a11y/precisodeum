@@ -167,10 +167,10 @@ export const Phase2Service = ({
         ← Voltar
       </button>
       <header className="space-y-2 text-center">
-        <h1 id="phase2-service-title" className="font-display text-2xl font-extrabold leading-tight text-foreground">
+        <h1 id="phase2-service-title" className="font-display text-lg font-extrabold leading-tight text-foreground">
           Qual serviço você quer cadastrar?
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Em 30 segundos seu primeiro serviço já está no mapa.
         </p>
       </header>
@@ -407,10 +407,10 @@ export const Phase2Details = ({
         ← Voltar
       </button>
       <header className="space-y-2 text-center">
-        <h1 id="phase2-details-title" className="font-display text-2xl font-extrabold leading-tight text-foreground">
+        <h1 id="phase2-details-title" className="font-display text-lg font-extrabold leading-tight text-foreground">
           Para quem e por quanto?
         </h1>
-        <p className="text-sm text-muted-foreground">Tudo opcional — você pode refinar depois.</p>
+        <p className="text-xs text-muted-foreground">Tudo opcional — você pode refinar depois.</p>
       </header>
 
       {/* Cidades atendidas */}
