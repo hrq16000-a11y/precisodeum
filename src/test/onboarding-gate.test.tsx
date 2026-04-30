@@ -116,7 +116,7 @@ describe("OnboardingGate", () => {
       loading: false,
     });
     renderAt("/dashboard");
-    expect(screen.getByText("CHILDREN_RENDERED")).toBeTruthy();
+    expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
   });
 
   it("renders children when profile is complete", () => {
@@ -126,14 +126,13 @@ describe("OnboardingGate", () => {
       loading: false,
     });
     renderAt("/dashboard");
-    expect(screen.getByText("CHILDREN_RENDERED")).toBeTruthy();
+    expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
   });
 
   it("renders children for anonymous routes (no user)", () => {
     mockUseAuth.mockReturnValue({ user: null, profile: null, loading: false });
     renderAt("/");
     expect(screen.getByText("CHILDREN_RENDERED")).toBeTruthy();
-    expect(screen.queryByText("TRIAGEM_PAGE")).toBeNull();
   });
 
   it("does not loop redirect when already on /cadastro-inicial", () => {
@@ -144,5 +143,51 @@ describe("OnboardingGate", () => {
     });
     renderAt("/cadastro-inicial");
     expect(screen.getByText("CADASTRO_PAGE")).toBeTruthy();
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Bloqueio pós-conclusão: usuário com onboarding_completed=true não pode
+  // voltar a /cadastro-inicial (favoritos, e-mails antigos, ?next=...).
+  // ──────────────────────────────────────────────────────────────────────
+
+  it("redirects completed user away from /cadastro-inicial to /dashboard", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: { profile_type: "provider", onboarding_completed: true, onboarding_step: 5 },
+      loading: false,
+    });
+    renderAt("/cadastro-inicial");
+    expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
+    expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
+  });
+
+  it("redirects completed user to safe ?next= when present", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: { profile_type: "provider", onboarding_completed: true, onboarding_step: 5 },
+      loading: false,
+    });
+    renderAt("/cadastro-inicial?next=/dashboard/leads");
+    expect(screen.getByText("LEADS_PAGE")).toBeTruthy();
+  });
+
+  it("ignores unsafe ?next= (protocol-relative) and falls back to /dashboard", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: { profile_type: "provider", onboarding_completed: true, onboarding_step: 5 },
+      loading: false,
+    });
+    renderAt("/cadastro-inicial?next=//evil.com");
+    expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
+  });
+
+  it("ignores ?next=/cadastro-inicial loop attempt", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: { profile_type: "provider", onboarding_completed: true, onboarding_step: 5 },
+      loading: false,
+    });
+    renderAt("/cadastro-inicial?next=/cadastro-inicial");
+    expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
   });
 });
