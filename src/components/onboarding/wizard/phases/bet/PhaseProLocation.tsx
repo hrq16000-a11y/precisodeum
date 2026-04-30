@@ -205,11 +205,58 @@ export default function PhaseProLocation({ state, patch, finish, addPoints }: Pr
     geo.source === 'manual' ? 'manual' :
     geo.source === 'cache' ? 'salva' : null;
 
-  // Prévia ANTES do GPS — mostra o que sabemos sem GPS preciso.
-  const previewCity = state.city || geo.city || '';
-  const previewState = state.state || geo.state || '';
-  const previewNeighborhood = sanitizeNeighborhood(state.neighborhood || geo.neighborhood, previewCity) || '';
   const showPreview = !state.location_source || state.location_source !== 'gps';
+
+  // Seed da prévia editável a partir do que já temos (state ou geo aproximado).
+  useEffect(() => {
+    if (previewSeededRef.current) return;
+    const seedCity = state.city || geo.city || '';
+    const seedState = state.state || geo.state || '';
+    if (!seedCity && !seedState) return;
+    previewSeededRef.current = true;
+    setPreviewCity(seedCity);
+    setPreviewStateField(seedState);
+    const seedNeigh = sanitizeNeighborhood(state.neighborhood || geo.neighborhood, seedCity) || '';
+    setPreviewNeighborhood(seedNeigh);
+  }, [state.city, state.state, state.neighborhood, geo.city, geo.state, geo.neighborhood]);
+
+  // Validação cidade-base vs área de atendimento (cidade não pode ser regional).
+  const previewIssues = validateBaseCityVsServiceArea({
+    city: previewCity,
+    state: previewState,
+    neighborhood: previewNeighborhood,
+  });
+  const previewBlocked = hasBlockingBaseCityIssue(previewIssues);
+
+  function handleConfirmPreview() {
+    if (previewBlocked) {
+      toast.error('Verifique a cidade-base', {
+        description: previewIssues[0]?.message || 'Cidade ou UF inválida.',
+      });
+      return;
+    }
+    const cleanNeigh = sanitizeNeighborhood(previewNeighborhood, previewCity) || '';
+    const cityChanged = previewCity !== state.city || previewState !== state.state;
+    patch({
+      city: previewCity,
+      state: previewState,
+      neighborhood: cleanNeigh,
+      ...(cityChanged ? { latitude: null, longitude: null, ibge_code: null } : {}),
+      location_source: state.location_source ?? 'manual',
+    });
+    if (previewCity && previewState) awardCityOnce();
+    setPreviewConfirmed(true);
+    toast.success('Prévia confirmada', { description: 'Agora você pode refinar com GPS ou finalizar.' });
+    void recordMyGeoEvent({
+      event_type: 'manual_edit',
+      source: state.location_source ?? 'manual',
+      city: previewCity,
+      state: previewState,
+      neighborhood: cleanNeigh || null,
+      status: 'logged',
+    });
+  }
+
 
   const gpsImprecise = gpsAccuracy != null && gpsAccuracy > 500;
 
