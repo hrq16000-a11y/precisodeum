@@ -1034,6 +1034,18 @@ const SearchPage = () => {
                     {filteredLocal.length} na sua região
                   </span>
                 )}
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-medium text-muted-foreground"
+                  title={
+                    sortBy === 'best'
+                      ? `Score: rating ${(scoreWeights.rating).toFixed(2)} + distância ${(scoreWeights.distance).toFixed(2)}`
+                      : SORT_CRITERIA_HINT[sortBy]
+                  }
+                  aria-label={`Critério de ordenação: ${SORT_CRITERIA_HINT[sortBy]}`}
+                >
+                  <ArrowUpDown className="h-3 w-3" />
+                  Ordenando por: <span className="font-semibold text-foreground">{SORT_CRITERIA_HINT[sortBy]}</span>
+                </span>
                 <Button
                   variant="outline"
                   size="sm"
