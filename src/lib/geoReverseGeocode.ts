@@ -63,15 +63,37 @@ export function parseReverseGeocodeLocation(data: ReverseGeocodeResponse) {
     });
 
   const locality = data?.locality ?? null;
-  const neighborhood = explicitNeighborhood || (
-    locality && municipality && normalize(locality) !== normalize(municipality) && !isRegionalLabel(locality)
+  const candidateNeighborhood =
+    explicitNeighborhood ||
+    (locality && municipality && normalize(locality) !== normalize(municipality) && !isRegionalLabel(locality)
       ? locality
-      : null
-  );
+      : null);
+
+  // Garantia final: bairro nunca pode ser igual à cidade nem label regional.
+  const neighborhood =
+    candidateNeighborhood &&
+    municipality &&
+    normalize(candidateNeighborhood) !== normalize(municipality) &&
+    !isRegionalLabel(candidateNeighborhood)
+      ? candidateNeighborhood
+      : null;
 
   return {
     city: municipality || null,
     state: data?.principalSubdivision || null,
     neighborhood,
   };
+}
+
+/**
+ * Sanitiza um valor de bairro: rejeita se for igual à cidade (acento-insensitive)
+ * ou se for label regional (Região Metropolitana, Microrregião etc.).
+ * Retorna a string limpa ou null.
+ */
+export function sanitizeNeighborhood(neighborhood?: string | null, city?: string | null): string | null {
+  const trimmed = (neighborhood || '').trim();
+  if (!trimmed) return null;
+  if (isRegionalLabel(trimmed)) return null;
+  if (city && normalize(trimmed) === normalize(city)) return null;
+  return trimmed;
 }
