@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { DbProvider } from '@/hooks/useProviders';
 import { logCoverageSearch } from '@/lib/coverageLog';
 import { useOnlineUsersMap } from '@/hooks/useOnlinePresence';
+import { measureQuery } from '@/lib/queryTelemetry';
 import { useMemo } from 'react';
 
 interface NearbyParams {
