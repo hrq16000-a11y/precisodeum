@@ -406,7 +406,122 @@ export default function AdminOnboardingStatsPage() {
             </CardContent>
           </Card>
 
-          {data?.since ? (
+          {/* Funnel segmentado por draft_source (local vs remote) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Funnel por origem do rascunho (local vs. remoto)
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Compara conversão entre quem retomou rascunho local, recuperou backup remoto ou começou do zero.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {!bySourceFunnel || bySourceFunnel.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sem dados na janela selecionada.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-xs uppercase text-muted-foreground">
+                      <tr>
+                        <th className="px-2 py-1 text-left">Origem</th>
+                        <th className="px-2 py-1 text-left">Phase</th>
+                        <th className="px-2 py-1 text-right">Entradas</th>
+                        <th className="px-2 py-1 text-right">Avanços</th>
+                        <th className="px-2 py-1 text-right">Erros</th>
+                        <th className="px-2 py-1 text-right">Usuários únicos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bySourceFunnel.map((r) => (
+                        <tr key={`${r.draft_source}-${r.phase}`} className="border-t">
+                          <td className="px-2 py-1">
+                            <Badge variant="outline" className="font-normal capitalize">
+                              {r.draft_source}
+                            </Badge>
+                          </td>
+                          <td className="px-2 py-1 font-mono text-xs">{r.phase}</td>
+                          <td className="px-2 py-1 text-right">{r.enters}</td>
+                          <td className="px-2 py-1 text-right">{r.advances}</td>
+                          <td className="px-2 py-1 text-right">
+                            {r.errors > 0 ? (
+                              <span className="text-destructive">{r.errors}</span>
+                            ) : r.errors}
+                          </td>
+                          <td className="px-2 py-1 text-right">{r.unique_users}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Funnel por usuário — quem está stuck */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Funnel por usuário (últimas atividades)</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Lista cada usuário, em qual fase ele parou e quantos erros encontrou. Top 200 por atividade recente.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {!userFunnel || userFunnel.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sem dados na janela selecionada.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-xs uppercase text-muted-foreground">
+                      <tr>
+                        <th className="px-2 py-1 text-left">Usuário</th>
+                        <th className="px-2 py-1 text-left">Origem</th>
+                        <th className="px-2 py-1 text-right">Fases entradas</th>
+                        <th className="px-2 py-1 text-right">Avanços</th>
+                        <th className="px-2 py-1 text-right">Erros</th>
+                        <th className="px-2 py-1 text-left">Última fase</th>
+                        <th className="px-2 py-1 text-center">Concluído</th>
+                        <th className="px-2 py-1 text-right">Última atividade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userFunnel.slice(0, 200).map((u) => (
+                        <tr key={u.user_id} className="border-t">
+                          <td className="px-2 py-1 font-mono text-xs">{u.user_id.slice(0, 8)}…</td>
+                          <td className="px-2 py-1">
+                            <Badge variant="outline" className="font-normal capitalize">
+                              {u.draft_source}
+                            </Badge>
+                          </td>
+                          <td className="px-2 py-1 text-right">{u.phases_entered}</td>
+                          <td className="px-2 py-1 text-right">{u.phases_advanced}</td>
+                          <td className="px-2 py-1 text-right">
+                            {u.errors_total > 0 ? (
+                              <span className="text-destructive">{u.errors_total}</span>
+                            ) : u.errors_total}
+                          </td>
+                          <td className="px-2 py-1 font-mono text-xs">{u.last_phase || "—"}</td>
+                          <td className="px-2 py-1 text-center">
+                            {u.completed ? (
+                              <Badge className="bg-green-500/15 text-green-700 hover:bg-green-500/15">
+                                Sim
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="px-2 py-1 text-right text-xs text-muted-foreground">
+                            {new Date(u.last_seen).toLocaleString("pt-BR")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
             <p className="text-xs text-muted-foreground">
               Janela: últimos {data.days} dias (desde {new Date(data.since).toLocaleString("pt-BR")}).
             </p>
