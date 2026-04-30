@@ -54,7 +54,10 @@ Allow: /
 User-agent: cohere-ai
 Allow: /
 
-# Dynamic sitemap index (sub-sitemaps for categories, providers, cities, etc.)
+# Dynamic sitemap index (sub-sitemaps for categories, providers, cities,
+# AND category+city pairs at /categoria/:slug/em/:cidade — page is noindex
+# automatic when the pair has 0 eligible providers, so the sitemap only emits
+# pairs with eligible content).
 Sitemap: https://precisodeum.com.br/sitemap
 
 # AI content guide
