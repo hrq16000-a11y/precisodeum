@@ -6817,6 +6817,7 @@ export type Database = {
           rating_avg: number | null
           review_count: number | null
           services_count: number | null
+          show_full_address: boolean | null
           slug: string | null
           social_links: Json | null
           state: string | null
@@ -7741,6 +7742,7 @@ export type Database = {
           rating_avg: number | null
           review_count: number | null
           services_count: number | null
+          show_full_address: boolean | null
           slug: string | null
           social_links: Json | null
           state: string | null
@@ -8181,6 +8183,7 @@ export type Database = {
           rating_avg: number
           review_count: number
           services_count: number
+          show_full_address: boolean
           slug: string
           social_links: Json
           state: string
