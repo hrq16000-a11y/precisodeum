@@ -83,6 +83,7 @@ import {
   markPhaseExit,
   setOnboardingDraftSource,
   getOnboardingDraftSource,
+  setOnboardingFlow,
 } from './telemetry';
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
 import {
