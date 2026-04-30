@@ -77,7 +77,13 @@ import {
   fetchRemoteDraft,
   clearRemoteDraft,
 } from './useOnboardingV2RemoteDraft';
-import { trackOnboardingEvent } from './telemetry';
+import {
+  trackOnboardingEvent,
+  markPhaseEnter,
+  markPhaseExit,
+  setOnboardingDraftSource,
+  getOnboardingDraftSource,
+} from './telemetry';
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
 import {
   buildOnboardingCoreLocks,
