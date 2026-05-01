@@ -77,6 +77,13 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
   };
 
   const summary = formatStruct(safe);
+  const issues = validateStruct(safe);
+  const issuesByIndex = issues.reduce<Record<number, string[]>>((acc, it) => {
+    if (!acc[it.index]) acc[it.index] = [];
+    acc[it.index].push(it.message);
+    return acc;
+  }, {});
+  const canAddMore = safe.ranges.length < MAX_RANGES;
 
   return (
     <div className="space-y-3">
