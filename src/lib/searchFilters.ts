@@ -3,8 +3,10 @@
  * sem depender do React/router/supabase.
  */
 import { calculateDistanceKm } from '@/lib/geoDistance';
+import { isOpenNow } from '@/lib/workingHoursOpenNow';
+import type { WorkingHoursStruct } from '@/components/onboarding/wizard/phases/v2/workingHours';
 
-export type SortMode = 'relevance' | 'best' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
+export type SortMode = 'relevance' | 'best' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience' | 'open_now';
 
 /**
  * Pesos do score híbrido usado pelo modo `'best'`. Soma livre — normalizada
@@ -81,6 +83,13 @@ export interface FilterableProvider {
   latitude?: number | null;
   longitude?: number | null;
   distanceKm?: number;
+  // Flags derivadas dos horários (vêm do banco via useProviders)
+  opensWeekend?: boolean;
+  opensLateNight?: boolean;
+  opensOvernight?: boolean;
+  is24h?: boolean;
+  acceptsOnDemand?: boolean;
+  workingHoursStruct?: WorkingHoursStruct | null;
 }
 
 export interface RouteCorridor {
@@ -117,6 +126,16 @@ export interface SearchFilterOptions {
   availabilityWindow?: AvailabilityWindow;
   /** Pesos do modo `sortBy='best'`. Default: rating 0.7 / distância 0.3. */
   scoreWeights?: SearchScoreWeights;
+  /** Filtros derivados do `working_hours_struct`. */
+  weekendOnly?: boolean;
+  lateNightOnly?: boolean;
+  overnightOnly?: boolean;
+  is24hOnly?: boolean;
+  onDemandOnly?: boolean;
+  /** Quando true, filtra para mostrar apenas prestadores abertos agora. */
+  openNowOnly?: boolean;
+  /** Quando true (default), prestadores abertos agora sobem ao topo (stable partition). */
+  prioritizeOpenNow?: boolean;
 }
 
 export function applySearchFilters<T extends FilterableProvider>(
