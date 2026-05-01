@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { User, Building2, Sparkles } from 'lucide-react';
 import { fieldWin } from '@/lib/betDopamine';
 import { BET_POINTS, type BetProKind, type BetState } from './types';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 import type { BetRewardKey } from './betRewards';
 
 interface Props {
