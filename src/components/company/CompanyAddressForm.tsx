@@ -250,6 +250,43 @@ export default function CompanyAddressForm({
 
   const fields = (
     <div className="space-y-2">
+      {/* Histórico recente de CEPs consultados — permite reaplicar uma sugestão rapidamente. */}
+      {cepHistory.length > 0 && (
+        <div
+          data-testid="cep-history"
+          className="rounded-lg border border-border/60 bg-muted/30 p-2"
+        >
+          <div className="mb-1 flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">
+            <History className="h-3 w-3" aria-hidden="true" /> CEPs recentes
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {cepHistory.map((entry) => {
+              const isActive = entry.digits === cepDigits;
+              return (
+                <button
+                  key={entry.digits}
+                  type="button"
+                  onClick={() => reapplyFromHistory(entry)}
+                  data-testid={`cep-history-item-${entry.digits}`}
+                  aria-label={`Reaplicar CEP ${entry.cep}${entry.address ? ` — ${entry.address}` : ''}`}
+                  className={`group inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition ${
+                    isActive
+                      ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
+                      : 'border-border bg-background text-foreground hover:border-amber-300 hover:bg-amber-50'
+                  }`}
+                >
+                  <span className="font-mono">{entry.cep}</span>
+                  {entry.address && (
+                    <span className="truncate text-muted-foreground group-hover:text-foreground">
+                      · {entry.address}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {/* Banner de SUGESTÃO PENDENTE — usuário precisa confirmar o logradouro vindo do CEP. */}
       {pendingConfirmation && (
         <div
