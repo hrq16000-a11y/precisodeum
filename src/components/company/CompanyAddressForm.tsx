@@ -96,10 +96,29 @@ export default function CompanyAddressForm({
   const [cepErrorReason, setCepErrorReason] = useState<'network' | 'not_found' | null>(null);
   const lastCepRef = useRef<string>('');
   /**
-   * Histórico recente de CEPs consultados com sucesso nesta sessão (máx 3).
-   * Permite o usuário reaplicar uma sugestão rapidamente após retry / edição.
+   * Histórico recente de CEPs consultados com sucesso (máx 3, mais recente
+   * primeiro). Modo controlado quando `value.cep_history` é fornecido — o
+   * histórico é persistido no estado pai (BetState/OnboardingProfileData) e
+   * sobrevive à navegação entre steps. Caso contrário, usa estado local.
    */
-  const [cepHistory, setCepHistory] = useState<CepHistoryEntry[]>([]);
+  const [internalHistory, setInternalHistory] = useState<CepHistoryEntry[]>([]);
+  const isControlledHistory = Array.isArray(value.cep_history);
+  const cepHistory: CepHistoryEntry[] = isControlledHistory
+    ? (value.cep_history as CepHistoryEntry[])
+    : internalHistory;
+
+  /** Aplica uma transformação ao histórico, persistindo no destino correto. */
+  const updateHistory = useCallback(
+    (updater: (prev: CepHistoryEntry[]) => CepHistoryEntry[]) => {
+      if (isControlledHistory) {
+        const next = updater(value.cep_history ?? []);
+        onChange({ cep_history: next });
+      } else {
+        setInternalHistory(updater);
+      }
+    },
+    [isControlledHistory, onChange, value.cep_history],
+  );
 
   const isSuggested = (k: keyof CompanyAddressValue) => suggestedFields.includes(k);
 
