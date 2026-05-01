@@ -89,11 +89,18 @@ export default function CompanyAddressForm({
   const streetError = streetRaw.length > 0 && streetRaw.length < 3
     ? 'Logradouro muito curto — informe pelo menos 3 caracteres.'
     : '';
-  const numberError = numberRaw.length > 0 && !/^([0-9]{1,6}|s\/?n|sn)$/i.test(numberRaw)
-    ? 'Número inválido — use só dígitos ou "S/N".'
-    : '';
+  // Número: aceita só dígitos (até 6) ou "S/N"/"SN". Mensagens distintas para tamanho vs formato.
+  const numberError = (() => {
+    if (numberRaw.length === 0) return '';
+    if (numberRaw.length > 10) return 'Número muito longo — máximo 10 caracteres.';
+    if (!/^([0-9]{1,6}|s\/?n|sn)$/i.test(numberRaw)) return 'Número inválido — use só dígitos (até 6) ou "S/N".';
+    return '';
+  })();
   const cepError = cepDigits.length > 0 && cepDigits.length < 8
     ? 'CEP incompleto — precisa ter 8 dígitos.'
+    : '';
+  const cepHint = cepDigits.length > 0 && cepDigits.length < 8
+    ? `Digite mais ${8 - cepDigits.length} dígito${8 - cepDigits.length === 1 ? '' : 's'} para buscar automaticamente.`
     : '';
 
   /** Faz o lookup de fato e propaga o resultado. Reutilizado pelo botão "Tentar de novo". */
@@ -105,12 +112,26 @@ export default function CompanyAddressForm({
       const suggestion = r.address ?? '';
       // Persiste a sugestão sempre que houver — para o próximo passo saber.
       const patch: Partial<CompanyAddressValue> = { street_suggested: suggestion };
-      const userTyped = (value.street ?? '').trim().length > 0;
+      const currentStreet = (value.street ?? '').trim();
+      const userTyped = currentStreet.length > 0;
+      const userConfirmed = Boolean(value.street_confirmed);
+      const previousSuggestion = (value.street_suggested ?? '').trim();
+      // Caso 1: campo vazio → preenche e marca como NÃO confirmado.
       if (suggestion && !userTyped) {
-        // Campo vazio → preenche e marca como NÃO confirmado (usuário precisa confirmar).
+        patch.street = suggestion;
+        patch.street_confirmed = false;
+      } else if (
+        // Caso 2: usuário ainda não confirmou e tinha a sugestão anterior — atualiza para a nova.
+        suggestion &&
+        userTyped &&
+        !userConfirmed &&
+        previousSuggestion.length > 0 &&
+        normalizeStreet(currentStreet) === normalizeStreet(previousSuggestion)
+      ) {
         patch.street = suggestion;
         patch.street_confirmed = false;
       }
+      // Caso 3: usuário confirmou ou digitou diferente → mantém o que está e deixa o conflict banner agir.
       onChange(patch);
       setCepStatus('applied');
     } else {
@@ -119,7 +140,7 @@ export default function CompanyAddressForm({
       setCepStatus(reason === 'not_found' ? 'not_found' : 'error');
       setCepErrorReason(reason);
     }
-  }, [onChange, value.street]);
+  }, [onChange, value.street, value.street_confirmed, value.street_suggested]);
 
   // Lookup automático SOMENTE quando o CEP atinge EXATAMENTE 8 dígitos.
   useEffect(() => {
@@ -273,7 +294,7 @@ export default function CompanyAddressForm({
             type="text"
             inputMode="numeric"
             value={value.street_number ?? ''}
-            onChange={(e) => onChange({ street_number: e.target.value.replace(/[^\dA-Za-z/-]/g, '').slice(0, 10) })}
+            onChange={(e) => onChange({ street_number: e.target.value.replace(/[^\dA-Za-z/-]/g, '').slice(0, 14) })}
             placeholder="123"
             aria-invalid={!!numberError}
             aria-describedby={numberError ? 'number-error' : undefined}
@@ -331,6 +352,9 @@ export default function CompanyAddressForm({
           />
           {cepError && (
             <p id="cep-error" className="mt-1 text-[10.5px] text-rose-600">{cepError}</p>
+          )}
+          {!cepError && cepHint && (
+            <p data-testid="cep-hint" className="mt-1 text-[10.5px] text-muted-foreground">{cepHint}</p>
           )}
           {(cepStatus === 'error' || cepStatus === 'not_found') && (
             <div className="mt-1 flex items-start gap-1.5 rounded-md border border-rose-200 bg-rose-50 p-1.5 text-[10.5px] leading-snug text-rose-700">
