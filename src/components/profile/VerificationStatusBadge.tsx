@@ -38,26 +38,48 @@ interface Props {
   variant?: 'default' | 'compact';
   /** Se passado, exibe um pequeno timeline com a última atualização. */
   showHistory?: boolean;
+  /**
+   * Tipo do documento do usuário — usado para personalizar a copy ("CPF" para PF,
+   * "CNPJ" para PJ). Se omitido, mantém a copy genérica "CPF/CNPJ".
+   */
+  docKind?: 'pf' | 'pj';
+  /**
+   * Quando true, o componente NÃO renderiza nada no estado 'none' (não enviado).
+   * Útil em fluxos onde a ausência do documento já é evidente pela UI ao redor
+   * (ex.: passo de upsell no wizard) — evita texto duplicado.
+   */
+  hideWhenNone?: boolean;
   className?: string;
 }
 
-const STATE_META: Record<VerificationState, {
+/**
+ * Resolve a label do documento conforme o tipo de pessoa.
+ * Centralizado para evitar repetição "CPF/CNPJ" desnecessária quando já sabemos
+ * que o usuário é PF ou PJ.
+ */
+function resolveDocLabel(kind?: 'pf' | 'pj'): string {
+  if (kind === 'pj') return 'CNPJ';
+  if (kind === 'pf') return 'CPF';
+  return 'CPF/CNPJ';
+}
+
+const buildStateMeta = (docLabel: string): Record<VerificationState, {
   label: string;
   color: string;
   Icon: typeof ShieldCheck;
   description: string;
-}> = {
+}> => ({
   loading: {
     label: 'Carregando…',
     color: 'bg-muted text-muted-foreground',
     Icon: Loader2,
-    description: 'Verificando o status do seu documento.',
+    description: `Verificando o status do seu documento.`,
   },
   none: {
     label: 'Não enviado',
     color: 'bg-muted text-muted-foreground border border-border',
     Icon: ShieldQuestion,
-    description: 'Você ainda não enviou seu CPF/CNPJ. Isso desbloqueia o status ONLINE.',
+    description: `Você ainda não enviou seu ${docLabel}. Isso desbloqueia o status ONLINE.`,
   },
   pending: {
     label: 'Pendente',
@@ -77,10 +99,10 @@ const STATE_META: Record<VerificationState, {
     Icon: ShieldCheck,
     description: 'Identidade verificada. Seu perfil aparece com selo de confiança.',
   },
-};
+});
 
 export const VerificationStatusBadge = ({
-  userId, variant = 'default', showHistory = false, className,
+  userId, variant = 'default', showHistory = false, docKind, hideWhenNone, className,
 }: Props) => {
   const [state, setState] = useState<VerificationState>('loading');
   const [hasDoc, setHasDoc] = useState(false);
@@ -158,6 +180,9 @@ export const VerificationStatusBadge = ({
     };
   }, [userId]);
 
+  const STATE_META = buildStateMeta(resolveDocLabel(docKind));
+  // Em fluxos como o upsell do wizard, o estado 'none' duplica info já evidente.
+  if (hideWhenNone && state === 'none') return null;
   const meta = STATE_META[state];
   const Icon = meta.Icon;
   const isSpinning = state === 'loading' || state === 'review';
