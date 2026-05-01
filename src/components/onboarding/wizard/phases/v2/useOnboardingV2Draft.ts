@@ -12,6 +12,7 @@
 import { useEffect, useRef } from 'react';
 import type { OnboardingState } from './types';
 import { broadcastDraftChange } from './crossTabSync';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 /**
  * Versão de RUPTURA (V3): trocamos a chave para invalidar instantaneamente
@@ -75,23 +76,27 @@ export function useOnboardingV2Draft(state: OnboardingState) {
       return;
     }
     if (timerRef.current) window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => {
-      try {
-        const envelope: DraftEnvelope = {
-          savedAt: Date.now(),
-          profile: state.profile,
-          service: state.service,
-          phase: state.phase,
-          userRef: state.userRef,
-          providerId: state.providerId,
-          firstServiceId: state.firstServiceId,
-        };
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(envelope));
-        broadcastDraftChange('local-write');
-      } catch {
-        /* quota cheia — ignora */
-      }
-    }, DEBOUNCE_MS);
+    timerRef.current = scheduleWizardTimeout(
+      { phase: state.phase as any, action: 'autosave_local_draft', runIfStale: true },
+      () => {
+        try {
+          const envelope: DraftEnvelope = {
+            savedAt: Date.now(),
+            profile: state.profile,
+            service: state.service,
+            phase: state.phase,
+            userRef: state.userRef,
+            providerId: state.providerId,
+            firstServiceId: state.firstServiceId,
+          };
+          localStorage.setItem(DRAFT_KEY, JSON.stringify(envelope));
+          broadcastDraftChange('local-write');
+        } catch {
+          /* quota cheia — ignora */
+        }
+      },
+      DEBOUNCE_MS,
+    );
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };

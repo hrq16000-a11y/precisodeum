@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import { Search, Loader2, MapPin, AlertTriangle, Check, RotateCw } from 'lucide-react';
 import { lookupCepFromCity } from '@/lib/cepReverseLookup';
 import { startCepTimer, trackCepAttempt, type CepErrorCode } from '@/lib/locationTelemetry';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 export interface CepSuggestionCardProps {
   city: string;
@@ -75,7 +76,9 @@ export default function CepSuggestionCard({
     let cancelled = false;
     setStatus('loading');
     const timer = startCepTimer();
-    const t = window.setTimeout(async () => {
+    const t = scheduleWizardTimeout(
+      { phase: phase as any, action: 'cep_suggestion_debounce' },
+      async () => {
       try {
         const r = await lookupCepFromCity({
           city: cityTrim,

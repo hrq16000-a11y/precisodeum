@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { OnboardingState } from './types';
 import { wasRemoteDraftWrittenRecently, markRemoteDraftWritten } from './flushDraft';
 import { recordWizardSupabaseCall } from './diagnostics';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 const REMOTE_DEBOUNCE_MS = 1500;
 
@@ -57,39 +58,43 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
     if (state.phase === 'done') return;
 
     if (timerRef.current) window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(async () => {
-      // Anti-duplicação: se um flush imediato (clique "Salvar e continuar")
-      // já gravou esta mesma fase nos últimos 2s para ESTE userId, pulamos
-      // o upsert para evitar 2 chamadas redundantes ao Supabase.
-      if (wasRemoteDraftWrittenRecently(state.phase as any, userId)) {
-        recordWizardSupabaseCall('useRemoteDraft.skipped', state.phase as any, userId);
-        return;
-      }
-      try {
-        await supabase.from('onboarding_v2_drafts' as any).upsert({
-          user_id: userId,
-          payload: {
-            profile: state.profile,
-            service: state.service,
-            userRef: state.userRef,
-            providerId: state.providerId,
-            firstServiceId: state.firstServiceId,
-          },
-          phase: state.phase,
-        } as any, { onConflict: 'user_id' });
-        markRemoteDraftWritten(state.phase as any, userId);
-        recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
-      } catch (error) {
-        console.error('[onboardingV2] remote draft upsert failed', {
-          phase: state.phase,
-          userId,
-          message: (error as any)?.message || String(error),
-          code: (error as any)?.code || null,
-          details: (error as any)?.details || null,
-          hint: (error as any)?.hint || null,
-        });
-      }
-    }, REMOTE_DEBOUNCE_MS);
+    timerRef.current = scheduleWizardTimeout(
+      { phase: state.phase as any, action: 'autosave_remote_draft', runIfStale: true },
+      async () => {
+        // Anti-duplicação: se um flush imediato (clique "Salvar e continuar")
+        // já gravou esta mesma fase nos últimos 2s para ESTE userId, pulamos
+        // o upsert para evitar 2 chamadas redundantes ao Supabase.
+        if (wasRemoteDraftWrittenRecently(state.phase as any, userId)) {
+          recordWizardSupabaseCall('useRemoteDraft.skipped', state.phase as any, userId);
+          return;
+        }
+        try {
+          await supabase.from('onboarding_v2_drafts' as any).upsert({
+            user_id: userId,
+            payload: {
+              profile: state.profile,
+              service: state.service,
+              userRef: state.userRef,
+              providerId: state.providerId,
+              firstServiceId: state.firstServiceId,
+            },
+            phase: state.phase,
+          } as any, { onConflict: 'user_id' });
+          markRemoteDraftWritten(state.phase as any, userId);
+          recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
+        } catch (error) {
+          console.error('[onboardingV2] remote draft upsert failed', {
+            phase: state.phase,
+            userId,
+            message: (error as any)?.message || String(error),
+            code: (error as any)?.code || null,
+            details: (error as any)?.details || null,
+            hint: (error as any)?.hint || null,
+          });
+        }
+      },
+      REMOTE_DEBOUNCE_MS,
+    );
 
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);

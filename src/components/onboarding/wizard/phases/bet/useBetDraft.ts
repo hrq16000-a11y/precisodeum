@@ -12,6 +12,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { initialBetState, type BetState } from './types';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 const KEY = 'bet_wizard_draft_v1';
 const DEBOUNCE_MS = 400;
@@ -42,9 +43,13 @@ export function useBetDraft(state: BetState) {
   useEffect(() => {
     if (state.phase === 'done' || state.phase === 'celebration') return;
     if (timer.current) window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => {
-      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* noop */ }
-    }, DEBOUNCE_MS);
+    timer.current = scheduleWizardTimeout(
+      { phase: state.phase as any, action: 'autosave_bet_local', runIfStale: true },
+      () => {
+        try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* noop */ }
+      },
+      DEBOUNCE_MS,
+    );
     return () => { if (timer.current) window.clearTimeout(timer.current); };
   }, [state]);
 }
