@@ -28,6 +28,8 @@ export interface OnboardingProfileData {
   bio: string;                  // opcional, Fase 4
   instagram_url: string;        // opcional, Fase 4
   facebook_url: string;         // opcional, Fase 4
+  /** Site/portfólio próprio (URL livre) — opcional, Fase 4. Visível publicamente no perfil. */
+  website_url?: string;
   /** Categoria escolhida na Fase 2 — herda automaticamente para o perfil. */
   primary_category_id: string | null;
   /** Horários escolhidos na Fase 2 — herda automaticamente para o perfil. */
