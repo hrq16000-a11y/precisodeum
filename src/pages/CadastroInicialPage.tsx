@@ -220,6 +220,22 @@ export default function CadastroInicialPage() {
     navigate(loginUrl, { replace: true });
   }, [loading, authSettled, user, navigate, params, location.pathname, location.search]);
 
-  if (loading || !authSettled || !user) return null;
+  if (loading || !authSettled || !user) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        aria-label="Carregando cadastro"
+        className="flex min-h-screen items-center justify-center bg-background"
+      >
+        <div className="w-full max-w-md space-y-3 px-4">
+          <div className="h-8 w-3/4 animate-pulse rounded-lg bg-muted" />
+          <div className="h-4 w-full animate-pulse rounded bg-muted" />
+          <div className="h-4 w-5/6 animate-pulse rounded bg-muted" />
+        </div>
+      </div>
+    );
+  }
   return <WizardShell />;
 }
