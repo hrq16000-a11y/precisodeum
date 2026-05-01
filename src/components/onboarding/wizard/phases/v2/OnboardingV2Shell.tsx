@@ -621,6 +621,32 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       // 2) provider apenas se for prestador
       if ((p.profile_type || 'provider') === 'provider') {
+        // Resolve lat/lng com fallback de geocoding (Nominatim → IBGE) caso o
+        // GPS não tenha sido disparado. Sem coords a coluna `geog` (PostGIS) fica
+        // null e a busca por proximidade quebra silenciosamente.
+        let lat: number | null =
+          typeof (p as any).latitude === 'number' && Number.isFinite((p as any).latitude)
+            ? (p as any).latitude
+            : null;
+        let lng: number | null =
+          typeof (p as any).longitude === 'number' && Number.isFinite((p as any).longitude)
+            ? (p as any).longitude
+            : null;
+        if ((lat === null || lng === null) && p.city && p.state) {
+          try {
+            const { geocodeAddress } = await import('@/lib/geocodeAddress');
+            const g = await geocodeAddress({
+              neighborhood: p.neighborhood || null,
+              city: p.city,
+              state: p.state,
+            });
+            if (typeof g.latitude === 'number' && Number.isFinite(g.latitude)) lat = g.latitude;
+            if (typeof g.longitude === 'number' && Number.isFinite(g.longitude)) lng = g.longitude;
+          } catch {
+            // Geocoding é best-effort; não bloqueia o cadastro.
+          }
+        }
+
         // ANTI-DUPLICAÇÃO: query ignora qualquer ID local e busca direto no DB
         // por user_id. Se já existir, atualiza; senão, insere uma única vez.
         const { data: existing } = await supabase
@@ -639,6 +665,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             account_type: p.kind === 'pj' ? 'company' : 'autonomous',
             business_name: businessName || null,
             legal_name: legalName || null,
+            // Coordenadas — alimentam a coluna geog (PostGIS) via trigger.
+            // Só envia quando temos par válido para evitar sobrescrever com null.
+            ...(lat !== null && lng !== null ? { latitude: lat, longitude: lng } : {}),
           });
           const { error } = await supabase.from('providers').update(updPayload as any).eq('id', existing[0].id);
           if (error) throw error;
@@ -663,6 +692,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               business_name: fullName,
               legal_name: fullName,
               status: 'pending',
+              ...(lat !== null && lng !== null ? { latitude: lat, longitude: lng } : {}),
             });
             const { data: created, error } = await supabase.from('providers').insert(insPayload as any).select('id').single();
             if (error) throw error;
