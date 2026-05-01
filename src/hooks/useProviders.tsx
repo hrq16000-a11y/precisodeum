@@ -92,6 +92,7 @@ export interface DbProvider {
   opensLateNight?: boolean;
   opensOvernight?: boolean;
   is24h?: boolean;
+  acceptsOnDemand?: boolean;
 }
 
 export type FeaturedProviderSort = 'proximity' | 'category' | 'availability';
