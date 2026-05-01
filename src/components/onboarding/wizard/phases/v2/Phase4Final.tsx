@@ -307,16 +307,32 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
 
       {/* Grade de avatares minimalistas — usuário escolhe qual gosta mais. */}
       <div className="rounded-xl border border-border bg-card p-3">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <span className="text-[12px] font-semibold text-foreground">
             Ou escolha um avatar minimalista
           </span>
-          {categoryInfo && (
-            <span className="text-[10px] text-muted-foreground">
-              {categoryInfo.name}
-            </span>
-          )}
+          <div className="flex items-center gap-1" role="group" aria-label="Quantidade de variações">
+            {([6, 12] as const).map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setVariantCount(n)}
+                aria-pressed={variantCount === n}
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                  variantCount === n
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-muted/40 text-muted-foreground hover:bg-muted/70'
+                }`}
+                data-testid={`phase4-variant-count-${n}`}
+              >
+                {n} opções
+              </button>
+            ))}
+          </div>
         </div>
+        {categoryInfo && (
+          <div className="mb-2 text-[10px] text-muted-foreground">{categoryInfo.name}</div>
+        )}
         <div
           role="radiogroup"
           aria-label="Avatares minimalistas sugeridos"
