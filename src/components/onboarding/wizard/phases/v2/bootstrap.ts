@@ -21,6 +21,13 @@ function normalizePhone(value: unknown): string {
   return digits.replace(/^55(?=\d{10,11}$)/, '');
 }
 
+function readSocialLink(source: any, key: string): string {
+  const direct = typeof source?.[`${key}_url`] === 'string' ? source[`${key}_url`] : '';
+  const nested = typeof source?.social_links?.[key] === 'string' ? source.social_links[key] : '';
+  const website = key === 'website' && typeof source?.website === 'string' ? source.website : '';
+  return String(direct || nested || website || '').trim();
+}
+
 function inferKind(profile: any | null, provider: any | null): AccountKind {
   const raw = String(provider?.account_type || profile?.account_type || '').toLowerCase();
   if (raw === 'pj' || raw === 'company' || raw === 'empresa' || raw === 'agency') return 'pj';
@@ -118,8 +125,9 @@ export function buildOnboardingV2BootstrapState({ profile, provider }: Bootstrap
   const state = String(provider?.state || profile?.state || '').trim().toUpperCase().slice(0, 2);
   const neighborhood = String(provider?.neighborhood || profile?.neighborhood || '').trim();
   const bio = String(provider?.description || profile?.bio || '').trim();
-  const instagram_url = String(provider?.instagram_url || profile?.instagram_url || '').trim();
-  const facebook_url = String(provider?.facebook_url || profile?.facebook_url || '').trim();
+  const instagram_url = readSocialLink(provider, 'instagram') || readSocialLink(profile, 'instagram');
+  const facebook_url = readSocialLink(provider, 'facebook') || readSocialLink(profile, 'facebook');
+  const website_url = readSocialLink(provider, 'website') || readSocialLink(profile, 'website');
   const working_hours = String(provider?.working_hours || '').trim();
   const primary_category_id = provider?.category_id || profile?.primary_category_id || null;
   const years_experience = typeof provider?.years_experience === 'number'
@@ -146,6 +154,7 @@ export function buildOnboardingV2BootstrapState({ profile, provider }: Bootstrap
       bio,
       instagram_url,
       facebook_url,
+      website_url,
       primary_category_id,
       working_hours,
     },
@@ -157,6 +166,7 @@ export function buildOnboardingV2BootstrapState({ profile, provider }: Bootstrap
       starting_price_brl: typeof provider?.starting_price === 'number' ? provider.starting_price : null,
       working_days: [],
       working_hours,
+      working_hours_struct: provider?.working_hours_struct ?? null,
     },
   };
 }
