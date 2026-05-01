@@ -174,7 +174,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // rascunho stale pode mascarar a descrição/nome do serviço já publicado.
   const skipDraftRestore =
     editMode ||
-    (internalHandoffFromTriage && (seedState?.phase === 'phase2_service' || seedState?.phase === 'phase1_action'));
+    (internalHandoffFromTriage && (seedState?.phase === 'phase2_service' || seedState?.phase === 'phase2_service'));
   // Restaura draft local ao montar (se existir e não estiver expirado)
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
     const draft = skipDraftRestore ? null : readOnboardingV2Draft();
@@ -328,7 +328,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // "Salvar e continuar" persista antes de qualquer fechamento de aba,
   // sem esperar pelos debounces de 600ms / 1500ms.
   useEffect(() => {
-    if (state.phase === 'phase1_action' || state.phase === 'done') return;
+    if (state.phase === 'phase2_service' || state.phase === 'done') return;
     flushOnboardingV2Draft(state, user?.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, user?.id]);
@@ -350,7 +350,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       return;
     }
     const draft = readOnboardingV2Draft();
-    if (draft && draft.phase && draft.phase !== 'phase1_action') {
+    if (draft && draft.phase && draft.phase !== 'phase2_service') {
       setDraftRestored({ source: 'local' });
       setOnboardingDraftSource('local');
       const t = scheduleWizardTimeout(
@@ -374,7 +374,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     if (!user?.id) return;
     if (skipDraftRestore) return;
     const local = readOnboardingV2Draft();
-    const localPhase = (local?.phase as any) || 'phase1_action';
+    const localPhase = (local?.phase as any) || 'phase2_service';
     let alive = true;
     (async () => {
       const remote = await fetchRemoteDraft(user.id);
@@ -383,7 +383,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       const remoteIdx = phaseIndex(remotePhase);
       const localIdx = phaseIndex(localPhase);
       const remoteIsAhead = remoteIdx > localIdx;
-      const localIsEmpty = !local || localPhase === 'phase1_action';
+      const localIsEmpty = !local || localPhase === 'phase2_service';
       // Pergunta sempre que (a) local vazio, ou (b) remoto está mais à frente.
       if (!localIsEmpty && !remoteIsAhead) return;
       setRemoteDraft(remote);
@@ -465,7 +465,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       forceFromBootstrap: internalHandoffFromTriage,
     });
 
-    const currentPhase = state.phase || 'phase1_action';
+    const currentPhase = state.phase || 'phase2_service';
     const nextPhase = resolved.phase || currentPhase;
     const isRegression = phaseIndex(nextPhase) < phaseIndex(currentPhase);
 
@@ -1645,7 +1645,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       </AnimatePresence>
 
       <BetCardShell animated={false}>
-        {state.phase !== 'phase1_action' && state.phase !== 'done' && (
+        {state.phase !== 'phase2_service' && state.phase !== 'done' && (
           <div className="mb-2 flex items-center justify-end">
             <AutoSaveBadge signal={state.profile} />
           </div>
