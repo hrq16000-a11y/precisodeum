@@ -275,8 +275,18 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
                   ? serviceSeed.starting_price_brl
                   : parsePrice(existingService?.price),
               working_hours: serviceSeed.working_hours || existingService?.working_hours || '',
-              working_hours_struct:
-                serviceSeed.working_hours_struct ?? existingService?.working_hours_struct ?? null,
+              working_hours_struct: (() => {
+                if (serviceSeed.working_hours_struct) return serviceSeed.working_hours_struct;
+                const raw = existingService?.working_hours_struct;
+                if (!raw?.ranges?.length) return null;
+                return {
+                  ranges: raw.ranges.map((r) => ({
+                    days: Array.isArray(r?.days) ? r.days : [],
+                    start: typeof r?.start === 'string' ? r.start : '',
+                    end: typeof r?.end === 'string' ? r.end : '',
+                  })),
+                };
+              })(),
             };
           })(),
           providerId: providerId ?? null,
