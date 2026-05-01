@@ -7,7 +7,7 @@
  */
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -22,6 +22,8 @@ import {
   makeEmptyStruct,
   TIME_OPTIONS,
   TIME_OPTIONS_END,
+  validateStruct,
+  MAX_RANGES,
   type WeekdayKey,
   type WorkingHoursStruct,
 } from './workingHours';
@@ -44,12 +46,22 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
   const setStruct = (next: WorkingHoursStruct) => onChange(next);
 
   const addRange = () => {
-    const next: WorkingHoursStruct = {
-      ranges: [
-        ...safe.ranges,
-        { days: ['mon', 'tue', 'wed', 'thu', 'fri'], start: '08:00', end: '18:00' },
-      ],
+    if (safe.ranges.length >= MAX_RANGES) return;
+    // Heurística: oferece um default que não bate com a 1ª faixa para reduzir
+    // conflito imediato. Ex.: se já existe Seg–Sex 08–18h, sugere Sáb 09–13h.
+    const first = safe.ranges[0];
+    let candidate: WorkingHoursStruct['ranges'][number] = {
+      days: ['mon', 'tue', 'wed', 'thu', 'fri'], start: '08:00', end: '18:00',
     };
+    if (first) {
+      const firstIsWeekday = first.days.every((d) => ['mon', 'tue', 'wed', 'thu', 'fri'].includes(d));
+      if (firstIsWeekday) {
+        candidate = { days: ['sat'], start: '09:00', end: '13:00' };
+      } else {
+        candidate = { days: ['mon', 'tue', 'wed', 'thu', 'fri'], start: '08:00', end: '18:00' };
+      }
+    }
+    const next: WorkingHoursStruct = { ranges: [...safe.ranges, candidate] };
     setStruct(next);
     setCustomMode(true);
   };
@@ -75,6 +87,13 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
   };
 
   const summary = formatStruct(safe);
+  const issues = validateStruct(safe);
+  const issuesByIndex = issues.reduce<Record<number, string[]>>((acc, it) => {
+    if (!acc[it.index]) acc[it.index] = [];
+    acc[it.index].push(it.message);
+    return acc;
+  }, {});
+  const canAddMore = safe.ranges.length < MAX_RANGES;
 
   return (
     <div className="space-y-3">
@@ -134,8 +153,16 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
             </p>
           )}
 
-          {safe.ranges.map((r, idx) => (
-            <div key={idx} className="space-y-2 rounded-md border border-border bg-card p-3 shadow-sm">
+          {safe.ranges.map((r, idx) => {
+            const rangeIssues = issuesByIndex[idx] || [];
+            const hasErr = rangeIssues.length > 0;
+            return (
+            <div
+              key={idx}
+              className={`space-y-2 rounded-md border bg-card p-3 shadow-sm ${
+                hasErr ? 'border-destructive/60 ring-1 ring-destructive/20' : 'border-border'
+              }`}
+            >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                   Faixa {idx + 1}
@@ -211,13 +238,20 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
                   </Select>
                 </label>
               </div>
-              {r.end < r.start && r.end !== '00:00' && (
+              {r.end < r.start && r.end !== '00:00' && r.end !== '24:00' && (
                 <p className="text-[10px] text-amber-700 dark:text-amber-300">
                   Faixa cruzando meia-noite: {r.start} → {r.end} (entrará no filtro de "madrugada").
                 </p>
               )}
+              {rangeIssues.map((msg, k) => (
+                <p key={k} className="flex items-start gap-1 text-[10.5px] font-medium text-destructive" style={{ textWrap: 'balance' as never }}>
+                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span className="break-words">{msg}</span>
+                </p>
+              ))}
             </div>
-          ))}
+            );
+          })}
 
           <Button
             type="button"
@@ -225,21 +259,35 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
             size="sm"
             onClick={addRange}
             className="w-full"
+            disabled={!canAddMore}
           >
-            <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar outra faixa
+            <Plus className="mr-1 h-3.5 w-3.5" />
+            {canAddMore
+              ? `Adicionar outra faixa (${safe.ranges.length}/${MAX_RANGES})`
+              : `Limite atingido — máximo ${MAX_RANGES} faixas`}
           </Button>
         </div>
       )}
 
       {summary && (
-        <p className="text-[11px] text-muted-foreground">
-          Será exibido como <span className="font-medium text-foreground">{summary}</span>
+        <p className="text-[11px] leading-relaxed text-muted-foreground" style={{ textWrap: 'balance' as never, wordBreak: 'break-word' }}>
+          Será exibido como{' '}
+          <span className="font-medium text-foreground break-words">{summary}</span>
         </p>
       )}
       {!summary && (
         <p className="text-[11px] text-muted-foreground">
           Sem horário configurado — aparecerá como "Sob agendamento".
         </p>
+      )}
+      {issues.some((i) => i.type === 'overlap' || i.type === 'duplicate') && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px] leading-snug text-destructive">
+          <p className="font-medium">Conflito de horários detectado.</p>
+          <p className="mt-0.5 text-foreground/80">
+            Cada faixa precisa ser diferente em <strong>dia</strong> ou em <strong>horário</strong>.
+            Ex.: válido — Seg–Sex 08:00–12:00 + Seg–Sex 13:00–18:00. Inválido — Seg–Sex 08:00–18:00 + Seg–Sex 08:00–19:00 (sobrepõem).
+          </p>
+        </div>
       )}
     </div>
   );

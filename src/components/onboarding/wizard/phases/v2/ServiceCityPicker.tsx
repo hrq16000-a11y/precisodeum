@@ -9,12 +9,13 @@
  * Sem texto livre. Tudo passa pelo catálogo IBGE ou pelo dicionário de RMs.
  */
 import { useMemo } from 'react';
-import { Plus, X, MapPin, Sparkles, Check } from 'lucide-react';
+import { Plus, X, MapPin, Sparkles, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { findMetroByPole, getMetroMembers } from '@/lib/metroRegions';
 import { normalize } from '@/lib/normalize';
+import { useNearbyCitySuggestions } from '@/hooks/useNearbyCitySuggestions';
 
 interface Props {
   /** Cidade-base do profissional (providers.city). */
@@ -75,6 +76,27 @@ export const ServiceCityPicker = ({
 
   const hasRegion = regionLabel ? value.includes(regionLabel) : false;
   const remaining = Math.max(0, max - value.length);
+
+  // Sugestões automáticas por proximidade (Haversine no backend).
+  const { data: nearby, loading: loadingNearby } = useNearbyCitySuggestions({
+    baseCity,
+    baseState,
+    maxKm: 100,
+    limit: 30,
+    enabled: Boolean(baseCity && baseState),
+  });
+
+  const valueNorm = useMemo(() => new Set(value.map((v) => normalize(v))), [value]);
+  const baseNormSet = baseNorm;
+
+  // Filtra sugestões que ainda não estão na lista, mantém ordem por distância.
+  const filteredNearby = useMemo(
+    () => nearby.filter((c) => !valueNorm.has(normalize(c.name)) && normalize(c.name) !== baseNormSet),
+    [nearby, valueNorm, baseNormSet],
+  );
+  const nearList = filteredNearby.filter((c) => c.bucket === 'near').slice(0, 8);
+  const midList = filteredNearby.filter((c) => c.bucket === 'mid').slice(0, 6);
+  const farList = filteredNearby.filter((c) => c.bucket === 'far').slice(0, 4);
 
   const addCity = (city: string) => {
     const v = (city || '').trim();
@@ -183,6 +205,47 @@ export const ServiceCityPicker = ({
         </div>
       )}
 
+      {/* Sugestões automáticas por proximidade — ordenadas por distância. */}
+      {baseCity && baseState && (loadingNearby || filteredNearby.length > 0) && (
+        <div className="space-y-1.5 rounded-lg border border-border/60 bg-muted/20 p-2">
+          <div className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">
+            <Sparkles className="h-3 w-3" />
+            Sugestões próximas a {baseCity}
+            {loadingNearby && <Loader2 className="ml-1 h-3 w-3 animate-spin" />}
+          </div>
+          {nearList.length > 0 && (
+            <NearbyChipRow
+              label="Até 15 km"
+              tone="near"
+              items={nearList}
+              disabled={value.length >= max}
+              onPick={(c) => addCity(`${c.name}/${c.state_uf}`)}
+            />
+          )}
+          {midList.length > 0 && (
+            <NearbyChipRow
+              label="Até 50 km"
+              tone="mid"
+              items={midList}
+              disabled={value.length >= max}
+              onPick={(c) => addCity(`${c.name}/${c.state_uf}`)}
+            />
+          )}
+          {farList.length > 0 && (
+            <NearbyChipRow
+              label="Até 100 km"
+              tone="far"
+              items={farList}
+              disabled={value.length >= max}
+              onPick={(c) => addCity(`${c.name}/${c.state_uf}`)}
+            />
+          )}
+          <p className="text-[10px] text-muted-foreground">
+            Ordem mantida por distância — mais perto da cidade-base aparece primeiro.
+          </p>
+        </div>
+      )}
+
       {!baseState && (
         <p className="text-[11px] text-muted-foreground">
           Escolha seu estado na etapa anterior para limitar as cidades automaticamente.
@@ -217,5 +280,43 @@ export const ServiceCityPicker = ({
     </div>
   );
 };
+
+interface NearbyChipRowProps {
+  label: string;
+  tone: 'near' | 'mid' | 'far';
+  items: Array<{ id: string; name: string; state_uf: string; distance_km: number }>;
+  disabled: boolean;
+  onPick: (c: { id: string; name: string; state_uf: string; distance_km: number }) => void;
+}
+
+const TONE: Record<NearbyChipRowProps['tone'], string> = {
+  near: 'border-emerald-500/50 bg-emerald-500/5 text-foreground hover:bg-emerald-500/10',
+  mid: 'border-amber-500/40 bg-amber-500/5 text-foreground hover:bg-amber-500/10',
+  far: 'border-border bg-card text-foreground hover:bg-muted',
+};
+
+const NearbyChipRow = ({ label, tone, items, disabled, onPick }: NearbyChipRowProps) => (
+  <div className="space-y-1">
+    <span className="text-[9.5px] font-bold uppercase tracking-wide text-muted-foreground/80">
+      {label}
+    </span>
+    <div className="flex flex-wrap gap-1">
+      {items.map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          onClick={() => onPick(c)}
+          disabled={disabled}
+          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] transition disabled:opacity-50 ${TONE[tone]}`}
+          title={`${c.name}/${c.state_uf} — ${c.distance_km.toFixed(1)} km`}
+        >
+          <Plus className="h-2.5 w-2.5" />
+          <span className="break-words">{c.name}</span>
+          <span className="text-[9px] text-muted-foreground">{c.distance_km.toFixed(0)}km</span>
+        </button>
+      ))}
+    </div>
+  </div>
+);
 
 export default ServiceCityPicker;

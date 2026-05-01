@@ -1,0 +1,1 @@
+ALTER FUNCTION public.suggest_nearby_cities(text, text, double precision, integer) SECURITY INVOKER;
