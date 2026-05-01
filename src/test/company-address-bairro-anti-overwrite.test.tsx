@@ -64,7 +64,7 @@ describe('CompanyAddressForm — bairro_sugerido_cep e anti-sobrescrita', () => 
     });
   });
 
-  it('quando street_confirmed=true: novo lookup NÃO sobrescreve street_suggested/street_suggested_cep', async () => {
+  it('quando street_confirmed=true: novo lookup NÃO sobrescreve street_suggested_cep (auditoria do 1º CEP)', async () => {
     lookupCepMock.mockResolvedValueOnce({
       ok: true,
       cep: '04567-000',
@@ -91,12 +91,11 @@ describe('CompanyAddressForm — bairro_sugerido_cep e anti-sobrescrita', () => 
     await waitFor(() => {
       expect(patches.some((p) => p.bairro_sugerido_cep === 'Brooklin')).toBe(true);
     });
-    // NENHUM patch deve ter incluído street_suggested ou street_suggested_cep
-    // após o usuário ter confirmado manualmente.
-    const tocouSugestao = patches.some(
-      (p) => 'street_suggested' in p || 'street_suggested_cep' in p,
-    );
-    expect(tocouSugestao).toBe(false);
+    // street_suggested_cep (auditoria) NÃO foi sobrescrito.
+    const tocouCep = patches.some((p) => 'street_suggested_cep' in p);
+    expect(tocouCep).toBe(false);
+    // street_suggested PODE ter sido atualizado — necessário para o banner
+    // de conflito detectar a divergência. Auditoria-only via street_suggested_cep.
   });
 
   it('quando street_confirmed=false: novo lookup ATUALIZA street_suggested_cep', async () => {
