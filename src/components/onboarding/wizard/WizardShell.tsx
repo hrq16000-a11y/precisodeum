@@ -188,6 +188,7 @@ export default function WizardShell() {
             street_suggested: '',
             street_suggested_cep: '',
             street_confirmed: false,
+            bairro_sugerido_cep: '',
             cep_history: [],
             points: Number(profile?.engagement_points ?? state.triage.points ?? 0),
             rewards: {
