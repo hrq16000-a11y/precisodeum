@@ -79,6 +79,17 @@ interface WizardShellProps {
   reviewMode?: boolean;
 }
 
+/**
+ * Em modo `edit_profile`, decide a fase em que o wizard inicia.
+ *
+ * Regra: quando o usuário clica no botão "Assistente" no Dashboard SEM uma
+ * seção específica, deve começar do absoluto início (`triage_identity`) — o
+ * fluxo completo, com cada fase pré-preenchida pelo `seedState`. O usuário
+ * pode então usar o botão "Pular esta etapa" para avançar fases já completas.
+ *
+ * Quando há uma `section` (atalhos vindos da página /dashboard/assistente),
+ * pulamos para a fase mais próxima daquela seção.
+ */
 function resolveReviewStartPhase(section: OnboardingReviewSection | null): UnifiedPhase {
   switch (section) {
     case 'servicos':
@@ -90,8 +101,10 @@ function resolveReviewStartPhase(section: OnboardingReviewSection | null): Unifi
     case 'url':
       return 'main_extras_b';
     case 'cadastro':
-    default:
       return 'main_action';
+    default:
+      // Sem section explícita ⇒ começa do absoluto início para revisar tudo.
+      return 'triage_identity';
   }
 }
 
@@ -518,6 +531,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         <MainOrchestrator
           internalHandoffFromTriage
           deferCompletionToParent
+          editMode={isReview}
           seedState={{
             phase: mapUnifiedToMainPhase(state.phase),
             profile: state.profile,

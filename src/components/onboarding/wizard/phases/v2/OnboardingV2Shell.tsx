@@ -159,13 +159,25 @@ interface OnboardingV2ShellProps {
   onPhaseChange?: (phase: import('./types').OnboardingPhase) => void;
   /** Quando true, o shell V2 não navega sozinho para a tela de sucesso; devolve o controle ao wizard unificado. */
   deferCompletionToParent?: boolean;
+  /**
+   * Quando true (modo edit_profile/revisão), ignora o draft local e prioriza
+   * o `seedState` vindo do banco. Evita que rascunhos antigos com campos
+   * vazios (ex.: `description: ''`) sobrescrevam dados reais já publicados.
+   */
+  editMode?: boolean;
 }
 
-export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState, onPhaseChange, deferCompletionToParent = false }: OnboardingV2ShellProps = {}) => {
+export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState, onPhaseChange, deferCompletionToParent = false, editMode = false }: OnboardingV2ShellProps = {}) => {
   const { user, profile, provider, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const skipDraftRestore = internalHandoffFromTriage && (seedState?.phase === 'phase2_service' || seedState?.phase === 'phase1_action');
+  // Em edit_profile, o usuário voltou para revisar — qualquer draft local
+  // antigo (provavelmente com campos vazios) deve ser ignorado em favor dos
+  // dados reais já no banco, propagados via `seedState`. Caso contrário, um
+  // rascunho stale pode mascarar a descrição/nome do serviço já publicado.
+  const skipDraftRestore =
+    editMode ||
+    (internalHandoffFromTriage && (seedState?.phase === 'phase2_service' || seedState?.phase === 'phase1_action'));
   // Restaura draft local ao montar (se existir e não estiver expirado)
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
     const draft = skipDraftRestore ? null : readOnboardingV2Draft();
@@ -179,10 +191,27 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       firstServiceId: seedState?.firstServiceId ?? init.firstServiceId,
     };
     if (!draft) return seeded;
+    // Merge do draft NÃO-DESTRUTIVO: campos vazios do draft nunca sobrescrevem
+    // valores já presentes no seedState (banco). Antes era `{...seeded, ...draft}`,
+    // o que apagava `service.description` quando o draft tinha string vazia.
+    const mergeNonDestructive = <T extends Record<string, any>>(base: T, patch: Partial<T> | undefined): T => {
+      if (!patch) return base;
+      const out: any = { ...base };
+      for (const k of Object.keys(patch)) {
+        const v = (patch as any)[k];
+        const isEmpty =
+          v === null ||
+          v === undefined ||
+          (typeof v === 'string' && v.trim() === '') ||
+          (Array.isArray(v) && v.length === 0);
+        if (!isEmpty) out[k] = v;
+      }
+      return out as T;
+    };
     return {
       ...seeded,
-      profile: { ...seeded.profile, ...(draft.profile || {}) },
-      service: { ...seeded.service, ...(draft.service || {}) },
+      profile: mergeNonDestructive(seeded.profile, draft.profile),
+      service: mergeNonDestructive(seeded.service, draft.service),
       phase: draft.phase || seedState?.phase || seeded.phase,
       userRef: draft.userRef ?? seeded.userRef,
       providerId: draft.providerId ?? seeded.providerId,
