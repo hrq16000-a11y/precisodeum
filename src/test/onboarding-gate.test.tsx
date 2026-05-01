@@ -236,6 +236,17 @@ describe("OnboardingGate", () => {
     expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
   });
 
+  it("permite /cadastro-inicial em modo review para usuário concluído", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: { profile_type: "provider", onboarding_completed: true, onboarding_step: 5 },
+      loading: false,
+    });
+    renderAt("/cadastro-inicial?mode=review&next=/dashboard");
+    expect(screen.getByText("CADASTRO_PAGE")).toBeTruthy();
+    expect(screen.queryByText("DASHBOARD_PAGE")).toBeNull();
+  });
+
   it("redirects completed user to safe ?next= when present", () => {
     mockUseAuth.mockReturnValue({
       user: { id: "u1" },
