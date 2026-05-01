@@ -71,3 +71,9 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Documentação de segurança
+
+- [`docs/security/chat-rls.md`](./docs/security/chat-rls.md) — Políticas RLS de `chat_messages` e `chat_conversations`, painel de moderação `/admin/chat` e justificativa para não usar service-role no backend de chat.
+- [`docs/security/services-insert-fallback.md`](./docs/security/services-insert-fallback.md) — Auditoria do fallback de INSERT em `services` no wizard.
+
