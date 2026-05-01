@@ -34,6 +34,7 @@ import { markSupportContacted, shouldSuppressExitIntent } from '@/lib/conversion
 import SaveLaterDialog from './SaveLaterDialog';
 import { buildWhatsappContextMessage, computeOnboardingProgress } from '@/lib/onboardingProgress';
 import type { OnboardingState } from './phases/v2/types';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 const INACTIVITY_MS = 30_000;
 const STORAGE_KEY = 'wizard:exit-intent-shown';
