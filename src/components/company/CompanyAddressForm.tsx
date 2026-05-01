@@ -16,8 +16,8 @@
  *  - É totalmente controlado — não persiste sozinho.
  *  - Todos os campos são OPCIONAIS.
  */
-import { MapPin, Store, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, Check, AlertTriangle } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { lookupCep, formatCep, onlyDigits } from '@/lib/cepLookup';
 
@@ -27,6 +27,10 @@ export interface CompanyAddressValue {
   complement?: string;
   postal_code?: string;
   show_full_address?: boolean;
+  /** Última sugestão de logradouro vinda do CEP — para o passo seguinte saber que foi sugerido. */
+  street_suggested?: string;
+  /** Usuário confirmou explicitamente o logradouro (clicou "Usar este" ou digitou). */
+  street_confirmed?: boolean;
 }
 
 interface Props {
@@ -49,6 +53,17 @@ function maskCep(digits: string): string {
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
+/** Normalização leve para comparar duas strings de logradouro (case + acentos + pontuação). */
+function normalizeStreet(s: string): string {
+  return (s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[.,\-/]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export default function CompanyAddressForm({
   value,
   onChange,
@@ -61,7 +76,8 @@ export default function CompanyAddressForm({
     value.street || value.street_number || value.postal_code || value.complement,
   );
   const [open, setOpen] = useState(!collapsible || hasContent);
-  const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'applied' | 'error'>('idle');
+  const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'applied' | 'error' | 'not_found'>('idle');
+  const [cepErrorReason, setCepErrorReason] = useState<'network' | 'not_found' | null>(null);
   const lastCepRef = useRef<string>('');
 
   const isSuggested = (k: keyof CompanyAddressValue) => suggestedFields.includes(k);
@@ -80,7 +96,30 @@ export default function CompanyAddressForm({
     ? 'CEP incompleto — precisa ter 8 dígitos.'
     : '';
 
-  // Lookup automático quando o CEP atinge 8 dígitos
+  /** Faz o lookup de fato e propaga o resultado. Reutilizado pelo botão "Tentar de novo". */
+  const runLookup = useCallback(async (digits: string) => {
+    setCepStatus('loading');
+    setCepErrorReason(null);
+    const r = await lookupCep(digits);
+    if (r.ok) {
+      const suggestion = r.address ?? '';
+      // Persiste a sugestão sempre que houver — para o próximo passo saber.
+      const patch: Partial<CompanyAddressValue> = { street_suggested: suggestion };
+      const userTyped = (value.street ?? '').trim().length > 0;
+      if (suggestion && !userTyped) {
+        // Campo vazio → preenche e marca como NÃO confirmado (usuário precisa confirmar).
+        patch.street = suggestion;
+        patch.street_confirmed = false;
+      }
+      onChange(patch);
+      setCepStatus('applied');
+    } else {
+      setCepStatus(r.reason === 'not_found' ? 'not_found' : 'error');
+      setCepErrorReason(r.reason === 'not_found' ? 'not_found' : 'network');
+    }
+  }, [onChange, value.street]);
+
+  // Lookup automático SOMENTE quando o CEP atinge EXATAMENTE 8 dígitos.
   useEffect(() => {
     const digits = onlyDigits(value.postal_code ?? '');
     if (digits.length !== 8) {
@@ -89,26 +128,40 @@ export default function CompanyAddressForm({
     }
     if (digits === lastCepRef.current) return;
     lastCepRef.current = digits;
-    let cancelled = false;
-    setCepStatus('loading');
-    (async () => {
-      const r = await lookupCep(digits);
-      if (cancelled) return;
-      if (r.ok) {
-        // Só preenche street se ainda estiver vazio (não sobrescreve digitação do usuário)
-        const patch: Partial<CompanyAddressValue> = {};
-        if (!value.street && r.address) patch.street = r.address;
-        if (Object.keys(patch).length > 0) onChange(patch);
-        setCepStatus('applied');
-      } else {
-        setCepStatus('error');
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    void runLookup(digits);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value.postal_code]);
+
+  // Detecção de conflito: usuário digitou street e o CEP sugere algo diferente.
+  const suggestion = (value.street_suggested ?? '').trim();
+  const hasUserStreet = streetRaw.length >= 3;
+  const conflict =
+    cepStatus === 'applied' &&
+    suggestion.length > 0 &&
+    hasUserStreet &&
+    normalizeStreet(suggestion) !== normalizeStreet(streetRaw);
+
+  // Sugestão pendente de confirmação: street veio do CEP e o usuário ainda não confirmou.
+  const pendingConfirmation =
+    cepStatus === 'applied' &&
+    suggestion.length > 0 &&
+    !value.street_confirmed &&
+    !conflict &&
+    normalizeStreet(suggestion) === normalizeStreet(streetRaw);
+
+  const acceptSuggestion = () => {
+    onChange({ street: suggestion, street_confirmed: true });
+  };
+  const rejectSuggestion = () => {
+    // Limpa o campo para o usuário digitar manualmente, mas mantém o que foi sugerido para auditoria.
+    onChange({ street: '', street_confirmed: false });
+  };
+  const retryLookup = () => {
+    if (cepDigits.length === 8) {
+      lastCepRef.current = ''; // força re-execução
+      void runLookup(cepDigits);
+    }
+  };
 
   const inputBase =
     'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30';
