@@ -1,0 +1,294 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+const PAGE_SIZE = 20;
+
+type TicketRow = {
+  id: string;
+  user_id: string;
+  subject: string;
+  status: 'open_user' | 'open_admin' | 'closed';
+  consecutive_user_msgs: number;
+  user_city: string | null;
+  user_full_name: string | null;
+  last_message_text: string | null;
+  last_message_at: string | null;
+  unread_admin: number;
+  blocked: boolean;
+  updated_at: string;
+};
+
+export default function AdminSupportTicketsPanel() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open_user' | 'open_admin' | 'closed' | 'blocked'>('all');
+  const [page, setPage] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [reply, setReply] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Reset page on filter change
+  useEffect(() => { setPage(0); }, [search, statusFilter]);
+
+  const { data: ticketsPage, isLoading } = useQuery({
+    queryKey: ['admin-support-tickets', search, statusFilter, page],
+    queryFn: async () => {
+      let q: any = (supabase.from('support_tickets' as any).select('*', { count: 'exact' }) as any);
+      if (statusFilter === 'blocked') q = q.eq('blocked', true);
+      else if (statusFilter !== 'all') q = q.eq('status', statusFilter);
+
+      const term = search.trim();
+      if (term) {
+        const safe = term.replace(/[%,]/g, ' ');
+        q = q.or(
+          `user_full_name.ilike.%${safe}%,user_city.ilike.%${safe}%,subject.ilike.%${safe}%,last_message_text.ilike.%${safe}%`
+        );
+      }
+      q = q.order('updated_at', { ascending: false })
+           .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      const { data, count, error } = await q;
+      if (error) throw error;
+      return { rows: (data || []) as TicketRow[], total: count || 0 };
+    },
+  });
+
+  const tickets = ticketsPage?.rows || [];
+  const total = ticketsPage?.total || 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  const selected = useMemo(() => tickets.find(t => t.id === selectedId), [tickets, selectedId]);
+
+  const { data: messages = [] } = useQuery({
+    queryKey: ['admin-support-messages', selectedId],
+    enabled: !!selectedId,
+    queryFn: async () => {
+      const { data } = await (supabase
+        .from('support_ticket_messages' as any)
+        .select('*')
+        .eq('ticket_id', selectedId!)
+        .order('created_at', { ascending: true })
+        .limit(500) as any);
+      return (data || []) as any[];
+    },
+  });
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [messages]);
+
+  const sendReply = useMutation({
+    mutationFn: async () => {
+      if (!selectedId || !reply.trim()) return;
+      const { error } = await (supabase
+        .from('support_ticket_messages' as any)
+        .insert({
+          ticket_id: selectedId,
+          sender_id: user!.id,
+          sender_role: 'admin',
+          content: reply.trim().slice(0, 4000),
+        } as any) as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setReply('');
+      qc.invalidateQueries({ queryKey: ['admin-support-messages', selectedId] });
+      qc.invalidateQueries({ queryKey: ['admin-support-tickets'] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const setStatus = useMutation({
+    mutationFn: async (status: 'open_user' | 'closed') => {
+      if (!selectedId) return;
+      const { error } = await (supabase.from('support_tickets' as any)
+        .update({ status, ...(status === 'open_user' ? { consecutive_user_msgs: 0 } : {}) } as any)
+        .eq('id', selectedId) as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Ticket atualizado');
+      qc.invalidateQueries({ queryKey: ['admin-support-tickets'] });
+    },
+  });
+
+  const toggleBlock = useMutation({
+    mutationFn: async (blocked: boolean) => {
+      if (!selectedId) return;
+      const { error } = await (supabase.from('support_tickets' as any)
+        .update({ blocked: !blocked } as any).eq('id', selectedId) as any);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-support-tickets'] }),
+  });
+
+  const deleteMessage = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase.from('support_ticket_messages' as any).delete().eq('id', id) as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Mensagem removida');
+      qc.invalidateQueries({ queryKey: ['admin-support-messages', selectedId] });
+    },
+  });
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(280px,380px)_1fr]">
+      {/* List + filters */}
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-2 space-y-2">
+          <CardTitle className="text-sm">Tickets ({total})</CardTitle>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Buscar por nome, cidade, assunto…"
+                className="h-9 pl-7 text-sm"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={v => setStatusFilter(v as any)}>
+              <SelectTrigger className="h-9 w-[130px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="open_user">Aguardando admin</SelectItem>
+                <SelectItem value="open_admin">Limite (3)</SelectItem>
+                <SelectItem value="closed">Fechados</SelectItem>
+                <SelectItem value="blocked">Bloqueados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent className="p-2 max-h-[60vh] overflow-y-auto space-y-1">
+          {isLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : tickets.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-6">Nenhum ticket</p>
+          ) : tickets.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setSelectedId(t.id)}
+              className={`w-full text-left rounded-lg p-2 transition-colors ${selectedId === t.id ? 'bg-primary/10' : 'hover:bg-muted'}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium truncate">{t.user_full_name || 'Usuário'}</span>
+                <div className="flex gap-1 shrink-0">
+                  {t.blocked && <Badge variant="destructive" className="text-[9px]">Bloq</Badge>}
+                  {t.status === 'open_admin' && <Badge variant="secondary" className="text-[9px]">3/3</Badge>}
+                  {t.status === 'closed' && <Badge variant="outline" className="text-[9px]">Fechado</Badge>}
+                  {t.unread_admin > 0 && <Badge className="text-[9px] h-4 min-w-4 px-1">{t.unread_admin}</Badge>}
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground truncate">{t.user_city || '—'}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{t.last_message_text || '...'}</p>
+              {t.last_message_at && (
+                <p className="text-[9px] text-muted-foreground/60">
+                  {formatDistanceToNow(new Date(t.last_message_at), { addSuffix: true, locale: ptBR })}
+                </p>
+              )}
+            </button>
+          ))}
+        </CardContent>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-border p-2 text-xs">
+            <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Anterior</Button>
+            <span>Página {page + 1} / {totalPages}</span>
+            <Button size="sm" variant="outline" disabled={page + 1 >= totalPages} onClick={() => setPage(p => p + 1)}>Próxima</Button>
+          </div>
+        )}
+      </Card>
+
+      {/* Detail */}
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center justify-between gap-2">
+            <span className="truncate">
+              {selected ? `${selected.user_full_name || 'Usuário'} · ${selected.user_city || '—'}` : 'Selecione um ticket'}
+            </span>
+            {selected && (
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" className="h-7 gap-1"
+                  onClick={() => toggleBlock.mutate(selected.blocked)}>
+                  {selected.blocked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                  {selected.blocked ? 'Desbloquear' : 'Bloquear'}
+                </Button>
+                {selected.status === 'closed' ? (
+                  <Button size="sm" variant="outline" className="h-7 gap-1" onClick={() => setStatus.mutate('open_user')}>
+                    <RotateCcw className="h-3.5 w-3.5" /> Reabrir
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="outline" className="h-7 gap-1" onClick={() => setStatus.mutate('closed')}>
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Fechar
+                  </Button>
+                )}
+              </div>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 flex flex-col h-[60vh] min-h-[420px]">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2">
+            {!selectedId ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Selecione um ticket à esquerda</p>
+            ) : messages.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Sem mensagens</p>
+            ) : messages.map((msg: any) => {
+              const isAdmin = msg.sender_role === 'admin';
+              return (
+                <div key={msg.id} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm relative ${
+                    isAdmin ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
+                  }`}>
+                    <p className="text-[10px] opacity-70 mb-0.5">{isAdmin ? 'Admin' : 'Usuário'}</p>
+                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    <p className={`text-[9px] mt-1 ${isAdmin ? 'text-primary-foreground/60' : 'text-muted-foreground/60'}`}>
+                      {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
+                    </p>
+                    <button
+                      onClick={() => { if (confirm('Remover mensagem?')) deleteMessage.mutate(msg.id); }}
+                      className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-1 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                      aria-label="Remover"
+                    >
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {selected && selected.status !== 'closed' && (
+            <div className="border-t border-border p-3 flex items-end gap-2">
+              <Textarea
+                value={reply}
+                onChange={e => setReply(e.target.value)}
+                placeholder="Responder ao usuário…"
+                className="min-h-[60px] text-sm flex-1"
+                maxLength={4000}
+              />
+              <Button size="sm" className="gap-1"
+                onClick={() => sendReply.mutate()}
+                disabled={!reply.trim() || sendReply.isPending}>
+                {sendReply.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Enviar
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -11,11 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Settings, Users, Shield, Trash2, Eye, Lock, Unlock, Loader2 } from 'lucide-react';
+import { MessageSquare, Settings, Users, Shield, Trash2, Eye, Lock, Unlock, Loader2, LifeBuoy } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
+import AdminSupportTicketsPanel from '@/components/admin/AdminSupportTicketsPanel';
 
 const PROFILE_TYPES = [
   { key: 'provider', label: 'Profissional' },
@@ -177,11 +178,16 @@ const AdminChatPage = () => {
           <p className="text-sm text-muted-foreground">Configure e gerencie o chat entre profissionais</p>
         </div>
 
-        <Tabs defaultValue="settings">
+        <Tabs defaultValue="tickets">
           <TabsList>
+            <TabsTrigger value="tickets" className="gap-1"><LifeBuoy className="h-3.5 w-3.5" /> Tickets de Suporte</TabsTrigger>
             <TabsTrigger value="settings" className="gap-1"><Settings className="h-3.5 w-3.5" /> Configurações</TabsTrigger>
-            <TabsTrigger value="conversations" className="gap-1"><Users className="h-3.5 w-3.5" /> Conversas ({conversations.length})</TabsTrigger>
+            <TabsTrigger value="conversations" className="gap-1"><Users className="h-3.5 w-3.5" /> Conversas P2P ({conversations.length})</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="tickets" className="mt-4">
+            <AdminSupportTicketsPanel />
+          </TabsContent>
 
           {/* SETTINGS TAB */}
           <TabsContent value="settings" className="space-y-4 mt-4">

@@ -6199,6 +6199,95 @@ export type Database = {
           },
         ]
       }
+      support_ticket_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          read: boolean
+          sender_id: string
+          sender_role: Database["public"]["Enums"]["support_message_role"]
+          ticket_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          sender_id: string
+          sender_role: Database["public"]["Enums"]["support_message_role"]
+          ticket_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          sender_id?: string
+          sender_role?: Database["public"]["Enums"]["support_message_role"]
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          blocked: boolean
+          consecutive_user_msgs: number
+          created_at: string
+          id: string
+          last_message_at: string | null
+          last_message_text: string | null
+          status: Database["public"]["Enums"]["support_ticket_status"]
+          subject: string
+          unread_admin: number
+          unread_user: number
+          updated_at: string
+          user_city: string | null
+          user_full_name: string | null
+          user_id: string
+        }
+        Insert: {
+          blocked?: boolean
+          consecutive_user_msgs?: number
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_text?: string | null
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          subject?: string
+          unread_admin?: number
+          unread_user?: number
+          updated_at?: string
+          user_city?: string | null
+          user_full_name?: string | null
+          user_id: string
+        }
+        Update: {
+          blocked?: boolean
+          consecutive_user_msgs?: number
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_text?: string | null
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          subject?: string
+          unread_admin?: number
+          unread_user?: number
+          updated_at?: string
+          user_city?: string | null
+          user_full_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       system_audit_logs: {
         Row: {
           acted_as_admin_id: string | null
@@ -8740,6 +8829,8 @@ export type Database = {
         | "gerente"
         | "supervisor"
         | "analista"
+      support_message_role: "user" | "admin"
+      support_ticket_status: "open_user" | "open_admin" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -8875,6 +8966,8 @@ export const Constants = {
         "supervisor",
         "analista",
       ],
+      support_message_role: ["user", "admin"],
+      support_ticket_status: ["open_user", "open_admin", "closed"],
     },
   },
 } as const

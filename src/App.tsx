@@ -155,6 +155,7 @@ const AdminStaffPage = lazy(() => import("./pages/AdminStaffPage"));
 const AdminApprovalSettingsPage = lazy(() => import("./pages/AdminApprovalSettingsPage"));
 const AdminOrphanProfilesPage = lazy(() => import("./pages/AdminOrphanProfilesPage"));
 const DashboardChatPage = lazy(() => import("./pages/DashboardChatPage"));
+const DashboardSupportPage = lazy(() => import("./pages/DashboardSupportPage"));
 const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
@@ -523,6 +524,7 @@ const App = () => {
                 <Route path="/dashboard/auditoria-bairro" element={<ProtectedRoute allowedTypes={['provider']}><DashboardBadgeAuditPage /></ProtectedRoute>} />
                 <Route path="/dashboard/localizacao-guiada" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLocationGuidedPage /></ProtectedRoute>} />
                 <Route path="/dashboard/chat" element={<ProtectedRoute><DashboardChatPage /></ProtectedRoute>} />
+                <Route path="/dashboard/suporte" element={<ProtectedRoute><DashboardSupportPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
                 <Route path="/admin/prestadores" element={<AdminGuard><AdminProvidersPage /></AdminGuard>} />
                 <Route path="/admin/bairro-default" element={<AdminGuard><AdminDefaultNeighborhoodPage /></AdminGuard>} />
