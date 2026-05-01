@@ -532,7 +532,11 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         </div>
       ) : (
         <MainOrchestrator
-          internalHandoffFromTriage
+          // BLINDAGEM (auditoria reidratação 2026-05): em modo revisão NUNCA
+          // simulamos um handoff novo de triagem — isso forçaria o bootstrap
+          // do V2 a sobrescrever o seedState (rico, vindo do banco) com um
+          // payload vazio (`service_name=''`, `description=''`).
+          internalHandoffFromTriage={!isReview}
           deferCompletionToParent
           editMode={isReview}
           seedState={{
