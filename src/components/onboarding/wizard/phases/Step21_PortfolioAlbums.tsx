@@ -257,11 +257,23 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip, onGoToPath }: Step21Props)
           1. Crie um álbum. 2. Toque no nome do álbum. 3. Envie as fotos na área que abre logo abaixo.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button asChild type="button" variant="outline" className="gap-2">
-            <Link to="/dashboard/portfolio">Abrir portfólio</Link>
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            disabled={navigating !== null}
+            onClick={() => void goTo('/dashboard/portfolio')}
+          >
+            Abrir portfólio
           </Button>
-          <Button asChild type="button" variant="outline" className="gap-2">
-            <Link to="/dashboard">Ir para meu painel</Link>
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            disabled={navigating !== null}
+            onClick={() => void goTo('/dashboard')}
+          >
+            Ir para meu painel
           </Button>
         </div>
       </div>
