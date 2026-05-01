@@ -519,29 +519,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     onPhaseChange?.(state.phase);
   }, [state.phase, onPhaseChange]);
 
-  // Re-hidrata estado pelo draft local ao entrar no Review (garante dados frescos),
-  // PRESERVANDO campos que o usuário já alterou nesta sessão (anti-stale + anti-overwrite).
-  useEffect(() => {
-    if (state.phase !== 'phase4_review') return;
-    const apply = () => {
-      const draft = readOnboardingV2Draft();
-      if (!draft) return;
-      dispatch({
-        type: 'HYDRATE',
-        state: {
-          profile: mergePreservingTouched('profile', state.profile, draft.profile as any),
-          service: mergePreservingTouched('service', state.service, draft.service as any),
-        },
-      });
-    };
-    apply();
-    // Cross-tab: se outra aba atualizar o draft enquanto o Review está aberto,
-    // re-aplica o merge (sempre preservando o que o usuário tocou aqui).
-    const off = subscribeDraftChange(() => apply());
-    return off;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.phase]);
-
   useEffect(() => {
     const goBack = () => {
       switch (state.phase) {
@@ -577,9 +554,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           break;
         case 'phase4_extras_b':
           dispatch({ type: 'GO_TO', phase: 'phase4_extras_a' });
-          break;
-        case 'phase4_review':
-          dispatch({ type: 'GO_TO', phase: 'phase4_extras_b' });
           break;
       }
     };
@@ -1463,7 +1437,29 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             data={state.profile}
             onChange={patchProfile}
             saving={saving}
-            onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
+            onSkip={async () => {
+              track('skip');
+              void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
+                recordRegistrationSnapshotOnce({
+                  whatsapp: state.profile.whatsapp,
+                  postal_code: state.profile.postal_code,
+                  street: state.profile.street,
+                  street_number: state.profile.street_number,
+                  neighborhood: state.profile.neighborhood,
+                  city: state.profile.city,
+                  state: state.profile.state,
+                  latitude: (state.profile as any).latitude ?? null,
+                  longitude: (state.profile as any).longitude ?? null,
+                  accuracy_m: (state.profile as any).accuracy_m ?? null,
+                  origin_summary: {
+                    flow: 'onboarding_v2',
+                    account_type: state.profile.kind,
+                    has_first_service: !!state.service.service_name,
+                  },
+                }),
+              );
+              dispatch({ type: 'NEXT' });
+            }}
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase4_extras_a' }); }}
             onFinish={async () => {
               track('submit');
@@ -1472,41 +1468,30 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 facebook_url: state.profile.facebook_url,
                 website: state.profile.website_url,
               }));
+              void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
+                recordRegistrationSnapshotOnce({
+                  whatsapp: state.profile.whatsapp,
+                  postal_code: state.profile.postal_code,
+                  street: state.profile.street,
+                  street_number: state.profile.street_number,
+                  neighborhood: state.profile.neighborhood,
+                  city: state.profile.city,
+                  state: state.profile.state,
+                  latitude: (state.profile as any).latitude ?? null,
+                  longitude: (state.profile as any).longitude ?? null,
+                  accuracy_m: (state.profile as any).accuracy_m ?? null,
+                  origin_summary: {
+                    flow: 'onboarding_v2',
+                    account_type: state.profile.kind,
+                    has_first_service: !!state.service.service_name,
+                  },
+                }),
+              );
               track('next');
               dispatch({ type: 'NEXT' });
             }}
           />
         );
-      case 'phase4_review': {
-        // Publicação SILENCIOSA — não há mais tela de revisão no Wizard.
-        // Toda persistência já foi feita patch-a-patch. Aqui só:
-        //  1) gravamos o snapshot forense (idempotente)
-        //  2) avançamos pra 'done' imediatamente
-        track('submit', { from: 'review_silent' });
-        // Fire-and-forget: não bloqueia a UX se o snapshot falhar.
-        void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
-          recordRegistrationSnapshotOnce({
-            whatsapp: state.profile.whatsapp,
-            postal_code: state.profile.postal_code,
-            street: state.profile.street,
-            street_number: state.profile.street_number,
-            neighborhood: state.profile.neighborhood,
-            city: state.profile.city,
-            state: state.profile.state,
-            latitude: (state.profile as any).latitude ?? null,
-            longitude: (state.profile as any).longitude ?? null,
-            accuracy_m: (state.profile as any).accuracy_m ?? null,
-            origin_summary: {
-              flow: 'onboarding_v2',
-              account_type: state.profile.kind,
-              has_first_service: !!state.service.service_name,
-            },
-          }),
-        );
-        // Avança imediatamente — sem renderizar nada.
-        Promise.resolve().then(() => dispatch({ type: 'NEXT' }));
-        return null;
-      }
       case 'done':
         if (deferCompletionToParent) return null;
         // Limpa rascunho local e auto-finaliza
