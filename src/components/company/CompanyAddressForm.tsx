@@ -254,7 +254,7 @@ export default function CompanyAddressForm({
           <input
             type="text"
             value={value.street ?? ''}
-            onChange={(e) => onChange({ street: e.target.value })}
+            onChange={(e) => onChange({ street: e.target.value, street_confirmed: true })}
             placeholder="Rua / Avenida"
             maxLength={120}
             aria-invalid={!!streetError}
