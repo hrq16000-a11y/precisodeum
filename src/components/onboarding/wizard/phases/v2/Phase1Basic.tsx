@@ -12,7 +12,7 @@
 import { motion } from 'framer-motion';
 import {
   Briefcase, UserRound, Building2, Megaphone, MapPin, Loader2, Phone,
-  ArrowLeft, ArrowRight, Sparkles, User, Camera,
+  ArrowLeft, ArrowRight, Sparkles, User, Camera, Lock,
 } from 'lucide-react';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -407,6 +407,14 @@ export const Phase1Contact = ({
           <span className={ws.fieldLabel}>
             <Phone className="h-3.5 w-3.5" /> WhatsApp *
             {whatsOk && !duplicateWhatsapp && <span className={ws.pointsBadge}>OK</span>}
+            {!!locks?.whatsapp && (
+              <span
+                className="ml-1 inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                title="Este WhatsApp já está vinculado à sua conta e não pode ser alterado por aqui. Fale com o suporte para trocar."
+              >
+                <Lock className="h-3 w-3" aria-hidden="true" /> bloqueado
+              </span>
+            )}
           </span>
           <div className="relative">
             <input
@@ -414,21 +422,29 @@ export const Phase1Contact = ({
               inputMode="numeric"
               value={visibleWhats}
               onChange={(e) => {
+                if (locks?.whatsapp) return;
                 const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
                 onChange({ whatsapp: digits });
               }}
               onBlur={onWhatsappBlur}
               placeholder="41 9 9745 2053"
               disabled={!!locks?.whatsapp}
+              readOnly={!!locks?.whatsapp}
               aria-invalid={duplicateWhatsapp || undefined}
+              aria-readonly={!!locks?.whatsapp || undefined}
               className={`${whatsOk && !duplicateWhatsapp ? ws.inputValid : ws.input} pr-24 tracking-wide ${
                 duplicateWhatsapp ? 'border-destructive ring-destructive/40' : ''
-              }`}
+              } ${locks?.whatsapp ? 'cursor-not-allowed bg-muted/60 text-muted-foreground' : ''}`}
             />
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
-              {checkingWhatsapp ? 'verificando...' : 'DDD + número'}
+              {locks?.whatsapp ? 'imutável' : checkingWhatsapp ? 'verificando...' : 'DDD + número'}
             </span>
           </div>
+          {!!locks?.whatsapp && (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Por segurança, o WhatsApp já vinculado não pode ser editado por aqui — abra um chamado em /ajuda para trocar.
+            </p>
+          )}
           {!whatsOk && data.whatsapp.length > 0 && (
             <p className="mt-1 text-xs text-destructive">Inclua DDD + número (mínimo 10 dígitos).</p>
           )}
