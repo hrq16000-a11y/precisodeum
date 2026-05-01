@@ -143,8 +143,16 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
             </p>
           )}
 
-          {safe.ranges.map((r, idx) => (
-            <div key={idx} className="space-y-2 rounded-md border border-border bg-card p-3 shadow-sm">
+          {safe.ranges.map((r, idx) => {
+            const rangeIssues = issuesByIndex[idx] || [];
+            const hasErr = rangeIssues.length > 0;
+            return (
+            <div
+              key={idx}
+              className={`space-y-2 rounded-md border bg-card p-3 shadow-sm ${
+                hasErr ? 'border-destructive/60 ring-1 ring-destructive/20' : 'border-border'
+              }`}
+            >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                   Faixa {idx + 1}
@@ -220,13 +228,20 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
                   </Select>
                 </label>
               </div>
-              {r.end < r.start && r.end !== '00:00' && (
+              {r.end < r.start && r.end !== '00:00' && r.end !== '24:00' && (
                 <p className="text-[10px] text-amber-700 dark:text-amber-300">
                   Faixa cruzando meia-noite: {r.start} → {r.end} (entrará no filtro de "madrugada").
                 </p>
               )}
+              {rangeIssues.map((msg, k) => (
+                <p key={k} className="flex items-start gap-1 text-[10.5px] font-medium text-destructive" style={{ textWrap: 'balance' as never }}>
+                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span className="break-words">{msg}</span>
+                </p>
+              ))}
             </div>
-          ))}
+            );
+          })}
 
           <Button
             type="button"
@@ -234,8 +249,12 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
             size="sm"
             onClick={addRange}
             className="w-full"
+            disabled={!canAddMore}
           >
-            <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar outra faixa
+            <Plus className="mr-1 h-3.5 w-3.5" />
+            {canAddMore
+              ? `Adicionar outra faixa (${safe.ranges.length}/${MAX_RANGES})`
+              : `Limite atingido — máximo ${MAX_RANGES} faixas`}
           </Button>
         </div>
       )}
