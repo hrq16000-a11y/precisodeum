@@ -16,10 +16,11 @@
  *  - É totalmente controlado — não persiste sozinho.
  *  - Todos os campos são OPCIONAIS.
  */
-import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, Check, AlertTriangle } from 'lucide-react';
+import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, Check, AlertTriangle, History } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { lookupCep, formatCep, onlyDigits } from '@/lib/cepLookup';
+import { normalizeStreet as robustNormalizeStreet, isSameStreet } from '@/lib/streetNormalize';
 
 export interface CompanyAddressValue {
   street?: string;
@@ -29,6 +30,8 @@ export interface CompanyAddressValue {
   show_full_address?: boolean;
   /** Última sugestão de logradouro vinda do CEP — para o passo seguinte saber que foi sugerido. */
   street_suggested?: string;
+  /** CEP (8 dígitos) que originou a sugestão atual — auditoria/telemetria + anti-sobrescrita. */
+  street_suggested_cep?: string;
   /** Usuário confirmou explicitamente o logradouro (clicou "Usar este" ou digitou). */
   street_confirmed?: boolean;
 }
@@ -53,15 +56,21 @@ function maskCep(digits: string): string {
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
-/** Normalização leve para comparar duas strings de logradouro (case + acentos + pontuação). */
+/**
+ * Normalização robusta delegada a `@/lib/streetNormalize`. Cobre acentos,
+ * pontuação, abreviações ("R.", "Av.", "Tv.") e stopwords ("de", "da").
+ */
 function normalizeStreet(s: string): string {
-  return (s || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[.,\-/]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return robustNormalizeStreet(s);
+}
+
+/** Item do histórico recente de CEPs consultados nesta sessão do form. */
+interface CepHistoryEntry {
+  cep: string;        // 00000-000
+  digits: string;     // 8 dígitos
+  address?: string;   // logradouro sugerido
+  city?: string;
+  state?: string;
 }
 
 export default function CompanyAddressForm({
@@ -79,6 +88,11 @@ export default function CompanyAddressForm({
   const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'applied' | 'error' | 'not_found'>('idle');
   const [cepErrorReason, setCepErrorReason] = useState<'network' | 'not_found' | null>(null);
   const lastCepRef = useRef<string>('');
+  /**
+   * Histórico recente de CEPs consultados com sucesso nesta sessão (máx 3).
+   * Permite o usuário reaplicar uma sugestão rapidamente após retry / edição.
+   */
+  const [cepHistory, setCepHistory] = useState<CepHistoryEntry[]>([]);
 
   const isSuggested = (k: keyof CompanyAddressValue) => suggestedFields.includes(k);
 
@@ -110,8 +124,11 @@ export default function CompanyAddressForm({
     const r = await lookupCep(digits);
     if (r.ok) {
       const suggestion = r.address ?? '';
-      // Persiste a sugestão sempre que houver — para o próximo passo saber.
-      const patch: Partial<CompanyAddressValue> = { street_suggested: suggestion };
+      // Persiste a sugestão + o CEP que a originou — auditoria/telemetria + anti-sobrescrita.
+      const patch: Partial<CompanyAddressValue> = {
+        street_suggested: suggestion,
+        street_suggested_cep: digits,
+      };
       const currentStreet = (value.street ?? '').trim();
       const userTyped = currentStreet.length > 0;
       const userConfirmed = Boolean(value.street_confirmed);
@@ -126,7 +143,7 @@ export default function CompanyAddressForm({
         userTyped &&
         !userConfirmed &&
         previousSuggestion.length > 0 &&
-        normalizeStreet(currentStreet) === normalizeStreet(previousSuggestion)
+        isSameStreet(currentStreet, previousSuggestion)
       ) {
         patch.street = suggestion;
         patch.street_confirmed = false;
@@ -134,6 +151,21 @@ export default function CompanyAddressForm({
       // Caso 3: usuário confirmou ou digitou diferente → mantém o que está e deixa o conflict banner agir.
       onChange(patch);
       setCepStatus('applied');
+
+      // Atualiza histórico (LRU, máx 3) — apenas quando há logradouro útil.
+      if (suggestion) {
+        setCepHistory((prev) => {
+          const entry: CepHistoryEntry = {
+            cep: formatCep(digits),
+            digits,
+            address: suggestion,
+            city: r.city,
+            state: r.state,
+          };
+          const dedup = prev.filter((e) => e.digits !== digits);
+          return [entry, ...dedup].slice(0, 3);
+        });
+      }
     } else {
       const failure = r as { ok: false; reason: 'invalid_format' | 'not_found' | 'network'; message: string };
       const reason: 'network' | 'not_found' = failure.reason === 'not_found' ? 'not_found' : 'network';
@@ -186,6 +218,25 @@ export default function CompanyAddressForm({
     }
   };
 
+  /**
+   * Reaplica uma sugestão a partir do histórico recente: repõe o CEP e o
+   * logradouro sugerido em UM patch, marca como NÃO-confirmado para o usuário
+   * confirmar explicitamente. Útil quando o usuário fez retry / editou o CEP
+   * e quer voltar a um valor já consultado.
+   */
+  const reapplyFromHistory = (entry: CepHistoryEntry) => {
+    lastCepRef.current = entry.digits; // evita re-disparar lookup automático
+    setCepStatus('applied');
+    setCepErrorReason(null);
+    onChange({
+      postal_code: entry.digits,
+      street: entry.address ?? '',
+      street_suggested: entry.address ?? '',
+      street_suggested_cep: entry.digits,
+      street_confirmed: false,
+    });
+  };
+
   const inputBase =
     'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30';
   const inputSuggested =
@@ -199,6 +250,43 @@ export default function CompanyAddressForm({
 
   const fields = (
     <div className="space-y-2">
+      {/* Histórico recente de CEPs consultados — permite reaplicar uma sugestão rapidamente. */}
+      {cepHistory.length > 0 && (
+        <div
+          data-testid="cep-history"
+          className="rounded-lg border border-border/60 bg-muted/30 p-2"
+        >
+          <div className="mb-1 flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">
+            <History className="h-3 w-3" aria-hidden="true" /> CEPs recentes
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {cepHistory.map((entry) => {
+              const isActive = entry.digits === cepDigits;
+              return (
+                <button
+                  key={entry.digits}
+                  type="button"
+                  onClick={() => reapplyFromHistory(entry)}
+                  data-testid={`cep-history-item-${entry.digits}`}
+                  aria-label={`Reaplicar CEP ${entry.cep}${entry.address ? ` — ${entry.address}` : ''}`}
+                  className={`group inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition ${
+                    isActive
+                      ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
+                      : 'border-border bg-background text-foreground hover:border-amber-300 hover:bg-amber-50'
+                  }`}
+                >
+                  <span className="font-mono">{entry.cep}</span>
+                  {entry.address && (
+                    <span className="truncate text-muted-foreground group-hover:text-foreground">
+                      · {entry.address}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {/* Banner de SUGESTÃO PENDENTE — usuário precisa confirmar o logradouro vindo do CEP. */}
       {pendingConfirmation && (
         <div

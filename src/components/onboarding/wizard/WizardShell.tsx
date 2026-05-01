@@ -186,6 +186,7 @@ export default function WizardShell() {
             postal_code: '',
             show_full_address: false,
             street_suggested: '',
+            street_suggested_cep: '',
             street_confirmed: false,
             points: Number(profile?.engagement_points ?? state.triage.points ?? 0),
             rewards: {
