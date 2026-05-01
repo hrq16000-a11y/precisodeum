@@ -1,17 +1,12 @@
 /** Phase Pro Document — CPF (PF) ou CNPJ + Nome Fantasia (PJ), troca por selo + pontos. */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, FileText, Store, MapPin, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowRight, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isValidCpf, isValidCnpj } from '@/lib/cpfCnpj';
-import { lookupCep, onlyDigits } from '@/lib/cepLookup';
 import VerifiedBadgeReveal from './VerifiedBadgeReveal';
 import { BET_POINTS, type BetState } from './types';
-
-function maskCep(d: string) {
-  const x = onlyDigits(d).slice(0, 8);
-  return x.length <= 5 ? x : `${x.slice(0, 5)}-${x.slice(5)}`;
-}
+import CompanyAddressForm, { type CompanyAddressValue } from '@/components/company/CompanyAddressForm';
 
 interface Props {
   state: BetState;
