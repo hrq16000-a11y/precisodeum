@@ -293,6 +293,7 @@ export const initialWizardState: WizardState = {
     bio: '',
     instagram_url: '',
     facebook_url: '',
+    website_url: '',
     primary_category_id: null,
     working_hours: '',
     go_online: true,

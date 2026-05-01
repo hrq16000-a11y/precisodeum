@@ -1422,6 +1422,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             saving={saving}
             userId={user?.id}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
+            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase4_document' }); }}
             onContinue={async () => {
               track('submit');
               if (state.profile.avatar_url) {
@@ -1461,11 +1462,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onChange={patchProfile}
             saving={saving}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
+            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase4_extras_a' }); }}
             onFinish={async () => {
               track('submit');
               await persistPatch(nullifyEmpty({
                 instagram_url: state.profile.instagram_url,
                 facebook_url: state.profile.facebook_url,
+                website: state.profile.website_url,
               }));
               track('next');
               dispatch({ type: 'NEXT' });

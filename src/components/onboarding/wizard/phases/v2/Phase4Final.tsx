@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, ArrowLeft, Check, Wifi,
-  MapPin, FileText, Calendar, Camera as CameraIcon,
+  MapPin, FileText, Calendar, Camera as CameraIcon, Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,11 +41,12 @@ interface AvatarProps {
   onChange: (patch: Partial<OnboardingProfileData>) => void;
   onContinue: () => void;
   onSkip: () => void;
+  onBack?: () => void;
   saving: boolean;
   userId?: string;
 }
 
-export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userId }: AvatarProps) => {
+export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, saving, userId }: AvatarProps) => {
   const focusAvatar = useFocusFieldFromReview('avatar_url');
   const { user } = useAuth();
   const socialUrl = getSocialAvatarUrl(user);
@@ -78,7 +79,8 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
     categoryIcon: categoryInfo?.icon,
     seed,
   });
-  // Grade de 6 variantes minimalistas (cores/estilos distintos sobre a mesma categoria).
+  // Toggle 6 / 12 variantes — escolha do usuário, sem perder a seleção atual.
+  const [variantCount, setVariantCount] = useState<6 | 12>(6);
   const variants = generateAvatarVariants(
     {
       userId,
@@ -86,7 +88,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
       categoryName: categoryInfo?.name,
       categoryIcon: categoryInfo?.icon,
     },
-    6,
+    variantCount,
   );
 
   // Auto-sugestão: se o usuário ainda não escolheu nada e a categoria carregou,
@@ -305,16 +307,32 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
 
       {/* Grade de avatares minimalistas — usuário escolhe qual gosta mais. */}
       <div className="rounded-xl border border-border bg-card p-3">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <span className="text-[12px] font-semibold text-foreground">
             Ou escolha um avatar minimalista
           </span>
-          {categoryInfo && (
-            <span className="text-[10px] text-muted-foreground">
-              {categoryInfo.name}
-            </span>
-          )}
+          <div className="flex items-center gap-1" role="group" aria-label="Quantidade de variações">
+            {([6, 12] as const).map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setVariantCount(n)}
+                aria-pressed={variantCount === n}
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                  variantCount === n
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-muted/40 text-muted-foreground hover:bg-muted/70'
+                }`}
+                data-testid={`phase4-variant-count-${n}`}
+              >
+                {n} opções
+              </button>
+            ))}
+          </div>
         </div>
+        {categoryInfo && (
+          <div className="mb-2 text-[10px] text-muted-foreground">{categoryInfo.name}</div>
+        )}
         <div
           role="radiogroup"
           aria-label="Avatares minimalistas sugeridos"
@@ -364,6 +382,17 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
           Agora não
         </Button>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={saving}
+            className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+            data-testid="phase4-avatar-back"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+          </button>
+        )}
       </div>
 
       {/* Mantém o AvatarUpload original disponível (escondido) caso outras telas o reusem.
@@ -703,12 +732,14 @@ interface ExtrasBProps {
   onChange: (patch: Partial<OnboardingProfileData>) => void;
   onFinish: () => void;
   onSkip: () => void;
+  onBack?: () => void;
   saving: boolean;
 }
 
-export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: ExtrasBProps) => {
+export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving }: ExtrasBProps) => {
   const focusInsta = useFocusFieldFromReview('instagram_url');
   const focusFb = useFocusFieldFromReview('facebook_url');
+  const focusSite = useFocusFieldFromReview('website_url' as any);
 
   // Resumo PJ — só aparece quando o usuário preencheu algum dado de endereço.
   const isPj = data.kind === 'pj';
@@ -756,6 +787,25 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
             placeholder="Link da sua página"
           />
         </label>
+        <label className="block">
+          <span className={ws.fieldLabel}>
+            <Globe className="h-3.5 w-3.5" /> Site / portfólio
+          </span>
+          <Input
+            ref={focusSite.ref}
+            className={focusSite.highlightClass}
+            type="url"
+            inputMode="url"
+            autoComplete="url"
+            value={data.website_url ?? ''}
+            onChange={(e) => onChange({ website_url: e.target.value } as Partial<OnboardingProfileData>)}
+            placeholder="https://seusite.com.br"
+            data-testid="phase4-website-url"
+          />
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            Aparece publicamente no seu perfil.
+          </span>
+        </label>
       </div>
 
       {showPjReview && (
@@ -792,6 +842,17 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
           Pular redes e revisar
         </Button>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={saving}
+            className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+            data-testid="phase4-extras-b-back"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+          </button>
+        )}
       </div>
     </motion.div>
   );
