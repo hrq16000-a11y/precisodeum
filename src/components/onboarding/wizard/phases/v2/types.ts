@@ -66,6 +66,12 @@ export interface OnboardingProfileData {
   avatar_source?: 'upload' | 'camera' | 'social' | 'generated' | null;
   /** Seed/variante do avatar gerado — permite "trocar cores" e restaurar a mesma escolha ao voltar. */
   avatar_seed?: number;
+  /** Latitude capturada via GPS/CEP — alimenta a coluna `geog` (PostGIS) em `providers`. */
+  latitude?: number | null;
+  /** Longitude capturada via GPS/CEP — alimenta a coluna `geog` (PostGIS) em `providers`. */
+  longitude?: number | null;
+  /** Precisão do GPS em metros (opcional, telemetria/auditoria). */
+  accuracy_m?: number | null;
 }
 
 export type OnboardingCoreField = 'full_name' | 'whatsapp' | 'city' | 'state' | 'document';
