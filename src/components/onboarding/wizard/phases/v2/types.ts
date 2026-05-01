@@ -46,6 +46,10 @@ export interface OnboardingProfileData {
   business_segment?: string;
   /** Toggle de privacidade do endereço completo — só PJ. */
   show_full_address?: boolean;
+  /** Última sugestão de logradouro vinda do CEP (BrasilAPI/ViaCEP) — só UX, não persistida. */
+  street_suggested?: string;
+  /** Confirmação explícita do logradouro pelo usuário — só UX, não persistida. */
+  street_confirmed?: boolean;
   /** Redes sociais institucionais (chave→URL) — só PJ. */
   social_links?: Record<string, string> | null;
 }
