@@ -46,6 +46,12 @@ export interface BetState {
   bairro_sugerido_cep: string;
   /** PJ — histórico recente de CEPs consultados com sucesso (LRU, máx 3). Persiste entre steps do wizard. */
   cep_history: Array<{ cep: string; digits: string; address?: string; city?: string; state?: string }>;
+  /** Avatar — URL persistida (Storage URL ou data URL do gerado). */
+  avatar_url: string | null;
+  /** Avatar — origem da escolha. */
+  avatar_source: 'upload' | 'camera' | 'social' | 'generated' | null;
+  /** Avatar — seed da variação gerada. Garante restaurar a mesma variante ao Voltar. */
+  avatar_seed: number;
   points: number;              // contador exibido
   rewards: {
     name: boolean;
@@ -82,6 +88,9 @@ export const initialBetState: BetState = {
   street_confirmed: false,
   bairro_sugerido_cep: '',
   cep_history: [],
+  avatar_url: null,
+  avatar_source: null,
+  avatar_seed: 0,
   points: 0,
   rewards: {
     name: false,

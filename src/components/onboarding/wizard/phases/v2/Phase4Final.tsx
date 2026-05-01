@@ -29,6 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getSocialAvatarUrl } from '@/lib/avatarUtils';
 import { generateUniqueAvatar, generateAvatarVariants } from '@/lib/avatarGenerator';
 import { toast } from 'sonner';
+import AvatarCropDialog from './AvatarCropDialog';
 import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 import { wizardStyles as ws, wizardEnter } from './wizardStyles';
@@ -90,9 +91,13 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
 
   // Auto-sugestão: se o usuário ainda não escolheu nada e a categoria carregou,
   // já mostramos o avatar gerado como pré-seleção (mas não bloqueia upload/câmera).
+  // Aplica detecção de colisão: se algum dos avatares "já usados" do próprio usuário
+  // bater com o seed 0, avançamos pro próximo seed disponível dentro das variantes.
   useEffect(() => {
     if (!data.avatar_url && !data.avatar_source && categoryInfo) {
-      onChange({ avatar_url: generatedUrl, avatar_source: 'generated' });
+      const used = new Set<string>([data.avatar_url || ''].filter(Boolean));
+      const fresh = variants.find((v) => !used.has(v.url)) || variants[0];
+      onChange({ avatar_url: fresh.url, avatar_seed: fresh.seed, avatar_source: 'generated' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryInfo?.name]);
@@ -101,32 +106,67 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleCapturedFile = async (file: File | null, source: 'camera' | 'upload') => {
-    if (!file || !userId) return;
-    // Validação pré-upload (tipo + tamanho + dimensões).
+  // Crop dialog state
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropSource, setCropSource] = useState<'camera' | 'upload'>('upload');
+
+  /**
+   * Etapa 1: validação rigorosa do arquivo recebido (tipo/tamanho/dimensões).
+   * Em caso de falha, BLOQUEIA — não há fallback silencioso pra avatar gerado.
+   * O usuário precisa escolher outro arquivo OU clicar em uma variação minimalista.
+   */
+  const handleSelectFile = async (file: File | null, source: 'camera' | 'upload') => {
+    if (!file) return;
     const { validateImageFile } = await import('@/lib/imageValidation');
     const v = await validateImageFile(file, {
-      maxSizeBytes: 5 * 1024 * 1024,
-      minDimension: 64,
+      maxSizeBytes: 5 * 1024 * 1024, // 5MB
+      minSizeBytes: 5 * 1024,        // 5KB anti-arquivo-vazio
+      minDimension: 200,             // avatar precisa renderizar bem em 80×80
       maxDimension: 6000,
+      allowedMimes: [
+        'image/jpeg', 'image/jpg', 'image/png',
+        'image/webp', 'image/avif', 'image/heic', 'image/heif',
+      ],
     });
     if (!v.ok) {
-      toast.error(v.message ?? 'Arquivo inválido', {
-        description: 'Vamos usar um avatar gerado pra você por enquanto. Você pode trocar depois.',
-      });
-      onChange({ avatar_url: generatedUrl, avatar_source: 'generated' });
+      // Mensagens claras + ação corretiva. SEM fallback automático.
+      const hint =
+        v.code === 'invalid_type'  ? 'Use JPG, PNG, WebP ou HEIC.'
+      : v.code === 'too_large'     ? 'Tente uma imagem menor que 5MB.'
+      : v.code === 'too_small'     ? 'A imagem parece corrompida. Escolha outra.'
+      : v.code === 'dim_too_large' ? 'Reduza as dimensões antes de enviar.'
+      : v.code === 'dim_too_small' ? 'Use uma imagem com pelo menos 200×200px.'
+      : v.code === 'corrupt'       ? 'Não consegui abrir essa imagem. Escolha outra.'
+      :                              'Tente outra imagem.';
+      toast.error(v.message ?? 'Arquivo inválido', { description: hint });
+      return; // ← bloqueia, mantém estado anterior intacto.
+    }
+    // Validou → abre o crop dialog.
+    setCropSource(source);
+    setCropFile(file);
+  };
+
+  /**
+   * Etapa 2: o usuário confirmou o recorte. Comprimimos o blob (já 512×512 jpeg)
+   * e subimos no Storage via edge `optimize-image`. Em caso de falha, mostramos
+   * erro claro e mantemos o avatar atual — sem trocar pelo gerado às escondidas.
+   */
+  const handleCroppedConfirm = async (cropped: File) => {
+    if (!userId) {
+      toast.error('Faça login pra enviar a foto.');
+      setCropFile(null);
       return;
     }
-    // Compressão client-side (AVIF/WebP, target ~200KB).
+    const source = cropSource;
+    setCropFile(null); // fecha modal antes do upload
     try {
       const { compressImage } = await import('@/lib/compressImage');
-      const compressed = await compressImage(file, { maxDimension: 512, targetKB: 200 });
-      const finalFile = compressed || file;
-      // Reaproveita o pipeline do AvatarUpload via edge function `optimize-image`.
+      const compressed = await compressImage(cropped, { maxDimension: 512, targetKB: 200 });
+      const finalFile = compressed || cropped;
       const { uploadWithFallback } = await import('@/lib/uploadWithFallback');
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        toast.error('Faça login pra enviar a foto.');
+        toast.error('Sessão expirada. Faça login de novo.');
         return;
       }
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -152,11 +192,25 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
       onChange({ avatar_url: publicUrl, avatar_source: source });
       toast.success(source === 'camera' ? 'Foto capturada e otimizada!' : 'Foto enviada!');
     } catch (err: any) {
+      // Erro real de rede/upload → mostramos mensagem honesta, sem trocar avatar.
       toast.error('Não consegui enviar a foto agora.', {
-        description: 'Usei um avatar gerado por enquanto — você pode trocar depois.',
+        description: 'Verifique sua conexão e tente de novo, ou escolha um avatar minimalista.',
       });
-      onChange({ avatar_url: generatedUrl, avatar_source: 'generated' });
     }
+  };
+
+  /**
+   * Detecção de colisão: ao selecionar uma variação gerada, se a URL já estiver
+   * em uso pelo próprio usuário (mesmo seed), saltamos pro próximo seed disponível.
+   */
+  const handlePickVariant = (seed: number, url: string) => {
+    if (data.avatar_url === url && data.avatar_source === 'generated') {
+      // mesmo avatar já selecionado — força próxima variação livre.
+      const next = variants.find((v) => v.url !== url) || variants[0];
+      onChange({ avatar_seed: next.seed, avatar_url: next.url, avatar_source: 'generated' });
+      return;
+    }
+    onChange({ avatar_seed: seed, avatar_url: url, avatar_source: 'generated' });
   };
 
   const sourceLabel: Record<string, string> = {
@@ -202,14 +256,14 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => handleCapturedFile(e.target.files?.[0] || null, 'camera')}
+        onChange={(e) => { const f = e.target.files?.[0] || null; e.currentTarget.value = ''; handleSelectFile(f, 'camera'); }}
       />
       <input
         ref={galleryInputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/*"
         className="hidden"
-        onChange={(e) => handleCapturedFile(e.target.files?.[0] || null, 'upload')}
+        onChange={(e) => { const f = e.target.files?.[0] || null; e.currentTarget.value = ''; handleSelectFile(f, 'upload'); }}
       />
 
       {/* 4 ações em grid 2×2. Mobile: câmera, galeria, conta social (se houver), avatar gerado. */}
@@ -275,9 +329,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
                 role="radio"
                 aria-checked={isSelected}
                 aria-label={`Avatar variação ${v.seed + 1}`}
-                onClick={() =>
-                  onChange({ avatar_seed: v.seed, avatar_url: v.url, avatar_source: 'generated' })
-                }
+                onClick={() => handlePickVariant(v.seed, v.url)}
                 className={`relative aspect-square overflow-hidden rounded-full border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
                   isSelected
                     ? 'border-amber-400 ring-2 ring-amber-400/40 scale-105'
@@ -326,6 +378,14 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
           />
         )}
       </div>
+
+      {/* Crop dialog — abre depois da validação rigorosa do arquivo. */}
+      <AvatarCropDialog
+        open={!!cropFile}
+        file={cropFile}
+        onCancel={() => setCropFile(null)}
+        onConfirm={handleCroppedConfirm}
+      />
     </motion.div>
   );
 };
