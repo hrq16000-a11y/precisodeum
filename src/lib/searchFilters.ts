@@ -312,6 +312,16 @@ export function applySearchFilters<T extends FilterableProvider>(
     ];
   }
 
+  // Open-now boost (opt-in): sobe quem está aberto agora ao topo,
+  // preservando a ordenação interna de cada partição.
+  if (prioritizeOpenNow) {
+    const isOpen = (p: T) => isOpenNow(p.workingHoursStruct as any) || !!p.is24h;
+    results = [
+      ...results.filter((p) => isOpen(p)),
+      ...results.filter((p) => !isOpen(p)),
+    ];
+  }
+
   return results;
 }
 
