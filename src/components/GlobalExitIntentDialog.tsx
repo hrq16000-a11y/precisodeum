@@ -29,9 +29,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { markSupportContacted, shouldSuppressExitIntent } from '@/lib/conversionFunnel';
 import { trackExitIntent, markPendingExitConversion } from '@/lib/exitIntentTelemetry';
+import { canTriggerMarketingPopup, isMobileViewport } from '@/lib/popupGuards';
 
 const STORAGE_KEY = 'global-exit-intent:shown';
-const INACTIVITY_MS = 45_000;
+const INACTIVITY_MS_DESKTOP = 45_000;
+const INACTIVITY_MS_MOBILE = 90_000;
 const SUPPORT_WHATSAPP = '5541997452053';
 
 // Rotas onde o pop-up NÃO deve aparecer (já há gatilhos de conversão próprios
