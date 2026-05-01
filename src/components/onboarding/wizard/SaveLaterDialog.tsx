@@ -28,6 +28,7 @@ import { computeOnboardingProgress } from '@/lib/onboardingProgress';
 import { markSaveLater } from '@/lib/conversionFunnel';
 import type { OnboardingState } from './phases/v2/types';
 import type { ExitIntentIntent, ExitIntentVariant } from '@/lib/exitIntentVariants';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 export interface SaveLaterDialogProps {
   open: boolean;
