@@ -23,7 +23,7 @@ export default function VerifiedBadgeReveal({ label, variant = 'pf', onDone }: P
   const Icon = variant === 'pj' ? BadgeCheck : ShieldCheck;
   const tone =
     variant === 'pj'
-      ? 'from-blue-500 via-orange-500 to-orange-500 shadow-[0_0_36px_rgba(99,102,241,0.7)]'
+      ? 'from-amber-500 via-orange-500 to-orange-500 shadow-[0_0_36px_rgba(99,102,241,0.7)]'
       : 'from-amber-400 via-orange-500 to-emerald-500 shadow-[0_0_36px_rgba(251,146,60,0.7)]';
   return (
     <AnimatePresence>

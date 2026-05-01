@@ -50,7 +50,7 @@ const RecentActivity = ({ providerId }: RecentActivityProps) => {
           subtitle: l.service_needed || 'Solicitou orçamento',
           time: l.created_at,
           icon: MessageSquare,
-          color: 'text-blue-500 bg-blue-500/10',
+          color: 'text-amber-500 bg-amber-500/10',
         });
       });
 

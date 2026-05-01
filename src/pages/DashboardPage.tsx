@@ -374,11 +374,11 @@ const DashboardPage = () => {
         {debugResetBar}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
           <motion.div
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-600/10"
             animate={{ rotate: [0, 5, -5, 0] }}
             transition={{ duration: 6, repeat: Infinity }}
           >
-            <User className="h-5 w-5 text-blue-600" />
+            <User className="h-5 w-5 text-amber-600" />
           </motion.div>
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground">Olá, {profile?.full_name?.split(' ')[0] || 'Bem-vindo'}!</h1>
@@ -388,7 +388,7 @@ const DashboardPage = () => {
 
         <GlassCard variant="gradient" className="mt-6">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
               <User className="h-5 w-5" />
             </div>
             <div>
@@ -619,7 +619,7 @@ const DashboardPage = () => {
   const anyEmptyBannerVisible = showServiceEmptyBanner || showPortfolioEmptyBanner;
 
   const statCards = [
-    { icon: Briefcase, value: servicesCount ?? 0, label: servicesCount === 0 ? 'Nenhum serviço' : 'Serviços', gradient: 'from-blue-500/10 to-blue-600/5', iconColor: 'text-blue-500' },
+    { icon: Briefcase, value: servicesCount ?? 0, label: servicesCount === 0 ? 'Nenhum serviço' : 'Serviços', gradient: 'from-amber-500/10 to-orange-600/5', iconColor: 'text-amber-500' },
     { icon: MessageSquare, value: leadsCount, label: leadsCount === 0 ? 'Nenhum lead' : 'Leads', gradient: 'from-orange-500/10 to-orange-600/5', iconColor: 'text-orange-500' },
     { icon: TrendingUp, value: viewsTotal, label: viewsTotal === 0 ? 'Sem visualizações' : 'Visualizações', gradient: 'from-emerald-500/10 to-emerald-600/5', iconColor: 'text-emerald-500' },
     { icon: Star, value: provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0', label: !provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações' : `${reviewCount} avaliação${reviewCount !== 1 ? 'ões' : ''}`, gradient: 'from-amber-500/10 to-amber-600/5', iconColor: 'text-amber-500' },

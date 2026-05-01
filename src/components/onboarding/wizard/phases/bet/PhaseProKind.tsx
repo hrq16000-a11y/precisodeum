@@ -72,7 +72,7 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => pick('pj')}
-          className="group rounded-2xl border border-amber-300 bg-gradient-to-br from-blue-50 via-orange-50 to-orange-50 p-5 text-left shadow-card transition hover:shadow-[0_0_24px_rgba(99,102,241,0.5)] dark:border-amber-500/40 dark:from-blue-950/30 dark:via-orange-950/30 dark:to-orange-950/30"
+          className="group rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-orange-50 p-5 text-left shadow-card transition hover:shadow-[0_0_24px_rgba(99,102,241,0.5)] dark:border-amber-500/40 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-orange-950/30"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg">
