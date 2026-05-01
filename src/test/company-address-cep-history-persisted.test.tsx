@@ -1,12 +1,12 @@
 /**
- * Persistência do histórico de CEPs no estado pai (BetState/OnboardingProfileData).
+ * Persistência do cep_history no estado pai (BetState/OnboardingProfileData).
  *
- * Quando `value.cep_history` é fornecido, o componente é controlado: reads/writes
+ * Quando `value.cep_history` é fornecido, o componente é controlado: writes
  * passam pelo `onChange`. Isso garante que o histórico sobreviva à navegação
  * entre steps do wizard (unmount/remount).
  *
- * Modo não-controlado (sem `cep_history`) mantém estado interno — para uso
- * isolado fora do wizard (ex.: testes legados, formulários standalone).
+ * A UI de "CEPs recentes" foi removida — esses testes garantem apenas a
+ * persistência do array em estado pai, sem depender de elementos de UI.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act, waitFor, cleanup } from '@testing-library/react';
@@ -45,7 +45,7 @@ function ControlledHarness({
   );
 }
 
-describe('CompanyAddressForm — persistência do histórico de CEPs', () => {
+describe('CompanyAddressForm — persistência do cep_history (sem UI)', () => {
   beforeEach(() => {
     lookupCepMock.mockReset();
     cleanup();
@@ -71,24 +71,23 @@ describe('CompanyAddressForm — persistência do histórico de CEPs', () => {
     const hist = lastValue.v!.cep_history!;
     expect(hist[0].digits).toBe('01310100');
     expect(hist[0].address).toBe('Avenida Paulista');
+    expect(hist[0].city).toBe('São Paulo');
+    expect(hist[0].state).toBe('SP');
   });
 
-  it('renderiza histórico vindo do estado pai mesmo sem fazer lookup nesta montagem', async () => {
+  it('histórico hidratado do estado pai NÃO dispara lookup nesta montagem', async () => {
     const seeded: CepHistoryEntry[] = [
       { cep: '01310-100', digits: '01310100', address: 'Avenida Paulista', city: 'São Paulo', state: 'SP' },
       { cep: '04567-000', digits: '04567000', address: 'Avenida Brigadeiro', city: 'São Paulo', state: 'SP' },
     ];
     render(<ControlledHarness initial={{ cep_history: seeded }} />);
-    expect(screen.getByTestId('cep-history')).toBeTruthy();
-    expect(screen.getByTestId('cep-history-item-01310100')).toBeTruthy();
-    expect(screen.getByTestId('cep-history-item-04567000')).toBeTruthy();
-    // Nenhum lookup foi disparado (validação chave da persistência).
+    // Sem postal_code, nenhum lookup automático ocorre — histórico só sobrevive no estado.
     expect(lookupCepMock).not.toHaveBeenCalled();
+    // E nenhum elemento de UI de histórico é renderizado (regressão).
+    expect(screen.queryByTestId('cep-history')).toBeNull();
   });
 
   it('histórico sobrevive a unmount/remount quando persistido no estado pai', async () => {
-    // Mock para o 1º lookup (durante typing) e um 2º para o remount
-    // (que ainda tem postal_code preenchido e dispara lookup automático).
     lookupCepMock
       .mockResolvedValueOnce({
         ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP',
@@ -98,7 +97,6 @@ describe('CompanyAddressForm — persistência do histórico de CEPs', () => {
         ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP',
         address: 'Avenida Paulista', source: 'brasilapi',
       });
-    // Estado pai persistido fora do componente — simula BetState do wizard.
     const lastValue = { v: { cep_history: [] } as CompanyAddressValue };
     const { unmount } = render(
       <ControlledHarness
@@ -113,37 +111,9 @@ describe('CompanyAddressForm — persistência do histórico de CEPs', () => {
     });
     unmount();
 
-    // Remonta com o estado pai persistido — histórico já está visível ANTES
-    // de qualquer novo lookup (chave da persistência).
+    // Remonta com o estado pai persistido — o array continua lá.
     render(<ControlledHarness initial={lastValue.v} />);
-    expect(screen.getByTestId('cep-history-item-01310100')).toBeTruthy();
-  });
-
-  it('dedupe e LRU operam sobre o histórico controlado (máx 3)', async () => {
-    lookupCepMock
-      .mockResolvedValueOnce({ ok: true, cep: '01001-000', city: 'São Paulo', state: 'SP', address: 'Praça da Sé', source: 'brasilapi' })
-      .mockResolvedValueOnce({ ok: true, cep: '04567-000', city: 'São Paulo', state: 'SP', address: 'Avenida Brigadeiro', source: 'brasilapi' })
-      .mockResolvedValueOnce({ ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP', address: 'Avenida Paulista', source: 'brasilapi' })
-      .mockResolvedValueOnce({ ok: true, cep: '20040-002', city: 'Rio de Janeiro', state: 'RJ', address: 'Rua da Carioca', source: 'brasilapi' });
-    const lastValue = { v: null as CompanyAddressValue | null };
-    render(
-      <ControlledHarness
-        initial={{ cep_history: [] }}
-        onChange={(v) => { lastValue.v = v; }}
-      />,
-    );
-    const cep = screen.getByPlaceholderText('00000-000') as HTMLInputElement;
-    for (const v of ['01001000', '04567000', '01310100', '20040002']) {
-      await act(async () => { fireEvent.change(cep, { target: { value: '' } }); });
-      await act(async () => { fireEvent.change(cep, { target: { value: v } }); });
-      // eslint-disable-next-line no-await-in-loop
-      await waitFor(() => {
-        const last = lastValue.v?.cep_history?.[0]?.digits;
-        expect(last).toBe(v);
-      });
-    }
-    const hist = lastValue.v!.cep_history!;
-    expect(hist.length).toBe(3);
-    expect(hist.map((e) => e.digits)).toEqual(['20040002', '01310100', '04567000']);
+    expect(lastValue.v.cep_history?.[0]?.digits).toBe('01310100');
+    expect(lastValue.v.cep_history?.[0]?.city).toBe('São Paulo');
   });
 });
