@@ -1281,7 +1281,16 @@ const SearchPage = () => {
                                   variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
                                   transition={{ duration: 0.3 }}
                                   layout
+                                  className="relative"
                                 >
+                                  {sortBy === 'best' && (
+                                    <ScoreTooltipBadge
+                                      rating={p.rating}
+                                      reviewCount={p.reviewCount}
+                                      distanceKm={p.distanceKm}
+                                      weights={scoreWeights}
+                                    />
+                                  )}
                                   <ProviderRenderer provider={p} isFallback={isFallback} />
                                 </motion.div>
                               ))}
