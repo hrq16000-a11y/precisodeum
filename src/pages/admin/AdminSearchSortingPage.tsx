@@ -134,13 +134,16 @@ export default function AdminSearchSortingPage() {
     );
   }
 
+  useEffect(() => {
+    const prev = document.title;
+    document.title = 'Ordenação da busca · Admin';
+    return () => { document.title = prev; };
+  }, []);
+
   return (
     <>
-      <Helmet>
-        <title>Ordenação da busca · Admin</title>
-        <meta name="robots" content="noindex,nofollow" />
-      </Helmet>
       <div className="container mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+
         <header className="space-y-1">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             <Sparkles className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
