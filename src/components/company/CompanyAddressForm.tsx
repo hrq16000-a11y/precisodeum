@@ -66,6 +66,20 @@ export default function CompanyAddressForm({
 
   const isSuggested = (k: keyof CompanyAddressValue) => suggestedFields.includes(k);
 
+  // Validações inline, não-bloqueantes (só sinalizam quando o usuário digitou algo inválido).
+  const streetRaw = (value.street ?? '').trim();
+  const numberRaw = (value.street_number ?? '').trim();
+  const cepDigits = onlyDigits(value.postal_code ?? '');
+  const streetError = streetRaw.length > 0 && streetRaw.length < 3
+    ? 'Logradouro muito curto — informe pelo menos 3 caracteres.'
+    : '';
+  const numberError = numberRaw.length > 0 && !/^([0-9]{1,6}|s\/?n|sn)$/i.test(numberRaw)
+    ? 'Número inválido — use só dígitos ou "S/N".'
+    : '';
+  const cepError = cepDigits.length > 0 && cepDigits.length < 8
+    ? 'CEP incompleto — precisa ter 8 dígitos.'
+    : '';
+
   // Lookup automático quando o CEP atinge 8 dígitos
   useEffect(() => {
     const digits = onlyDigits(value.postal_code ?? '');
