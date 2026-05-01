@@ -405,10 +405,34 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       event: 'back',
       meta: { variant: 'unified', source: 'global-nav' },
     });
-    // Dispara um evento DOM que os steps podem opcionalmente capturar.
-    // Como fallback, o usuário também tem o botão "Voltar" interno do step.
+    // Em modo revisão, se estamos numa fase de TRIAGEM (Steps 1–6) ou na
+    // celebração da triagem, o BetModeShell não escuta `wizard:request-back`
+    // (cada fase Bet tem seu próprio Voltar interno). Aqui retrocedemos
+    // diretamente pela régua unificada para garantir Voltar infinito.
+    if (isReview && (state.phase.startsWith('triage_') || state.phase === 'main_service')) {
+      const prev = prevUnifiedPhase(state.phase);
+      if (prev !== state.phase) {
+        dispatch({ type: 'GO_TO_PHASE', phase: prev });
+        return;
+      }
+    }
+    // Caso contrário, despacha o evento DOM tratado pelos orquestradores.
     window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
-  }, [state.phase]);
+  }, [state.phase, isReview]);
+
+  // Listener para retrocesso na régua unificada disparado pelo V2 quando a
+  // pilha de revisão esgota (modo "Assistente é dono do Wizard").
+  useEffect(() => {
+    if (!isReview) return;
+    const onPrevUnified = () => {
+      const prev = prevUnifiedPhase(stateRef.current.phase);
+      if (prev !== stateRef.current.phase) {
+        dispatch({ type: 'GO_TO_PHASE', phase: prev });
+      }
+    };
+    window.addEventListener('wizard:request-prev-unified', onPrevUnified as EventListener);
+    return () => window.removeEventListener('wizard:request-prev-unified', onPrevUnified as EventListener);
+  }, [isReview]);
 
   // Pontos REAIS lidos de profiles.engagement_points (atualizados pelos triggers
   // de banco a cada ação concluída). Fora da triagem usamos o valor do banco;
