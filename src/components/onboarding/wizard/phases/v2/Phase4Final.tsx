@@ -27,6 +27,8 @@ import VerificationStatusBadge from '@/components/profile/VerificationStatusBadg
 import AvatarUpload from '@/components/AvatarUpload';
 import { useAuth } from '@/hooks/useAuth';
 import { getSocialAvatarUrl } from '@/lib/avatarUtils';
+import { generateUniqueAvatar } from '@/lib/avatarGenerator';
+import { toast } from 'sonner';
 import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 import { wizardStyles as ws, wizardEnter } from './wizardStyles';
