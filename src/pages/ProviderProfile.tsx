@@ -3,6 +3,7 @@ import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThu
 import { handleImageError } from '@/lib/imageResolver';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench, Info, UserRound } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
+import WorkingHoursDisplay from '@/components/profile/WorkingHoursDisplay';
 import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
@@ -379,7 +380,7 @@ const ProviderProfile = () => {
 
       if (active) setLoading(true);
 
-      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, years_experience, ibge_code, latitude, longitude, created_at, updated_at, deleted_at, onboarding_progress, website, user_ref, meta_title, meta_description';
+      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, years_experience, ibge_code, latitude, longitude, created_at, updated_at, deleted_at, onboarding_progress, website, user_ref, meta_title, meta_description';
 
       let { data } = await supabase
         .from('providers')
@@ -1239,15 +1240,12 @@ const ProviderProfile = () => {
             </div>
           </motion.div>
         )}
-        {provider.working_hours && (
-          <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
-            <Clock className="h-4 w-4 text-accent shrink-0" />
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Horário</p>
-              <p className="text-xs font-medium text-foreground">{provider.working_hours}</p>
-            </div>
-          </motion.div>
-        )}
+        <motion.div variants={scaleIn} className="col-span-full">
+          <WorkingHoursDisplay
+            struct={(provider as any).working_hours_struct ?? null}
+            legacyText={provider.working_hours ?? null}
+          />
+        </motion.div>
         {provider.service_radius && (
           <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
             <Zap className="h-4 w-4 text-accent shrink-0" />

@@ -13,7 +13,7 @@ import { Plus, X, MapPin, Sparkles, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import CityAutocomplete from '@/components/CityAutocomplete';
-import { findMetroByPole, getMetroMembers } from '@/lib/metroRegions';
+import { findMetroForCity, getMetroMembers } from '@/lib/metroRegions';
 import { normalize } from '@/lib/normalize';
 import { useNearbyCitySuggestions } from '@/hooks/useNearbyCitySuggestions';
 
@@ -69,9 +69,13 @@ export const ServiceCityPicker = ({
   max = 5,
 }: Props) => {
   const baseNorm = normalize(baseCity || '');
+  const baseStateNorm = normalize(baseState || '');
 
-  // Detecta se a cidade-base é polo de alguma RM.
-  const metro = useMemo(() => (baseNorm ? findMetroByPole(baseNorm) : null), [baseNorm]);
+  // Detecta a RM da cidade-base — seja ela polo (Curitiba) ou membro (São José dos Pinhais).
+  const metro = useMemo(
+    () => (baseNorm ? findMetroForCity(baseNorm, baseStateNorm) : null),
+    [baseNorm, baseStateNorm],
+  );
   const regionLabel = metro ? regionLabelFromPole(metro.pole) : null;
 
   const hasRegion = regionLabel ? value.includes(regionLabel) : false;

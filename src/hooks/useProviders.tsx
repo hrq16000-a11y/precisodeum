@@ -82,6 +82,16 @@ export interface DbProvider {
   legalName?: string | null;
   /** PJ: indica se rua/número devem ser exibidos publicamente. */
   showFullAddress?: boolean;
+  /** Horário (texto livre legado) e struct estruturado (Google-Meu-Negócio). */
+  workingHours?: string | null;
+  workingHoursStruct?: {
+    ranges: Array<{ days: string[]; start: string; end: string }>;
+  } | null;
+  /** Flags derivadas (calculadas no DB por trigger). */
+  opensWeekend?: boolean;
+  opensLateNight?: boolean;
+  opensOvernight?: boolean;
+  is24h?: boolean;
 }
 
 export type FeaturedProviderSort = 'proximity' | 'category' | 'availability';
@@ -402,10 +412,16 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
     portfolioPhotoCount: p.portfolio_photo_count || 0,
     avgResponseMinutes: p.avg_response_minutes ?? null,
     communityVerified: !!p.community_verified,
+    workingHours: (p as any).working_hours ?? null,
+    workingHoursStruct: ((p as any).working_hours_struct as any) ?? null,
+    opensWeekend: !!(p as any).opens_weekend,
+    opensLateNight: !!(p as any).opens_late_night,
+    opensOvernight: !!(p as any).opens_overnight,
+    is24h: !!(p as any).is_24h,
   };
 }
 
-const providerSelect = 'id, user_id, created_at, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, categories(name, slug, icon)';
+const providerSelect = 'id, user_id, created_at, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, categories(name, slug, icon)';
 
 function compareEliteMerit(a: DbProvider, b: DbProvider): number {
   const levelDiff = (b.levelPriority || 0) - (a.levelPriority || 0);
