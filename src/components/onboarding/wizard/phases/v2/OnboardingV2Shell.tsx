@@ -1074,7 +1074,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // 3) Marca onboarding completo. A categoria principal vive em providers.category_id
       // (já atualizada acima); profiles.primary_category_id é apenas estado de UI no wizard.
       await supabase.from('profiles')
-        .update({ onboarding_step: 5, onboarding_completed: true })
+        .update({ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true })
         .eq('id', user.id);
 
       // Notifica o checklist do dashboard pra atualizar imediatamente
@@ -1177,7 +1177,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     if (user?.id) {
       try {
         const { error } = await supabase.from('profiles')
-          .update({ onboarding_step: 5, onboarding_completed: true })
+          .update({ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true })
           .eq('id', user.id);
         if (error) {
           console.warn('[finishWizard] profile update failed (fail-soft)', error);

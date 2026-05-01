@@ -14,7 +14,7 @@ vi.mock("@/hooks/useAuth", () => ({
 // This must stay 1:1 with the real implementation in src/App.tsx.
 import { useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { resolveOnboardingGateTarget } from "@/lib/onboardingAccess";
+import { resolveEffectiveProfileType, resolveOnboardingGateTarget } from "@/lib/onboardingAccess";
 
 const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, loading } = useAuth() as any;
@@ -107,6 +107,12 @@ describe("OnboardingGate", () => {
     });
     renderAt("/dashboard");
     expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
+  });
+
+  it("resolve tipo efetivo como provider quando existe provider mesmo sem profile_type", () => {
+    expect(resolveEffectiveProfileType({ profile_type: null }, { id: "prov-1" })).toBe("provider");
+    expect(resolveEffectiveProfileType({ profile_type: "client" }, { id: "prov-1" })).toBe("client");
+    expect(resolveEffectiveProfileType({ profile_type: null }, null)).toBeNull();
   });
 
   it("redirects to /cadastro-inicial when onboarding_completed is false and no service exists", () => {

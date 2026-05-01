@@ -53,6 +53,19 @@ export function hasUnlockedAppAccess(profile: any | null, hasExistingService = f
   return profile.profile_type === 'provider' && hasExistingService;
 }
 
+export function resolveEffectiveProfileType(
+  profile: { profile_type?: string | null } | null | undefined,
+  provider?: { id?: string | null } | null,
+) {
+  const explicitType = typeof profile?.profile_type === 'string' && profile.profile_type.trim().length > 0
+    ? profile.profile_type
+    : null;
+
+  if (explicitType) return explicitType;
+  if (provider?.id) return 'provider';
+  return null;
+}
+
 export function shouldForceOnboarding(profile: any | null, hasExistingService = false) {
   return !hasUnlockedAppAccess(profile, hasExistingService);
 }
