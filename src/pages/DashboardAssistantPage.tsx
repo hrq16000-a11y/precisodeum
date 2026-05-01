@@ -27,6 +27,7 @@ import {
   ArrowLeft,
   PlayCircle,
   Pencil,
+  Eye,
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
