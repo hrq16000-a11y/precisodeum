@@ -21,7 +21,6 @@ const SECTIONS = [
 const HelpCenterPage = () => {
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
-  const supportPhone = useSettingValue('whatsapp_support_phone') || FALLBACK_PHONE;
 
   useSeoHead({
     title: 'Central de Ajuda | Preciso de um',
