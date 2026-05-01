@@ -80,6 +80,7 @@ export const initialBetState: BetState = {
   street_suggested: '',
   street_suggested_cep: '',
   street_confirmed: false,
+  bairro_sugerido_cep: '',
   cep_history: [],
   points: 0,
   rewards: {
