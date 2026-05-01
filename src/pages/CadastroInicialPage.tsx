@@ -111,10 +111,8 @@ function inspectLocalDraft(): { exists: boolean; phase: string | null; savedAt: 
 
 export default function CadastroInicialPage() {
   const { user, profile, loading } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
-  const redirectedRef = useRef(false);
   const reviewMode = isOnboardingReviewMode(location.search);
   const reviewSection = getOnboardingReviewSection(location.search);
 
@@ -156,8 +154,18 @@ export default function CadastroInicialPage() {
     return () => window.clearTimeout(t);
   }, [loading]);
 
-  // Tarefa #1: ao logar de volta, se houver rascunho salvo, avisar que o
-  // progresso foi recuperado. Dispara uma vez por aba/sessão, evitando spam.
+  // Decisão de redirect: PURA, sem side-effects. Se o utilizador está
+  // realmente sem sessão (`authSettled && !user`), montamos a URL de login
+  // preservando `?next=` e renderizamos `<Navigate>` declarativo.
+  const loginRedirect = useMemo(() => {
+    if (loading || !authSettled || user) return null;
+    const nextParam =
+      params.get('next') || `${location.pathname}${location.search || ''}` || '/cadastro-inicial';
+    return `/login?next=${encodeURIComponent(nextParam)}`;
+  }, [loading, authSettled, user, params, location.pathname, location.search]);
+
+  // Side-effect ÚNICO de UX: ao logar de volta, se houver rascunho salvo,
+  // avisar que o progresso foi recuperado. Dispara uma vez por aba.
   const welcomeShownRef = useRef(false);
   useEffect(() => {
     if (loading || !authSettled || !user) return;
@@ -173,21 +181,16 @@ export default function CadastroInicialPage() {
     });
   }, [loading, authSettled, user]);
 
+  // Side-effect ÚNICO de telemetria/toast quando vamos redirecionar para
+  // /login. NÃO navega (a navegação é declarativa via `<Navigate>` abaixo).
+  // Idempotente por mount — só roda uma vez mesmo com re-renders.
+  const sessionExpiredHandledRef = useRef(false);
   useEffect(() => {
-    if (loading || !authSettled) return;
-    if (user) return;
-    // Race-guard: ref-flag idempotente. Mesmo que o efeito reexecute por
-    // mudança de params/location, só dispara navegação+toast UMA vez por mount.
-    if (redirectedRef.current) return;
-    redirectedRef.current = true;
-
-    const nextParam =
-      params.get('next') || `${location.pathname}${location.search || ''}` || '/cadastro-inicial';
-    const loginUrl = `/login?next=${encodeURIComponent(nextParam)}`;
+    if (!loginRedirect) return;
+    if (sessionExpiredHandledRef.current) return;
+    sessionExpiredHandledRef.current = true;
 
     const draft = inspectLocalDraft();
-
-    // Telemetria de expiração de sessão durante onboarding — fail-soft.
     void trackOnboardingEvent({
       phase: (draft.phase as any) || 'unknown',
       event: 'error',
@@ -196,32 +199,27 @@ export default function CadastroInicialPage() {
         had_draft: draft.exists,
         draft_phase: draft.phase,
         draft_age_ms: draft.savedAt ? Date.now() - draft.savedAt : null,
-        next_param: nextParam,
+        next_param: new URL(loginRedirect, window.location.origin).searchParams.get('next'),
         error_code: 'AUTH_SESSION_EXPIRED',
         error_message: 'User redirected to /login without active session',
       },
     });
 
     if (draft.exists) {
-      // Toast com ação direta para o usuário voltar ao cadastro (link com ?next=).
       toast.warning(
         'Sua sessão expirou por segurança. Salvamos seu progresso — você tem 7 dias para retomar de onde parou.',
-        {
-          duration: 10000,
-          action: {
-            label: 'Voltar ao cadastro',
-            onClick: () => navigate(loginUrl, { replace: true }),
-          },
-        },
+        { duration: 10000 },
       );
     } else {
       toast.message('Faça login para iniciar seu cadastro. Vamos te levar de volta para cá.', {
         duration: 5000,
       });
     }
+  }, [loginRedirect]);
 
-    navigate(loginUrl, { replace: true });
-  }, [loading, authSettled, user, navigate, params, location.pathname, location.search]);
+  if (loginRedirect) {
+    return <Navigate to={loginRedirect} replace />;
+  }
 
   if (loading || !authSettled || !user) {
     return (
