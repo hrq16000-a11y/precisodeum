@@ -436,6 +436,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
 const App = () => {
   useEffect(() => {
     initializeUiFreezeMonitor();
+    installPopupGuards();
 
     // Invalidate all queries if daily purge just ran
     if ((window as any).__DAILY_PURGE_TRIGGERED__) {
