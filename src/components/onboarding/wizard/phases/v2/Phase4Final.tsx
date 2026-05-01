@@ -739,6 +739,7 @@ interface ExtrasBProps {
 export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving }: ExtrasBProps) => {
   const focusInsta = useFocusFieldFromReview('instagram_url');
   const focusFb = useFocusFieldFromReview('facebook_url');
+  const focusSite = useFocusFieldFromReview('website_url' as any);
 
   // Resumo PJ — só aparece quando o usuário preencheu algum dado de endereço.
   const isPj = data.kind === 'pj';
