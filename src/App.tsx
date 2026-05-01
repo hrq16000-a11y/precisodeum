@@ -198,6 +198,7 @@ const DashboardPrivacyPage = lazy(() => import("./pages/DashboardPrivacyPage"));
 const DashboardConsentAuditPage = lazy(() => import("./pages/DashboardConsentAuditPage"));
 const DashboardMyRegistrationPage = lazy(() => import("./pages/DashboardMyRegistrationPage"));
 const DashboardCadastroStatusPage = lazy(() => import("./pages/DashboardCadastroStatusPage"));
+const DashboardAssistantPage = lazy(() => import("./pages/DashboardAssistantPage"));
 const SponsorLandingPage = lazy(() => import("./pages/SponsorLandingPage"));
 const SponsorStatusPage = lazy(() => import("./pages/SponsorStatusPage"));
 const SponsorSlotsPage = lazy(() => import("./pages/SponsorSlotsPage"));
@@ -488,6 +489,7 @@ const App = () => {
                 <Route path="/dashboard/auditoria-consentimentos" element={<ProtectedRoute><DashboardConsentAuditPage /></ProtectedRoute>} />
                 <Route path="/dashboard/meu-cadastro" element={<ProtectedRoute><DashboardMyRegistrationPage /></ProtectedRoute>} />
                 <Route path="/dashboard/cadastro-status" element={<ProtectedRoute><DashboardCadastroStatusPage /></ProtectedRoute>} />
+                <Route path="/dashboard/assistente" element={<ProtectedRoute><DashboardAssistantPage /></ProtectedRoute>} />
                 <Route path="/dashboard/indicacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReferralsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/ranking" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRankingPage /></ProtectedRoute>} />
                 <Route path="/dashboard/sugestoes-identidade" element={<ProtectedRoute><DashboardIdentitySuggestionsPage /></ProtectedRoute>} />
