@@ -261,13 +261,17 @@ export default function CompanyAddressForm({
     lastCepRef.current = entry.digits; // evita re-disparar lookup automático
     setCepStatus('applied');
     setCepErrorReason(null);
-    onChange({
+    const patch: Partial<CompanyAddressValue> = {
       postal_code: entry.digits,
       street: entry.address ?? '',
       street_suggested: entry.address ?? '',
       street_suggested_cep: entry.digits,
       street_confirmed: false,
-    });
+    };
+    // Reusa cidade/UF do histórico para preencher campos correlatos quando disponíveis.
+    if (entry.city) (patch as CompanyAddressValue & { city?: string }).city = entry.city;
+    if (entry.state) (patch as CompanyAddressValue & { state?: string }).state = entry.state;
+    onChange(patch);
   };
 
   const inputBase =
