@@ -399,6 +399,15 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     state.phase !== 'main_celebration' &&
     state.phase !== 'done';
 
+  // Em revisão, retrocesso linear usa REVIEW_PHASE_ORDER (régua sem
+  // main_action..main_contact obsoletas), garantindo que o usuário não pare
+  // em fases-fantasma sem step renderizado.
+  const prevReviewPhase = useCallback((phase: UnifiedPhase): UnifiedPhase => {
+    const i = REVIEW_PHASE_ORDER.indexOf(phase);
+    if (i <= 0) return phase;
+    return REVIEW_PHASE_ORDER[i - 1];
+  }, []);
+
   const handleGlobalBack = useCallback(() => {
     void trackOnboardingEvent({
       phase: state.phase as any,
@@ -406,11 +415,10 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       meta: { variant: 'unified', source: 'global-nav' },
     });
     // Em modo revisão, se estamos numa fase de TRIAGEM (Steps 1–6) ou na
-    // celebração da triagem, o BetModeShell não escuta `wizard:request-back`
-    // (cada fase Bet tem seu próprio Voltar interno). Aqui retrocedemos
-    // diretamente pela régua unificada para garantir Voltar infinito.
+    // primeira fase do V2 (`main_service`), retrocedemos diretamente pela
+    // régua REVIEW_PHASE_ORDER para garantir Voltar infinito até a Step 1.
     if (isReview && (state.phase.startsWith('triage_') || state.phase === 'main_service')) {
-      const prev = prevUnifiedPhase(state.phase);
+      const prev = prevReviewPhase(state.phase);
       if (prev !== state.phase) {
         dispatch({ type: 'GO_TO_PHASE', phase: prev });
         return;
@@ -418,15 +426,17 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     }
     // Caso contrário, despacha o evento DOM tratado pelos orquestradores.
     window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
-  }, [state.phase, isReview]);
+  }, [state.phase, isReview, prevReviewPhase]);
 
   // Listener para retrocesso na régua unificada disparado pelo V2 quando a
   // pilha de revisão esgota (modo "Assistente é dono do Wizard").
   useEffect(() => {
     if (!isReview) return;
     const onPrevUnified = () => {
-      const prev = prevUnifiedPhase(stateRef.current.phase);
-      if (prev !== stateRef.current.phase) {
+      const cur = stateRef.current.phase;
+      const i = REVIEW_PHASE_ORDER.indexOf(cur);
+      const prev = i > 0 ? REVIEW_PHASE_ORDER[i - 1] : cur;
+      if (prev !== cur) {
         dispatch({ type: 'GO_TO_PHASE', phase: prev });
       }
     };
