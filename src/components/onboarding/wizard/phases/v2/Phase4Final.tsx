@@ -110,8 +110,11 @@ function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
 export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId, locked }: DocumentProps) => {
   const [verified, setVerified] = useState(false);
   const [providerStatus, setProviderStatus] = useState<string | null>(null);
+  const [goOnline, setGoOnline] = useState(true); // pré-marcado: ficar ONLINE é opcional, mas default ON
   const focusDoc = useFocusFieldFromReview('document');
   const valid = isValidDoc(data.document, data.kind);
+  const isPj = data.kind === 'pj';
+  const docLabel = isPj ? 'CNPJ' : 'CPF';
 
   // Auto-avança quando o documento já foi capturado no V3 (não re-perguntar).
   useEffect(() => {
@@ -148,68 +151,94 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
     return () => { alive = false; };
   }, [userId]);
 
-  const handleVerify = async () => {
-    if (!valid) return;
-    setVerified(true);
-    celebrate({ intensity: 'mini', id: `doc-verified:${userId || 'anon'}` });
-    // Marca o provider como ativo (online) — o canal realtime acima reflete instantaneamente
-    if (userId) {
+  const handleSubmit = async () => {
+    // Ficar ONLINE não depende mais do CPF/CNPJ — é uma opção independente.
+    if (goOnline && userId) {
       try {
         await supabase.from('providers').update({ status: 'active' } as any).eq('user_id', userId);
       } catch { /* fail-soft */ }
     }
-    setTimeout(() => onContinue(), 1600);
+    if (valid) {
+      setVerified(true);
+      celebrate({ intensity: 'mini', id: `doc-verified:${userId || 'anon'}` });
+      setTimeout(() => onContinue(), 1400);
+    } else {
+      // Sem documento: avança normalmente; o status ONLINE depende só do checkbox.
+      onContinue();
+    }
+  };
+
+  const handleBack = () => {
+    window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_document' } }));
   };
 
   return (
     <AnimatePresence mode="wait">
       {!verified ? (
         <motion.div key="doc" {...wizardEnter} className={ws.container}>
+          <button
+            type="button"
+            onClick={handleBack}
+            className={ws.backBtn}
+            aria-label="Voltar para a etapa anterior"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+          </button>
+
           <header className={ws.headerWrap}>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 text-white shadow-[0_0_24px_rgba(251,146,60,0.45)]">
               <ShieldCheck className="h-7 w-7" />
             </div>
-            <div className={ws.chip}>
-              <ShieldCheck className="h-3 w-3" /> Verificação
-            </div>
             <h1 className={ws.title}>Quer ficar ONLINE agora?</h1>
             <p className={ws.subtitle}>
-              Adicione seu {data.kind === 'pj' ? 'CNPJ' : 'CPF'} para receber chamados diretos no WhatsApp.
+              Receba chamados diretos no WhatsApp. {docLabel} é opcional e dá selo extra.
             </p>
           </header>
 
-          {userId && (
-            <div className="rounded-2xl border border-border bg-muted/30 p-3">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">
-                Status atual da sua verificação
-              </p>
-              <VerificationStatusBadge userId={userId} showHistory />
-            </div>
-          )}
+          {/* Checkbox principal: ficar ONLINE é independente do documento e já vem marcado. */}
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-emerald-300/60 bg-emerald-50/60 p-3 dark:border-emerald-500/30 dark:bg-emerald-950/20">
+            <input
+              type="checkbox"
+              checked={goOnline}
+              onChange={(e) => setGoOnline(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-600"
+            />
+            <span className="text-[13px] leading-snug text-foreground">
+              <span className="font-semibold">Ficar ONLINE agora</span>
+              <span className="block text-[11px] text-muted-foreground">
+                Seu perfil aparecerá nas buscas. Pode desligar quando quiser.
+              </span>
+            </span>
+          </label>
 
           <div ref={focusDoc.ref as any} className={`${ws.card} ${focusDoc.highlightClass}`}>
             <label className="block">
               <span className={ws.fieldLabel}>
-                <FileText className="h-3.5 w-3.5" /> {data.kind === 'pj' ? 'CNPJ' : 'CPF'}
+                <FileText className="h-3.5 w-3.5" /> {docLabel} <span className="ml-1 text-[10px] font-normal normal-case text-muted-foreground">(opcional · ganha selo)</span>
               </span>
               <CpfCnpjInput
                 value={data.document}
                 onChange={(digitsOnly) => { if (!locked) onChange({ document: digitsOnly }); }}
-                mode={data.kind === 'pj' ? 'cnpj' : 'cpf'}
-                placeholder={data.kind === 'pj' ? '00.000.000/0000-00' : '000.000.000-00'}
+                mode={isPj ? 'cnpj' : 'cpf'}
+                placeholder={isPj ? '00.000.000/0000-00' : '000.000.000-00'}
                 disabled={!!locked}
               />
               {locked ? (
                 <p className="mt-1 text-[11px] text-emerald-600">Já preenchido — não pode ser alterado aqui.</p>
               ) : (
                 <p className="mt-1 text-[10px] text-muted-foreground">
-                  Usado apenas para validar seu perfil. Nunca exibido publicamente.
+                  Nunca exibido publicamente.
                 </p>
               )}
             </label>
+            {userId && (
+              <div className="mt-2">
+                <VerificationStatusBadge userId={userId} showHistory={false} />
+              </div>
+            )}
           </div>
 
-          {data.kind === 'pj' && (
+          {isPj && (
             <CompanyAddressForm
               collapsible
               revealLabel="Possui ponto de atendimento físico (loja, oficina, salão)?"
@@ -230,12 +259,12 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
           )}
 
           <div className="flex flex-col gap-2 pt-1">
-            <Button type="button" size="lg" onClick={handleVerify} disabled={!valid || saving} className={ws.cta}>
+            <Button type="button" size="lg" onClick={handleSubmit} disabled={saving} className={ws.cta}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Ficar ONLINE <ArrowRight className="ml-2 h-5 w-5" />
+              {goOnline ? 'Ficar ONLINE' : 'Continuar'} <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
-              Agora não
+              Pular por enquanto
             </Button>
           </div>
         </motion.div>
