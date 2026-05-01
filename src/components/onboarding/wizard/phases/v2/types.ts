@@ -96,7 +96,6 @@ export type OnboardingPhase =
   | 'phase4_avatar'        // Step 8.5 — Foto de perfil (se ainda faltar)
   | 'phase4_extras_a'      // Step 9 — Bairro + Bio
   | 'phase4_extras_b'      // Step 10 — Redes sociais
-  | 'phase4_review'        // Step 11 — Revisão final (somente leitura, sem upsert)
   | 'done';
 
 /** Fases que NUNCA podem ser puladas (regra do prompt). */
