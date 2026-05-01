@@ -29,7 +29,6 @@ import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/w
 import { buildOnboardingV2BootstrapState } from '@/components/onboarding/wizard/phases/v2/bootstrap';
 import { fetchExistingFirstService, findExistingProvider } from '@/components/onboarding/wizard/phases/v2/findExistingRecords';
 import Step20_MoreServices from '@/components/onboarding/wizard/phases/Step20_MoreServices';
-import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21_PortfolioAlbums';
 import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 import { Button } from '@/components/ui/button';
 import PointsHud from '@/components/onboarding/wizard/phases/bet/PointsHud';
