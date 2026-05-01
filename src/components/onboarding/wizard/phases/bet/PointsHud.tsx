@@ -60,8 +60,8 @@ export default function PointsHud({ points, phaseLabel, progress }: Props) {
           />
         </motion.div>
         <div className="relative flex-1">
-          <div className="flex items-center justify-between text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            <span>{phaseLabel}</span>
+          <div className="flex items-center justify-end text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <span aria-hidden className="sr-only">{phaseLabel}</span>
             <span>{Math.round(pct * 100)}%</span>
           </div>
           <div className="relative mt-1 h-1.5 overflow-visible rounded-full bg-muted">

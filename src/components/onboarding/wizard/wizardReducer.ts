@@ -215,7 +215,7 @@ export const UNIFIED_PHASE_LABELS: Record<UnifiedPhase, string> = {
   main_service_details: 'Detalhes do serviço',
   main_photos: 'Fotos do serviço',
   main_celebration: 'Serviço criado!',
-  main_document: 'CPF / CNPJ',
+  main_document: 'Documento',
   main_avatar: 'Foto de perfil',
   main_extras_a: 'Bairro e bio',
   main_extras_b: 'Redes sociais',
