@@ -7,14 +7,13 @@ import ChatMessageView from '@/components/chat/ChatMessageView';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, Lock, AlertTriangle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 
 const DashboardChatPage = () => {
   const { isEnabled, eligible, reason, isLoading, settings } = useChatEligibility();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const { data: siteSettings } = useSiteSettings();
-  const p2pEnabled = (siteSettings as any)?.chat_p2p_enabled !== false;
+  const p2pEnabled = useFeatureEnabled('chat_p2p_enabled');
 
   // P2P desativado → redireciona para suporte
   if (!p2pEnabled) {
