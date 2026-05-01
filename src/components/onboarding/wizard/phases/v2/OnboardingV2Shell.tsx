@@ -1160,7 +1160,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // Se vier no patch, removemos antes de normalizar e mapeamos para cpf/cnpj
       // conforme o kind (PF → cpf, PJ → cnpj). Isso evita o erro
       // "Could not find the 'tax_id' column of 'providers'" reportado em produção.
-      const { tax_id: incomingTaxId, ...providerPatch } = patch as Record<string, any>;
+      const { tax_id: incomingTaxId, ...rawProviderPatch } = patch as Record<string, any>;
+      const providerPatch = buildProviderSocialPatch(rawProviderPatch, state.profile);
       if (incomingTaxId) {
         const isPj = state.profile.kind === 'pj';
         if (isPj) providerPatch.cnpj = incomingTaxId;
