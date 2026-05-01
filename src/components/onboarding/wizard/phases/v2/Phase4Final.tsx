@@ -732,10 +732,11 @@ interface ExtrasBProps {
   onChange: (patch: Partial<OnboardingProfileData>) => void;
   onFinish: () => void;
   onSkip: () => void;
+  onBack?: () => void;
   saving: boolean;
 }
 
-export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: ExtrasBProps) => {
+export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving }: ExtrasBProps) => {
   const focusInsta = useFocusFieldFromReview('instagram_url');
   const focusFb = useFocusFieldFromReview('facebook_url');
 
