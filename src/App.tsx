@@ -27,6 +27,7 @@ import { initializeUiFreezeMonitor } from "@/lib/uiFreezeMonitor";
 import { installPopupGuards } from "@/lib/popupGuards";
 import { appendWizardResetDebugLog } from "@/lib/wizardResetDebug";
 import { hasUnlockedAppAccess, isOnboardingCompletionGraceActive, resolveOnboardingGateTarget } from "@/lib/onboardingAccess";
+import { runOnboardingSelfHeal } from "@/lib/onboardingSelfHeal";
 import { fetchExistingFirstService, findExistingProvider } from "@/components/onboarding/wizard/phases/v2/findExistingRecords";
 import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 
