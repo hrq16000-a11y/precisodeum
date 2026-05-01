@@ -43,13 +43,9 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   const preferredUF = state.state || geo.state || '';
   const autoFilledRef = useRef(false);
   const cepLookupRef = useRef<string>('');
-  // Prévia editável + confirmação. O GPS e o "Finalizar" ficam bloqueados
-  // até o usuário revisar e confirmar a cidade aproximada e o bairro (se houver).
-  const [previewCity, setPreviewCity] = useState('');
-  const [previewState, setPreviewStateField] = useState('');
-  const [previewNeighborhood, setPreviewNeighborhood] = useState('');
-  const [previewConfirmed, setPreviewConfirmed] = useState<boolean>(() => state.location_source === 'gps');
-  const previewSeededRef = useRef(false);
+  // [UX-merge] Prévia removida — cidade-base + bairro são o único ponto de
+  // edição. A confirmação é implícita: assim que houver cidade/UF válidos +
+  // fonte conhecida (gps/cep/manual/ip), o usuário pode finalizar.
 
   // Auto-sugestão (não-destrutiva): pré-preenche cidade/UF se vazios.
   // Bairro só auto-preenche se vier sanitizado (≠ cidade, não-regional).
