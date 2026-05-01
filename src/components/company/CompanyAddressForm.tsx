@@ -229,20 +229,8 @@ export default function CompanyAddressForm({
     hasUserStreet &&
     normalizeStreet(suggestion) !== normalizeStreet(streetRaw);
 
-  // Sugestão pendente de confirmação: street veio do CEP e o usuário ainda não confirmou.
-  const pendingConfirmation =
-    cepStatus === 'applied' &&
-    suggestion.length > 0 &&
-    !value.street_confirmed &&
-    !conflict &&
-    normalizeStreet(suggestion) === normalizeStreet(streetRaw);
-
   const acceptSuggestion = () => {
     onChange({ street: suggestion, street_confirmed: true });
-  };
-  const rejectSuggestion = () => {
-    // Limpa o campo para o usuário digitar manualmente, mas mantém o que foi sugerido para auditoria.
-    onChange({ street: '', street_confirmed: false });
   };
   const retryLookup = () => {
     if (cepDigits.length === 8) {
@@ -251,28 +239,12 @@ export default function CompanyAddressForm({
     }
   };
 
-  /**
-   * Reaplica uma sugestão a partir do histórico recente: repõe o CEP e o
-   * logradouro sugerido em UM patch, marca como NÃO-confirmado para o usuário
-   * confirmar explicitamente. Útil quando o usuário fez retry / editou o CEP
-   * e quer voltar a um valor já consultado.
-   */
-  const reapplyFromHistory = (entry: CepHistoryEntry) => {
-    lastCepRef.current = entry.digits; // evita re-disparar lookup automático
-    setCepStatus('applied');
-    setCepErrorReason(null);
-    const patch: Partial<CompanyAddressValue> = {
-      postal_code: entry.digits,
-      street: entry.address ?? '',
-      street_suggested: entry.address ?? '',
-      street_suggested_cep: entry.digits,
-      street_confirmed: false,
-    };
-    // Reusa cidade/UF do histórico para preencher campos correlatos quando disponíveis.
-    if (entry.city) (patch as CompanyAddressValue & { city?: string }).city = entry.city;
-    if (entry.state) (patch as CompanyAddressValue & { state?: string }).state = entry.state;
-    onChange(patch);
-  };
+  // Observação: o histórico de CEPs (cep_history) continua persistido no
+  // estado pai para auditoria/telemetria e para o passo seguinte do wizard.
+  // A UI de "CEPs recentes" foi removida a pedido do usuário — o fluxo agora
+  // é: digitar CEP → preencher automático. `reapplyFromHistory` permanece
+  // disponível como helper programático se algum consumidor precisar dele.
+  void cepHistory;
 
   const inputBase =
     'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30';
