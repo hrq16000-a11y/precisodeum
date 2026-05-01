@@ -228,7 +228,19 @@ ${entries.join('\n')}
       for (const city of cities || []) {
         const cityNorm = String(city.name || city.slug || '').trim().toLowerCase();
         if (!eligiblePairs.has(`${cat.id}::${cityNorm}`)) continue;
+        // Rota canônica rica (CategoryCityPage)
         urls += entry(siteUrl, `/categoria/${cat.slug}/em/${city.slug}`, today, 'weekly', '0.65');
+        // /buscar com filtros pré-aplicados — variante navegável e indexável.
+        // Mesmo conteúdo, intent diferente (busca livre por categoria+cidade).
+        // Prioridade ligeiramente menor para não competir com o canonical rico.
+        const cityName = encodeURIComponent(String(city.name || city.slug));
+        urls += entry(
+          siteUrl,
+          `/buscar?categoria=${cat.slug}&cidade=${cityName}`,
+          today,
+          'weekly',
+          '0.55',
+        );
       }
     }
   }
