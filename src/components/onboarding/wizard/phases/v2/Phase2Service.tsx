@@ -456,7 +456,7 @@ export const Phase2Details = ({
       {/* Horários — picker estruturado (Google Meu Negócio) */}
       <div className="rounded-xl border border-border bg-card p-3 shadow-card">
         <WorkingHoursPicker
-          value={service.working_hours_struct ?? null}
+          value={(service.working_hours_struct as WorkingHoursStruct | null) ?? null}
           onChange={setStruct}
         />
       </div>
