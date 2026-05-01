@@ -81,7 +81,12 @@ describe('Onboarding V2 — fluxo final', () => {
     expect(shellSrc).toContain("phase: 'main_portfolio_albums'");
     expect(shellSrc).toContain('Step21_PortfolioAlbums');
     expect(shellSrc).toContain('finalizeUnifiedOnboarding');
-    expect(shellSrc).toMatch(/update\(\{ onboarding_step: 5, onboarding_completed: true \}\)/);
+    expect(shellSrc).toMatch(/update\(\{ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true \}\)/);
+  });
+
+  it('finalização do V2 força profile_type=provider ao concluir', () => {
+    const shellSrc = read('components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
+    expect(shellSrc).toMatch(/update\(\{ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true \}\)/);
   });
 
   it('rotas protegidas do onboarding não retornam para /cadastro-inicial após /onboarding-v2/sucesso', () => {
