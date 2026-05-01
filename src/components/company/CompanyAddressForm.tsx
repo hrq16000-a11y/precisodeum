@@ -306,9 +306,12 @@ export default function CompanyAddressForm({
                 Aplicado
               </span>
             )}
-            {cepStatus === 'error' && (
-              <span className="ml-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-700">
-                Não encontrado
+            {(cepStatus === 'error' || cepStatus === 'not_found') && (
+              <span
+                data-testid="cep-error-badge"
+                className="ml-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-700"
+              >
+                {cepStatus === 'not_found' ? 'CEP não encontrado' : 'Falha de rede'}
               </span>
             )}
             {isSuggested('postal_code') && value.postal_code ? <SuggestedTag /> : null}
@@ -328,6 +331,24 @@ export default function CompanyAddressForm({
           />
           {cepError && (
             <p id="cep-error" className="mt-1 text-[10.5px] text-rose-600">{cepError}</p>
+          )}
+          {(cepStatus === 'error' || cepStatus === 'not_found') && (
+            <div className="mt-1 flex items-start gap-1.5 rounded-md border border-rose-200 bg-rose-50 p-1.5 text-[10.5px] leading-snug text-rose-700">
+              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              <div className="flex-1">
+                {cepErrorReason === 'not_found'
+                  ? 'Não encontramos esse CEP nas bases públicas (BrasilAPI / ViaCEP). Confira os dígitos ou preencha o logradouro manualmente.'
+                  : 'Não conseguimos consultar o CEP agora — pode ser falha de rede. Você pode tentar novamente ou preencher manualmente.'}
+                <button
+                  type="button"
+                  onClick={retryLookup}
+                  data-testid="cep-retry"
+                  className="ml-1 inline-flex items-center gap-1 rounded-md border border-rose-300 bg-white px-1.5 py-0.5 text-[10.5px] font-semibold text-rose-700 hover:bg-rose-100"
+                >
+                  <RotateCw className="h-2.5 w-2.5" /> Tentar de novo
+                </button>
+              </div>
+            </div>
           )}
         </label>
       </div>
