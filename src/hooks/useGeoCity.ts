@@ -415,7 +415,7 @@ export function useGeoCity(): GeoStore {
       try { sessionStorage.removeItem(GEO_ASKED_KEY); } catch {}
     }
 
-    return await new Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null }>((resolve) => {
+    return await new Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null; latitude?: number | null; longitude?: number | null }>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const latitude = position.coords.latitude;
