@@ -265,6 +265,9 @@ export const initialWizardState: WizardState = {
     street_confirmed: false,
     bairro_sugerido_cep: '',
     cep_history: [],
+    avatar_url: null,
+    avatar_source: null,
+    avatar_seed: 0,
     points: 0,
     rewards: {
       name: false,
