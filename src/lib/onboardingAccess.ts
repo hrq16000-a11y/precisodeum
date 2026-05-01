@@ -40,12 +40,16 @@ export function isOnboardingCompletionGraceActive() {
 }
 
 export function hasUnlockedAppAccess(profile: any | null, hasExistingService = false) {
-  if (!profile?.profile_type) return false;
+  if (!profile) return false;
+
+  // Onboarding já concluído explicitamente (fonte de verdade) — libera mesmo
+  // que profile_type ainda esteja indefinido por race/legado.
+  if (profile.onboarding_completed === true) return true;
 
   const onboardingStep = Number(profile?.onboarding_step ?? 0);
-  if (profile.onboarding_completed === true) return true;
   if (onboardingStep >= 5) return true;
 
+  if (!profile.profile_type) return false;
   return profile.profile_type === 'provider' && hasExistingService;
 }
 

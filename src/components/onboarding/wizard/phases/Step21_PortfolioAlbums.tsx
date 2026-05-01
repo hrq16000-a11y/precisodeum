@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -27,9 +27,21 @@ interface Album { id: string; name: string; description: string | null; }
 interface Step21Props {
   onContinue: () => void;
   onSkip: () => void;
+  onGoToPath?: (path: string) => Promise<void> | void;
 }
 
-const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
+const Step21_PortfolioAlbums = ({ onContinue, onSkip, onGoToPath }: Step21Props) => {
+  const navigate = useNavigate();
+  const [navigating, setNavigating] = useState<string | null>(null);
+  const goTo = useCallback(async (path: string) => {
+    setNavigating(path);
+    try {
+      if (onGoToPath) await onGoToPath(path);
+      else navigate(path);
+    } finally {
+      setNavigating(null);
+    }
+  }, [navigate, onGoToPath]);
   const { user, provider } = useAuth();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
@@ -245,11 +257,23 @@ const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
           1. Crie um álbum. 2. Toque no nome do álbum. 3. Envie as fotos na área que abre logo abaixo.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button asChild type="button" variant="outline" className="gap-2">
-            <Link to="/dashboard/portfolio">Abrir portfólio</Link>
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            disabled={navigating !== null}
+            onClick={() => void goTo('/dashboard/portfolio')}
+          >
+            Abrir portfólio
           </Button>
-          <Button asChild type="button" variant="outline" className="gap-2">
-            <Link to="/dashboard">Ir para meu painel</Link>
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            disabled={navigating !== null}
+            onClick={() => void goTo('/dashboard')}
+          >
+            Ir para meu painel
           </Button>
         </div>
       </div>

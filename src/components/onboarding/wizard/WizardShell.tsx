@@ -22,7 +22,7 @@
  * patches incrementais, drafts local + remote) permanece encapsulada lá.
  */
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, LayoutDashboard, Briefcase, FolderOpen, Sparkles } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
@@ -65,6 +65,7 @@ type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-port
 
 export default function WizardShell() {
   const { user, profile, provider } = useAuth();
+  const navigate = useNavigate();
   const realPoints = useEngagementPointsValue(user?.id);
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
   const resumeBootstrapRef = useRef(false);
@@ -302,6 +303,13 @@ export default function WizardShell() {
     }
   }, [user?.id]);
 
+  // Finaliza o onboarding e navega para o caminho informado. Garante que o
+  // OnboardingGate não rebata o usuário de volta para /cadastro-inicial.
+  const finalizeAndNavigateTo = useCallback(async (path: string) => {
+    await finalizeUnifiedOnboarding();
+    navigate(path);
+  }, [finalizeUnifiedOnboarding, navigate]);
+
   return (
     <div className="min-h-[100svh] text-[15px] leading-snug bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
       <ExitIntentDialog
@@ -337,6 +345,7 @@ export default function WizardShell() {
           <Step20_MoreServices
             onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
             onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
+            onGoToPath={finalizeAndNavigateTo}
           />
         </BetCardShell>
       ) : stage === 'extras-portfolio' ? (
@@ -352,6 +361,7 @@ export default function WizardShell() {
                 dispatch({ type: 'GO_TO_PHASE', phase: 'done' });
               });
             }}
+            onGoToPath={finalizeAndNavigateTo}
           />
         </BetCardShell>
       ) : stage === 'done' ? (
