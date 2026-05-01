@@ -8806,6 +8806,23 @@ export type Database = {
         Args: { _sponsor_id: string }
         Returns: boolean
       }
+      suggest_nearby_cities: {
+        Args: {
+          _base_city: string
+          _base_state: string
+          _limit?: number
+          _max_km?: number
+        }
+        Returns: {
+          bucket: string
+          distance_km: number
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          state_uf: string
+        }[]
+      }
       touch_my_provider_activity: { Args: never; Returns: undefined }
       track_lead_interaction: {
         Args: {
