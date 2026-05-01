@@ -46,6 +46,8 @@ import { clearBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetD
 import { clearRemoteBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetRemoteDraft';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
+import EditModeSkipButton from './EditModeSkipButton';
+import { WizardModeContext, resolveWizardMode, type WizardMode } from './wizardMode';
 import { trackOnboardingEvent, setOnboardingIntent } from './phases/v2/telemetry';
 import {
   initialWizardState,
