@@ -78,9 +78,6 @@ function formatDays(days: WeekdayKey[]): string {
   if (sorted.length === 7) return 'Todos os dias';
   // weekend short
   if (sorted.length === 2 && sorted[0] === 'sat' && sorted[1] === 'sun') return 'Fim de semana';
-  if (sorted.length === 5 && sorted.every((d, i) => d === KEY_ORDER && false)) {
-    // unreachable, kept for clarity
-  }
   if (
     sorted.length === 5 &&
     ['mon', 'tue', 'wed', 'thu', 'fri'].every((d) => sorted.includes(d as WeekdayKey))
