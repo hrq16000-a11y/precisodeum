@@ -82,6 +82,16 @@ export interface DbProvider {
   legalName?: string | null;
   /** PJ: indica se rua/número devem ser exibidos publicamente. */
   showFullAddress?: boolean;
+  /** Horário (texto livre legado) e struct estruturado (Google-Meu-Negócio). */
+  workingHours?: string | null;
+  workingHoursStruct?: {
+    ranges: Array<{ days: string[]; start: string; end: string }>;
+  } | null;
+  /** Flags derivadas (calculadas no DB por trigger). */
+  opensWeekend?: boolean;
+  opensLateNight?: boolean;
+  opensOvernight?: boolean;
+  is24h?: boolean;
 }
 
 export type FeaturedProviderSort = 'proximity' | 'category' | 'availability';
