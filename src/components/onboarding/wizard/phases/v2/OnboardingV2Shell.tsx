@@ -640,17 +640,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   useEffect(() => {
     const goBack = () => {
       switch (state.phase) {
-        case 'phase1_kind':
-          dispatch({ type: 'GO_TO', phase: 'phase1_action' });
-          break;
-        case 'phase1_location':
-          dispatch({ type: 'GO_TO', phase: 'phase1_kind' });
-          break;
-        case 'phase1_contact':
-          dispatch({ type: 'GO_TO', phase: 'phase1_location' });
-          break;
+        // phase1_* removidas em mai/2026; phase2_service é a 1ª fase viva do V2.
+        // Voltar de phase2_service é responsabilidade do WizardShell (sai para triage_celebration).
         case 'phase2_service':
-          dispatch({ type: 'GO_TO', phase: 'phase1_contact' });
+          /* noop — WizardShell trata o retorno à triagem */
           break;
         case 'phase2_details':
           dispatch({ type: 'GO_TO', phase: 'phase2_service' });
