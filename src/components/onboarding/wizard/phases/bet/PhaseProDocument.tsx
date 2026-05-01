@@ -189,6 +189,9 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
             collapsible
             revealLabel="Possui ponto de atendimento físico (loja, oficina, salão)?"
             cityPreview={{ city: state.city, neighborhood: state.neighborhood }}
+            onAutoFill={handleAutoFill}
+            autoFillStatus={autoFillStatus}
+            autoFillError={autoFillError}
             value={{
               street: state.street,
               street_number: state.street_number,
