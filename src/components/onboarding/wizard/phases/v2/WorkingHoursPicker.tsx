@@ -46,12 +46,22 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
   const setStruct = (next: WorkingHoursStruct) => onChange(next);
 
   const addRange = () => {
-    const next: WorkingHoursStruct = {
-      ranges: [
-        ...safe.ranges,
-        { days: ['mon', 'tue', 'wed', 'thu', 'fri'], start: '08:00', end: '18:00' },
-      ],
+    if (safe.ranges.length >= MAX_RANGES) return;
+    // Heurística: oferece um default que não bate com a 1ª faixa para reduzir
+    // conflito imediato. Ex.: se já existe Seg–Sex 08–18h, sugere Sáb 09–13h.
+    const first = safe.ranges[0];
+    let candidate: WorkingHoursStruct['ranges'][number] = {
+      days: ['mon', 'tue', 'wed', 'thu', 'fri'], start: '08:00', end: '18:00',
     };
+    if (first) {
+      const firstIsWeekday = first.days.every((d) => ['mon', 'tue', 'wed', 'thu', 'fri'].includes(d));
+      if (firstIsWeekday) {
+        candidate = { days: ['sat'], start: '09:00', end: '13:00' };
+      } else {
+        candidate = { days: ['mon', 'tue', 'wed', 'thu', 'fri'], start: '08:00', end: '18:00' };
+      }
+    }
+    const next: WorkingHoursStruct = { ranges: [...safe.ranges, candidate] };
     setStruct(next);
     setCustomMode(true);
   };
