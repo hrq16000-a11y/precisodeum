@@ -222,8 +222,22 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
     generated: 'Avatar gerado',
   };
 
+  const handleBackTop = () => {
+    if (onBack) onBack();
+    else window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_avatar' } }));
+  };
+
   return (
     <motion.div {...wizardEnter} className={ws.container}>
+      <button
+        type="button"
+        onClick={handleBackTop}
+        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+        aria-label="Voltar para a etapa anterior do cadastro"
+        data-testid="phase4-avatar-back"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+      </button>
       <header className={ws.headerWrap}>
         <div className={ws.chip}>
           <CameraIcon className="h-3 w-3" /> Foto de perfil
