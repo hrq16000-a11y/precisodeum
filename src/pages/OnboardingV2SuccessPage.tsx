@@ -7,7 +7,7 @@
  * via link direto ou voltar (ex: do email).
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -162,13 +162,21 @@ const OnboardingV2SuccessPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultMessage]);
 
+  // Timer rastreado do reset de "copiado" — limpo no unmount para evitar
+  // setState em componente morto se o usuário sair da página em <2s.
+  const copyResetTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (copyResetTimer.current) window.clearTimeout(copyResetTimer.current);
+  }, []);
+
   const handleCopy = async () => {
     if (!affiliateLink) return;
     try {
       await navigator.clipboard.writeText(affiliateLink);
       setCopied(true);
       toast.success('Link copiado! Compartilhe e ganhe pontos a cada cadastro.');
-      setTimeout(() => setCopied(false), 2000);
+      if (copyResetTimer.current) window.clearTimeout(copyResetTimer.current);
+      copyResetTimer.current = window.setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('Não foi possível copiar.');
     }
