@@ -529,5 +529,6 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         />
       )}
     </div>
+    </WizardModeContext.Provider>
   );
 }
