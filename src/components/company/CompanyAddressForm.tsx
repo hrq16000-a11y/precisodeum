@@ -56,15 +56,21 @@ function maskCep(digits: string): string {
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
-/** Normalização leve para comparar duas strings de logradouro (case + acentos + pontuação). */
+/**
+ * Normalização robusta delegada a `@/lib/streetNormalize`. Cobre acentos,
+ * pontuação, abreviações ("R.", "Av.", "Tv.") e stopwords ("de", "da").
+ */
 function normalizeStreet(s: string): string {
-  return (s || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[.,\-/]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return robustNormalizeStreet(s);
+}
+
+/** Item do histórico recente de CEPs consultados nesta sessão do form. */
+interface CepHistoryEntry {
+  cep: string;        // 00000-000
+  digits: string;     // 8 dígitos
+  address?: string;   // logradouro sugerido
+  city?: string;
+  state?: string;
 }
 
 export default function CompanyAddressForm({
