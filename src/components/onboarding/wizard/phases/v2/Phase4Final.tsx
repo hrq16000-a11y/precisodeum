@@ -842,6 +842,17 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
           Pular redes e revisar
         </Button>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={saving}
+            className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+            data-testid="phase4-extras-b-back"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+          </button>
+        )}
       </div>
     </motion.div>
   );
