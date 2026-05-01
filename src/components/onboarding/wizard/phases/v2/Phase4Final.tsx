@@ -378,6 +378,14 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
           />
         )}
       </div>
+
+      {/* Crop dialog — abre depois da validação rigorosa do arquivo. */}
+      <AvatarCropDialog
+        open={!!cropFile}
+        file={cropFile}
+        onCancel={() => setCropFile(null)}
+        onConfirm={handleCroppedConfirm}
+      />
     </motion.div>
   );
 };
