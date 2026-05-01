@@ -38,6 +38,8 @@ export interface BetState {
   show_full_address: boolean;
   /** PJ — última sugestão de logradouro vinda do CEP (BrasilAPI/ViaCEP). Não exposta no banco; só guia de UX. */
   street_suggested: string;
+  /** PJ — CEP (8 dígitos) que originou a sugestão atual em street_suggested. Usado para auditoria/telemetria e para evitar sobrescrita. */
+  street_suggested_cep: string;
   /** PJ — usuário confirmou explicitamente o logradouro (clicou em "Usar este" ou digitou manualmente). */
   street_confirmed: boolean;
   points: number;              // contador exibido
@@ -72,6 +74,7 @@ export const initialBetState: BetState = {
   postal_code: '',
   show_full_address: false,
   street_suggested: '',
+  street_suggested_cep: '',
   street_confirmed: false,
   points: 0,
   rewards: {

@@ -261,6 +261,7 @@ export const initialWizardState: WizardState = {
     postal_code: '',
     show_full_address: false,
     street_suggested: '',
+    street_suggested_cep: '',
     street_confirmed: false,
     points: 0,
     rewards: {

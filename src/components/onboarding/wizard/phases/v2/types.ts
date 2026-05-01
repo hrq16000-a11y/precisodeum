@@ -48,6 +48,8 @@ export interface OnboardingProfileData {
   show_full_address?: boolean;
   /** Última sugestão de logradouro vinda do CEP (BrasilAPI/ViaCEP) — só UX, não persistida. */
   street_suggested?: string;
+  /** CEP (8 dígitos) que originou a sugestão atual — auditoria/telemetria; evita sobrescrita após edição manual. */
+  street_suggested_cep?: string;
   /** Confirmação explícita do logradouro pelo usuário — só UX, não persistida. */
   street_confirmed?: boolean;
   /** Redes sociais institucionais (chave→URL) — só PJ. */

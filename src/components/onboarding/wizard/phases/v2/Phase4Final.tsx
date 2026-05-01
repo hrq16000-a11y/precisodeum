@@ -221,6 +221,7 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
                 postal_code: data.postal_code,
                 show_full_address: data.show_full_address,
                 street_suggested: data.street_suggested,
+                street_suggested_cep: data.street_suggested_cep,
                 street_confirmed: data.street_confirmed,
               }}
               onChange={(patch) => onChange(patch as Partial<OnboardingProfileData>)}
