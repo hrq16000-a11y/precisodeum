@@ -46,6 +46,8 @@ import { clearBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetD
 import { clearRemoteBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetRemoteDraft';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
+import EditModeSkipButton from './EditModeSkipButton';
+import { WizardModeContext, resolveWizardMode, type WizardMode } from './wizardMode';
 import { trackOnboardingEvent, setOnboardingIntent } from './phases/v2/telemetry';
 import {
   initialWizardState,
@@ -64,8 +66,17 @@ import type { BetState } from './phases/bet/types';
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
 
 interface WizardShellProps {
-  reviewMode?: boolean;
+  /**
+   * Modo de operação do wizard.
+   *  - `new_signup` (default): fluxo completo para novos usuários.
+   *  - `edit_profile`: usuário voltando para revisar/editar; ativa o atalho
+   *    "Pular esta etapa" quando a fase já está 100% preenchida.
+   *  - `add_service`: perfil já existe; foco é adicionar um novo serviço.
+   */
+  mode?: WizardMode;
   reviewSection?: OnboardingReviewSection | null;
+  /** @deprecated Use `mode='edit_profile'`. Mantido por compatibilidade. */
+  reviewMode?: boolean;
 }
 
 function resolveReviewStartPhase(section: OnboardingReviewSection | null): UnifiedPhase {
@@ -84,7 +95,10 @@ function resolveReviewStartPhase(section: OnboardingReviewSection | null): Unifi
   }
 }
 
-export default function WizardShell({ reviewMode = false, reviewSection = null }: WizardShellProps) {
+export default function WizardShell({ mode, reviewMode = false, reviewSection = null }: WizardShellProps) {
+  // Resolve o modo efetivo (mode > reviewMode boolean > default new_signup).
+  const resolvedMode = resolveWizardMode({ mode, reviewMode });
+  const isReview = resolvedMode === 'edit_profile';
   const { user, profile, provider } = useAuth();
   const navigate = useNavigate();
   const realPoints = useEngagementPointsValue(user?.id);
@@ -203,7 +217,7 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
       dispatch({
         type: 'HYDRATE',
           state: {
-              phase: reviewMode
+              phase: isReview
                 ? resolveReviewStartPhase(reviewSection ?? getOnboardingReviewSection(window.location.search))
               : existingService
                 ? profile?.onboarding_completed === true
@@ -313,7 +327,7 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, profile?.id, provider?.id, reviewMode, reviewSection]);
+  }, [user?.id, profile?.id, provider?.id, resolvedMode, reviewSection]);
 
   const handleTriagePhaseChange = useCallback((betPhase: string) => {
     dispatch({ type: 'GO_TO_PHASE', phase: mapTriagePhaseToUnified(betPhase) });
@@ -352,7 +366,7 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
   const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
   const progressOrder = state.triage.intent === 'professional' ? PROVIDER_WIZARD_PHASE_ORDER : undefined;
-  const holdTriageWhileReviewBootstraps = reviewMode && !resumeBootstrapRef.current && state.phase === 'triage_identity';
+  const holdTriageWhileReviewBootstraps = isReview && !resumeBootstrapRef.current && state.phase === 'triage_identity';
 
   // Sincroniza intent real do reducer → sessionStorage para auto-injeção em
   // todos os eventos de telemetria (milestone, skip, next, error, complete).
@@ -393,7 +407,9 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
   }, [finalizeUnifiedOnboarding, navigate]);
 
   return (
+    <WizardModeContext.Provider value={{ mode: resolvedMode, isEditing: isReview }}>
     <div className="min-h-[100svh] text-[15px] leading-snug bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
+      <EditModeSkipButton state={state} phase={state.phase} />
       <ExitIntentDialog
         phase={state.phase}
         intent={
@@ -513,5 +529,6 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
         />
       )}
     </div>
+    </WizardModeContext.Provider>
   );
 }

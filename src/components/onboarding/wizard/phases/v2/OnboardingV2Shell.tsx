@@ -190,6 +190,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     };
   });
 
+  // Listener global do botão "Pular esta etapa" exibido pelo WizardShell em
+  // modo edit_profile. Avança a fase atual via NEXT — mesmo comportamento
+  // dos botões "Pular" internos. Idempotente; cleanup garante zero zumbi.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleSkip = () => { dispatch({ type: 'NEXT' } as any); };
+    window.addEventListener('wizard:request-skip', handleSkip as EventListener);
+    return () => window.removeEventListener('wizard:request-skip', handleSkip as EventListener);
+  }, []);
+
   // Wrappers que registram quais campos o usuário tocou nesta sessão
   // (usado pelo Review para merge não-destrutivo).
   const patchProfile = (patch: Partial<typeof state.profile>) => {

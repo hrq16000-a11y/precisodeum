@@ -238,5 +238,5 @@ export default function CadastroInicialPage() {
       </div>
     );
   }
-  return <WizardShell reviewMode={reviewMode} reviewSection={reviewSection} />;
+  return <WizardShell mode={reviewMode ? 'edit_profile' : 'new_signup'} reviewSection={reviewSection} />;
 }
