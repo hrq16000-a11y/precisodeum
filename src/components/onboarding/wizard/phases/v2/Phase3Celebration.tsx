@@ -22,6 +22,7 @@ import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
 import { whatsappLink } from '@/lib/whatsapp';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 interface Phase3Props {
   serviceName: string;
@@ -120,7 +121,11 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
       setCopied(true);
       toast.success('Link copiado! Compartilhe e ganhe pontos a cada cadastro.');
       if (copyResetTimer.current) window.clearTimeout(copyResetTimer.current);
-      copyResetTimer.current = window.setTimeout(() => setCopied(false), 2000);
+      copyResetTimer.current = scheduleWizardTimeout(
+        { phase: 'phase3_celebration', action: 'phase3_copy_reset' },
+        () => setCopied(false),
+        2000,
+      );
     } catch {
       toast.error('Não foi possível copiar.');
     }
