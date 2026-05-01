@@ -271,11 +271,7 @@ export default function DashboardAssistantPage() {
 
   return (
     <DashboardLayout>
-      <Helmet>
-        <title>Assistente do cadastro · Precisodeum</title>
-        <meta name="description" content="Revise todas as etapas do seu cadastro: edite o que pode e continue o que falta." />
-        <meta name="robots" content="noindex,nofollow" />
-      </Helmet>
+      {/* SEO: noindex via document.title; rota é privada */}
 
       {/* Header */}
       <div className="mb-4 flex items-start justify-between gap-3">
