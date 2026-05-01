@@ -266,6 +266,23 @@ export default function DashboardAssistantPage() {
     navigate(`/cadastro-inicial?${params.toString()}`);
   }
 
+  /**
+   * "Ver em detalhes" — abre a mesma seção em modo review, mas com a flag
+   * `view=1` para a UI poder iniciar em estado read-only/expandido. O wizard
+   * continua resolvendo `mode=review` → `edit_profile`, então o usuário
+   * sempre pode passar a editar de dentro da fase.
+   */
+  function viewPhase(meta: AssistantPhaseMeta, status: PhaseStatus) {
+    if (status === 'locked' || meta.section === null) return;
+    const params = new URLSearchParams({
+      mode: 'review',
+      section: meta.section,
+      view: '1',
+      next: '/dashboard/assistente',
+    });
+    navigate(`/cadastro-inicial?${params.toString()}`);
+  }
+
   function continueWhereLeftOff() {
     if (!currentPhase) {
       // Tudo concluído — abre wizard em modo review na primeira seção.
