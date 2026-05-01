@@ -209,6 +209,22 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             </label>
           </div>
 
+          {data.kind === 'pj' && (
+            <CompanyAddressForm
+              collapsible
+              revealLabel="Possui ponto de atendimento físico (loja, oficina, salão)?"
+              cityPreview={{ city: data.city, neighborhood: data.neighborhood }}
+              value={{
+                street: data.street,
+                street_number: data.street_number,
+                complement: data.complement,
+                postal_code: data.postal_code,
+                show_full_address: data.show_full_address,
+              }}
+              onChange={(patch) => onChange(patch as Partial<OnboardingProfileData>)}
+            />
+          )}
+
           <div className="flex flex-col gap-2 pt-1">
             <Button type="button" size="lg" onClick={handleVerify} disabled={!valid || saving} className={ws.cta}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
