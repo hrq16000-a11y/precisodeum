@@ -1,5 +1,6 @@
 import { initialOnboardingState, phaseIndex } from './state';
 import type { AccountKind, OnboardingPhase, OnboardingState } from './types';
+import { isOnboardingFullNameValid, normalizeOnboardingPhone } from './contactValidation';
 
 type BootstrapInput = {
   profile: any | null;
@@ -17,8 +18,7 @@ export type OnboardingCoreLocks = {
 };
 
 function normalizePhone(value: unknown): string {
-  const digits = typeof value === 'string' ? value.replace(/\D/g, '') : '';
-  return digits.replace(/^55(?=\d{10,11}$)/, '');
+  return normalizeOnboardingPhone(value);
 }
 
 function readSocialLink(source: any, key: string): string {
@@ -35,7 +35,7 @@ function inferKind(profile: any | null, provider: any | null): AccountKind {
 }
 
 function resolvePhase(fullName: string, whatsapp: string, city: string): OnboardingPhase {
-  const hasContact = fullName.trim().length >= 4 && whatsapp.length >= 10;
+  const hasContact = isOnboardingFullNameValid(fullName) && normalizePhone(whatsapp).length >= 10;
   if (hasContact && city.trim().length > 0) return 'phase2_service';
   if (city.trim().length > 0 || hasContact) return hasContact ? 'phase2_service' : 'phase1_contact';
   return 'phase1_location';
@@ -51,7 +51,7 @@ export function buildOnboardingCoreLocks({ profile, provider }: BootstrapInput):
   ).replace(/\D/g, '');
 
   return {
-    full_name: full_name.length >= 4,
+    full_name: isOnboardingFullNameValid(full_name),
     whatsapp: whatsapp.length >= 10,
     city: city.length > 0,
     state: state.length === 2,

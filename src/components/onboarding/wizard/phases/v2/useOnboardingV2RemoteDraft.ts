@@ -79,8 +79,15 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
         } as any, { onConflict: 'user_id' });
         markRemoteDraftWritten(state.phase as any, userId);
         recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
-      } catch {
-        /* fail-soft — local draft já cobre */
+      } catch (error) {
+        console.error('[onboardingV2] remote draft upsert failed', {
+          phase: state.phase,
+          userId,
+          message: (error as any)?.message || String(error),
+          code: (error as any)?.code || null,
+          details: (error as any)?.details || null,
+          hint: (error as any)?.hint || null,
+        });
       }
     }, REMOTE_DEBOUNCE_MS);
 

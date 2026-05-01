@@ -14,7 +14,7 @@ import {
   Briefcase, UserRound, Building2, Megaphone, MapPin, Loader2, Phone,
   ArrowLeft, ArrowRight, Sparkles, User, Camera,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -23,6 +23,7 @@ import CityAutocomplete from '@/components/CityAutocomplete';
 import UFSelect, { BR_UFS } from '@/components/admin/UFSelect';
 import { wizardStyles as ws, wizardEnter } from './wizardStyles';
 import type { OnboardingCoreField, OnboardingProfileData, ProfileTypeChoice } from './types';
+import { getOnboardingContactValidation } from './contactValidation';
 
 /* ───── 1.1 Atuação ───── */
 
@@ -163,6 +164,7 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
   const { user } = useAuth();
   const [requestingGps, setRequestingGps] = useState(false);
   const { requestPreciseLocation } = useGeoCity();
+  const socialAvatarSyncedRef = useRef(false);
   const selectedStateName = BR_UFS.find((uf) => uf.uf === data.state)?.name;
 
   const socialAvatar = (user?.user_metadata as any)?.avatar_url || (user?.user_metadata as any)?.picture || null;
@@ -188,9 +190,12 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
     }
   };
 
-  if (!data.avatar_url && socialAvatar) {
+  useEffect(() => {
+    if (socialAvatarSyncedRef.current) return;
+    if (data.avatar_url || !socialAvatar) return;
+    socialAvatarSyncedRef.current = true;
     onChange({ avatar_url: socialAvatar });
-  }
+  }, [data.avatar_url, onChange, socialAvatar]);
 
   return (
     <motion.div {...wizardEnter} className={ws.container} role="region" aria-labelledby="phase1-location-title">
@@ -358,8 +363,9 @@ export const Phase1Contact = ({
   duplicateWhatsapp = false, checkingWhatsapp = false, onWhatsappBlur,
 }: ContactProps) => {
   const visibleWhats = useMemo(() => formatWhatsappVisible(data.whatsapp), [data.whatsapp]);
-  const nameOk = data.full_name.trim().split(/\s+/).length >= 2 && data.full_name.trim().length >= 4;
-  const whatsOk = (data.whatsapp || '').replace(/\D/g, '').length >= 10;
+  const validation = useMemo(() => getOnboardingContactValidation({ fullName: data.full_name, whatsapp: data.whatsapp }), [data.full_name, data.whatsapp]);
+  const nameOk = validation.fullName;
+  const whatsOk = validation.whatsapp;
   const canSubmit = nameOk && whatsOk && !saving && !duplicateWhatsapp && !checkingWhatsapp;
 
   return (
@@ -389,6 +395,7 @@ export const Phase1Contact = ({
             placeholder="Ex: Maria Silva"
             disabled={!!locks?.full_name}
             autoFocus
+            aria-invalid={!nameOk && data.full_name.length > 0}
             className={nameOk ? ws.inputValid : ws.input}
           />
           {!nameOk && data.full_name.length > 0 && (
