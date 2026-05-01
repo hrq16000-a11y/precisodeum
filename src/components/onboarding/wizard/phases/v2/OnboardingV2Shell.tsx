@@ -174,7 +174,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // rascunho stale pode mascarar a descrição/nome do serviço já publicado.
   const skipDraftRestore =
     editMode ||
-    (internalHandoffFromTriage && (seedState?.phase === 'phase2_service' || seedState?.phase === 'phase2_service'));
+    (internalHandoffFromTriage && seedState?.phase === 'phase2_service');
   // Restaura draft local ao montar (se existir e não estiver expirado)
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
     const draft = skipDraftRestore ? null : readOnboardingV2Draft();
