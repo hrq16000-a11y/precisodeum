@@ -17,7 +17,6 @@ interface ExistingServiceRecord {
   service_name: string | null;
   description: string | null;
   category_id: string | null;
-  category_ids?: string[] | null;
   service_area: string | null;
   address: string | null;
   working_hours: string | null;
@@ -91,7 +90,7 @@ export async function fetchExistingFirstService(
   try {
     let query = supabase
       .from('services')
-      .select('id, provider_id, service_name, description, category_id, category_ids, service_area, address, working_hours, working_hours_struct, price, created_at')
+      .select('id, provider_id, service_name, description, category_id, service_area, address, working_hours, working_hours_struct, price, created_at')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(12);
