@@ -1,28 +1,72 @@
 /**
- * InstallAppCard — convite inline para instalar o PWA.
+ * InstallAppCard — instalação imediata do app.
  *
- * Renderizado ao final da Fase 2 do Wizard (PhaseCelebration / Phase3Celebration)
- * para sugerir a instalação do app logo após o prestador publicar o 1º serviço.
- *
- * Regras (alinhadas ao módulo PWA blindado):
- *  - Não bloqueia o avanço do wizard.
+ * Botão SEMPRE clicável e com ação direta:
+ *  - Se `beforeinstallprompt` está disponível ⇒ chama prompt nativo (1 toque).
+ *  - Senão (ex.: iOS Safari, navegador sem suporte) ⇒ abre o modal global
+ *    do banner PWA via `PWA_OPEN_INSTALL_MODAL_EVENT`, que mostra a instrução
+ *    "Compartilhar → Adicionar à Tela de Início" sem travar a UI.
  *  - Some sozinho quando o app já está instalado (display-mode: standalone).
- *  - Quando `beforeinstallprompt` não está disponível (iOS, browsers que não
- *    expõem o evento), exibe uma instrução discreta em vez do botão.
+ *
+ * Usado nas telas de celebração do wizard (visível ao lado dos CTAs principais).
  */
 import { Smartphone, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePwaInstallPrompt } from '@/hooks/usePwaInstall';
+import {
+  usePwaInstallPrompt,
+  PWA_OPEN_INSTALL_MODAL_EVENT,
+  trackPwaEvent,
+} from '@/hooks/usePwaInstall';
 
 interface Props {
   /** Origem para telemetria de instalação (default: 'wizard-celebration'). */
   source?: string;
+  /** Variante visual: 'card' (padrão) ou 'inline' (sem moldura, p/ usar dentro de outro card). */
+  variant?: 'card' | 'inline';
 }
 
-export default function InstallAppCard({ source = 'wizard-celebration' }: Props) {
+export default function InstallAppCard({
+  source = 'wizard-celebration',
+  variant = 'card',
+}: Props) {
   const { canInstall, isStandalone, install } = usePwaInstallPrompt();
 
   if (isStandalone) return null;
+
+  const handleClick = async () => {
+    if (canInstall) {
+      // Caminho rápido: prompt nativo, 1 toque, instala imediatamente.
+      await install(source);
+      return;
+    }
+    // Fallback (iOS / browsers sem beforeinstallprompt): abre o modal global
+    // do banner — único lugar com a instrução "Compartilhar → Adicionar".
+    trackPwaEvent('cta_click', source);
+    try {
+      window.dispatchEvent(
+        new CustomEvent(PWA_OPEN_INSTALL_MODAL_EVENT, { detail: { source } }),
+      );
+    } catch {
+      /* fail-soft */
+    }
+  };
+
+  const button = (
+    <Button
+      type="button"
+      onClick={handleClick}
+      className="h-10 w-full gap-2 bg-primary font-semibold text-primary-foreground hover:opacity-95"
+      aria-label="Instalar o app agora"
+    >
+      <Download className="h-4 w-4" />
+      Instalar app agora
+    </Button>
+  );
+
+  if (variant === 'inline') {
+    // Sem moldura — para uso dentro do BetCardShell.
+    return button;
+  }
 
   return (
     <div className="rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 p-4 shadow-sm">
@@ -36,23 +80,10 @@ export default function InstallAppCard({ source = 'wizard-celebration' }: Props)
               Instale o app para receber clientes mais rápido
             </p>
             <p className="text-[11px] text-muted-foreground">
-              Notificações em tempo real de novos pedidos e acesso pela tela inicial — sem ocupar memória.
+              Notificações em tempo real e acesso pela tela inicial — sem ocupar memória.
             </p>
           </div>
-          {canInstall ? (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => { void install(source); }}
-              className="h-8 w-full bg-primary text-primary-foreground hover:opacity-95"
-            >
-              <Download className="mr-2 h-3.5 w-3.5" /> Instalar agora
-            </Button>
-          ) : (
-            <p className="text-[11px] text-muted-foreground">
-              No iPhone: toque em <span className="font-semibold text-foreground">Compartilhar</span> → <span className="font-semibold text-foreground">Adicionar à Tela de Início</span>.
-            </p>
-          )}
+          {button}
         </div>
       </div>
     </div>
