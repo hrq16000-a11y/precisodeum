@@ -179,15 +179,16 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
           <button
             type="button"
             onClick={handleBack}
-            className={ws.backBtn}
-            aria-label="Voltar para a etapa anterior"
+            className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+            aria-label="Voltar para a etapa anterior do cadastro"
+            data-testid="phase4-doc-back"
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
           </button>
 
           <header className={ws.headerWrap}>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 text-white shadow-[0_0_24px_rgba(251,146,60,0.45)]">
-              <ShieldCheck className="h-7 w-7" />
+              <ShieldCheck className="h-7 w-7" aria-hidden="true" />
             </div>
             <h1 className={ws.title}>Quer ficar ONLINE agora?</h1>
             <p className={ws.subtitle}>
@@ -195,45 +196,64 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             </p>
           </header>
 
-          {/* Checkbox principal: ficar ONLINE é independente do documento e já vem marcado. */}
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-emerald-300/60 bg-emerald-50/60 p-3 dark:border-emerald-500/30 dark:bg-emerald-950/20">
-            <input
-              type="checkbox"
-              checked={goOnline}
-              onChange={(e) => setGoOnline(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-600"
-            />
-            <span className="text-[13px] leading-snug text-foreground">
-              <span className="font-semibold">Ficar ONLINE agora</span>
-              <span className="block text-[11px] text-muted-foreground">
-                Seu perfil aparecerá nas buscas. Pode desligar quando quiser.
-              </span>
-            </span>
-          </label>
+          {/* Checkbox principal: ficar ONLINE é independente do documento e já vem marcado.
+              A11y: input com id estável + label associada via htmlFor + descrição via aria-describedby. */}
+          <div className="rounded-2xl border border-emerald-300/60 bg-emerald-50/60 p-3 dark:border-emerald-500/30 dark:bg-emerald-950/20">
+            <div className="flex items-start gap-3">
+              <input
+                id="phase4-go-online"
+                type="checkbox"
+                checked={goOnline}
+                onChange={(e) => setGoOnline(e.target.checked)}
+                aria-describedby="phase4-go-online-desc"
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              />
+              <label htmlFor="phase4-go-online" className="cursor-pointer text-[13px] leading-snug text-foreground">
+                <span className="font-semibold">Ficar ONLINE agora</span>
+                <span id="phase4-go-online-desc" className="block text-[11px] text-muted-foreground">
+                  Seu perfil aparecerá nas buscas. Pode desligar quando quiser.
+                </span>
+              </label>
+            </div>
+          </div>
 
           <div ref={focusDoc.ref as any} className={`${ws.card} ${focusDoc.highlightClass}`}>
-            <label className="block">
+            <label htmlFor="phase4-doc-input" className="block">
               <span className={ws.fieldLabel}>
-                <FileText className="h-3.5 w-3.5" /> {docLabel} <span className="ml-1 text-[10px] font-normal normal-case text-muted-foreground">(opcional · ganha selo)</span>
+                <FileText className="h-3.5 w-3.5" aria-hidden="true" /> {docLabel}{' '}
+                <span className="ml-1 text-[10px] font-normal normal-case text-muted-foreground">
+                  (opcional · ganha selo)
+                </span>
               </span>
               <CpfCnpjInput
+                id="phase4-doc-input"
                 value={data.document}
                 onChange={(digitsOnly) => { if (!locked) onChange({ document: digitsOnly }); }}
                 mode={isPj ? 'cnpj' : 'cpf'}
                 placeholder={isPj ? '00.000.000/0000-00' : '000.000.000-00'}
                 disabled={!!locked}
+                aria-describedby="phase4-doc-help"
               />
               {locked ? (
-                <p className="mt-1 text-[11px] text-emerald-600">Já preenchido — não pode ser alterado aqui.</p>
+                <p id="phase4-doc-help" className="mt-1 text-[11px] text-emerald-600">
+                  Já preenchido — não pode ser alterado aqui.
+                </p>
               ) : (
-                <p className="mt-1 text-[10px] text-muted-foreground">
+                <p id="phase4-doc-help" className="mt-1 text-[10px] text-muted-foreground">
                   Nunca exibido publicamente.
                 </p>
               )}
             </label>
+            {/* Badge de verificação só aparece quando há algo a comunicar (pending/review/verified).
+                No estado 'none' (não enviado) seria duplicidade do que o passo já diz. */}
             {userId && (
               <div className="mt-2">
-                <VerificationStatusBadge userId={userId} showHistory={false} />
+                <VerificationStatusBadge
+                  userId={userId}
+                  showHistory={false}
+                  docKind={isPj ? 'pj' : 'pf'}
+                  hideWhenNone
+                />
               </div>
             )}
           </div>
