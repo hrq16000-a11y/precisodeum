@@ -420,7 +420,8 @@ function analyzeFile(absPath) {
     if (!/[A-Za-z_$]/.test(ch)) continue;
     const target = m[1];
     const evt = m[2];
-    const res = checkListener(masked, raw, idx, target, evt);
+    const handler = m[3];
+    const res = checkListener(masked, raw, idx, target, evt, handler);
     if (DEBUG) {
       const { line, col } = lineCol(raw, idx);
       console.log(`[debug] ${rel}:${line}:${col} ${target}.addEventListener(${evt}) → ${res.ok ? 'OK' : 'FAIL'} (${res.reason})`);
