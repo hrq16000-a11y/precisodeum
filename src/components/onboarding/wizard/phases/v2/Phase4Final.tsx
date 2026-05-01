@@ -486,6 +486,12 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
     return () => { alive = false; };
   }, [userId]);
 
+  // Timer da animação pós-verify — rastreado para cleanup no unmount.
+  const verifyDelayTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (verifyDelayTimer.current) window.clearTimeout(verifyDelayTimer.current);
+  }, []);
+
   const handleSubmit = async () => {
     // Ficar ONLINE não depende mais do CPF/CNPJ — é uma opção independente.
     if (goOnline && userId) {
@@ -496,7 +502,8 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
     if (valid) {
       setVerified(true);
       celebrate({ intensity: 'mini', id: `doc-verified:${userId || 'anon'}` });
-      setTimeout(() => onContinue(), 1400);
+      if (verifyDelayTimer.current) window.clearTimeout(verifyDelayTimer.current);
+      verifyDelayTimer.current = window.setTimeout(() => onContinue(), 1400);
     } else {
       // Sem documento: avança normalmente; o status ONLINE depende só do checkbox.
       onContinue();
