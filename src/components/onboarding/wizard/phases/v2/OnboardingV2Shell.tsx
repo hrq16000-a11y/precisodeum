@@ -44,6 +44,41 @@ function warnIfForbiddenAddress(payload: Record<string, unknown>) {
     });
   }
 }
+
+function parseServiceAreaToCities(value: string | null | undefined): string[] {
+  return String(value || '')
+    .split(/[;|•\n]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseStartingPrice(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const parsed = parseFloat(String(value).replace(/[^\d,.]/g, '').replace(',', '.'));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildProviderSocialPatch(patch: Record<string, any>, currentProfile: { instagram_url?: string; facebook_url?: string; website_url?: string }) {
+  const nextPatch = { ...patch };
+  const hasSocialKeys = 'instagram_url' in nextPatch || 'facebook_url' in nextPatch || 'website' in nextPatch || 'website_url' in nextPatch;
+  if (!hasSocialKeys) return nextPatch;
+
+  const socialLinks = {
+    instagram: nextPatch.instagram_url ?? currentProfile.instagram_url ?? null,
+    facebook: nextPatch.facebook_url ?? currentProfile.facebook_url ?? null,
+  };
+
+  delete nextPatch.instagram_url;
+  delete nextPatch.facebook_url;
+
+  if ('website_url' in nextPatch && !('website' in nextPatch)) {
+    nextPatch.website = nextPatch.website_url;
+  }
+  delete nextPatch.website_url;
+
+  nextPatch.social_links = socialLinks;
+  return nextPatch;
+}
 import { useWizardDuplicateCheck } from '@/hooks/useWizardDuplicateCheck';
 import {
   initialOnboardingState,
@@ -445,7 +480,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       dispatch({ type: 'SET_FIRST_SERVICE_ID', id: svc.id });
 
       const existingService = state.service || ({} as any);
-      const merged: any = {
+        const merged: any = {
         service_name: existingService.service_name || svc.service_name || '',
         description: existingService.description || svc.description || '',
         category_ids:
@@ -457,19 +492,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         cities_served:
           existingService.cities_served?.length
             ? existingService.cities_served
-            : svc.address
-              ? [svc.address]
-              : svc.service_area
-                ? [svc.service_area]
-                : [],
+            : parseServiceAreaToCities(svc.service_area).length
+              ? parseServiceAreaToCities(svc.service_area)
+              : parseServiceAreaToCities(svc.address),
         starting_price_brl:
           existingService.starting_price_brl != null
             ? existingService.starting_price_brl
-            : typeof svc.price === 'string' && svc.price.trim()
-              ? parseFloat(String(svc.price).replace(/[^\d,.]/g, '').replace(',', '.')) || null
-              : null,
+            : parseStartingPrice(svc.price),
         working_days: existingService.working_days || [],
         working_hours: existingService.working_hours || svc.working_hours || '',
+        working_hours_struct: existingService.working_hours_struct ?? svc.working_hours_struct ?? null,
       };
 
       dispatch({ type: 'HYDRATE', state: { service: merged } });
