@@ -21,6 +21,11 @@ export function clearOnboardingCompletionGrace() {
   }
 }
 
+export function isOnboardingReviewMode(search = '') {
+  const params = new URLSearchParams(search);
+  return params.get('mode') === 'review' || params.get('review') === '1';
+}
+
 export function isOnboardingCompletionGraceActive() {
   if (typeof window === 'undefined') return false;
   try {
@@ -86,6 +91,7 @@ export function resolveOnboardingGateTarget({
   const hasUnlocked = hasUnlockedAppAccess(profile, hasExistingService) || completionGraceActive;
   const mustCompleteOnboarding = !!profile && !hasUnlocked;
   const isOnboardingRoute = pathname === '/cadastro-inicial' || pathname === '/onboarding-v2/sucesso';
+  const reviewMode = pathname === '/cadastro-inicial' && isOnboardingReviewMode(search);
 
   if (mustCompleteOnboarding && !isOnboardingRoute) {
     return {
@@ -96,7 +102,7 @@ export function resolveOnboardingGateTarget({
   }
 
   const alreadyCompleted = !!profile && hasUnlocked;
-  if (alreadyCompleted && pathname === '/cadastro-inicial') {
+  if (alreadyCompleted && pathname === '/cadastro-inicial' && !reviewMode) {
     const params = new URLSearchParams(search);
     const nextRaw = params.get('next');
     const isSafeNext = !!nextRaw && nextRaw.startsWith('/') && !nextRaw.startsWith('//') && nextRaw !== '/cadastro-inicial';
