@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 import { motion } from 'framer-motion';
 import { ChevronDown, X, Loader2, Plus, MapPin, Sparkles, Check, AlertCircle, Wand2, ArrowRight, Tag, FileText, DollarSign, Clock } from 'lucide-react';
 import { toast } from 'sonner';
@@ -99,12 +100,20 @@ export const Phase2Service = ({
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     if (hideHintTimer.current) window.clearTimeout(hideHintTimer.current);
     setSavedHint(false);
-    saveTimer.current = window.setTimeout(() => {
-      setSavedHint(true);
-      // Clear blindado: o timer de "esconder" também é rastreado para
-      // garantir limpeza no unmount (evita setState em componente morto).
-      hideHintTimer.current = window.setTimeout(() => setSavedHint(false), 1800);
-    }, 700);
+    saveTimer.current = scheduleWizardTimeout(
+      { phase: 'phase2_service', action: 'phase2_show_saved_hint' },
+      () => {
+        setSavedHint(true);
+        // Clear blindado: o timer de "esconder" também é rastreado para
+        // garantir limpeza no unmount (evita setState em componente morto).
+        hideHintTimer.current = scheduleWizardTimeout(
+          { phase: 'phase2_service', action: 'phase2_hide_saved_hint' },
+          () => setSavedHint(false),
+          1800,
+        );
+      },
+      700,
+    );
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
       if (hideHintTimer.current) window.clearTimeout(hideHintTimer.current);
@@ -177,10 +186,14 @@ export const Phase2Service = ({
       // Libera o lock no próximo tick — o shell já avançou de phase, mas
       // protegemos contra duplo-clique muito rápido.
       if (advanceUnlockTimer.current) window.clearTimeout(advanceUnlockTimer.current);
-      advanceUnlockTimer.current = window.setTimeout(() => {
-        advancingRef.current = false;
-        advanceUnlockTimer.current = null;
-      }, 600);
+      advanceUnlockTimer.current = scheduleWizardTimeout(
+        { phase: 'phase2_service', action: 'phase2_advance_unlock', runIfStale: true },
+        () => {
+          advancingRef.current = false;
+          advanceUnlockTimer.current = null;
+        },
+        600,
+      );
     }
   };
 
@@ -399,10 +412,14 @@ export const Phase2Details = ({
       onSubmit();
     } finally {
       if (submitUnlockTimer.current) window.clearTimeout(submitUnlockTimer.current);
-      submitUnlockTimer.current = window.setTimeout(() => {
-        submittingRef.current = false;
-        submitUnlockTimer.current = null;
-      }, 1500);
+      submitUnlockTimer.current = scheduleWizardTimeout(
+        { phase: 'phase2_details', action: 'phase2_submit_unlock', runIfStale: true },
+        () => {
+          submittingRef.current = false;
+          submitUnlockTimer.current = null;
+        },
+        1500,
+      );
     }
   };
 
