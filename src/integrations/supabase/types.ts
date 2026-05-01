@@ -4049,6 +4049,7 @@ export type Database = {
           geog: unknown
           ibge_code: string | null
           id: string
+          is_24h: boolean
           is_verified: boolean
           last_active_at: string | null
           last_response_calc_at: string | null
@@ -4064,6 +4065,9 @@ export type Database = {
           neighborhood_source_at: string | null
           notification_channels: Json
           onboarding_progress: Json | null
+          opens_late_night: boolean
+          opens_overnight: boolean
+          opens_weekend: boolean
           phone: string
           photo_url: string | null
           plan: string
@@ -4093,6 +4097,7 @@ export type Database = {
           website: string | null
           whatsapp: string
           working_hours: string | null
+          working_hours_struct: Json | null
           years_experience: number
         }
         Insert: {
@@ -4123,6 +4128,7 @@ export type Database = {
           geog?: unknown
           ibge_code?: string | null
           id?: string
+          is_24h?: boolean
           is_verified?: boolean
           last_active_at?: string | null
           last_response_calc_at?: string | null
@@ -4138,6 +4144,9 @@ export type Database = {
           neighborhood_source_at?: string | null
           notification_channels?: Json
           onboarding_progress?: Json | null
+          opens_late_night?: boolean
+          opens_overnight?: boolean
+          opens_weekend?: boolean
           phone?: string
           photo_url?: string | null
           plan?: string
@@ -4167,6 +4176,7 @@ export type Database = {
           website?: string | null
           whatsapp?: string
           working_hours?: string | null
+          working_hours_struct?: Json | null
           years_experience?: number
         }
         Update: {
@@ -4197,6 +4207,7 @@ export type Database = {
           geog?: unknown
           ibge_code?: string | null
           id?: string
+          is_24h?: boolean
           is_verified?: boolean
           last_active_at?: string | null
           last_response_calc_at?: string | null
@@ -4212,6 +4223,9 @@ export type Database = {
           neighborhood_source_at?: string | null
           notification_channels?: Json
           onboarding_progress?: Json | null
+          opens_late_night?: boolean
+          opens_overnight?: boolean
+          opens_weekend?: boolean
           phone?: string
           photo_url?: string | null
           plan?: string
@@ -4241,6 +4255,7 @@ export type Database = {
           website?: string | null
           whatsapp?: string
           working_hours?: string | null
+          working_hours_struct?: Json | null
           years_experience?: number
         }
         Relationships: [
@@ -5081,9 +5096,13 @@ export type Database = {
           facebook_url: string | null
           id: string
           instagram_url: string | null
+          is_24h: boolean
           is_emergency: boolean
           meta_description: string | null
           meta_title: string | null
+          opens_late_night: boolean
+          opens_overnight: boolean
+          opens_weekend: boolean
           price: string | null
           provider_id: string
           seo_tags: string[]
@@ -5096,6 +5115,7 @@ export type Database = {
           website: string | null
           whatsapp: string
           working_hours: string
+          working_hours_struct: Json | null
           youtube_url: string | null
         }
         Insert: {
@@ -5107,9 +5127,13 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          is_24h?: boolean
           is_emergency?: boolean
           meta_description?: string | null
           meta_title?: string | null
+          opens_late_night?: boolean
+          opens_overnight?: boolean
+          opens_weekend?: boolean
           price?: string | null
           provider_id: string
           seo_tags?: string[]
@@ -5122,6 +5146,7 @@ export type Database = {
           website?: string | null
           whatsapp?: string
           working_hours?: string
+          working_hours_struct?: Json | null
           youtube_url?: string | null
         }
         Update: {
@@ -5133,9 +5158,13 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          is_24h?: boolean
           is_emergency?: boolean
           meta_description?: string | null
           meta_title?: string | null
+          opens_late_night?: boolean
+          opens_overnight?: boolean
+          opens_weekend?: boolean
           price?: string | null
           provider_id?: string
           seo_tags?: string[]
@@ -5148,6 +5177,7 @@ export type Database = {
           website?: string | null
           whatsapp?: string
           working_hours?: string
+          working_hours_struct?: Json | null
           youtube_url?: string | null
         }
         Relationships: [
@@ -7949,6 +7979,15 @@ export type Database = {
         Returns: string
       }
       derive_user_ref: { Args: { _uuid: string }; Returns: string }
+      derive_working_hours_flags: {
+        Args: { _struct: Json }
+        Returns: {
+          is_24h: boolean
+          opens_late_night: boolean
+          opens_overnight: boolean
+          opens_weekend: boolean
+        }[]
+      }
       dismiss_dashboard_widget: {
         Args: { _widget: string }
         Returns: {
