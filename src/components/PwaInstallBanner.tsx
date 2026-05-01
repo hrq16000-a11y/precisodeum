@@ -19,6 +19,7 @@ import {
   PWA_OPEN_INSTALL_MODAL_EVENT,
 } from '@/hooks/usePwaInstall';
 import { useAuth } from '@/hooks/useAuth';
+import { canTriggerMarketingPopup } from '@/lib/popupGuards';
 
 const PwaInstallBanner = () => {
   const [show, setShow] = useState(false);
