@@ -14,12 +14,13 @@ interface Phase2PhotosProps {
   serviceId: string;
   userId: string;
   serviceName: string;
+  onBack: () => void;
   onContinue: () => void;
   onSkip: () => void;
 }
 
 export const Phase2Photos = ({
-  serviceId, userId, serviceName, onContinue, onSkip,
+  serviceId, userId, serviceName, onBack, onContinue, onSkip,
 }: Phase2PhotosProps) => (
   <motion.section
     initial={{ opacity: 0, y: 20 }}
@@ -29,6 +30,15 @@ export const Phase2Photos = ({
     aria-labelledby="phase2-photos-title"
     role="region"
   >
+    <button
+      type="button"
+      onClick={onBack}
+      className="text-xs text-muted-foreground hover:text-foreground"
+      aria-label="Voltar para a etapa anterior"
+    >
+      ← Voltar
+    </button>
+
     <header className="space-y-2 text-center">
       <div
         className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-[0_0_24px_rgba(251,146,60,0.45)]"
