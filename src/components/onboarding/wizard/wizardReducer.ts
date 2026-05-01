@@ -94,6 +94,36 @@ export const PROVIDER_WIZARD_PHASE_ORDER: UnifiedPhase[] = [
   'done',
 ];
 
+/**
+ * REVIEW_PHASE_ORDER — régua usada quando o Wizard é aberto pelo Assistente
+ * (`mode=review`). 19 fases visíveis + `done`, casando com o que o
+ * /dashboard/assistente exibe ao usuário (sem `triage_client_city` que é
+ * exclusiva do fluxo cliente, e sem os 2 extras opcionais finais).
+ *
+ * Ordem espelha o funil profissional completo: triagem (Steps 1–6) → criação
+ * de serviço (Steps 7–9) → celebração → ajustes de perfil (Steps 11–14) →
+ * extras opcionais.
+ */
+export const REVIEW_PHASE_ORDER: UnifiedPhase[] = [
+  'triage_identity',         // 1
+  'triage_who',              // 2
+  'triage_pro_kind',         // 3
+  'triage_pro_document',     // 4
+  'triage_pro_location',     // 5
+  'triage_celebration',      // 6
+  'main_service',            // 7
+  'main_service_details',    // 8
+  'main_photos',             // 9
+  'main_celebration',        // 10
+  'main_document',           // 11
+  'main_avatar',             // 12
+  'main_extras_a',           // 13
+  'main_extras_b',           // 14
+  'main_more_services',      // 15
+  'main_portfolio_albums',   // 16
+  'done',
+];
+
 /** Quantidade de fases visíveis (exclui 'done'). */
 export const UNIFIED_VISIBLE_PHASES = UNIFIED_PHASE_ORDER.length - 1;
 
