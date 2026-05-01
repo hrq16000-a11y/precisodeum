@@ -88,6 +88,7 @@ const AdminInboxPage = lazy(() => import("./pages/admin/AdminInboxPage"));
 const AdminSitemapAuditPage = lazy(() => import("./pages/admin/AdminSitemapAuditPage"));
 const AdminOnboardingStatsPage = lazy(() => import("./pages/admin/AdminOnboardingStatsPage"));
 const AdminUploadStressTestPage = lazy(() => import("./pages/admin/AdminUploadStressTestPage"));
+const AdminSearchSortingPage = lazy(() => import("./pages/admin/AdminSearchSortingPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
@@ -537,6 +538,7 @@ const App = () => {
                 <Route path="/admin/upload-stress-test" element={<AdminGuard><AdminUploadStressTestPage /></AdminGuard>} />
                 <Route path="/admin/caixa-notificacoes" element={<AdminGuard><AdminInboxPage /></AdminGuard>} />
                 <Route path="/admin/sitemap-audit" element={<AdminGuard><AdminSitemapAuditPage /></AdminGuard>} />
+                <Route path="/admin/busca-ordenacao" element={<AdminGuard><AdminSearchSortingPage /></AdminGuard>} />
                 <Route path="/admin/erros-500" element={<AdminError500Page />} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
                 <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
