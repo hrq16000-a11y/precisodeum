@@ -69,8 +69,16 @@ const PwaInstallBanner = () => {
     const impressions = getImpressionCount();
     if (settings.max_impressions > 0 && impressions >= settings.max_impressions) return;
 
+    const hasScrolledEnough = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      return docHeight > 0 && scrollTop / docHeight >= 0.3;
+    };
+
     const triggerShow = () => {
       if (autoShownRef.current) return;
+      // Guard: nunca abre antes do usuário rolar a página.
+      if (!hasScrolledEnough()) return;
       autoShownRef.current = true;
       setSource('banner');
       setShow(true);
@@ -78,25 +86,22 @@ const PwaInstallBanner = () => {
       trackPwaEvent('impression', 'banner');
     };
 
-    // Trigger 1: Delay from settings (in seconds)
-    const delayMs = (settings.show_delay_seconds || 5) * 1000;
-    const timer = setTimeout(triggerShow, delayMs);
+    // O delay de settings agora funciona apenas como *atraso mínimo* — o popup
+    // nunca dispara sem o usuário ter rolado ≥30% da página.
+    const minDelayMs = (settings.show_delay_seconds || 5) * 1000;
+    const mountedAt = Date.now();
 
-    // Trigger 2: Scroll past 50% of the page
     const onScroll = () => {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (docHeight > 0 && scrollTop / docHeight >= 0.5) {
-        triggerShow();
-      }
+      if (Date.now() - mountedAt < minDelayMs) return;
+      if (hasScrolledEnough()) triggerShow();
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
-      clearTimeout(timer);
       window.removeEventListener('scroll', onScroll);
     };
+
   }, [
     canInstall, isStandalone, settings, authLoading, user,
     isDismissed, getVisitCount, getImpressionCount, incrementImpressions,
