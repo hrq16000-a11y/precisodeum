@@ -36,6 +36,10 @@ export interface BetState {
   postal_code: string;
   /** PJ — toggle de privacidade. Se true exibe rua/nº no card; se false só bairro/cidade. */
   show_full_address: boolean;
+  /** PJ — última sugestão de logradouro vinda do CEP (BrasilAPI/ViaCEP). Não exposta no banco; só guia de UX. */
+  street_suggested: string;
+  /** PJ — usuário confirmou explicitamente o logradouro (clicou em "Usar este" ou digitou manualmente). */
+  street_confirmed: boolean;
   points: number;              // contador exibido
   rewards: {
     name: boolean;
@@ -67,6 +71,8 @@ export const initialBetState: BetState = {
   complement: '',
   postal_code: '',
   show_full_address: false,
+  street_suggested: '',
+  street_confirmed: false,
   points: 0,
   rewards: {
     name: false,

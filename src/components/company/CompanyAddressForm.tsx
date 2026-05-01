@@ -16,8 +16,8 @@
  *  - É totalmente controlado — não persiste sozinho.
  *  - Todos os campos são OPCIONAIS.
  */
-import { MapPin, Store, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, Check, AlertTriangle } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { lookupCep, formatCep, onlyDigits } from '@/lib/cepLookup';
 
@@ -27,6 +27,10 @@ export interface CompanyAddressValue {
   complement?: string;
   postal_code?: string;
   show_full_address?: boolean;
+  /** Última sugestão de logradouro vinda do CEP — para o passo seguinte saber que foi sugerido. */
+  street_suggested?: string;
+  /** Usuário confirmou explicitamente o logradouro (clicou "Usar este" ou digitou). */
+  street_confirmed?: boolean;
 }
 
 interface Props {
@@ -49,6 +53,17 @@ function maskCep(digits: string): string {
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
+/** Normalização leve para comparar duas strings de logradouro (case + acentos + pontuação). */
+function normalizeStreet(s: string): string {
+  return (s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[.,\-/]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export default function CompanyAddressForm({
   value,
   onChange,
@@ -61,7 +76,8 @@ export default function CompanyAddressForm({
     value.street || value.street_number || value.postal_code || value.complement,
   );
   const [open, setOpen] = useState(!collapsible || hasContent);
-  const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'applied' | 'error'>('idle');
+  const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'applied' | 'error' | 'not_found'>('idle');
+  const [cepErrorReason, setCepErrorReason] = useState<'network' | 'not_found' | null>(null);
   const lastCepRef = useRef<string>('');
 
   const isSuggested = (k: keyof CompanyAddressValue) => suggestedFields.includes(k);
@@ -80,7 +96,32 @@ export default function CompanyAddressForm({
     ? 'CEP incompleto — precisa ter 8 dígitos.'
     : '';
 
-  // Lookup automático quando o CEP atinge 8 dígitos
+  /** Faz o lookup de fato e propaga o resultado. Reutilizado pelo botão "Tentar de novo". */
+  const runLookup = useCallback(async (digits: string) => {
+    setCepStatus('loading');
+    setCepErrorReason(null);
+    const r = await lookupCep(digits);
+    if (r.ok) {
+      const suggestion = r.address ?? '';
+      // Persiste a sugestão sempre que houver — para o próximo passo saber.
+      const patch: Partial<CompanyAddressValue> = { street_suggested: suggestion };
+      const userTyped = (value.street ?? '').trim().length > 0;
+      if (suggestion && !userTyped) {
+        // Campo vazio → preenche e marca como NÃO confirmado (usuário precisa confirmar).
+        patch.street = suggestion;
+        patch.street_confirmed = false;
+      }
+      onChange(patch);
+      setCepStatus('applied');
+    } else {
+      const failure = r as { ok: false; reason: 'invalid_format' | 'not_found' | 'network'; message: string };
+      const reason: 'network' | 'not_found' = failure.reason === 'not_found' ? 'not_found' : 'network';
+      setCepStatus(reason === 'not_found' ? 'not_found' : 'error');
+      setCepErrorReason(reason);
+    }
+  }, [onChange, value.street]);
+
+  // Lookup automático SOMENTE quando o CEP atinge EXATAMENTE 8 dígitos.
   useEffect(() => {
     const digits = onlyDigits(value.postal_code ?? '');
     if (digits.length !== 8) {
@@ -89,26 +130,40 @@ export default function CompanyAddressForm({
     }
     if (digits === lastCepRef.current) return;
     lastCepRef.current = digits;
-    let cancelled = false;
-    setCepStatus('loading');
-    (async () => {
-      const r = await lookupCep(digits);
-      if (cancelled) return;
-      if (r.ok) {
-        // Só preenche street se ainda estiver vazio (não sobrescreve digitação do usuário)
-        const patch: Partial<CompanyAddressValue> = {};
-        if (!value.street && r.address) patch.street = r.address;
-        if (Object.keys(patch).length > 0) onChange(patch);
-        setCepStatus('applied');
-      } else {
-        setCepStatus('error');
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    void runLookup(digits);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value.postal_code]);
+
+  // Detecção de conflito: usuário digitou street e o CEP sugere algo diferente.
+  const suggestion = (value.street_suggested ?? '').trim();
+  const hasUserStreet = streetRaw.length >= 3;
+  const conflict =
+    cepStatus === 'applied' &&
+    suggestion.length > 0 &&
+    hasUserStreet &&
+    normalizeStreet(suggestion) !== normalizeStreet(streetRaw);
+
+  // Sugestão pendente de confirmação: street veio do CEP e o usuário ainda não confirmou.
+  const pendingConfirmation =
+    cepStatus === 'applied' &&
+    suggestion.length > 0 &&
+    !value.street_confirmed &&
+    !conflict &&
+    normalizeStreet(suggestion) === normalizeStreet(streetRaw);
+
+  const acceptSuggestion = () => {
+    onChange({ street: suggestion, street_confirmed: true });
+  };
+  const rejectSuggestion = () => {
+    // Limpa o campo para o usuário digitar manualmente, mas mantém o que foi sugerido para auditoria.
+    onChange({ street: '', street_confirmed: false });
+  };
+  const retryLookup = () => {
+    if (cepDigits.length === 8) {
+      lastCepRef.current = ''; // força re-execução
+      void runLookup(cepDigits);
+    }
+  };
 
   const inputBase =
     'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30';
@@ -123,6 +178,72 @@ export default function CompanyAddressForm({
 
   const fields = (
     <div className="space-y-2">
+      {/* Banner de SUGESTÃO PENDENTE — usuário precisa confirmar o logradouro vindo do CEP. */}
+      {pendingConfirmation && (
+        <div
+          data-testid="cep-suggestion-banner"
+          className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-[12px] leading-snug"
+        >
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+          <div className="flex-1">
+            <p className="font-semibold text-amber-900">Sugerido pelo CEP — confirme:</p>
+            <p className="text-amber-800">{suggestion}</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={acceptSuggestion}
+                data-testid="cep-suggestion-accept"
+                className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700"
+              >
+                <Check className="h-3 w-3" /> Usar este
+              </button>
+              <button
+                type="button"
+                onClick={rejectSuggestion}
+                data-testid="cep-suggestion-reject"
+                className="inline-flex items-center gap-1 rounded-md border border-amber-400 bg-white px-2 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100"
+              >
+                Editar manualmente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Banner de CONFLITO — usuário digitou logradouro diferente do que o CEP sugere. */}
+      {conflict && (
+        <div
+          data-testid="cep-conflict-banner"
+          className="flex items-start gap-2 rounded-lg border border-amber-400 bg-amber-50 p-2 text-[12px] leading-snug"
+          role="alert"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
+          <div className="flex-1">
+            <p className="font-semibold text-amber-900">Confira: o CEP sugere outra rua.</p>
+            <p className="text-amber-800">
+              Você digitou <span className="font-semibold">{streetRaw}</span>, mas o CEP indica{' '}
+              <span className="font-semibold">{suggestion}</span>.
+            </p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={acceptSuggestion}
+                data-testid="cep-conflict-accept-suggestion"
+                className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700"
+              >
+                Usar a do CEP
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange({ street_confirmed: true })}
+                data-testid="cep-conflict-keep-typed"
+                className="inline-flex items-center gap-1 rounded-md border border-amber-400 bg-white px-2 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100"
+              >
+                Manter o que digitei
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Logradouro + Número SEMPRE na mesma linha (achatado) */}
       <div className="grid grid-cols-[1fr_88px] gap-2">
         <label className="block">
@@ -133,7 +254,7 @@ export default function CompanyAddressForm({
           <input
             type="text"
             value={value.street ?? ''}
-            onChange={(e) => onChange({ street: e.target.value })}
+            onChange={(e) => onChange({ street: e.target.value, street_confirmed: true })}
             placeholder="Rua / Avenida"
             maxLength={120}
             aria-invalid={!!streetError}
@@ -185,9 +306,12 @@ export default function CompanyAddressForm({
                 Aplicado
               </span>
             )}
-            {cepStatus === 'error' && (
-              <span className="ml-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-700">
-                Não encontrado
+            {(cepStatus === 'error' || cepStatus === 'not_found') && (
+              <span
+                data-testid="cep-error-badge"
+                className="ml-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-700"
+              >
+                {cepStatus === 'not_found' ? 'CEP não encontrado' : 'Falha de rede'}
               </span>
             )}
             {isSuggested('postal_code') && value.postal_code ? <SuggestedTag /> : null}
@@ -207,6 +331,24 @@ export default function CompanyAddressForm({
           />
           {cepError && (
             <p id="cep-error" className="mt-1 text-[10.5px] text-rose-600">{cepError}</p>
+          )}
+          {(cepStatus === 'error' || cepStatus === 'not_found') && (
+            <div className="mt-1 flex items-start gap-1.5 rounded-md border border-rose-200 bg-rose-50 p-1.5 text-[10.5px] leading-snug text-rose-700">
+              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              <div className="flex-1">
+                {cepErrorReason === 'not_found'
+                  ? 'Não encontramos esse CEP nas bases públicas (BrasilAPI / ViaCEP). Confira os dígitos ou preencha o logradouro manualmente.'
+                  : 'Não conseguimos consultar o CEP agora — pode ser falha de rede. Você pode tentar novamente ou preencher manualmente.'}
+                <button
+                  type="button"
+                  onClick={retryLookup}
+                  data-testid="cep-retry"
+                  className="ml-1 inline-flex items-center gap-1 rounded-md border border-rose-300 bg-white px-1.5 py-0.5 text-[10.5px] font-semibold text-rose-700 hover:bg-rose-100"
+                >
+                  <RotateCw className="h-2.5 w-2.5" /> Tentar de novo
+                </button>
+              </div>
+            </div>
           )}
         </label>
       </div>
