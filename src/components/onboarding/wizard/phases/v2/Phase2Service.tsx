@@ -24,7 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { suggestServiceDescriptionVariants } from '@/lib/serviceDescriptionSuggester';
 import { sanitizeSlug } from '@/lib/slugify';
 import type { OnboardingFirstServiceData, OnboardingProfileData } from './types';
-import { buildWorkingHoursSummary, formatStruct, legacyToStruct, type WorkingHoursStruct } from './workingHours';
+import { buildWorkingHoursSummary, formatStruct, legacyToStruct, validateStruct, type WorkingHoursStruct } from './workingHours';
 import WorkingHoursPicker from './WorkingHoursPicker';
 import ServiceCityPicker from './ServiceCityPicker';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
