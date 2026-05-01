@@ -25,7 +25,7 @@ interface GeoData {
 interface GeoStore extends GeoData {
   setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null, neighborhood?: string | null) => void;
   setRadius: (km: number) => void;
-  requestPreciseLocation: (options?: { force?: boolean }) => Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null }>;
+  requestPreciseLocation: (options?: { force?: boolean }) => Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null; latitude?: number | null; longitude?: number | null }>;
   /** Limpa o estado de erro (ex.: após o usuário ver o aviso). */
   dismissGeoFailure: () => void;
 }
@@ -395,19 +395,19 @@ export function useGeoCity(): GeoStore {
   const requestPreciseLocation = useCallback(async (options?: { force?: boolean }) => {
     const force = !!options?.force;
     if (typeof window === 'undefined' || !navigator.geolocation) {
-      return { ok: false, city: null, state: null, neighborhood: null };
+      return { ok: false, city: null, state: null, neighborhood: null, latitude: null, longitude: null };
     }
-    if (!force && geoState.manualOverride) return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood };
+    if (!force && geoState.manualOverride) return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood, latitude: geoState.latitude, longitude: geoState.longitude };
     if (!force && geoState.precise && geoState.latitude !== null && geoState.longitude !== null) {
-      return { ok: true, city: geoState.city, state: geoState.state, neighborhood: geoState.neighborhood };
+      return { ok: true, city: geoState.city, state: geoState.state, neighborhood: geoState.neighborhood, latitude: geoState.latitude, longitude: geoState.longitude };
     }
 
     if (!force) {
       try {
-          if (sessionStorage.getItem(GEO_ASKED_KEY)) return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood };
+          if (sessionStorage.getItem(GEO_ASKED_KEY)) return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood, latitude: null, longitude: null };
         sessionStorage.setItem(GEO_ASKED_KEY, '1');
       } catch {
-        return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood };
+        return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood, latitude: null, longitude: null };
       }
     } else {
       // Explicit user-triggered request: clear the once-per-session guard so
@@ -415,7 +415,7 @@ export function useGeoCity(): GeoStore {
       try { sessionStorage.removeItem(GEO_ASKED_KEY); } catch {}
     }
 
-    return await new Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null }>((resolve) => {
+    return await new Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null; latitude?: number | null; longitude?: number | null }>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const latitude = position.coords.latitude;
@@ -472,7 +472,7 @@ export function useGeoCity(): GeoStore {
           try { localStorage.removeItem(OVERRIDE_KEY); sessionStorage.removeItem(OVERRIDE_KEY); } catch {}
 
           setGeoState({ city, state, neighborhood, neighborhoodSource, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2, manualOverride: false });
-          resolve({ ok: true, city, state, accuracyMeters, neighborhood });
+          resolve({ ok: true, city, state, accuracyMeters, neighborhood, latitude, longitude });
         },
         () => {
           if (geoState.latitude === null && !geoState.city) {
@@ -484,7 +484,7 @@ export function useGeoCity(): GeoStore {
           import('@/lib/tracking').then(({ trackGeoEvent }) => {
             trackGeoEvent('geo_failed', { stage: 'gps', had_cache: geoState.city ? 'true' : 'false' });
           }).catch(() => {});
-          resolve({ ok: false, city: null, state: null, accuracyMeters: null, neighborhood: null });
+          resolve({ ok: false, city: null, state: null, accuracyMeters: null, neighborhood: null, latitude: null, longitude: null });
         },
         { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
       );
