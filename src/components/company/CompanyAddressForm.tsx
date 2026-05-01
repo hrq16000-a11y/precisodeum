@@ -178,6 +178,72 @@ export default function CompanyAddressForm({
 
   const fields = (
     <div className="space-y-2">
+      {/* Banner de SUGESTÃO PENDENTE — usuário precisa confirmar o logradouro vindo do CEP. */}
+      {pendingConfirmation && (
+        <div
+          data-testid="cep-suggestion-banner"
+          className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-[12px] leading-snug"
+        >
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+          <div className="flex-1">
+            <p className="font-semibold text-amber-900">Sugerido pelo CEP — confirme:</p>
+            <p className="text-amber-800">{suggestion}</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={acceptSuggestion}
+                data-testid="cep-suggestion-accept"
+                className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700"
+              >
+                <Check className="h-3 w-3" /> Usar este
+              </button>
+              <button
+                type="button"
+                onClick={rejectSuggestion}
+                data-testid="cep-suggestion-reject"
+                className="inline-flex items-center gap-1 rounded-md border border-amber-400 bg-white px-2 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100"
+              >
+                Editar manualmente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Banner de CONFLITO — usuário digitou logradouro diferente do que o CEP sugere. */}
+      {conflict && (
+        <div
+          data-testid="cep-conflict-banner"
+          className="flex items-start gap-2 rounded-lg border border-amber-400 bg-amber-50 p-2 text-[12px] leading-snug"
+          role="alert"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
+          <div className="flex-1">
+            <p className="font-semibold text-amber-900">Confira: o CEP sugere outra rua.</p>
+            <p className="text-amber-800">
+              Você digitou <span className="font-semibold">{streetRaw}</span>, mas o CEP indica{' '}
+              <span className="font-semibold">{suggestion}</span>.
+            </p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={acceptSuggestion}
+                data-testid="cep-conflict-accept-suggestion"
+                className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700"
+              >
+                Usar a do CEP
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange({ street_confirmed: true })}
+                data-testid="cep-conflict-keep-typed"
+                className="inline-flex items-center gap-1 rounded-md border border-amber-400 bg-white px-2 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100"
+              >
+                Manter o que digitei
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Logradouro + Número SEMPRE na mesma linha (achatado) */}
       <div className="grid grid-cols-[1fr_88px] gap-2">
         <label className="block">
