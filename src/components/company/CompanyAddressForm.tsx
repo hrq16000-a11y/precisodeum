@@ -199,10 +199,15 @@ export default function CompanyAddressForm({
             onChange={(e) => onChange({ postal_code: onlyDigits(e.target.value).slice(0, 8) })}
             placeholder="00000-000"
             maxLength={9}
+            aria-invalid={!!cepError}
+            aria-describedby={cepError ? 'cep-error' : undefined}
             className={
               isSuggested('postal_code') && value.postal_code ? inputSuggested : inputBase
             }
           />
+          {cepError && (
+            <p id="cep-error" className="mt-1 text-[10.5px] text-rose-600">{cepError}</p>
+          )}
         </label>
       </div>
       <label className="mt-1 flex cursor-pointer items-start gap-2 rounded-lg bg-background/60 p-2 text-[11px] leading-snug text-foreground">
