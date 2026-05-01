@@ -65,6 +65,7 @@ type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-port
 
 export default function WizardShell() {
   const { user, profile, provider } = useAuth();
+  const navigate = useNavigate();
   const realPoints = useEngagementPointsValue(user?.id);
   const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
   const resumeBootstrapRef = useRef(false);
