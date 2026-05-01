@@ -80,15 +80,6 @@ function normalizeStreet(s: string): string {
   return robustNormalizeStreet(s);
 }
 
-/** Item do histórico recente de CEPs consultados nesta sessão do form. */
-interface CepHistoryEntry {
-  cep: string;        // 00000-000
-  digits: string;     // 8 dígitos
-  address?: string;   // logradouro sugerido
-  city?: string;
-  state?: string;
-}
-
 export default function CompanyAddressForm({
   value,
   onChange,
