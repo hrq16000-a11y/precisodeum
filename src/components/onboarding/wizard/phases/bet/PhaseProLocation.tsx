@@ -227,21 +227,17 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   const cityOk = state.city.trim().length > 0 && state.state.trim().length === 2;
   const neighborhoodOk = (state.neighborhood || '').trim().length >= 2;
 
-  // Detecta se o GPS falhou/foi negado: hook indica erro ou source diferente de 'gps'
-  // após uma tentativa explícita. Também consideramos negação quando geo.error existir.
+  // Detecta se o GPS falhou/foi negado.
   const geoFailed = Boolean((geo as any).error) || (geo.source && geo.source !== 'gps');
 
-  // canFinish é tolerante a falha/ausência de GPS (Hotfix #G2):
-  //  - prévia confirmada explicitamente (caminho feliz).
-  //  - GPS falhou/foi negado e há cidade+UF válidos.
-  //  - localização veio de fonte manual confiável (CEP/manual) — usuário não
-  //    deve ficar preso esperando GPS quando já informou de outra forma.
-  //  - previewSeededRef NUNCA atua como trava: basta cityOk + fonte válida.
+  // [UX-merge] Confirmação implícita: basta cityOk + fonte conhecida.
   const hasReliableManualSource =
     state.location_source === 'cep' ||
     state.location_source === 'manual' ||
-    state.location_source === 'gps';
-  const canFinish = cityOk && (previewConfirmed || geoFailed || hasReliableManualSource);
+    state.location_source === 'gps' ||
+    state.location_source === 'ip';
+  const canFinish = cityOk && (hasReliableManualSource || geoFailed);
+
   const sourceLabel =
     state.location_source === 'gps' ? 'GPS preciso' :
     state.location_source === 'cep' ? 'CEP' :
@@ -252,75 +248,13 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     geo.source === 'manual' ? 'manual' :
     geo.source === 'cache' ? 'salva' : null;
 
-  const showPreview = !state.location_source || state.location_source !== 'gps';
-
-  // Seed da prévia editável a partir do que já temos (state ou geo aproximado).
-  useEffect(() => {
-    if (previewSeededRef.current) return;
-    const seedCity = state.city || geo.city || '';
-    const seedState = state.state || geo.state || '';
-    if (!seedCity && !seedState) return;
-    previewSeededRef.current = true;
-    setPreviewCity(seedCity);
-    setPreviewStateField(seedState);
-    const seedNeigh = sanitizeNeighborhood(state.neighborhood || geo.neighborhood, seedCity) || '';
-    setPreviewNeighborhood(seedNeigh);
-  }, [state.city, state.state, state.neighborhood, geo.city, geo.state, geo.neighborhood]);
-
-  // Hotfix #G2.1 — Sincronização bidirecional:
-  // Quando o usuário escolhe cidade manualmente via CityAutocomplete, propagamos
-  // automaticamente para o estado da prévia, sem exigir digitação duplicada.
-  // Marca a prévia como NÃO confirmada para forçar revisão consciente — exceto
-  // se o GPS já tiver confirmado anteriormente.
-  useEffect(() => {
-    if (!state.city || !state.state) return;
-    const cityChanged = state.city !== previewCity;
-    const ufChanged = state.state !== previewState;
-    if (cityChanged) setPreviewCity(state.city);
-    if (ufChanged) setPreviewStateField(state.state);
-    if ((cityChanged || ufChanged) && state.location_source !== 'gps') {
-      setPreviewConfirmed(false);
-    }
-  }, [state.city, state.state, state.location_source]); // eslint-disable-line react-hooks/exhaustive-deps
-
-
-  // Validação cidade-base vs área de atendimento (cidade não pode ser regional).
-  const previewIssues = validateBaseCityVsServiceArea({
-    city: previewCity,
-    state: previewState,
-    neighborhood: previewNeighborhood,
+  // Validação cidade-base (cidade não pode ser regional / UF inválida).
+  const baseCityIssues = validateBaseCityVsServiceArea({
+    city: state.city,
+    state: state.state,
+    neighborhood: state.neighborhood || '',
   });
-  const previewBlocked = hasBlockingBaseCityIssue(previewIssues);
-
-  function handleConfirmPreview() {
-    if (previewBlocked) {
-      toast.error('Verifique a cidade-base', {
-        description: previewIssues[0]?.message || 'Cidade ou UF inválida.',
-      });
-      return;
-    }
-    const cleanNeigh = sanitizeNeighborhood(previewNeighborhood, previewCity) || '';
-    const cityChanged = previewCity !== state.city || previewState !== state.state;
-    patch({
-      city: previewCity,
-      state: previewState,
-      neighborhood: cleanNeigh,
-      ...(cityChanged ? { latitude: null, longitude: null, ibge_code: null } : {}),
-      location_source: state.location_source ?? 'manual',
-    });
-    if (previewCity && previewState) awardCityOnce();
-    setPreviewConfirmed(true);
-    toast.success('Prévia confirmada', { description: 'Agora você pode refinar com GPS ou finalizar.' });
-    void recordMyGeoEvent({
-      event_type: 'manual_edit',
-      source: state.location_source ?? 'manual',
-      city: previewCity,
-      state: previewState,
-      neighborhood: cleanNeigh || null,
-      status: 'logged',
-    });
-  }
-
+  const baseCityBlocked = hasBlockingBaseCityIssue(baseCityIssues);
 
   const gpsImprecise = gpsAccuracy != null && gpsAccuracy > 500;
 
@@ -336,16 +270,19 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
 
   async function onFinish() {
     if (!canFinish || submitting) return;
+    if (baseCityBlocked) {
+      toast.error('Verifique a cidade-base', {
+        description: baseCityIssues[0]?.message || 'Cidade ou UF inválida.',
+      });
+      return;
+    }
     setSubmitting(true);
-    // Telemetria: rastreia tentativas de finalização por origem para detectar
-    // novamente travamentos no canFinish/previewConfirmed (Tarefa #3).
     void trackOnboardingEvent({
       phase: 'pro_location' as any,
       event: 'submit',
       userId: user?.id || null,
       meta: {
         location_source: effectiveSource,
-        preview_confirmed: previewConfirmed,
         geo_failed: Boolean(geoFailed),
         has_neighborhood: neighborhoodOk,
         gps_accuracy_m: gpsAccuracy,
