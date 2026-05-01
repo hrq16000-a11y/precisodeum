@@ -613,15 +613,36 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
             />
           )}
 
-          <div className="flex flex-col gap-2 pt-1">
-            <Button type="button" size="lg" onClick={handleSubmit} disabled={saving} className={ws.cta}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {goOnline ? 'Ficar ONLINE' : 'Continuar'} <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
-              Pular por enquanto
-            </Button>
-          </div>
+          {(() => {
+            const docDigits = (data.document || '').replace(/\D/g, '');
+            // Documento é opcional: bloqueia somente quando preenchido mas inválido.
+            const docFilledButInvalid = docDigits.length > 0 && !valid;
+            const blocked = saving || docFilledButInvalid;
+            return (
+              <div className="flex flex-col gap-2 pt-1">
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={handleSubmit}
+                  disabled={blocked}
+                  aria-disabled={blocked}
+                  title={docFilledButInvalid ? `Verifique o ${docLabel} digitado antes de continuar` : undefined}
+                  className={ws.cta}
+                >
+                  {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {goOnline ? 'Ficar ONLINE' : 'Continuar'} <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                {docFilledButInvalid && (
+                  <p className="text-[11px] text-amber-600 text-center">
+                    {docLabel} inválido — corrija ou apague para continuar (o campo é opcional).
+                  </p>
+                )}
+                <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
+                  Pular por enquanto
+                </Button>
+              </div>
+            );
+          })()}
         </motion.div>
       ) : (
         <motion.div

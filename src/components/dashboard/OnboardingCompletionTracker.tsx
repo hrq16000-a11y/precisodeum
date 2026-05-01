@@ -67,8 +67,12 @@ const OnboardingCompletionTracker = ({
     if (typeof window === 'undefined') return [];
     try {
       const raw = localStorage.getItem(storageKey);
-      return raw ? JSON.parse(raw) : [];
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
+      // localStorage corrompido — limpa a chave para evitar loop de erro e nunca quebra o Dashboard.
+      try { localStorage.removeItem(storageKey); } catch { /* noop */ }
       return [];
     }
   }, [storageKey, items]);
@@ -94,7 +98,17 @@ const OnboardingCompletionTracker = ({
     if (newlyCompleted.length > 0) {
       try {
         const existingRaw = localStorage.getItem(storageKey);
-        const existing: CompletionEntry[] = existingRaw ? JSON.parse(existingRaw) : [];
+        let existing: CompletionEntry[] = [];
+        if (existingRaw) {
+          try {
+            const parsed = JSON.parse(existingRaw);
+            existing = Array.isArray(parsed) ? parsed : [];
+          } catch {
+            // chave corrompida → limpa e segue com array vazio (nunca quebra renderização)
+            try { localStorage.removeItem(storageKey); } catch { /* noop */ }
+            existing = [];
+          }
+        }
         const seen = new Set(existing.map((e) => e.key));
         const additions: CompletionEntry[] = newlyCompleted
           .filter((i) => !seen.has(i.key))
@@ -105,7 +119,7 @@ const OnboardingCompletionTracker = ({
           }));
         if (additions.length > 0) {
           const next = [...existing, ...additions].slice(-12);
-          localStorage.setItem(storageKey, JSON.stringify(next));
+          try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* quota/indisponível */ }
         }
       } catch {
         /* storage indisponível, segue sem persistir histórico */

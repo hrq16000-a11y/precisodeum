@@ -289,14 +289,34 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
         </label>
       </div>
 
-      <div className="flex flex-col gap-2 pt-1">
-        <Button type="button" size="lg" onClick={onNext} className={ws.cta}>
-          Salvar e continuar <ArrowRight className="ml-2 h-5 w-5" />
-        </Button>
-        <Button type="button" variant="ghost" onClick={onSkip} className={ws.ctaGhost}>
-          Pular por enquanto
-        </Button>
-      </div>
+      {(() => {
+        const ufOk = !!(data.state && /^[A-Z]{2}$/.test((data.state || '').trim().toUpperCase()));
+        const cityOk = !!(data.city && data.city.trim().length >= 2);
+        const canContinue = ufOk && cityOk;
+        return (
+          <div className="flex flex-col gap-2 pt-1">
+            <Button
+              type="button"
+              size="lg"
+              onClick={onNext}
+              disabled={!canContinue}
+              aria-disabled={!canContinue}
+              title={!canContinue ? 'Selecione o estado (UF) e a cidade para continuar' : undefined}
+              className={ws.cta}
+            >
+              Salvar e continuar <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            {!canContinue && (
+              <p className="text-[11px] text-amber-600 text-center">
+                Selecione o estado e a cidade para continuar.
+              </p>
+            )}
+            <Button type="button" variant="ghost" onClick={onSkip} className={ws.ctaGhost}>
+              Pular por enquanto
+            </Button>
+          </div>
+        );
+      })()}
     </motion.div>
   );
 };
