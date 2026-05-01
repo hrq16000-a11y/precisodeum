@@ -14,7 +14,7 @@ interface Phase2PhotosProps {
   serviceId: string;
   userId: string;
   serviceName: string;
-  onBack: () => void;
+  onBack?: () => void;
   onContinue: () => void;
   onSkip: () => void;
 }
@@ -30,14 +30,16 @@ export const Phase2Photos = ({
     aria-labelledby="phase2-photos-title"
     role="region"
   >
-    <button
-      type="button"
-      onClick={onBack}
-      className="text-xs text-muted-foreground hover:text-foreground"
-      aria-label="Voltar para a etapa anterior"
-    >
-      ← Voltar
-    </button>
+    {onBack ? (
+      <button
+        type="button"
+        onClick={onBack}
+        className="text-xs text-muted-foreground hover:text-foreground"
+        aria-label="Voltar para a etapa anterior"
+      >
+        ← Voltar
+      </button>
+    ) : null}
 
     <header className="space-y-2 text-center">
       <div
