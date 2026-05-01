@@ -630,7 +630,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     onPhaseChange?.(state.phase);
     // Instrumentação: registra a fase ativa para o detector de timer zumbi.
     setActiveWizardPhase(state.phase);
-  }, [state.phase, onPhaseChange]);
+    // Histórico de revisão: empilha cada fase visitada para que o botão
+    // "Voltar" sempre devolva o usuário à fase REAL anterior nesta sessão
+    // (em vez de seguir um mapa estático que não conhece os pulos via
+    // EditModeSkipButton ou navegação direta por `?section=`).
+    if (editMode) pushReviewPhase(state.phase);
+  }, [state.phase, onPhaseChange, editMode]);
 
   useEffect(() => {
     if (state.phase === 'phase2_photos' && (!state.firstServiceId || !user?.id)) {
