@@ -1148,13 +1148,23 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         toast.error('Não conseguimos recuperar seu perfil agora. Tente novamente em instantes.');
         return false;
       }
-      warnIfForbiddenAddress(patch);
-      const safe = normalizeProviderPayload(patch);
+      // tax_id é coluna SOMENTE de `profiles` — nunca enviar pra `providers`.
+      // Se vier no patch, removemos antes de normalizar e mapeamos para cpf/cnpj
+      // conforme o kind (PF → cpf, PJ → cnpj). Isso evita o erro
+      // "Could not find the 'tax_id' column of 'providers'" reportado em produção.
+      const { tax_id: incomingTaxId, ...providerPatch } = patch as Record<string, any>;
+      if (incomingTaxId) {
+        const isPj = state.profile.kind === 'pj';
+        if (isPj) providerPatch.cnpj = incomingTaxId;
+        else providerPatch.cpf = incomingTaxId;
+      }
+      warnIfForbiddenAddress(providerPatch);
+      const safe = normalizeProviderPayload(providerPatch);
       const { error } = await supabase.from('providers').update(safe as any).eq('id', workingProviderId);
       if (error) throw error;
       // Salva também tax_id no profile se vier
-      if (patch.tax_id) {
-        await supabase.from('profiles').update({ tax_id: patch.tax_id }).eq('id', user.id);
+      if (incomingTaxId) {
+        await supabase.from('profiles').update({ tax_id: incomingTaxId }).eq('id', user.id);
       }
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
       return true;
