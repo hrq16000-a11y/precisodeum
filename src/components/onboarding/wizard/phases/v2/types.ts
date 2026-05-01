@@ -60,6 +60,10 @@ export interface OnboardingProfileData {
   social_links?: Record<string, string> | null;
   /** Persistido no BetState: usuário marcou "Ficar ONLINE" no upsell de documento. Default true. */
   go_online?: boolean;
+  /** Origem do avatar atual: upload manual, câmera, foto da conta social, ou gerado pelo sistema. */
+  avatar_source?: 'upload' | 'camera' | 'social' | 'generated' | null;
+  /** Seed/variante do avatar gerado — permite "trocar cores" e restaurar a mesma escolha ao voltar. */
+  avatar_seed?: number;
 }
 
 export type OnboardingCoreField = 'full_name' | 'whatsapp' | 'city' | 'state' | 'document';

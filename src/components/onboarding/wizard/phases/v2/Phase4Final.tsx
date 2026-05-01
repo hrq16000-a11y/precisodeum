@@ -10,7 +10,7 @@
  * NÃO são reapresentados — Phase 4 só pede o que ainda está vazio.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, ArrowLeft, Check, Wifi,
@@ -27,6 +27,8 @@ import VerificationStatusBadge from '@/components/profile/VerificationStatusBadg
 import AvatarUpload from '@/components/AvatarUpload';
 import { useAuth } from '@/hooks/useAuth';
 import { getSocialAvatarUrl } from '@/lib/avatarUtils';
+import { generateUniqueAvatar } from '@/lib/avatarGenerator';
+import { toast } from 'sonner';
 import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 import { wizardStyles as ws, wizardEnter } from './wizardStyles';
@@ -42,53 +44,117 @@ interface AvatarProps {
   userId?: string;
 }
 
-/**
- * Gera um avatar SVG com iniciais e gradiente de cor determinístico.
- * Retorna data URL pronto pra usar em <img src> ou persistir em avatar_url.
- *
- * Não bate em rede — totalmente offline. O hash do nome define o matiz,
- * então o mesmo nome sempre cai no mesmo avatar (estável entre sessões).
- */
-function generateInitialsAvatar(name: string, seed = 0): string {
-  const initials = (name || 'EU')
-    .split(' ')
-    .map((s) => s[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase() || '?';
-  // Hash simples do nome + seed → matiz HSL.
-  let h = 0;
-  for (let i = 0; i < (name + seed).length; i++) h = (h * 31 + (name + seed).charCodeAt(i)) >>> 0;
-  const hue = h % 360;
-  const c1 = `hsl(${hue} 70% 55%)`;
-  const c2 = `hsl(${(hue + 40) % 360} 75% 45%)`;
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'>
-    <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-      <stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/>
-    </linearGradient></defs>
-    <rect width='200' height='200' rx='100' fill='url(#g)'/>
-    <text x='50%' y='54%' font-family='system-ui,sans-serif' font-size='90' font-weight='700'
-      fill='white' text-anchor='middle' dominant-baseline='middle'>${initials}</text>
-  </svg>`;
-  // btoa não suporta UTF-8 direto; aqui é só ASCII.
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
-}
-
 export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userId }: AvatarProps) => {
   const focusAvatar = useFocusFieldFromReview('avatar_url');
   const { user } = useAuth();
   const socialUrl = getSocialAvatarUrl(user);
-  const initials = (data.full_name || 'EU')
-    .split(' ')
-    .map((s) => s[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
-  const [genSeed, setGenSeed] = useState(0);
-  const generatedUrl = generateInitialsAvatar(data.full_name || 'EU', genSeed);
+  // Categoria selecionada → personaliza o avatar gerado.
+  const [categoryInfo, setCategoryInfo] = useState<{ name: string; icon: string | null } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!data.primary_category_id) { setCategoryInfo(null); return; }
+    (async () => {
+      const { data: cat } = await supabase
+        .from('categories')
+        .select('name, icon')
+        .eq('id', data.primary_category_id!)
+        .maybeSingle();
+      if (alive && cat) setCategoryInfo({ name: cat.name as string, icon: (cat.icon as string) || null });
+    })();
+    return () => { alive = false; };
+  }, [data.primary_category_id]);
+
+  const initials = (data.full_name || 'EU')
+    .split(' ').map((s) => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+
+  // Seed persistido em data.avatar_seed (sobrevive a Voltar).
+  const seed = data.avatar_seed ?? 0;
+  const generatedUrl = generateUniqueAvatar({
+    userId,
+    fullName: data.full_name,
+    categoryName: categoryInfo?.name,
+    categoryIcon: categoryInfo?.icon,
+    seed,
+  });
+
+  // Auto-sugestão: se o usuário ainda não escolheu nada e a categoria carregou,
+  // já mostramos o avatar gerado como pré-seleção (mas não bloqueia upload/câmera).
+  useEffect(() => {
+    if (!data.avatar_url && !data.avatar_source && categoryInfo) {
+      onChange({ avatar_url: generatedUrl, avatar_source: 'generated' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryInfo?.name]);
+
+  // Câmera dedicada: input file com `capture="environment"` força a câmera no mobile.
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleCapturedFile = async (file: File | null, source: 'camera' | 'upload') => {
+    if (!file || !userId) return;
+    // Validação pré-upload (tipo + tamanho + dimensões).
+    const { validateImageFile } = await import('@/lib/imageValidation');
+    const v = await validateImageFile(file, {
+      maxSizeBytes: 5 * 1024 * 1024,
+      minDimension: 64,
+      maxDimension: 6000,
+    });
+    if (!v.ok) {
+      toast.error(v.message ?? 'Arquivo inválido', {
+        description: 'Vamos usar um avatar gerado pra você por enquanto. Você pode trocar depois.',
+      });
+      onChange({ avatar_url: generatedUrl, avatar_source: 'generated' });
+      return;
+    }
+    // Compressão client-side (AVIF/WebP, target ~200KB).
+    try {
+      const { compressImage } = await import('@/lib/compressImage');
+      const compressed = await compressImage(file, { maxDimension: 512, targetKB: 200 });
+      const finalFile = compressed || file;
+      // Reaproveita o pipeline do AvatarUpload via edge function `optimize-image`.
+      const { uploadWithFallback } = await import('@/lib/uploadWithFallback');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Faça login pra enviar a foto.');
+        return;
+      }
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const result = await uploadWithFallback<{ url: string; error?: string }>(finalFile, {
+        url: `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        baseMaxDimension: 512,
+        baseTargetKB: 200,
+        buildFormData: (f) => {
+          const fd = new FormData();
+          fd.append('file', f);
+          fd.append('bucket', 'avatars');
+          fd.append('folder', userId);
+          return fd;
+        },
+      });
+      if (result.data.error) throw new Error(result.data.error);
+      const publicUrl = result.data.url;
+      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
+      onChange({ avatar_url: publicUrl, avatar_source: source });
+      toast.success(source === 'camera' ? 'Foto capturada e otimizada!' : 'Foto enviada!');
+    } catch (err: any) {
+      toast.error('Não consegui enviar a foto agora.', {
+        description: 'Usei um avatar gerado por enquanto — você pode trocar depois.',
+      });
+      onChange({ avatar_url: generatedUrl, avatar_source: 'generated' });
+    }
+  };
+
+  const sourceLabel: Record<string, string> = {
+    camera: 'Foto capturada',
+    upload: 'Foto da galeria',
+    social: 'Foto da conta',
+    generated: 'Avatar gerado',
+  };
 
   return (
     <motion.div {...wizardEnter} className={ws.container}>
@@ -102,79 +168,139 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
         </p>
       </header>
 
+      {/* Preview central — sempre algum avatar visível (gerado quando vazio). */}
       <div
         ref={focusAvatar.ref as any}
-        className={`flex justify-center rounded-2xl border border-border bg-card p-4 shadow-card ${focusAvatar.highlightClass}`}
+        className={`flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 shadow-card ${focusAvatar.highlightClass}`}
       >
-        {userId && (
-          <AvatarUpload
-            userId={userId}
-            currentUrl={data.avatar_url}
-            initials={initials}
-            onUploaded={(url) => onChange({ avatar_url: url })}
-          />
+        <img
+          src={data.avatar_url || generatedUrl}
+          alt={initials}
+          className="h-24 w-24 rounded-full border-4 border-background object-cover shadow-lg"
+        />
+        {data.avatar_source && (
+          <span className="text-[11px] text-muted-foreground">
+            {sourceLabel[data.avatar_source] || 'Foto atual'}
+          </span>
         )}
       </div>
 
-      {/* Opções rápidas: câmera/galeria já é coberto pelo AvatarUpload (input file accept=image/*).
-          Aqui adicionamos atalhos sem upload: Google, gerar avatar e remover. */}
+      {/* Inputs ocultos pra Câmera (capture) e Galeria (sem capture). */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleCapturedFile(e.target.files?.[0] || null, 'camera')}
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/*"
+        className="hidden"
+        onChange={(e) => handleCapturedFile(e.target.files?.[0] || null, 'upload')}
+      />
+
+      {/* 4 ações em grid 2×2. Mobile: câmera, galeria, conta social (se houver), avatar gerado. */}
       <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => cameraInputRef.current?.click()}
+          className="rounded-xl border border-border bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+          data-testid="phase4-avatar-camera"
+        >
+          <span className="flex items-center justify-center gap-2">
+            <CameraIcon className="h-4 w-4" aria-hidden="true" /> Tirar foto
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => galleryInputRef.current?.click()}
+          className="rounded-xl border border-border bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+          data-testid="phase4-avatar-gallery"
+        >
+          <span className="flex items-center justify-center gap-2">
+            Escolher da galeria
+          </span>
+        </button>
         {socialUrl && (
           <button
             type="button"
-            onClick={() => onChange({ avatar_url: socialUrl })}
-            className="rounded-xl border border-border bg-card p-2 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            onClick={() => onChange({ avatar_url: socialUrl, avatar_source: 'social' })}
+            className="rounded-xl border border-border bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             data-testid="phase4-avatar-use-google"
           >
             <span className="flex items-center justify-center gap-2">
-              <img src={socialUrl} alt="" aria-hidden="true" className="h-6 w-6 rounded-full object-cover" />
+              <img src={socialUrl} alt="" aria-hidden="true" className="h-5 w-5 rounded-full object-cover" />
               Usar foto da conta
             </span>
           </button>
         )}
         <button
           type="button"
-          onClick={() => { onChange({ avatar_url: generatedUrl }); }}
-          className="rounded-xl border border-border bg-card p-2 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+          onClick={() => onChange({ avatar_url: generatedUrl, avatar_source: 'generated' })}
+          className={`rounded-xl border ${data.avatar_source === 'generated' ? 'border-amber-400 ring-1 ring-amber-400/40' : 'border-border'} bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500`}
           data-testid="phase4-avatar-use-generated"
         >
           <span className="flex items-center justify-center gap-2">
-            <img src={generatedUrl} alt="" aria-hidden="true" className="h-6 w-6 rounded-full" />
-            Usar avatar gerado
+            <img src={generatedUrl} alt="" aria-hidden="true" className="h-5 w-5 rounded-full" />
+            Avatar minimalista
           </span>
         </button>
-        <button
-          type="button"
-          onClick={() => setGenSeed((s) => s + 1)}
-          className="col-span-2 rounded-xl border border-dashed border-border bg-transparent p-1.5 text-[11px] text-muted-foreground hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-          data-testid="phase4-avatar-shuffle"
-        >
-          Trocar cores do avatar gerado
-        </button>
-        {data.avatar_url && (
+        {data.avatar_source === 'generated' && (
           <button
             type="button"
-            onClick={() => onChange({ avatar_url: null })}
-            className="col-span-2 rounded-xl border border-border bg-transparent p-1.5 text-[11px] text-muted-foreground hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-            data-testid="phase4-avatar-clear"
+            onClick={() => {
+              const next = (data.avatar_seed ?? 0) + 1;
+              const url = generateUniqueAvatar({
+                userId, fullName: data.full_name,
+                categoryName: categoryInfo?.name, categoryIcon: categoryInfo?.icon,
+                seed: next,
+              });
+              onChange({ avatar_seed: next, avatar_url: url, avatar_source: 'generated' });
+            }}
+            className="col-span-2 rounded-xl border border-dashed border-border bg-transparent p-1.5 text-[11px] text-muted-foreground hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            data-testid="phase4-avatar-shuffle"
           >
-            Remover foto
+            Trocar variação do avatar gerado
           </button>
         )}
       </div>
 
       <p className="text-center text-[11px] text-muted-foreground">
-        Tirar foto com a câmera, escolher da galeria, usar a foto da sua conta Google ou um avatar gerado — você decide.
+        {categoryInfo
+          ? `Avatar minimalista personalizado pra ${categoryInfo.name}.`
+          : 'Tire uma foto, escolha da galeria, use a foto da conta ou um avatar gerado.'}
       </p>
 
       <div className="flex flex-col gap-2 pt-1">
-        <Button type="button" size="lg" onClick={onContinue} disabled={saving || !data.avatar_url} className={ws.cta}>
+        <Button
+          type="button"
+          size="lg"
+          onClick={onContinue}
+          disabled={saving || !data.avatar_url}
+          className={ws.cta}
+        >
           {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           Salvar e continuar <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
           Agora não
         </Button>
+      </div>
+
+      {/* Mantém o AvatarUpload original disponível (escondido) caso outras telas o reusem.
+          Mas o fluxo principal acima cobre todas as opções pedidas. */}
+      <div className="hidden">
+        {userId && (
+          <AvatarUpload
+            userId={userId}
+            currentUrl={data.avatar_url}
+            initials={initials}
+            onUploaded={(url) => onChange({ avatar_url: url, avatar_source: 'upload' })}
+          />
+        )}
       </div>
     </motion.div>
   );
