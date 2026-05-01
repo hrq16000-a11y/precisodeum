@@ -472,7 +472,7 @@ export function useGeoCity(): GeoStore {
           try { localStorage.removeItem(OVERRIDE_KEY); sessionStorage.removeItem(OVERRIDE_KEY); } catch {}
 
           setGeoState({ city, state, neighborhood, neighborhoodSource, temp, latitude, longitude, precise: true, source: 'gps', geoFailed: false, lastKnownAt: ts2, manualOverride: false });
-          resolve({ ok: true, city, state, accuracyMeters, neighborhood });
+          resolve({ ok: true, city, state, accuracyMeters, neighborhood, latitude, longitude });
         },
         () => {
           if (geoState.latitude === null && !geoState.city) {
