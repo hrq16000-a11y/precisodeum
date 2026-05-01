@@ -102,7 +102,7 @@ const buildStateMeta = (docLabel: string): Record<VerificationState, {
 });
 
 export const VerificationStatusBadge = ({
-  userId, variant = 'default', showHistory = false, className,
+  userId, variant = 'default', showHistory = false, docKind, hideWhenNone, className,
 }: Props) => {
   const [state, setState] = useState<VerificationState>('loading');
   const [hasDoc, setHasDoc] = useState(false);
