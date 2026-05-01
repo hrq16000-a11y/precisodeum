@@ -25,7 +25,7 @@ interface GeoData {
 interface GeoStore extends GeoData {
   setCity: (city: string, state?: string, latitude?: number | null, longitude?: number | null, neighborhood?: string | null) => void;
   setRadius: (km: number) => void;
-  requestPreciseLocation: (options?: { force?: boolean }) => Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null }>;
+  requestPreciseLocation: (options?: { force?: boolean }) => Promise<{ ok: boolean; city: string | null; state: string | null; accuracyMeters?: number | null; neighborhood?: string | null; latitude?: number | null; longitude?: number | null }>;
   /** Limpa o estado de erro (ex.: após o usuário ver o aviso). */
   dismissGeoFailure: () => void;
 }
