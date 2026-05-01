@@ -306,13 +306,6 @@ export default function WizardShell() {
       ) : stage === 'extras-services' ? (
         <BetCardShell>
           <Step20_MoreServices
-            onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
-            onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
-          />
-        </BetCardShell>
-      ) : stage === 'extras-portfolio' ? (
-        <BetCardShell>
-          <Step21_PortfolioAlbums
             onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
             onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
           />
