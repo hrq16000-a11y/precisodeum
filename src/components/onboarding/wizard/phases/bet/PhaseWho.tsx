@@ -8,6 +8,7 @@ import {
   setOnboardingIntent,
   type OnboardingIntent,
 } from '@/components/onboarding/wizard/phases/v2/telemetry';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 import type { BetRewardKey } from './betRewards';
 
 interface Props {
@@ -39,7 +40,11 @@ export default function PhaseWho({ state, patch, goto, awardReward }: Props) {
     }
     fieldWin();
     if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
-    transitionTimer.current = window.setTimeout(() => goto(intent), 250);
+    transitionTimer.current = scheduleWizardTimeout(
+      { phase: 'phase1_action', action: 'phase_who_goto' },
+      () => goto(intent),
+      250,
+    );
   }
 
   return (

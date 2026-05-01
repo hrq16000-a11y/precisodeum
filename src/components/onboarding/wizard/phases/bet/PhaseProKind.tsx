@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { User, Building2, Sparkles } from 'lucide-react';
 import { fieldWin } from '@/lib/betDopamine';
 import { BET_POINTS, type BetProKind, type BetState } from './types';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 import type { BetRewardKey } from './betRewards';
 
 interface Props {
@@ -27,7 +28,11 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
     }
     fieldWin();
     if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
-    transitionTimer.current = window.setTimeout(next, 250);
+    transitionTimer.current = scheduleWizardTimeout(
+      { phase: 'phase1_action', action: 'phase_pro_kind_next' },
+      next,
+      250,
+    );
   }
   return (
     <motion.div

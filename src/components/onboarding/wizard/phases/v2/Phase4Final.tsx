@@ -33,6 +33,7 @@ import AvatarCropDialog from './AvatarCropDialog';
 import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 import { wizardStyles as ws, wizardEnter } from './wizardStyles';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 /* ───── 4.0 Foto de perfil (se ainda faltar) ───── */
 
@@ -503,7 +504,11 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
       setVerified(true);
       celebrate({ intensity: 'mini', id: `doc-verified:${userId || 'anon'}` });
       if (verifyDelayTimer.current) window.clearTimeout(verifyDelayTimer.current);
-      verifyDelayTimer.current = window.setTimeout(() => onContinue(), 1400);
+      verifyDelayTimer.current = scheduleWizardTimeout(
+        { phase: 'phase4_document', action: 'doc_verified_continue' },
+        () => onContinue(),
+        1400,
+      );
     } else {
       // Sem documento: avança normalmente; o status ONLINE depende só do checkbox.
       onContinue();

@@ -28,6 +28,7 @@ import { computeOnboardingProgress } from '@/lib/onboardingProgress';
 import { markSaveLater } from '@/lib/conversionFunnel';
 import type { OnboardingState } from './phases/v2/types';
 import type { ExitIntentIntent, ExitIntentVariant } from '@/lib/exitIntentVariants';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 export interface SaveLaterDialogProps {
   open: boolean;
@@ -71,7 +72,11 @@ export default function SaveLaterDialog({
       });
       onOpenChange(false);
       if (navTimer.current) window.clearTimeout(navTimer.current);
-      navTimer.current = window.setTimeout(() => navigate(path), 50);
+      navTimer.current = scheduleWizardTimeout(
+        { phase: state.phase, action: `save_later_navigate_${destination}` },
+        () => navigate(path),
+        50,
+      );
     },
     [navigate, onOpenChange, source, intent, state.phase, variant, progressPct],
   );

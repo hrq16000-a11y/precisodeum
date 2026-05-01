@@ -31,6 +31,7 @@ import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload, detectForbiddenAddressKeys } from '@/lib/providerPayload';
 import { logWizardError } from '@/lib/wizardErrorGuard';
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
+import { setActiveWizardPhase } from '@/lib/wizardZombieGuard';
 
 // Aviso única vez por sessão para evitar spam
 let _addressWarnedOnce = false;
@@ -557,6 +558,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // Reporta a fase para a barra de progresso global do WizardShell.
   useEffect(() => {
     onPhaseChange?.(state.phase);
+    // Instrumentação: registra a fase ativa para o detector de timer zumbi.
+    setActiveWizardPhase(state.phase);
   }, [state.phase, onPhaseChange]);
 
   useEffect(() => {
