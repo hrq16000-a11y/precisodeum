@@ -656,17 +656,28 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   useEffect(() => {
     const goBack = () => {
+      // ── MODO REVISÃO: histórico por sessão ─────────────────────────────
+      // Em editMode, "Voltar" desempilha a fase REAL anterior visitada nesta
+      // sessão (resiliente a pulos via EditModeSkipButton ou navegação direta
+      // por `?section=`). Quando a pilha esgota, devolve o usuário ao
+      // Dashboard do Assistente — nunca trava o usuário na 1ª fase do V2.
+      if (editMode) {
+        const previous = popReviewPhase();
+        if (previous && previous !== state.phase) {
+          dispatch({ type: 'GO_TO', phase: previous as any });
+          return;
+        }
+        clearReviewHistory();
+        navigate('/dashboard/assistente');
+        return;
+      }
+
+      // ── FLUXO NORMAL (new_signup): mapa estático de antecessores ───────
       switch (state.phase) {
         // phase1_* removidas em mai/2026; phase2_service é a 1ª fase viva do V2.
         // Voltar de phase2_service é responsabilidade do WizardShell (sai para triage_celebration).
         case 'phase2_service':
-          // BLINDAGEM (auditoria 2026-05): em editMode, "Voltar" da 1ª fase
-          // do V2 deve devolver o usuário ao Assistente do Dashboard — não
-          // travar/noop nem cair na triagem (que está suprimida em revisão).
-          if (editMode) {
-            navigate('/dashboard/assistente');
-          }
-          /* fora de editMode: noop — WizardShell trata o retorno à triagem */
+          /* noop — WizardShell trata o retorno à triagem */
           break;
         case 'phase2_details':
           dispatch({ type: 'GO_TO', phase: 'phase2_service' });
@@ -694,6 +705,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     window.addEventListener('wizard:request-back', goBack as EventListener);
     return () => window.removeEventListener('wizard:request-back', goBack as EventListener);
   }, [state.phase, editMode, navigate]);
+
+  // Limpeza do histórico de revisão ao SAIR do modo edit_profile (ex.: usuário
+  // volta para new_signup na mesma aba). Garante que pilha velha não vaze
+  // para uma próxima sessão de revisão.
+  useEffect(() => {
+    if (!editMode) clearReviewHistory();
+  }, [editMode]);
 
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
