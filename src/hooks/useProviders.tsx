@@ -412,6 +412,12 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
     portfolioPhotoCount: p.portfolio_photo_count || 0,
     avgResponseMinutes: p.avg_response_minutes ?? null,
     communityVerified: !!p.community_verified,
+    workingHours: (p as any).working_hours ?? null,
+    workingHoursStruct: ((p as any).working_hours_struct as any) ?? null,
+    opensWeekend: !!(p as any).opens_weekend,
+    opensLateNight: !!(p as any).opens_late_night,
+    opensOvernight: !!(p as any).opens_overnight,
+    is24h: !!(p as any).is_24h,
   };
 }
 
