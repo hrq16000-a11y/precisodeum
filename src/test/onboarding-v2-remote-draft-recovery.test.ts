@@ -39,7 +39,7 @@ describe('G5 — RemoteDraftRecoveryModal: regra de exibição', () => {
     // Local na primeira fase real, remoto avançado — DEVE aparecer.
     expect(shouldShowRemoteRecoveryModal('phase1_kind', 'phase2_details')).toBe(true);
     expect(shouldShowRemoteRecoveryModal('phase1_contact', 'phase2_service')).toBe(true);
-    expect(shouldShowRemoteRecoveryModal('phase2_service', 'phase4_review')).toBe(true);
+    expect(shouldShowRemoteRecoveryModal('phase2_service', 'done')).toBe(true);
   });
 
   it('NÃO mostra quando local está IGUAL ao remoto', () => {
@@ -48,7 +48,7 @@ describe('G5 — RemoteDraftRecoveryModal: regra de exibição', () => {
   });
 
   it('NÃO mostra quando local está MAIS À FRENTE que o remoto', () => {
-    expect(shouldShowRemoteRecoveryModal('phase4_review', 'phase2_service')).toBe(false);
+    expect(shouldShowRemoteRecoveryModal('done', 'phase2_service')).toBe(false);
     expect(shouldShowRemoteRecoveryModal('phase2_details', 'phase1_contact')).toBe(false);
   });
 
