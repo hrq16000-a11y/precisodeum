@@ -249,6 +249,29 @@ export function findMetroByPole(poleCityNorm: string): MetroRegion | null {
   return _poleMap[poleCityNorm] || null;
 }
 
+/**
+ * Encontra a RM cuja cidade-base é membro (ex.: "saojosedospinhais" →
+ * RM de Curitiba). Quando há múltiplas RMs com mesmo membro, prioriza a
+ * UF informada; senão retorna a primeira encontrada.
+ */
+export function findMetroByMember(cityNorm: string, stateNorm?: string): MetroRegion | null {
+  const list = _memberMap[cityNorm];
+  if (!list || list.length === 0) return null;
+  if (stateNorm) {
+    const m = list.find((mr) => normalize(mr.state) === stateNorm);
+    if (m) return m;
+  }
+  return list[0];
+}
+
+/**
+ * Resolve a RM de uma cidade — seja ela polo ou membro. Centraliza a lógica
+ * para que UI e SEO usem a mesma regra.
+ */
+export function findMetroForCity(cityNorm: string, stateNorm?: string): MetroRegion | null {
+  return findMetroByPole(cityNorm) || findMetroByMember(cityNorm, stateNorm);
+}
+
 export function isMemberOfMetro(providerCityNorm: string, metro: MetroRegion): boolean {
   return metro.members.includes(providerCityNorm);
 }
