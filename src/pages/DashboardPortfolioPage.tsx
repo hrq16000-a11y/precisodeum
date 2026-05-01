@@ -511,9 +511,27 @@ const DashboardPortfolioPage = () => {
                   </motion.div>
                 ))}
                 {photos.length > 0 && photos.length < MAX_PHOTOS_PER_ALBUM && (
-                  <div className="aspect-square">
-                    <LockedSlotCard label={`Foto ${photos.length + 1}`} variant="compact" />
-                  </div>
+                  <label className="block aspect-square cursor-pointer">
+                    <div className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 p-4 text-center transition-colors hover:bg-muted/35">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm">
+                        <Plus className="h-4 w-4 text-primary" />
+                      </div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Foto {photos.length + 1}
+                      </p>
+                      <p className="max-w-[200px] text-[11px] leading-snug text-muted-foreground">
+                        Adicione a próxima foto para continuar preenchendo seu álbum.
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleUploadPhotos}
+                      disabled={uploading}
+                    />
+                  </label>
                 )}
               </div>
             )}
