@@ -178,7 +178,7 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
               className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
                 state.company_name.trim().length >= 2
                   ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
-                  : 'border-input focus:border-indigo-400 focus:ring-indigo-300/40'
+                  : 'border-input focus:border-amber-400 focus:ring-amber-300/40'
               }`}
             />
           </label>
