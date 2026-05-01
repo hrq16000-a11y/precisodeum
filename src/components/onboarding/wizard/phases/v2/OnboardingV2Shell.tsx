@@ -1411,7 +1411,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             profile={state.profile}
             onChangeService={patchService}
             onChangeProfile={patchProfile}
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_contact' }); }}
+            onBack={() => { /* phase2_service é a primeira fase do V2 — voltar é gerenciado pelo WizardShell (sai para triage_celebration). */ track('back'); }}
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             firstServiceId={state.firstServiceId}
             onSkip={() => {
