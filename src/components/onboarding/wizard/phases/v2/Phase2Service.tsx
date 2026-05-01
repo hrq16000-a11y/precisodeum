@@ -481,6 +481,8 @@ export const Phase2Details = ({
           Salvar progresso e configurar meu painel depois
         </Button>
       </div>
+        );
+      })()}
     </motion.div>
   );
 };
