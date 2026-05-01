@@ -293,26 +293,28 @@ function checkListener(masked, raw, idx, target, evt) {
   const block = enclosingBlock(masked, idx);
   if (block) {
     const [bs, be] = block;
-    const blockSrc = masked.slice(bs, be + 1);
+    const blockMasked = masked.slice(bs, be + 1);
+    const blockRaw = raw.slice(bs, be + 1);
     const hook = enclosingHook(masked, bs);
     if (hook === 'useEffect' || hook === 'useLayoutEffect' || hook === 'useInsertionEffect') {
-      if (effectReturnsCleanup(blockSrc, REMOVE_LISTENER_ANY)) {
+      // cleanup é checado no RAW (precisamos enxergar o nome do evento se houver).
+      if (effectReturnsCleanup(blockRaw, REMOVE_LISTENER_ANY)) {
         return { ok: true, reason: `${hook} cleanup return` };
       }
     }
-    // par direto no mesmo bloco para o mesmo target+evento
+    // par direto no mesmo bloco para o mesmo target+evento (raw, pois evt está quoted).
     const reSameBlock = new RegExp(
       `${target.replace(/\./g, '\\.')}\\.removeEventListener\\s*\\(\\s*${evt.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`
     );
-    if (reSameBlock.test(blockSrc)) {
+    if (reSameBlock.test(blockRaw)) {
       return { ok: true, reason: `paired removeEventListener (${target}, ${evt})` };
     }
   }
-  // par no arquivo inteiro (target+evt iguais)
+  // par no arquivo inteiro (raw)
   const reFile = new RegExp(
     `${target.replace(/\./g, '\\.')}\\.removeEventListener\\s*\\(\\s*${evt.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`
   );
-  if (reFile.test(masked)) {
+  if (reFile.test(raw)) {
     return { ok: true, reason: `paired removeEventListener in file (${target}, ${evt})` };
   }
   return { ok: false, reason: `no removeEventListener for (${target}, ${evt})` };
