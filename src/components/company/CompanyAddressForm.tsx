@@ -198,7 +198,7 @@ export default function CompanyAddressForm({
       setCepStatus(reason === 'not_found' ? 'not_found' : 'error');
       setCepErrorReason(reason);
     }
-  }, [onChange, value.street, value.street_confirmed, value.street_suggested]);
+  }, [onChange, updateHistory, value.street, value.street_confirmed, value.street_suggested]);
 
   // Lookup automático SOMENTE quando o CEP atinge EXATAMENTE 8 dígitos.
   useEffect(() => {
