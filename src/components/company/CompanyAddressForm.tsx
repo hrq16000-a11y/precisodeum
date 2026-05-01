@@ -218,6 +218,25 @@ export default function CompanyAddressForm({
     }
   };
 
+  /**
+   * Reaplica uma sugestão a partir do histórico recente: repõe o CEP e o
+   * logradouro sugerido em UM patch, marca como NÃO-confirmado para o usuário
+   * confirmar explicitamente. Útil quando o usuário fez retry / editou o CEP
+   * e quer voltar a um valor já consultado.
+   */
+  const reapplyFromHistory = (entry: CepHistoryEntry) => {
+    lastCepRef.current = entry.digits; // evita re-disparar lookup automático
+    setCepStatus('applied');
+    setCepErrorReason(null);
+    onChange({
+      postal_code: entry.digits,
+      street: entry.address ?? '',
+      street_suggested: entry.address ?? '',
+      street_suggested_cep: entry.digits,
+      street_confirmed: false,
+    });
+  };
+
   const inputBase =
     'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30';
   const inputSuggested =
