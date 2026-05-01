@@ -377,30 +377,64 @@ const SearchPage = () => {
 
   useSeoHead({ title: seoTitle, description: seoDesc, canonical: canonicalUrl, noindex, prevUrl, nextUrl });
 
-  // JSON-LD ItemList of visible local providers (top 10)
+  const paginatedLocal = filteredLocal.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedNearby = filteredNearby;
+  const paginatedOutOfState = showOutOfState ? filteredOutOfState : [];
+
+  // JSON-LD ItemList — reflete APENAS os itens visíveis na página atual.
+  // Inclui propriedades adicionais (aggregateRating + offers.availability)
+  // quando aplicável, ajudando o Google a entender riqueza/disponibilidade.
   const jsonLdData = useMemo(() => {
-    const items = filteredLocal.slice(0, 10).map((p, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      url: `${SITE_BASE_URL}/profissional/${p.slug}`,
-      name: p.businessName || p.name,
-    }));
-    if (!items.length) return null;
+    const visible = [...paginatedLocal, ...paginatedNearby, ...paginatedOutOfState].slice(0, 20);
+    if (!visible.length) return null;
+    const startPos = (page - 1) * ITEMS_PER_PAGE;
+    const items = visible.map((p, i) => {
+      const url = `${SITE_BASE_URL}/profissional/${p.slug}`;
+      const name = p.businessName || p.name;
+      const item: Record<string, unknown> = {
+        '@type': 'LocalBusiness',
+        '@id': url,
+        url,
+        name,
+      };
+      if (p.city) item.address = { '@type': 'PostalAddress', addressLocality: p.city, addressRegion: safeUF(p.state) || undefined, addressCountry: 'BR' };
+      if (typeof p.rating === 'number' && p.rating > 0 && (p.reviewCount ?? 0) > 0) {
+        item.aggregateRating = {
+          '@type': 'AggregateRating',
+          ratingValue: Number(p.rating.toFixed(2)),
+          reviewCount: p.reviewCount,
+          bestRating: 5,
+          worstRating: 1,
+        };
+      }
+      // Disponibilidade: usa presença online/ativo hoje quando conhecido.
+      const isOnline = onlineSet.has(p.userId);
+      const isActiveToday = activeTodaySet.has(p.userId);
+      if (isOnline || isActiveToday) {
+        item.offers = {
+          '@type': 'Offer',
+          availability: isOnline ? 'https://schema.org/InStock' : 'https://schema.org/LimitedAvailability',
+          url,
+        };
+      }
+      return {
+        '@type': 'ListItem',
+        position: startPos + i + 1,
+        item,
+      };
+    });
     return {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
       name: seoTitle,
       description: seoDesc,
       numberOfItems: items.length,
+      itemListOrder: sortBy === 'rating' ? 'https://schema.org/ItemListOrderDescending' : 'https://schema.org/ItemListUnordered',
       itemListElement: items,
     };
-  }, [filteredLocal, seoTitle, seoDesc]);
+  }, [paginatedLocal, paginatedNearby, paginatedOutOfState, page, seoTitle, seoDesc, sortBy, onlineSet, activeTodaySet]);
 
   useJsonLd(jsonLdData);
-
-  const paginatedLocal = filteredLocal.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
-  const paginatedNearby = filteredNearby;
-  const paginatedOutOfState = showOutOfState ? filteredOutOfState : [];
 
   // Sub-agrupamento por bairro dentro do bloco "local" — só aplica
   // quando há GPS, ordenação 'nearest' e diversidade de bairros (>=2).
