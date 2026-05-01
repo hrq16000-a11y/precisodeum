@@ -263,7 +263,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
         type="file"
         accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/*"
         className="hidden"
-        onChange={(e) => handleCapturedFile(e.target.files?.[0] || null, 'upload')}
+        onChange={(e) => { const f = e.target.files?.[0] || null; e.currentTarget.value = ''; handleSelectFile(f, 'upload'); }}
       />
 
       {/* 4 ações em grid 2×2. Mobile: câmera, galeria, conta social (se houver), avatar gerado. */}
