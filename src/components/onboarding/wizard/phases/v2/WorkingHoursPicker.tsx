@@ -270,14 +270,24 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
       )}
 
       {summary && (
-        <p className="text-[11px] text-muted-foreground">
-          Será exibido como <span className="font-medium text-foreground">{summary}</span>
+        <p className="text-[11px] leading-relaxed text-muted-foreground" style={{ textWrap: 'balance' as never, wordBreak: 'break-word' }}>
+          Será exibido como{' '}
+          <span className="font-medium text-foreground break-words">{summary}</span>
         </p>
       )}
       {!summary && (
         <p className="text-[11px] text-muted-foreground">
           Sem horário configurado — aparecerá como "Sob agendamento".
         </p>
+      )}
+      {issues.some((i) => i.type === 'overlap' || i.type === 'duplicate') && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px] leading-snug text-destructive">
+          <p className="font-medium">Conflito de horários detectado.</p>
+          <p className="mt-0.5 text-foreground/80">
+            Cada faixa precisa ser diferente em <strong>dia</strong> ou em <strong>horário</strong>.
+            Ex.: válido — Seg–Sex 08:00–12:00 + Seg–Sex 13:00–18:00. Inválido — Seg–Sex 08:00–18:00 + Seg–Sex 08:00–19:00 (sobrepõem).
+          </p>
+        </div>
       )}
     </div>
   );
