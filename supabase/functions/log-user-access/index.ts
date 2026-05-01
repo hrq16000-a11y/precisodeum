@@ -65,16 +65,25 @@ Deno.serve(async (req) => {
     const ua = req.headers.get("user-agent") || "";
     const { os, browser, device } = parseUA(ua);
 
-    // Geolocalização aproximada via ip-api.com (gratuito, sem chave, 45 req/min por IP)
+    // Geolocalização aproximada via ipapi.co (HTTPS, gratuito sem chave, ~1k req/dia por IP).
+    // Substitui o antigo http://ip-api.com (HTTP puro) por conformidade LGPD/segurança.
     let geo: any = {};
     if (ip && !ip.startsWith("127.") && !ip.startsWith("10.") && ip !== "::1") {
       try {
-        const r = await fetch(
-          `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,country,regionName,city,isp,org,query`,
-        );
+        const r = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
+          headers: { "User-Agent": "precisodeum-log/1.0" },
+          signal: AbortSignal.timeout(5000),
+        });
         if (r.ok) {
           const j = await r.json();
-          if (j.status === "success") geo = j;
+          if (!j?.error) {
+            geo = {
+              isp: j.org || j.asn || null,
+              country: j.country_name || j.country || null,
+              regionName: j.region || null,
+              city: j.city || null,
+            };
+          }
         }
       } catch (_) {
         // silencioso, não bloqueia o login
@@ -103,6 +112,24 @@ Deno.serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Conformidade LGPD: grava IP/UA no perfil APENAS no signup (1ª vez).
+    // Idempotente — só atualiza colunas que ainda estão null para não sobrescrever
+    // o snapshot original do cadastro a cada login.
+    if (eventType === "signup") {
+      try {
+        await admin
+          .from("profiles")
+          .update({
+            registration_ip: ip || null,
+            registration_user_agent: ua || null,
+          })
+          .eq("id", userId)
+          .is("registration_ip", null);
+      } catch (e) {
+        console.warn("profile registration update failed:", e);
+      }
     }
 
     return new Response(
