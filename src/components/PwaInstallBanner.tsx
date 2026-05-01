@@ -70,16 +70,12 @@ const PwaInstallBanner = () => {
     const impressions = getImpressionCount();
     if (settings.max_impressions > 0 && impressions >= settings.max_impressions) return;
 
-    const hasScrolledEnough = () => {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      return docHeight > 0 && scrollTop / docHeight >= 0.3;
-    };
-
     const triggerShow = () => {
       if (autoShownRef.current) return;
-      // Guard: nunca abre antes do usuário rolar a página.
-      if (!hasScrolledEnough()) return;
+      // Guard universal: respeita scroll/tempo/interação por device + 1ª visita.
+      if (!canTriggerMarketingPopup(mountedAt)) return;
+      // Honra também o show_delay_seconds como atraso mínimo configurável.
+      if (Date.now() - mountedAt < minDelayMs) return;
       autoShownRef.current = true;
       setSource('banner');
       setShow(true);
@@ -87,20 +83,17 @@ const PwaInstallBanner = () => {
       trackPwaEvent('impression', 'banner');
     };
 
-    // O delay de settings agora funciona apenas como *atraso mínimo* — o popup
-    // nunca dispara sem o usuário ter rolado ≥30% da página.
     const minDelayMs = (settings.show_delay_seconds || 5) * 1000;
     const mountedAt = Date.now();
 
-    const onScroll = () => {
-      if (Date.now() - mountedAt < minDelayMs) return;
-      if (hasScrolledEnough()) triggerShow();
-    };
+    const onScroll = () => triggerShow();
+    const interval = window.setInterval(triggerShow, 1500);
 
     window.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
       window.removeEventListener('scroll', onScroll);
+      window.clearInterval(interval);
     };
 
   }, [
