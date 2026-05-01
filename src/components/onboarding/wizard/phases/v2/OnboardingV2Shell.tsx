@@ -1422,6 +1422,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             saving={saving}
             userId={user?.id}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
+            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase4_document' }); }}
             onContinue={async () => {
               track('submit');
               if (state.profile.avatar_url) {
