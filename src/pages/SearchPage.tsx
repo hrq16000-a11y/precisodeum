@@ -44,6 +44,7 @@ import { useUrgencyMode } from '@/hooks/useUrgencyMode';
 import { useOnlineProviders, useRecentlyOfflineSet, useRealtimeHealth } from '@/hooks/useOnlinePresence';
 import { useActiveTodayProviders } from '@/hooks/useActiveTodayProviders';
 import AskSystemDialog from '@/components/search/AskSystemDialog';
+import ScoreTooltipBadge from '@/components/search/ScoreTooltipBadge';
 import { logSearchIntent } from '@/lib/searchIntent';
 import { safeUF } from '@/lib/locationFormat';
 import CepLookupField from '@/components/CepLookupField';
@@ -99,9 +100,17 @@ const SearchPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [featuredFilter, setFeaturedFilter] = useState('all');
   const [minRating, setMinRating] = useState(0);
-  // Default sort: 'nearest' quando há GPS preciso, senão 'relevance'.
+  // Default sort vem de `site_settings.default_search_sort` (admin-configurável).
+  // Fallback: 'best' quando há GPS preciso, senão 'relevance'.
   // O usuário pode sobrescrever via ?ordem=... ou pelos chips.
-  const initialSort = (searchParams.get('ordem') as SortOption) || (userLat && userLon ? 'best' : 'relevance');
+  const defaultSearchSortSetting = useSettingValue('default_search_sort');
+  const VALID_SORTS: SortOption[] = ['relevance','best','nearest','rating','reviews','name_asc','name_desc','experience'];
+  const adminDefaultSort: SortOption | null = (VALID_SORTS as string[]).includes(defaultSearchSortSetting)
+    ? (defaultSearchSortSetting as SortOption)
+    : null;
+  const initialSort = (searchParams.get('ordem') as SortOption)
+    || adminDefaultSort
+    || (userLat && userLon ? 'best' : 'relevance');
   const [sortBy, setSortBy] = useState<SortOption>(initialSort);
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -123,19 +132,22 @@ const SearchPage = () => {
   })();
   const [page, setPage] = useState(initialPage);
 
-  // Persiste `page` na URL para que o usuário possa compartilhar/voltar
-  // a uma página específica. Mantém demais params; remove quando page=1.
+  // Persiste `page`, `ordem` e `disponivel` na URL para que filtros e ordenação
+  // possam ser compartilhados, voltados via histórico e indexados quando aplicável.
+  // Mantém demais params; remove chave quando estiver no valor default.
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
     if (page > 1) next.set('page', String(page));
     else next.delete('page');
     if (availabilityWindow !== 'any') next.set('disponivel', availabilityWindow);
     else next.delete('disponivel');
+    if (sortBy && sortBy !== 'relevance') next.set('ordem', sortBy);
+    else next.delete('ordem');
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, availabilityWindow]);
+  }, [page, availabilityWindow, sortBy]);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
@@ -366,30 +378,64 @@ const SearchPage = () => {
 
   useSeoHead({ title: seoTitle, description: seoDesc, canonical: canonicalUrl, noindex, prevUrl, nextUrl });
 
-  // JSON-LD ItemList of visible local providers (top 10)
+  const paginatedLocal = filteredLocal.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedNearby = filteredNearby;
+  const paginatedOutOfState = showOutOfState ? filteredOutOfState : [];
+
+  // JSON-LD ItemList — reflete APENAS os itens visíveis na página atual.
+  // Inclui propriedades adicionais (aggregateRating + offers.availability)
+  // quando aplicável, ajudando o Google a entender riqueza/disponibilidade.
   const jsonLdData = useMemo(() => {
-    const items = filteredLocal.slice(0, 10).map((p, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      url: `${SITE_BASE_URL}/profissional/${p.slug}`,
-      name: p.businessName || p.name,
-    }));
-    if (!items.length) return null;
+    const visible = [...paginatedLocal, ...paginatedNearby, ...paginatedOutOfState].slice(0, 20);
+    if (!visible.length) return null;
+    const startPos = (page - 1) * ITEMS_PER_PAGE;
+    const items = visible.map((p, i) => {
+      const url = `${SITE_BASE_URL}/profissional/${p.slug}`;
+      const name = p.businessName || p.name;
+      const item: Record<string, unknown> = {
+        '@type': 'LocalBusiness',
+        '@id': url,
+        url,
+        name,
+      };
+      if (p.city) item.address = { '@type': 'PostalAddress', addressLocality: p.city, addressRegion: safeUF(p.state) || undefined, addressCountry: 'BR' };
+      if (typeof p.rating === 'number' && p.rating > 0 && (p.reviewCount ?? 0) > 0) {
+        item.aggregateRating = {
+          '@type': 'AggregateRating',
+          ratingValue: Number(p.rating.toFixed(2)),
+          reviewCount: p.reviewCount,
+          bestRating: 5,
+          worstRating: 1,
+        };
+      }
+      // Disponibilidade: usa presença online/ativo hoje quando conhecido.
+      const isOnline = onlineSet.has(p.userId);
+      const isActiveToday = activeTodaySet.has(p.userId);
+      if (isOnline || isActiveToday) {
+        item.offers = {
+          '@type': 'Offer',
+          availability: isOnline ? 'https://schema.org/InStock' : 'https://schema.org/LimitedAvailability',
+          url,
+        };
+      }
+      return {
+        '@type': 'ListItem',
+        position: startPos + i + 1,
+        item,
+      };
+    });
     return {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
       name: seoTitle,
       description: seoDesc,
       numberOfItems: items.length,
+      itemListOrder: sortBy === 'rating' ? 'https://schema.org/ItemListOrderDescending' : 'https://schema.org/ItemListUnordered',
       itemListElement: items,
     };
-  }, [filteredLocal, seoTitle, seoDesc]);
+  }, [paginatedLocal, paginatedNearby, paginatedOutOfState, page, seoTitle, seoDesc, sortBy, onlineSet, activeTodaySet]);
 
   useJsonLd(jsonLdData);
-
-  const paginatedLocal = filteredLocal.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
-  const paginatedNearby = filteredNearby;
-  const paginatedOutOfState = showOutOfState ? filteredOutOfState : [];
 
   // Sub-agrupamento por bairro dentro do bloco "local" — só aplica
   // quando há GPS, ordenação 'nearest' e diversidade de bairros (>=2).
@@ -1236,7 +1282,16 @@ const SearchPage = () => {
                                   variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
                                   transition={{ duration: 0.3 }}
                                   layout
+                                  className="relative"
                                 >
+                                  {sortBy === 'best' && (
+                                    <ScoreTooltipBadge
+                                      rating={p.rating}
+                                      reviewCount={p.reviewCount}
+                                      distanceKm={p.distanceKm}
+                                      weights={scoreWeights}
+                                    />
+                                  )}
                                   <ProviderRenderer provider={p} isFallback={isFallback} />
                                 </motion.div>
                               ))}
@@ -1257,7 +1312,16 @@ const SearchPage = () => {
                               variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
                               transition={{ duration: 0.35 }}
                               layout
+                              className="relative"
                             >
+                              {sortBy === 'best' && (
+                                <ScoreTooltipBadge
+                                  rating={p.rating}
+                                  reviewCount={p.reviewCount}
+                                  distanceKm={p.distanceKm}
+                                  weights={scoreWeights}
+                                />
+                              )}
                               <ProviderRenderer provider={p} isFallback={isFallback} />
                             </motion.div>
                             {/* Inject sponsor ad every 5 results */}
