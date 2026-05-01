@@ -9,12 +9,13 @@
  * Sem texto livre. Tudo passa pelo catálogo IBGE ou pelo dicionário de RMs.
  */
 import { useMemo } from 'react';
-import { Plus, X, MapPin, Sparkles, Check } from 'lucide-react';
+import { Plus, X, MapPin, Sparkles, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { findMetroByPole, getMetroMembers } from '@/lib/metroRegions';
 import { normalize } from '@/lib/normalize';
+import { useNearbyCitySuggestions } from '@/hooks/useNearbyCitySuggestions';
 
 interface Props {
   /** Cidade-base do profissional (providers.city). */
