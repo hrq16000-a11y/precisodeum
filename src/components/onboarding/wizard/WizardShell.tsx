@@ -244,16 +244,40 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       const serviceSeed = bootstrap?.service ?? currentState.service;
 
       resumeBootstrapRef.current = true;
+      const resolvedReviewPhase: UnifiedPhase | null = isReview
+        ? resolveReviewStartPhase(reviewSection ?? getOnboardingReviewSection(window.location.search))
+        : null;
+
+      // Em revisão abrindo numa fase de TRIAGEM (Steps 1–6), o BetModeShell
+      // hidrata seu estado de localStorage no initializer do useReducer.
+      // Pré-populamos o draft local com os dados reais do perfil/provider
+      // ANTES do dispatch (que dispara render) — assim o usuário vê
+      // Nome/WhatsApp/Cidade/Foto/Documento já preenchidos na Step 1.
+      if (resolvedReviewPhase && resolvedReviewPhase.startsWith('triage_')) {
+        seedBetDraftFromProfile({
+          full_name: profileSeed.full_name || '',
+          whatsapp: profileSeed.whatsapp || '',
+          city: profileSeed.city || '',
+          state: profileSeed.state || '',
+          neighborhood: profileSeed.neighborhood || '',
+          pro_kind: profileSeed.kind ?? null,
+          document: profileSeed.document || '',
+          avatar_url: profileSeed.avatar_url ?? null,
+          avatar_source: profileSeed.avatar_source ?? null,
+          avatar_seed: profileSeed.avatar_seed ?? 0,
+          intent: 'professional',
+        });
+      }
+
       dispatch({
         type: 'HYDRATE',
           state: {
-              phase: isReview
-                ? resolveReviewStartPhase(reviewSection ?? getOnboardingReviewSection(window.location.search))
-              : existingService
+              phase: resolvedReviewPhase
+                ?? (existingService
                 ? profile?.onboarding_completed === true
                   ? 'main_more_services'
                   : 'main_document'
-                : mapMainPhaseToUnified(bootstrap?.phase ?? 'phase2_service'),
+                : mapMainPhaseToUnified(bootstrap?.phase ?? 'phase2_service')),
           triage: {
             intent: 'professional',
             phase: 'done',
@@ -395,7 +419,14 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   const hudProgress = Math.min(1, (phaseIdx + 1) / UNIFIED_VISIBLE_PHASES);
   const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
-  const progressOrder = state.triage.intent === 'professional' ? PROVIDER_WIZARD_PHASE_ORDER : undefined;
+  // Régua de progresso: em modo revisão usa REVIEW_PHASE_ORDER (19 fases —
+  // mesma régua exibida no /dashboard/assistente). Fora de review, mantém
+  // o comportamento legado (16 fases para o profissional).
+  const progressOrder = isReview
+    ? REVIEW_PHASE_ORDER
+    : state.triage.intent === 'professional'
+      ? PROVIDER_WIZARD_PHASE_ORDER
+      : undefined;
   const holdTriageWhileReviewBootstraps = isReview && !resumeBootstrapRef.current && state.phase === 'triage_identity';
 
   // Sincroniza intent real do reducer → sessionStorage para auto-injeção em
