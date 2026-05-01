@@ -79,7 +79,8 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
     categoryIcon: categoryInfo?.icon,
     seed,
   });
-  // Grade de 6 variantes minimalistas (cores/estilos distintos sobre a mesma categoria).
+  // Toggle 6 / 12 variantes — escolha do usuário, sem perder a seleção atual.
+  const [variantCount, setVariantCount] = useState<6 | 12>(6);
   const variants = generateAvatarVariants(
     {
       userId,
@@ -87,7 +88,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
       categoryName: categoryInfo?.name,
       categoryIcon: categoryInfo?.icon,
     },
-    6,
+    variantCount,
   );
 
   // Auto-sugestão: se o usuário ainda não escolheu nada e a categoria carregou,
