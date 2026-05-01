@@ -253,15 +253,9 @@ export default function GlobalExitIntentDialog() {
     (source: 'mouseleave' | 'inactivity') => {
       if (excluded || triggeredRef.current) return;
       if (shouldSuppressExitIntent()) return;
-      // Guard: só dispara após o usuário ter rolado ≥25% da página. Evita
-      // popup "estourando" no carregamento inicial sem qualquer engajamento.
-      try {
-        const scrollTop = window.scrollY || document.documentElement.scrollTop;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        if (docHeight > 0 && scrollTop / docHeight < 0.25) return;
-      } catch {
-        return;
-      }
+      // Guard universal: respeita scroll/tempo/interação por device + 1ª visita.
+      // Substitui o antigo cheque manual de 25% (que não cobria mobile/1ª visita).
+      if (!canTriggerMarketingPopup(mountedAtRef.current)) return;
       try {
         if (sessionStorage.getItem(STORAGE_KEY) === '1') return;
       } catch {
@@ -281,9 +275,10 @@ export default function GlobalExitIntentDialog() {
 
   const resetInactivity = useCallback(() => {
     if (inactivityTimer.current) window.clearTimeout(inactivityTimer.current);
+    const ms = isMobileViewport() ? INACTIVITY_MS_MOBILE : INACTIVITY_MS_DESKTOP;
     inactivityTimer.current = window.setTimeout(
       () => trigger('inactivity'),
-      INACTIVITY_MS,
+      ms,
     );
   }, [trigger]);
 
