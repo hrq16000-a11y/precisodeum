@@ -184,6 +184,7 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
 
     const payload: Record<string, unknown> = {
       signup_method: getSignupMethod(user),
+      auth_provider: (user as any)?.app_metadata?.provider || 'email',
       signup_referrer: referrer,
       ...utm,
       landing_url: window.location.origin + window.location.pathname,
