@@ -58,6 +58,8 @@ export interface OnboardingProfileData {
   cep_history?: Array<{ cep: string; digits: string; address?: string; city?: string; state?: string }>;
   /** Redes sociais institucionais (chave→URL) — só PJ. */
   social_links?: Record<string, string> | null;
+  /** Persistido no BetState: usuário marcou "Ficar ONLINE" no upsell de documento. Default true. */
+  go_online?: boolean;
 }
 
 export type OnboardingCoreField = 'full_name' | 'whatsapp' | 'city' | 'state' | 'document';

@@ -25,6 +25,8 @@ import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
 import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
 import AvatarUpload from '@/components/AvatarUpload';
+import { useAuth } from '@/hooks/useAuth';
+import { getSocialAvatarUrl } from '@/lib/avatarUtils';
 import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 import { wizardStyles as ws, wizardEnter } from './wizardStyles';
@@ -40,8 +42,43 @@ interface AvatarProps {
   userId?: string;
 }
 
+/**
+ * Gera um avatar SVG com iniciais e gradiente de cor determinístico.
+ * Retorna data URL pronto pra usar em <img src> ou persistir em avatar_url.
+ *
+ * Não bate em rede — totalmente offline. O hash do nome define o matiz,
+ * então o mesmo nome sempre cai no mesmo avatar (estável entre sessões).
+ */
+function generateInitialsAvatar(name: string, seed = 0): string {
+  const initials = (name || 'EU')
+    .split(' ')
+    .map((s) => s[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || '?';
+  // Hash simples do nome + seed → matiz HSL.
+  let h = 0;
+  for (let i = 0; i < (name + seed).length; i++) h = (h * 31 + (name + seed).charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  const c1 = `hsl(${hue} 70% 55%)`;
+  const c2 = `hsl(${(hue + 40) % 360} 75% 45%)`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'>
+    <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/>
+    </linearGradient></defs>
+    <rect width='200' height='200' rx='100' fill='url(#g)'/>
+    <text x='50%' y='54%' font-family='system-ui,sans-serif' font-size='90' font-weight='700'
+      fill='white' text-anchor='middle' dominant-baseline='middle'>${initials}</text>
+  </svg>`;
+  // btoa não suporta UTF-8 direto; aqui é só ASCII.
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
 export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userId }: AvatarProps) => {
   const focusAvatar = useFocusFieldFromReview('avatar_url');
+  const { user } = useAuth();
+  const socialUrl = getSocialAvatarUrl(user);
   const initials = (data.full_name || 'EU')
     .split(' ')
     .map((s) => s[0])
@@ -49,6 +86,9 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
     .slice(0, 2)
     .join('')
     .toUpperCase();
+
+  const [genSeed, setGenSeed] = useState(0);
+  const generatedUrl = generateInitialsAvatar(data.full_name || 'EU', genSeed);
 
   return (
     <motion.div {...wizardEnter} className={ws.container}>
@@ -75,6 +115,57 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
           />
         )}
       </div>
+
+      {/* Opções rápidas: câmera/galeria já é coberto pelo AvatarUpload (input file accept=image/*).
+          Aqui adicionamos atalhos sem upload: Google, gerar avatar e remover. */}
+      <div className="grid grid-cols-2 gap-2">
+        {socialUrl && (
+          <button
+            type="button"
+            onClick={() => onChange({ avatar_url: socialUrl })}
+            className="rounded-xl border border-border bg-card p-2 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            data-testid="phase4-avatar-use-google"
+          >
+            <span className="flex items-center justify-center gap-2">
+              <img src={socialUrl} alt="" aria-hidden="true" className="h-6 w-6 rounded-full object-cover" />
+              Usar foto da conta
+            </span>
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => { onChange({ avatar_url: generatedUrl }); }}
+          className="rounded-xl border border-border bg-card p-2 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+          data-testid="phase4-avatar-use-generated"
+        >
+          <span className="flex items-center justify-center gap-2">
+            <img src={generatedUrl} alt="" aria-hidden="true" className="h-6 w-6 rounded-full" />
+            Usar avatar gerado
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setGenSeed((s) => s + 1)}
+          className="col-span-2 rounded-xl border border-dashed border-border bg-transparent p-1.5 text-[11px] text-muted-foreground hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+          data-testid="phase4-avatar-shuffle"
+        >
+          Trocar cores do avatar gerado
+        </button>
+        {data.avatar_url && (
+          <button
+            type="button"
+            onClick={() => onChange({ avatar_url: null })}
+            className="col-span-2 rounded-xl border border-border bg-transparent p-1.5 text-[11px] text-muted-foreground hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            data-testid="phase4-avatar-clear"
+          >
+            Remover foto
+          </button>
+        )}
+      </div>
+
+      <p className="text-center text-[11px] text-muted-foreground">
+        Tirar foto com a câmera, escolher da galeria, usar a foto da sua conta Google ou um avatar gerado — você decide.
+      </p>
 
       <div className="flex flex-col gap-2 pt-1">
         <Button type="button" size="lg" onClick={onContinue} disabled={saving || !data.avatar_url} className={ws.cta}>
@@ -110,7 +201,9 @@ function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
 export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId, locked }: DocumentProps) => {
   const [verified, setVerified] = useState(false);
   const [providerStatus, setProviderStatus] = useState<string | null>(null);
-  const [goOnline, setGoOnline] = useState(true); // pré-marcado: ficar ONLINE é opcional, mas default ON
+  // Persistido em data.go_online (default true) → sobrevive a Voltar/restauração de draft.
+  const goOnline = data.go_online !== false;
+  const setGoOnline = (next: boolean) => onChange({ go_online: next });
   const focusDoc = useFocusFieldFromReview('document');
   const valid = isValidDoc(data.document, data.kind);
   const isPj = data.kind === 'pj';

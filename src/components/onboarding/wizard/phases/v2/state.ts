@@ -49,6 +49,7 @@ export const initialOnboardingState: OnboardingState = {
     facebook_url: '',
     primary_category_id: null,
     working_hours: '',
+    go_online: true,
   },
   service: {
     service_name: '',
