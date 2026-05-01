@@ -281,4 +281,42 @@ export const ServiceCityPicker = ({
   );
 };
 
+interface NearbyChipRowProps {
+  label: string;
+  tone: 'near' | 'mid' | 'far';
+  items: Array<{ id: string; name: string; state_uf: string; distance_km: number }>;
+  disabled: boolean;
+  onPick: (c: { id: string; name: string; state_uf: string; distance_km: number }) => void;
+}
+
+const TONE: Record<NearbyChipRowProps['tone'], string> = {
+  near: 'border-emerald-500/50 bg-emerald-500/5 text-foreground hover:bg-emerald-500/10',
+  mid: 'border-amber-500/40 bg-amber-500/5 text-foreground hover:bg-amber-500/10',
+  far: 'border-border bg-card text-foreground hover:bg-muted',
+};
+
+const NearbyChipRow = ({ label, tone, items, disabled, onPick }: NearbyChipRowProps) => (
+  <div className="space-y-1">
+    <span className="text-[9.5px] font-bold uppercase tracking-wide text-muted-foreground/80">
+      {label}
+    </span>
+    <div className="flex flex-wrap gap-1">
+      {items.map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          onClick={() => onPick(c)}
+          disabled={disabled}
+          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] transition disabled:opacity-50 ${TONE[tone]}`}
+          title={`${c.name}/${c.state_uf} — ${c.distance_km.toFixed(1)} km`}
+        >
+          <Plus className="h-2.5 w-2.5" />
+          <span className="break-words">{c.name}</span>
+          <span className="text-[9px] text-muted-foreground">{c.distance_km.toFixed(0)}km</span>
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 export default ServiceCityPicker;
