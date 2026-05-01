@@ -1312,7 +1312,16 @@ const SearchPage = () => {
                               variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
                               transition={{ duration: 0.35 }}
                               layout
+                              className="relative"
                             >
+                              {sortBy === 'best' && (
+                                <ScoreTooltipBadge
+                                  rating={p.rating}
+                                  reviewCount={p.reviewCount}
+                                  distanceKm={p.distanceKm}
+                                  weights={scoreWeights}
+                                />
+                              )}
                               <ProviderRenderer provider={p} isFallback={isFallback} />
                             </motion.div>
                             {/* Inject sponsor ad every 5 results */}
