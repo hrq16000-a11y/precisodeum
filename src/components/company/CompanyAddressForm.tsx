@@ -66,6 +66,20 @@ export default function CompanyAddressForm({
 
   const isSuggested = (k: keyof CompanyAddressValue) => suggestedFields.includes(k);
 
+  // Validações inline, não-bloqueantes (só sinalizam quando o usuário digitou algo inválido).
+  const streetRaw = (value.street ?? '').trim();
+  const numberRaw = (value.street_number ?? '').trim();
+  const cepDigits = onlyDigits(value.postal_code ?? '');
+  const streetError = streetRaw.length > 0 && streetRaw.length < 3
+    ? 'Logradouro muito curto — informe pelo menos 3 caracteres.'
+    : '';
+  const numberError = numberRaw.length > 0 && !/^([0-9]{1,6}|s\/?n|sn)$/i.test(numberRaw)
+    ? 'Número inválido — use só dígitos ou "S/N".'
+    : '';
+  const cepError = cepDigits.length > 0 && cepDigits.length < 8
+    ? 'CEP incompleto — precisa ter 8 dígitos.'
+    : '';
+
   // Lookup automático quando o CEP atinge 8 dígitos
   useEffect(() => {
     const digits = onlyDigits(value.postal_code ?? '');
@@ -122,8 +136,13 @@ export default function CompanyAddressForm({
             onChange={(e) => onChange({ street: e.target.value })}
             placeholder="Rua / Avenida"
             maxLength={120}
+            aria-invalid={!!streetError}
+            aria-describedby={streetError ? 'street-error' : undefined}
             className={isSuggested('street') && value.street ? inputSuggested : inputBase}
           />
+          {streetError && (
+            <p id="street-error" className="mt-1 text-[10.5px] text-rose-600">{streetError}</p>
+          )}
         </label>
         <label className="block">
           <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -135,8 +154,13 @@ export default function CompanyAddressForm({
             value={value.street_number ?? ''}
             onChange={(e) => onChange({ street_number: e.target.value.replace(/[^\dA-Za-z/-]/g, '').slice(0, 10) })}
             placeholder="123"
+            aria-invalid={!!numberError}
+            aria-describedby={numberError ? 'number-error' : undefined}
             className={inputBase}
           />
+          {numberError && (
+            <p id="number-error" className="mt-1 text-[10.5px] text-rose-600">{numberError}</p>
+          )}
         </label>
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -175,10 +199,15 @@ export default function CompanyAddressForm({
             onChange={(e) => onChange({ postal_code: onlyDigits(e.target.value).slice(0, 8) })}
             placeholder="00000-000"
             maxLength={9}
+            aria-invalid={!!cepError}
+            aria-describedby={cepError ? 'cep-error' : undefined}
             className={
               isSuggested('postal_code') && value.postal_code ? inputSuggested : inputBase
             }
           />
+          {cepError && (
+            <p id="cep-error" className="mt-1 text-[10.5px] text-rose-600">{cepError}</p>
+          )}
         </label>
       </div>
       <label className="mt-1 flex cursor-pointer items-start gap-2 rounded-lg bg-background/60 p-2 text-[11px] leading-snug text-foreground">

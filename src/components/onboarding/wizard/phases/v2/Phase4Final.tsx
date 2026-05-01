@@ -353,6 +353,21 @@ interface ExtrasBProps {
 export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: ExtrasBProps) => {
   const focusInsta = useFocusFieldFromReview('instagram_url');
   const focusFb = useFocusFieldFromReview('facebook_url');
+
+  // Resumo PJ — só aparece quando o usuário preencheu algum dado de endereço.
+  const isPj = data.kind === 'pj';
+  const hasAddress = !!(data.street || data.street_number || data.postal_code || data.complement);
+  const showPjReview = isPj && hasAddress;
+  const formattedAddress = [
+    [data.street, data.street_number].filter(Boolean).join(', '),
+    data.complement,
+    data.neighborhood,
+    [data.city, data.state].filter(Boolean).join(' / '),
+    data.postal_code ? `CEP ${data.postal_code.replace(/(\d{5})(\d{3})/, '$1-$2')}` : '',
+  ]
+    .filter(Boolean)
+    .join(' • ');
+
   return (
     <motion.div {...wizardEnter} className={ws.container}>
       <header className={ws.headerWrap}>
@@ -386,6 +401,32 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, saving }: Extr
           />
         </label>
       </div>
+
+      {showPjReview && (
+        <div
+          data-testid="pj-address-review"
+          className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3 text-[12px] leading-snug"
+        >
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-700">
+            <MapPin className="h-3 w-3" /> Confirme seu endereço PJ
+          </div>
+          <p className="text-foreground">{formattedAddress || 'Endereço incompleto.'}</p>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            {data.show_full_address
+              ? 'Será exibido publicamente no seu perfil.'
+              : 'Ficará oculto — só aparece a cidade/bairro.'}
+          </p>
+          <label className="mt-2 flex cursor-pointer items-start gap-2 text-[11px] text-foreground">
+            <input
+              type="checkbox"
+              checked={Boolean(data.show_full_address)}
+              onChange={(e) => onChange({ show_full_address: e.target.checked } as Partial<OnboardingProfileData>)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+            />
+            <span>Exibir endereço completo no perfil público.</span>
+          </label>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2 pt-1">
         <Button type="button" size="lg" onClick={onFinish} disabled={saving} className={ws.cta}>
