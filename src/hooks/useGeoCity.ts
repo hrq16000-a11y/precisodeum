@@ -484,7 +484,7 @@ export function useGeoCity(): GeoStore {
           import('@/lib/tracking').then(({ trackGeoEvent }) => {
             trackGeoEvent('geo_failed', { stage: 'gps', had_cache: geoState.city ? 'true' : 'false' });
           }).catch(() => {});
-          resolve({ ok: false, city: null, state: null, accuracyMeters: null, neighborhood: null });
+          resolve({ ok: false, city: null, state: null, accuracyMeters: null, neighborhood: null, latitude: null, longitude: null });
         },
         { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
       );
