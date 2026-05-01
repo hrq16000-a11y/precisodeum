@@ -31,6 +31,7 @@ import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload, detectForbiddenAddressKeys } from '@/lib/providerPayload';
 import { logWizardError } from '@/lib/wizardErrorGuard';
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
+import { setActiveWizardPhase } from '@/lib/wizardZombieGuard';
 
 // Aviso única vez por sessão para evitar spam
 let _addressWarnedOnce = false;
