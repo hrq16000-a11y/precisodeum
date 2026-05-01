@@ -27,7 +27,7 @@ import VerificationStatusBadge from '@/components/profile/VerificationStatusBadg
 import AvatarUpload from '@/components/AvatarUpload';
 import { useAuth } from '@/hooks/useAuth';
 import { getSocialAvatarUrl } from '@/lib/avatarUtils';
-import { generateUniqueAvatar } from '@/lib/avatarGenerator';
+import { generateUniqueAvatar, generateAvatarVariants } from '@/lib/avatarGenerator';
 import { toast } from 'sonner';
 import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
@@ -77,6 +77,16 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
     categoryIcon: categoryInfo?.icon,
     seed,
   });
+  // Grade de 6 variantes minimalistas (cores/estilos distintos sobre a mesma categoria).
+  const variants = generateAvatarVariants(
+    {
+      userId,
+      fullName: data.full_name,
+      categoryName: categoryInfo?.name,
+      categoryIcon: categoryInfo?.icon,
+    },
+    6,
+  );
 
   // Auto-sugestão: se o usuário ainda não escolheu nada e a categoria carregou,
   // já mostramos o avatar gerado como pré-seleção (mas não bloqueia upload/câmera).
@@ -237,35 +247,49 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
             </span>
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => onChange({ avatar_url: generatedUrl, avatar_source: 'generated' })}
-          className={`rounded-xl border ${data.avatar_source === 'generated' ? 'border-amber-400 ring-1 ring-amber-400/40' : 'border-border'} bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500`}
-          data-testid="phase4-avatar-use-generated"
-        >
-          <span className="flex items-center justify-center gap-2">
-            <img src={generatedUrl} alt="" aria-hidden="true" className="h-5 w-5 rounded-full" />
-            Avatar minimalista
+      </div>
+
+      {/* Grade de avatares minimalistas — usuário escolhe qual gosta mais. */}
+      <div className="rounded-xl border border-border bg-card p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[12px] font-semibold text-foreground">
+            Ou escolha um avatar minimalista
           </span>
-        </button>
-        {data.avatar_source === 'generated' && (
-          <button
-            type="button"
-            onClick={() => {
-              const next = (data.avatar_seed ?? 0) + 1;
-              const url = generateUniqueAvatar({
-                userId, fullName: data.full_name,
-                categoryName: categoryInfo?.name, categoryIcon: categoryInfo?.icon,
-                seed: next,
-              });
-              onChange({ avatar_seed: next, avatar_url: url, avatar_source: 'generated' });
-            }}
-            className="col-span-2 rounded-xl border border-dashed border-border bg-transparent p-1.5 text-[11px] text-muted-foreground hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-            data-testid="phase4-avatar-shuffle"
-          >
-            Trocar variação do avatar gerado
-          </button>
-        )}
+          {categoryInfo && (
+            <span className="text-[10px] text-muted-foreground">
+              {categoryInfo.name}
+            </span>
+          )}
+        </div>
+        <div
+          role="radiogroup"
+          aria-label="Avatares minimalistas sugeridos"
+          className="grid grid-cols-6 gap-2"
+        >
+          {variants.map((v) => {
+            const isSelected = data.avatar_source === 'generated' && (data.avatar_seed ?? 0) === v.seed;
+            return (
+              <button
+                key={v.seed}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                aria-label={`Avatar variação ${v.seed + 1}`}
+                onClick={() =>
+                  onChange({ avatar_seed: v.seed, avatar_url: v.url, avatar_source: 'generated' })
+                }
+                className={`relative aspect-square overflow-hidden rounded-full border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                  isSelected
+                    ? 'border-amber-400 ring-2 ring-amber-400/40 scale-105'
+                    : 'border-border hover:border-amber-300'
+                }`}
+                data-testid={`phase4-avatar-variant-${v.seed}`}
+              >
+                <img src={v.url} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <p className="text-center text-[11px] text-muted-foreground">
