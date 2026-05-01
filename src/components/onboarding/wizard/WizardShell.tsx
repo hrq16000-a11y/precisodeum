@@ -42,7 +42,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { clearOnboardingV2Draft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2Draft';
 import { clearSessionTouched } from '@/components/onboarding/wizard/phases/v2/sessionTouched';
 import { clearRemoteDraft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2RemoteDraft';
-import { clearBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetDraft';
+import { clearBetDraft, seedBetDraftFromProfile } from '@/components/onboarding/wizard/phases/bet/useBetDraft';
 import { clearRemoteBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetRemoteDraft';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
@@ -55,6 +55,7 @@ import {
   mapUnifiedToMainPhase,
   mapTriagePhaseToUnified,
   PROVIDER_WIZARD_PHASE_ORDER,
+  REVIEW_PHASE_ORDER,
   unifiedPhaseIndex,
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
@@ -82,19 +83,31 @@ interface WizardShellProps {
 /**
  * Em modo `edit_profile`, decide a fase em que o wizard inicia.
  *
- * IMPORTANTE: nunca cair em `triage_identity` em revisão. A triagem (BetMode)
- * tem reducer e draft próprios e não lê o `seedState` do WizardShell — começar
- * dela em modo revisão fazia o usuário ver TUDO em branco, mesmo com perfil
- * 100% preenchido (sintoma reportado em 01/05/2026: "Assistente apagou tudo").
- *
- * Regras:
- *  - Com `section` explícita ⇒ pula para a fase main correspondente.
- *  - Sem `section` ⇒ começa do início da fase principal (`main_action`),
- *    de onde o usuário pode usar "Pular esta etapa" para navegar entre fases
- *    já completas. Os dados reais vêm via `seedState` e re-hidratam tudo.
+ * Regras (mai/2026 — "Assistente é dono do Wizard"):
+ *  - SEM `section` na URL ⇒ abre na PRIMEIRA fase (`triage_identity`).
+ *    Ele é o ponto natural para revisão total da régua de 19 etapas.
+ *    A re-hidratação síncrona da triagem acontece via `seedBetDraftFromProfile`
+ *    chamada antes do BetModeShell montar.
+ *  - `section` apontando para uma fase de triagem ⇒ abre nela.
+ *  - `section` clássica (servicos/dados/portfolio/url/cadastro) ⇒ pula
+ *    direto para a fase main correspondente.
  */
 function resolveReviewStartPhase(section: OnboardingReviewSection | null): UnifiedPhase {
   switch (section) {
+    // Seções da TRIAGEM — abrem direto nas Steps 1–6.
+    case 'identidade':
+      return 'triage_identity';
+    case 'quem':
+      return 'triage_who';
+    case 'cidade':
+      return 'triage_client_city';
+    case 'tipo':
+      return 'triage_pro_kind';
+    case 'documento':
+      return 'triage_pro_document';
+    case 'local':
+      return 'triage_pro_location';
+    // Seções clássicas (compat) — apontam para fases main_*.
     case 'servicos':
       return 'main_service';
     case 'dados':
@@ -104,10 +117,10 @@ function resolveReviewStartPhase(section: OnboardingReviewSection | null): Unifi
     case 'url':
       return 'main_extras_b';
     case 'cadastro':
-      return 'main_action';
+      return 'triage_identity';
     default:
-      // Sem section ⇒ vai para a 1ª fase main (NÃO para a triagem).
-      return 'main_action';
+      // Sem section ⇒ Step 1 da régua unificada (revisão total).
+      return 'triage_identity';
   }
 }
 
@@ -230,16 +243,40 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       const serviceSeed = bootstrap?.service ?? currentState.service;
 
       resumeBootstrapRef.current = true;
+      const resolvedReviewPhase: UnifiedPhase | null = isReview
+        ? resolveReviewStartPhase(reviewSection ?? getOnboardingReviewSection(window.location.search))
+        : null;
+
+      // Em revisão abrindo numa fase de TRIAGEM (Steps 1–6), o BetModeShell
+      // hidrata seu estado de localStorage no initializer do useReducer.
+      // Pré-populamos o draft local com os dados reais do perfil/provider
+      // ANTES do dispatch (que dispara render) — assim o usuário vê
+      // Nome/WhatsApp/Cidade/Foto/Documento já preenchidos na Step 1.
+      if (resolvedReviewPhase && resolvedReviewPhase.startsWith('triage_')) {
+        seedBetDraftFromProfile({
+          full_name: profileSeed.full_name || '',
+          whatsapp: profileSeed.whatsapp || '',
+          city: profileSeed.city || '',
+          state: profileSeed.state || '',
+          neighborhood: profileSeed.neighborhood || '',
+          pro_kind: profileSeed.kind ?? null,
+          document: profileSeed.document || '',
+          avatar_url: profileSeed.avatar_url ?? null,
+          avatar_source: profileSeed.avatar_source ?? null,
+          avatar_seed: profileSeed.avatar_seed ?? 0,
+          intent: 'professional',
+        });
+      }
+
       dispatch({
         type: 'HYDRATE',
           state: {
-              phase: isReview
-                ? resolveReviewStartPhase(reviewSection ?? getOnboardingReviewSection(window.location.search))
-              : existingService
+              phase: resolvedReviewPhase
+                ?? (existingService
                 ? profile?.onboarding_completed === true
                   ? 'main_more_services'
                   : 'main_document'
-                : mapMainPhaseToUnified(bootstrap?.phase ?? 'phase2_service'),
+                : mapMainPhaseToUnified(bootstrap?.phase ?? 'phase2_service')),
           triage: {
             intent: 'professional',
             phase: 'done',
@@ -361,16 +398,50 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     state.phase !== 'main_celebration' &&
     state.phase !== 'done';
 
+  // Em revisão, retrocesso linear usa REVIEW_PHASE_ORDER (régua sem
+  // main_action..main_contact obsoletas), garantindo que o usuário não pare
+  // em fases-fantasma sem step renderizado.
+  const prevReviewPhase = useCallback((phase: UnifiedPhase): UnifiedPhase => {
+    const i = REVIEW_PHASE_ORDER.indexOf(phase);
+    if (i <= 0) return phase;
+    return REVIEW_PHASE_ORDER[i - 1];
+  }, []);
+
   const handleGlobalBack = useCallback(() => {
     void trackOnboardingEvent({
       phase: state.phase as any,
       event: 'back',
       meta: { variant: 'unified', source: 'global-nav' },
     });
-    // Dispara um evento DOM que os steps podem opcionalmente capturar.
-    // Como fallback, o usuário também tem o botão "Voltar" interno do step.
+    // Em modo revisão, se estamos numa fase de TRIAGEM (Steps 1–6) ou na
+    // primeira fase do V2 (`main_service`), retrocedemos diretamente pela
+    // régua REVIEW_PHASE_ORDER para garantir Voltar infinito até a Step 1.
+    if (isReview && (state.phase.startsWith('triage_') || state.phase === 'main_service')) {
+      const prev = prevReviewPhase(state.phase);
+      if (prev !== state.phase) {
+        dispatch({ type: 'GO_TO_PHASE', phase: prev });
+        return;
+      }
+    }
+    // Caso contrário, despacha o evento DOM tratado pelos orquestradores.
     window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
-  }, [state.phase]);
+  }, [state.phase, isReview, prevReviewPhase]);
+
+  // Listener para retrocesso na régua unificada disparado pelo V2 quando a
+  // pilha de revisão esgota (modo "Assistente é dono do Wizard").
+  useEffect(() => {
+    if (!isReview) return;
+    const onPrevUnified = () => {
+      const cur = stateRef.current.phase;
+      const i = REVIEW_PHASE_ORDER.indexOf(cur);
+      const prev = i > 0 ? REVIEW_PHASE_ORDER[i - 1] : cur;
+      if (prev !== cur) {
+        dispatch({ type: 'GO_TO_PHASE', phase: prev });
+      }
+    };
+    window.addEventListener('wizard:request-prev-unified', onPrevUnified as EventListener);
+    return () => window.removeEventListener('wizard:request-prev-unified', onPrevUnified as EventListener);
+  }, [isReview]);
 
   // Pontos REAIS lidos de profiles.engagement_points (atualizados pelos triggers
   // de banco a cada ação concluída). Fora da triagem usamos o valor do banco;
@@ -381,7 +452,14 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   const hudProgress = Math.min(1, (phaseIdx + 1) / UNIFIED_VISIBLE_PHASES);
   const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
-  const progressOrder = state.triage.intent === 'professional' ? PROVIDER_WIZARD_PHASE_ORDER : undefined;
+  // Régua de progresso: em modo revisão usa REVIEW_PHASE_ORDER (19 fases —
+  // mesma régua exibida no /dashboard/assistente). Fora de review, mantém
+  // o comportamento legado (16 fases para o profissional).
+  const progressOrder = isReview
+    ? REVIEW_PHASE_ORDER
+    : state.triage.intent === 'professional'
+      ? PROVIDER_WIZARD_PHASE_ORDER
+      : undefined;
   const holdTriageWhileReviewBootstraps = isReview && !resumeBootstrapRef.current && state.phase === 'triage_identity';
 
   // Sincroniza intent real do reducer → sessionStorage para auto-injeção em

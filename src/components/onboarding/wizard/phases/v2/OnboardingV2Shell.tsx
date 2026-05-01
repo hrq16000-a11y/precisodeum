@@ -656,19 +656,24 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   useEffect(() => {
     const goBack = () => {
-      // ── MODO REVISÃO: histórico por sessão ─────────────────────────────
-      // Em editMode, "Voltar" desempilha a fase REAL anterior visitada nesta
-      // sessão (resiliente a pulos via EditModeSkipButton ou navegação direta
-      // por `?section=`). Quando a pilha esgota, devolve o usuário ao
-      // Dashboard do Assistente — nunca trava o usuário na 1ª fase do V2.
+      // ── MODO REVISÃO: navegação não-linear (Assistente é dono do Wizard) ─
+      // 1) Tenta desempilhar fase REAL anterior visitada nesta sessão.
+      // 2) Se a pilha esgota, delega ao WizardShell via evento global, que
+      //    sabe retroceder linearmente pela UNIFIED_PHASE_ORDER (incluindo
+      //    voltar de phase2_service para a triagem). Nunca cai no Dashboard
+      //    abruptamente: o Voltar é "infinito" até a Step 1.
       if (editMode) {
         const previous = popReviewPhase();
         if (previous && previous !== state.phase) {
           dispatch({ type: 'GO_TO', phase: previous as any });
           return;
         }
-        clearReviewHistory();
-        navigate('/dashboard/assistente');
+        // Pilha esgotada — peça ao WizardShell para retroceder na régua unificada.
+        try {
+          window.dispatchEvent(new CustomEvent('wizard:request-prev-unified', {
+            detail: { fromV2Phase: state.phase },
+          }));
+        } catch { /* fail-soft */ }
         return;
       }
 
