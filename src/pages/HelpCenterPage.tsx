@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import OpenSupportTicketCard from '@/components/support/OpenSupportTicketCard';
 
-const FALLBACK_PHONE = '5541997452053';
+
 
 const SECTIONS = [
   { key: 'clientes', label: 'Para Clientes', icon: Users, description: 'Como buscar profissionais, avaliar e solicitar orçamentos' },
