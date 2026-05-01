@@ -256,7 +256,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => handleCapturedFile(e.target.files?.[0] || null, 'camera')}
+        onChange={(e) => { const f = e.target.files?.[0] || null; e.currentTarget.value = ''; handleSelectFile(f, 'camera'); }}
       />
       <input
         ref={galleryInputRef}
