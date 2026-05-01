@@ -1166,20 +1166,23 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     clearSessionTouched();
     if (user?.id) void clearRemoteDraft(user.id);
 
-    // BUGFIX: idempotente — sempre garante que o perfil esteja marcado como
-    // concluído ANTES de navegar, independente de ter ou não firstServiceId.
-    // Sem isso, o OnboardingGate podia repor o usuário em /cadastro-inicial
-    // (ou em rota errada) por uma race entre profile cache e a checagem
-    // de `hasUnlockedAppAccess`. Aguardar o refetch garante que o estado
-    // global de auth esteja coerente quando a próxima rota montar.
+    // BLINDAGEM: o usuário SEMPRE precisa sair do wizard ao chegar em `done`.
+    // Marcamos o perfil como concluído e fazemos refetch, mas QUALQUER falha
+    // (rede, RLS, race) é fail-soft: navegamos mesmo assim para a tela de
+    // sucesso, que por sua vez tem CTA explícito para o /dashboard. O
+    // OnboardingGate revalida o estado global lá e não devolve o usuário
+    // para /cadastro-inicial porque a tela de sucesso é whitelisted.
     if (user?.id) {
-      const { error } = await supabase.from('profiles')
-        .update({ onboarding_step: 5, onboarding_completed: true })
-        .eq('id', user.id);
-
-      if (error) {
-        toast.error('Não consegui concluir seu perfil agora. ' + (error.message || 'Tente de novo.'));
-        return;
+      try {
+        const { error } = await supabase.from('profiles')
+          .update({ onboarding_step: 5, onboarding_completed: true })
+          .eq('id', user.id);
+        if (error) {
+          console.warn('[finishWizard] profile update failed (fail-soft)', error);
+          toast.warning('Concluímos seu cadastro, mas houve um aviso ao salvar o status. Você pode seguir normalmente.');
+        }
+      } catch (e) {
+        console.warn('[finishWizard] profile update threw (fail-soft)', e);
       }
 
       try { await refetchProfile?.(); } catch { /* noop — navegação ainda ocorre */ }
