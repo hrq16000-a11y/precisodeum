@@ -208,6 +208,143 @@ export const TIME_OPTIONS: string[] = (() => {
 /** Para o select de fim, incluímos também "24:00". */
 export const TIME_OPTIONS_END: string[] = [...TIME_OPTIONS, '24:00'];
 
+/* ─── Validação de faixas (anti-conflito dia × hora) ─── */
+
+export const MAX_RANGES = 3;
+
+/** Converte "HH:MM" em minutos absolutos a partir de 00:00. "24:00" = 1440. */
+function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+/**
+ * Expande uma faixa em pares (dayKey, [startMin, endMin)). Se a faixa cruza
+ * meia-noite (end < start), divide em (start..1440) no dia D + (0..end) no
+ * dia D+1. Se end === "00:00" e start === "00:00" → 24h (0..1440).
+ */
+function expandRangeToDayMinutes(r: WorkingHoursRange): Array<{ day: WeekdayKey; from: number; to: number }> {
+  const out: Array<{ day: WeekdayKey; from: number; to: number }> = [];
+  const startM = toMinutes(r.start);
+  const endRaw = r.end === '24:00' ? 1440 : toMinutes(r.end);
+  const is24 = r.start === '00:00' && (r.end === '00:00' || r.end === '24:00');
+  const days = sortDaysInternal(r.days);
+  for (const d of days) {
+    if (is24) {
+      out.push({ day: d, from: 0, to: 1440 });
+    } else if (endRaw > startM) {
+      out.push({ day: d, from: startM, to: endRaw });
+    } else if (endRaw < startM) {
+      // Cruza meia-noite
+      out.push({ day: d, from: startM, to: 1440 });
+      const nextDay = nextDayKey(d);
+      out.push({ day: nextDay, from: 0, to: endRaw });
+    }
+    // endRaw === startM e não é 24h → faixa vazia, ignora
+  }
+  return out;
+}
+
+function sortDaysInternal(days: WeekdayKey[]): WeekdayKey[] {
+  return [...new Set(days)].sort((a, b) => KEY_ORDER[a] - KEY_ORDER[b]);
+}
+
+function nextDayKey(d: WeekdayKey): WeekdayKey {
+  const order: WeekdayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const idx = order.indexOf(d);
+  return order[(idx + 1) % 7];
+}
+
+export interface RangeValidationIssue {
+  /** Índice da faixa que apresenta o problema (a "nova" / segunda em conflito). */
+  index: number;
+  /** Índice da faixa pré-existente em conflito (quando aplicável). */
+  conflictsWith?: number;
+  type: 'empty_days' | 'empty_hours' | 'overlap' | 'duplicate' | 'too_many';
+  message: string;
+}
+
+/**
+ * Valida o struct inteiro:
+ * - Máximo 3 faixas.
+ * - Cada faixa precisa ter ao menos 1 dia e horas válidas.
+ * - Faixas não podem se sobrepor: para cada par (faixa A, faixa B), não pode
+ *   existir um dia em comum com janela horária que se intersecciona.
+ *   "Diferentes em dia OU em hora" é o critério aceitável.
+ */
+export function validateStruct(struct: WorkingHoursStruct | null | undefined): RangeValidationIssue[] {
+  const issues: RangeValidationIssue[] = [];
+  if (!struct || !Array.isArray(struct.ranges)) return issues;
+  const ranges = struct.ranges;
+
+  if (ranges.length > MAX_RANGES) {
+    issues.push({
+      index: MAX_RANGES,
+      type: 'too_many',
+      message: `Máximo ${MAX_RANGES} faixas. Remova alguma para adicionar outra.`,
+    });
+  }
+
+  // Valida individualmente
+  ranges.forEach((r, i) => {
+    if (!r.days || r.days.length === 0) {
+      issues.push({ index: i, type: 'empty_days', message: `Faixa ${i + 1}: selecione pelo menos um dia.` });
+    }
+    const startM = toMinutes(r.start);
+    const endRaw = r.end === '24:00' ? 1440 : toMinutes(r.end);
+    const is24 = r.start === '00:00' && (r.end === '00:00' || r.end === '24:00');
+    if (!is24 && startM === endRaw) {
+      issues.push({ index: i, type: 'empty_hours', message: `Faixa ${i + 1}: início e fim iguais.` });
+    }
+  });
+
+  // Valida sobreposição entre pares
+  const expanded = ranges.map(expandRangeToDayMinutes);
+  for (let i = 0; i < ranges.length; i++) {
+    for (let j = i + 1; j < ranges.length; j++) {
+      // Duplicata exata?
+      if (
+        JSON.stringify({ d: sortDaysInternal(ranges[i].days), s: ranges[i].start, e: ranges[i].end }) ===
+        JSON.stringify({ d: sortDaysInternal(ranges[j].days), s: ranges[j].start, e: ranges[j].end })
+      ) {
+        issues.push({
+          index: j,
+          conflictsWith: i,
+          type: 'duplicate',
+          message: `Faixa ${j + 1} é igual à faixa ${i + 1}. Diferencie por dia ou por horário.`,
+        });
+        continue;
+      }
+      // Sobreposição (mesmo dia + janela com interseção)
+      const a = expanded[i];
+      const b = expanded[j];
+      let overlap = false;
+      for (const segA of a) {
+        for (const segB of b) {
+          if (segA.day !== segB.day) continue;
+          const inter = Math.min(segA.to, segB.to) - Math.max(segA.from, segB.from);
+          if (inter > 0) { overlap = true; break; }
+        }
+        if (overlap) break;
+      }
+      if (overlap) {
+        issues.push({
+          index: j,
+          conflictsWith: i,
+          type: 'overlap',
+          message: `Faixa ${j + 1} sobrepõe a faixa ${i + 1} (mesmo dia em horários que se cruzam). Ajuste o dia ou o horário.`,
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
+export function isStructValid(struct: WorkingHoursStruct | null | undefined): boolean {
+  return validateStruct(struct).length === 0;
+}
+
 /* ─── Compatibilidade com legado (string livre) ─── */
 
 /**
