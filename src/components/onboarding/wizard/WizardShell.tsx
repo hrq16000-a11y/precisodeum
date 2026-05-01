@@ -29,6 +29,7 @@ import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/w
 import { buildOnboardingV2BootstrapState } from '@/components/onboarding/wizard/phases/v2/bootstrap';
 import { fetchExistingFirstService, findExistingProvider } from '@/components/onboarding/wizard/phases/v2/findExistingRecords';
 import Step20_MoreServices from '@/components/onboarding/wizard/phases/Step20_MoreServices';
+import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21_PortfolioAlbums';
 import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 import { Button } from '@/components/ui/button';
 import PointsHud from '@/components/onboarding/wizard/phases/bet/PointsHud';
@@ -36,6 +37,13 @@ import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
 import { useEngagementPointsValue } from '@/hooks/useEngagementPoints';
 import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
+import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
+import { supabase } from '@/integrations/supabase/client';
+import { clearOnboardingV2Draft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2Draft';
+import { clearSessionTouched } from '@/components/onboarding/wizard/phases/v2/sessionTouched';
+import { clearRemoteDraft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2RemoteDraft';
+import { clearBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetDraft';
+import { clearRemoteBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetRemoteDraft';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
 import { trackOnboardingEvent, setOnboardingIntent } from './phases/v2/telemetry';
@@ -272,6 +280,28 @@ export default function WizardShell() {
     }
   }, [state.triage.intent]);
 
+  const finalizeUnifiedOnboarding = useCallback(async () => {
+    markOnboardingCompletionGrace();
+    clearOnboardingV2Draft();
+    clearSessionTouched();
+    clearBetDraft();
+
+    if (user?.id) {
+      void clearRemoteDraft(user.id);
+      void clearRemoteBetDraft(user.id);
+
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ onboarding_step: 5, onboarding_completed: true })
+          .eq('id', user.id);
+        if (error) console.warn('[WizardShell] unified finalize profile update failed (fail-soft)', error);
+      } catch (error) {
+        console.warn('[WizardShell] unified finalize profile update threw (fail-soft)', error);
+      }
+    }
+  }, [user?.id]);
+
   return (
     <div className="min-h-[100svh] text-[15px] leading-snug bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
       <ExitIntentDialog
@@ -305,8 +335,23 @@ export default function WizardShell() {
       ) : stage === 'extras-services' ? (
         <BetCardShell>
           <Step20_MoreServices
-            onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
-            onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'done' })}
+            onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
+            onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
+          />
+        </BetCardShell>
+      ) : stage === 'extras-portfolio' ? (
+        <BetCardShell>
+          <Step21_PortfolioAlbums
+            onContinue={() => {
+              void finalizeUnifiedOnboarding().finally(() => {
+                dispatch({ type: 'GO_TO_PHASE', phase: 'done' });
+              });
+            }}
+            onSkip={() => {
+              void finalizeUnifiedOnboarding().finally(() => {
+                dispatch({ type: 'GO_TO_PHASE', phase: 'done' });
+              });
+            }}
           />
         </BetCardShell>
       ) : stage === 'done' ? (
