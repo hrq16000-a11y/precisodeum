@@ -99,9 +99,17 @@ const SearchPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [featuredFilter, setFeaturedFilter] = useState('all');
   const [minRating, setMinRating] = useState(0);
-  // Default sort: 'nearest' quando há GPS preciso, senão 'relevance'.
+  // Default sort vem de `site_settings.default_search_sort` (admin-configurável).
+  // Fallback: 'best' quando há GPS preciso, senão 'relevance'.
   // O usuário pode sobrescrever via ?ordem=... ou pelos chips.
-  const initialSort = (searchParams.get('ordem') as SortOption) || (userLat && userLon ? 'best' : 'relevance');
+  const defaultSearchSortSetting = useSettingValue('default_search_sort');
+  const VALID_SORTS: SortOption[] = ['relevance','best','nearest','rating','reviews','name_asc','name_desc','experience'];
+  const adminDefaultSort: SortOption | null = (VALID_SORTS as string[]).includes(defaultSearchSortSetting)
+    ? (defaultSearchSortSetting as SortOption)
+    : null;
+  const initialSort = (searchParams.get('ordem') as SortOption)
+    || adminDefaultSort
+    || (userLat && userLon ? 'best' : 'relevance');
   const [sortBy, setSortBy] = useState<SortOption>(initialSort);
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
