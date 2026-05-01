@@ -345,10 +345,16 @@ function analyzeFile(absPath) {
     }
   }
 
-  // Listeners
+  // Listeners — buscamos no RAW (precisamos do nome do evento entre aspas)
+  // e descartamos hits cuja posição esteja dentro de comentário (no `masked`
+  // a posição correspondente vira espaço/quebra).
   LISTENER_RE.lastIndex = 0;
-  while ((m = LISTENER_RE.exec(masked))) {
+  while ((m = LISTENER_RE.exec(raw))) {
     const idx = m.index;
+    // Heurística simples: se o caractere em `masked[idx]` é parte do nome do
+    // target (alfanumérico/_/$), o trecho não está em comentário.
+    const ch = masked[idx];
+    if (!/[A-Za-z_$]/.test(ch)) continue;
     const target = m[1];
     const evt = m[2];
     const res = checkListener(masked, raw, idx, target, evt);
