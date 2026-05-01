@@ -22,6 +22,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { lookupCep, formatCep, onlyDigits } from '@/lib/cepLookup';
 import { normalizeStreet as robustNormalizeStreet, isSameStreet } from '@/lib/streetNormalize';
 
+/** Item do histórico recente de CEPs consultados nesta sessão do form. */
+export interface CepHistoryEntry {
+  cep: string;        // 00000-000
+  digits: string;     // 8 dígitos
+  address?: string;   // logradouro sugerido
+  city?: string;
+  state?: string;
+}
+
 export interface CompanyAddressValue {
   street?: string;
   street_number?: string;
@@ -34,6 +43,13 @@ export interface CompanyAddressValue {
   street_suggested_cep?: string;
   /** Usuário confirmou explicitamente o logradouro (clicou "Usar este" ou digitou). */
   street_confirmed?: boolean;
+  /**
+   * Histórico recente de CEPs consultados com sucesso (máx 3, mais recente primeiro).
+   * Quando fornecido, o componente é controlado: o histórico é lido e atualizado
+   * via `onChange` — sobrevive à navegação entre steps do wizard. Quando ausente,
+   * o componente usa um histórico interno (compat com usos sem persistência).
+   */
+  cep_history?: CepHistoryEntry[];
 }
 
 interface Props {
@@ -64,15 +80,6 @@ function normalizeStreet(s: string): string {
   return robustNormalizeStreet(s);
 }
 
-/** Item do histórico recente de CEPs consultados nesta sessão do form. */
-interface CepHistoryEntry {
-  cep: string;        // 00000-000
-  digits: string;     // 8 dígitos
-  address?: string;   // logradouro sugerido
-  city?: string;
-  state?: string;
-}
-
 export default function CompanyAddressForm({
   value,
   onChange,
@@ -89,10 +96,29 @@ export default function CompanyAddressForm({
   const [cepErrorReason, setCepErrorReason] = useState<'network' | 'not_found' | null>(null);
   const lastCepRef = useRef<string>('');
   /**
-   * Histórico recente de CEPs consultados com sucesso nesta sessão (máx 3).
-   * Permite o usuário reaplicar uma sugestão rapidamente após retry / edição.
+   * Histórico recente de CEPs consultados com sucesso (máx 3, mais recente
+   * primeiro). Modo controlado quando `value.cep_history` é fornecido — o
+   * histórico é persistido no estado pai (BetState/OnboardingProfileData) e
+   * sobrevive à navegação entre steps. Caso contrário, usa estado local.
    */
-  const [cepHistory, setCepHistory] = useState<CepHistoryEntry[]>([]);
+  const [internalHistory, setInternalHistory] = useState<CepHistoryEntry[]>([]);
+  const isControlledHistory = Array.isArray(value.cep_history);
+  const cepHistory: CepHistoryEntry[] = isControlledHistory
+    ? (value.cep_history as CepHistoryEntry[])
+    : internalHistory;
+
+  /** Aplica uma transformação ao histórico, persistindo no destino correto. */
+  const updateHistory = useCallback(
+    (updater: (prev: CepHistoryEntry[]) => CepHistoryEntry[]) => {
+      if (isControlledHistory) {
+        const next = updater(value.cep_history ?? []);
+        onChange({ cep_history: next });
+      } else {
+        setInternalHistory(updater);
+      }
+    },
+    [isControlledHistory, onChange, value.cep_history],
+  );
 
   const isSuggested = (k: keyof CompanyAddressValue) => suggestedFields.includes(k);
 
@@ -154,7 +180,7 @@ export default function CompanyAddressForm({
 
       // Atualiza histórico (LRU, máx 3) — apenas quando há logradouro útil.
       if (suggestion) {
-        setCepHistory((prev) => {
+        updateHistory((prev) => {
           const entry: CepHistoryEntry = {
             cep: formatCep(digits),
             digits,
@@ -172,7 +198,7 @@ export default function CompanyAddressForm({
       setCepStatus(reason === 'not_found' ? 'not_found' : 'error');
       setCepErrorReason(reason);
     }
-  }, [onChange, value.street, value.street_confirmed, value.street_suggested]);
+  }, [onChange, updateHistory, value.street, value.street_confirmed, value.street_suggested]);
 
   // Lookup automático SOMENTE quando o CEP atinge EXATAMENTE 8 dígitos.
   useEffect(() => {

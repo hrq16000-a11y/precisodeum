@@ -137,6 +137,7 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
               street_suggested: state.street_suggested,
               street_suggested_cep: state.street_suggested_cep,
               street_confirmed: state.street_confirmed,
+              cep_history: state.cep_history,
             }}
             onChange={(p: Partial<CompanyAddressValue>) => patch(p as Partial<BetState>)}
           />

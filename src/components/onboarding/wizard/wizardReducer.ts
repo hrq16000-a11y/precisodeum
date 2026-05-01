@@ -263,6 +263,7 @@ export const initialWizardState: WizardState = {
     street_suggested: '',
     street_suggested_cep: '',
     street_confirmed: false,
+    cep_history: [],
     points: 0,
     rewards: {
       name: false,
