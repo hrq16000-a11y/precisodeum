@@ -22,10 +22,6 @@ import { Badge } from '@/components/ui/badge';
 import type { OnboardingState } from './types';
 
 const PHASE_LABEL: Record<OnboardingState['phase'], string> = {
-  phase1_action: 'Início',
-  phase1_kind: 'Tipo de conta',
-  phase1_location: 'Localização',
-  phase1_contact: 'Contato',
   phase2_service: 'Categoria do serviço',
   phase2_details: 'Detalhes do serviço',
   phase2_photos: 'Fotos do serviço',

@@ -90,10 +90,6 @@ export interface OnboardingFirstServiceData {
 }
 
 export type OnboardingPhase =
-  | 'phase1_action'        // Step 1 — Atuação
-  | 'phase1_kind'          // Step 2 — PF / PJ
-  | 'phase1_location'      // Step 3 — Localização + Foto
-  | 'phase1_contact'       // Step 4 — Nome + WhatsApp
   | 'phase2_service'       // Step 5 — Categoria + Título do serviço
   | 'phase2_details'       // Step 6 — Cidades, Valores (a partir de), Horários
   | 'phase2_photos'        // Step 6.5 — Upload de até 5 fotos (1 capa)
@@ -104,10 +100,11 @@ export type OnboardingPhase =
   | 'phase4_extras_b'      // Step 10 — Redes sociais
   | 'done';
 
-/** Fases que NUNCA podem ser puladas (regra do prompt). */
-export const REQUIRED_PHASES: ReadonlySet<OnboardingPhase> = new Set([
-  'phase1_contact',  // Nome + WhatsApp
-]);
+/** Fases que NUNCA podem ser puladas (regra do prompt).
+ *  Nome+WhatsApp agora são exigidos pela triagem (Bet Mode), antes de
+ *  qualquer fase `main_*`/`phase2_*`. Mantemos o Set vazio aqui por
+ *  compat de assinatura. */
+export const REQUIRED_PHASES: ReadonlySet<OnboardingPhase> = new Set<OnboardingPhase>();
 
 export interface OnboardingState {
   profile: OnboardingProfileData;

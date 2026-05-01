@@ -150,10 +150,6 @@ export function mapTriagePhaseToUnified(betPhase: string): UnifiedPhase {
 
 export function mapMainPhaseToUnified(v2Phase: string): UnifiedPhase {
   switch (v2Phase as OnboardingPhase) {
-    case 'phase1_action': return 'main_action';
-    case 'phase1_kind': return 'main_kind';
-    case 'phase1_location': return 'main_location';
-    case 'phase1_contact': return 'main_contact';
     case 'phase2_service': return 'main_service';
     case 'phase2_details': return 'main_service_details';
     case 'phase2_photos': return 'main_photos';
@@ -182,10 +178,13 @@ export function mapUnifiedToTriagePhase(phase: UnifiedPhase): import('./phases/b
 
 export function mapUnifiedToMainPhase(phase: UnifiedPhase): OnboardingPhase {
   switch (phase) {
-    case 'main_action': return 'phase1_action';
-    case 'main_kind': return 'phase1_kind';
-    case 'main_location': return 'phase1_location';
-    case 'main_contact': return 'phase1_contact';
+    // main_action/kind/location/contact não existem mais em V2 — caem no
+    // início do fluxo V2 vivo (phase2_service). Identidade/local/contato
+    // são responsabilidade da Triagem (Bet Mode).
+    case 'main_action':
+    case 'main_kind':
+    case 'main_location':
+    case 'main_contact':
     case 'main_service': return 'phase2_service';
     case 'main_service_details': return 'phase2_details';
     case 'main_photos': return 'phase2_photos';
@@ -195,7 +194,7 @@ export function mapUnifiedToMainPhase(phase: UnifiedPhase): OnboardingPhase {
     case 'main_extras_a': return 'phase4_extras_a';
     case 'main_extras_b': return 'phase4_extras_b';
     case 'done': return 'done';
-    default: return 'phase1_action';
+    default: return 'phase2_service';
   }
 }
 

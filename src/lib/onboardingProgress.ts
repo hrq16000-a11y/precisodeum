@@ -12,6 +12,7 @@
  */
 
 import type { OnboardingState, OnboardingPhase } from '@/components/onboarding/wizard/phases/v2/types';
+import type { UnifiedPhase } from '@/components/onboarding/wizard/wizardReducer';
 
 export interface ProgressItem {
   /** Identificador estável (usado em telemetria + key React). */
@@ -20,8 +21,9 @@ export interface ProgressItem {
   label: string;
   /** True se a etapa já foi cumprida. */
   done: boolean;
-  /** Fase do reducer associada — usada para o "atalho retomar". */
-  phase: OnboardingPhase;
+  /** Fase do reducer associada — usada para o "atalho retomar".
+   *  Aceita `OnboardingPhase` (V2) ou `UnifiedPhase` (main_*). */
+  phase: OnboardingPhase | UnifiedPhase;
 }
 
 export interface OnboardingProgressSummary {
@@ -31,7 +33,7 @@ export interface OnboardingProgressSummary {
   /** 0..1 — útil pra Progress component. */
   ratio: number;
   /** Próxima fase pendente (ou a atual se nada falta). */
-  nextPhase: OnboardingPhase;
+  nextPhase: OnboardingPhase | UnifiedPhase;
   /** Próximo item pendente (mesma referência de `items`) ou `null` se 100%. */
   nextItem: ProgressItem | null;
   /** Categoria principal escolhida (id) — útil pra contexto WhatsApp. */
@@ -63,13 +65,13 @@ export function computeOnboardingProgress(
       id: 'name_whatsapp',
       label: 'Nome e WhatsApp',
       done: has(profile.full_name) && has(profile.whatsapp),
-      phase: 'phase1_contact',
+      phase: 'main_contact',
     },
     {
       id: 'location',
       label: 'Cidade e estado',
       done: has(profile.city) && has(profile.state),
-      phase: 'phase1_location',
+      phase: 'main_location',
     },
     {
       id: 'category',
