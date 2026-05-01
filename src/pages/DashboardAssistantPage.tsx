@@ -28,8 +28,7 @@ import {
   PlayCircle,
   Pencil,
 } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
