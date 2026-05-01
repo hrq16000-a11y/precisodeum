@@ -114,7 +114,8 @@ export default function CompanyAddressForm({
       onChange(patch);
       setCepStatus('applied');
     } else {
-      const reason: 'network' | 'not_found' = r.reason === 'not_found' ? 'not_found' : 'network';
+      const failure = r as { ok: false; reason: 'invalid_format' | 'not_found' | 'network'; message: string };
+      const reason: 'network' | 'not_found' = failure.reason === 'not_found' ? 'not_found' : 'network';
       setCepStatus(reason === 'not_found' ? 'not_found' : 'error');
       setCepErrorReason(reason);
     }
