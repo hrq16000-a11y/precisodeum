@@ -46,29 +46,7 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
   const sealEarned = docValid && companyOk;
   const canAdvance = true;
 
-  // Pré-preenchimento via CEP — só aplica se street estiver vazio
-  const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'applied' | 'error'>('idle');
-  const lastCepRef = useRef<string>('');
-  useEffect(() => {
-    const digits = onlyDigits(state.postal_code ?? '');
-    if (digits.length !== 8) { if (cepStatus !== 'idle') setCepStatus('idle'); return; }
-    if (digits === lastCepRef.current) return;
-    lastCepRef.current = digits;
-    let cancelled = false;
-    setCepStatus('loading');
-    (async () => {
-      const r = await lookupCep(digits);
-      if (cancelled) return;
-      if (r.ok) {
-        if (!state.street && r.address) patch({ street: r.address });
-        setCepStatus('applied');
-      } else {
-        setCepStatus('error');
-      }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.postal_code]);
+  // CEP lookup, sugestão, retry e validação inline ficam dentro do CompanyAddressForm.
 
   useEffect(() => {
     if (sealEarned && !awarded) {
