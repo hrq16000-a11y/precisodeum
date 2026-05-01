@@ -329,9 +329,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
                 role="radio"
                 aria-checked={isSelected}
                 aria-label={`Avatar variação ${v.seed + 1}`}
-                onClick={() =>
-                  onChange({ avatar_seed: v.seed, avatar_url: v.url, avatar_source: 'generated' })
-                }
+                onClick={() => handlePickVariant(v.seed, v.url)}
                 className={`relative aspect-square overflow-hidden rounded-full border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
                   isSelected
                     ? 'border-amber-400 ring-2 ring-amber-400/40 scale-105'
