@@ -69,9 +69,9 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
 
   it('App.tsx só conhece /cadastro-inicial (rotas legadas REMOVIDAS, não há mais Navigate)', () => {
     const app = read('src/App.tsx');
-    // Gate aceita apenas /cadastro-inicial e /onboarding-v2/sucesso.
-    expect(app).toContain("location.pathname === '/cadastro-inicial'");
-    expect(app).toContain('to="/cadastro-inicial"');
+    // Gate centralizado usa helper + rota única do onboarding.
+    expect(app).toContain('resolveOnboardingGateTarget');
+    expect(app).toContain('to={gateDecision.target}');
     expect(app).toContain('path="/cadastro-inicial"');
     // Rotas legadas NÃO existem mais (nem como redirect).
     expect(app).not.toMatch(/path="\/cadastro-bet"/);
@@ -134,6 +134,9 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
   it('WizardShell segura a conclusão final e oferece saídas para dashboard, serviços, portfólio e app', () => {
     const shell = read('src/components/onboarding/wizard/WizardShell.tsx');
     expect(shell).toContain('deferCompletionToParent');
+    expect(shell).toContain("phase: 'main_portfolio_albums'");
+    expect(shell).toContain('Step21_PortfolioAlbums');
+    expect(shell).toContain('finalizeUnifiedOnboarding');
     expect(shell).toContain('Continuar cadastrando serviços');
     expect(shell).toContain('Abrir portfólio');
     expect(shell).toContain('Conhecer o dashboard');

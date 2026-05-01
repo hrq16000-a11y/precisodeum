@@ -76,6 +76,14 @@ describe('Onboarding V2 — fluxo final', () => {
     expect(reducerSrc).toMatch(/case 'done':\s*return 'done'/);
   });
 
+  it('WizardShell só mostra a tela "Tudo pronto" depois de passar por portfólio e finalizar o onboarding', () => {
+    const shellSrc = read('components/onboarding/wizard/WizardShell.tsx');
+    expect(shellSrc).toContain("phase: 'main_portfolio_albums'");
+    expect(shellSrc).toContain('Step21_PortfolioAlbums');
+    expect(shellSrc).toContain('finalizeUnifiedOnboarding');
+    expect(shellSrc).toMatch(/update\(\{ onboarding_step: 5, onboarding_completed: true \}\)/);
+  });
+
   it('rotas protegidas do onboarding não retornam para /cadastro-inicial após /onboarding-v2/sucesso', () => {
     const profile = { profile_type: 'provider', onboarding_completed: false, onboarding_step: 4 };
 
