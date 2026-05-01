@@ -42,6 +42,8 @@ export interface BetState {
   street_suggested_cep: string;
   /** PJ — usuário confirmou explicitamente o logradouro (clicou em "Usar este" ou digitou manualmente). */
   street_confirmed: boolean;
+  /** PJ — histórico recente de CEPs consultados com sucesso (LRU, máx 3). Persiste entre steps do wizard. */
+  cep_history: Array<{ cep: string; digits: string; address?: string; city?: string; state?: string }>;
   points: number;              // contador exibido
   rewards: {
     name: boolean;
