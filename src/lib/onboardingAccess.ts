@@ -26,15 +26,32 @@ export function isOnboardingReviewMode(search = '') {
   return params.get('mode') === 'review' || params.get('review') === '1' || !!getOnboardingReviewSection(search);
 }
 
-export type OnboardingReviewSection = 'cadastro' | 'servicos' | 'dados' | 'portfolio' | 'url';
+export type OnboardingReviewSection =
+  // Seções clássicas (compat) — apontam para fases main_*
+  | 'cadastro'
+  | 'servicos'
+  | 'dados'
+  | 'portfolio'
+  | 'url'
+  // Modo Assistente "dono do Wizard" (mai/2026): permitem abrir direto em
+  // qualquer fase de TRIAGEM (Steps 1-6 da régua unificada). O Wizard hidrata
+  // nome/WhatsApp/cidade/foto/documento do banco antes de montar a triagem.
+  | 'identidade'
+  | 'quem'
+  | 'cidade'
+  | 'tipo'
+  | 'documento'
+  | 'local';
+
+const REVIEW_SECTION_VALUES: OnboardingReviewSection[] = [
+  'cadastro', 'servicos', 'dados', 'portfolio', 'url',
+  'identidade', 'quem', 'cidade', 'tipo', 'documento', 'local',
+];
 
 export function getOnboardingReviewSection(search = ''): OnboardingReviewSection | null {
   const params = new URLSearchParams(search);
   const raw = (params.get('section') || '').trim().toLowerCase();
-  if (raw === 'cadastro' || raw === 'servicos' || raw === 'dados' || raw === 'portfolio' || raw === 'url') {
-    return raw;
-  }
-  return null;
+  return (REVIEW_SECTION_VALUES as string[]).includes(raw) ? (raw as OnboardingReviewSection) : null;
 }
 
 export function isOnboardingCompletionGraceActive() {
