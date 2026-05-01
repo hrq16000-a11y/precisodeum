@@ -89,11 +89,18 @@ export default function CompanyAddressForm({
   const streetError = streetRaw.length > 0 && streetRaw.length < 3
     ? 'Logradouro muito curto — informe pelo menos 3 caracteres.'
     : '';
-  const numberError = numberRaw.length > 0 && !/^([0-9]{1,6}|s\/?n|sn)$/i.test(numberRaw)
-    ? 'Número inválido — use só dígitos ou "S/N".'
-    : '';
+  // Número: aceita só dígitos (até 6) ou "S/N"/"SN". Mensagens distintas para tamanho vs formato.
+  const numberError = (() => {
+    if (numberRaw.length === 0) return '';
+    if (numberRaw.length > 10) return 'Número muito longo — máximo 10 caracteres.';
+    if (!/^([0-9]{1,6}|s\/?n|sn)$/i.test(numberRaw)) return 'Número inválido — use só dígitos (até 6) ou "S/N".';
+    return '';
+  })();
   const cepError = cepDigits.length > 0 && cepDigits.length < 8
     ? 'CEP incompleto — precisa ter 8 dígitos.'
+    : '';
+  const cepHint = cepDigits.length > 0 && cepDigits.length < 8
+    ? `Digite mais ${8 - cepDigits.length} dígito${8 - cepDigits.length === 1 ? '' : 's'} para buscar automaticamente.`
     : '';
 
   /** Faz o lookup de fato e propaga o resultado. Reutilizado pelo botão "Tentar de novo". */
