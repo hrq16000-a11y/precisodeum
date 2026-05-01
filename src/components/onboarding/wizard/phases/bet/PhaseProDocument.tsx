@@ -1,11 +1,17 @@
 /** Phase Pro Document — CPF (PF) ou CNPJ + Nome Fantasia (PJ), troca por selo + pontos. */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, FileText, Store, MapPin, ChevronDown } from 'lucide-react';
+import { ArrowRight, FileText, Store, MapPin, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isValidCpf, isValidCnpj } from '@/lib/cpfCnpj';
+import { lookupCep, onlyDigits } from '@/lib/cepLookup';
 import VerifiedBadgeReveal from './VerifiedBadgeReveal';
 import { BET_POINTS, type BetState } from './types';
+
+function maskCep(d: string) {
+  const x = onlyDigits(d).slice(0, 8);
+  return x.length <= 5 ? x : `${x.slice(0, 5)}-${x.slice(5)}`;
+}
 
 interface Props {
   state: BetState;
@@ -42,9 +48,32 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
   const docDigits = useMemo(() => state.document.replace(/\D/g, ''), [state.document]);
   const docValid = isPf ? isValidCpf(docDigits) : isValidCnpj(docDigits);
   const companyOk = isPf ? true : state.company_name.trim().length >= 2;
-  // Documento é OPCIONAL para avançar (briefing Bet Mode). Selo + bônus só para quem preenche.
   const sealEarned = docValid && companyOk;
   const canAdvance = true;
+
+  // Pré-preenchimento via CEP — só aplica se street estiver vazio
+  const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'applied' | 'error'>('idle');
+  const lastCepRef = useRef<string>('');
+  useEffect(() => {
+    const digits = onlyDigits(state.postal_code ?? '');
+    if (digits.length !== 8) { if (cepStatus !== 'idle') setCepStatus('idle'); return; }
+    if (digits === lastCepRef.current) return;
+    lastCepRef.current = digits;
+    let cancelled = false;
+    setCepStatus('loading');
+    (async () => {
+      const r = await lookupCep(digits);
+      if (cancelled) return;
+      if (r.ok) {
+        if (!state.street && r.address) patch({ street: r.address });
+        setCepStatus('applied');
+      } else {
+        setCepStatus('error');
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.postal_code]);
 
   useEffect(() => {
     if (sealEarned && !awarded) {
@@ -154,28 +183,35 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
                   transition={{ duration: 0.25 }}
                   className="space-y-2 overflow-hidden pt-1"
                 >
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px]">
+                  {/* Logradouro + Número achatados — SEMPRE na mesma linha */}
+                  <div className="grid grid-cols-[1fr_88px] gap-2">
                     <label className="block">
                       <span className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                         <MapPin className="h-3 w-3" /> Logradouro
+                        {state.street && cepStatus === 'applied' && (
+                          <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700">
+                            <Sparkles className="h-2.5 w-2.5" /> Sugerido
+                          </span>
+                        )}
                       </span>
                       <input
                         type="text"
                         value={state.street}
                         onChange={(e) => patch({ street: e.target.value })}
                         placeholder="Rua / Avenida"
+                        maxLength={120}
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
                       />
                     </label>
                     <label className="block">
                       <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                        Número
+                        Nº
                       </span>
                       <input
                         type="text"
                         inputMode="numeric"
                         value={state.street_number}
-                        onChange={(e) => patch({ street_number: e.target.value })}
+                        onChange={(e) => patch({ street_number: e.target.value.replace(/[^\dA-Za-z/-]/g, '').slice(0, 10) })}
                         placeholder="123"
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
                       />
@@ -189,21 +225,33 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
                       <input
                         type="text"
                         value={state.complement}
-                        onChange={(e) => patch({ complement: e.target.value })}
+                        onChange={(e) => patch({ complement: e.target.value.slice(0, 60) })}
                         placeholder="Sala / Bloco (opcional)"
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                      <span className="mb-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                         CEP
+                        {cepStatus === 'loading' && <Loader2 className="h-3 w-3 animate-spin text-amber-600" />}
+                        {cepStatus === 'applied' && (
+                          <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
+                            Aplicado
+                          </span>
+                        )}
+                        {cepStatus === 'error' && (
+                          <span className="ml-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-700">
+                            Não encontrado
+                          </span>
+                        )}
                       </span>
                       <input
                         type="tel"
                         inputMode="numeric"
-                        value={state.postal_code}
-                        onChange={(e) => patch({ postal_code: e.target.value.replace(/\D/g, '').slice(0, 8) })}
+                        value={maskCep(state.postal_code)}
+                        onChange={(e) => patch({ postal_code: onlyDigits(e.target.value).slice(0, 8) })}
                         placeholder="00000-000"
+                        maxLength={9}
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
                       />
                     </label>
