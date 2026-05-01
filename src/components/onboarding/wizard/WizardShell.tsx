@@ -407,7 +407,9 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   }, [finalizeUnifiedOnboarding, navigate]);
 
   return (
+    <WizardModeContext.Provider value={{ mode: resolvedMode, isEditing: isReview }}>
     <div className="min-h-[100svh] text-[15px] leading-snug bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
+      <EditModeSkipButton state={state} phase={state.phase} />
       <ExitIntentDialog
         phase={state.phase}
         intent={
