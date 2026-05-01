@@ -353,6 +353,9 @@ export default function CompanyAddressForm({
           {cepError && (
             <p id="cep-error" className="mt-1 text-[10.5px] text-rose-600">{cepError}</p>
           )}
+          {!cepError && cepHint && (
+            <p data-testid="cep-hint" className="mt-1 text-[10.5px] text-muted-foreground">{cepHint}</p>
+          )}
           {(cepStatus === 'error' || cepStatus === 'not_found') && (
             <div className="mt-1 flex items-start gap-1.5 rounded-md border border-rose-200 bg-rose-50 p-1.5 text-[10.5px] leading-snug text-rose-700">
               <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
