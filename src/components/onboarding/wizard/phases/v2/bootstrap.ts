@@ -34,11 +34,12 @@ function inferKind(profile: any | null, provider: any | null): AccountKind {
   return 'pf';
 }
 
-function resolvePhase(fullName: string, whatsapp: string, city: string): OnboardingPhase {
-  const hasContact = isOnboardingFullNameValid(fullName) && normalizePhone(whatsapp).length >= 10;
-  if (hasContact && city.trim().length > 0) return 'phase2_service';
-  if (city.trim().length > 0 || hasContact) return hasContact ? 'phase2_service' : 'phase1_contact';
-  return 'phase1_location';
+function resolvePhase(_fullName: string, _whatsapp: string, _city: string): OnboardingPhase {
+  // phase1_* removidas em mai/2026 — esses dados agora vêm 100% da triagem
+  // (Bet Mode), executada antes do V2. A fase principal SEMPRE começa em
+  // phase2_service. Casos onde nome/WhatsApp/cidade ainda estão vazios são
+  // tratados pela própria phase2_service via locks/validação.
+  return 'phase2_service';
 }
 
 export function buildOnboardingCoreLocks({ profile, provider }: BootstrapInput): OnboardingCoreLocks {
