@@ -50,6 +50,8 @@ export interface OnboardingProfileData {
   street_suggested?: string;
   /** CEP (8 dígitos) que originou a sugestão atual — auditoria/telemetria; evita sobrescrita após edição manual. */
   street_suggested_cep?: string;
+  /** Bairro sugerido pelo último CEP consultado — persistido para reuso entre steps do wizard. */
+  bairro_sugerido_cep?: string;
   /** Confirmação explícita do logradouro pelo usuário — só UX, não persistida. */
   street_confirmed?: boolean;
   /** Histórico recente de CEPs consultados (LRU, máx 3). Persiste entre steps do wizard. */

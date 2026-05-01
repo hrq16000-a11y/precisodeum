@@ -1,16 +1,15 @@
 /**
- * Confirmação explícita do logradouro sugerido pelo CEP, conflito e retry.
+ * Lookup automático do CEP, conflito com o que o usuário digitou e retry.
  *
- * Cobre as regras da rodada V3 do CompanyAddressForm:
+ * UI atualizada: a faixa "Sugerido pelo CEP — confirme" foi removida.
+ * Comportamento atual:
  *  - Lookup só dispara ao atingir EXATAMENTE 8 dígitos.
  *  - Máscara 00000-000 é aplicada visualmente em <8 dígitos sem disparar lookup.
- *  - Quando o CEP retorna logradouro e o campo está vazio, surge o banner
- *    "Sugerido pelo CEP — confirme" com botões "Usar este" / "Editar manualmente".
- *  - "Usar este" persiste { street, street_confirmed: true }.
- *  - Se o usuário já digitou logradouro diferente do sugerido, surge o banner
- *    de conflito com "Usar a do CEP" / "Manter o que digitei".
- *  - Falha de rede mostra mensagem clara + botão "Tentar de novo" que dispara
- *    novamente o lookup.
+ *  - Quando o CEP retorna logradouro e o campo street está vazio, o valor é
+ *    preenchido automaticamente e uma linha sutil mostra o nome da rua.
+ *  - Quando o usuário JÁ digitou logradouro diferente, surge o banner de
+ *    conflito com "Usar a do CEP" / "Manter o que digitei".
+ *  - Falha de rede e CEP não encontrado mostram mensagens distintas + retry.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
@@ -19,13 +18,9 @@ import CompanyAddressForm, {
   type CompanyAddressValue,
 } from '@/components/company/CompanyAddressForm';
 
-// Mocka lookupCep — controle por teste via mockImplementationOnce.
 vi.mock('@/lib/cepLookup', async () => {
   const actual = await vi.importActual<typeof import('@/lib/cepLookup')>('@/lib/cepLookup');
-  return {
-    ...actual,
-    lookupCep: vi.fn(),
-  };
+  return { ...actual, lookupCep: vi.fn() };
 });
 
 import { lookupCep } from '@/lib/cepLookup';
@@ -41,7 +36,7 @@ function Harness({ initial }: { initial?: CompanyAddressValue }) {
   );
 }
 
-describe('CompanyAddressForm — sugestão por CEP, confirmação e retry', () => {
+describe('CompanyAddressForm — lookup automático e conflitos', () => {
   beforeEach(() => {
     lookupCepMock.mockReset();
   });
@@ -51,16 +46,15 @@ describe('CompanyAddressForm — sugestão por CEP, confirmação e retry', () =
     const cepInput = screen.getByPlaceholderText('00000-000') as HTMLInputElement;
 
     fireEvent.change(cepInput, { target: { value: '0131' } });
-    expect(cepInput.value).toBe('0131'); // <=5 sem hífen
+    expect(cepInput.value).toBe('0131');
     fireEvent.change(cepInput, { target: { value: '01310' } });
     expect(cepInput.value).toBe('01310');
     fireEvent.change(cepInput, { target: { value: '0131010' } });
-    expect(cepInput.value).toBe('01310-10'); // hífen depois do 5º
-    // Em nenhum momento o lookup foi chamado.
+    expect(cepInput.value).toBe('01310-10');
     expect(lookupCepMock).not.toHaveBeenCalled();
   });
 
-  it('lookup dispara EXATAMENTE com 8 dígitos e sugere logradouro com banner de confirmação', async () => {
+  it('lookup dispara com 8 dígitos e preenche street + mostra linha sutil com a rua', async () => {
     lookupCepMock.mockResolvedValueOnce({
       ok: true,
       cep: '01310-100',
@@ -77,34 +71,17 @@ describe('CompanyAddressForm — sugestão por CEP, confirmação e retry', () =
     expect(lookupCepMock).toHaveBeenCalledTimes(1);
     expect(cepInput.value).toBe('01310-100');
 
-    // Banner de sugestão pendente surge.
+    // A NOVA UI substitui o banner por uma linha sutil + auto-preenchimento.
     await waitFor(() => {
-      expect(screen.getByTestId('cep-suggestion-banner')).toBeTruthy();
+      expect(screen.getByTestId('cep-applied-street')).toBeTruthy();
     });
-    const banner = screen.getByTestId('cep-suggestion-banner');
-    expect(banner.textContent).toMatch(/Avenida Paulista/);
-  });
-
-  it('clicar "Usar este" confirma a sugestão e remove o banner', async () => {
-    lookupCepMock.mockResolvedValueOnce({
-      ok: true,
-      cep: '01310-100',
-      city: 'São Paulo',
-      state: 'SP',
-      address: 'Avenida Paulista',
-      source: 'brasilapi',
-    });
-    render(<Harness />);
-    const cepInput = screen.getByPlaceholderText('00000-000') as HTMLInputElement;
-    await act(async () => {
-      fireEvent.change(cepInput, { target: { value: '01310100' } });
-    });
-    const accept = await screen.findByTestId('cep-suggestion-accept');
-    fireEvent.click(accept);
-    // Após confirmar, o banner some e o input do logradouro contém o valor.
-    expect(screen.queryByTestId('cep-suggestion-banner')).toBeNull();
+    expect(screen.getByTestId('cep-applied-street').textContent).toMatch(/Avenida Paulista/);
     const street = screen.getByPlaceholderText('Rua / Avenida') as HTMLInputElement;
     expect(street.value).toBe('Avenida Paulista');
+
+    // O banner "Sugerido pelo CEP — confirme" foi removido.
+    expect(screen.queryByTestId('cep-suggestion-banner')).toBeNull();
+    expect(screen.queryByTestId('cep-suggestion-accept')).toBeNull();
   });
 
   it('detecta CONFLITO quando o usuário digitou street diferente do CEP sugerido', async () => {
@@ -116,7 +93,6 @@ describe('CompanyAddressForm — sugestão por CEP, confirmação e retry', () =
       address: 'Avenida Paulista',
       source: 'brasilapi',
     });
-    // Estado inicial: usuário JÁ digitou outra rua.
     render(<Harness initial={{ street: 'Rua das Flores', street_confirmed: true }} />);
     const cepInput = screen.getByPlaceholderText('00000-000') as HTMLInputElement;
     await act(async () => {
@@ -125,8 +101,6 @@ describe('CompanyAddressForm — sugestão por CEP, confirmação e retry', () =
     const conflict = await screen.findByTestId('cep-conflict-banner');
     expect(conflict).toBeTruthy();
     expect(screen.getByText(/Rua das Flores/)).toBeTruthy();
-    // E o banner de "sugestão pendente" NÃO aparece quando há conflito.
-    expect(screen.queryByTestId('cep-suggestion-banner')).toBeNull();
 
     // "Usar a do CEP" substitui o que estava digitado.
     fireEvent.click(screen.getByTestId('cep-conflict-accept-suggestion'));
@@ -145,12 +119,10 @@ describe('CompanyAddressForm — sugestão por CEP, confirmação e retry', () =
     await act(async () => {
       fireEvent.change(cepInput, { target: { value: '01310100' } });
     });
-    // Badge + caixa explicativa devem aparecer.
     const badge = await screen.findByTestId('cep-error-badge');
     expect(badge.textContent).toMatch(/Falha de rede/i);
     expect(screen.getByText(/Não conseguimos consultar o CEP/i)).toBeTruthy();
 
-    // Próximo lookup retorna sucesso.
     lookupCepMock.mockResolvedValueOnce({
       ok: true,
       cep: '01310-100',
@@ -164,7 +136,7 @@ describe('CompanyAddressForm — sugestão por CEP, confirmação e retry', () =
     });
     expect(lookupCepMock).toHaveBeenCalledTimes(2);
     await waitFor(() => {
-      expect(screen.getByTestId('cep-suggestion-banner')).toBeTruthy();
+      expect(screen.getByTestId('cep-applied-street')).toBeTruthy();
     });
   });
 
