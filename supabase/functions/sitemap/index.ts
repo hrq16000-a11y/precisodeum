@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     };
     const sitemaps = [
       'static', 'categories', 'especialidades', 'providers', 'cities',
-      'blog', 'jobs', 'pages', 'popular', 'seo',
+      'blog', 'jobs', 'pages', 'popular', 'seo', 'seo-cep',
     ];
     const entries: string[] = [];
     for (const s of sitemaps) {
