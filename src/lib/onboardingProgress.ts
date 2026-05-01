@@ -12,6 +12,7 @@
  */
 
 import type { OnboardingState, OnboardingPhase } from '@/components/onboarding/wizard/phases/v2/types';
+import type { UnifiedPhase } from '@/components/onboarding/wizard/wizardReducer';
 
 export interface ProgressItem {
   /** Identificador estável (usado em telemetria + key React). */
@@ -20,8 +21,9 @@ export interface ProgressItem {
   label: string;
   /** True se a etapa já foi cumprida. */
   done: boolean;
-  /** Fase do reducer associada — usada para o "atalho retomar". */
-  phase: OnboardingPhase;
+  /** Fase do reducer associada — usada para o "atalho retomar".
+   *  Aceita `OnboardingPhase` (V2) ou `UnifiedPhase` (main_*). */
+  phase: OnboardingPhase | UnifiedPhase;
 }
 
 export interface OnboardingProgressSummary {
