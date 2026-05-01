@@ -510,9 +510,9 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
                   <FolderOpen className="h-4 w-4" /> Abrir portfólio
                 </Link>
               </Button>
+              <InstallAppCard source="wizard-unified-done" variant="inline" />
             </div>
           </BetCardShell>
-          <InstallAppCard source="wizard-unified-done" />
         </div>
       ) : (
         <MainOrchestrator
