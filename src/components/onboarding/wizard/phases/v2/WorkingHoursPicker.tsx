@@ -7,7 +7,7 @@
  */
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -22,6 +22,8 @@ import {
   makeEmptyStruct,
   TIME_OPTIONS,
   TIME_OPTIONS_END,
+  validateStruct,
+  MAX_RANGES,
   type WeekdayKey,
   type WorkingHoursStruct,
 } from './workingHours';
