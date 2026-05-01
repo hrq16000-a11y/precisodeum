@@ -82,19 +82,31 @@ interface WizardShellProps {
 /**
  * Em modo `edit_profile`, decide a fase em que o wizard inicia.
  *
- * IMPORTANTE: nunca cair em `triage_identity` em revisão. A triagem (BetMode)
- * tem reducer e draft próprios e não lê o `seedState` do WizardShell — começar
- * dela em modo revisão fazia o usuário ver TUDO em branco, mesmo com perfil
- * 100% preenchido (sintoma reportado em 01/05/2026: "Assistente apagou tudo").
- *
- * Regras:
- *  - Com `section` explícita ⇒ pula para a fase main correspondente.
- *  - Sem `section` ⇒ começa do início da fase principal (`main_action`),
- *    de onde o usuário pode usar "Pular esta etapa" para navegar entre fases
- *    já completas. Os dados reais vêm via `seedState` e re-hidratam tudo.
+ * Regras (mai/2026 — "Assistente é dono do Wizard"):
+ *  - SEM `section` na URL ⇒ abre na PRIMEIRA fase (`triage_identity`).
+ *    Ele é o ponto natural para revisão total da régua de 19 etapas.
+ *    A re-hidratação síncrona da triagem acontece via `seedBetDraftFromProfile`
+ *    chamada antes do BetModeShell montar.
+ *  - `section` apontando para uma fase de triagem ⇒ abre nela.
+ *  - `section` clássica (servicos/dados/portfolio/url/cadastro) ⇒ pula
+ *    direto para a fase main correspondente.
  */
 function resolveReviewStartPhase(section: OnboardingReviewSection | null): UnifiedPhase {
   switch (section) {
+    // Seções da TRIAGEM — abrem direto nas Steps 1–6.
+    case 'identidade':
+      return 'triage_identity';
+    case 'quem':
+      return 'triage_who';
+    case 'cidade':
+      return 'triage_client_city';
+    case 'tipo':
+      return 'triage_pro_kind';
+    case 'documento':
+      return 'triage_pro_document';
+    case 'local':
+      return 'triage_pro_location';
+    // Seções clássicas (compat) — apontam para fases main_*.
     case 'servicos':
       return 'main_service';
     case 'dados':
@@ -104,10 +116,10 @@ function resolveReviewStartPhase(section: OnboardingReviewSection | null): Unifi
     case 'url':
       return 'main_extras_b';
     case 'cadastro':
-      return 'main_action';
+      return 'triage_identity';
     default:
-      // Sem section ⇒ vai para a 1ª fase main (NÃO para a triagem).
-      return 'main_action';
+      // Sem section ⇒ Step 1 da régua unificada (revisão total).
+      return 'triage_identity';
   }
 }
 
