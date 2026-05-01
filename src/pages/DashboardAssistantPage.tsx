@@ -384,19 +384,10 @@ export default function DashboardAssistantPage() {
               <div
                 key={meta.phase}
                 className={[
-                  'group flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors',
+                  'group flex flex-col gap-3 rounded-xl border bg-card px-4 py-3 transition-colors sm:flex-row sm:items-center',
                   status === 'current' ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border',
-                  editable ? 'hover:border-primary/40 cursor-pointer' : 'cursor-default opacity-90',
+                  editable ? 'hover:border-primary/40' : 'opacity-90',
                 ].join(' ')}
-                onClick={() => openPhase(meta, status)}
-                role={editable ? 'button' : undefined}
-                tabIndex={editable ? 0 : -1}
-                onKeyDown={(e) => {
-                  if (editable && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault();
-                    openPhase(meta, status);
-                  }
-                }}
                 aria-label={`${meta.title} — ${status === 'done' ? 'concluída' : status === 'current' ? 'atual' : status === 'locked' ? 'bloqueada' : 'pendente'}`}
               >
                 <StatusIcon className={`h-5 w-5 shrink-0 ${statusColor}`} />
@@ -418,25 +409,47 @@ export default function DashboardAssistantPage() {
                       </Badge>
                     )}
                   </div>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  <p className="mt-0.5 text-xs text-muted-foreground sm:truncate">
                     {meta.description}
                   </p>
                 </div>
                 {editable ? (
-                  <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground">
-                    {status === 'done' ? (
-                      <>
-                        <Pencil className="h-3.5 w-3.5" />
-                        Revisar
-                      </>
-                    ) : (
-                      <>
-                        Continuar
-                        <ChevronRight className="h-4 w-4" />
-                      </>
-                    )}
+                  <div className="flex shrink-0 items-center gap-2 self-stretch sm:self-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={() => viewPhase(meta, status)}
+                      aria-label={`Ver detalhes de ${meta.title}`}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Ver em detalhes
+                    </Button>
+                    <Button
+                      variant={status === 'current' ? 'default' : 'secondary'}
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={() => openPhase(meta, status)}
+                      aria-label={`Editar ${meta.title}`}
+                    >
+                      {status === 'current' ? (
+                        <>
+                          Continuar
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </>
+                      ) : (
+                        <>
+                          <Pencil className="h-3.5 w-3.5" />
+                          Editar esta fase
+                        </>
+                      )}
+                    </Button>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="shrink-0 text-[11px] text-muted-foreground">
+                    {meta.milestone ? 'Marco' : 'Somente leitura'}
+                  </div>
+                )}
               </div>
             );
           })
