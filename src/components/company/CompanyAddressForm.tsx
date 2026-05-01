@@ -152,15 +152,20 @@ export default function CompanyAddressForm({
     const r = await lookupCep(digits);
     if (r.ok) {
       const suggestion = r.address ?? '';
-      // Persiste a sugestão + o CEP que a originou — auditoria/telemetria + anti-sobrescrita.
-      const patch: Partial<CompanyAddressValue> = {
-        street_suggested: suggestion,
-        street_suggested_cep: digits,
-      };
       const currentStreet = (value.street ?? '').trim();
       const userTyped = currentStreet.length > 0;
       const userConfirmed = Boolean(value.street_confirmed);
       const previousSuggestion = (value.street_suggested ?? '').trim();
+      // ANTI-SOBRESCRITA: se o usuário JÁ confirmou manualmente um endereço,
+      // não tocamos em street_suggested/street_suggested_cep — apenas
+      // registramos o bairro para uso em outros campos do wizard.
+      const patch: Partial<CompanyAddressValue> = {};
+      if (!userConfirmed) {
+        patch.street_suggested = suggestion;
+        patch.street_suggested_cep = digits;
+      }
+      // Bairro sempre é registrado (não conflita com logradouro digitado).
+      if (r.neighborhood) patch.bairro_sugerido_cep = r.neighborhood;
       // Caso 1: campo vazio → preenche e marca como NÃO confirmado.
       if (suggestion && !userTyped) {
         patch.street = suggestion;
