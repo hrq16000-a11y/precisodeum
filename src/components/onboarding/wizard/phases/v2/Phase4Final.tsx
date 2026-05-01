@@ -25,6 +25,8 @@ import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
 import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
 import AvatarUpload from '@/components/AvatarUpload';
+import { useAuth } from '@/hooks/useAuth';
+import { getSocialAvatarUrl } from '@/lib/avatarUtils';
 import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 import { wizardStyles as ws, wizardEnter } from './wizardStyles';
