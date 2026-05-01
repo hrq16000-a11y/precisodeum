@@ -294,7 +294,7 @@ export default function WizardShell() {
       try {
         const { error } = await supabase
           .from('profiles')
-          .update({ onboarding_step: 5, onboarding_completed: true })
+          .update({ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true })
           .eq('id', user.id);
         if (error) console.warn('[WizardShell] unified finalize profile update failed (fail-soft)', error);
       } catch (error) {
