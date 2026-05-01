@@ -46,11 +46,11 @@ const ROOT = process.cwd();
 /** Diretórios escaneados recursivamente. */
 const SCAN_DIRS = [
   'src/components/onboarding',
-  'src/components/dashboard',
 ];
 
 /** Arquivos avulsos sempre incluídos (mesmo fora dos dirs acima). */
 const EXTRA_FILES = [
+  'src/components/dashboard/DashboardTour.tsx',
   'src/pages/CadastroInicialPage.tsx',
   'src/pages/OnboardingV2SuccessPage.tsx',
 ];
