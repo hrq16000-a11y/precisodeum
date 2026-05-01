@@ -96,6 +96,13 @@ export default function ExitIntentDialog({
   const [saveLaterOpen, setSaveLaterOpen] = useState(false);
   const triggeredRef = useRef(false);
   const inactivityTimer = useRef<number | null>(null);
+  const saveLaterTimer = useRef<number | null>(null);
+
+  // Limpeza do timer do "Salvar e continuar mais tarde" ao desmontar — evita
+  // setState em componente já desmontado se o usuário fechar o pop-up nos 50ms.
+  useEffect(() => () => {
+    if (saveLaterTimer.current) window.clearTimeout(saveLaterTimer.current);
+  }, []);
 
   const variant: ExitIntentVariant = useMemo(
     () => variantOverride ?? getSessionVariant(),
@@ -207,7 +214,8 @@ export default function ExitIntentDialog({
     tracker('exit_intent_save_later', baseMeta);
     setOpen(false);
     // Abre modal com resumo de progresso em vez de navegar direto.
-    window.setTimeout(() => setSaveLaterOpen(true), 50);
+    if (saveLaterTimer.current) window.clearTimeout(saveLaterTimer.current);
+    saveLaterTimer.current = window.setTimeout(() => setSaveLaterOpen(true), 50);
   }, [tracker, baseMeta]);
 
   return (
