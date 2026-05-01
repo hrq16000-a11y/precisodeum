@@ -33,6 +33,7 @@ import DashboardGroupNav from '@/components/dashboard/DashboardGroupNav';
 interface Snapshot {
   id: string;
   signup_method: string | null;
+  auth_provider: string | null;
   signup_referrer: string | null;
   utm_source: string | null;
   utm_medium: string | null;
@@ -170,6 +171,10 @@ export default function DashboardMyRegistrationPage() {
                 no momento exato em que você criou a conta. Por exigência legal e de auditoria,
                 <strong> esta tela não é editável</strong> e nunca muda.
               </p>
+              <p className="mt-1 text-[11px] text-muted-foreground/80">
+                Imutabilidade garantida em nível de banco — qualquer tentativa de alteração é
+                negada e auditada.
+              </p>
             </div>
           </header>
 
@@ -185,6 +190,7 @@ export default function DashboardMyRegistrationPage() {
             <div className="space-y-4">
               <Section title="Origem do cadastro">
                 <Row label="Método" value={snap.signup_method} />
+                <Row label="Provedor de auth" value={snap.auth_provider} />
                 <Row label="Veio por link?" value={snap.came_from_link ? 'Sim' : 'Não'} />
                 <Row label="Referrer" value={snap.signup_referrer} mono />
                 <Row label="URL de entrada" value={snap.landing_url} mono />
