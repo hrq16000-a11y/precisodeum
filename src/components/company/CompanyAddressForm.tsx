@@ -88,6 +88,11 @@ export default function CompanyAddressForm({
   const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'applied' | 'error' | 'not_found'>('idle');
   const [cepErrorReason, setCepErrorReason] = useState<'network' | 'not_found' | null>(null);
   const lastCepRef = useRef<string>('');
+  /**
+   * Histórico recente de CEPs consultados com sucesso nesta sessão (máx 3).
+   * Permite o usuário reaplicar uma sugestão rapidamente após retry / edição.
+   */
+  const [cepHistory, setCepHistory] = useState<CepHistoryEntry[]>([]);
 
   const isSuggested = (k: keyof CompanyAddressValue) => suggestedFields.includes(k);
 
@@ -119,8 +124,11 @@ export default function CompanyAddressForm({
     const r = await lookupCep(digits);
     if (r.ok) {
       const suggestion = r.address ?? '';
-      // Persiste a sugestão sempre que houver — para o próximo passo saber.
-      const patch: Partial<CompanyAddressValue> = { street_suggested: suggestion };
+      // Persiste a sugestão + o CEP que a originou — auditoria/telemetria + anti-sobrescrita.
+      const patch: Partial<CompanyAddressValue> = {
+        street_suggested: suggestion,
+        street_suggested_cep: digits,
+      };
       const currentStreet = (value.street ?? '').trim();
       const userTyped = currentStreet.length > 0;
       const userConfirmed = Boolean(value.street_confirmed);
@@ -135,7 +143,7 @@ export default function CompanyAddressForm({
         userTyped &&
         !userConfirmed &&
         previousSuggestion.length > 0 &&
-        normalizeStreet(currentStreet) === normalizeStreet(previousSuggestion)
+        isSameStreet(currentStreet, previousSuggestion)
       ) {
         patch.street = suggestion;
         patch.street_confirmed = false;
@@ -143,6 +151,21 @@ export default function CompanyAddressForm({
       // Caso 3: usuário confirmou ou digitou diferente → mantém o que está e deixa o conflict banner agir.
       onChange(patch);
       setCepStatus('applied');
+
+      // Atualiza histórico (LRU, máx 3) — apenas quando há logradouro útil.
+      if (suggestion) {
+        setCepHistory((prev) => {
+          const entry: CepHistoryEntry = {
+            cep: formatCep(digits),
+            digits,
+            address: suggestion,
+            city: r.city,
+            state: r.state,
+          };
+          const dedup = prev.filter((e) => e.digits !== digits);
+          return [entry, ...dedup].slice(0, 3);
+        });
+      }
     } else {
       const failure = r as { ok: false; reason: 'invalid_format' | 'not_found' | 'network'; message: string };
       const reason: 'network' | 'not_found' = failure.reason === 'not_found' ? 'not_found' : 'network';
