@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettingValue } from '@/hooks/useSiteSettings';
+import { canTriggerMarketingPopup } from '@/lib/popupGuards';
 
 const UrgencyBanner = memo(() => {
   const [visible, setVisible] = useState(false);
@@ -30,8 +31,27 @@ const UrgencyBanner = memo(() => {
   });
 
   useEffect(() => {
-    const timer = setTimeout(() => setVisible(true), 300);
-    return () => clearTimeout(timer);
+    const mountedAt = Date.now();
+    let raf = 0;
+    const tryShow = () => {
+      if (canTriggerMarketingPopup(mountedAt)) {
+        setVisible(true);
+        cleanup();
+      }
+    };
+    const cleanup = () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf) window.cancelAnimationFrame(raf);
+      window.clearInterval(interval);
+    };
+    const onScroll = () => {
+      if (raf) window.cancelAnimationFrame(raf);
+      raf = window.requestAnimationFrame(tryShow);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // Poll leve (a cada 1.5s) para honrar minTimeMs sem depender só de scroll.
+    const interval = window.setInterval(tryShow, 1500);
+    return cleanup;
   }, []);
 
   if (recentCount === 0) return null;

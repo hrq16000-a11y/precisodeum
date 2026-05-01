@@ -24,6 +24,7 @@ const GlobalExitIntentDialog = reactLazy(() => importWithRetry(() => import("./c
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { initializeUiFreezeMonitor } from "@/lib/uiFreezeMonitor";
+import { installPopupGuards } from "@/lib/popupGuards";
 import { appendWizardResetDebugLog } from "@/lib/wizardResetDebug";
 import { hasUnlockedAppAccess, shouldForceOnboarding } from "@/lib/onboardingAccess";
 import { fetchExistingFirstService, findExistingProvider } from "@/components/onboarding/wizard/phases/v2/findExistingRecords";
@@ -435,6 +436,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
 const App = () => {
   useEffect(() => {
     initializeUiFreezeMonitor();
+    installPopupGuards();
 
     // Invalidate all queries if daily purge just ran
     if ((window as any).__DAILY_PURGE_TRIGGERED__) {

@@ -29,9 +29,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { markSupportContacted, shouldSuppressExitIntent } from '@/lib/conversionFunnel';
 import { trackExitIntent, markPendingExitConversion } from '@/lib/exitIntentTelemetry';
+import { canTriggerMarketingPopup, isMobileViewport } from '@/lib/popupGuards';
 
 const STORAGE_KEY = 'global-exit-intent:shown';
-const INACTIVITY_MS = 45_000;
+const INACTIVITY_MS_DESKTOP = 45_000;
+const INACTIVITY_MS_MOBILE = 90_000;
 const SUPPORT_WHATSAPP = '5541997452053';
 
 // Rotas onde o pop-up NÃO deve aparecer (já há gatilhos de conversão próprios
@@ -222,6 +224,7 @@ export default function GlobalExitIntentDialog() {
   const [open, setOpen] = useState(false);
   const triggeredRef = useRef(false);
   const inactivityTimer = useRef<number | null>(null);
+  const mountedAtRef = useRef<number>(Date.now());
 
   const excluded = useMemo(
     () => EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p)),
@@ -250,15 +253,9 @@ export default function GlobalExitIntentDialog() {
     (source: 'mouseleave' | 'inactivity') => {
       if (excluded || triggeredRef.current) return;
       if (shouldSuppressExitIntent()) return;
-      // Guard: só dispara após o usuário ter rolado ≥25% da página. Evita
-      // popup "estourando" no carregamento inicial sem qualquer engajamento.
-      try {
-        const scrollTop = window.scrollY || document.documentElement.scrollTop;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        if (docHeight > 0 && scrollTop / docHeight < 0.25) return;
-      } catch {
-        return;
-      }
+      // Guard universal: respeita scroll/tempo/interação por device + 1ª visita.
+      // Substitui o antigo cheque manual de 25% (que não cobria mobile/1ª visita).
+      if (!canTriggerMarketingPopup(mountedAtRef.current)) return;
       try {
         if (sessionStorage.getItem(STORAGE_KEY) === '1') return;
       } catch {
@@ -278,9 +275,10 @@ export default function GlobalExitIntentDialog() {
 
   const resetInactivity = useCallback(() => {
     if (inactivityTimer.current) window.clearTimeout(inactivityTimer.current);
+    const ms = isMobileViewport() ? INACTIVITY_MS_MOBILE : INACTIVITY_MS_DESKTOP;
     inactivityTimer.current = window.setTimeout(
       () => trigger('inactivity'),
-      INACTIVITY_MS,
+      ms,
     );
   }, [trigger]);
 
