@@ -22,6 +22,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { lookupCep, formatCep, onlyDigits } from '@/lib/cepLookup';
 import { normalizeStreet as robustNormalizeStreet, isSameStreet } from '@/lib/streetNormalize';
 
+/** Item do histórico recente de CEPs consultados nesta sessão do form. */
+export interface CepHistoryEntry {
+  cep: string;        // 00000-000
+  digits: string;     // 8 dígitos
+  address?: string;   // logradouro sugerido
+  city?: string;
+  state?: string;
+}
+
 export interface CompanyAddressValue {
   street?: string;
   street_number?: string;
@@ -34,6 +43,13 @@ export interface CompanyAddressValue {
   street_suggested_cep?: string;
   /** Usuário confirmou explicitamente o logradouro (clicou "Usar este" ou digitou). */
   street_confirmed?: boolean;
+  /**
+   * Histórico recente de CEPs consultados com sucesso (máx 3, mais recente primeiro).
+   * Quando fornecido, o componente é controlado: o histórico é lido e atualizado
+   * via `onChange` — sobrevive à navegação entre steps do wizard. Quando ausente,
+   * o componente usa um histórico interno (compat com usos sem persistência).
+   */
+  cep_history?: CepHistoryEntry[];
 }
 
 interface Props {
