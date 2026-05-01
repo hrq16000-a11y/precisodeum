@@ -98,6 +98,7 @@ import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Ph
 import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { markPatchTouched, clearSessionTouched } from './sessionTouched';
+import { pushReviewPhase, popReviewPhase, clearReviewHistory } from './reviewHistory';
 import {
   useOnboardingV2Draft,
   readOnboardingV2Draft,
