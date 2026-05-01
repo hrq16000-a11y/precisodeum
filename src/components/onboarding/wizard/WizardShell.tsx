@@ -235,17 +235,60 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
             },
           },
           profile: profileSeed,
-          service: {
-            ...serviceSeed,
-            service_name: serviceSeed.service_name || existingService?.service_name || '',
-            description: serviceSeed.description || existingService?.description || '',
-            category_ids: serviceSeed.category_ids?.length
-              ? serviceSeed.category_ids
-              : existingService?.category_id
-              ? [existingService.category_id]
-              : [],
-            working_hours: serviceSeed.working_hours || existingService?.working_hours || '',
-          },
+          service: (() => {
+            // Reidratação FIEL do 1º serviço: puxa TODOS os campos existentes
+            // (nome, descrição, categoria, áreas atendidas, preço, horários,
+            // estrutura de horários e endereço) para que o modo revisão mostre
+            // exatamente o que já está publicado e não force re-upload de fotos
+            // nem reescrita de dados. Bairro vai pelo profileSeed.
+            const parseAreas = (value: string | null | undefined): string[] =>
+              String(value || '')
+                .split(/[;|•\n]+/)
+                .map((item) => item.trim())
+                .filter(Boolean);
+            const parsePrice = (value: string | null | undefined): number | null => {
+              if (!value) return null;
+              const n = parseFloat(String(value).replace(/[^\d,.]/g, '').replace(',', '.'));
+              return Number.isFinite(n) ? n : null;
+            };
+            const existingAreas = existingService
+              ? parseAreas(existingService.service_area) || parseAreas(existingService.address)
+              : [];
+            return {
+              ...serviceSeed,
+              service_name: serviceSeed.service_name || existingService?.service_name || '',
+              description: serviceSeed.description || existingService?.description || '',
+              category_ids: serviceSeed.category_ids?.length
+                ? serviceSeed.category_ids
+                : existingService?.category_id
+                ? [existingService.category_id]
+                : [],
+              cities_served: serviceSeed.cities_served?.length
+                ? serviceSeed.cities_served
+                : existingAreas.length
+                ? existingAreas
+                : profileSeed.city
+                ? [profileSeed.city]
+                : [],
+              starting_price_brl:
+                serviceSeed.starting_price_brl != null
+                  ? serviceSeed.starting_price_brl
+                  : parsePrice(existingService?.price),
+              working_hours: serviceSeed.working_hours || existingService?.working_hours || '',
+              working_hours_struct: (() => {
+                if (serviceSeed.working_hours_struct) return serviceSeed.working_hours_struct;
+                const raw = existingService?.working_hours_struct;
+                if (!raw?.ranges?.length) return null;
+                return {
+                  ranges: raw.ranges.map((r) => ({
+                    days: Array.isArray(r?.days) ? r.days : [],
+                    start: typeof r?.start === 'string' ? r.start : '',
+                    end: typeof r?.end === 'string' ? r.end : '',
+                  })),
+                };
+              })(),
+            };
+          })(),
           providerId: providerId ?? null,
           firstServiceId: existingService?.id ?? null,
         },
