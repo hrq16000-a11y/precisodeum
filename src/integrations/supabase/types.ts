@@ -7651,6 +7651,7 @@ export type Database = {
       }
     }
     Functions: {
+      _is_blank_text: { Args: { v: string }; Returns: boolean }
       _strip_accents: { Args: { t: string }; Returns: string }
       _sync_in_progress: { Args: never; Returns: boolean }
       add_portfolio_photo_atomic: {
