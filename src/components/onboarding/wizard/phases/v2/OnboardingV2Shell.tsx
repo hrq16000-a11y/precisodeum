@@ -321,17 +321,23 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // revisando dados já publicados e o draft seria poluição que poderia
   // mascarar campos reais em retornos futuros (sintoma "Assistente apagou tudo").
   useOnboardingV2Draft(state, !editMode);
-  // Auto-save remoto com debounce (cross-device)
-  useOnboardingV2RemoteDraft(state, user?.id);
+  // Auto-save remoto com debounce (cross-device).
+  // BLINDAGEM (auditoria 2026-05): em editMode NÃO escrevemos draft remoto —
+  // a fonte de verdade é o banco. Passamos userId=undefined para o hook
+  // entrar em modo no-op (early return interno em !userId).
+  useOnboardingV2RemoteDraft(state, editMode ? undefined : user?.id);
 
   // Flush imediato (local + remoto) ao TROCAR DE FASE — garante que
   // "Salvar e continuar" persista antes de qualquer fechamento de aba,
   // sem esperar pelos debounces de 600ms / 1500ms.
+  // BLINDAGEM: pulamos o flush em editMode — evita gravar payload parcial
+  // (provisório, durante revisão) por cima dos dados reais já publicados.
   useEffect(() => {
+    if (editMode) return;
     if (state.phase === 'phase2_service' || state.phase === 'done') return;
     flushOnboardingV2Draft(state, user?.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.phase, user?.id]);
+  }, [state.phase, user?.id, editMode]);
 
   // Flush ao desmontar / antes de fechar a aba
   useEffect(() => {
