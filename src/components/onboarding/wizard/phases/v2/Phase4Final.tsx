@@ -110,7 +110,9 @@ function isValidDoc(digits: string, kind: 'pf' | 'pj'): boolean {
 export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, userId, locked }: DocumentProps) => {
   const [verified, setVerified] = useState(false);
   const [providerStatus, setProviderStatus] = useState<string | null>(null);
-  const [goOnline, setGoOnline] = useState(true); // pré-marcado: ficar ONLINE é opcional, mas default ON
+  // Persistido em data.go_online (default true) → sobrevive a Voltar/restauração de draft.
+  const goOnline = data.go_online !== false;
+  const setGoOnline = (next: boolean) => onChange({ go_online: next });
   const focusDoc = useFocusFieldFromReview('document');
   const valid = isValidDoc(data.document, data.kind);
   const isPj = data.kind === 'pj';
