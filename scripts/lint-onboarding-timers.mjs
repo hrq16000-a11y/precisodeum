@@ -315,37 +315,73 @@ function checkTimer(masked, raw, idx) {
   return { ok: false, reason: 'no cleanup found for timer' };
 }
 
-function checkListener(masked, raw, idx, target, evt) {
-  // bloco enclosing + useEffect cleanup com removeEventListener
+function findRemovesIn(scope) {
+  const out = [];
+  REMOVE_RE.lastIndex = 0;
+  let m;
+  while ((m = REMOVE_RE.exec(scope))) {
+    out.push({ target: m[1], evt: m[2], handler: m[3] });
+  }
+  return out;
+}
+
+function checkListener(masked, raw, idx, target, evt, handler) {
+  // 1) Handler precisa ser uma referência nomeada para conseguir ser removido.
+  //    Inline arrow/function literais geram referência única → leak.
+  const inlineHandler = !isNamedHandler(handler);
+
   const block = enclosingBlock(masked, idx);
+  let blockRaw = '';
   if (block) {
     const [bs, be] = block;
-    const blockMasked = masked.slice(bs, be + 1);
-    const blockRaw = raw.slice(bs, be + 1);
-    const hook = enclosingHook(masked, bs);
-    if (hook === 'useEffect' || hook === 'useLayoutEffect' || hook === 'useInsertionEffect') {
-      // cleanup é checado no RAW (precisamos enxergar o nome do evento se houver).
-      if (effectReturnsCleanup(blockRaw, REMOVE_LISTENER_ANY)) {
-        return { ok: true, reason: `${hook} cleanup return` };
-      }
-    }
-    // par direto no mesmo bloco para o mesmo target+evento (raw, pois evt está quoted).
-    const reSameBlock = new RegExp(
-      `${target.replace(/\./g, '\\.')}\\.removeEventListener\\s*\\(\\s*${evt.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`
-    );
-    if (reSameBlock.test(blockRaw)) {
-      return { ok: true, reason: `paired removeEventListener (${target}, ${evt})` };
-    }
+    blockRaw = raw.slice(bs, be + 1);
   }
-  // par no arquivo inteiro (raw)
-  const reFile = new RegExp(
-    `${target.replace(/\./g, '\\.')}\\.removeEventListener\\s*\\(\\s*${evt.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`
-  );
-  if (reFile.test(raw)) {
-    return { ok: true, reason: `paired removeEventListener in file (${target}, ${evt})` };
+  const fileRemoves = findRemovesIn(raw);
+  const blockRemoves = blockRaw ? findRemovesIn(blockRaw) : [];
+
+  const wantTarget = target;
+  const wantEvt = evt;
+  const wantHandler = inlineHandler ? null : normalizeHandler(handler);
+
+  const matches = (rem) => {
+    if (rem.target !== wantTarget) return false;
+    if (rem.evt !== wantEvt) return false;
+    if (wantHandler === null) return false; // inline → nunca casa
+    return normalizeHandler(rem.handler) === wantHandler;
+  };
+
+  if (inlineHandler) {
+    return {
+      ok: false,
+      reason: `inline handler in addEventListener(${evt}) cannot be removed (use a named ref)`,
+    };
   }
-  return { ok: false, reason: `no removeEventListener for (${target}, ${evt})` };
+
+  if (blockRemoves.some(matches)) {
+    return { ok: true, reason: `paired remove in same block (${target}, ${evt}, ${wantHandler})` };
+  }
+  if (fileRemoves.some(matches)) {
+    return { ok: true, reason: `paired remove in file (${target}, ${evt}, ${wantHandler})` };
+  }
+
+  // Mensagem de erro mais útil: indica se há remove com event/target diferente.
+  const sameTargetEvt = fileRemoves.find((r) => r.target === wantTarget && r.evt === wantEvt);
+  if (sameTargetEvt) {
+    return {
+      ok: false,
+      reason: `removeEventListener(${evt}) uses different handler ref (${normalizeHandler(sameTargetEvt.handler)} vs ${wantHandler})`,
+    };
+  }
+  const wrongEvt = fileRemoves.find((r) => r.target === wantTarget && r.evt !== wantEvt);
+  if (wrongEvt) {
+    return {
+      ok: false,
+      reason: `addEventListener(${evt}) but cleanup removes ${wrongEvt.evt} (event mismatch)`,
+    };
+  }
+  return { ok: false, reason: `no removeEventListener for (${target}, ${evt}, ${wantHandler})` };
 }
+
 
 function analyzeFile(absPath) {
   const rel = relative(ROOT, absPath).split(sep).join('/');
