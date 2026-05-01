@@ -32,6 +32,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const gateDecision = resolveOnboardingGateTarget({
     profile,
     hasExistingService,
+    completionGraceActive: Boolean(profile?.completionGraceActive),
     pathname: location.pathname,
     search: location.search,
   });
@@ -129,6 +130,22 @@ describe("OnboardingGate", () => {
     });
     renderAt("/onboarding-v2/sucesso");
     expect(screen.getByText("CHILDREN_RENDERED")).toBeTruthy();
+    expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
+  });
+
+  it("permite /dashboard logo após a conclusão quando a grace window está ativa", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: {
+        profile_type: "provider",
+        onboarding_completed: false,
+        onboarding_step: 4,
+        completionGraceActive: true,
+      },
+      loading: false,
+    });
+    renderAt("/dashboard");
+    expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
     expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
   });
 
