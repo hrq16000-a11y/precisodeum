@@ -71,6 +71,8 @@ export const initialBetState: BetState = {
   complement: '',
   postal_code: '',
   show_full_address: false,
+  street_suggested: '',
+  street_confirmed: false,
   points: 0,
   rewards: {
     name: false,
