@@ -537,10 +537,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       //    corpo do serviço (categoria/descrição/etc.) tinha sido perdido.
       //    Agora rehidratamos se QUALQUER campo crítico estiver vazio.
       const svcState = state.service || ({} as any);
+      // BLINDAGEM (auditoria 2026-05): "ter corpo" exige TEXTO REAL.
+      // Antes aceitávamos apenas `category_ids`, mas o bootstrap injeta
+      // `category_ids` a partir de `provider.primary_category_id` mesmo
+      // quando o serviço real (services.service_name/description) está
+      // ausente do estado — isso fazia o efeito curto-circuitar e a UI
+      // ficava vazia em modo revisão.
       const hasServiceBody =
         !!(svcState.service_name && svcState.service_name.trim()) ||
-        !!(svcState.description && svcState.description.trim()) ||
-        (Array.isArray(svcState.category_ids) && svcState.category_ids.length > 0);
+        !!(svcState.description && svcState.description.trim());
       if (state.firstServiceId && hasServiceBody) return;
 
       // 3) Busca o melhor serviço existente (pelo provider OU pelo user_ref)
