@@ -42,7 +42,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { clearOnboardingV2Draft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2Draft';
 import { clearSessionTouched } from '@/components/onboarding/wizard/phases/v2/sessionTouched';
 import { clearRemoteDraft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2RemoteDraft';
-import { clearBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetDraft';
+import { clearBetDraft, seedBetDraftFromProfile } from '@/components/onboarding/wizard/phases/bet/useBetDraft';
 import { clearRemoteBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetRemoteDraft';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
@@ -55,6 +55,8 @@ import {
   mapUnifiedToMainPhase,
   mapTriagePhaseToUnified,
   PROVIDER_WIZARD_PHASE_ORDER,
+  REVIEW_PHASE_ORDER,
+  prevUnifiedPhase,
   unifiedPhaseIndex,
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
