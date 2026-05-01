@@ -63,8 +63,7 @@ import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Ph
 // Phase4Review removido — Wizard publica silenciosamente, sem tela de revisão.
 import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
-import { mergePreservingTouched, markPatchTouched, clearSessionTouched } from './sessionTouched';
-import { subscribeDraftChange } from './crossTabSync';
+import { markPatchTouched, clearSessionTouched } from './sessionTouched';
 import {
   useOnboardingV2Draft,
   readOnboardingV2Draft,
