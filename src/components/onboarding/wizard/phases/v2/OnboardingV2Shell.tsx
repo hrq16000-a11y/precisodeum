@@ -60,7 +60,7 @@ import { Phase2Service, Phase2Details } from './Phase2Service';
 import { Phase2Photos } from './Phase2Photos';
 import { Phase3Celebration } from './Phase3Celebration';
 import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Phase4Final';
-import { Phase4Review } from './Phase4Review';
+// Phase4Review removido — Wizard publica silenciosamente, sem tela de revisão.
 import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { mergePreservingTouched, markPatchTouched, clearSessionTouched } from './sessionTouched';
