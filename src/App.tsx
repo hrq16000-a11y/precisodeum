@@ -26,7 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { initializeUiFreezeMonitor } from "@/lib/uiFreezeMonitor";
 import { installPopupGuards } from "@/lib/popupGuards";
 import { appendWizardResetDebugLog } from "@/lib/wizardResetDebug";
-import { hasUnlockedAppAccess, shouldForceOnboarding } from "@/lib/onboardingAccess";
+import { hasUnlockedAppAccess, isOnboardingCompletionGraceActive, resolveOnboardingGateTarget } from "@/lib/onboardingAccess";
 import { fetchExistingFirstService, findExistingProvider } from "@/components/onboarding/wizard/phases/v2/findExistingRecords";
 import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 
@@ -378,55 +378,44 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   }
 
   const onboardingStep = Number(profile?.onboarding_step ?? 0);
-  // Fonte de verdade do desbloqueio: profile_type + onboarding_completed.
-  // onboarding_step é mantido só para diagnóstico/telemetria, sem re-travar
-  // usuários que já concluíram e já possuem serviços publicados.
-  const mustCompleteOnboarding = !!user && !!profile && shouldForceOnboarding(profile, hasExistingService);
+  const gateDecision = resolveOnboardingGateTarget({
+    profile,
+    hasExistingService,
+    completionGraceActive: isOnboardingCompletionGraceActive(),
+    pathname: location.pathname,
+    search: location.search,
+  });
 
-  // Wizard unificado: /cadastro-inicial é a porta ÚNICA. /cadastro-bet,
-  // /onboarding-v2 e /triagem viram redirects (mantidos no Routes).
-  const isOnboardingRoute =
-    location.pathname === '/cadastro-inicial' ||
-    location.pathname === '/onboarding-v2/sucesso';
-  if (mustCompleteOnboarding && !isOnboardingRoute) {
+  if (gateDecision.action === 'redirect' && gateDecision.reason === 'global-onboarding-gate') {
     appendWizardResetDebugLog({
       source: 'onboarding-gate-redirect',
       route: `${location.pathname}${location.search}`,
-      nextRoute: '/cadastro-inicial',
+      nextRoute: gateDecision.target,
       phase: null,
-      reason: 'global-onboarding-gate',
+      reason: gateDecision.reason,
       meta: {
         profile_type: profile?.profile_type ?? null,
         onboarding_completed: profile?.onboarding_completed ?? null,
         onboarding_step: onboardingStep,
       },
     });
-    return <Navigate to="/cadastro-inicial" replace />;
+    return <Navigate to={gateDecision.target} replace />;
   }
 
-  // Bloqueia retorno indevido a /cadastro-inicial após conclusão.
-  // Cobre links residuais (favoritos, e-mails, ?next=...) que tentam reabrir
-  // o wizard de quem já completou o onboarding. O destino preserva ?next=
-  // se for um caminho interno seguro; caso contrário cai no /dashboard.
-  const alreadyCompleted = !!profile && profile.onboarding_completed === true;
-  if (alreadyCompleted && location.pathname === '/cadastro-inicial') {
-    const params = new URLSearchParams(location.search);
-    const nextRaw = params.get('next');
-    const isSafeNext = !!nextRaw && nextRaw.startsWith('/') && !nextRaw.startsWith('//') && nextRaw !== '/cadastro-inicial';
-    const target = isSafeNext ? nextRaw! : '/dashboard';
+  if (gateDecision.action === 'redirect' && gateDecision.reason === 'already-completed-blocking-cadastro-inicial') {
     appendWizardResetDebugLog({
       source: 'onboarding-gate-block-completed',
       route: `${location.pathname}${location.search}`,
-      nextRoute: target,
+      nextRoute: gateDecision.target,
       phase: null,
-      reason: 'already-completed-blocking-cadastro-inicial',
+      reason: gateDecision.reason,
       meta: {
         profile_type: profile?.profile_type ?? null,
-        onboarding_completed: true,
-        had_next_param: !!nextRaw,
+        onboarding_completed: profile?.onboarding_completed ?? null,
+        had_next_param: new URLSearchParams(location.search).has('next'),
       },
     });
-    return <Navigate to={target} replace />;
+    return <Navigate to={gateDecision.target} replace />;
   }
 
 

@@ -11,6 +11,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveOnboardingGateTarget } from '@/lib/onboardingAccess';
 
 const root = path.resolve(__dirname, '..');
 
@@ -73,5 +74,32 @@ describe('Onboarding V2 — fluxo final', () => {
     const reducerSrc = read('components/onboarding/wizard/wizardReducer.ts');
     // A linha do mapeamento explícito deve existir
     expect(reducerSrc).toMatch(/case 'done':\s*return 'done'/);
+  });
+
+  it('rotas protegidas do onboarding não retornam para /cadastro-inicial após /onboarding-v2/sucesso', () => {
+    const profile = { profile_type: 'provider', onboarding_completed: false, onboarding_step: 4 };
+
+    const successDecision = resolveOnboardingGateTarget({
+      profile,
+      pathname: '/onboarding-v2/sucesso',
+      search: '',
+    });
+    expect(successDecision.action).toBe('allow');
+
+    const dashboardDecision = resolveOnboardingGateTarget({
+      profile,
+      pathname: '/dashboard',
+      search: '',
+      completionGraceActive: true,
+    });
+    expect(dashboardDecision.action).toBe('allow');
+
+    const dashboardLeadDecision = resolveOnboardingGateTarget({
+      profile,
+      pathname: '/dashboard/leads',
+      search: '',
+      completionGraceActive: true,
+    });
+    expect(dashboardLeadDecision.action).toBe('allow');
   });
 });

@@ -14,7 +14,7 @@ vi.mock("@/hooks/useAuth", () => ({
 // This must stay 1:1 with the real implementation in src/App.tsx.
 import { useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { shouldForceOnboarding } from "@/lib/onboardingAccess";
+import { resolveOnboardingGateTarget } from "@/lib/onboardingAccess";
 
 const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, loading } = useAuth() as any;
@@ -29,23 +29,16 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  const mustCompleteOnboarding = !!user && !!profile && shouldForceOnboarding(profile, hasExistingService);
-  const isOnboardingRoute =
-    location.pathname === "/cadastro-inicial" ||
-    location.pathname === "/onboarding-v2/sucesso";
+  const gateDecision = resolveOnboardingGateTarget({
+    profile,
+    hasExistingService,
+    completionGraceActive: Boolean(profile?.completionGraceActive),
+    pathname: location.pathname,
+    search: location.search,
+  });
 
-  if (mustCompleteOnboarding && !isOnboardingRoute) {
-    return <Navigate to="/cadastro-inicial" replace />;
-  }
-
-  // Mirror App.tsx: bloqueia volta a /cadastro-inicial após conclusão.
-  const alreadyCompleted = !!profile && profile.onboarding_completed === true;
-  if (alreadyCompleted && location.pathname === "/cadastro-inicial") {
-    const params = new URLSearchParams(location.search);
-    const nextRaw = params.get("next");
-    const isSafeNext = !!nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//") && nextRaw !== "/cadastro-inicial";
-    const target = isSafeNext ? nextRaw! : "/dashboard";
-    return <Navigate to={target} replace />;
+  if (gateDecision.action === "redirect") {
+    return <Navigate to={gateDecision.target} replace />;
   }
 
   return <>{children}</>;
@@ -58,7 +51,14 @@ const renderAt = (path = "/dashboard") =>
         <Routes>
           <Route path="/cadastro-inicial" element={<div>CADASTRO_PAGE</div>} />
           <Route path="/dashboard" element={<div>DASHBOARD_PAGE</div>} />
+          <Route path="/dashboard/perfil" element={<div>DASHBOARD_PROFILE_PAGE</div>} />
           <Route path="/dashboard/leads" element={<div>LEADS_PAGE</div>} />
+          <Route path="/dashboard/servicos" element={<div>SERVICES_PAGE</div>} />
+          <Route path="/dashboard/portfolio" element={<div>PORTFOLIO_PAGE</div>} />
+          <Route path="/dashboard/minha-pagina" element={<div>MY_PAGE</div>} />
+          <Route path="/dashboard/privacidade" element={<div>PRIVACY_PAGE</div>} />
+          <Route path="/dashboard/cadastro-status" element={<div>STATUS_PAGE</div>} />
+          <Route path="/onboarding-v2/sucesso" element={<div>SUCCESS_PAGE</div>} />
           <Route path="*" element={<div>CHILDREN_RENDERED</div>} />
         </Routes>
       </OnboardingGate>
@@ -127,6 +127,65 @@ describe("OnboardingGate", () => {
     });
     renderAt("/dashboard");
     expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
+  });
+
+  it("permite /onboarding-v2/sucesso sem devolver ao /cadastro-inicial quando onboarding ainda está sincronizando", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: { profile_type: "provider", onboarding_completed: false, onboarding_step: 4 },
+      loading: false,
+    });
+    renderAt("/onboarding-v2/sucesso");
+    expect(screen.getByText("SUCCESS_PAGE")).toBeTruthy();
+    expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
+  });
+
+  it("permite /dashboard logo após a conclusão quando a grace window está ativa", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: {
+        profile_type: "provider",
+        onboarding_completed: false,
+        onboarding_step: 4,
+        completionGraceActive: true,
+      },
+      loading: false,
+    });
+    renderAt("/dashboard");
+    expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
+    expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
+  });
+
+  it("percorre as rotas protegidas do pós-onboarding sem voltar para /cadastro-inicial", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: {
+        profile_type: "provider",
+        onboarding_completed: false,
+        onboarding_step: 4,
+        completionGraceActive: true,
+      },
+      loading: false,
+    });
+
+    const routes = [
+      ["/onboarding-v2/sucesso", "SUCCESS_PAGE"],
+      ["/dashboard", "DASHBOARD_PAGE"],
+      ["/dashboard/perfil", "DASHBOARD_PROFILE_PAGE"],
+      ["/dashboard/servicos", "SERVICES_PAGE"],
+      ["/dashboard/portfolio", "PORTFOLIO_PAGE"],
+      ["/dashboard/minha-pagina", "MY_PAGE"],
+      ["/dashboard/privacidade", "PRIVACY_PAGE"],
+      ["/dashboard/cadastro-status", "STATUS_PAGE"],
+      ["/dashboard/leads", "LEADS_PAGE"],
+    ] as const;
+
+    for (const [route, marker] of routes) {
+      const view = renderAt(route);
+      expect(screen.getByText(marker)).toBeTruthy();
+      expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
+      view.unmount();
+    }
   });
 
   it("renders children for anonymous routes (no user)", () => {
