@@ -96,12 +96,12 @@ ${entries.join('\n')}
   //   3. service_area = provider.city (kill-switch)
   //   4. Provider aprovado
   const MIN_DESCRIPTION_LEN = 80;
-  const NEEDS_ELIGIBILITY = ['providers', 'cities', 'categories', 'especialidades', 'seo'].includes(type || '');
+  const NEEDS_ELIGIBILITY = ['providers', 'cities', 'categories', 'especialidades', 'seo', 'seo-cep'].includes(type || '');
 
   type EligibleSvc = {
     id: string; provider_id: string; description: string | null;
     service_area: string | null; category_id: string | null;
-    providers: { id: string; slug: string | null; city: string | null; status: string; updated_at: string };
+    providers: { id: string; slug: string | null; city: string | null; status: string; updated_at: string; postal_code: string | null };
   };
   const eligible: EligibleSvc[] = [];
   const eligibleProviderSlugs = new Set<string>();
@@ -122,7 +122,7 @@ ${entries.join('\n')}
     };
     const { data: eligibleServices } = await supabase
       .from('services')
-      .select('id, provider_id, description, service_area, category_id, providers!inner(id, slug, city, status, updated_at)')
+      .select('id, provider_id, description, service_area, category_id, providers!inner(id, slug, city, status, updated_at, postal_code)')
       .is('deleted_at', null)
       .not('service_area', 'is', null)
       .neq('service_area', '')
