@@ -30,6 +30,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload, detectForbiddenAddressKeys } from '@/lib/providerPayload';
 import { logWizardError } from '@/lib/wizardErrorGuard';
+import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
 
 // Aviso única vez por sessão para evitar spam
 let _addressWarnedOnce = false;
@@ -1162,6 +1163,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   /* ───── Render por fase ───── */
 
   const finishWizard = async () => {
+    markOnboardingCompletionGrace();
     clearOnboardingV2Draft();
     clearSessionTouched();
     if (user?.id) void clearRemoteDraft(user.id);
