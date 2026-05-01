@@ -4028,6 +4028,7 @@ export type Database = {
       }
       providers: {
         Row: {
+          accepts_on_demand: boolean
           account_type: string
           address_complete: boolean | null
           avg_response_minutes: number | null
@@ -4107,6 +4108,7 @@ export type Database = {
           years_experience: number
         }
         Insert: {
+          accepts_on_demand?: boolean
           account_type?: string
           address_complete?: boolean | null
           avg_response_minutes?: number | null
@@ -4186,6 +4188,7 @@ export type Database = {
           years_experience?: number
         }
         Update: {
+          accepts_on_demand?: boolean
           account_type?: string
           address_complete?: boolean | null
           avg_response_minutes?: number | null
@@ -4592,6 +4595,7 @@ export type Database = {
       registration_snapshots: {
         Row: {
           accuracy_m: number | null
+          auth_provider: string | null
           battery_charging: boolean | null
           battery_level: number | null
           browser_name: string | null
@@ -4644,6 +4648,7 @@ export type Database = {
         }
         Insert: {
           accuracy_m?: number | null
+          auth_provider?: string | null
           battery_charging?: boolean | null
           battery_level?: number | null
           browser_name?: string | null
@@ -4696,6 +4701,7 @@ export type Database = {
         }
         Update: {
           accuracy_m?: number | null
+          auth_provider?: string | null
           battery_charging?: boolean | null
           battery_level?: number | null
           browser_name?: string | null
@@ -5298,6 +5304,7 @@ export type Database = {
       }
       services: {
         Row: {
+          accepts_on_demand: boolean
           address: string
           category_id: string | null
           created_at: string
@@ -5329,6 +5336,7 @@ export type Database = {
           youtube_url: string | null
         }
         Insert: {
+          accepts_on_demand?: boolean
           address?: string
           category_id?: string | null
           created_at?: string
@@ -5360,6 +5368,7 @@ export type Database = {
           youtube_url?: string | null
         }
         Update: {
+          accepts_on_demand?: boolean
           address?: string
           category_id?: string | null
           created_at?: string
@@ -8192,6 +8201,7 @@ export type Database = {
       derive_working_hours_flags: {
         Args: { _struct: Json }
         Returns: {
+          accepts_on_demand: boolean
           is_24h: boolean
           opens_late_night: boolean
           opens_overnight: boolean
