@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useChatEligibility } from '@/hooks/useChatEligibility';
 import ChatConversationList from '@/components/chat/ChatConversationList';
@@ -6,11 +7,19 @@ import ChatMessageView from '@/components/chat/ChatMessageView';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, Lock, AlertTriangle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const DashboardChatPage = () => {
   const { isEnabled, eligible, reason, isLoading, settings } = useChatEligibility();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { data: siteSettings } = useSiteSettings();
+  const p2pEnabled = (siteSettings as any)?.chat_p2p_enabled !== false;
+
+  // P2P desativado → redireciona para suporte
+  if (!p2pEnabled) {
+    return <Navigate to="/dashboard/suporte" replace />;
+  }
 
   if (isLoading) {
     return (
