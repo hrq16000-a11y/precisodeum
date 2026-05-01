@@ -239,6 +239,42 @@ const REMOVE_LISTENER_ANY = /\bremoveEventListener\s*\(/;
 const SCHEDULE_HELPER = /\bscheduleWizardTimeout\s*\(/;
 
 /**
+ * Strips TS casts/annotations that don't change handler identity:
+ *   `fn as EventListener`         → `fn`
+ *   `fn satisfies (e: Event)=>void` → `fn`
+ *   `<EventListener>fn`           → `fn`
+ *   `(fn)`                        → `fn`
+ *   `fn!`                         → `fn`
+ */
+function stripTsCasts(s) {
+  let prev;
+  let cur = s.trim();
+  do {
+    prev = cur;
+    // `<Type>expr` (TS angle-bracket cast) — apenas se o `<...>` parece um tipo
+    cur = cur.replace(/^<[^<>]+>\s*/, '');
+    // `expr as Type` / `expr satisfies Type` — consome até o fim, pois o tipo
+    // pode conter generics simples sem vírgulas externas.
+    cur = cur.replace(/\s+(?:as|satisfies)\s+[\w$.<>[\]\s|&,'"`-]+$/i, '');
+    // Non-null assertion `expr!`
+    cur = cur.replace(/!\s*$/, '');
+    // Parênteses externos `(expr)`
+    if (cur.startsWith('(') && cur.endsWith(')')) {
+      const inner = cur.slice(1, -1);
+      // só remove se os parênteses são realmente externos (depth 0 no fim)
+      let depth = 0, ok = true;
+      for (let i = 0; i < inner.length; i++) {
+        if (inner[i] === '(') depth++;
+        else if (inner[i] === ')') { depth--; if (depth < 0) { ok = false; break; } }
+      }
+      if (ok && depth === 0) cur = inner.trim();
+    }
+    cur = cur.trim();
+  } while (cur !== prev);
+  return cur;
+}
+
+/**
  * Decide se um trecho de handler é uma referência a um identificador "removível".
  * Aceita identificadores simples (`onResize`), acessos (`handlerRef.current`,
  * `this.onClick`) e bind (`fn.bind(this)`). REJEITA literais inline:
@@ -246,7 +282,7 @@ const SCHEDULE_HELPER = /\bscheduleWizardTimeout\s*\(/;
  * não pode ser reutilizada em `removeEventListener`.
  */
 function isNamedHandler(handlerSrc) {
-  const h = handlerSrc.trim();
+  const h = stripTsCasts(handlerSrc);
   if (!h) return false;
   // Inline literals → leak garantido.
   if (/^(?:async\s+)?function\b/.test(h)) return false;
@@ -257,10 +293,11 @@ function isNamedHandler(handlerSrc) {
   return /^[A-Za-z_$][\w$.[\]]*(?:\.bind\([^)]*\))?$/.test(h);
 }
 
-/** Normaliza um handler para comparação (remove espaços e .bind(...)). */
+/** Normaliza um handler para comparação (remove casts, espaços e .bind(...)). */
 function normalizeHandler(h) {
-  return h.trim().replace(/\.bind\([^)]*\)$/, '');
+  return stripTsCasts(h).replace(/\.bind\([^)]*\)$/, '');
 }
+
 
 
 function lineCol(src, pos) {
