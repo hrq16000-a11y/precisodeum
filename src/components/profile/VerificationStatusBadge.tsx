@@ -180,6 +180,9 @@ export const VerificationStatusBadge = ({
     };
   }, [userId]);
 
+  const STATE_META = buildStateMeta(resolveDocLabel(docKind));
+  // Em fluxos como o upsell do wizard, o estado 'none' duplica info já evidente.
+  if (hideWhenNone && state === 'none') return null;
   const meta = STATE_META[state];
   const Icon = meta.Icon;
   const isSpinning = state === 'loading' || state === 'review';
