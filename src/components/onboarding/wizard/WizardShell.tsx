@@ -56,7 +56,6 @@ import {
   mapTriagePhaseToUnified,
   PROVIDER_WIZARD_PHASE_ORDER,
   REVIEW_PHASE_ORDER,
-  prevUnifiedPhase,
   unifiedPhaseIndex,
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
