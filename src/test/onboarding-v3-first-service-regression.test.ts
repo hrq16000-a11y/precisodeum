@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 
 const read = (path: string) => fs.readFileSync(path, 'utf8');
+const exists = (path: string) => fs.existsSync(path);
 
 /**
  * Após a Fusão Estrutural (Fase B), o handoff Triagem → Criação de Serviço
