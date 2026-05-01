@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Download, FileText, ShieldCheck, Trash2, Cookie, Loader2 } from "lucide-react";
+import { Download, FileText, ShieldCheck, Trash2, Cookie, Loader2, FileLock2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -166,6 +166,12 @@ const DashboardPrivacyPage = () => {
               icon={Cookie}
               title="Auditoria de consentimentos"
               description="Histórico de aceites e mudanças de preferências de cookies."
+            />
+            <PrivacyLink
+              to="/dashboard/meu-cadastro"
+              icon={FileLock2}
+              title="Registro de cadastro (LGPD)"
+              description="Arquivo imutável com IP, dispositivo, endereço e origem do seu cadastro."
             />
             <PrivacyLink
               to="/termos"
