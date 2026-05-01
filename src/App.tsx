@@ -24,6 +24,7 @@ const GlobalExitIntentDialog = reactLazy(() => importWithRetry(() => import("./c
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { initializeUiFreezeMonitor } from "@/lib/uiFreezeMonitor";
+import { installPopupGuards } from "@/lib/popupGuards";
 import { appendWizardResetDebugLog } from "@/lib/wizardResetDebug";
 import { hasUnlockedAppAccess, shouldForceOnboarding } from "@/lib/onboardingAccess";
 import { fetchExistingFirstService, findExistingProvider } from "@/components/onboarding/wizard/phases/v2/findExistingRecords";
