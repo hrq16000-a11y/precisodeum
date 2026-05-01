@@ -89,6 +89,12 @@ describe('Onboarding V2 — fluxo final', () => {
     expect(shellSrc).toMatch(/update\(\{ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true \}\)/);
   });
 
+  it('WizardShell aceita reviewMode para reabrir o fluxo pelo botão Wizard', () => {
+    const shellSrc = read('components/onboarding/wizard/WizardShell.tsx');
+    expect(shellSrc).toContain('reviewMode = false');
+    expect(shellSrc).toContain("reviewMode\n              ? 'main_action'");
+  });
+
   it('rotas protegidas do onboarding não retornam para /cadastro-inicial após /onboarding-v2/sucesso', () => {
     const profile = { profile_type: 'provider', onboarding_completed: false, onboarding_step: 4 };
 

@@ -345,7 +345,7 @@ const DashboardPage = () => {
           size="sm"
           variant="default"
           className="h-7 gap-1.5 px-2.5 text-[11px]"
-          onClick={() => navigate('/cadastro-inicial')}
+          onClick={() => navigate('/cadastro-inicial?mode=review&next=/dashboard')}
           title="Continuar onde parei"
           aria-label="Wizard — continuar onde parei"
         >
