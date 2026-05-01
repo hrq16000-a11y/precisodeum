@@ -14,6 +14,48 @@ export function shouldForceOnboarding(profile: any | null, hasExistingService = 
   return !hasUnlockedAppAccess(profile, hasExistingService);
 }
 
+export function resolveOnboardingGateTarget({
+  profile,
+  hasExistingService = false,
+  pathname,
+  search = '',
+}: {
+  profile: any | null;
+  hasExistingService?: boolean;
+  pathname: string;
+  search?: string;
+}) {
+  const mustCompleteOnboarding = !!profile && shouldForceOnboarding(profile, hasExistingService);
+  const isOnboardingRoute = pathname === '/cadastro-inicial' || pathname === '/onboarding-v2/sucesso';
+
+  if (mustCompleteOnboarding && !isOnboardingRoute) {
+    return {
+      action: 'redirect' as const,
+      target: '/cadastro-inicial',
+      reason: 'global-onboarding-gate',
+    };
+  }
+
+  const alreadyCompleted = !!profile && hasUnlockedAppAccess(profile, hasExistingService);
+  if (alreadyCompleted && pathname === '/cadastro-inicial') {
+    const params = new URLSearchParams(search);
+    const nextRaw = params.get('next');
+    const isSafeNext = !!nextRaw && nextRaw.startsWith('/') && !nextRaw.startsWith('//') && nextRaw !== '/cadastro-inicial';
+
+    return {
+      action: 'redirect' as const,
+      target: isSafeNext ? nextRaw! : '/dashboard',
+      reason: 'already-completed-blocking-cadastro-inicial',
+    };
+  }
+
+  return {
+    action: 'allow' as const,
+    target: null,
+    reason: null,
+  };
+}
+
 export async function resolvePostLoginRoute({
   userId,
   profile,
