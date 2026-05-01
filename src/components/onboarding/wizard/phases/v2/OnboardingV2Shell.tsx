@@ -60,7 +60,7 @@ import { Phase2Service, Phase2Details } from './Phase2Service';
 import { Phase2Photos } from './Phase2Photos';
 import { Phase3Celebration } from './Phase3Celebration';
 import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Phase4Final';
-import { Phase4Review } from './Phase4Review';
+// Phase4Review removido — Wizard publica silenciosamente, sem tela de revisão.
 import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { mergePreservingTouched, markPatchTouched, clearSessionTouched } from './sessionTouched';
@@ -1477,20 +1477,36 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             }}
           />
         );
-      case 'phase4_review':
-        return (
-          <Phase4Review
-            profile={state.profile}
-            service={state.service}
-            saving={saving}
-            onEdit={(phase) => { track('back', { from: 'review', to: phase }); dispatch({ type: 'GO_TO', phase }); }}
-            onConfirm={() => {
-              // SEM novos upserts — apenas transição. Persistência já foi feita patch-a-patch.
-              track('submit', { from: 'review' });
-              dispatch({ type: 'NEXT' });
-            }}
-          />
+      case 'phase4_review': {
+        // Publicação SILENCIOSA — não há mais tela de revisão no Wizard.
+        // Toda persistência já foi feita patch-a-patch. Aqui só:
+        //  1) gravamos o snapshot forense (idempotente)
+        //  2) avançamos pra 'done' imediatamente
+        track('submit', { from: 'review_silent' });
+        // Fire-and-forget: não bloqueia a UX se o snapshot falhar.
+        void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
+          recordRegistrationSnapshotOnce({
+            whatsapp: state.profile.whatsapp,
+            postal_code: state.profile.postal_code,
+            street: state.profile.street,
+            street_number: state.profile.street_number,
+            neighborhood: state.profile.neighborhood,
+            city: state.profile.city,
+            state: state.profile.state,
+            latitude: (state.profile as any).latitude ?? null,
+            longitude: (state.profile as any).longitude ?? null,
+            accuracy_m: (state.profile as any).accuracy_m ?? null,
+            origin_summary: {
+              flow: 'onboarding_v2',
+              account_type: state.profile.kind,
+              has_first_service: !!state.service.service_name,
+            },
+          }),
         );
+        // Avança imediatamente — sem renderizar nada.
+        Promise.resolve().then(() => dispatch({ type: 'NEXT' }));
+        return null;
+      }
       case 'done':
         if (deferCompletionToParent) return null;
         // Limpa rascunho local e auto-finaliza

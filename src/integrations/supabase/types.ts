@@ -3352,6 +3352,8 @@ export type Database = {
         Row: {
           account_type_id: string | null
           avatar_url: string | null
+          ban_reason: string | null
+          banned_at: string | null
           bio: string | null
           celebration_muted: boolean
           city: string | null
@@ -3395,6 +3397,8 @@ export type Database = {
         Insert: {
           account_type_id?: string | null
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           bio?: string | null
           celebration_muted?: boolean
           city?: string | null
@@ -3438,6 +3442,8 @@ export type Database = {
         Update: {
           account_type_id?: string | null
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           bio?: string | null
           celebration_muted?: boolean
           city?: string | null
@@ -4535,6 +4541,210 @@ export type Database = {
           referrer_id?: string
           rewarded_at?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      registration_blocks: {
+        Row: {
+          blocked_at: string
+          blocked_user_id: string | null
+          device_fingerprint: string | null
+          email: string | null
+          expires_at: string | null
+          id: string
+          ip_address: string | null
+          is_permanent: boolean
+          postal_code: string | null
+          reason: string | null
+          street_number: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          blocked_at?: string
+          blocked_user_id?: string | null
+          device_fingerprint?: string | null
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_permanent?: boolean
+          postal_code?: string | null
+          reason?: string | null
+          street_number?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          blocked_at?: string
+          blocked_user_id?: string | null
+          device_fingerprint?: string | null
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_permanent?: boolean
+          postal_code?: string | null
+          reason?: string | null
+          street_number?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      registration_snapshots: {
+        Row: {
+          accuracy_m: number | null
+          battery_charging: boolean | null
+          battery_level: number | null
+          browser_name: string | null
+          browser_version: string | null
+          came_from_link: boolean | null
+          captured_at: string
+          city: string | null
+          city_geoip: string | null
+          country: string | null
+          created_at: string
+          device_brand: string | null
+          device_fingerprint: string | null
+          device_imei: string | null
+          device_model: string | null
+          device_pixel_ratio: number | null
+          email: string | null
+          id: string
+          ip_address: string | null
+          isp: string | null
+          landing_url: string | null
+          language: string | null
+          latitude: number | null
+          longitude: number | null
+          neighborhood: string | null
+          online_at_signup: boolean | null
+          origin_summary: Json | null
+          os_name: string | null
+          os_version: string | null
+          postal_code: string | null
+          raw_meta: Json | null
+          region: string | null
+          screen_height: number | null
+          screen_width: number | null
+          signup_method: string | null
+          signup_referrer: string | null
+          state: string | null
+          street: string | null
+          street_number: string | null
+          timezone: string | null
+          user_agent: string | null
+          user_id: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          velocity_mps: number | null
+          was_moving: boolean | null
+          whatsapp: string | null
+        }
+        Insert: {
+          accuracy_m?: number | null
+          battery_charging?: boolean | null
+          battery_level?: number | null
+          browser_name?: string | null
+          browser_version?: string | null
+          came_from_link?: boolean | null
+          captured_at?: string
+          city?: string | null
+          city_geoip?: string | null
+          country?: string | null
+          created_at?: string
+          device_brand?: string | null
+          device_fingerprint?: string | null
+          device_imei?: string | null
+          device_model?: string | null
+          device_pixel_ratio?: number | null
+          email?: string | null
+          id?: string
+          ip_address?: string | null
+          isp?: string | null
+          landing_url?: string | null
+          language?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          neighborhood?: string | null
+          online_at_signup?: boolean | null
+          origin_summary?: Json | null
+          os_name?: string | null
+          os_version?: string | null
+          postal_code?: string | null
+          raw_meta?: Json | null
+          region?: string | null
+          screen_height?: number | null
+          screen_width?: number | null
+          signup_method?: string | null
+          signup_referrer?: string | null
+          state?: string | null
+          street?: string | null
+          street_number?: string | null
+          timezone?: string | null
+          user_agent?: string | null
+          user_id: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          velocity_mps?: number | null
+          was_moving?: boolean | null
+          whatsapp?: string | null
+        }
+        Update: {
+          accuracy_m?: number | null
+          battery_charging?: boolean | null
+          battery_level?: number | null
+          browser_name?: string | null
+          browser_version?: string | null
+          came_from_link?: boolean | null
+          captured_at?: string
+          city?: string | null
+          city_geoip?: string | null
+          country?: string | null
+          created_at?: string
+          device_brand?: string | null
+          device_fingerprint?: string | null
+          device_imei?: string | null
+          device_model?: string | null
+          device_pixel_ratio?: number | null
+          email?: string | null
+          id?: string
+          ip_address?: string | null
+          isp?: string | null
+          landing_url?: string | null
+          language?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          neighborhood?: string | null
+          online_at_signup?: boolean | null
+          origin_summary?: Json | null
+          os_name?: string | null
+          os_version?: string | null
+          postal_code?: string | null
+          raw_meta?: Json | null
+          region?: string | null
+          screen_height?: number | null
+          screen_width?: number | null
+          signup_method?: string | null
+          signup_referrer?: string | null
+          state?: string | null
+          street?: string | null
+          street_number?: string | null
+          timezone?: string | null
+          user_agent?: string | null
+          user_id?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          velocity_mps?: number | null
+          was_moving?: boolean | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
@@ -8661,6 +8871,10 @@ export type Database = {
             }
             Returns: string
           }
+      record_registration_snapshot: {
+        Args: { _payload: Json }
+        Returns: string
+      }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
       register_click_lead: {
         Args: {
@@ -8698,6 +8912,7 @@ export type Database = {
             Returns: boolean
           }
       register_service_completion: { Args: never; Returns: Json }
+      request_self_account_ban: { Args: never; Returns: Json }
       reschedule_lead_followup: {
         Args: { _lead_id: string; _next_at: string; _note?: string }
         Returns: undefined
