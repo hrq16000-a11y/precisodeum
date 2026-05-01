@@ -136,8 +136,13 @@ export default function CompanyAddressForm({
             onChange={(e) => onChange({ street: e.target.value })}
             placeholder="Rua / Avenida"
             maxLength={120}
+            aria-invalid={!!streetError}
+            aria-describedby={streetError ? 'street-error' : undefined}
             className={isSuggested('street') && value.street ? inputSuggested : inputBase}
           />
+          {streetError && (
+            <p id="street-error" className="mt-1 text-[10.5px] text-rose-600">{streetError}</p>
+          )}
         </label>
         <label className="block">
           <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -149,8 +154,13 @@ export default function CompanyAddressForm({
             value={value.street_number ?? ''}
             onChange={(e) => onChange({ street_number: e.target.value.replace(/[^\dA-Za-z/-]/g, '').slice(0, 10) })}
             placeholder="123"
+            aria-invalid={!!numberError}
+            aria-describedby={numberError ? 'number-error' : undefined}
             className={inputBase}
           />
+          {numberError && (
+            <p id="number-error" className="mt-1 text-[10.5px] text-rose-600">{numberError}</p>
+          )}
         </label>
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
