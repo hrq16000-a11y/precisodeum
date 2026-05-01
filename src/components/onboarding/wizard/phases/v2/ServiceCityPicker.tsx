@@ -13,7 +13,7 @@ import { Plus, X, MapPin, Sparkles, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import CityAutocomplete from '@/components/CityAutocomplete';
-import { findMetroByPole, getMetroMembers } from '@/lib/metroRegions';
+import { findMetroForCity, getMetroMembers } from '@/lib/metroRegions';
 import { normalize } from '@/lib/normalize';
 import { useNearbyCitySuggestions } from '@/hooks/useNearbyCitySuggestions';
 
