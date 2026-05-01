@@ -131,19 +131,22 @@ const SearchPage = () => {
   })();
   const [page, setPage] = useState(initialPage);
 
-  // Persiste `page` na URL para que o usuário possa compartilhar/voltar
-  // a uma página específica. Mantém demais params; remove quando page=1.
+  // Persiste `page`, `ordem` e `disponivel` na URL para que filtros e ordenação
+  // possam ser compartilhados, voltados via histórico e indexados quando aplicável.
+  // Mantém demais params; remove chave quando estiver no valor default.
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
     if (page > 1) next.set('page', String(page));
     else next.delete('page');
     if (availabilityWindow !== 'any') next.set('disponivel', availabilityWindow);
     else next.delete('disponivel');
+    if (sortBy && sortBy !== 'relevance') next.set('ordem', sortBy);
+    else next.delete('ordem');
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, availabilityWindow]);
+  }, [page, availabilityWindow, sortBy]);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
