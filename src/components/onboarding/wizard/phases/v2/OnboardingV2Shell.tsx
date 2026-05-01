@@ -964,6 +964,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                   service_area: serviceArea || null,
                   address: cityForAddress || null,
                   working_hours: workingHoursSummary || null,
+                  working_hours_struct: s.working_hours_struct ?? null,
                   category_id: categoryId,
                   category_ids: [categoryId, ...s.category_ids.slice(1)],
                 } as any)
@@ -1022,6 +1023,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // 2) Herança — categoria principal + horário sobem para o provider
       const updates: any = { category_id: categoryId };
       if (workingHoursSummary) updates.working_hours = workingHoursSummary;
+      if (s.working_hours_struct) updates.working_hours_struct = s.working_hours_struct;
       if (s.starting_price_brl != null) updates.starting_price = s.starting_price_brl;
       await supabase.from('providers').update(updates).eq('id', workingProviderId);
 
