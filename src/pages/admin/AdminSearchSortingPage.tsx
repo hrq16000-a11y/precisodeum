@@ -128,17 +128,17 @@ export default function AdminSearchSortingPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6 text-sm text-muted-foreground">Carregando…</div>
-    );
-  }
-
   useEffect(() => {
     const prev = document.title;
     document.title = 'Ordenação da busca · Admin';
     return () => { document.title = prev; };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 text-sm text-muted-foreground">Carregando…</div>
+    );
+  }
 
   return (
     <>
