@@ -112,12 +112,26 @@ export default function CompanyAddressForm({
       const suggestion = r.address ?? '';
       // Persiste a sugestão sempre que houver — para o próximo passo saber.
       const patch: Partial<CompanyAddressValue> = { street_suggested: suggestion };
-      const userTyped = (value.street ?? '').trim().length > 0;
+      const currentStreet = (value.street ?? '').trim();
+      const userTyped = currentStreet.length > 0;
+      const userConfirmed = Boolean(value.street_confirmed);
+      const previousSuggestion = (value.street_suggested ?? '').trim();
+      // Caso 1: campo vazio → preenche e marca como NÃO confirmado.
       if (suggestion && !userTyped) {
-        // Campo vazio → preenche e marca como NÃO confirmado (usuário precisa confirmar).
+        patch.street = suggestion;
+        patch.street_confirmed = false;
+      } else if (
+        // Caso 2: usuário ainda não confirmou e tinha a sugestão anterior — atualiza para a nova.
+        suggestion &&
+        userTyped &&
+        !userConfirmed &&
+        previousSuggestion.length > 0 &&
+        normalizeStreet(currentStreet) === normalizeStreet(previousSuggestion)
+      ) {
         patch.street = suggestion;
         patch.street_confirmed = false;
       }
+      // Caso 3: usuário confirmou ou digitou diferente → mantém o que está e deixa o conflict banner agir.
       onChange(patch);
       setCepStatus('applied');
     } else {
@@ -126,7 +140,7 @@ export default function CompanyAddressForm({
       setCepStatus(reason === 'not_found' ? 'not_found' : 'error');
       setCepErrorReason(reason);
     }
-  }, [onChange, value.street]);
+  }, [onChange, value.street, value.street_confirmed, value.street_suggested]);
 
   // Lookup automático SOMENTE quando o CEP atinge EXATAMENTE 8 dígitos.
   useEffect(() => {
