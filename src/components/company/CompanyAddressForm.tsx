@@ -180,7 +180,7 @@ export default function CompanyAddressForm({
 
       // Atualiza histórico (LRU, máx 3) — apenas quando há logradouro útil.
       if (suggestion) {
-        setCepHistory((prev) => {
+        updateHistory((prev) => {
           const entry: CepHistoryEntry = {
             cep: formatCep(digits),
             digits,
