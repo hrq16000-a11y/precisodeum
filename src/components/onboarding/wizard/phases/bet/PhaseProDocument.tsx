@@ -37,18 +37,77 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
   const isPf = state.pro_kind === 'pf';
   const [showBadge, setShowBadge] = useState(false);
   const [awarded, setAwarded] = useState(false);
-  // Convite opcional ao "ponto de atendimento físico" (PJ apenas).
-  const [showAddress, setShowAddress] = useState(
-    !isPf && Boolean(state.street || state.street_number || state.postal_code),
-  );
+  const [autoFillStatus, setAutoFillStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [autoFillError, setAutoFillError] = useState<string | undefined>(undefined);
+  const { requestPreciseLocation } = useGeoCity();
 
   const docDigits = useMemo(() => state.document.replace(/\D/g, ''), [state.document]);
   const docValid = isPf ? isValidCpf(docDigits) : isValidCnpj(docDigits);
   const companyOk = isPf ? true : state.company_name.trim().length >= 2;
   const sealEarned = docValid && companyOk;
-  const canAdvance = true;
 
-  // CEP lookup, sugestão, retry e validação inline ficam dentro do CompanyAddressForm.
+  // Auto-preenchimento via GPS: pega coordenadas → reverse geocode (Nominatim)
+  // → CEP → lookupCep para obter logradouro/cidade/UF/bairro completos.
+  const handleAutoFill = useCallback(async () => {
+    setAutoFillStatus('loading');
+    setAutoFillError(undefined);
+    try {
+      const r = await requestPreciseLocation({ force: true });
+      const lat = r.latitude;
+      const lon = r.longitude;
+      if (!r.ok || lat == null || lon == null) {
+        setAutoFillStatus('error');
+        setAutoFillError('Permissão de localização negada. Você pode preencher manualmente.');
+        return;
+      }
+      // Tenta extrair CEP do Nominatim — mais confiável p/ logradouro no BR.
+      let postcode: string | null = null;
+      try {
+        const resp = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2&accept-language=pt-BR&zoom=18&addressdetails=1`,
+          { headers: { Accept: 'application/json' } },
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          const raw = (data?.address?.postcode || '').toString().replace(/\D/g, '');
+          if (raw.length === 8) postcode = raw;
+        }
+      } catch { /* ignora */ }
+
+      if (postcode) {
+        // Aplica CEP e dispara o lookup automático do CompanyAddressForm.
+        const cepResult = await lookupCep(postcode);
+        if (cepResult.ok) {
+          patch({
+            postal_code: postcode,
+            street: cepResult.address || state.street,
+            street_suggested: cepResult.address || '',
+            street_suggested_cep: postcode,
+            street_confirmed: false,
+            bairro_sugerido_cep: cepResult.neighborhood || state.bairro_sugerido_cep,
+          });
+          setAutoFillStatus('success');
+          return;
+        }
+        // CEP não encontrado nas bases — preenche só o CEP e deixa usuário completar.
+        patch({ postal_code: postcode });
+        setAutoFillStatus('success');
+        return;
+      }
+
+      // Sem CEP: aplica ao menos cidade/bairro vindos do GPS.
+      if (r.city || r.neighborhood) {
+        setAutoFillStatus('success');
+        return;
+      }
+      setAutoFillStatus('error');
+      setAutoFillError('Não foi possível identificar seu CEP — preencha manualmente.');
+    } catch (err) {
+      setAutoFillStatus('error');
+      setAutoFillError('Falha ao consultar GPS. Tente novamente ou preencha manualmente.');
+    }
+  }, [requestPreciseLocation, patch, state.street, state.bairro_sugerido_cep]);
+
 
   useEffect(() => {
     if (sealEarned && !awarded) {
