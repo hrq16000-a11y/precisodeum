@@ -15,9 +15,14 @@ import { describe, it, expect } from 'vitest';
 import { getOnboardingReviewSection } from '@/lib/onboardingAccess';
 import {
   REVIEW_PHASE_ORDER,
-  prevUnifiedPhase,
   unifiedPhaseIndex,
 } from '@/components/onboarding/wizard/wizardReducer';
+
+// Helper local que espelha o usado no WizardShell em modo revisão.
+function prevReview(phase: string): string {
+  const i = REVIEW_PHASE_ORDER.indexOf(phase as any);
+  return i <= 0 ? phase : REVIEW_PHASE_ORDER[i - 1];
+}
 
 describe('Wizard review · navegação não-linear', () => {
   it('REVIEW_PHASE_ORDER tem 19 fases visíveis + done', () => {
@@ -58,23 +63,22 @@ describe('Wizard review · navegação não-linear', () => {
     expect(getOnboardingReviewSection('?mode=review')).toBeNull();
   });
 
-  it('prevUnifiedPhase retrocede de main_service para triage_celebration', () => {
-    expect(prevUnifiedPhase('main_service')).toBe('triage_celebration');
+  it('prevReview retrocede de main_service para triage_celebration', () => {
+    expect(prevReview('main_service')).toBe('triage_celebration');
   });
 
-  it('prevUnifiedPhase em triage_identity é estável (não trava abaixo de 0)', () => {
-    expect(prevUnifiedPhase('triage_identity')).toBe('triage_identity');
+  it('prevReview em triage_identity é estável (não trava abaixo de 0)', () => {
+    expect(prevReview('triage_identity')).toBe('triage_identity');
   });
 
-  it('prevUnifiedPhase percorre toda a régua review até a Step 1', () => {
-    let phase: any = 'main_service';
+  it('prevReview percorre toda a régua review até a Step 1', () => {
+    let phase: string = 'main_service';
     const visited: string[] = [phase];
     for (let i = 0; i < 30 && phase !== 'triage_identity'; i++) {
-      phase = prevUnifiedPhase(phase);
+      phase = prevReview(phase);
       visited.push(phase);
     }
     expect(phase).toBe('triage_identity');
-    // Inclui pelo menos uma fase de triagem antes da identidade.
     expect(visited).toContain('triage_celebration');
     expect(visited).toContain('triage_pro_location');
   });
