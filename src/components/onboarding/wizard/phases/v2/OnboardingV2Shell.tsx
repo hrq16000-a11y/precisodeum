@@ -1401,77 +1401,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   const renderPhase = () => {
     switch (state.phase) {
-      case 'phase1_action':
-        return (
-          <Phase1Action
-            onSelect={(t) => {
-              dispatch({ type: 'PATCH_PROFILE', patch: { profile_type: t } });
-              if (t === 'provider') dispatch({ type: 'NEXT' });
-              else {
-                // Fluxos não-provider saem para rotas dedicadas, mantendo escopo enxuto
-                if (t === 'sponsor') navigate('/quero-ser-patrocinador');
-                else navigate('/dashboard');
-              }
-            }}
-          />
-        );
-      case 'phase1_kind':
-        return (
-          <Phase1Kind
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_action' }); }}
-            onSelect={(kind) => {
-              dispatch({ type: 'PATCH_PROFILE', patch: { kind } });
-              track('next', { kind });
-              dispatch({ type: 'NEXT' });
-            }}
-          />
-        );
-      case 'phase1_location':
-        return (
-          <Phase1Location
-            data={state.profile}
-            locks={coreLocks}
-            onChange={patchProfile}
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_kind' }); }}
-            onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
-            onSkip={() => { track('skip'); dispatch({ type: 'SKIP_TO_NEXT' }); }}
-          />
-        );
-      case 'phase1_contact':
-        return (
-          <Phase1Contact
-            data={state.profile}
-            locks={coreLocks}
-            onChange={patchProfile}
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_location' }); }}
-            saving={saving}
-            duplicateWhatsapp={dup.duplicates.whatsapp}
-            checkingWhatsapp={dup.checking.whatsapp}
-            onWhatsappBlur={async () => {
-              if (state.profile.whatsapp.replace(/\D/g, '').length >= 10) {
-                const isDup = await dup.checkWhatsapp(state.profile.whatsapp, user?.id);
-                if (isDup) toast.error('Este WhatsApp já está cadastrado em outra conta.');
-              }
-            }}
-            onSubmit={async () => {
-              if (dup.duplicates.whatsapp) {
-                track('error', { reason: 'duplicate_whatsapp' });
-                toast.error('Corrija o WhatsApp duplicado antes de continuar.');
-                return;
-              }
-              const isDup = await dup.checkWhatsapp(state.profile.whatsapp, user?.id);
-              if (isDup) {
-                track('error', { reason: 'duplicate_whatsapp' });
-                toast.error('Este WhatsApp já está cadastrado em outra conta.');
-                return;
-              }
-              track('submit');
-              const ok = await persistPhase1();
-              if (ok) { track('next'); dispatch({ type: 'NEXT' }); }
-              else track('error', { reason: 'persist_phase1_failed' });
-            }}
-          />
-        );
+      // phase1_action / phase1_kind / phase1_location / phase1_contact
+      // foram removidas em mai/2026 (consolidação Bet Mode). Esses dados
+      // agora vêm 100% da triagem; a fase principal começa em phase2_service.
       case 'phase2_service':
         return (
           <Phase2Service
