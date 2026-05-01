@@ -4,7 +4,6 @@
  */
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { isOpenNow } from '@/lib/workingHoursOpenNow';
-import type { WorkingHoursStruct } from '@/components/onboarding/wizard/phases/v2/workingHours';
 
 export type SortMode = 'relevance' | 'best' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience' | 'open_now';
 
@@ -89,7 +88,7 @@ export interface FilterableProvider {
   opensOvernight?: boolean;
   is24h?: boolean;
   acceptsOnDemand?: boolean;
-  workingHoursStruct?: WorkingHoursStruct | null;
+  workingHoursStruct?: { ranges: Array<{ days: string[]; start: string; end: string }> } | null;
 }
 
 export interface RouteCorridor {
