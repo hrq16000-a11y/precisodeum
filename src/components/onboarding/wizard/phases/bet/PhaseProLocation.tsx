@@ -239,7 +239,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     state.location_source === 'gps' ||
     state.location_source === 'ip';
   const isHydratedFromDraft =
-    cityOk && (!state.location_source || state.location_source === 'unknown' || state.location_source === '');
+    cityOk && !hasReliableManualSource && !geoFailed;
   const canFinish = cityOk && (hasReliableManualSource || geoFailed || isHydratedFromDraft);
 
 
