@@ -230,13 +230,18 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   // Detecta se o GPS falhou/foi negado.
   const geoFailed = Boolean((geo as any).error) || (geo.source && geo.source !== 'gps');
 
-  // [UX-merge] Confirmação implícita: basta cityOk + fonte conhecida.
+  // [UX-merge] Confirmação implícita: basta cityOk + fonte conhecida OU dado já hidratado.
+  // Quando o estado vem hidratado de um draft remoto / modo de edição / fase anterior,
+  // location_source pode estar vazio, mas a cidade já foi validada antes — não trave o usuário.
   const hasReliableManualSource =
     state.location_source === 'cep' ||
     state.location_source === 'manual' ||
     state.location_source === 'gps' ||
     state.location_source === 'ip';
-  const canFinish = cityOk && (hasReliableManualSource || geoFailed);
+  const isHydratedFromDraft =
+    cityOk && (!state.location_source || state.location_source === 'unknown' || state.location_source === '');
+  const canFinish = cityOk && (hasReliableManualSource || geoFailed || isHydratedFromDraft);
+
 
   const sourceLabel =
     state.location_source === 'gps' ? 'GPS preciso' :
