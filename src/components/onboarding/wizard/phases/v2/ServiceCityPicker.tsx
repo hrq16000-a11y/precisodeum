@@ -77,6 +77,27 @@ export const ServiceCityPicker = ({
   const hasRegion = regionLabel ? value.includes(regionLabel) : false;
   const remaining = Math.max(0, max - value.length);
 
+  // Sugestões automáticas por proximidade (Haversine no backend).
+  const { data: nearby, loading: loadingNearby } = useNearbyCitySuggestions({
+    baseCity,
+    baseState,
+    maxKm: 100,
+    limit: 30,
+    enabled: Boolean(baseCity && baseState),
+  });
+
+  const valueNorm = useMemo(() => new Set(value.map((v) => normalize(v))), [value]);
+  const baseNormSet = baseNorm;
+
+  // Filtra sugestões que ainda não estão na lista, mantém ordem por distância.
+  const filteredNearby = useMemo(
+    () => nearby.filter((c) => !valueNorm.has(normalize(c.name)) && normalize(c.name) !== baseNormSet),
+    [nearby, valueNorm, baseNormSet],
+  );
+  const nearList = filteredNearby.filter((c) => c.bucket === 'near').slice(0, 8);
+  const midList = filteredNearby.filter((c) => c.bucket === 'mid').slice(0, 6);
+  const farList = filteredNearby.filter((c) => c.bucket === 'far').slice(0, 4);
+
   const addCity = (city: string) => {
     const v = (city || '').trim();
     if (!v) return;
