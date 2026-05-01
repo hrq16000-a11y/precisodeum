@@ -12,6 +12,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import type { OnboardingPhase } from './types';
+import type { UnifiedPhase } from '../../wizardReducer';
 
 const SESSION_KEY = 'onboarding_v2_session_id';
 const INTENT_KEY = 'onboarding_v2_intent';
@@ -74,7 +75,10 @@ export function getOnboardingIntent(): OnboardingIntent | null {
 }
 
 export interface TrackOptions {
-  phase: OnboardingPhase;
+  /** Aceita fases V2 (`OnboardingPhase`) e fases unificadas (`UnifiedPhase`,
+   *  ex: `main_contact`). Strings legadas (`phase1_*`) ainda chegam de
+   *  telemetria histórica via `String(opts.phase)`. */
+  phase: OnboardingPhase | UnifiedPhase;
   event: OnboardingEventName;
   userId?: string | null;
   /** Apenas dados não-PII: contadores, durações, flags. */
