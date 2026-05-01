@@ -93,15 +93,22 @@ export const Phase2Service = ({
   // Aqui exibimos um micro-indicador visual quando o usuário pausa a digitação.
   const [savedHint, setSavedHint] = useState(false);
   const saveTimer = useRef<number | null>(null);
+  const hideHintTimer = useRef<number | null>(null);
   useEffect(() => {
     if (!service.description) return;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    if (hideHintTimer.current) window.clearTimeout(hideHintTimer.current);
     setSavedHint(false);
     saveTimer.current = window.setTimeout(() => {
       setSavedHint(true);
-      window.setTimeout(() => setSavedHint(false), 1800);
+      // Clear blindado: o timer de "esconder" também é rastreado para
+      // garantir limpeza no unmount (evita setState em componente morto).
+      hideHintTimer.current = window.setTimeout(() => setSavedHint(false), 1800);
     }, 700);
-    return () => { if (saveTimer.current) window.clearTimeout(saveTimer.current); };
+    return () => {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+      if (hideHintTimer.current) window.clearTimeout(hideHintTimer.current);
+    };
   }, [service.description]);
 
   const handleSuggest = () => {
@@ -141,6 +148,11 @@ export const Phase2Service = ({
 
   // G13: dedupe de cliques no botão "Salvar e continuar".
   const advancingRef = useRef(false);
+  const advanceUnlockTimer = useRef<number | null>(null);
+  // Cleanup do timer de unlock ao desmontar (evita timer zumbi após sair da fase).
+  useEffect(() => () => {
+    if (advanceUnlockTimer.current) window.clearTimeout(advanceUnlockTimer.current);
+  }, []);
 
   const handleAdvance = () => {
     if (advancingRef.current) return;
@@ -164,7 +176,11 @@ export const Phase2Service = ({
     } finally {
       // Libera o lock no próximo tick — o shell já avançou de phase, mas
       // protegemos contra duplo-clique muito rápido.
-      window.setTimeout(() => { advancingRef.current = false; }, 600);
+      if (advanceUnlockTimer.current) window.clearTimeout(advanceUnlockTimer.current);
+      advanceUnlockTimer.current = window.setTimeout(() => {
+        advancingRef.current = false;
+        advanceUnlockTimer.current = null;
+      }, 600);
     }
   };
 
@@ -371,13 +387,22 @@ export const Phase2Details = ({
 
   // G13: dedupe defensivo de cliques em "Salvar e continuar".
   const submittingRef = useRef(false);
+  const submitUnlockTimer = useRef<number | null>(null);
+  // Cleanup do timer ao desmontar para evitar callback em componente morto.
+  useEffect(() => () => {
+    if (submitUnlockTimer.current) window.clearTimeout(submitUnlockTimer.current);
+  }, []);
   const handleSubmitDeduped = () => {
     if (submittingRef.current || saving) return;
     submittingRef.current = true;
     try {
       onSubmit();
     } finally {
-      window.setTimeout(() => { submittingRef.current = false; }, 1500);
+      if (submitUnlockTimer.current) window.clearTimeout(submitUnlockTimer.current);
+      submitUnlockTimer.current = window.setTimeout(() => {
+        submittingRef.current = false;
+        submitUnlockTimer.current = null;
+      }, 1500);
     }
   };
 
