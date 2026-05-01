@@ -26,7 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { initializeUiFreezeMonitor } from "@/lib/uiFreezeMonitor";
 import { installPopupGuards } from "@/lib/popupGuards";
 import { appendWizardResetDebugLog } from "@/lib/wizardResetDebug";
-import { hasUnlockedAppAccess, resolveOnboardingGateTarget } from "@/lib/onboardingAccess";
+import { hasUnlockedAppAccess, isOnboardingCompletionGraceActive, resolveOnboardingGateTarget } from "@/lib/onboardingAccess";
 import { fetchExistingFirstService, findExistingProvider } from "@/components/onboarding/wizard/phases/v2/findExistingRecords";
 import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 
@@ -381,6 +381,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const gateDecision = resolveOnboardingGateTarget({
     profile,
     hasExistingService,
+    completionGraceActive: isOnboardingCompletionGraceActive(),
     pathname: location.pathname,
     search: location.search,
   });
