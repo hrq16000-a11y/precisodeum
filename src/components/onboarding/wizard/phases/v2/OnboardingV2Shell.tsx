@@ -558,6 +558,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // Reporta a fase para a barra de progresso global do WizardShell.
   useEffect(() => {
     onPhaseChange?.(state.phase);
+    // Instrumentação: registra a fase ativa para o detector de timer zumbi.
+    setActiveWizardPhase(state.phase);
   }, [state.phase, onPhaseChange]);
 
   useEffect(() => {
