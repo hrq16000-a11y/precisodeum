@@ -307,109 +307,6 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         </p>
       </header>
 
-      {/* Prévia EDITÁVEL — usuário precisa confirmar antes de habilitar GPS/Finalizar */}
-      {showPreview && (
-        <div className={`rounded-xl border p-3 text-xs ${previewConfirmed
-          ? 'border-emerald-200 bg-emerald-50/70 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100'
-          : 'border-sky-200 bg-sky-50/70 text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100'}`}>
-          <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wide opacity-80">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>{previewConfirmed ? 'Prévia confirmada' : 'Revise a prévia da sua localização'}</span>
-            {/* Pill de origem (Tarefa #2) — sempre visível para reduzir confusão. */}
-            <span
-              data-testid="location-source-pill"
-              className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-bold normal-case tracking-normal text-foreground/80 shadow-sm dark:bg-black/30"
-            >
-              Origem: {effectiveSource === 'gps' ? 'GPS' : effectiveSource === 'cep' ? 'CEP' : effectiveSource === 'manual' ? 'Manual' : effectiveSource === 'ip' ? 'IP (aproximada)' : 'Não definida'}
-            </span>
-          </div>
-          <div className="space-y-2">
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold opacity-80">Cidade aproximada</label>
-              <div className="flex gap-2">
-                <Input
-                  value={previewCity}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    // Tarefa #4 — só altera se houver mudança real (evita re-render por dados parciais idênticos)
-                    if (next === previewCity) return;
-                    setPreviewCity(next);
-                    setPreviewConfirmed(false);
-                  }}
-                  placeholder="Município"
-                  className="h-8 flex-1 text-xs"
-                  maxLength={120}
-                />
-                <Input
-                  value={previewState}
-                  onChange={(e) => {
-                    const raw = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
-                    // Tarefa #4 — só commita UF quando vazia ou quando atinge 2 letras E é UF válida.
-                    // Permite digitação progressiva (1 letra) sem rejeitar, mas só define quando válida.
-                    if (raw.length < 2) {
-                      setPreviewStateField(raw);
-                      setPreviewConfirmed(false);
-                      return;
-                    }
-                    if (isUF(raw)) {
-                      setPreviewStateField(raw);
-                      setPreviewConfirmed(false);
-                    } else {
-                      // UF inválida (ex: "ZZ", "ST") — não atualiza, sinaliza ao usuário.
-                      toast.error('UF inválida', { description: `"${raw}" não é uma sigla de estado válida.` });
-                    }
-                  }}
-                  placeholder="UF"
-                  className="h-8 w-14 text-xs uppercase"
-                  maxLength={2}
-                  data-testid="preview-uf-input"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold opacity-80">
-                Bairro <span className="opacity-60">(se disponível)</span>
-              </label>
-              <Input
-                value={previewNeighborhood}
-                onChange={(e) => { setPreviewNeighborhood(e.target.value); setPreviewConfirmed(false); }}
-                placeholder="Ex: Centro — deixe vazio se não souber"
-                className="h-8 text-xs"
-                maxLength={80}
-              />
-            </div>
-          </div>
-          {previewIssues.length > 0 && (
-            <ul className="mt-2 space-y-0.5 text-[11px] text-rose-700 dark:text-rose-300">
-              {previewIssues.map((iss) => <li key={iss.code}>• {iss.message}</li>)}
-            </ul>
-          )}
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleConfirmPreview}
-            disabled={previewConfirmed || previewBlocked}
-            className="mt-2 h-8 w-full text-xs"
-            variant={previewConfirmed ? 'secondary' : 'default'}
-          >
-            {previewConfirmed ? <><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Confirmada</> : 'Confirmar prévia'}
-          </Button>
-          {!previewConfirmed && cityOk && (state.location_source === 'manual' || state.location_source === 'cep' || geoFailed) && (
-            <p className="mt-1.5 flex items-start gap-1 text-[11px] font-medium text-sky-800 dark:text-sky-200">
-              <Info className="mt-0.5 h-3 w-3 flex-shrink-0" />
-              {geoFailed
-                ? 'GPS indisponível — sua localização foi definida manualmente. Você já pode finalizar; confirmar a prévia é opcional.'
-                : 'Localização selecionada manualmente. Por favor, confirme para finalizar.'}
-            </p>
-          )}
-          {!previewConfirmed && !cityOk && (
-            <p className="mt-1.5 text-[11px] opacity-80">
-              Confirme a prévia para liberar o GPS refinado e o botão de finalizar.
-            </p>
-          )}
-        </div>
-      )}
-
       {/* Aviso curto */}
       <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
         <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
@@ -419,53 +316,24 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         </p>
       </div>
 
-      {/* Botão GPS — disponível assim que houver cidade ou prévia preenchida (refino opcional). */}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={handleUseGps}
-        disabled={requestingGps}
-        className="w-full justify-center gap-2 border-orange-300 text-orange-700 hover:bg-orange-50 disabled:opacity-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-950/40"
-      >
-        <LocateFixed className={`h-4 w-4 ${requestingGps ? 'animate-pulse' : ''}`} />
-        {requestingGps ? 'Detectando…' : state.location_source === 'gps' ? 'GPS confirmado — refinar de novo' : 'Usar minha localização (GPS refinado)'}
-      </Button>
-
-
-      {state.location_source === 'gps' && (
-        <div className="-mt-2 space-y-1 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-[11px] text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
-          <p className="flex items-center gap-1 font-semibold">
-            <CheckCircle2 className="h-3 w-3" />
-            {gpsAccuracy != null && gpsAccuracy <= 100
-              ? `GPS exato (±${Math.round(gpsAccuracy)}m)`
-              : gpsAccuracy != null
-              ? `GPS aproximado (±${Math.round(gpsAccuracy)}m)`
-              : 'GPS confirmado'}
-          </p>
-          {geo.neighborhoodSource && geo.neighborhoodSource !== 'none' && (
-            <p className="opacity-80">
-              Bairro detectado via {geo.neighborhoodSource === 'bigdatacloud'
-                ? 'BigDataCloud'
-                : geo.neighborhoodSource === 'nominatim'
-                ? 'OpenStreetMap (fallback)'
-                : geo.neighborhoodSource === 'cep'
-                ? 'CEP'
-                : 'manual'}.
-            </p>
-          )}
-        </div>
-      )}
-
+      {/* Card único: Cidade-base + GPS embaixo */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
-        <span className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5" /> Cidade-base
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5" /> Cidade-base
+          </span>
+          <span
+            data-testid="location-source-pill"
+            className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground/80"
+          >
+            Origem: {effectiveSource === 'gps' ? 'GPS' : effectiveSource === 'cep' ? 'CEP' : effectiveSource === 'manual' ? 'Manual' : effectiveSource === 'ip' ? 'IP (aproximada)' : 'Não definida'}
+          </span>
           {awarded && (
-            <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
               +{BET_POINTS.city} pts
             </span>
           )}
-        </span>
+        </div>
         <div className={`rounded-lg transition ${cityOk ? 'ring-2 ring-emerald-300/60 shadow-[0_0_14px_rgba(16,185,129,0.35)]' : ''}`}>
           <CityAutocomplete
             value={{ city: state.city, state: state.state }}
@@ -483,6 +351,49 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
             }
           />
         </div>
+
+        {baseCityIssues.length > 0 && (
+          <ul className="mt-2 space-y-0.5 text-[11px] text-rose-700 dark:text-rose-300">
+            {baseCityIssues.map((iss) => <li key={iss.code}>• {iss.message}</li>)}
+          </ul>
+        )}
+
+        {/* Botão GPS posicionado logo abaixo do campo Cidade-base */}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleUseGps}
+          disabled={requestingGps}
+          className="mt-3 w-full justify-center gap-2 border-orange-300 text-orange-700 hover:bg-orange-50 disabled:opacity-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-950/40"
+        >
+          <LocateFixed className={`h-4 w-4 ${requestingGps ? 'animate-pulse' : ''}`} />
+          {requestingGps ? 'Detectando…' : state.location_source === 'gps' ? 'GPS confirmado — refinar' : 'Usar minha localização (GPS)'}
+        </Button>
+
+        {state.location_source === 'gps' && (
+          <div className="mt-2 space-y-1 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-[11px] text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
+            <p className="flex items-center gap-1 font-semibold">
+              <CheckCircle2 className="h-3 w-3" />
+              {gpsAccuracy != null && gpsAccuracy <= 100
+                ? `GPS exato (±${Math.round(gpsAccuracy)}m)`
+                : gpsAccuracy != null
+                ? `GPS aproximado (±${Math.round(gpsAccuracy)}m)`
+                : 'GPS confirmado'}
+            </p>
+            {geo.neighborhoodSource && geo.neighborhoodSource !== 'none' && (
+              <p className="opacity-80">
+                Bairro detectado via {geo.neighborhoodSource === 'bigdatacloud'
+                  ? 'BigDataCloud'
+                  : geo.neighborhoodSource === 'nominatim'
+                  ? 'OpenStreetMap (fallback)'
+                  : geo.neighborhoodSource === 'cep'
+                  ? 'CEP'
+                  : 'manual'}.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
