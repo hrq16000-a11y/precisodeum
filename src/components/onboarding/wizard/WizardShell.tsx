@@ -37,7 +37,7 @@ import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
 import { useEngagementPointsValue } from '@/hooks/useEngagementPoints';
 import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
-import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
+import { getOnboardingReviewSection, markOnboardingCompletionGrace, type OnboardingReviewSection } from '@/lib/onboardingAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { clearOnboardingV2Draft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2Draft';
 import { clearSessionTouched } from '@/components/onboarding/wizard/phases/v2/sessionTouched';
@@ -65,9 +65,26 @@ type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-port
 
 interface WizardShellProps {
   reviewMode?: boolean;
+  reviewSection?: OnboardingReviewSection | null;
 }
 
-export default function WizardShell({ reviewMode = false }: WizardShellProps) {
+function resolveReviewStartPhase(section: OnboardingReviewSection | null): UnifiedPhase {
+  switch (section) {
+    case 'servicos':
+      return 'main_service';
+    case 'dados':
+      return 'main_document';
+    case 'portfolio':
+      return 'main_portfolio_albums';
+    case 'url':
+      return 'main_extras_b';
+    case 'cadastro':
+    default:
+      return 'main_action';
+  }
+}
+
+export default function WizardShell({ reviewMode = false, reviewSection = null }: WizardShellProps) {
   const { user, profile, provider } = useAuth();
   const navigate = useNavigate();
   const realPoints = useEngagementPointsValue(user?.id);
@@ -172,8 +189,8 @@ export default function WizardShell({ reviewMode = false }: WizardShellProps) {
       dispatch({
         type: 'HYDRATE',
           state: {
-            phase: reviewMode
-              ? 'main_action'
+              phase: reviewMode
+                ? resolveReviewStartPhase(reviewSection ?? getOnboardingReviewSection(window.location.search))
               : existingService
                 ? profile?.onboarding_completed === true
                   ? 'main_more_services'
@@ -340,7 +357,18 @@ export default function WizardShell({ reviewMode = false }: WizardShellProps) {
       {showGlobalHud && (
         <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
       )}
-      {/* Botão Voltar global removido — cada fase já tem o seu interno (evita duplicação). */}
+      {showGlobalBack && (
+        <div className="sticky top-3 z-30 mx-auto flex w-full max-w-5xl px-4 pt-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGlobalBack}
+            className="gap-2 shadow-sm"
+          >
+            <ArrowLeft className="h-4 w-4" /> Voltar
+          </Button>
+        </div>
+      )}
       {stage === 'triage' ? (
         <TriageOrchestrator
           onInternalHandoff={handleTriageDone}
