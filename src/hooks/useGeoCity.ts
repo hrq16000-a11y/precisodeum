@@ -395,19 +395,19 @@ export function useGeoCity(): GeoStore {
   const requestPreciseLocation = useCallback(async (options?: { force?: boolean }) => {
     const force = !!options?.force;
     if (typeof window === 'undefined' || !navigator.geolocation) {
-      return { ok: false, city: null, state: null, neighborhood: null };
+      return { ok: false, city: null, state: null, neighborhood: null, latitude: null, longitude: null };
     }
-    if (!force && geoState.manualOverride) return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood };
+    if (!force && geoState.manualOverride) return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood, latitude: geoState.latitude, longitude: geoState.longitude };
     if (!force && geoState.precise && geoState.latitude !== null && geoState.longitude !== null) {
-      return { ok: true, city: geoState.city, state: geoState.state, neighborhood: geoState.neighborhood };
+      return { ok: true, city: geoState.city, state: geoState.state, neighborhood: geoState.neighborhood, latitude: geoState.latitude, longitude: geoState.longitude };
     }
 
     if (!force) {
       try {
-          if (sessionStorage.getItem(GEO_ASKED_KEY)) return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood };
+          if (sessionStorage.getItem(GEO_ASKED_KEY)) return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood, latitude: null, longitude: null };
         sessionStorage.setItem(GEO_ASKED_KEY, '1');
       } catch {
-        return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood };
+        return { ok: false, city: null, state: null, neighborhood: geoState.neighborhood, latitude: null, longitude: null };
       }
     } else {
       // Explicit user-triggered request: clear the once-per-session guard so
