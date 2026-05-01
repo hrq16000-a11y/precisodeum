@@ -170,18 +170,58 @@ export function generateUniqueAvatar(input: GenerateUniqueAvatarInput): string {
   ].join('|');
   const h = hash32(fingerprint);
   const { c1, c2 } = palette(h);
-  const glyph = pickGlyph(input.categoryName, input.fullName);
-  // Tamanho de fonte adaptativo: 1 caractere → maior; 2 → menor.
-  const fontSize = glyph.length === 1 ? 110 : 88;
+  const iconKey = pickIconKey(input.categoryName, input.categoryIcon);
+  const iconPath = iconKey ? ICON_PATHS[iconKey] : null;
+  // Estilo "ondas" determinístico — varia o raio do círculo de fundo + offset do gradiente.
+  const styleVariant = h % 4; // 0..3: full, ring, half, dots
+  const ringId = `g${(h % 9999).toString(36)}`;
+
+  // Conteúdo central: ícone (preferencial) OU iniciais (fallback).
+  let center = '';
+  if (iconPath) {
+    // 24x24 → escalar pra ~110 e centralizar (origem em 45,45 → 110px de área).
+    center = `<g transform='translate(45 45) scale(4.6)'><path d='${iconPath}' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></g>`;
+  } else {
+    const glyph = pickGlyph(input.categoryName, input.fullName);
+    const fontSize = glyph.length === 1 ? 110 : 88;
+    center = `<text x='50%' y='54%' font-family='system-ui,-apple-system,sans-serif' font-size='${fontSize}' font-weight='700' letter-spacing='-2' fill='white' text-anchor='middle' dominant-baseline='middle'>${escapeXml(glyph)}</text>`;
+  }
+
+  // Camadas de "estilo" para diferenciar variantes mesmo com a mesma categoria.
+  let bgExtras = '';
+  if (styleVariant === 1) {
+    bgExtras = `<circle cx='100' cy='100' r='86' fill='none' stroke='white' stroke-opacity='0.35' stroke-width='4'/>`;
+  } else if (styleVariant === 2) {
+    bgExtras = `<rect x='0' y='100' width='200' height='100' fill='white' fill-opacity='0.10'/>`;
+  } else if (styleVariant === 3) {
+    bgExtras = `<circle cx='30' cy='30' r='6' fill='white' fill-opacity='0.35'/><circle cx='170' cy='170' r='8' fill='white' fill-opacity='0.25'/>`;
+  }
+
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' role='img' aria-label='Avatar gerado'>
-    <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+    <defs><linearGradient id='${ringId}' x1='0' y1='0' x2='1' y2='1'>
       <stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/>
     </linearGradient></defs>
-    <rect width='200' height='200' rx='100' fill='url(#g)'/>
-    <text x='50%' y='54%' font-family='system-ui,-apple-system,sans-serif' font-size='${fontSize}' font-weight='700' letter-spacing='-2'
-      fill='white' text-anchor='middle' dominant-baseline='middle'>${escapeXml(glyph)}</text>
+    <rect width='200' height='200' rx='100' fill='url(#${ringId})'/>
+    ${bgExtras}
+    ${center}
   </svg>`;
   return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
+/**
+ * Gera N variantes determinísticas — útil pra mostrar grade de opções no wizard.
+ * Cada variante tem um seed diferente → cores/estilos distintos, mas todas associadas
+ * à mesma categoria/usuário.
+ */
+export function generateAvatarVariants(
+  input: Omit<GenerateUniqueAvatarInput, 'seed'>,
+  count = 6,
+): Array<{ seed: number; url: string }> {
+  const out: Array<{ seed: number; url: string }> = [];
+  for (let i = 0; i < count; i++) {
+    out.push({ seed: i, url: generateUniqueAvatar({ ...input, seed: i }) });
+  }
+  return out;
 }
 
 function escapeXml(s: string): string {
