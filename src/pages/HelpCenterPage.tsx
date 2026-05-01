@@ -2,13 +2,12 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
-import { useSettingValue } from '@/hooks/useSiteSettings';
-import { whatsappLink } from '@/lib/whatsapp';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Search, HelpCircle, Users, Briefcase, CreditCard, Shield, MessageCircle, ChevronDown, Wifi, ArrowRight, ArrowUpDown } from 'lucide-react';
+import { Search, HelpCircle, Users, Briefcase, CreditCard, Shield, ChevronDown, Wifi, ArrowRight, ArrowUpDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import OpenSupportTicketCard from '@/components/support/OpenSupportTicketCard';
 
 const FALLBACK_PHONE = '5541997452053';
 
@@ -213,25 +212,8 @@ const HelpCenterPage = () => {
           </div>
         )}
 
-        {/* Support CTA */}
-        <motion.div
-          className="mt-12 rounded-2xl border border-accent/20 bg-accent/5 p-6 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="font-display text-lg font-bold text-foreground">Ainda tem dúvidas?</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Nossa equipe está pronta para ajudar</p>
-          <a
-            href={whatsappLink(supportPhone, 'Olá! Preciso de ajuda no Preciso de um.')}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-6 py-3 text-sm font-semibold text-white shadow-md hover:brightness-110 transition-all"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Falar com Suporte
-          </a>
-        </motion.div>
+        {/* Abrir ticket de suporte */}
+        <OpenSupportTicketCard />
       </section>
 
       <Footer />
