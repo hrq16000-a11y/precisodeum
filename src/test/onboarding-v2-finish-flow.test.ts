@@ -89,10 +89,28 @@ describe('Onboarding V2 — fluxo final', () => {
     expect(shellSrc).toMatch(/update\(\{ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true \}\)/);
   });
 
-  it('WizardShell aceita reviewMode para reabrir o fluxo pelo botão Wizard', () => {
+  it('WizardShell aceita prop mode (WizardMode) com alias deprecated reviewMode', () => {
     const shellSrc = read('components/onboarding/wizard/WizardShell.tsx');
-    expect(shellSrc).toContain('reviewMode = false');
-    expect(shellSrc).toContain("reviewMode\n              ? 'main_action'");
+    // Novo contrato: prop `mode` + alias deprecated `reviewMode`
+    expect(shellSrc).toContain('mode?: WizardMode');
+    expect(shellSrc).toContain('reviewMode?: boolean');
+    expect(shellSrc).toContain('resolveWizardMode');
+    // Hidratação usa o booleano interno `isReview` derivado do modo
+    expect(shellSrc).toMatch(/phase: isReview\s*\?\s*resolveReviewStartPhase/);
+    // CadastroInicialPage propaga mode='edit_profile' quando reviewMode=true
+    const pageSrc = read('pages/CadastroInicialPage.tsx');
+    expect(pageSrc).toContain("mode={reviewMode ? 'edit_profile' : 'new_signup'}");
+  });
+
+  it('EditModeSkipButton existe e checa fase 100% completa antes de exibir', () => {
+    const btnSrc = read('components/onboarding/wizard/EditModeSkipButton.tsx');
+    expect(btnSrc).toContain('isPhaseFullyCompleted');
+    expect(btnSrc).toContain("'wizard:request-skip'");
+    expect(btnSrc).toMatch(/if \(!isEditing\) return null/);
+    // OnboardingV2Shell escuta o evento e dispara NEXT
+    const v2Src = read('components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
+    expect(v2Src).toContain("'wizard:request-skip'");
+    expect(v2Src).toMatch(/dispatch\(\{ type: 'NEXT' \}/);
   });
 
   it('rotas protegidas do onboarding não retornam para /cadastro-inicial após /onboarding-v2/sucesso', () => {
