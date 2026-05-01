@@ -82,13 +82,16 @@ interface WizardShellProps {
 /**
  * Em modo `edit_profile`, decide a fase em que o wizard inicia.
  *
- * Regra: quando o usuário clica no botão "Assistente" no Dashboard SEM uma
- * seção específica, deve começar do absoluto início (`triage_identity`) — o
- * fluxo completo, com cada fase pré-preenchida pelo `seedState`. O usuário
- * pode então usar o botão "Pular esta etapa" para avançar fases já completas.
+ * IMPORTANTE: nunca cair em `triage_identity` em revisão. A triagem (BetMode)
+ * tem reducer e draft próprios e não lê o `seedState` do WizardShell — começar
+ * dela em modo revisão fazia o usuário ver TUDO em branco, mesmo com perfil
+ * 100% preenchido (sintoma reportado em 01/05/2026: "Assistente apagou tudo").
  *
- * Quando há uma `section` (atalhos vindos da página /dashboard/assistente),
- * pulamos para a fase mais próxima daquela seção.
+ * Regras:
+ *  - Com `section` explícita ⇒ pula para a fase main correspondente.
+ *  - Sem `section` ⇒ começa do início da fase principal (`main_action`),
+ *    de onde o usuário pode usar "Pular esta etapa" para navegar entre fases
+ *    já completas. Os dados reais vêm via `seedState` e re-hidratam tudo.
  */
 function resolveReviewStartPhase(section: OnboardingReviewSection | null): UnifiedPhase {
   switch (section) {
@@ -103,8 +106,8 @@ function resolveReviewStartPhase(section: OnboardingReviewSection | null): Unifi
     case 'cadastro':
       return 'main_action';
     default:
-      // Sem section explícita ⇒ começa do absoluto início para revisar tudo.
-      return 'triage_identity';
+      // Sem section ⇒ vai para a 1ª fase main (NÃO para a triagem).
+      return 'main_action';
   }
 }
 
