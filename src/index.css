@@ -54,8 +54,52 @@
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --info: 200 80% 50%;
+    --info: 25 95% 53%; /* Bet Mode: info usa âmbar/laranja, NUNCA azul */
     --info-foreground: 0 0% 100%;
+
+    /* ── Bet Mode Palette (âmbar → laranja → verde) ──
+       Fonte da verdade para qualquer nova tela do Wizard/Dashboard.
+       Use os tokens via Tailwind: bg-bet-amber, text-bet-orange, ring-bet-green, etc.
+       Estados padronizados: -hover, -focus, -active, -disabled, -bg, -fg. */
+    --bet-amber: 43 96% 56%;        /* amber-400 */
+    --bet-amber-hover: 38 92% 50%;  /* amber-500 */
+    --bet-amber-active: 32 95% 44%; /* amber-600 */
+    --bet-amber-soft: 48 100% 96%;  /* amber-50  */
+    --bet-amber-border: 43 96% 76%; /* amber-200 */
+    --bet-amber-fg: 26 70% 24%;     /* amber-900 */
+
+    --bet-orange: 25 95% 53%;       /* orange-500 */
+    --bet-orange-hover: 21 90% 48%; /* orange-600 */
+    --bet-orange-active: 17 88% 40%;/* orange-700 */
+    --bet-orange-soft: 33 100% 96%; /* orange-50  */
+    --bet-orange-border: 32 98% 83%;/* orange-200 */
+    --bet-orange-fg: 15 75% 28%;    /* orange-900 */
+
+    --bet-green: 160 84% 39%;       /* emerald-500 */
+    --bet-green-hover: 161 94% 30%; /* emerald-600 */
+    --bet-green-active: 163 94% 24%;/* emerald-700 */
+    --bet-green-soft: 152 81% 96%;  /* emerald-50 */
+    --bet-green-border: 152 76% 80%;/* emerald-200 */
+    --bet-green-fg: 165 94% 16%;    /* emerald-900 */
+
+    /* Estados semânticos do Bet Mode (mapeamento canônico) */
+    --bet-focus-ring: var(--bet-orange);
+    --bet-error: 0 84% 60%;
+    --bet-error-soft: 0 86% 97%;
+    --bet-error-border: 0 93% 87%;
+    --bet-disabled-bg: 210 20% 94%;
+    --bet-disabled-fg: 215 15% 65%;
+
+    /* Gradiente oficial Bet Mode (CTA primário) */
+    --bet-gradient: linear-gradient(135deg,
+      hsl(var(--bet-amber)) 0%,
+      hsl(var(--bet-orange)) 50%,
+      hsl(var(--bet-green)) 100%);
+    --bet-gradient-hover: linear-gradient(135deg,
+      hsl(var(--bet-amber-hover)) 0%,
+      hsl(var(--bet-orange-hover)) 50%,
+      hsl(var(--bet-green-hover)) 100%);
+    --bet-glow: 0 8px 24px hsl(var(--bet-orange) / 0.35);
   }
 
   .dark {
