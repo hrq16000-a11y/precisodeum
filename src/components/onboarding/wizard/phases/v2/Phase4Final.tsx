@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, Check, Wifi,
+  Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, ArrowLeft, Check, Wifi,
   MapPin, FileText, Calendar, Camera as CameraIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
