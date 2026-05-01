@@ -287,75 +287,79 @@ export default function CompanyAddressForm({
 
   const fields = (
     <div className="space-y-2">
-      {/* Histórico recente de CEPs consultados — permite reaplicar uma sugestão rapidamente. */}
-      {cepHistory.length > 0 && (
-        <div
-          data-testid="cep-history"
-          className="rounded-lg border border-border/60 bg-muted/30 p-2"
-        >
-          <div className="mb-1 flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">
-            <History className="h-3 w-3" aria-hidden="true" /> CEPs recentes
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {cepHistory.map((entry) => {
-              const isActive = entry.digits === cepDigits;
-              return (
-                <button
-                  key={entry.digits}
-                  type="button"
-                  onClick={() => reapplyFromHistory(entry)}
-                  data-testid={`cep-history-item-${entry.digits}`}
-                  aria-label={`Reaplicar CEP ${entry.cep}${entry.address ? ` — ${entry.address}` : ''}`}
-                  className={`group inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition ${
-                    isActive
-                      ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
-                      : 'border-border bg-background text-foreground hover:border-amber-300 hover:bg-amber-50'
-                  }`}
-                >
-                  <span className="font-mono">{entry.cep}</span>
-                  {entry.address && (
-                    <span className="truncate text-muted-foreground group-hover:text-foreground">
-                      · {entry.address}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      {/* Banner de SUGESTÃO PENDENTE — usuário precisa confirmar o logradouro vindo do CEP. */}
-      {pendingConfirmation && (
-        <div
-          data-testid="cep-suggestion-banner"
-          className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-[12px] leading-snug"
-        >
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-          <div className="flex-1">
-            <p className="font-semibold text-amber-900">Sugerido pelo CEP — confirme:</p>
-            <p className="text-amber-800">{suggestion}</p>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {/* CEP no topo: ponto de partida do preenchimento. Texto sutil convida o usuário a buscar o endereço pelo CEP. */}
+      <label className="block">
+        <span className="mb-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          CEP
+          {cepStatus === 'loading' && <Loader2 className="h-3 w-3 animate-spin text-amber-600" />}
+          {cepStatus === 'applied' && (
+            <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
+              Aplicado
+            </span>
+          )}
+          {(cepStatus === 'error' || cepStatus === 'not_found') && (
+            <span
+              data-testid="cep-error-badge"
+              className="ml-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-700"
+            >
+              {cepStatus === 'not_found' ? 'CEP não encontrado' : 'Falha de rede'}
+            </span>
+          )}
+          {isSuggested('postal_code') && value.postal_code ? <SuggestedTag /> : null}
+        </span>
+        <input
+          type="tel"
+          inputMode="numeric"
+          value={maskCep(value.postal_code ?? '')}
+          onChange={(e) => onChange({ postal_code: onlyDigits(e.target.value).slice(0, 8) })}
+          placeholder="00000-000"
+          maxLength={9}
+          aria-invalid={!!cepError}
+          aria-describedby={cepError ? 'cep-error' : undefined}
+          className={
+            isSuggested('postal_code') && value.postal_code ? inputSuggested : inputBase
+          }
+        />
+        {cepError && (
+          <p id="cep-error" className="mt-1 text-[10.5px] text-rose-600">{cepError}</p>
+        )}
+        {!cepError && cepStatus === 'idle' && cepDigits.length < 8 && (
+          <p data-testid="cep-hint" className="mt-1 text-[10.5px] text-muted-foreground">
+            {cepHint || 'Informe o CEP — buscamos o endereço pra você.'}
+          </p>
+        )}
+        {/* Linha sutil mostrando o nome da rua sugerido após o lookup. */}
+        {cepStatus === 'applied' && suggestion && !conflict && (
+          <p
+            data-testid="cep-applied-street"
+            className="mt-1 truncate text-[10.5px] text-muted-foreground"
+          >
+            <MapPin className="-mt-0.5 mr-0.5 inline h-2.5 w-2.5" aria-hidden="true" />
+            {suggestion}
+          </p>
+        )}
+        {(cepStatus === 'error' || cepStatus === 'not_found') && (
+          <div className="mt-1 flex items-start gap-1.5 rounded-md border border-rose-200 bg-rose-50 p-1.5 text-[10.5px] leading-snug text-rose-700">
+            <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+            <div className="flex-1">
+              {cepErrorReason === 'not_found'
+                ? 'Não encontramos esse CEP nas bases públicas (BrasilAPI / ViaCEP). Confira os dígitos ou preencha o logradouro manualmente.'
+                : 'Não conseguimos consultar o CEP agora — pode ser falha de rede. Você pode tentar novamente ou preencher manualmente.'}
               <button
                 type="button"
-                onClick={acceptSuggestion}
-                data-testid="cep-suggestion-accept"
-                className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700"
+                onClick={retryLookup}
+                data-testid="cep-retry"
+                className="ml-1 inline-flex items-center gap-1 rounded-md border border-rose-300 bg-white px-1.5 py-0.5 text-[10.5px] font-semibold text-rose-700 hover:bg-rose-100"
               >
-                <Check className="h-3 w-3" /> Usar este
-              </button>
-              <button
-                type="button"
-                onClick={rejectSuggestion}
-                data-testid="cep-suggestion-reject"
-                className="inline-flex items-center gap-1 rounded-md border border-amber-400 bg-white px-2 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100"
-              >
-                Editar manualmente
+                <RotateCw className="h-2.5 w-2.5" /> Tentar de novo
               </button>
             </div>
           </div>
-        </div>
-      )}
-      {/* Banner de CONFLITO — usuário digitou logradouro diferente do que o CEP sugere. */}
+        )}
+      </label>
+
+      {/* Banner de CONFLITO — usuário digitou logradouro diferente do que o CEP sugere.
+          Mantido pois é o único caso em que a UI precisa intervir explicitamente. */}
       {conflict && (
         <div
           data-testid="cep-conflict-banner"
@@ -390,6 +394,7 @@ export default function CompanyAddressForm({
           </div>
         </div>
       )}
+
       {/* Logradouro + Número SEMPRE na mesma linha (achatado) */}
       <div className="grid grid-cols-[1fr_88px] gap-2">
         <label className="block">
@@ -430,77 +435,20 @@ export default function CompanyAddressForm({
           )}
         </label>
       </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-            Complemento
-          </span>
-          <input
-            type="text"
-            value={value.complement ?? ''}
-            onChange={(e) => onChange({ complement: e.target.value.slice(0, 60) })}
-            placeholder="Sala / Bloco (opcional)"
-            className={inputBase}
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-            CEP
-            {cepStatus === 'loading' && <Loader2 className="h-3 w-3 animate-spin text-amber-600" />}
-            {cepStatus === 'applied' && (
-              <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
-                Aplicado
-              </span>
-            )}
-            {(cepStatus === 'error' || cepStatus === 'not_found') && (
-              <span
-                data-testid="cep-error-badge"
-                className="ml-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-700"
-              >
-                {cepStatus === 'not_found' ? 'CEP não encontrado' : 'Falha de rede'}
-              </span>
-            )}
-            {isSuggested('postal_code') && value.postal_code ? <SuggestedTag /> : null}
-          </span>
-          <input
-            type="tel"
-            inputMode="numeric"
-            value={maskCep(value.postal_code ?? '')}
-            onChange={(e) => onChange({ postal_code: onlyDigits(e.target.value).slice(0, 8) })}
-            placeholder="00000-000"
-            maxLength={9}
-            aria-invalid={!!cepError}
-            aria-describedby={cepError ? 'cep-error' : undefined}
-            className={
-              isSuggested('postal_code') && value.postal_code ? inputSuggested : inputBase
-            }
-          />
-          {cepError && (
-            <p id="cep-error" className="mt-1 text-[10.5px] text-rose-600">{cepError}</p>
-          )}
-          {!cepError && cepHint && (
-            <p data-testid="cep-hint" className="mt-1 text-[10.5px] text-muted-foreground">{cepHint}</p>
-          )}
-          {(cepStatus === 'error' || cepStatus === 'not_found') && (
-            <div className="mt-1 flex items-start gap-1.5 rounded-md border border-rose-200 bg-rose-50 p-1.5 text-[10.5px] leading-snug text-rose-700">
-              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-              <div className="flex-1">
-                {cepErrorReason === 'not_found'
-                  ? 'Não encontramos esse CEP nas bases públicas (BrasilAPI / ViaCEP). Confira os dígitos ou preencha o logradouro manualmente.'
-                  : 'Não conseguimos consultar o CEP agora — pode ser falha de rede. Você pode tentar novamente ou preencher manualmente.'}
-                <button
-                  type="button"
-                  onClick={retryLookup}
-                  data-testid="cep-retry"
-                  className="ml-1 inline-flex items-center gap-1 rounded-md border border-rose-300 bg-white px-1.5 py-0.5 text-[10.5px] font-semibold text-rose-700 hover:bg-rose-100"
-                >
-                  <RotateCw className="h-2.5 w-2.5" /> Tentar de novo
-                </button>
-              </div>
-            </div>
-          )}
-        </label>
-      </div>
+
+      <label className="block">
+        <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          Complemento
+        </span>
+        <input
+          type="text"
+          value={value.complement ?? ''}
+          onChange={(e) => onChange({ complement: e.target.value.slice(0, 60) })}
+          placeholder="Sala / Bloco (opcional)"
+          className={inputBase}
+        />
+      </label>
+
       <label className="mt-1 flex cursor-pointer items-start gap-2 rounded-lg bg-background/60 p-2 text-[11px] leading-snug text-foreground">
         <input
           type="checkbox"
