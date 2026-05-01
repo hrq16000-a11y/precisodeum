@@ -206,6 +206,12 @@ export default function DashboardAssistantPage() {
   const [serviceLoading, setServiceLoading] = useState(true);
 
   useEffect(() => {
+    const prev = document.title;
+    document.title = 'Assistente do cadastro · Precisodeum';
+    return () => { document.title = prev; };
+  }, []);
+
+  useEffect(() => {
     let alive = true;
     (async () => {
       if (!provider?.id) {
