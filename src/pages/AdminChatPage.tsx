@@ -142,6 +142,19 @@ const AdminChatPage = () => {
     },
   });
 
+  const deleteMessage = useMutation({
+    mutationFn: async (messageId: string) => {
+      const { error } = await (supabase.from('chat_messages' as any).delete().eq('id', messageId) as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Mensagem removida');
+      qc.invalidateQueries({ queryKey: ['admin-chat-messages', viewConvId] });
+      qc.invalidateQueries({ queryKey: ['admin-chat-conversations'] });
+    },
+    onError: (err: any) => toast.error(err.message || 'Falha ao remover'),
+  });
+
   if (adminLoading || settingsLoading) {
     return <AdminLayout><div className="h-8 w-1/3 animate-pulse rounded-lg bg-muted" /></AdminLayout>;
   }
@@ -359,6 +372,20 @@ const AdminChatPage = () => {
                           <span className="text-[10px] text-muted-foreground">
                             {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
                           </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 ml-auto"
+                            onClick={() => {
+                              if (confirm('Remover esta mensagem? A ação fica registrada na auditoria do banco.')) {
+                                deleteMessage.mutate(msg.id);
+                              }
+                            }}
+                            disabled={deleteMessage.isPending}
+                            aria-label="Remover mensagem"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
                         </div>
                         {msg.image_url && <img src={msg.image_url} alt="" className="rounded max-h-32 object-cover mb-1" />}
                         <p className="text-sm">{msg.content}</p>
