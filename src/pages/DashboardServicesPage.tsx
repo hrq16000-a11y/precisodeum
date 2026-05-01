@@ -880,7 +880,8 @@ const DashboardServicesPage = () => {
         })()}
       </div>
 
-      {/* ─── New/Edit Sheet (lateral, espaçoso, full-screen no mobile) ─── */}
+      {/* ─── New/Edit Sheet (lazy mount: árvore só existe quando showDialog=true) ─── */}
+      {showDialog && (
       <Sheet open={showDialog} onOpenChange={(open) => { if (!open) { resetForm(); } setShowDialog(open); }}>
         <SheetContent
           side="right"
@@ -1648,6 +1649,7 @@ const DashboardServicesPage = () => {
           </div>
         </SheetContent>
       </Sheet>
+      )}
 
       <NextStepPrompt
         open={showNextStepPrompt}
