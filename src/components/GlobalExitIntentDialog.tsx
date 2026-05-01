@@ -224,6 +224,7 @@ export default function GlobalExitIntentDialog() {
   const [open, setOpen] = useState(false);
   const triggeredRef = useRef(false);
   const inactivityTimer = useRef<number | null>(null);
+  const mountedAtRef = useRef<number>(Date.now());
 
   const excluded = useMemo(
     () => EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p)),
