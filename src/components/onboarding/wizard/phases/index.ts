@@ -12,10 +12,10 @@ export { default as Step04_ProKind } from './Step04_ProKind';
 export { default as Step05_ProDocument } from './Step05_ProDocument';
 export { default as Step06_ProLocation } from './Step06_ProLocation';
 export { default as Step07_TriageCelebration } from './Step07_TriageCelebration';
-export { default as Step08_Action } from './Step08_Action';
-export { default as Step09_Kind } from './Step09_Kind';
-export { default as Step10_Location } from './Step10_Location';
-export { default as Step11_Contact } from './Step11_Contact';
+// Step08_Action / Step09_Kind / Step10_Location / Step11_Contact REMOVIDOS
+// na consolidação Bet Mode (mai/2026). Eram re-exports da árvore legada
+// `Phase1Basic.tsx` que duplicava telas já cobertas pela triagem (Bet Mode).
+// Após a triagem, o usuário entra direto em main_service.
 export { default as Step12_Service } from './Step12_Service';
 export { default as Step13_ServiceDetails } from './Step13_ServiceDetails';
 export { default as Step14_Photos } from './Step14_Photos';
