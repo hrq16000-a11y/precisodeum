@@ -16,10 +16,11 @@
  *  - É totalmente controlado — não persiste sozinho.
  *  - Todos os campos são OPCIONAIS.
  */
-import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, Check, AlertTriangle } from 'lucide-react';
+import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, Check, AlertTriangle, History } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { lookupCep, formatCep, onlyDigits } from '@/lib/cepLookup';
+import { normalizeStreet as robustNormalizeStreet, isSameStreet } from '@/lib/streetNormalize';
 
 export interface CompanyAddressValue {
   street?: string;
@@ -29,6 +30,8 @@ export interface CompanyAddressValue {
   show_full_address?: boolean;
   /** Última sugestão de logradouro vinda do CEP — para o passo seguinte saber que foi sugerido. */
   street_suggested?: string;
+  /** CEP (8 dígitos) que originou a sugestão atual — auditoria/telemetria + anti-sobrescrita. */
+  street_suggested_cep?: string;
   /** Usuário confirmou explicitamente o logradouro (clicou "Usar este" ou digitou). */
   street_confirmed?: boolean;
 }
