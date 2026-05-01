@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     };
     const sitemaps = [
       'static', 'categories', 'especialidades', 'providers', 'cities',
-      'blog', 'jobs', 'pages', 'popular', 'seo',
+      'blog', 'jobs', 'pages', 'popular', 'seo', 'seo-cep',
     ];
     const entries: string[] = [];
     for (const s of sitemaps) {
@@ -96,12 +96,12 @@ ${entries.join('\n')}
   //   3. service_area = provider.city (kill-switch)
   //   4. Provider aprovado
   const MIN_DESCRIPTION_LEN = 80;
-  const NEEDS_ELIGIBILITY = ['providers', 'cities', 'categories', 'especialidades', 'seo'].includes(type || '');
+  const NEEDS_ELIGIBILITY = ['providers', 'cities', 'categories', 'especialidades', 'seo', 'seo-cep'].includes(type || '');
 
   type EligibleSvc = {
     id: string; provider_id: string; description: string | null;
     service_area: string | null; category_id: string | null;
-    providers: { id: string; slug: string | null; city: string | null; status: string; updated_at: string };
+    providers: { id: string; slug: string | null; city: string | null; status: string; updated_at: string; postal_code: string | null };
   };
   const eligible: EligibleSvc[] = [];
   const eligibleProviderSlugs = new Set<string>();
@@ -122,7 +122,7 @@ ${entries.join('\n')}
     };
     const { data: eligibleServices } = await supabase
       .from('services')
-      .select('id, provider_id, description, service_area, category_id, providers!inner(id, slug, city, status, updated_at)')
+      .select('id, provider_id, description, service_area, category_id, providers!inner(id, slug, city, status, updated_at, postal_code)')
       .is('deleted_at', null)
       .not('service_area', 'is', null)
       .neq('service_area', '')
@@ -242,6 +242,41 @@ ${entries.join('\n')}
           '0.55',
         );
       }
+    }
+  }
+
+  if (type === 'seo-cep') {
+    // SEO por CEP — combinações categoria × CEP normalizado.
+    // Critério de elegibilidade:
+    //   - provider aprovado, descrição limpa, service_area = city (já garantido em `eligible`)
+    //   - postal_code com 8 dígitos válidos
+    //   - pelo menos 1 serviço elegível para o par (category_id, cep8)
+    // Cada par emite a rota /buscar?categoria=:slug&cep=00000-000 (canonical da
+    // própria SearchPage faz o resto).
+    const { data: cats } = await supabase
+      .from('categories').select('id, slug').is('deleted_at', null);
+    const catSlugById = new Map<string, string>();
+    for (const c of cats || []) catSlugById.set(c.id, c.slug);
+
+    const eligiblePairs = new Set<string>(); // key: `${categorySlug}::${cepFormatted}`
+    for (const s of eligible) {
+      if (!s.category_id) continue;
+      const slug = catSlugById.get(s.category_id);
+      if (!slug) continue;
+      const digits = String(s.providers.postal_code || '').replace(/\D+/g, '');
+      if (digits.length !== 8 || digits === '00000000' || digits === '99999999') continue;
+      const cepFmt = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+      eligiblePairs.add(`${slug}::${cepFmt}`);
+    }
+    for (const key of eligiblePairs) {
+      const [slug, cepFmt] = key.split('::');
+      urls += entry(
+        siteUrl,
+        `/buscar?categoria=${slug}&cep=${cepFmt}`,
+        today,
+        'weekly',
+        '0.6',
+      );
     }
   }
 

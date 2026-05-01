@@ -6,7 +6,7 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import { whatsappLink } from '@/lib/whatsapp';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Search, HelpCircle, Users, Briefcase, CreditCard, Shield, MessageCircle, ChevronDown, Wifi, ArrowRight } from 'lucide-react';
+import { Search, HelpCircle, Users, Briefcase, CreditCard, Shield, MessageCircle, ChevronDown, Wifi, ArrowRight, ArrowUpDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -133,6 +133,23 @@ const HelpCenterPage = () => {
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
                   O que significam os badges, quais dados usamos (online_since e lastSeen) e como o status influencia a busca.
+                </p>
+              </div>
+            </Link>
+            <Link
+              to="/ajuda/ordenacao-busca"
+              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
+            >
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ArrowUpDown className="h-5 w-5" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-foreground">Ordenação e URLs da busca</h3>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" />
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                  Entenda Melhor combinação, Distância e Avaliação — e como compartilhar resultados pela URL com ?ordem=, ?cidade= e ?cep=.
                 </p>
               </div>
             </Link>

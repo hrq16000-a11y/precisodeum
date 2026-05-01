@@ -48,6 +48,7 @@ import ScoreTooltipBadge from '@/components/search/ScoreTooltipBadge';
 import { logSearchIntent } from '@/lib/searchIntent';
 import { safeUF } from '@/lib/locationFormat';
 import CepLookupField from '@/components/CepLookupField';
+import { lookupCep, normalizeCep, formatCep } from '@/lib/cepLookup';
 import { toast } from 'sonner';
 
 const ITEMS_PER_PAGE = 12;
@@ -90,6 +91,7 @@ const SearchPage = () => {
   const isMobile = useIsMobile();
   const query = searchParams.get('q') || '';
   const cityParam = searchParams.get('cidade') || '';
+  const cepParam = searchParams.get('cep') || '';
   const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, setRadius, requestPreciseLocation, geoFailed, source: geoSource, lastKnownAt, dismissGeoFailure } = useGeoCity();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoria') || '');
   const [selectedCity, setSelectedCity] = useState(cityParam);
@@ -148,6 +150,27 @@ const SearchPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, availabilityWindow, sortBy]);
+
+  // Hidrata cidade/UF/bairro a partir de ?cep= (BrasilAPI → ViaCEP).
+  // Roda apenas quando o CEP da URL muda; é idempotente (não sobrescreve cidade
+  // já preenchida pelo usuário no mesmo CEP).
+  const [resolvedCepNorm, setResolvedCepNorm] = useState<string | null>(null);
+  useEffect(() => {
+    const norm = normalizeCep(cepParam);
+    if (!norm || norm === resolvedCepNorm) return;
+    let cancelled = false;
+    (async () => {
+      const r = await lookupCep(cepParam);
+      if (cancelled || !r.ok) return;
+      setResolvedCepNorm(norm);
+      setSelectedState(prev => prev || r.state);
+      setSelectedCity(prev => prev || r.city);
+      if (r.neighborhood) setSelectedNeighborhood(prev => prev || r.neighborhood!);
+      setPage(1);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cepParam]);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
@@ -342,17 +365,24 @@ const SearchPage = () => {
 
   // Canonical estável: NÃO inclui `page` nem `disponivel` (filtros voláteis/de UI).
   // Toda página paginada e qualquer recorte por disponibilidade aponta canonical
-  // para a versão "raiz" da combinação (q+categoria+cidade+ordem). Isso evita
+  // para a versão "raiz" da combinação (q+categoria+cidade|cep+ordem). Isso evita
   // duplicação de conteúdo no índice do Google.
+  // Regra anti-duplicação: quando há ?cep= válido, o canonical usa CEP (mais
+  // preciso) e omite ?cidade=, já que o CEP resolve cidade+UF deterministicamente.
+  const cepNormForSeo = normalizeCep(cepParam);
   const canonicalUrl = useMemo(() => {
     const params = new URLSearchParams();
     if (query) params.set('q', query);
     if (selectedCategory) params.set('categoria', selectedCategory);
-    if (seoCity) params.set('cidade', seoCity);
+    if (cepNormForSeo) {
+      params.set('cep', formatCep(cepNormForSeo));
+    } else if (seoCity) {
+      params.set('cidade', seoCity);
+    }
     if (sortBy && sortBy !== 'relevance') params.set('ordem', sortBy);
     const qs = params.toString();
     return `${SITE_BASE_URL}/buscar${qs ? `?${qs}` : ''}`;
-  }, [query, selectedCategory, seoCity, sortBy]);
+  }, [query, selectedCategory, seoCity, sortBy, cepNormForSeo]);
 
   // rel=prev / rel=next para paginação. Os links incluem TODOS os params atuais
   // (inclusive `disponivel`) porque apontam para variantes navegáveis pelo bot.
@@ -368,13 +398,16 @@ const SearchPage = () => {
   const nextUrl = page < totalPages ? buildPagedUrl(page + 1) : undefined;
 
   // Noindex quando:
-  //  - não há recorte editorial (sem q, categoria nem cidade) → SERP fina
+  //  - não há recorte editorial (sem q, categoria, cidade nem cep) → SERP fina
   //  - é uma página paginada (page > 1) → Google segue o canonical da página 1
   //  - há filtro de disponibilidade ativo → recorte volátil, não indexável
+  //  - ?cep= está presente mas inválido (não-normalizável) → não indexa lixo
+  const cepInUrlButInvalid = !!cepParam && !cepNormForSeo;
   const noindex =
-    (!query && !selectedCategory && !seoCity) ||
+    (!query && !selectedCategory && !seoCity && !cepNormForSeo) ||
     page > 1 ||
-    availabilityWindow !== 'any';
+    availabilityWindow !== 'any' ||
+    cepInUrlButInvalid;
 
   useSeoHead({ title: seoTitle, description: seoDesc, canonical: canonicalUrl, noindex, prevUrl, nextUrl });
 
