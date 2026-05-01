@@ -350,8 +350,9 @@ export default function CompanyProfile() {
         {fullAddress && (
           <section className="border-t border-border bg-muted/20 py-8">
             <div className="container max-w-4xl">
-              <h2 className="mb-3 font-display text-xl font-bold">
-                {showFull ? 'Endereço e localização' : 'Ponto de Atendimento Físico'}
+              <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-bold">
+                <MapPin className="h-5 w-5 text-accent" aria-hidden="true" />
+                {showFull ? 'Contato e endereço' : 'Ponto de atendimento físico'}
               </h2>
               {showFull ? (
                 <a
