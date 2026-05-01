@@ -824,16 +824,15 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
         </label>
       </div>
 
-      {/* Endereço PJ NÃO é re-perguntado aqui — já foi coletado no passo do documento.
-          A confirmação fica na tela de Revisão final. */}
+      {/* Endereço PJ NÃO é re-perguntado aqui — já foi coletado no passo do documento. */}
 
       <div className="flex flex-col gap-2 pt-1">
         <Button type="button" size="lg" onClick={onFinish} disabled={saving} className={ws.cta}>
           {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Salvar e revisar <ArrowRight className="ml-2 h-5 w-5" />
+          Concluir cadastro <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
-          Pular redes e revisar
+          Pular e concluir
         </Button>
       </div>
     </motion.div>
