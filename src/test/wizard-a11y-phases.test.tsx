@@ -30,7 +30,9 @@ vi.mock('@/components/admin/UFSelect', () => ({
   BR_UFS: [{ uf: 'PR', name: 'Paraná' }],
 }));
 
-import { Phase1Action, Phase1Kind, Phase1Location, Phase1Contact } from '@/components/onboarding/wizard/phases/v2/Phase1Basic';
+// Phase1Action/Kind/Location/Contact REMOVIDOS em mai/2026 (consolidação Bet Mode).
+// Esses passos eram duplicações da triagem; a a11y deles agora é coberta
+// pelos testes do Bet Mode (PhaseWho, PhaseClientCity, PhaseProKind, PhaseProLocation).
 import { Phase2Service } from '@/components/onboarding/wizard/phases/v2/Phase2Service';
 
 const profileBase = {
@@ -42,53 +44,6 @@ const serviceBase = {
   category_ids: [], service_name: '', description: '',
   cities_served: [], working_days: [], working_hours: '', starting_price_brl: null,
 } as any;
-
-describe('Wizard a11y — Phase1', () => {
-  it('Phase1Action: tem region/radiogroup com nome acessível', () => {
-    render(<Phase1Action onSelect={vi.fn()} />);
-    expect(screen.getByRole('region', { name: /como você atua/i })).toBeInTheDocument();
-    expect(screen.getByRole('radiogroup', { name: /como você atua/i })).toBeInTheDocument();
-    // 4 cards atuação acessíveis
-    expect(screen.getAllByRole('radio')).toHaveLength(4);
-  });
-
-  it('Phase1Kind: botão Voltar tem aria-label e radiogroup PF/PJ', () => {
-    render(<Phase1Kind onSelect={vi.fn()} onBack={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /voltar para a etapa anterior/i })).toBeInTheDocument();
-    expect(screen.getByRole('radiogroup', { name: /como vamos te identificar/i })).toBeInTheDocument();
-    expect(screen.getAllByRole('radio')).toHaveLength(2);
-  });
-
-  it('Phase1Location: region rotulado e botão voltar acessível', () => {
-    render(
-      <Phase1Location
-        data={profileBase}
-        onChange={vi.fn()}
-        onNext={vi.fn()}
-        onBack={vi.fn()}
-        onSkip={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole('region', { name: /de onde você atende/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /voltar para a etapa anterior/i })).toBeInTheDocument();
-  });
-
-  it('Phase1Contact: region rotulado, autoFocus no nome e botão voltar acessível', () => {
-    render(
-      <Phase1Contact
-        data={{ ...profileBase, full_name: '' }}
-        onChange={vi.fn()}
-        onSubmit={vi.fn()}
-        onBack={vi.fn()}
-        saving={false}
-      />,
-    );
-    expect(screen.getByRole('region', { name: /como te chamamos/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /voltar para a etapa anterior/i })).toBeInTheDocument();
-    // Inputs com placeholder/label visível
-    expect(screen.getByPlaceholderText(/Maria Silva/i)).toBeInTheDocument();
-  });
-});
 
 describe('Wizard a11y — Phase2Service', () => {
   it('tem region rotulado e botão voltar com aria-label', () => {
