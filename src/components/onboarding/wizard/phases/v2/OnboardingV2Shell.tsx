@@ -87,12 +87,9 @@ import {
   phaseIndex,
   VISIBLE_PHASES_COUNT,
 } from './state';
-import {
-  Phase1Action,
-  Phase1Kind,
-  Phase1Location,
-  Phase1Contact,
-} from './Phase1Basic';
+// Phase1Action/Kind/Location/Contact REMOVIDOS na consolidação Bet Mode
+// (mai/2026). Esses passos eram duplicações das telas da triagem (Bet Mode);
+// agora a fase principal começa direto em phase2_service.
 import { Phase2Service, Phase2Details } from './Phase2Service';
 import { Phase2Photos } from './Phase2Photos';
 import { Phase3Celebration } from './Phase3Celebration';
