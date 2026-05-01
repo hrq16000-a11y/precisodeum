@@ -20,7 +20,7 @@ import {
 } from '@/components/onboarding/wizard/phases/v2/state';
 
 describe('onboardingV2 reducer', () => {
-  it('NEXT avança fase a fase até done', () => {
+  it('NEXT avança fase a fase até done (phase1_* removidas em mai/2026)', () => {
     let s = initialOnboardingState;
     const visited: string[] = [s.phase];
     for (let i = 0; i < VISIBLE_PHASES_COUNT; i++) {
@@ -28,7 +28,8 @@ describe('onboardingV2 reducer', () => {
       visited.push(s.phase);
     }
     expect(s.phase).toBe('done');
-    expect(visited).toContain('phase1_contact');
+    // phase1_* não existem mais — a 1ª fase viva é phase2_service.
+    expect(visited[0]).toBe('phase2_service');
     expect(visited).toContain('phase2_service');
     expect(visited).toContain('phase2_photos');
     expect(visited).toContain('phase3_celebration');
@@ -36,7 +37,8 @@ describe('onboardingV2 reducer', () => {
 
   it('SKIP_TO_NEXT avança como NEXT (skip = avançar nas fases não-críticas)', () => {
     const after = onboardingReducer(initialOnboardingState, { type: 'SKIP_TO_NEXT' });
-    expect(after.phase).toBe('phase1_kind');
+    // Início agora é phase2_service → SKIP leva para phase2_details.
+    expect(after.phase).toBe('phase2_details');
   });
 
   it('GO_TO permite voltar a uma fase anterior preservando dados', () => {
@@ -82,26 +84,16 @@ describe('onboardingV2 reducer', () => {
     expect(s.profile.working_hours).toBe('Comercial (09h às 18h)');
   });
 
-  it('cenário "skip tudo exceto Fase 1.4 e 2": estado mínimo viável é preservado', () => {
+  it('cenário "skip tudo exceto categoria do serviço": estado mínimo viável é preservado', () => {
+    // phase1_* removidas — a triagem (Bet Mode) já entrega nome/WhatsApp/cidade.
+    // Aqui simulamos só o V2: estado inicial = phase2_service.
     let s = initialOnboardingState;
 
-    // Fase 1.1: escolheu provider
-    s = onboardingReducer(s, { type: 'PATCH_PROFILE', patch: { profile_type: 'provider' } });
-    s = onboardingReducer(s, { type: 'NEXT' });
-
-    // Fase 1.2: PF
-    s = onboardingReducer(s, { type: 'PATCH_PROFILE', patch: { kind: 'pf' } });
-    s = onboardingReducer(s, { type: 'NEXT' });
-
-    // Fase 1.3: PULOU localização
-    s = onboardingReducer(s, { type: 'SKIP_TO_NEXT' });
-
-    // Fase 1.4: OBRIGATÓRIO — preencheu nome+whatsapp
+    // Hidratamos os dados que viriam da triagem
     s = onboardingReducer(s, {
       type: 'PATCH_PROFILE',
-      patch: { full_name: 'Ana Costa', whatsapp: '11999998888' },
+      patch: { profile_type: 'provider', kind: 'pf', full_name: 'Ana Costa', whatsapp: '11999998888' },
     });
-    s = onboardingReducer(s, { type: 'NEXT' });
 
     // Fase 2.1: categoria + título
     s = onboardingReducer(s, {
@@ -149,8 +141,9 @@ describe('onboardingV2 reducer', () => {
     expect(s.phase).toBe('phase2_service');
   });
 
-  it('phaseIndex devolve posição na ordem do wizard', () => {
-    expect(phaseIndex('phase1_action')).toBe(0);
+  it('phaseIndex devolve posição na ordem do wizard (phase1_* removidas)', () => {
+    // phase2_service é agora a primeira fase viva (índice 0).
+    expect(phaseIndex('phase2_service')).toBe(0);
     expect(phaseIndex('phase2_photos')).toBeGreaterThan(phaseIndex('phase2_details'));
     expect(phaseIndex('done')).toBe(VISIBLE_PHASES_COUNT);
   });

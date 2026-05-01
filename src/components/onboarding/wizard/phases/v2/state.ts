@@ -15,11 +15,10 @@ import type {
   OnboardingFirstServiceData,
 } from './types';
 
+// Ordem das fases vivas do reducer V2 (após expurgo das phase1_* — mai/2026).
+// A triagem (Bet Mode) cobre identidade/local/contato; a fase principal começa
+// direto na criação do 1º serviço.
 const PHASE_ORDER: OnboardingPhase[] = [
-  'phase1_action',
-  'phase1_kind',
-  'phase1_location',
-  'phase1_contact',
   'phase2_service',
   'phase2_details',
   'phase2_photos',
@@ -63,7 +62,7 @@ export const initialOnboardingState: OnboardingState = {
     working_hours: '',
     working_hours_struct: null,
   },
-  phase: 'phase1_action',
+  phase: 'phase2_service',
   userRef: null,
   providerId: null,
   firstServiceId: null,

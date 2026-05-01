@@ -87,12 +87,9 @@ import {
   phaseIndex,
   VISIBLE_PHASES_COUNT,
 } from './state';
-import {
-  Phase1Action,
-  Phase1Kind,
-  Phase1Location,
-  Phase1Contact,
-} from './Phase1Basic';
+// Phase1Action/Kind/Location/Contact REMOVIDOS na consolidação Bet Mode
+// (mai/2026). Esses passos eram duplicações das telas da triagem (Bet Mode);
+// agora a fase principal começa direto em phase2_service.
 import { Phase2Service, Phase2Details } from './Phase2Service';
 import { Phase2Photos } from './Phase2Photos';
 import { Phase3Celebration } from './Phase3Celebration';
@@ -177,7 +174,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // rascunho stale pode mascarar a descrição/nome do serviço já publicado.
   const skipDraftRestore =
     editMode ||
-    (internalHandoffFromTriage && (seedState?.phase === 'phase2_service' || seedState?.phase === 'phase1_action'));
+    (internalHandoffFromTriage && seedState?.phase === 'phase2_service');
   // Restaura draft local ao montar (se existir e não estiver expirado)
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState, (init) => {
     const draft = skipDraftRestore ? null : readOnboardingV2Draft();
@@ -331,7 +328,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // "Salvar e continuar" persista antes de qualquer fechamento de aba,
   // sem esperar pelos debounces de 600ms / 1500ms.
   useEffect(() => {
-    if (state.phase === 'phase1_action' || state.phase === 'done') return;
+    if (state.phase === 'phase2_service' || state.phase === 'done') return;
     flushOnboardingV2Draft(state, user?.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, user?.id]);
@@ -353,7 +350,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       return;
     }
     const draft = readOnboardingV2Draft();
-    if (draft && draft.phase && draft.phase !== 'phase1_action') {
+    if (draft && draft.phase && draft.phase !== 'phase2_service') {
       setDraftRestored({ source: 'local' });
       setOnboardingDraftSource('local');
       const t = scheduleWizardTimeout(
@@ -377,7 +374,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     if (!user?.id) return;
     if (skipDraftRestore) return;
     const local = readOnboardingV2Draft();
-    const localPhase = (local?.phase as any) || 'phase1_action';
+    const localPhase = (local?.phase as any) || 'phase2_service';
     let alive = true;
     (async () => {
       const remote = await fetchRemoteDraft(user.id);
@@ -386,7 +383,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       const remoteIdx = phaseIndex(remotePhase);
       const localIdx = phaseIndex(localPhase);
       const remoteIsAhead = remoteIdx > localIdx;
-      const localIsEmpty = !local || localPhase === 'phase1_action';
+      const localIsEmpty = !local || localPhase === 'phase2_service';
       // Pergunta sempre que (a) local vazio, ou (b) remoto está mais à frente.
       if (!localIsEmpty && !remoteIsAhead) return;
       setRemoteDraft(remote);
@@ -468,7 +465,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       forceFromBootstrap: internalHandoffFromTriage,
     });
 
-    const currentPhase = state.phase || 'phase1_action';
+    const currentPhase = state.phase || 'phase2_service';
     const nextPhase = resolved.phase || currentPhase;
     const isRegression = phaseIndex(nextPhase) < phaseIndex(currentPhase);
 
@@ -643,17 +640,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   useEffect(() => {
     const goBack = () => {
       switch (state.phase) {
-        case 'phase1_kind':
-          dispatch({ type: 'GO_TO', phase: 'phase1_action' });
-          break;
-        case 'phase1_location':
-          dispatch({ type: 'GO_TO', phase: 'phase1_kind' });
-          break;
-        case 'phase1_contact':
-          dispatch({ type: 'GO_TO', phase: 'phase1_location' });
-          break;
+        // phase1_* removidas em mai/2026; phase2_service é a 1ª fase viva do V2.
+        // Voltar de phase2_service é responsabilidade do WizardShell (sai para triage_celebration).
         case 'phase2_service':
-          dispatch({ type: 'GO_TO', phase: 'phase1_contact' });
+          /* noop — WizardShell trata o retorno à triagem */
           break;
         case 'phase2_details':
           dispatch({ type: 'GO_TO', phase: 'phase2_service' });
@@ -1404,77 +1394,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   const renderPhase = () => {
     switch (state.phase) {
-      case 'phase1_action':
-        return (
-          <Phase1Action
-            onSelect={(t) => {
-              dispatch({ type: 'PATCH_PROFILE', patch: { profile_type: t } });
-              if (t === 'provider') dispatch({ type: 'NEXT' });
-              else {
-                // Fluxos não-provider saem para rotas dedicadas, mantendo escopo enxuto
-                if (t === 'sponsor') navigate('/quero-ser-patrocinador');
-                else navigate('/dashboard');
-              }
-            }}
-          />
-        );
-      case 'phase1_kind':
-        return (
-          <Phase1Kind
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_action' }); }}
-            onSelect={(kind) => {
-              dispatch({ type: 'PATCH_PROFILE', patch: { kind } });
-              track('next', { kind });
-              dispatch({ type: 'NEXT' });
-            }}
-          />
-        );
-      case 'phase1_location':
-        return (
-          <Phase1Location
-            data={state.profile}
-            locks={coreLocks}
-            onChange={patchProfile}
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_kind' }); }}
-            onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
-            onSkip={() => { track('skip'); dispatch({ type: 'SKIP_TO_NEXT' }); }}
-          />
-        );
-      case 'phase1_contact':
-        return (
-          <Phase1Contact
-            data={state.profile}
-            locks={coreLocks}
-            onChange={patchProfile}
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_location' }); }}
-            saving={saving}
-            duplicateWhatsapp={dup.duplicates.whatsapp}
-            checkingWhatsapp={dup.checking.whatsapp}
-            onWhatsappBlur={async () => {
-              if (state.profile.whatsapp.replace(/\D/g, '').length >= 10) {
-                const isDup = await dup.checkWhatsapp(state.profile.whatsapp, user?.id);
-                if (isDup) toast.error('Este WhatsApp já está cadastrado em outra conta.');
-              }
-            }}
-            onSubmit={async () => {
-              if (dup.duplicates.whatsapp) {
-                track('error', { reason: 'duplicate_whatsapp' });
-                toast.error('Corrija o WhatsApp duplicado antes de continuar.');
-                return;
-              }
-              const isDup = await dup.checkWhatsapp(state.profile.whatsapp, user?.id);
-              if (isDup) {
-                track('error', { reason: 'duplicate_whatsapp' });
-                toast.error('Este WhatsApp já está cadastrado em outra conta.');
-                return;
-              }
-              track('submit');
-              const ok = await persistPhase1();
-              if (ok) { track('next'); dispatch({ type: 'NEXT' }); }
-              else track('error', { reason: 'persist_phase1_failed' });
-            }}
-          />
-        );
+      // phase1_action / phase1_kind / phase1_location / phase1_contact
+      // foram removidas em mai/2026 (consolidação Bet Mode). Esses dados
+      // agora vêm 100% da triagem; a fase principal começa em phase2_service.
       case 'phase2_service':
         return (
           <Phase2Service
@@ -1482,7 +1404,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             profile={state.profile}
             onChangeService={patchService}
             onChangeProfile={patchProfile}
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase1_contact' }); }}
+            onBack={() => { /* phase2_service é a primeira fase do V2 — voltar é gerenciado pelo WizardShell (sai para triage_celebration). */ track('back'); }}
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             firstServiceId={state.firstServiceId}
             onSkip={() => {
@@ -1723,7 +1645,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       </AnimatePresence>
 
       <BetCardShell animated={false}>
-        {state.phase !== 'phase1_action' && state.phase !== 'done' && (
+        {state.phase !== 'phase2_service' && state.phase !== 'done' && (
           <div className="mb-2 flex items-center justify-end">
             <AutoSaveBadge signal={state.profile} />
           </div>

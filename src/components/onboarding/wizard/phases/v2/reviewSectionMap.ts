@@ -20,7 +20,10 @@ export interface ReviewSectionConfig {
 }
 
 export const REVIEW_SECTIONS: Record<string, ReviewSectionConfig> = {
-  identity:    { key: 'identity',    label: 'Identidade',         phase: 'phase1_contact',  focusField: 'full_name' },
+  // 'identity' agora aponta para phase2_service: nome/WhatsApp são coletados
+  // na triagem (Bet Mode); em modo edit_profile o usuário cai diretamente no
+  // 1º passo do V2 e o WizardShell oferece a opção de revisar a triagem.
+  identity:    { key: 'identity',    label: 'Identidade',         phase: 'phase2_service',  focusField: 'full_name' },
   document:    { key: 'document',    label: 'Documento',          phase: 'phase4_document', focusField: 'document' },
   /** Endereço comercial PJ — opcional, exibido apenas se preenchido. */
   pjAddress:   { key: 'pjAddress',   label: 'Endereço comercial', phase: 'phase4_document', focusField: 'street' },
