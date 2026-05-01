@@ -525,15 +525,26 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       }
       if (cancelled) return;
 
-      // 2) Se já temos firstServiceId, nada a fazer
-      if (state.firstServiceId) return;
+      // 2) Decide se precisamos buscar/rehidratar o serviço.
+      //    Antes: pulávamos sempre que firstServiceId estava setado — isso
+      //    deixava a UI vazia quando o draft remoto trazia só o ID, mas o
+      //    corpo do serviço (categoria/descrição/etc.) tinha sido perdido.
+      //    Agora rehidratamos se QUALQUER campo crítico estiver vazio.
+      const svcState = state.service || ({} as any);
+      const hasServiceBody =
+        !!(svcState.service_name && svcState.service_name.trim()) ||
+        !!(svcState.description && svcState.description.trim()) ||
+        (Array.isArray(svcState.category_ids) && svcState.category_ids.length > 0);
+      if (state.firstServiceId && hasServiceBody) return;
 
       // 3) Busca o melhor serviço existente (pelo provider OU pelo user_ref)
       //    para hidratar o Wizard em modo revisão sem duplicar registros.
       const svc = await fetchExistingFirstService(pid, state.userRef ?? null, state.profile.primary_category_id);
       if (!svc || cancelled) return;
 
-      dispatch({ type: 'SET_FIRST_SERVICE_ID', id: svc.id });
+      if (svc.id !== state.firstServiceId) {
+        dispatch({ type: 'SET_FIRST_SERVICE_ID', id: svc.id });
+      }
 
       const existingService = state.service || ({} as any);
         const merged: any = {
