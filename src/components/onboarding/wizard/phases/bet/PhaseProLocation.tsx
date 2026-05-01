@@ -230,13 +230,18 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   // Detecta se o GPS falhou/foi negado.
   const geoFailed = Boolean((geo as any).error) || (geo.source && geo.source !== 'gps');
 
-  // [UX-merge] Confirmação implícita: basta cityOk + fonte conhecida.
+  // [UX-merge] Confirmação implícita: basta cityOk + fonte conhecida OU dado já hidratado.
+  // Quando o estado vem hidratado de um draft remoto / modo de edição / fase anterior,
+  // location_source pode estar vazio, mas a cidade já foi validada antes — não trave o usuário.
   const hasReliableManualSource =
     state.location_source === 'cep' ||
     state.location_source === 'manual' ||
     state.location_source === 'gps' ||
     state.location_source === 'ip';
-  const canFinish = cityOk && (hasReliableManualSource || geoFailed);
+  const isHydratedFromDraft =
+    cityOk && !hasReliableManualSource && !geoFailed;
+  const canFinish = cityOk && (hasReliableManualSource || geoFailed || isHydratedFromDraft);
+
 
   const sourceLabel =
     state.location_source === 'gps' ? 'GPS preciso' :
@@ -328,6 +333,14 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           >
             Origem: {effectiveSource === 'gps' ? 'GPS' : effectiveSource === 'cep' ? 'CEP' : effectiveSource === 'manual' ? 'Manual' : effectiveSource === 'ip' ? 'IP (aproximada)' : 'Não definida'}
           </span>
+          {isHydratedFromDraft && (
+            <span
+              data-testid="location-prefilled-pill"
+              className="rounded-full bg-bet-green-soft text-bet-green-fg border border-bet-green-border px-2 py-0.5 text-[10px] font-bold inline-flex items-center gap-1"
+            >
+              <CheckCircle2 className="h-3 w-3" /> Já preenchido — pode avançar
+            </span>
+          )}
           {awarded && (
             <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
               +{BET_POINTS.city} pts

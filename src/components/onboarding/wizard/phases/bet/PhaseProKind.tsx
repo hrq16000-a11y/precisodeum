@@ -6,6 +6,8 @@ import { fieldWin } from '@/lib/betDopamine';
 import { BET_POINTS, type BetProKind, type BetState } from './types';
 import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 import type { BetRewardKey } from './betRewards';
+import { PrefilledBadge, prefilledSelectCard } from '@/components/onboarding/wizard/PrefilledBadge';
+import { cn } from '@/lib/utils';
 
 interface Props {
   state: BetState;
@@ -54,14 +56,21 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => pick('pf')}
-          className="group rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 p-5 text-left shadow-card transition hover:shadow-[0_0_24px_rgba(251,146,60,0.5)] dark:border-amber-500/40 dark:from-amber-950/30 dark:to-orange-950/30"
+          aria-pressed={state.pro_kind === 'pf'}
+          className={cn(
+            'group rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 p-5 text-left shadow-card transition hover:shadow-[0_0_24px_rgba(251,146,60,0.5)] dark:border-amber-500/40 dark:from-amber-950/30 dark:to-orange-950/30',
+            state.pro_kind === 'pf' && prefilledSelectCard,
+          )}
         >
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg">
               <User className="h-6 w-6" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-base font-extrabold text-foreground">Sou Autônomo / Pessoa Física</h2>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="text-base font-extrabold text-foreground">Sou Autônomo / Pessoa Física</h2>
+                {state.pro_kind === 'pf' && <PrefilledBadge label="Selecionado" />}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Ganhe o <strong className="text-amber-700 dark:text-amber-300">Selo de Confiança</strong> e <strong>+{BET_POINTS.cpf_badge} pts</strong>
               </p>
@@ -72,14 +81,21 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => pick('pj')}
-          className="group rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-orange-50 p-5 text-left shadow-card transition hover:shadow-[0_0_24px_rgba(99,102,241,0.5)] dark:border-amber-500/40 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-orange-950/30"
+          aria-pressed={state.pro_kind === 'pj'}
+          className={cn(
+            'group rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-orange-50 p-5 text-left shadow-card transition hover:shadow-[0_0_24px_rgba(99,102,241,0.5)] dark:border-amber-500/40 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-orange-950/30',
+            state.pro_kind === 'pj' && prefilledSelectCard,
+          )}
         >
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg">
               <Building2 className="h-6 w-6" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-base font-extrabold text-foreground">Sou Empresa / MEI / PJ</h2>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="text-base font-extrabold text-foreground">Sou Empresa / MEI / PJ</h2>
+                {state.pro_kind === 'pj' && <PrefilledBadge label="Selecionado" />}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Ganhe o <strong className="text-amber-700 dark:text-amber-300">Selo Empresa Verificada</strong> e <strong>+{BET_POINTS.cnpj_badge} pts</strong>
               </p>

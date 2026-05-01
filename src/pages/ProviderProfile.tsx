@@ -891,7 +891,7 @@ const ProviderProfile = () => {
     : 'Profissional';
   const seoDescriptionRaw = provider
     ? (provider.meta_description?.trim() ||
-        `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Peca seu orcamento gratis!`)
+        `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Entre em contato direto, sem intermediarios!`)
     : 'Encontre profissionais na plataforma.';
 
   const seoTitle = truncateAt(seoTitleRaw, 60);
