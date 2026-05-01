@@ -72,16 +72,23 @@ export default function PhaseWho({ state, patch, goto, awardReward }: Props) {
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => pick('professional')}
-          className="group relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-emerald-50 p-5 text-left shadow-card transition hover:shadow-[0_0_30px_rgba(251,146,60,0.55)] dark:border-amber-500/40 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-emerald-950/30"
+          aria-pressed={state.intent === 'professional'}
+          className={cn(
+            'group relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-emerald-50 p-5 text-left shadow-card transition hover:shadow-[0_0_30px_rgba(251,146,60,0.55)] dark:border-amber-500/40 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-emerald-950/30',
+            state.intent === 'professional' && prefilledSelectCard,
+          )}
         >
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg">
               <Briefcase className="h-6 w-6" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-base font-extrabold text-foreground">
-                Sou Profissional — Quero Clientes
-              </h2>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="text-base font-extrabold text-foreground">
+                  Sou Profissional — Quero Clientes
+                </h2>
+                {state.intent === 'professional' && <PrefilledBadge label="Selecionado" />}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Ofereço serviços e quero ser encontrado
               </p>
@@ -92,16 +99,23 @@ export default function PhaseWho({ state, patch, goto, awardReward }: Props) {
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => pick('client')}
-          className="group relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-orange-50 p-5 text-left shadow-card transition hover:shadow-[0_0_30px_rgba(99,102,241,0.55)] dark:border-amber-500/40 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-orange-950/30"
+          aria-pressed={state.intent === 'client'}
+          className={cn(
+            'group relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-orange-50 p-5 text-left shadow-card transition hover:shadow-[0_0_30px_rgba(99,102,241,0.55)] dark:border-amber-500/40 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-orange-950/30',
+            state.intent === 'client' && prefilledSelectCard,
+          )}
         >
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg">
               <Search className="h-6 w-6" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-base font-extrabold text-foreground">
-                Sou Cliente — Procuro Profissionais
-              </h2>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="text-base font-extrabold text-foreground">
+                  Sou Cliente — Procuro Profissionais
+                </h2>
+                {state.intent === 'client' && <PrefilledBadge label="Selecionado" />}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Quero contratar alguém para um serviço
               </p>
@@ -112,16 +126,23 @@ export default function PhaseWho({ state, patch, goto, awardReward }: Props) {
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => pick('rh')}
-          className="group relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-accent/5 to-secondary/10 p-5 text-left shadow-card transition hover:shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
+          aria-pressed={state.intent === 'rh'}
+          className={cn(
+            'group relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-accent/5 to-secondary/10 p-5 text-left shadow-card transition hover:shadow-[0_0_30px_hsl(var(--primary)/0.35)]',
+            state.intent === 'rh' && prefilledSelectCard,
+          )}
         >
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
               <Building2 className="h-6 w-6" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-base font-extrabold text-foreground">
-                Sou Agência de RH
-              </h2>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="text-base font-extrabold text-foreground">
+                  Sou Agência de RH
+                </h2>
+                {state.intent === 'rh' && <PrefilledBadge label="Selecionado" />}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Quero publicar vagas e gerenciar minha agência
               </p>
@@ -132,16 +153,23 @@ export default function PhaseWho({ state, patch, goto, awardReward }: Props) {
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => pick('sponsor')}
-          className="group relative overflow-hidden rounded-2xl border border-secondary/40 bg-gradient-to-br from-secondary/10 via-muted/40 to-background p-5 text-left shadow-card transition hover:shadow-[0_0_30px_hsl(var(--secondary)/0.25)]"
+          aria-pressed={state.intent === 'sponsor'}
+          className={cn(
+            'group relative overflow-hidden rounded-2xl border border-secondary/40 bg-gradient-to-br from-secondary/10 via-muted/40 to-background p-5 text-left shadow-card transition hover:shadow-[0_0_30px_hsl(var(--secondary)/0.25)]',
+            state.intent === 'sponsor' && prefilledSelectCard,
+          )}
         >
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-lg">
               <Megaphone className="h-6 w-6" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-base font-extrabold text-foreground">
-                Sou Patrocinador
-              </h2>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="text-base font-extrabold text-foreground">
+                  Sou Patrocinador
+                </h2>
+                {state.intent === 'sponsor' && <PrefilledBadge label="Selecionado" />}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Quero anunciar minha marca na plataforma
               </p>
