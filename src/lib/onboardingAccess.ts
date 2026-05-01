@@ -23,7 +23,18 @@ export function clearOnboardingCompletionGrace() {
 
 export function isOnboardingReviewMode(search = '') {
   const params = new URLSearchParams(search);
-  return params.get('mode') === 'review' || params.get('review') === '1';
+  return params.get('mode') === 'review' || params.get('review') === '1' || !!getOnboardingReviewSection(search);
+}
+
+export type OnboardingReviewSection = 'cadastro' | 'servicos' | 'dados' | 'portfolio' | 'url';
+
+export function getOnboardingReviewSection(search = ''): OnboardingReviewSection | null {
+  const params = new URLSearchParams(search);
+  const raw = (params.get('section') || '').trim().toLowerCase();
+  if (raw === 'cadastro' || raw === 'servicos' || raw === 'dados' || raw === 'portfolio' || raw === 'url') {
+    return raw;
+  }
+  return null;
 }
 
 export function isOnboardingCompletionGraceActive() {
