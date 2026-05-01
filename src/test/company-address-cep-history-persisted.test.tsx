@@ -91,25 +91,25 @@ describe('CompanyAddressForm — persistência do histórico de CEPs', () => {
       ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP',
       address: 'Avenida Paulista', source: 'brasilapi',
     });
-    // Estado pai que sobrevive ao remount (simula BetState do wizard).
-    let parentValue: CompanyAddressValue = { cep_history: [] };
-    const onChange = (p: Partial<CompanyAddressValue>) => {
-      parentValue = { ...parentValue, ...p };
-    };
-
+    // Estado pai persistido fora do componente — simula BetState do wizard.
+    const lastValue = { v: { cep_history: [] } as CompanyAddressValue };
     const { unmount } = render(
-      <CompanyAddressForm value={parentValue} onChange={onChange} />,
+      <ControlledHarness
+        initial={lastValue.v}
+        onChange={(v) => { lastValue.v = v; }}
+      />,
     );
     const cep = screen.getByPlaceholderText('00000-000') as HTMLInputElement;
     await act(async () => { fireEvent.change(cep, { target: { value: '01310100' } }); });
     await waitFor(() => {
-      expect((parentValue.cep_history ?? []).length).toBeGreaterThan(0);
+      expect((lastValue.v.cep_history ?? []).length).toBeGreaterThan(0);
     });
     unmount();
 
-    // Remonta com o estado pai persistido — histórico continua visível.
-    render(<CompanyAddressForm value={parentValue} onChange={onChange} />);
+    // Remonta com o estado pai persistido — histórico continua visível sem novo lookup.
+    render(<ControlledHarness initial={lastValue.v} />);
     expect(screen.getByTestId('cep-history-item-01310100')).toBeTruthy();
+    expect(lookupCepMock).toHaveBeenCalledTimes(1);
   });
 
   it('dedupe e LRU operam sobre o histórico controlado (máx 3)', async () => {
