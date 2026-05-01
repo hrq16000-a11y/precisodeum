@@ -670,8 +670,20 @@ interface ExtrasAProps {
 export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: ExtrasAProps) => {
   const focusBio = useFocusFieldFromReview('bio');
   const focusNeighborhood = useFocusFieldFromReview('neighborhood');
+  const handleBackTop = () => {
+    window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_a' } }));
+  };
   return (
     <motion.div {...wizardEnter} className={ws.container}>
+      <button
+        type="button"
+        onClick={handleBackTop}
+        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+        aria-label="Voltar para a etapa anterior do cadastro"
+        data-testid="phase4-extras-a-back"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+      </button>
       <header className={ws.headerWrap}>
         <h1 className={ws.title}>Quase lá — falta só ajustar seu perfil.</h1>
         <p className={ws.subtitle}>Ajuda quem busca por você na sua região.</p>
