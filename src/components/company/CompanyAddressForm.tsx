@@ -270,6 +270,42 @@ export default function CompanyAddressForm({
 
   const fields = (
     <div className="space-y-2">
+      {/* Auto-preenchimento via GPS — opcional, ativado pelo prop onAutoFill. */}
+      {onAutoFill && (
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={() => { void onAutoFill(); }}
+            disabled={autoFillStatus === 'loading'}
+            data-testid="company-address-autofill"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[12px] font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-700/50 dark:bg-emerald-950/30 dark:text-emerald-300"
+          >
+            {autoFillStatus === 'loading' ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                <span className="break-words">Detectando sua localização…</span>
+              </>
+            ) : autoFillStatus === 'success' ? (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                <span className="break-words">Localização preenchida — confira os dados</span>
+              </>
+            ) : (
+              <>
+                <Crosshair className="h-3.5 w-3.5 shrink-0" />
+                <span className="break-words">Preencher localização automaticamente</span>
+              </>
+            )}
+          </button>
+          {autoFillStatus === 'error' && (
+            <p className="flex items-start gap-1 text-[10.5px] leading-snug text-rose-600">
+              <AlertTriangle className="mt-0.5 h-2.5 w-2.5 shrink-0" />
+              <span className="break-words">{autoFillError || 'Não foi possível obter sua localização. Você pode preencher manualmente.'}</span>
+            </p>
+          )}
+        </div>
+      )}
+
       {/* CEP no topo: ponto de partida do preenchimento. Texto sutil convida o usuário a buscar o endereço pelo CEP. */}
       <label className="block">
         <span className="mb-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
