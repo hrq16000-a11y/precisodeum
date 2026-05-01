@@ -63,7 +63,11 @@ import type { BetState } from './phases/bet/types';
 
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
 
-export default function WizardShell() {
+interface WizardShellProps {
+  reviewMode?: boolean;
+}
+
+export default function WizardShell({ reviewMode = false }: WizardShellProps) {
   const { user, profile, provider } = useAuth();
   const navigate = useNavigate();
   const realPoints = useEngagementPointsValue(user?.id);
@@ -167,12 +171,14 @@ export default function WizardShell() {
       resumeBootstrapRef.current = true;
       dispatch({
         type: 'HYDRATE',
-        state: {
-          phase: existingService
-            ? profile?.onboarding_completed === true
-              ? 'main_more_services'
-              : 'main_document'
-            : mapMainPhaseToUnified(bootstrap?.phase ?? 'phase2_service'),
+          state: {
+            phase: reviewMode
+              ? 'main_action'
+              : existingService
+                ? profile?.onboarding_completed === true
+                  ? 'main_more_services'
+                  : 'main_document'
+                : mapMainPhaseToUnified(bootstrap?.phase ?? 'phase2_service'),
           triage: {
             intent: 'professional',
             phase: 'done',
@@ -232,7 +238,7 @@ export default function WizardShell() {
     return () => {
       cancelled = true;
     };
-  }, [profile, provider, state.phase, state.profile, state.service, user?.id]);
+  }, [profile, provider, reviewMode, state.phase, state.profile, state.service, user?.id]);
 
   const handleTriagePhaseChange = useCallback((betPhase: string) => {
     dispatch({ type: 'GO_TO_PHASE', phase: mapTriagePhaseToUnified(betPhase) });
