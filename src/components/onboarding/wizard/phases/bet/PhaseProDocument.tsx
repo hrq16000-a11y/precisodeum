@@ -183,28 +183,35 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
                   transition={{ duration: 0.25 }}
                   className="space-y-2 overflow-hidden pt-1"
                 >
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px]">
+                  {/* Logradouro + Número achatados — SEMPRE na mesma linha */}
+                  <div className="grid grid-cols-[1fr_88px] gap-2">
                     <label className="block">
                       <span className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                         <MapPin className="h-3 w-3" /> Logradouro
+                        {state.street && cepStatus === 'applied' && (
+                          <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700">
+                            <Sparkles className="h-2.5 w-2.5" /> Sugerido
+                          </span>
+                        )}
                       </span>
                       <input
                         type="text"
                         value={state.street}
                         onChange={(e) => patch({ street: e.target.value })}
                         placeholder="Rua / Avenida"
+                        maxLength={120}
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
                       />
                     </label>
                     <label className="block">
                       <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                        Número
+                        Nº
                       </span>
                       <input
                         type="text"
                         inputMode="numeric"
                         value={state.street_number}
-                        onChange={(e) => patch({ street_number: e.target.value })}
+                        onChange={(e) => patch({ street_number: e.target.value.replace(/[^\dA-Za-z/-]/g, '').slice(0, 10) })}
                         placeholder="123"
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
                       />
@@ -218,21 +225,33 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
                       <input
                         type="text"
                         value={state.complement}
-                        onChange={(e) => patch({ complement: e.target.value })}
+                        onChange={(e) => patch({ complement: e.target.value.slice(0, 60) })}
                         placeholder="Sala / Bloco (opcional)"
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                      <span className="mb-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                         CEP
+                        {cepStatus === 'loading' && <Loader2 className="h-3 w-3 animate-spin text-amber-600" />}
+                        {cepStatus === 'applied' && (
+                          <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
+                            Aplicado
+                          </span>
+                        )}
+                        {cepStatus === 'error' && (
+                          <span className="ml-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-700">
+                            Não encontrado
+                          </span>
+                        )}
                       </span>
                       <input
                         type="tel"
                         inputMode="numeric"
-                        value={state.postal_code}
-                        onChange={(e) => patch({ postal_code: e.target.value.replace(/\D/g, '').slice(0, 8) })}
+                        value={maskCep(state.postal_code)}
+                        onChange={(e) => patch({ postal_code: onlyDigits(e.target.value).slice(0, 8) })}
                         placeholder="00000-000"
+                        maxLength={9}
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
                       />
                     </label>
