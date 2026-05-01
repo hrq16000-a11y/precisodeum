@@ -77,6 +77,16 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
     categoryIcon: categoryInfo?.icon,
     seed,
   });
+  // Grade de 6 variantes minimalistas (cores/estilos distintos sobre a mesma categoria).
+  const variants = generateAvatarVariants(
+    {
+      userId,
+      fullName: data.full_name,
+      categoryName: categoryInfo?.name,
+      categoryIcon: categoryInfo?.icon,
+    },
+    6,
+  );
 
   // Auto-sugestão: se o usuário ainda não escolheu nada e a categoria carregou,
   // já mostramos o avatar gerado como pré-seleção (mas não bloqueia upload/câmera).
