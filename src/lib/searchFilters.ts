@@ -159,6 +159,13 @@ export function applySearchFilters<T extends FilterableProvider>(
     disableOnlineBoost = false,
     availabilityWindow = 'any',
     scoreWeights = DEFAULT_SCORE_WEIGHTS,
+    weekendOnly = false,
+    lateNightOnly = false,
+    overnightOnly = false,
+    is24hOnly = false,
+    onDemandOnly = false,
+    openNowOnly = false,
+    prioritizeOpenNow = false,
   } = opts;
 
   let results = [...list];
@@ -228,8 +235,27 @@ export function applySearchFilters<T extends FilterableProvider>(
     );
   }
 
+  // Filtros derivados de horário (flags do banco)
+  if (weekendOnly) results = results.filter((p) => !!p.opensWeekend);
+  if (lateNightOnly) results = results.filter((p) => !!p.opensLateNight);
+  if (overnightOnly) results = results.filter((p) => !!p.opensOvernight);
+  if (is24hOnly) results = results.filter((p) => !!p.is24h);
+  if (onDemandOnly) results = results.filter((p) => !!p.acceptsOnDemand);
+  if (openNowOnly) {
+    results = results.filter((p) => isOpenNow(p.workingHoursStruct as any) || !!p.is24h);
+  }
+
   if (sortBy === 'nearest') {
     results.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
+  } else if (sortBy === 'open_now') {
+    // Aberto agora primeiro, depois por avaliação
+    results.sort((a, b) => {
+      const aOpen = (isOpenNow(a.workingHoursStruct as any) || !!a.is24h) ? 0 : 1;
+      const bOpen = (isOpenNow(b.workingHoursStruct as any) || !!b.is24h) ? 0 : 1;
+      if (aOpen !== bOpen) return aOpen - bOpen;
+      if (b.rating !== a.rating) return b.rating - a.rating;
+      return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
+    });
   } else if (sortBy === 'best') {
     // Score híbrido (rating prioritário, distância como desempate). Em empate
     // de score, mantém ordem por rating desc, depois reviews desc.
