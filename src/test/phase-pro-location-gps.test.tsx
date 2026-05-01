@@ -82,7 +82,6 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
       accuracyMeters: 1200,
     });
     renderPhase(makeState({ city: 'Curitiba', state: 'PR', location_source: 'manual' }));
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar prévia/i }));
     fireEvent.click(screen.getByRole('button', { name: /Usar minha localização/i }));
 
     await waitFor(() => {
@@ -104,7 +103,6 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
       accuracyMeters: 80,
     });
     const { container } = renderPhase(makeState({ city: 'Curitiba', state: 'PR', location_source: 'manual' }));
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar prévia/i }));
     fireEvent.click(screen.getByRole('button', { name: /Usar minha localização/i }));
 
     await waitFor(() => expect(toastSuccess).toHaveBeenCalled());
@@ -122,7 +120,6 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
       accuracyMeters: null,
     });
     const { patch, awardReward } = renderPhase(makeState({ city: 'Curitiba', state: 'PR', location_source: 'manual' }));
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar prévia/i }));
     fireEvent.click(screen.getByRole('button', { name: /Usar minha localização/i }));
 
     await waitFor(() => {
@@ -138,7 +135,6 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
 
   it('permite finalizar sem bairro quando a cidade-base foi revisada', async () => {
     const { finish } = renderPhase(makeState({ city: 'São José dos Pinhais', state: 'PR', neighborhood: '' }));
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar prévia/i }));
     fireEvent.click(screen.getByRole('button', { name: /Finalizar cadastro express/i }));
 
     await waitFor(() => expect(finish).toHaveBeenCalled());
