@@ -127,7 +127,9 @@ export default function CepSuggestionCard({
           });
         }
       }
-    }, debounceMs);
+      },
+      debounceMs,
+    );
     return () => {
       cancelled = true;
       window.clearTimeout(t);
