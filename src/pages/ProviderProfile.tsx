@@ -1240,15 +1240,12 @@ const ProviderProfile = () => {
             </div>
           </motion.div>
         )}
-        {provider.working_hours && (
-          <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
-            <Clock className="h-4 w-4 text-accent shrink-0" />
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Horário</p>
-              <p className="text-xs font-medium text-foreground">{provider.working_hours}</p>
-            </div>
-          </motion.div>
-        )}
+        <motion.div variants={scaleIn} className="col-span-full">
+          <WorkingHoursDisplay
+            struct={(provider as any).working_hours_struct ?? null}
+            legacyText={provider.working_hours ?? null}
+          />
+        </motion.div>
         {provider.service_radius && (
           <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
             <Zap className="h-4 w-4 text-accent shrink-0" />
