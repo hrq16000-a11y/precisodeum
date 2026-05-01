@@ -81,6 +81,45 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // ── Bet Mode tokens (âmbar → laranja → verde) ──
+        // Fonte única para Wizard e Dashboard. Use SEMPRE estes tokens
+        // (bg-bet-amber, text-bet-orange-fg, ring-bet-orange, etc.)
+        // em vez de classes Tailwind cruas como bg-amber-500 ou bg-blue-500.
+        bet: {
+          amber: {
+            DEFAULT: "hsl(var(--bet-amber))",
+            hover: "hsl(var(--bet-amber-hover))",
+            active: "hsl(var(--bet-amber-active))",
+            soft: "hsl(var(--bet-amber-soft))",
+            border: "hsl(var(--bet-amber-border))",
+            fg: "hsl(var(--bet-amber-fg))",
+          },
+          orange: {
+            DEFAULT: "hsl(var(--bet-orange))",
+            hover: "hsl(var(--bet-orange-hover))",
+            active: "hsl(var(--bet-orange-active))",
+            soft: "hsl(var(--bet-orange-soft))",
+            border: "hsl(var(--bet-orange-border))",
+            fg: "hsl(var(--bet-orange-fg))",
+          },
+          green: {
+            DEFAULT: "hsl(var(--bet-green))",
+            hover: "hsl(var(--bet-green-hover))",
+            active: "hsl(var(--bet-green-active))",
+            soft: "hsl(var(--bet-green-soft))",
+            border: "hsl(var(--bet-green-border))",
+            fg: "hsl(var(--bet-green-fg))",
+          },
+          error: {
+            DEFAULT: "hsl(var(--bet-error))",
+            soft: "hsl(var(--bet-error-soft))",
+            border: "hsl(var(--bet-error-border))",
+          },
+          disabled: {
+            bg: "hsl(var(--bet-disabled-bg))",
+            fg: "hsl(var(--bet-disabled-fg))",
+          },
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
