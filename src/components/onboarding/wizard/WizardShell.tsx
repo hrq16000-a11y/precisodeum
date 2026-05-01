@@ -66,8 +66,17 @@ import type { BetState } from './phases/bet/types';
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
 
 interface WizardShellProps {
-  reviewMode?: boolean;
+  /**
+   * Modo de operação do wizard.
+   *  - `new_signup` (default): fluxo completo para novos usuários.
+   *  - `edit_profile`: usuário voltando para revisar/editar; ativa o atalho
+   *    "Pular esta etapa" quando a fase já está 100% preenchida.
+   *  - `add_service`: perfil já existe; foco é adicionar um novo serviço.
+   */
+  mode?: WizardMode;
   reviewSection?: OnboardingReviewSection | null;
+  /** @deprecated Use `mode='edit_profile'`. Mantido por compatibilidade. */
+  reviewMode?: boolean;
 }
 
 function resolveReviewStartPhase(section: OnboardingReviewSection | null): UnifiedPhase {
@@ -86,7 +95,10 @@ function resolveReviewStartPhase(section: OnboardingReviewSection | null): Unifi
   }
 }
 
-export default function WizardShell({ reviewMode = false, reviewSection = null }: WizardShellProps) {
+export default function WizardShell({ mode, reviewMode = false, reviewSection = null }: WizardShellProps) {
+  // Resolve o modo efetivo (mode > reviewMode boolean > default new_signup).
+  const resolvedMode = resolveWizardMode({ mode, reviewMode });
+  const isReview = resolvedMode === 'edit_profile';
   const { user, profile, provider } = useAuth();
   const navigate = useNavigate();
   const realPoints = useEngagementPointsValue(user?.id);
