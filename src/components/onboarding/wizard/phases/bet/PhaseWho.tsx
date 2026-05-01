@@ -8,6 +8,7 @@ import {
   setOnboardingIntent,
   type OnboardingIntent,
 } from '@/components/onboarding/wizard/phases/v2/telemetry';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 import type { BetRewardKey } from './betRewards';
 
 interface Props {
