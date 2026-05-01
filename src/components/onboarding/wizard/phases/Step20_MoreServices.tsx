@@ -27,10 +27,27 @@ const MAX_SERVICES = 5;
 interface Step20Props {
   onContinue: () => void;
   onSkip: () => void;
+  onGoToPath?: (path: string) => Promise<void> | void;
 }
 
-const Step20_MoreServices = ({ onContinue, onSkip }: Step20Props) => {
+const Step20_MoreServices = ({ onContinue, onSkip, onGoToPath }: Step20Props) => {
   const { user, provider } = useAuth();
+  const navigate = useNavigate();
+  const [navigating, setNavigating] = useState<string | null>(null);
+
+  const goTo = useCallback(async (path: string) => {
+    setNavigating(path);
+    try {
+      if (onGoToPath) {
+        await onGoToPath(path);
+      } else {
+        navigate(path);
+      }
+    } finally {
+      setNavigating(null);
+    }
+  }, [navigate, onGoToPath]);
+
   const [count, setCount] = useState<number | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -163,15 +180,23 @@ const Step20_MoreServices = ({ onContinue, onSkip }: Step20Props) => {
           )}
 
           <div className="grid grid-cols-2 gap-2">
-            <Button asChild type="button" variant="outline" className="gap-2">
-              <Link to="/dashboard">
-                <LayoutDashboard className="h-4 w-4" /> Ir para meu painel
-              </Link>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2"
+              disabled={navigating !== null}
+              onClick={() => void goTo('/dashboard')}
+            >
+              <LayoutDashboard className="h-4 w-4" /> Ir para meu painel
             </Button>
-            <Button asChild type="button" variant="outline" className="gap-2">
-              <Link to="/dashboard/minha-pagina">
-                <UserRound className="h-4 w-4" /> Ir para meu perfil
-              </Link>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2"
+              disabled={navigating !== null}
+              onClick={() => void goTo('/dashboard/minha-pagina')}
+            >
+              <UserRound className="h-4 w-4" /> Ir para meu perfil
             </Button>
           </div>
 
