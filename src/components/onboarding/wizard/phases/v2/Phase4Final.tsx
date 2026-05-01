@@ -676,7 +676,7 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
           >
             <Check className="h-10 w-10 stroke-[3]" />
           </motion.div>
-          <h2 className="font-display text-2xl font-bold text-foreground">Veja que legal!</h2>
+          <h2 className="font-display text-2xl font-bold text-foreground break-words">Veja que legal!</h2>
           <p className="text-sm text-muted-foreground">
             Seu perfil está verificado e{' '}
             <span className={`font-bold ${providerStatus === 'active' ? 'text-emerald-600' : 'text-amber-600'}`}>

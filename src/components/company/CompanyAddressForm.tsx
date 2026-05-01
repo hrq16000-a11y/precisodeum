@@ -16,7 +16,7 @@
  *  - É totalmente controlado — não persiste sozinho.
  *  - Todos os campos são OPCIONAIS.
  */
-import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, AlertTriangle } from 'lucide-react';
+import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, AlertTriangle, Crosshair, CheckCircle2 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { lookupCep, formatCep, onlyDigits } from '@/lib/cepLookup';
@@ -65,6 +65,12 @@ interface Props {
   revealLabel?: string;
   /** Marca campos pré-preenchidos por GPS/IP/conta como "Sugerido — confirme". */
   suggestedFields?: Array<keyof CompanyAddressValue>;
+  /** Quando definido, renderiza botão "Preencher localização" no topo do form. */
+  onAutoFill?: () => void | Promise<void>;
+  /** Estado visual do auto-preenchimento (controlado pelo pai). */
+  autoFillStatus?: 'idle' | 'loading' | 'success' | 'error';
+  /** Mensagem de erro a exibir quando autoFillStatus === 'error'. */
+  autoFillError?: string;
 }
 
 /** Máscara visível 00000-000 a partir de até 8 dígitos. */
@@ -89,6 +95,9 @@ export default function CompanyAddressForm({
   collapsible = false,
   revealLabel = 'Adicionar endereço do ponto de atendimento físico',
   suggestedFields = [],
+  onAutoFill,
+  autoFillStatus = 'idle',
+  autoFillError,
 }: Props) {
   const hasContent = Boolean(
     value.street || value.street_number || value.postal_code || value.complement,
@@ -261,6 +270,42 @@ export default function CompanyAddressForm({
 
   const fields = (
     <div className="space-y-2">
+      {/* Auto-preenchimento via GPS — opcional, ativado pelo prop onAutoFill. */}
+      {onAutoFill && (
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={() => { void onAutoFill(); }}
+            disabled={autoFillStatus === 'loading'}
+            data-testid="company-address-autofill"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[12px] font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-700/50 dark:bg-emerald-950/30 dark:text-emerald-300"
+          >
+            {autoFillStatus === 'loading' ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                <span className="break-words">Detectando sua localização…</span>
+              </>
+            ) : autoFillStatus === 'success' ? (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                <span className="break-words">Localização preenchida — confira os dados</span>
+              </>
+            ) : (
+              <>
+                <Crosshair className="h-3.5 w-3.5 shrink-0" />
+                <span className="break-words">Preencher localização automaticamente</span>
+              </>
+            )}
+          </button>
+          {autoFillStatus === 'error' && (
+            <p className="flex items-start gap-1 text-[10.5px] leading-snug text-rose-600">
+              <AlertTriangle className="mt-0.5 h-2.5 w-2.5 shrink-0" />
+              <span className="break-words">{autoFillError || 'Não foi possível obter sua localização. Você pode preencher manualmente.'}</span>
+            </p>
+          )}
+        </div>
+      )}
+
       {/* CEP no topo: ponto de partida do preenchimento. Texto sutil convida o usuário a buscar o endereço pelo CEP. */}
       <label className="block">
         <span className="mb-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">

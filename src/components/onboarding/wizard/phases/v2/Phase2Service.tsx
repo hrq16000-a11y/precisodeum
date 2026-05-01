@@ -274,19 +274,19 @@ export const Phase2Service = ({
         </label>
 
         <div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              <FileText className="h-3.5 w-3.5" /> Descrição do serviço
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground min-w-0">
+              <FileText className="h-3.5 w-3.5 shrink-0" /> <span className="break-words">Descrição do serviço</span>
             </span>
             <button
               type="button"
               onClick={handleSuggest}
               disabled={!selectedId}
-              className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/20 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/20 disabled:opacity-40 disabled:cursor-not-allowed transition shrink-0"
               aria-label="Gerar 3 sugestões de descrição"
             >
-              <Wand2 className="h-3 w-3" />
-              Gerar 3 sugestões
+              <Wand2 className="h-3 w-3 shrink-0" />
+              <span className="whitespace-nowrap">Gerar 3 sugestões</span>
             </button>
           </div>
 

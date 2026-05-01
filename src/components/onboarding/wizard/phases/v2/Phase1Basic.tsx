@@ -219,9 +219,11 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
         </p>
       </div>
 
-      <Button type="button" size="lg" onClick={handleGps} disabled={requestingGps} className={ws.cta}>
-        {requestingGps ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <MapPin className="h-4 w-4 mr-2" />}
-        {data.city ? `${data.city}${data.state ? ' • ' + data.state : ''} — atualizar` : 'Usar minha localização'}
+      <Button type="button" size="lg" onClick={handleGps} disabled={requestingGps} className={`${ws.cta} flex-wrap`}>
+        {requestingGps ? <Loader2 className="h-4 w-4 mr-2 shrink-0 animate-spin" /> : <MapPin className="h-4 w-4 mr-2 shrink-0" />}
+        <span className="min-w-0 break-words text-center">
+          {data.city ? `${data.city}${data.state ? ' • ' + data.state : ''} — atualizar` : 'Usar minha localização'}
+        </span>
       </Button>
 
       <div className={ws.card}>
