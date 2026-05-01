@@ -16,7 +16,7 @@
  *  - É totalmente controlado — não persiste sozinho.
  *  - Todos os campos são OPCIONAIS.
  */
-import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, Check, AlertTriangle, History } from 'lucide-react';
+import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, AlertTriangle } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { lookupCep, formatCep, onlyDigits } from '@/lib/cepLookup';
