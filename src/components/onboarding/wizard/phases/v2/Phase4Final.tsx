@@ -33,6 +33,7 @@ import AvatarCropDialog from './AvatarCropDialog';
 import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 import { wizardStyles as ws, wizardEnter } from './wizardStyles';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 /* ───── 4.0 Foto de perfil (se ainda faltar) ───── */
 
