@@ -41,6 +41,8 @@ export interface CompanyAddressValue {
   street_suggested?: string;
   /** CEP (8 dígitos) que originou a sugestão atual — auditoria/telemetria + anti-sobrescrita. */
   street_suggested_cep?: string;
+  /** Bairro sugerido pelo último CEP consultado — persistido para reuso entre steps do wizard. */
+  bairro_sugerido_cep?: string;
   /** Usuário confirmou explicitamente o logradouro (clicou "Usar este" ou digitou). */
   street_confirmed?: boolean;
   /**
