@@ -95,6 +95,9 @@ export default function CompanyAddressForm({
   collapsible = false,
   revealLabel = 'Adicionar endereço do ponto de atendimento físico',
   suggestedFields = [],
+  onAutoFill,
+  autoFillStatus = 'idle',
+  autoFillError,
 }: Props) {
   const hasContent = Boolean(
     value.street || value.street_number || value.postal_code || value.complement,
