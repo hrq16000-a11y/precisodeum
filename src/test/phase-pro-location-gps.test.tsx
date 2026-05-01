@@ -130,7 +130,10 @@ describe('PhaseProLocation — GPS imprecision & denial', () => {
     });
     // Não pode aplicar patch de GPS quando o GPS falha.
     expect(patch).not.toHaveBeenCalledWith(expect.objectContaining({ location_source: 'gps' }));
-    expect(awardReward).toHaveBeenCalledTimes(1);
+    // [UX-merge] Sem botão "Confirmar prévia": award só ocorre quando GPS
+    // ou seleção de cidade é bem-sucedida. Aqui o GPS falhou e a cidade já
+    // veio pré-preenchida do state inicial, portanto nenhum award.
+    expect(awardReward).not.toHaveBeenCalled();
   });
 
   it('permite finalizar sem bairro quando a cidade-base foi revisada', async () => {
