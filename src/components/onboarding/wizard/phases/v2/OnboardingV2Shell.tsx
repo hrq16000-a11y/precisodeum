@@ -687,7 +687,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     };
     window.addEventListener('wizard:request-back', goBack as EventListener);
     return () => window.removeEventListener('wizard:request-back', goBack as EventListener);
-  }, [state.phase]);
+  }, [state.phase, editMode, navigate]);
 
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
