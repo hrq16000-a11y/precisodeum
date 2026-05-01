@@ -22,7 +22,7 @@ import { sanitizeNeighborhood } from '@/lib/geoReverseGeocode';
 import { validateBaseCityVsServiceArea, hasBlockingBaseCityIssue } from '@/lib/locationConsistency';
 import { recordMyGeoEvent } from '@/lib/providerGeoAudit';
 import { lookupCep, normalizeCep } from '@/lib/cepLookup';
-import { isUF } from '@/lib/ufIndex';
+// isUF removido (input UF da prévia foi mesclado com o CityAutocomplete).
 import { trackOnboardingEvent } from '../v2/telemetry';
 import { BET_POINTS, type BetState } from './types';
 import type { BetRewardKey } from './betRewards';
