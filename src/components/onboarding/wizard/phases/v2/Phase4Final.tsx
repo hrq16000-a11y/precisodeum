@@ -29,6 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getSocialAvatarUrl } from '@/lib/avatarUtils';
 import { generateUniqueAvatar, generateAvatarVariants } from '@/lib/avatarGenerator';
 import { toast } from 'sonner';
+import AvatarCropDialog from './AvatarCropDialog';
 import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 import { wizardStyles as ws, wizardEnter } from './wizardStyles';
