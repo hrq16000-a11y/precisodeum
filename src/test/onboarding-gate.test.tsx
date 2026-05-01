@@ -99,6 +99,16 @@ describe("OnboardingGate", () => {
     expect(screen.getByText("CADASTRO_PAGE")).toBeTruthy();
   });
 
+  it("allows /dashboard when onboarding_completed=true even if profile_type is null (legado)", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: { profile_type: null, onboarding_completed: true, onboarding_step: 5 },
+      loading: false,
+    });
+    renderAt("/dashboard");
+    expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
+  });
+
   it("redirects to /cadastro-inicial when onboarding_completed is false and no service exists", () => {
     mockUseAuth.mockReturnValue({
       user: { id: "u1" },
