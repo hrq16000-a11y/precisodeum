@@ -86,6 +86,7 @@ import { useFirstContactAutoMission } from '@/hooks/useFirstContactAutoMission';
 import UnifiedHealthScore from '@/components/dashboard/UnifiedHealthScore';
 import QuickActionsHero from '@/components/dashboard/QuickActionsHero';
 import ImpactSection from '@/components/dashboard/ImpactSection';
+import { resolveEffectiveProfileType } from '@/lib/onboardingAccess';
 import {
   startDashboardTimers,
   reportFirstRender,
@@ -264,7 +265,7 @@ const DashboardPage = () => {
       .then(({ count }) => setJobsCount(count ?? 0));
   }, [user]);
 
-  const profileType = profile?.profile_type ?? null;
+  const profileType = resolveEffectiveProfileType(profile, provider);
   const isClient = profileType === 'client';
   const isProvider = profileType === 'provider';
   const isRH = profileType === 'rh';
@@ -315,7 +316,9 @@ const DashboardPage = () => {
 
   // Onboarding redirect is owned exclusively by `OnboardingGate` in App.tsx.
   // We only guard against the brief instant where `profile_type` hasn't loaded yet.
-  if (profile && !profileType) return null;
+  if (profile && !profileType) {
+    return <DashboardLayout><DashboardSkeleton /></DashboardLayout>;
+  }
 
   const profileTypeLabel = (() => {
     switch (profile?.profile_type) {
