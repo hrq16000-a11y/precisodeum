@@ -62,6 +62,7 @@ export const initialOnboardingState: OnboardingState = {
     starting_price_brl: null,
     working_days: [],
     working_hours: '',
+    working_hours_struct: null,
   },
   phase: 'phase1_action',
   userRef: null,

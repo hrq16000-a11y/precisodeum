@@ -78,6 +78,9 @@ export interface OnboardingFirstServiceData {
   starting_price_brl: number | null; // "Valores (a partir de)"
   working_days: string[];
   working_hours: string;
+  /** Estrutura controlada (Google Meu Negócio): { ranges: [...] }. Substitui
+   *  texto livre — o resumo de `working_hours` passa a ser derivado dela. */
+  working_hours_struct?: { ranges: Array<{ days: string[]; start: string; end: string }> } | null;
 }
 
 export type OnboardingPhase =

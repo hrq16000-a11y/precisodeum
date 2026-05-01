@@ -24,7 +24,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { suggestServiceDescriptionVariants } from '@/lib/serviceDescriptionSuggester';
 import { sanitizeSlug } from '@/lib/slugify';
 import type { OnboardingFirstServiceData, OnboardingProfileData } from './types';
-import { WEEKDAY_OPTIONS, buildWorkingHoursSummary } from './workingHours';
+import { buildWorkingHoursSummary, formatStruct, legacyToStruct, type WorkingHoursStruct } from './workingHours';
+import WorkingHoursPicker from './WorkingHoursPicker';
+import ServiceCityPicker from './ServiceCityPicker';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 
 interface CategoryRow { id: string; name: string; icon?: string | null }
@@ -338,13 +340,6 @@ interface DetailsProps {
   saving: boolean;
 }
 
-const HOUR_PRESETS = [
-  'Comercial (09h às 18h)',
-  '24 horas',
-  'Sob agendamento',
-  'Finais de semana',
-];
-
 const formatBRL = (n: number | null): string => {
   if (n == null || isNaN(n)) return '';
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
@@ -354,7 +349,6 @@ export const Phase2Details = ({
   service, profile, onChangeService, onChangeProfile, onSubmit, onBack, onSkip, saving,
 }: DetailsProps) => {
   const [priceText, setPriceText] = useState(service.starting_price_brl != null ? String(service.starting_price_brl) : '');
-  const [customHours, setCustomHours] = useState(service.working_hours);
   const focusCities = useFocusFieldFromReview('cities_served');
 
   // G13: dedupe defensivo de cliques em "Salvar e continuar".
@@ -377,32 +371,22 @@ export const Phase2Details = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const addCity = (city: string) => {
-    const v = city.trim();
-    if (!v) return;
-    if (service.cities_served.includes(v)) return;
-    if (service.cities_served.length >= 5) return;
-    onChangeService({ cities_served: [...service.cities_served, v] });
-  };
-  const removeCity = (v: string) => {
-    onChangeService({ cities_served: service.cities_served.filter(c => c !== v) });
-  };
+  // Hidrata struct a partir do legado (working_hours texto + working_days)
+  // se o struct ainda estiver vazio. Garante migração transparente.
+  useEffect(() => {
+    if (service.working_hours_struct) return;
+    const migrated = legacyToStruct(service.working_hours, service.working_days);
+    if (migrated) onChangeService({ working_hours_struct: migrated });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const setHours = (h: string) => {
-    setCustomHours(h);
-    const summary = buildWorkingHoursSummary(h, service.working_days);
-    onChangeService({ working_hours: h });
+  const setStruct = (next: WorkingHoursStruct) => {
+    const summary = formatStruct(next);
+    onChangeService({
+      working_hours_struct: next,
+      working_hours: summary,
+    });
     onChangeProfile({ working_hours: summary }); // herança
-  };
-
-  const toggleDay = (day: string) => {
-    const nextDays = service.working_days.includes(day)
-      ? service.working_days.filter((current) => current !== day)
-      : [...service.working_days, day];
-
-    const summary = buildWorkingHoursSummary(customHours, nextDays);
-    onChangeService({ working_days: nextDays });
-    onChangeProfile({ working_hours: summary });
   };
 
   const onPriceChange = (raw: string) => {
@@ -435,44 +419,18 @@ export const Phase2Details = ({
         <p className="text-xs text-muted-foreground">Tudo opcional — você pode refinar depois.</p>
       </header>
 
-      {/* Cidades atendidas */}
+      {/* Cidades atendidas com sugestão de Região Metropolitana */}
       <div
         ref={focusCities.ref as any}
-        className={`space-y-2 rounded-xl border border-border bg-card p-3 shadow-card ${focusCities.highlightClass}`}
+        className={`rounded-xl border border-border bg-card p-3 shadow-card ${focusCities.highlightClass}`}
       >
-        <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5" /> Cidades atendidas <span className="font-normal normal-case text-muted-foreground/70">(até 5)</span>
-        </span>
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <CityAutocomplete
-              value={{ city: '', state: profile.state }}
-              onChange={(next) => addCity(next.city)}
-              placeholder={profile.state ? 'Ex: Curitiba' : 'Defina sua UF antes'}
-              stateFilter={profile.state}
-              disabled={service.cities_served.length >= 5 || !profile.state}
-              statusText={profile.state ? `Selecione cidades de ${profile.state}` : 'A UF do perfil define as cidades exibidas'}
-            />
-          </div>
-          <Button type="button" variant="outline" disabled className="h-11 w-11 p-0">
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-        {!profile.state && (
-          <p className="text-[11px] text-muted-foreground">Escolha seu estado na etapa anterior para limitar as cidades automaticamente.</p>
-        )}
-        {service.cities_served.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {service.cities_served.map(c => (
-              <Badge key={c} variant="secondary" className="gap-1">
-                {c}
-                <button type="button" onClick={() => removeCity(c)} className="hover:text-destructive">
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
+        <ServiceCityPicker
+          baseCity={profile.city}
+          baseState={profile.state}
+          value={service.cities_served}
+          onChange={(next) => onChangeService({ cities_served: next })}
+          max={5}
+        />
       </div>
 
       {/* Valores (a partir de) */}
@@ -495,54 +453,12 @@ export const Phase2Details = ({
         <p className="text-[11px] leading-relaxed text-muted-foreground">Foco em valorizar sua mão de obra — nada de leilão.</p>
       </div>
 
-      {/* Horários */}
-      <div className="space-y-2 rounded-xl border border-border bg-card p-3 shadow-card">
-        <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" /> Horários de atendimento
-        </span>
-        <div className="flex flex-wrap gap-1.5">
-          {HOUR_PRESETS.map(h => (
-            <motion.button
-              key={h}
-              type="button"
-              onClick={() => setHours(h)}
-              whileTap={{ scale: 0.95 }}
-              className={`rounded-full border px-3 py-1.5 text-xs transition ${customHours === h ? 'border-emerald-500 bg-emerald-500/10 font-medium text-foreground' : 'border-border hover:border-accent/50'}`}
-            >
-              {h}
-            </motion.button>
-          ))}
-        </div>
-        <div>
-          <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Dias de atendimento</span>
-          <div className="flex flex-wrap gap-1.5">
-            {WEEKDAY_OPTIONS.map((day) => {
-              const active = service.working_days.includes(day);
-              return (
-                <motion.button
-                  key={day}
-                  type="button"
-                  onClick={() => toggleDay(day)}
-                  whileTap={{ scale: 0.95 }}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition ${active ? 'border-emerald-500 bg-emerald-500/10 font-medium text-foreground' : 'border-border hover:border-accent/50'}`}
-                >
-                  {day}
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
-        <Input
-          value={customHours}
-          onChange={(e) => setHours(e.target.value)}
-          placeholder="Ou descreva no seu jeito"
-          className="h-11"
+      {/* Horários — picker estruturado (Google Meu Negócio) */}
+      <div className="rounded-xl border border-border bg-card p-3 shadow-card">
+        <WorkingHoursPicker
+          value={(service.working_hours_struct as WorkingHoursStruct | null) ?? null}
+          onChange={setStruct}
         />
-        {(service.working_days.length > 0 || customHours.trim()) && (
-          <p className="text-[11px] text-muted-foreground">
-            Será exibido como <span className="font-medium text-foreground">{buildWorkingHoursSummary(customHours, service.working_days)}</span>
-          </p>
-        )}
       </div>
 
       <div className="flex flex-col gap-2 pt-1">
@@ -564,3 +480,4 @@ export const Phase2Details = ({
     </motion.div>
   );
 };
+
