@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import WizardShell from '@/components/onboarding/wizard/WizardShell';
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
-import { isOnboardingReviewMode } from '@/lib/onboardingAccess';
+import { getOnboardingReviewSection, isOnboardingReviewMode } from '@/lib/onboardingAccess';
 
 /**
  * /cadastro-inicial — porta única do onboarding (V3 + V2 fundidos).
@@ -116,6 +116,7 @@ export default function CadastroInicialPage() {
   const [params] = useSearchParams();
   const redirectedRef = useRef(false);
   const reviewMode = isOnboardingReviewMode(location.search);
+  const reviewSection = getOnboardingReviewSection(location.search);
 
   // PURGA ÚNICA das chaves antigas — roda no primeiro boot e nunca mais.
   // Garante que o reducer atual nunca tente "mesclar" payloads bugados.
@@ -239,5 +240,5 @@ export default function CadastroInicialPage() {
       </div>
     );
   }
-  return <WizardShell reviewMode={reviewMode} />;
+  return <WizardShell reviewMode={reviewMode} reviewSection={reviewSection} />;
 }
