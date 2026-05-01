@@ -136,7 +136,7 @@ describe("OnboardingGate", () => {
       loading: false,
     });
     renderAt("/onboarding-v2/sucesso");
-    expect(screen.getByText("CHILDREN_RENDERED")).toBeTruthy();
+    expect(screen.getByText("SUCCESS_PAGE")).toBeTruthy();
     expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
   });
 
