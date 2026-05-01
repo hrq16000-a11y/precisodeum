@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, ArrowLeft, Check, Wifi,
-  MapPin, FileText, Calendar, Camera as CameraIcon, Globe,
+  FileText, Calendar, Camera as CameraIcon, Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
