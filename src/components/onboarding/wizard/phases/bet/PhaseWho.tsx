@@ -10,6 +10,8 @@ import {
 } from '@/components/onboarding/wizard/phases/v2/telemetry';
 import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 import type { BetRewardKey } from './betRewards';
+import { PrefilledBadge, prefilledSelectCard } from '@/components/onboarding/wizard/PrefilledBadge';
+import { cn } from '@/lib/utils';
 
 interface Props {
   state: BetState;
