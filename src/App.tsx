@@ -310,55 +310,29 @@ const RoutePrefetcher = () => {
 const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, provider, loading, refetchProfile } = useAuth();
   const location = useLocation();
-  const [checkingExistingService, setCheckingExistingService] = useState(false);
-  const [hasExistingService, setHasExistingService] = useState(false);
 
+  // Self-heal idempotente para perfis legados (provider + 1º serviço já criados
+  // mas com `onboarding_completed=false`). Roda no MÁXIMO uma vez por user.id
+  // por aba e é totalmente desacoplada do render — o Gate em si permanece
+  // 100% read-only e determinístico.
   useEffect(() => {
+    if (loading) return;
+    if (!user || !profile) return;
+    if (profile.profile_type !== 'provider') return;
+    if (profile.onboarding_completed === true) return;
+
     let cancelled = false;
-
-    const recoverProviderAccess = async () => {
-      const needsRecovery = !!user && !!profile && profile.profile_type === 'provider' && profile.onboarding_completed !== true;
-      if (!needsRecovery) {
-        setCheckingExistingService(false);
-        setHasExistingService(false);
-        return;
-      }
-
-      setCheckingExistingService(true);
-      try {
-        const providerId = provider?.id ?? await findExistingProvider(user.id, profile?.user_ref ?? null);
-        const existingService = await fetchExistingFirstService(
-          providerId ?? null,
-          profile?.user_ref ?? null,
-          provider?.category_id ?? profile?.primary_category_id ?? null,
-        );
-
-        if (cancelled) return;
-
-        const unlocked = hasUnlockedAppAccess(profile, Boolean(existingService?.id));
-        setHasExistingService(Boolean(existingService?.id));
-
-        if (unlocked && profile.onboarding_completed !== true) {
-          await supabase
-            .from('profiles')
-            .update({ onboarding_step: 5, onboarding_completed: true })
-            .eq('id', user.id);
-          void refetchProfile();
-        }
-      } finally {
-        if (!cancelled) setCheckingExistingService(false);
-      }
-    };
-
-    void recoverProviderAccess();
+    void runOnboardingSelfHeal({ userId: user.id, profile, provider }).then((healed) => {
+      if (!cancelled && healed) void refetchProfile();
+    });
     return () => {
       cancelled = true;
     };
-  }, [profile, provider, refetchProfile, user]);
+  }, [loading, user, profile, provider, refetchProfile]);
 
   // While auth is resolving, or user exists but profile not yet loaded,
   // render an accessible skeleton instead of null to avoid blank screens.
-  if (loading || (user && !profile) || checkingExistingService) {
+  if (loading || (user && !profile)) {
     return (
       <div
         role="status"
