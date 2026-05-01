@@ -319,8 +319,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   }, [profile, state.profile.kind, state.phase, user?.id, isCompany]);
 
 
-  // Auto-save em localStorage com debounce (rápido)
-  useOnboardingV2Draft(state);
+  // Auto-save em localStorage com debounce (rápido).
+  // Em edit_profile/revisão, NÃO persistimos draft local — o usuário está
+  // revisando dados já publicados e o draft seria poluição que poderia
+  // mascarar campos reais em retornos futuros (sintoma "Assistente apagou tudo").
+  useOnboardingV2Draft(state, !editMode);
   // Auto-save remoto com debounce (cross-device)
   useOnboardingV2RemoteDraft(state, user?.id);
 

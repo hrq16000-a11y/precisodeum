@@ -65,12 +65,18 @@ export function clearOnboardingV2Draft() {
 /**
  * Salva automaticamente o estado em localStorage com debounce.
  * Pula a 1ª execução (montagem) para evitar sobrescrever um draft restaurado.
+ *
+ * `enabled=false` desliga o autosave por completo — usado em modo
+ * `edit_profile`, onde o usuário está revisando dados já publicados e qualquer
+ * persistência local seria poluição (e poderia mascarar dados reais do banco
+ * em retornos futuros).
  */
-export function useOnboardingV2Draft(state: OnboardingState) {
+export function useOnboardingV2Draft(state: OnboardingState, enabled: boolean = true) {
   const firstRun = useRef(true);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     if (firstRun.current) {
       firstRun.current = false;
       return;
