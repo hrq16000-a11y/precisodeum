@@ -2634,6 +2634,7 @@ export type Database = {
           image_url: string | null
           link: string | null
           message: string
+          metadata: Json
           read: boolean
           sent_by: string | null
           target_group: string | null
@@ -2650,6 +2651,7 @@ export type Database = {
           image_url?: string | null
           link?: string | null
           message?: string
+          metadata?: Json
           read?: boolean
           sent_by?: string | null
           target_group?: string | null
@@ -2666,6 +2668,7 @@ export type Database = {
           image_url?: string | null
           link?: string | null
           message?: string
+          metadata?: Json
           read?: boolean
           sent_by?: string | null
           target_group?: string | null
