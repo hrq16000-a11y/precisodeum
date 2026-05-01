@@ -81,7 +81,8 @@ describe('CompanyAddressForm — sugestão por CEP, confirmação e retry', () =
     await waitFor(() => {
       expect(screen.getByTestId('cep-suggestion-banner')).toBeTruthy();
     });
-    expect(screen.getByText(/Avenida Paulista/)).toBeTruthy();
+    const banner = screen.getByTestId('cep-suggestion-banner');
+    expect(banner.textContent).toMatch(/Avenida Paulista/);
   });
 
   it('clicar "Usar este" confirma a sugestão e remove o banner', async () => {
