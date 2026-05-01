@@ -70,6 +70,7 @@ const menuGroups = [
       { label: 'Ordem Seções', icon: LayoutList, path: '/admin/secoes-home' },
       { label: 'Auditoria SEO', icon: SearchIcon, path: '/admin/seo-auditoria' },
       { label: 'Sitemap & Robots', icon: SearchIcon, path: '/admin/sitemap-audit' },
+      { label: 'Ordenação da Busca', icon: Sparkles, path: '/admin/busca-ordenacao' },
     ],
   },
   {
