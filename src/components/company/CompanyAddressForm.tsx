@@ -294,7 +294,7 @@ export default function CompanyAddressForm({
             type="text"
             inputMode="numeric"
             value={value.street_number ?? ''}
-            onChange={(e) => onChange({ street_number: e.target.value.replace(/[^\dA-Za-z/-]/g, '').slice(0, 10) })}
+            onChange={(e) => onChange({ street_number: e.target.value.replace(/[^\dA-Za-z/-]/g, '').slice(0, 14) })}
             placeholder="123"
             aria-invalid={!!numberError}
             aria-describedby={numberError ? 'number-error' : undefined}
