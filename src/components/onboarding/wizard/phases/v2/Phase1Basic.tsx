@@ -210,7 +210,7 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
       <div className="flex flex-col items-center gap-2">
         <Avatar className="h-24 w-24 ring-4 ring-amber-400/30 shadow-[0_0_24px_rgba(251,146,60,0.35)]">
           {displayAvatar ? <AvatarImage src={displayAvatar} alt={data.full_name || 'Você'} /> : null}
-          <AvatarFallback className="bg-gradient-to-br from-amber-400 to-rose-500 text-white text-2xl font-display font-extrabold">
+          <AvatarFallback className="bg-gradient-to-br from-amber-400 to-emerald-500 text-white text-2xl font-display font-extrabold">
             {getInitials(data.full_name)}
           </AvatarFallback>
         </Avatar>

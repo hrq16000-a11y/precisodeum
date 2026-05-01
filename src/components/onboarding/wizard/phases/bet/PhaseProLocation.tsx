@@ -353,7 +353,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         </div>
 
         {baseCityIssues.length > 0 && (
-          <ul className="mt-2 space-y-0.5 text-[11px] text-rose-700 dark:text-rose-300">
+          <ul className="mt-2 space-y-0.5 text-[11px] text-orange-700 dark:text-orange-300">
             {baseCityIssues.map((iss) => <li key={iss.code}>• {iss.message}</li>)}
           </ul>
         )}
@@ -425,7 +425,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
       </div>
 
       {gpsImprecise && (
-        <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-xs text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-100">
+        <div className="flex items-start gap-2 rounded-xl border border-orange-200 bg-orange-50/70 p-3 text-xs text-orange-900 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-100">
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <p className="leading-snug">
             GPS impreciso (margem de ~{Math.round(gpsAccuracy!)}m). <strong>Confirme o bairro</strong> manualmente
@@ -438,7 +438,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         size="lg"
         disabled={!canFinish || submitting}
         onClick={onFinish}
-        className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50"
+        className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50"
       >
         {submitting ? 'Salvando…' : 'Finalizar cadastro express'}
         <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />

@@ -538,7 +538,7 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
           </button>
 
           <header className={ws.headerWrap}>
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 text-white shadow-[0_0_24px_rgba(251,146,60,0.45)]">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-emerald-500 text-white shadow-[0_0_24px_rgba(251,146,60,0.45)]">
               <ShieldCheck className="h-7 w-7" aria-hidden="true" />
             </div>
             <h1 className={ws.title}>Quer ficar ONLINE agora?</h1>

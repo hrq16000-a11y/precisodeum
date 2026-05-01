@@ -88,7 +88,7 @@ export default function LocationSourceHistoryCard() {
                   {entry.accuracy_m != null && <span>±{Math.round(entry.accuracy_m)}m</span>}
                   {entry.latency_ms != null && <span>{Math.round(entry.latency_ms)}ms</span>}
                   <span className="opacity-70">{entry.event_type}</span>
-                  {entry.error_message && <span className="text-rose-600">erro: {entry.error_message}</span>}
+                  {entry.error_message && <span className="text-orange-600">erro: {entry.error_message}</span>}
                 </div>
               </div>
             </li>

@@ -170,7 +170,7 @@ export default function CepSuggestionCard({
       <div
         role="status"
         aria-live="polite"
-        className="mt-2 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50/70 p-2 text-[11px] text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-100"
+        className="mt-2 flex items-start gap-2 rounded-md border border-orange-200 bg-orange-50/70 p-2 text-[11px] text-orange-900 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-100"
         data-testid="cep-suggestion-error"
       >
         <AlertTriangle className="mt-0.5 h-3 w-3 flex-shrink-0" />

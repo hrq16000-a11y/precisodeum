@@ -137,18 +137,18 @@ export default function ReferralInviteCard() {
   return (
     <GlassCard variant="default" className="overflow-hidden">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-600">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
           <Users className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-display text-base font-bold text-foreground">Convide um Parceiro</h3>
           <p className="text-[11px] text-muted-foreground">
-            Indique outro profissional · ganhe <strong className="text-violet-700 dark:text-violet-400">+50 pts</strong> quando ele postar a 1ª Obra do Dia
+            Indique outro profissional · ganhe <strong className="text-amber-700 dark:text-amber-400">+50 pts</strong> quando ele postar a 1ª Obra do Dia
           </p>
         </div>
         <Link
           to="/dashboard/indicacoes"
-          className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-violet-700 hover:bg-violet-500/10 dark:text-violet-400"
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
           title="Ver ranking e histórico completo"
         >
           Ver tudo <ArrowRight className="h-3 w-3" />

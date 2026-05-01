@@ -142,7 +142,7 @@ export default function SaveLaterDialog({
             type="button"
             onClick={() => goTo('recovery_page', '/cadastro/retomar')}
             data-testid="save-later-recovery"
-            className="w-full gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(251,146,60,0.7)] hover:opacity-95"
+            className="w-full gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(251,146,60,0.7)] hover:opacity-95"
           >
             <Compass className="h-4 w-4" />
             Ver guia de retomada

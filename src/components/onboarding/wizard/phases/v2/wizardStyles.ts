@@ -33,7 +33,7 @@ export const wizardStyles = {
     'w-full rounded-lg border border-emerald-500 bg-background px-3 py-2.5 text-base text-foreground outline-none ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] transition focus:border-emerald-500 focus:ring-emerald-300/50',
   /** CTA principal — gradiente âmbar→rosa com glow. */
   cta:
-    'group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50',
+    'group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50',
   /** CTA secundário — outline neutro. */
   ctaGhost:
     'h-12 w-full text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -51,7 +51,7 @@ export const wizardStyles = {
     'group rounded-2xl border-2 border-border bg-card p-5 text-left transition hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-[0_0_24px_rgba(251,146,60,0.35)]',
   /** Ícone circular do select card (gradiente). */
   selectIcon:
-    'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-rose-500 text-white shadow-[0_0_18px_rgba(251,146,60,0.4)]',
+    'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-emerald-500 text-white shadow-[0_0_18px_rgba(251,146,60,0.4)]',
 };
 
 /** Animação de entrada padrão para cada fase (usar com framer-motion). */

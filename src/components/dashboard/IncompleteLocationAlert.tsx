@@ -83,7 +83,7 @@ export default function IncompleteLocationAlert({ provider }: Props) {
           <div className="flex flex-wrap gap-2 pt-1">
             <Link
               to="/dashboard/localizacao-guiada"
-              className="inline-flex h-9 items-center rounded-md bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 px-3 text-xs font-bold text-white hover:opacity-95"
+              className="inline-flex h-9 items-center rounded-md bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 px-3 text-xs font-bold text-white hover:opacity-95"
             >
               {ctaLabel} <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>

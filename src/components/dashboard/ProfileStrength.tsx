@@ -165,9 +165,9 @@ const ProfileStrength = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="mt-3 flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500/10 to-accent/10 p-3"
+          className="mt-3 flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500/10 to-accent/10 p-3"
         >
-          <Sparkles className="h-4 w-4 text-purple-500" />
+          <Sparkles className="h-4 w-4 text-orange-500" />
           <p className="text-[11px] font-bold text-foreground">
             Nível máximo alcançado! Você é um Mestre da plataforma.
           </p>

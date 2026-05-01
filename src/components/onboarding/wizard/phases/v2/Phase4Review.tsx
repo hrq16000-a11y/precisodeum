@@ -195,7 +195,7 @@ export const Phase4Review = ({ profile, service, saving, onEdit, onConfirm }: Ph
           size="lg"
           aria-disabled={saving || blocked}
           title={blocked ? 'Corrija os campos destacados acima' : undefined}
-          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50"
+          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50"
         >
           {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           {saving ? 'Publicando...' : blocked ? 'Corrija para publicar' : 'Confirmar e Publicar'}

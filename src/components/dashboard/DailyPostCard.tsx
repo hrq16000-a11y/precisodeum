@@ -163,7 +163,7 @@ export default function DailyPostCard() {
   return (
     <GlassCard variant="default" className="overflow-hidden">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/10 text-fuchsia-600">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600">
           <Sparkles className="h-5 w-5" />
         </div>
         <div className="flex-1">
@@ -187,7 +187,7 @@ export default function DailyPostCard() {
             exit={{ opacity: 0 }}
             className="mt-4 space-y-3"
           >
-            <div className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-3">
+            <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-3">
               {active.image_url ? (
                 <div className="relative mb-2 max-h-48 w-full overflow-hidden rounded-lg" style={{ aspectRatio: '16/9' }}>
                   <LazyImage
@@ -279,7 +279,7 @@ export default function DailyPostCard() {
               </span>
             </div>
             {imageUrl && !uploading && (
-              <div className="relative overflow-hidden rounded-lg border border-fuchsia-500/20" style={{ aspectRatio: '16/9', maxHeight: '10rem' }}>
+              <div className="relative overflow-hidden rounded-lg border border-orange-500/20" style={{ aspectRatio: '16/9', maxHeight: '10rem' }}>
                 <LazyImage
                   src={imageUrl}
                   alt="Pré-visualização da Obra do Dia"
@@ -293,7 +293,7 @@ export default function DailyPostCard() {
               size="sm"
               onClick={handlePost}
               disabled={posting || !caption.trim()}
-              className="w-full gap-1.5 bg-fuchsia-600 text-white hover:bg-fuchsia-700"
+              className="w-full gap-1.5 bg-orange-600 text-white hover:bg-orange-700"
             >
               {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
               Publicar Obra do Dia

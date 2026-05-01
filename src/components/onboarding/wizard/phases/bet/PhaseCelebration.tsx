@@ -22,7 +22,7 @@ export default function PhaseCelebration({ totalPoints, ctaLabel, onCta }: Props
       className="mx-auto flex w-full max-w-md flex-col items-center gap-6 px-4 py-10 text-center"
     >
       <div className="relative">
-        <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 opacity-30 blur-3xl" />
+        <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-emerald-500 opacity-30 blur-3xl" />
         <Sparkles className="h-16 w-16 text-amber-500 drop-shadow-[0_0_24px_rgba(251,191,36,0.85)]" />
       </div>
       <h1 className="font-display text-3xl font-extrabold leading-tight text-foreground">
@@ -41,7 +41,7 @@ export default function PhaseCelebration({ totalPoints, ctaLabel, onCta }: Props
       <Button
         size="lg"
         onClick={onCta}
-        className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95"
+        className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95"
       >
         <Rocket className="mr-2 h-5 w-5" /> {ctaLabel}
       </Button>

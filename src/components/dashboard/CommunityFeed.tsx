@@ -114,8 +114,8 @@ const CommunityFeed = ({ compact = false }: CommunityFeedProps) => {
     >
       <div className={`flex items-center justify-between ${compact ? 'mb-1.5' : 'mb-3'}`}>
         <div className="flex items-center gap-1.5">
-          <div className={`flex items-center justify-center rounded-md bg-purple-500/10 ${compact ? 'h-5 w-5' : 'h-8 w-8 rounded-lg'}`}>
-            <Sparkles className={`text-purple-500 ${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
+          <div className={`flex items-center justify-center rounded-md bg-orange-500/10 ${compact ? 'h-5 w-5' : 'h-8 w-8 rounded-lg'}`}>
+            <Sparkles className={`text-orange-500 ${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
           </div>
           <h3 className={`font-bold text-foreground ${compact ? 'text-[11px]' : 'text-sm'}`}>
             Comunidade
