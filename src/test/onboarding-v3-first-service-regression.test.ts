@@ -48,11 +48,11 @@ describe('V3→V2 first service continuity (handoff interno)', () => {
     expect(bet).toContain('clearRemoteBetDraft(user.id)');
   });
 
-  it('Locks já travam nome/WhatsApp/cidade no Phase1Basic', () => {
-    const phase = read('src/components/onboarding/wizard/phases/v2/Phase1Basic.tsx');
-    expect(phase).toContain('disabled={!!locks?.full_name}');
-    expect(phase).toContain('disabled={!!locks?.whatsapp}');
-    expect(phase).toContain('disabled={!data.state || !!locks?.city}');
+  it('Phase1Basic.tsx foi removido em mai/2026 (consolidação Bet Mode)', () => {
+    // O arquivo Phase1Basic e seus 4 componentes (Action/Kind/Location/Contact)
+    // foram excluídos porque duplicavam telas já cobertas pela triagem.
+    // Os locks de nome/WhatsApp/cidade agora vivem nas fases do Bet Mode.
+    expect(exists('src/components/onboarding/wizard/phases/v2/Phase1Basic.tsx')).toBe(false);
   });
 
   it('Skip do 1º serviço mantém o usuário dentro do wizard', () => {

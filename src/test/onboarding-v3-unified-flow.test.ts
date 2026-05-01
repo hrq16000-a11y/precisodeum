@@ -49,11 +49,12 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(exists('src/pages/CadastroInicialPage.tsx')).toBe(true);
   });
 
-  it('Steps planos Step01..Step19 existem como re-exports em phases/', () => {
+  it('Steps planos existem como re-exports em phases/ (Step08-11 removidos em mai/2026)', () => {
+    // Step08_Action / Step09_Kind / Step10_Location / Step11_Contact foram
+    // removidos na consolidação Bet Mode — eram duplicações da triagem.
     const expected = [
       'Step01_Identity', 'Step02_Who', 'Step03_ClientCity', 'Step04_ProKind',
       'Step05_ProDocument', 'Step06_ProLocation', 'Step07_TriageCelebration',
-      'Step08_Action', 'Step09_Kind', 'Step10_Location', 'Step11_Contact',
       'Step12_Service', 'Step13_ServiceDetails', 'Step14_Photos',
       'Step15_Celebration', 'Step16_Document', 'Step17_Avatar',
       'Step18_ExtrasA', 'Step19_ExtrasB',
@@ -64,6 +65,10 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     const barrel = read('src/components/onboarding/wizard/phases/index.ts');
     for (const name of expected) {
       expect(barrel).toContain(name);
+    }
+    // Garante que Step08-11 NÃO voltem (anti-regressão).
+    for (const removed of ['Step08_Action', 'Step09_Kind', 'Step10_Location', 'Step11_Contact']) {
+      expect(exists(`src/components/onboarding/wizard/phases/${removed}.tsx`)).toBe(false);
     }
   });
 
