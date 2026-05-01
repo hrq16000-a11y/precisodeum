@@ -41,11 +41,12 @@ interface AvatarProps {
   onChange: (patch: Partial<OnboardingProfileData>) => void;
   onContinue: () => void;
   onSkip: () => void;
+  onBack?: () => void;
   saving: boolean;
   userId?: string;
 }
 
-export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userId }: AvatarProps) => {
+export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, saving, userId }: AvatarProps) => {
   const focusAvatar = useFocusFieldFromReview('avatar_url');
   const { user } = useAuth();
   const socialUrl = getSocialAvatarUrl(user);
