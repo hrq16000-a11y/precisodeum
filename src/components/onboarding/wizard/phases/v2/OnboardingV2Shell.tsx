@@ -1394,6 +1394,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             serviceId={state.firstServiceId}
             userId={user.id}
             serviceName={state.service.service_name}
+            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_details' }); }}
             onContinue={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
           />
