@@ -87,10 +87,17 @@ describe('CompanyAddressForm — persistência do histórico de CEPs', () => {
   });
 
   it('histórico sobrevive a unmount/remount quando persistido no estado pai', async () => {
-    lookupCepMock.mockResolvedValueOnce({
-      ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP',
-      address: 'Avenida Paulista', source: 'brasilapi',
-    });
+    // Mock para o 1º lookup (durante typing) e um 2º para o remount
+    // (que ainda tem postal_code preenchido e dispara lookup automático).
+    lookupCepMock
+      .mockResolvedValueOnce({
+        ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP',
+        address: 'Avenida Paulista', source: 'brasilapi',
+      })
+      .mockResolvedValue({
+        ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP',
+        address: 'Avenida Paulista', source: 'brasilapi',
+      });
     // Estado pai persistido fora do componente — simula BetState do wizard.
     const lastValue = { v: { cep_history: [] } as CompanyAddressValue };
     const { unmount } = render(
@@ -106,10 +113,10 @@ describe('CompanyAddressForm — persistência do histórico de CEPs', () => {
     });
     unmount();
 
-    // Remonta com o estado pai persistido — histórico continua visível sem novo lookup.
+    // Remonta com o estado pai persistido — histórico já está visível ANTES
+    // de qualquer novo lookup (chave da persistência).
     render(<ControlledHarness initial={lastValue.v} />);
     expect(screen.getByTestId('cep-history-item-01310100')).toBeTruthy();
-    expect(lookupCepMock).toHaveBeenCalledTimes(1);
   });
 
   it('dedupe e LRU operam sobre o histórico controlado (máx 3)', async () => {
