@@ -16,7 +16,7 @@
  * `flushDraftNow()` extra pra garantir que o último patch foi gravado antes
  * de sair.
  */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -52,6 +52,13 @@ export default function SaveLaterDialog({
   const summary = useMemo(() => computeOnboardingProgress(state), [state]);
   const progressPct = Math.round(summary.ratio * 100);
 
+  // Timer de navegação rastreado — limpo ao desmontar o dialog para
+  // evitar `navigate(path)` chamado depois que o componente saiu da árvore.
+  const navTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (navTimer.current) window.clearTimeout(navTimer.current);
+  }, []);
+
   const goTo = useCallback(
     (destination: 'dashboard' | 'recovery_page', path: string) => {
       markSaveLater({
@@ -63,7 +70,8 @@ export default function SaveLaterDialog({
         progressPct,
       });
       onOpenChange(false);
-      window.setTimeout(() => navigate(path), 50);
+      if (navTimer.current) window.clearTimeout(navTimer.current);
+      navTimer.current = window.setTimeout(() => navigate(path), 50);
     },
     [navigate, onOpenChange, source, intent, state.phase, variant, progressPct],
   );

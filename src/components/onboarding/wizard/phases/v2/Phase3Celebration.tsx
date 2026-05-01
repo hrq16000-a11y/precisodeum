@@ -9,7 +9,7 @@
  *  - Checklist e "próximos passos" colapsados em "Detalhes" para diminuir altura.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Sparkles, MapPin, Briefcase, ArrowRight, ExternalLink,
@@ -106,13 +106,21 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
     ? `Acabei de criar meu perfil no Preciso de Um! Cadastre-se pelo meu link e receba clientes mais rápido: ${affiliateLink}`
     : '';
 
+  // Timer rastreado para o reset de "copiado" — limpo ao desmontar
+  // para não chamar setCopied num componente já morto.
+  const copyResetTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (copyResetTimer.current) window.clearTimeout(copyResetTimer.current);
+  }, []);
+
   const handleCopy = async () => {
     if (!affiliateLink) return;
     try {
       await navigator.clipboard.writeText(affiliateLink);
       setCopied(true);
       toast.success('Link copiado! Compartilhe e ganhe pontos a cada cadastro.');
-      setTimeout(() => setCopied(false), 2000);
+      if (copyResetTimer.current) window.clearTimeout(copyResetTimer.current);
+      copyResetTimer.current = window.setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('Não foi possível copiar.');
     }

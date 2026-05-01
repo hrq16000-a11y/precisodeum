@@ -1,4 +1,5 @@
 /** Phase Pro Kind — PF (Autônomo) ou PJ (Empresa/MEI). */
+import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { User, Building2, Sparkles } from 'lucide-react';
 import { fieldWin } from '@/lib/betDopamine';
@@ -13,13 +14,20 @@ interface Props {
 }
 
 export default function PhaseProKind({ state, patch, next, awardReward }: Props) {
+  // Cleanup do timer de transição animada — evita callback após unmount.
+  const transitionTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
+  }, []);
+
   function pick(kind: BetProKind) {
     patch({ pro_kind: kind });
     if (!state.rewards.pro_kind) {
       awardReward('pro_kind', BET_POINTS.pro_kind);
     }
     fieldWin();
-    window.setTimeout(next, 250);
+    if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
+    transitionTimer.current = window.setTimeout(next, 250);
   }
   return (
     <motion.div

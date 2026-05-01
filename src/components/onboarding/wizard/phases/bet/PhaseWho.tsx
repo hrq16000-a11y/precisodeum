@@ -1,4 +1,5 @@
 /** Phase Who — Sou Profissional / Sou Cliente. */
+import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Briefcase, Search, Sparkles, Building2, Megaphone } from 'lucide-react';
 import { fieldWin } from '@/lib/betDopamine';
@@ -23,16 +24,22 @@ function toTelemetryIntent(i: BetIntent): OnboardingIntent | null {
 }
 
 export default function PhaseWho({ state, patch, goto, awardReward }: Props) {
+  // Timer de transição animada — rastreado para limpar no unmount,
+  // evitando que `goto` (navegação) dispare em componente já desmontado.
+  const transitionTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
+  }, []);
+
   function pick(intent: BetIntent) {
     patch({ intent });
-    // Persiste intent real para auto-injeção em todos os eventos subsequentes
-    // (milestone, skip, next, error, complete) — fonte única em sessionStorage.
     setOnboardingIntent(toTelemetryIntent(intent));
     if (!state.rewards.intent) {
       awardReward('intent', BET_POINTS.intent);
     }
     fieldWin();
-    window.setTimeout(() => goto(intent), 250);
+    if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
+    transitionTimer.current = window.setTimeout(() => goto(intent), 250);
   }
 
   return (

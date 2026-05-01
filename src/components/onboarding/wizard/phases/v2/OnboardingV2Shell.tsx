@@ -202,6 +202,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   const [saving, setSaving] = useState(false);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
+  // Timer rastreado do hint "rascunho restaurado" (caminho remoto, fora de useEffect).
+  // Mantido em ref para garantir cleanup no unmount e evitar setState zumbi.
+  const remoteDraftHintTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (remoteDraftHintTimer.current) window.clearTimeout(remoteDraftHintTimer.current);
+  }, []);
   const [remoteDraft, setRemoteDraft] = useState<null | {
     payload: { profile: any; service: any; userRef?: string | null; providerId?: string | null; firstServiceId?: string | null };
     phase: any;
@@ -357,7 +363,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       });
       setDraftRestored({ source: 'remote', at: remoteDraft.updated_at });
       setOnboardingDraftSource('remote');
-      setTimeout(() => setDraftRestored(null), 6000);
+      if (remoteDraftHintTimer.current) window.clearTimeout(remoteDraftHintTimer.current);
+      remoteDraftHintTimer.current = window.setTimeout(() => setDraftRestored(null), 6000);
     }
     setShowRemoteModal(false);
     setRemoteDraft(null);
