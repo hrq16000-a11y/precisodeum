@@ -1729,6 +1729,20 @@ const ProviderProfile = () => {
                         <Music className="h-4 w-4" />
                       </motion.a>
                     )}
+                    {provider?.website && (
+                      <motion.a
+                        href={/^https?:\/\//.test(provider.website) ? provider.website : `https://${provider.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        aria-label="Site / portfólio"
+                        title="Site / portfólio"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Globe className="h-4 w-4" />
+                      </motion.a>
+                    )}
                   </div>
                 )}
               </motion.div>
