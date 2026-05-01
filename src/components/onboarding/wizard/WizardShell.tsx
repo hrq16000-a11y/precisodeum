@@ -190,6 +190,9 @@ export default function WizardShell() {
             street_confirmed: false,
             bairro_sugerido_cep: '',
             cep_history: [],
+            avatar_url: profileSeed.avatar_url ?? null,
+            avatar_source: profileSeed.avatar_source ?? null,
+            avatar_seed: profileSeed.avatar_seed ?? 0,
             points: Number(profile?.engagement_points ?? state.triage.points ?? 0),
             rewards: {
               name: true,
