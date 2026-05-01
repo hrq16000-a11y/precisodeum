@@ -80,8 +80,9 @@ export const Phase2Photos = ({
       role="group"
       aria-label={`Fotos do serviço ${serviceName || ''}`.trim()}
     >
-      <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-        <Camera className="h-3.5 w-3.5" aria-hidden="true" /> {serviceName || 'Seu serviço'}
+      <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground min-w-0">
+        <Camera className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span className="break-words min-w-0 flex-1">{serviceName || 'Seu serviço'}</span>
       </span>
       <ServiceImageUpload serviceId={serviceId} userId={userId} />
     </div>
