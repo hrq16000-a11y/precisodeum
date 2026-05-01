@@ -28,7 +28,11 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
     }
     fieldWin();
     if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
-    transitionTimer.current = window.setTimeout(next, 250);
+    transitionTimer.current = scheduleWizardTimeout(
+      { phase: 'phase1_action', action: 'phase_pro_kind_next' },
+      next,
+      250,
+    );
   }
   return (
     <motion.div
