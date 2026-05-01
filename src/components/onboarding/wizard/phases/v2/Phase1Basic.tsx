@@ -173,7 +173,15 @@ export const Phase1Location = ({ data, onChange, onNext, onBack, onSkip, locks }
     try {
       const r = await requestPreciseLocation({ force: true });
       if (r.ok && r.city) {
-        onChange({ city: r.city, state: (r.state || '').toUpperCase().slice(0, 2) });
+        const patch: Partial<OnboardingProfileData> = {
+          city: r.city,
+          state: (r.state || '').toUpperCase().slice(0, 2),
+        };
+        // Captura coordenadas para alimentar a coluna `geog` (PostGIS) ao salvar o provider.
+        if (typeof r.latitude === 'number' && Number.isFinite(r.latitude)) patch.latitude = r.latitude;
+        if (typeof r.longitude === 'number' && Number.isFinite(r.longitude)) patch.longitude = r.longitude;
+        if (typeof r.accuracyMeters === 'number' && Number.isFinite(r.accuracyMeters)) patch.accuracy_m = r.accuracyMeters;
+        onChange(patch);
       }
     } finally {
       setRequestingGps(false);
