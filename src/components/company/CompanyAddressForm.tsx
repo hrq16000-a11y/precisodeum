@@ -156,12 +156,14 @@ export default function CompanyAddressForm({
       const userTyped = currentStreet.length > 0;
       const userConfirmed = Boolean(value.street_confirmed);
       const previousSuggestion = (value.street_suggested ?? '').trim();
-      // ANTI-SOBRESCRITA: se o usuário JÁ confirmou manualmente um endereço,
-      // não tocamos em street_suggested/street_suggested_cep — apenas
-      // registramos o bairro para uso em outros campos do wizard.
-      const patch: Partial<CompanyAddressValue> = {};
+      // ANTI-SOBRESCRITA: quando o usuário JÁ confirmou manualmente, não
+      // sobrescrevemos `street_suggested_cep` (auditoria do 1º CEP autoritativo)
+      // — apenas atualizamos `street_suggested` para que o banner de conflito
+      // possa comparar. Caso ele ainda não tenha confirmado, gravamos ambos.
+      const patch: Partial<CompanyAddressValue> = {
+        street_suggested: suggestion,
+      };
       if (!userConfirmed) {
-        patch.street_suggested = suggestion;
         patch.street_suggested_cep = digits;
       }
       // Bairro sempre é registrado (não conflita com logradouro digitado).
