@@ -21,8 +21,8 @@ const ConversionInsights = ({ views, leads, services }: ConversionInsightsProps)
       label: 'Visualizações',
       value: views,
       format: 'number' as const,
-      color: 'text-sky-500',
-      bg: 'bg-sky-500/10',
+      color: 'text-amber-500',
+      bg: 'bg-amber-500/10',
     },
     {
       icon: MousePointerClick,

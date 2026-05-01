@@ -207,7 +207,7 @@ const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount:
 /** Visual progress badge — Bronze/Prata/Ouro/Diamante based on completeness. */
 const LevelBadge = ({ percentage }: { percentage: number }) => {
   const tier =
-    percentage >= 90 ? { label: 'Diamante', cls: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30' } :
+    percentage >= 90 ? { label: 'Diamante', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' } :
     percentage >= 70 ? { label: 'Ouro', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' } :
     percentage >= 40 ? { label: 'Prata', cls: 'bg-slate-400/20 text-slate-700 dark:text-slate-200 border-slate-400/40' } :
                        { label: 'Bronze', cls: 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30' };

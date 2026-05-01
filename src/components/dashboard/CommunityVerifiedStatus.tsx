@@ -58,9 +58,9 @@ const CommunityVerifiedStatus = ({ className = '' }: { className?: string }) => 
   const completed = items.filter(i => i.ok).length;
 
   return (
-    <div className={`rounded-2xl border ${status.is_verified ? 'border-blue-500/30 bg-gradient-to-br from-blue-500/5 to-card' : 'border-border bg-card'} p-5 shadow-card ${className}`}>
+    <div className={`rounded-2xl border ${status.is_verified ? 'border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-card' : 'border-border bg-card'} p-5 shadow-card ${className}`}>
       <div className="flex items-start gap-3">
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${status.is_verified ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'}`}>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${status.is_verified ? 'bg-amber-500 text-white' : 'bg-muted text-muted-foreground'}`}>
           <BadgeCheck className="h-6 w-6" strokeWidth={2.5} />
         </div>
         <div className="flex-1 min-w-0">

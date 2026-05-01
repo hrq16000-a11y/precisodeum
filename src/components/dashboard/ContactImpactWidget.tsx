@@ -53,7 +53,7 @@ const ContactImpactWidget = () => {
             label="Cliques WhatsApp"
           />
           <ImpactStat
-            icon={<Phone className="h-4 w-4 text-blue-600" />}
+            icon={<Phone className="h-4 w-4 text-amber-600" />}
             value={data?.phone_clicks ?? 0}
             label="Cliques Telefone"
           />

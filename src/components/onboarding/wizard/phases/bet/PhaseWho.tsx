@@ -90,10 +90,10 @@ export default function PhaseWho({ state, patch, goto, awardReward }: Props) {
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => pick('client')}
-          className="group relative overflow-hidden rounded-2xl border border-blue-300 bg-gradient-to-br from-blue-50 via-orange-50 to-orange-50 p-5 text-left shadow-card transition hover:shadow-[0_0_30px_rgba(99,102,241,0.55)] dark:border-blue-500/40 dark:from-blue-950/30 dark:via-orange-950/30 dark:to-orange-950/30"
+          className="group relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-orange-50 to-orange-50 p-5 text-left shadow-card transition hover:shadow-[0_0_30px_rgba(99,102,241,0.55)] dark:border-amber-500/40 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-orange-950/30"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-orange-600 text-white shadow-lg">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg">
               <Search className="h-6 w-6" />
             </div>
             <div className="flex-1">

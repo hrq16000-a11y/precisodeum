@@ -51,7 +51,7 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
       className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
     >
       <header className="space-y-2 text-center">
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
           <Zap className="h-3 w-3" /> Fast-pass do cliente
         </div>
         <h1 className="font-display text-lg font-extrabold leading-tight text-foreground">
@@ -102,7 +102,7 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
         size="lg"
         disabled={!canFinish || submitting}
         onClick={onFinish}
-        className="group h-12 w-full bg-gradient-to-r from-blue-500 via-orange-500 to-orange-600 text-base font-bold text-white shadow-[0_0_24px_rgba(99,102,241,0.55)] hover:opacity-95 disabled:opacity-50"
+        className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 text-base font-bold text-white shadow-[0_0_24px_rgba(99,102,241,0.55)] hover:opacity-95 disabled:opacity-50"
       >
         {submitting ? 'Liberando acesso…' : 'Entrar no app agora'}
         <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />
