@@ -217,7 +217,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       dispatch({
         type: 'HYDRATE',
           state: {
-              phase: reviewMode
+              phase: isReview
                 ? resolveReviewStartPhase(reviewSection ?? getOnboardingReviewSection(window.location.search))
               : existingService
                 ? profile?.onboarding_completed === true
@@ -327,7 +327,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, profile?.id, provider?.id, reviewMode, reviewSection]);
+  }, [user?.id, profile?.id, provider?.id, resolvedMode, reviewSection]);
 
   const handleTriagePhaseChange = useCallback((betPhase: string) => {
     dispatch({ type: 'GO_TO_PHASE', phase: mapTriagePhaseToUnified(betPhase) });
@@ -366,7 +366,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
   const progressOrder = state.triage.intent === 'professional' ? PROVIDER_WIZARD_PHASE_ORDER : undefined;
-  const holdTriageWhileReviewBootstraps = reviewMode && !resumeBootstrapRef.current && state.phase === 'triage_identity';
+  const holdTriageWhileReviewBootstraps = isReview && !resumeBootstrapRef.current && state.phase === 'triage_identity';
 
   // Sincroniza intent real do reducer → sessionStorage para auto-injeção em
   // todos os eventos de telemetria (milestone, skip, next, error, complete).
