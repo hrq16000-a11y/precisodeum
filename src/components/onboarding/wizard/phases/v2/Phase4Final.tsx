@@ -455,7 +455,11 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
   // Auto-avança quando o documento já foi capturado no V3 (não re-perguntar).
   useEffect(() => {
     if (locked && valid) {
-      const t = setTimeout(() => onContinue(), 250);
+      const t = scheduleWizardTimeout(
+        { phase: 'phase4_document', action: 'phase4_doc_autoadvance' },
+        () => onContinue(),
+        250,
+      );
       return () => clearTimeout(t);
     }
   }, [locked, valid, onContinue]);

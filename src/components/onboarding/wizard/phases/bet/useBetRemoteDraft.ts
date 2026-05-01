@@ -11,6 +11,7 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { BetState } from './types';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 const REMOTE_DEBOUNCE_MS = 1500;
 
@@ -57,17 +58,21 @@ export function useBetRemoteDraft(state: BetState, userId: string | undefined, o
     if (state.phase === 'done' || state.phase === 'celebration') return;
 
     if (timer.current) window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(async () => {
-      try {
-        await (supabase as any).from('bet_drafts').upsert({
-          user_id: userId,
-          payload: state,
-          phase: state.phase,
-        }, { onConflict: 'user_id' });
-      } catch {
-        /* fail-soft — local draft cobre */
-      }
-    }, REMOTE_DEBOUNCE_MS);
+    timer.current = scheduleWizardTimeout(
+      { phase: state.phase as any, action: 'autosave_bet_remote', runIfStale: true },
+      async () => {
+        try {
+          await (supabase as any).from('bet_drafts').upsert({
+            user_id: userId,
+            payload: state,
+            phase: state.phase,
+          }, { onConflict: 'user_id' });
+        } catch {
+          /* fail-soft — local draft cobre */
+        }
+      },
+      REMOTE_DEBOUNCE_MS,
+    );
 
     return () => { if (timer.current) window.clearTimeout(timer.current); };
   }, [state, userId, options.ready]);

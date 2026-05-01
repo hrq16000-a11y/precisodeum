@@ -31,7 +31,7 @@ import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload, detectForbiddenAddressKeys } from '@/lib/providerPayload';
 import { logWizardError } from '@/lib/wizardErrorGuard';
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
-import { setActiveWizardPhase } from '@/lib/wizardZombieGuard';
+import { setActiveWizardPhase, scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 // Aviso única vez por sessão para evitar spam
 let _addressWarnedOnce = false;
@@ -314,7 +314,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     if (draft && draft.phase && draft.phase !== 'phase1_action') {
       setDraftRestored({ source: 'local' });
       setOnboardingDraftSource('local');
-      const t = setTimeout(() => setDraftRestored(null), 5000);
+      const t = scheduleWizardTimeout(
+        { phase: state.phase as any, action: 'shell_local_draft_hint_clear' },
+        () => setDraftRestored(null),
+        5000,
+      );
       return () => clearTimeout(t);
     }
     // Sessão limpa: marca explicitamente como "none" para diferenciar de
@@ -365,7 +369,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       setDraftRestored({ source: 'remote', at: remoteDraft.updated_at });
       setOnboardingDraftSource('remote');
       if (remoteDraftHintTimer.current) window.clearTimeout(remoteDraftHintTimer.current);
-      remoteDraftHintTimer.current = window.setTimeout(() => setDraftRestored(null), 6000);
+      remoteDraftHintTimer.current = scheduleWizardTimeout(
+        { phase: state.phase as any, action: 'shell_remote_draft_hint_clear' },
+        () => setDraftRestored(null),
+        6000,
+      );
     }
     setShowRemoteModal(false);
     setRemoteDraft(null);
@@ -571,9 +579,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   useEffect(() => {
     if (state.phase !== 'done' || deferCompletionToParent) return;
     clearOnboardingV2Draft();
-    const timer = window.setTimeout(() => {
-      void finishWizard();
-    }, 300);
+    const timer = scheduleWizardTimeout(
+      { phase: 'done', action: 'shell_finish_wizard', runIfStale: true },
+      () => { void finishWizard(); },
+      300,
+    );
     return () => window.clearTimeout(timer);
   }, [state.phase, deferCompletionToParent]);
 

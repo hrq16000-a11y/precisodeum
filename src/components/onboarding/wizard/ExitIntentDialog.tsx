@@ -34,6 +34,7 @@ import { markSupportContacted, shouldSuppressExitIntent } from '@/lib/conversion
 import SaveLaterDialog from './SaveLaterDialog';
 import { buildWhatsappContextMessage, computeOnboardingProgress } from '@/lib/onboardingProgress';
 import type { OnboardingState } from './phases/v2/types';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 const INACTIVITY_MS = 30_000;
 const STORAGE_KEY = 'wizard:exit-intent-shown';
@@ -215,7 +216,11 @@ export default function ExitIntentDialog({
     setOpen(false);
     // Abre modal com resumo de progresso em vez de navegar direto.
     if (saveLaterTimer.current) window.clearTimeout(saveLaterTimer.current);
-    saveLaterTimer.current = window.setTimeout(() => setSaveLaterOpen(true), 50);
+    saveLaterTimer.current = scheduleWizardTimeout(
+      { phase: phase as any, action: 'exit_intent_open_save_later' },
+      () => setSaveLaterOpen(true),
+      50,
+    );
   }, [tracker, baseMeta]);
 
   return (
