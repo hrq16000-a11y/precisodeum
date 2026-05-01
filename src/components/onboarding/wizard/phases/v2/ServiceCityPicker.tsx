@@ -60,6 +60,7 @@ function regionLabelFromPole(pole: string): string {
 
 const REGION_PREFIX = 'Região Metropolitana de ';
 const isRegionTag = (s: string) => s.startsWith(REGION_PREFIX) || s === 'Baixada Santista';
+const BRAZIL_WIDE_LABEL = 'Brasil';
 
 export const ServiceCityPicker = ({
   baseCity,
@@ -160,6 +161,19 @@ export const ServiceCityPicker = ({
         </div>
         <Button type="button" variant="outline" disabled className="h-11 w-11 p-0" aria-hidden>
           <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={value.includes(BRAZIL_WIDE_LABEL) ? 'default' : 'outline'}
+          disabled={value.includes(BRAZIL_WIDE_LABEL) || value.length >= max}
+          onClick={() => addCity(BRAZIL_WIDE_LABEL)}
+          className="h-8 px-3 text-[11px]"
+        >
+          Atendimento em todo o Brasil
         </Button>
       </div>
 

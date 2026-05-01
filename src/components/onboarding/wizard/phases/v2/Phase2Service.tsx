@@ -73,6 +73,12 @@ export const Phase2Service = ({
     [categories, selectedId],
   );
 
+  useEffect(() => {
+    if (selectedId && selectedName && search !== selectedName) {
+      setSearch(selectedName);
+    }
+  }, [search, selectedId, selectedName]);
+
   const pickCategory = (id: string, name: string) => {
     // INVARIANTE: o nome do serviço é SEMPRE o nome da categoria escolhida,
     // e o primary_category_id do perfil herda esse mesmo id.
@@ -197,7 +203,19 @@ export const Phase2Service = ({
               ref={focusCategory.ref as any}
               className={`h-11 ${focusCategory.highlightClass}`}
               value={search || selectedName}
-              onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
+              onChange={(e) => {
+                const nextValue = e.target.value;
+                setSearch(nextValue);
+                setOpen(true);
+
+                if (
+                  selectedId &&
+                  nextValue.trim().toLowerCase() !== selectedName.trim().toLowerCase()
+                ) {
+                  onChangeService({ category_ids: [], service_name: '' });
+                  onChangeProfile({ primary_category_id: null });
+                }
+              }}
               onFocus={() => setOpen(true)}
               placeholder="Buscar categoria (ex: encanador, costureira...)"
             />
