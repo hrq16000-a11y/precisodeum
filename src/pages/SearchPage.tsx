@@ -48,6 +48,7 @@ import ScoreTooltipBadge from '@/components/search/ScoreTooltipBadge';
 import { logSearchIntent } from '@/lib/searchIntent';
 import { safeUF } from '@/lib/locationFormat';
 import CepLookupField from '@/components/CepLookupField';
+import { lookupCep, normalizeCep, formatCep } from '@/lib/cepLookup';
 import { toast } from 'sonner';
 
 const ITEMS_PER_PAGE = 12;
@@ -149,6 +150,27 @@ const SearchPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, availabilityWindow, sortBy]);
+
+  // Hidrata cidade/UF/bairro a partir de ?cep= (BrasilAPI → ViaCEP).
+  // Roda apenas quando o CEP da URL muda; é idempotente (não sobrescreve cidade
+  // já preenchida pelo usuário no mesmo CEP).
+  const [resolvedCepNorm, setResolvedCepNorm] = useState<string | null>(null);
+  useEffect(() => {
+    const norm = normalizeCep(cepParam);
+    if (!norm || norm === resolvedCepNorm) return;
+    let cancelled = false;
+    (async () => {
+      const r = await lookupCep(cepParam);
+      if (cancelled || !r.ok) return;
+      setResolvedCepNorm(norm);
+      setSelectedState(prev => prev || r.state);
+      setSelectedCity(prev => prev || r.city);
+      if (r.neighborhood) setSelectedNeighborhood(prev => prev || r.neighborhood!);
+      setPage(1);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cepParam]);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeCorridor, setRouteCorridor] = useState<RouteCorridor | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
