@@ -134,6 +134,9 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
   it('WizardShell segura a conclusão final e oferece saídas para dashboard, serviços, portfólio e app', () => {
     const shell = read('src/components/onboarding/wizard/WizardShell.tsx');
     expect(shell).toContain('deferCompletionToParent');
+    expect(shell).toContain("phase: 'main_portfolio_albums'");
+    expect(shell).toContain('Step21_PortfolioAlbums');
+    expect(shell).toContain('finalizeUnifiedOnboarding');
     expect(shell).toContain('Continuar cadastrando serviços');
     expect(shell).toContain('Abrir portfólio');
     expect(shell).toContain('Conhecer o dashboard');
