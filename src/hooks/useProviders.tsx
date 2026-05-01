@@ -405,7 +405,7 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
   };
 }
 
-const providerSelect = 'id, user_id, created_at, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, categories(name, slug, icon)';
+const providerSelect = 'id, user_id, created_at, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, categories(name, slug, icon)';
 
 function compareEliteMerit(a: DbProvider, b: DbProvider): number {
   const levelDiff = (b.levelPriority || 0) - (a.levelPriority || 0);
