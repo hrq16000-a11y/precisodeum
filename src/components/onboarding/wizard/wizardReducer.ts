@@ -150,10 +150,6 @@ export function mapTriagePhaseToUnified(betPhase: string): UnifiedPhase {
 
 export function mapMainPhaseToUnified(v2Phase: string): UnifiedPhase {
   switch (v2Phase as OnboardingPhase) {
-    case 'phase1_action': return 'main_action';
-    case 'phase1_kind': return 'main_kind';
-    case 'phase1_location': return 'main_location';
-    case 'phase1_contact': return 'main_contact';
     case 'phase2_service': return 'main_service';
     case 'phase2_details': return 'main_service_details';
     case 'phase2_photos': return 'main_photos';
