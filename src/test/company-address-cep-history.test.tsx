@@ -1,12 +1,15 @@
 /**
- * Histórico recente de CEPs no CompanyAddressForm.
+ * Histórico recente de CEPs (cep_history) — agora SEM UI.
  *
- * Regras cobertas:
- *  - Após uma busca com sucesso, o item aparece em "CEPs recentes".
- *  - Após uma 2ª busca, o histórico mantém ordem LRU e máx 3 itens.
- *  - Clicar em um item do histórico reaplica CEP+logradouro num único patch
- *    e marca street_confirmed=false (usuário precisa reconfirmar).
- *  - O patch também repõe street_suggested_cep para auditoria/telemetria.
+ * A pedido do usuário, removemos a faixa "CEPs recentes" da tela. O
+ * histórico continua persistido no estado (BetState/OnboardingProfileData)
+ * via `onChange` para auditoria, telemetria e reuso programático no wizard.
+ *
+ * Cobertura:
+ *  - Após uma busca com sucesso, o histórico é gravado no patch (LRU, máx 3).
+ *  - cep_history armazena cidade e UF quando disponíveis no resultado.
+ *  - street_suggested_cep é gravado junto com a sugestão.
+ *  - Nenhum elemento "cep-history" aparece na UI.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
@@ -41,7 +44,7 @@ function Harness({
   );
 }
 
-describe('CompanyAddressForm — histórico de CEPs e street_suggested_cep', () => {
+describe('CompanyAddressForm — cep_history persistido sem UI', () => {
   beforeEach(() => lookupCepMock.mockReset());
 
   it('persiste street_suggested_cep junto com a sugestão após lookup', async () => {
@@ -60,7 +63,30 @@ describe('CompanyAddressForm — histórico de CEPs e street_suggested_cep', () 
     expect(patchWithCep.street_suggested).toBe('Avenida Paulista');
   });
 
-  it('mostra item no histórico após sucesso e permite reaplicar com 1 clique', async () => {
+  it('grava cep_history com cidade e UF no patch após sucesso (controlado)', async () => {
+    lookupCepMock.mockResolvedValueOnce({
+      ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP',
+      address: 'Avenida Paulista', source: 'brasilapi',
+    });
+    function Controlled() {
+      const [value, setValue] = useState<CompanyAddressValue>({ cep_history: [] });
+      return (
+        <CompanyAddressForm
+          value={value}
+          onChange={(p) => setValue((v) => ({ ...v, ...p }))}
+        />
+      );
+    }
+    render(<Controlled />);
+    const cep = screen.getByPlaceholderText('00000-000') as HTMLInputElement;
+    await act(async () => { fireEvent.change(cep, { target: { value: '01310100' } }); });
+    // O componente está controlado: cep_history vai ser atualizado via onChange.
+    // Como não temos referência direta ao state aqui, validamos que NENHUM
+    // elemento de UI de histórico aparece (regressão).
+    expect(screen.queryByTestId('cep-history')).toBeNull();
+  });
+
+  it('UI: nenhum elemento "CEPs recentes" é renderizado mesmo após sucesso', async () => {
     lookupCepMock.mockResolvedValueOnce({
       ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP',
       address: 'Avenida Paulista', source: 'brasilapi',
@@ -68,59 +94,51 @@ describe('CompanyAddressForm — histórico de CEPs e street_suggested_cep', () 
     render(<Harness />);
     const cep = screen.getByPlaceholderText('00000-000') as HTMLInputElement;
     await act(async () => { fireEvent.change(cep, { target: { value: '01310100' } }); });
-    await waitFor(() => expect(screen.getByTestId('cep-history')).toBeTruthy());
-
-    // Apaga o CEP — confirma que o histórico permanece visível.
-    await act(async () => { fireEvent.change(cep, { target: { value: '' } }); });
-    expect(screen.getByTestId('cep-history')).toBeTruthy();
-
-    // Clicar no item reaplica CEP+rua.
-    const item = screen.getByTestId('cep-history-item-01310100');
-    await act(async () => { fireEvent.click(item); });
-    expect(cep.value).toBe('01310-100');
-    const street = screen.getByPlaceholderText('Rua / Avenida') as HTMLInputElement;
-    expect(street.value).toBe('Avenida Paulista');
+    await waitFor(() => {
+      // Linha sutil "Aplicado" + nome da rua deve aparecer no lugar do banner.
+      expect(screen.getByTestId('cep-applied-street')).toBeTruthy();
+    });
+    expect(screen.queryByTestId('cep-history')).toBeNull();
+    expect(screen.queryByText(/CEPs recentes/i)).toBeNull();
   });
 
-  it('mantém máx 3 itens no histórico em ordem LRU (mais recente primeiro)', async () => {
+  it('mantém máx 3 itens no histórico controlado em ordem LRU (mais recente primeiro)', async () => {
     lookupCepMock
       .mockResolvedValueOnce({ ok: true, cep: '01001-000', city: 'São Paulo', state: 'SP', address: 'Praça da Sé', source: 'brasilapi' })
       .mockResolvedValueOnce({ ok: true, cep: '04567-000', city: 'São Paulo', state: 'SP', address: 'Avenida Brigadeiro', source: 'brasilapi' })
       .mockResolvedValueOnce({ ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP', address: 'Avenida Paulista', source: 'brasilapi' })
       .mockResolvedValueOnce({ ok: true, cep: '20040-002', city: 'Rio de Janeiro', state: 'RJ', address: 'Rua da Carioca', source: 'brasilapi' });
-    render(<Harness />);
+    const lastValue = { v: { cep_history: [] } as CompanyAddressValue };
+    function Controlled() {
+      const [value, setValue] = useState<CompanyAddressValue>({ cep_history: [] });
+      lastValue.v = value;
+      return (
+        <CompanyAddressForm
+          value={value}
+          onChange={(p) => setValue((v) => {
+            const next = { ...v, ...p };
+            lastValue.v = next;
+            return next;
+          })}
+        />
+      );
+    }
+    render(<Controlled />);
     const cep = screen.getByPlaceholderText('00000-000') as HTMLInputElement;
-    const seq = ['01001000', '04567000', '01310100', '20040002'];
-    for (const v of seq) {
+    for (const v of ['01001000', '04567000', '01310100', '20040002']) {
       await act(async () => { fireEvent.change(cep, { target: { value: '' } }); });
       await act(async () => { fireEvent.change(cep, { target: { value: v } }); });
-      // espera o lookup propagar
       // eslint-disable-next-line no-await-in-loop
-      await waitFor(() => expect(screen.getByTestId('cep-history')).toBeTruthy());
+      await waitFor(() => {
+        const last = lastValue.v.cep_history?.[0]?.digits;
+        expect(last).toBe(v);
+      });
     }
-    // Mais recente é o 20040-002; o mais antigo (01001-000) deve ter saído.
-    expect(screen.getByTestId('cep-history-item-20040002')).toBeTruthy();
-    expect(screen.getByTestId('cep-history-item-01310100')).toBeTruthy();
-    expect(screen.getByTestId('cep-history-item-04567000')).toBeTruthy();
-    expect(screen.queryByTestId('cep-history-item-01001000')).toBeNull();
-  });
-
-  it('reapply marca street_confirmed=false (usuário precisa reconfirmar)', async () => {
-    lookupCepMock.mockResolvedValueOnce({
-      ok: true, cep: '01310-100', city: 'São Paulo', state: 'SP',
-      address: 'Avenida Paulista', source: 'brasilapi',
-    });
-    const patches: Partial<CompanyAddressValue>[] = [];
-    render(<Harness onPatch={(p) => patches.push(p)} />);
-    const cep = screen.getByPlaceholderText('00000-000') as HTMLInputElement;
-    await act(async () => { fireEvent.change(cep, { target: { value: '01310100' } }); });
-    await waitFor(() => expect(screen.getByTestId('cep-history')).toBeTruthy());
-    patches.length = 0;
-    await act(async () => { fireEvent.click(screen.getByTestId('cep-history-item-01310100')); });
-    const reapply = patches[patches.length - 1];
-    expect(reapply.postal_code).toBe('01310100');
-    expect(reapply.street).toBe('Avenida Paulista');
-    expect(reapply.street_suggested_cep).toBe('01310100');
-    expect(reapply.street_confirmed).toBe(false);
+    const hist = lastValue.v.cep_history!;
+    expect(hist.length).toBe(3);
+    expect(hist.map((e) => e.digits)).toEqual(['20040002', '01310100', '04567000']);
+    // Cidade e UF preservadas para reuso.
+    expect(hist[0]).toMatchObject({ city: 'Rio de Janeiro', state: 'RJ' });
+    expect(hist[1]).toMatchObject({ city: 'São Paulo', state: 'SP' });
   });
 });
