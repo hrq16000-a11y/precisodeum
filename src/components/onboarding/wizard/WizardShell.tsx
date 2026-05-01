@@ -159,6 +159,16 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
     });
   }, [state.profile, state.service]);
 
+  // Bootstrap ÚNICO: roda no máximo uma vez por mount (guardado por
+  // `resumeBootstrapRef`). Lê o estado atual via ref para evitar
+  // re-execução cada vez que o reducer dispara dispatch — antes este efeito
+  // tinha 7 dependências reativas e era a maior fonte de "ping-pong" no
+  // wizard. Agora as deps são apenas as ENTRADAS externas estáveis (user,
+  // profile, provider, modo de review) — exatamente o que descobrimos no
+  // wizard de cada ciclo.
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+
   useEffect(() => {
     if (resumeBootstrapRef.current) return;
     if (state.phase !== 'triage_identity') return;
@@ -182,8 +192,12 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
 
       if (cancelled) return;
 
-      const profileSeed = bootstrap?.profile ?? state.profile;
-      const serviceSeed = bootstrap?.service ?? state.service;
+      // Snapshot do state no MOMENTO do bootstrap (não reativo). Garantimos
+      // assim que a única chance de hidratação aconteça aqui — qualquer
+      // patch posterior do usuário NÃO disparará re-bootstrap.
+      const currentState = stateRef.current;
+      const profileSeed = bootstrap?.profile ?? currentState.profile;
+      const serviceSeed = bootstrap?.service ?? currentState.service;
 
       resumeBootstrapRef.current = true;
       dispatch({
@@ -224,7 +238,7 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
             avatar_url: profileSeed.avatar_url ?? null,
             avatar_source: profileSeed.avatar_source ?? null,
             avatar_seed: profileSeed.avatar_seed ?? 0,
-            points: Number(profile?.engagement_points ?? state.triage.points ?? 0),
+            points: Number(profile?.engagement_points ?? currentState.triage.points ?? 0),
             rewards: {
               name: true,
               whatsapp: true,
@@ -298,7 +312,8 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
     return () => {
       cancelled = true;
     };
-  }, [profile, provider, reviewMode, state.phase, state.profile, state.service, user?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, profile?.id, provider?.id, reviewMode, reviewSection]);
 
   const handleTriagePhaseChange = useCallback((betPhase: string) => {
     dispatch({ type: 'GO_TO_PHASE', phase: mapTriagePhaseToUnified(betPhase) });
