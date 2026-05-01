@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import { compressImage } from '@/lib/compressImage';
 import { getSuggestedTags } from '@/data/tagSuggestions';
-import { getTemplatesForCategory, DIFFERENTIAL_TAGS, buildExternalPrompt } from '@/data/serviceTemplates';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -43,29 +42,19 @@ import {
   clearServiceWizardDraft,
   useServiceWizardDraftAutosave,
 } from '@/hooks/useServiceWizardDraft';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { findMetroByPole, getMetroMembers } from '@/lib/metroRegions';
 import { validateWhatsapp } from '@/lib/whatsapp';
-import { ShieldAlert, UserCheck } from 'lucide-react';
+import { UserCheck } from 'lucide-react';
+import type { QualityBlockState } from '@/components/dashboard/QualityBlockModal';
 
-// Heavy editor sub-components — only loaded when the edit Dialog opens
+// Heavy editor sub-components — only loaded when the edit Sheet opens (lazy chunks)
 const SmartCategoryPicker = lazy(() => import('@/components/SmartCategoryPicker'));
 const ServiceImageUpload = lazy(() => import('@/components/dashboard/ServiceImageDragUploader'));
+const DescriptionTemplatePanel = lazy(() => import('@/components/dashboard/DescriptionTemplatePanel'));
+const QualityBlockModal = lazy(() => import('@/components/dashboard/QualityBlockModal'));
+const SuspenseFallback = lazy(() => import('@/components/dashboard/SuspenseFallback'));
 
-const SuspenseFallback = () => (
-  <div className="flex justify-center p-8">
-    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-  </div>
-);
 import { format } from 'date-fns';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { CITIES_INDEX, type CityEntry } from '@/lib/citiesIndex';
