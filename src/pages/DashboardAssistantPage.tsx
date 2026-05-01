@@ -201,7 +201,7 @@ function derivePhaseStatuses(
 // ──────────────────────────────────────────────────────────────────────────
 export default function DashboardAssistantPage() {
   const navigate = useNavigate();
-  const { user, profile, provider, loading: authLoading } = useAuth();
+  const { profile, provider, loading: authLoading } = useAuth();
   const [firstService, setFirstService] = useState<any | null>(null);
   const [serviceLoading, setServiceLoading] = useState(true);
 
