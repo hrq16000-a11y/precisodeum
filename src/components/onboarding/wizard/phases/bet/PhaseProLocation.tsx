@@ -333,6 +333,14 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           >
             Origem: {effectiveSource === 'gps' ? 'GPS' : effectiveSource === 'cep' ? 'CEP' : effectiveSource === 'manual' ? 'Manual' : effectiveSource === 'ip' ? 'IP (aproximada)' : 'Não definida'}
           </span>
+          {isHydratedFromDraft && (
+            <span
+              data-testid="location-prefilled-pill"
+              className="rounded-full bg-bet-green-soft text-bet-green-fg border border-bet-green-border px-2 py-0.5 text-[10px] font-bold inline-flex items-center gap-1"
+            >
+              <CheckCircle2 className="h-3 w-3" /> Já preenchido — pode avançar
+            </span>
+          )}
           {awarded && (
             <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
               +{BET_POINTS.city} pts
