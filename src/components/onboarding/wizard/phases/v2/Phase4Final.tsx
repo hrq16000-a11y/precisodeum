@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, ArrowLeft, Check, Wifi,
-  MapPin, FileText, Calendar, Camera as CameraIcon, Globe,
+  FileText, Calendar, Camera as CameraIcon, Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -222,8 +222,22 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
     generated: 'Avatar gerado',
   };
 
+  const handleBackTop = () => {
+    if (onBack) onBack();
+    else window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_avatar' } }));
+  };
+
   return (
     <motion.div {...wizardEnter} className={ws.container}>
+      <button
+        type="button"
+        onClick={handleBackTop}
+        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+        aria-label="Voltar para a etapa anterior do cadastro"
+        data-testid="phase4-avatar-back"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+      </button>
       <header className={ws.headerWrap}>
         <div className={ws.chip}>
           <CameraIcon className="h-3 w-3" /> Foto de perfil
@@ -382,17 +396,6 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
           Agora não
         </Button>
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            disabled={saving}
-            className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
-            data-testid="phase4-avatar-back"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
-          </button>
-        )}
       </div>
 
       {/* Mantém o AvatarUpload original disponível (escondido) caso outras telas o reusem.
@@ -667,8 +670,20 @@ interface ExtrasAProps {
 export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: ExtrasAProps) => {
   const focusBio = useFocusFieldFromReview('bio');
   const focusNeighborhood = useFocusFieldFromReview('neighborhood');
+  const handleBackTop = () => {
+    window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_a' } }));
+  };
   return (
     <motion.div {...wizardEnter} className={ws.container}>
+      <button
+        type="button"
+        onClick={handleBackTop}
+        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+        aria-label="Voltar para a etapa anterior do cadastro"
+        data-testid="phase4-extras-a-back"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+      </button>
       <header className={ws.headerWrap}>
         <h1 className={ws.title}>Quase lá — falta só ajustar seu perfil.</h1>
         <p className={ws.subtitle}>Ajuda quem busca por você na sua região.</p>
@@ -741,22 +756,23 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
   const focusFb = useFocusFieldFromReview('facebook_url');
   const focusSite = useFocusFieldFromReview('website_url' as any);
 
-  // Resumo PJ — só aparece quando o usuário preencheu algum dado de endereço.
-  const isPj = data.kind === 'pj';
-  const hasAddress = !!(data.street || data.street_number || data.postal_code || data.complement);
-  const showPjReview = isPj && hasAddress;
-  const formattedAddress = [
-    [data.street, data.street_number].filter(Boolean).join(', '),
-    data.complement,
-    data.neighborhood,
-    [data.city, data.state].filter(Boolean).join(' / '),
-    data.postal_code ? `CEP ${data.postal_code.replace(/(\d{5})(\d{3})/, '$1-$2')}` : '',
-  ]
-    .filter(Boolean)
-    .join(' • ');
+  const handleBackTop = () => {
+    if (onBack) onBack();
+    else window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_b' } }));
+  };
 
   return (
     <motion.div {...wizardEnter} className={ws.container}>
+      <button
+        type="button"
+        onClick={handleBackTop}
+        disabled={saving}
+        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+        aria-label="Voltar para a etapa anterior do cadastro"
+        data-testid="phase4-extras-b-back"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+      </button>
       <header className={ws.headerWrap}>
         <h1 className={ws.title}>Suas redes (opcional)</h1>
         <p className={ws.subtitle}>Mostre seu trabalho onde já existe.</p>
@@ -808,31 +824,8 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
         </label>
       </div>
 
-      {showPjReview && (
-        <div
-          data-testid="pj-address-review"
-          className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3 text-[12px] leading-snug"
-        >
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-700">
-            <MapPin className="h-3 w-3" /> Confirme seu endereço PJ
-          </div>
-          <p className="text-foreground">{formattedAddress || 'Endereço incompleto.'}</p>
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            {data.show_full_address
-              ? 'Será exibido publicamente no seu perfil.'
-              : 'Ficará oculto — só aparece a cidade/bairro.'}
-          </p>
-          <label className="mt-2 flex cursor-pointer items-start gap-2 text-[11px] text-foreground">
-            <input
-              type="checkbox"
-              checked={Boolean(data.show_full_address)}
-              onChange={(e) => onChange({ show_full_address: e.target.checked } as Partial<OnboardingProfileData>)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
-            />
-            <span>Exibir endereço completo no perfil público.</span>
-          </label>
-        </div>
-      )}
+      {/* Endereço PJ NÃO é re-perguntado aqui — já foi coletado no passo do documento.
+          A confirmação fica na tela de Revisão final. */}
 
       <div className="flex flex-col gap-2 pt-1">
         <Button type="button" size="lg" onClick={onFinish} disabled={saving} className={ws.cta}>
@@ -842,17 +835,6 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
           Pular redes e revisar
         </Button>
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            disabled={saving}
-            className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
-            data-testid="phase4-extras-b-back"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
-          </button>
-        )}
       </div>
     </motion.div>
   );
