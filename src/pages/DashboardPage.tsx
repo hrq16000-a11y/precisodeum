@@ -345,9 +345,9 @@ const DashboardPage = () => {
           size="sm"
           variant="default"
           className="h-7 gap-1.5 px-2.5 text-[11px]"
-          onClick={() => navigate('/dashboard/assistente')}
-          title="Revisar e completar seu cadastro — veja tudo, edite o que pode e continue o que falta"
-          aria-label="Assistente — revisar cadastro"
+          onClick={() => navigate('/cadastro-inicial?mode=review&next=/dashboard')}
+          title="Abrir o Wizard em modo revisão — ver tudo, editar o que pode e continuar o que falta"
+          aria-label="Assistente — abrir Wizard em modo revisão"
         >
           <Sparkles className="h-3 w-3" />
           Assistente

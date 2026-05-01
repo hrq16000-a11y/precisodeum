@@ -101,18 +101,22 @@ const PwaInstallBanner = () => {
     isDismissed, getVisitCount, getImpressionCount, incrementImpressions,
   ]);
 
-  // Listen for manual open from CTAs (homepage section, footer button, etc.)
+  // Listen for manual open from CTAs (homepage section, footer button,
+  // wizard celebration, etc). Aceita inclusive quando `canInstall` é false:
+  // navegadores sem `beforeinstallprompt` (ex.: Safari/iOS) ainda precisam
+  // ver instruções claras de instalação manual.
   useEffect(() => {
     const onManualOpen = (evt: Event) => {
-      if (!canInstall || isStandalone) return;
+      if (isStandalone) return;
       const detail = (evt as CustomEvent).detail;
       setSource(detail?.source || 'banner');
       setShow(true);
+      trackPwaEvent('impression', detail?.source || 'manual');
     };
 
     window.addEventListener(PWA_OPEN_INSTALL_MODAL_EVENT, onManualOpen);
     return () => window.removeEventListener(PWA_OPEN_INSTALL_MODAL_EVENT, onManualOpen);
-  }, []);
+  }, [isStandalone]);
 
   // CRITICAL: close modal FIRST, then do async work
   const handleInstall = async () => {
@@ -127,12 +131,18 @@ const PwaInstallBanner = () => {
     trackPwaEvent('dismissed', source);
   };
 
-  if (!show || isStandalone || !canInstall) return null;
+  if (!show || isStandalone) return null;
 
   const titleText = settings?.title || 'Instale o App';
   const subtitleText = settings?.subtitle || 'Acesse mais rápido direto da tela inicial';
   const ctaText = settings?.cta_text || 'Instalar';
   const dismissText = settings?.dismiss_text || 'Agora não';
+
+  // Quando o navegador não expõe `beforeinstallprompt`, mostramos instruções
+  // genéricas de instalação manual (passo a passo do menu do navegador).
+  // Não há detecção de plataforma — o texto serve para Safari/iOS e qualquer
+  // outro navegador sem suporte ao prompt nativo.
+  const showManualSteps = !canInstall;
 
   return (
     <div
@@ -168,17 +178,43 @@ const PwaInstallBanner = () => {
           </button>
         </div>
 
-        {/* Install CTA */}
-        <div className="mt-5">
-          <Button
-            size="lg"
-            className="w-full bg-accent text-base font-bold text-accent-foreground shadow-lg hover:bg-accent/90"
-            onClick={handleInstall}
-          >
-            <Download className="mr-2 h-5 w-5" />
-            {ctaText}
-          </Button>
-        </div>
+        {showManualSteps ? (
+          // Fluxo manual — sem prompt nativo. Mostra passo-a-passo curto e
+          // mantém um botão "Entendi" como ação direta para fechar sem travar.
+          <div className="mt-5 space-y-4" data-testid="pwa-manual-steps">
+            <ol className="space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-sm text-foreground">
+              <li>
+                <strong>1.</strong> Toque no botão <strong>Compartilhar</strong> do seu navegador.
+              </li>
+              <li>
+                <strong>2.</strong> Escolha <strong>Adicionar à Tela de Início</strong>.
+              </li>
+              <li>
+                <strong>3.</strong> Confirme em <strong>Adicionar</strong> — pronto, o app aparece como ícone.
+              </li>
+            </ol>
+            <Button
+              size="lg"
+              className="w-full bg-accent text-base font-bold text-accent-foreground shadow-lg hover:bg-accent/90"
+              onClick={handleDismiss}
+              aria-label="Entendi como instalar"
+            >
+              Entendi
+            </Button>
+          </div>
+        ) : (
+          // Fluxo nativo — `beforeinstallprompt` disponível.
+          <div className="mt-5">
+            <Button
+              size="lg"
+              className="w-full bg-accent text-base font-bold text-accent-foreground shadow-lg hover:bg-accent/90"
+              onClick={handleInstall}
+            >
+              <Download className="mr-2 h-5 w-5" />
+              {ctaText}
+            </Button>
+          </div>
+        )}
 
         {/* Dismiss link */}
         <button
