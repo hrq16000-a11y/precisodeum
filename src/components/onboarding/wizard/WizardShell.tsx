@@ -294,6 +294,7 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
   const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
   const progressOrder = state.triage.intent === 'professional' ? PROVIDER_WIZARD_PHASE_ORDER : undefined;
+  const holdTriageWhileReviewBootstraps = reviewMode && !resumeBootstrapRef.current && state.phase === 'triage_identity';
 
   // Sincroniza intent real do reducer → sessionStorage para auto-injeção em
   // todos os eventos de telemetria (milestone, skip, next, error, complete).
@@ -369,7 +370,17 @@ export default function WizardShell({ reviewMode = false, reviewSection = null }
           </Button>
         </div>
       )}
-      {stage === 'triage' ? (
+      {holdTriageWhileReviewBootstraps ? (
+        <div className="mx-auto w-full max-w-md px-4 py-10">
+          <BetCardShell>
+            <div className="space-y-3">
+              <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-full animate-pulse rounded bg-muted" />
+              <div className="h-4 w-5/6 animate-pulse rounded bg-muted" />
+            </div>
+          </BetCardShell>
+        </div>
+      ) : stage === 'triage' ? (
         <TriageOrchestrator
           onInternalHandoff={handleTriageDone}
           onPhaseChange={handleTriagePhaseChange}
