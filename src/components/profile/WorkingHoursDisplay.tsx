@@ -14,6 +14,7 @@ import {
   type WorkingHoursStruct,
   type WeekdayKey,
 } from '@/components/onboarding/wizard/phases/v2/workingHours';
+import { isOpenNow } from '@/lib/workingHoursOpenNow';
 
 interface Props {
   /** JSONB persistido em providers.working_hours_struct. Aceita null. */
@@ -57,14 +58,6 @@ function deriveFlags(struct: WorkingHoursStruct | null | undefined): DerivedFlag
       onDemand: true,
     };
   }
-  const now = new Date();
-  // Date.getDay(): 0=Dom, 1=Seg, …
-  const jsToKey: WeekdayKey[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-  const todayKey = jsToKey[now.getDay()];
-  const yesterdayKey = jsToKey[(now.getDay() + 6) % 7];
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-
-  let isOpenNow = false;
   let is24h = false;
   let opensWeekend = false;
   let opensLateNight = false;
@@ -86,22 +79,10 @@ function deriveFlags(struct: WorkingHoursStruct | null | undefined): DerivedFlag
     }
 
     if (r.days.includes('sat') || r.days.includes('sun')) opensWeekend = true;
-
-    // Aberto agora
-    if (full24 && r.days.includes(todayKey)) {
-      isOpenNow = true;
-    } else if (endM > startM) {
-      // Mesmo dia
-      if (r.days.includes(todayKey) && nowMin >= startM && nowMin < endM) isOpenNow = true;
-    } else if (endM < startM) {
-      // Cruza meia-noite — abre hoje (após startM) ou hoje (antes de endM, vindo de ontem)
-      if (r.days.includes(todayKey) && nowMin >= startM) isOpenNow = true;
-      if (r.days.includes(yesterdayKey) && nowMin < endM) isOpenNow = true;
-    }
   }
 
   return {
-    isOpenNow,
+    isOpenNow: isOpenNow(struct),
     is24h,
     opensWeekend,
     opensLateNight,

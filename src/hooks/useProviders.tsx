@@ -92,6 +92,7 @@ export interface DbProvider {
   opensLateNight?: boolean;
   opensOvernight?: boolean;
   is24h?: boolean;
+  acceptsOnDemand?: boolean;
 }
 
 export type FeaturedProviderSort = 'proximity' | 'category' | 'availability';
@@ -418,10 +419,11 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
     opensLateNight: !!(p as any).opens_late_night,
     opensOvernight: !!(p as any).opens_overnight,
     is24h: !!(p as any).is_24h,
+    acceptsOnDemand: !!(p as any).accepts_on_demand,
   };
 }
 
-const providerSelect = 'id, user_id, created_at, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, categories(name, slug, icon)';
+const providerSelect = 'id, user_id, created_at, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, accepts_on_demand, categories(name, slug, icon)';
 
 function compareEliteMerit(a: DbProvider, b: DbProvider): number {
   const levelDiff = (b.levelPriority || 0) - (a.levelPriority || 0);

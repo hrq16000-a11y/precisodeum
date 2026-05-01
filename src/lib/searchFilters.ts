@@ -3,8 +3,9 @@
  * sem depender do React/router/supabase.
  */
 import { calculateDistanceKm } from '@/lib/geoDistance';
+import { isOpenNow } from '@/lib/workingHoursOpenNow';
 
-export type SortMode = 'relevance' | 'best' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience';
+export type SortMode = 'relevance' | 'best' | 'nearest' | 'rating' | 'reviews' | 'name_asc' | 'name_desc' | 'experience' | 'open_now';
 
 /**
  * Pesos do score híbrido usado pelo modo `'best'`. Soma livre — normalizada
@@ -81,6 +82,13 @@ export interface FilterableProvider {
   latitude?: number | null;
   longitude?: number | null;
   distanceKm?: number;
+  // Flags derivadas dos horários (vêm do banco via useProviders)
+  opensWeekend?: boolean;
+  opensLateNight?: boolean;
+  opensOvernight?: boolean;
+  is24h?: boolean;
+  acceptsOnDemand?: boolean;
+  workingHoursStruct?: { ranges: Array<{ days: string[]; start: string; end: string }> } | null;
 }
 
 export interface RouteCorridor {
@@ -117,6 +125,16 @@ export interface SearchFilterOptions {
   availabilityWindow?: AvailabilityWindow;
   /** Pesos do modo `sortBy='best'`. Default: rating 0.7 / distância 0.3. */
   scoreWeights?: SearchScoreWeights;
+  /** Filtros derivados do `working_hours_struct`. */
+  weekendOnly?: boolean;
+  lateNightOnly?: boolean;
+  overnightOnly?: boolean;
+  is24hOnly?: boolean;
+  onDemandOnly?: boolean;
+  /** Quando true, filtra para mostrar apenas prestadores abertos agora. */
+  openNowOnly?: boolean;
+  /** Quando true (default), prestadores abertos agora sobem ao topo (stable partition). */
+  prioritizeOpenNow?: boolean;
 }
 
 export function applySearchFilters<T extends FilterableProvider>(
@@ -141,6 +159,13 @@ export function applySearchFilters<T extends FilterableProvider>(
     disableOnlineBoost = false,
     availabilityWindow = 'any',
     scoreWeights = DEFAULT_SCORE_WEIGHTS,
+    weekendOnly = false,
+    lateNightOnly = false,
+    overnightOnly = false,
+    is24hOnly = false,
+    onDemandOnly = false,
+    openNowOnly = false,
+    prioritizeOpenNow = false,
   } = opts;
 
   let results = [...list];
@@ -210,8 +235,27 @@ export function applySearchFilters<T extends FilterableProvider>(
     );
   }
 
+  // Filtros derivados de horário (flags do banco)
+  if (weekendOnly) results = results.filter((p) => !!p.opensWeekend);
+  if (lateNightOnly) results = results.filter((p) => !!p.opensLateNight);
+  if (overnightOnly) results = results.filter((p) => !!p.opensOvernight);
+  if (is24hOnly) results = results.filter((p) => !!p.is24h);
+  if (onDemandOnly) results = results.filter((p) => !!p.acceptsOnDemand);
+  if (openNowOnly) {
+    results = results.filter((p) => isOpenNow(p.workingHoursStruct as any) || !!p.is24h);
+  }
+
   if (sortBy === 'nearest') {
     results.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
+  } else if (sortBy === 'open_now') {
+    // Aberto agora primeiro, depois por avaliação
+    results.sort((a, b) => {
+      const aOpen = (isOpenNow(a.workingHoursStruct as any) || !!a.is24h) ? 0 : 1;
+      const bOpen = (isOpenNow(b.workingHoursStruct as any) || !!b.is24h) ? 0 : 1;
+      if (aOpen !== bOpen) return aOpen - bOpen;
+      if (b.rating !== a.rating) return b.rating - a.rating;
+      return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
+    });
   } else if (sortBy === 'best') {
     // Score híbrido (rating prioritário, distância como desempate). Em empate
     // de score, mantém ordem por rating desc, depois reviews desc.
@@ -268,6 +312,16 @@ export function applySearchFilters<T extends FilterableProvider>(
     ];
   }
 
+  // Open-now boost (opt-in): sobe quem está aberto agora ao topo,
+  // preservando a ordenação interna de cada partição.
+  if (prioritizeOpenNow) {
+    const isOpen = (p: T) => isOpenNow(p.workingHoursStruct as any) || !!p.is24h;
+    results = [
+      ...results.filter((p) => isOpen(p)),
+      ...results.filter((p) => !isOpen(p)),
+    ];
+  }
+
   return results;
 }
 
@@ -284,6 +338,12 @@ export function countActiveFilters(state: {
   onlineOnly?: boolean;
   acceptingOnly?: boolean;
   activeTodayOnly?: boolean;
+  weekendOnly?: boolean;
+  lateNightOnly?: boolean;
+  overnightOnly?: boolean;
+  is24hOnly?: boolean;
+  onDemandOnly?: boolean;
+  openNowOnly?: boolean;
 }): number {
   return [
     state.selectedCategory,
@@ -295,6 +355,12 @@ export function countActiveFilters(state: {
     state.onlineOnly ? 'x' : '',
     state.acceptingOnly ? 'x' : '',
     state.activeTodayOnly ? 'x' : '',
+    state.weekendOnly ? 'x' : '',
+    state.lateNightOnly ? 'x' : '',
+    state.overnightOnly ? 'x' : '',
+    state.is24hOnly ? 'x' : '',
+    state.onDemandOnly ? 'x' : '',
+    state.openNowOnly ? 'x' : '',
   ].filter(Boolean).length;
 }
 
