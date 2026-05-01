@@ -3378,6 +3378,8 @@ export type Database = {
           preferred_category_ids: string[] | null
           profile_type: string | null
           referral_code: string | null
+          registration_ip: string | null
+          registration_user_agent: string | null
           role: string | null
           staff_role: Database["public"]["Enums"]["app_role"] | null
           state: string | null
@@ -3423,6 +3425,8 @@ export type Database = {
           preferred_category_ids?: string[] | null
           profile_type?: string | null
           referral_code?: string | null
+          registration_ip?: string | null
+          registration_user_agent?: string | null
           role?: string | null
           staff_role?: Database["public"]["Enums"]["app_role"] | null
           state?: string | null
@@ -3468,6 +3472,8 @@ export type Database = {
           preferred_category_ids?: string[] | null
           profile_type?: string | null
           referral_code?: string | null
+          registration_ip?: string | null
+          registration_user_agent?: string | null
           role?: string | null
           staff_role?: Database["public"]["Enums"]["app_role"] | null
           state?: string | null
