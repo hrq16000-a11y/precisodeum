@@ -787,6 +787,25 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
             placeholder="Link da sua página"
           />
         </label>
+        <label className="block">
+          <span className={ws.fieldLabel}>
+            <Globe className="h-3.5 w-3.5" /> Site / portfólio
+          </span>
+          <Input
+            ref={focusSite.ref}
+            className={focusSite.highlightClass}
+            type="url"
+            inputMode="url"
+            autoComplete="url"
+            value={data.website_url ?? ''}
+            onChange={(e) => onChange({ website_url: e.target.value } as Partial<OnboardingProfileData>)}
+            placeholder="https://seusite.com.br"
+            data-testid="phase4-website-url"
+          />
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            Aparece publicamente no seu perfil.
+          </span>
+        </label>
       </div>
 
       {showPjReview && (
