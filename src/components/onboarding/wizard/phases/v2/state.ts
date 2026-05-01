@@ -50,6 +50,8 @@ export const initialOnboardingState: OnboardingState = {
     primary_category_id: null,
     working_hours: '',
     go_online: true,
+    avatar_source: null,
+    avatar_seed: 0,
   },
   service: {
     service_name: '',
