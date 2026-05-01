@@ -245,6 +245,41 @@ ${entries.join('\n')}
     }
   }
 
+  if (type === 'seo-cep') {
+    // SEO por CEP — combinações categoria × CEP normalizado.
+    // Critério de elegibilidade:
+    //   - provider aprovado, descrição limpa, service_area = city (já garantido em `eligible`)
+    //   - postal_code com 8 dígitos válidos
+    //   - pelo menos 1 serviço elegível para o par (category_id, cep8)
+    // Cada par emite a rota /buscar?categoria=:slug&cep=00000-000 (canonical da
+    // própria SearchPage faz o resto).
+    const { data: cats } = await supabase
+      .from('categories').select('id, slug').is('deleted_at', null);
+    const catSlugById = new Map<string, string>();
+    for (const c of cats || []) catSlugById.set(c.id, c.slug);
+
+    const eligiblePairs = new Set<string>(); // key: `${categorySlug}::${cepFormatted}`
+    for (const s of eligible) {
+      if (!s.category_id) continue;
+      const slug = catSlugById.get(s.category_id);
+      if (!slug) continue;
+      const digits = String(s.providers.postal_code || '').replace(/\D+/g, '');
+      if (digits.length !== 8 || digits === '00000000' || digits === '99999999') continue;
+      const cepFmt = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+      eligiblePairs.add(`${slug}::${cepFmt}`);
+    }
+    for (const key of eligiblePairs) {
+      const [slug, cepFmt] = key.split('::');
+      urls += entry(
+        siteUrl,
+        `/buscar?categoria=${slug}&cep=${cepFmt}`,
+        today,
+        'weekly',
+        '0.6',
+      );
+    }
+  }
+
   // Categorias só entram se tiverem ao menos 1 serviço elegível.
   // (mantemos categories como sub-sitemap separado mais acima)
 
