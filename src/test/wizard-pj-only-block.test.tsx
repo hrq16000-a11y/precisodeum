@@ -6,26 +6,20 @@
  *     contém ambos os campos.
  *  4. Título reflete o tipo selecionado (CPF para PF, CNPJ para PJ).
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import PhaseProDocument from '@/components/onboarding/wizard/phases/bet/PhaseProDocument';
-import type { BetState } from '@/components/onboarding/wizard/phases/bet/types';
+import { initialBetState, type BetState } from '@/components/onboarding/wizard/phases/bet/types';
 
 function baseState(overrides: Partial<BetState> = {}): BetState {
   return {
+    ...initialBetState,
     pro_kind: 'pj',
-    document: '',
-    company_name: '',
-    street: '',
-    street_number: '',
-    complement: '',
-    postal_code: '',
-    show_full_address: false,
     city: 'São José dos Pinhais',
     state: 'PR',
     neighborhood: 'Itália',
-    ...(overrides as any),
-  } as BetState;
+    ...overrides,
+  };
 }
 
 const noop = () => {};
