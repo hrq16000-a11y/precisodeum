@@ -338,6 +338,12 @@ export function countActiveFilters(state: {
   onlineOnly?: boolean;
   acceptingOnly?: boolean;
   activeTodayOnly?: boolean;
+  weekendOnly?: boolean;
+  lateNightOnly?: boolean;
+  overnightOnly?: boolean;
+  is24hOnly?: boolean;
+  onDemandOnly?: boolean;
+  openNowOnly?: boolean;
 }): number {
   return [
     state.selectedCategory,
@@ -349,6 +355,12 @@ export function countActiveFilters(state: {
     state.onlineOnly ? 'x' : '',
     state.acceptingOnly ? 'x' : '',
     state.activeTodayOnly ? 'x' : '',
+    state.weekendOnly ? 'x' : '',
+    state.lateNightOnly ? 'x' : '',
+    state.overnightOnly ? 'x' : '',
+    state.is24hOnly ? 'x' : '',
+    state.onDemandOnly ? 'x' : '',
+    state.openNowOnly ? 'x' : '',
   ].filter(Boolean).length;
 }
 
