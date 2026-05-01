@@ -250,6 +250,15 @@ export default function GlobalExitIntentDialog() {
     (source: 'mouseleave' | 'inactivity') => {
       if (excluded || triggeredRef.current) return;
       if (shouldSuppressExitIntent()) return;
+      // Guard: só dispara após o usuário ter rolado ≥25% da página. Evita
+      // popup "estourando" no carregamento inicial sem qualquer engajamento.
+      try {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0 && scrollTop / docHeight < 0.25) return;
+      } catch {
+        return;
+      }
       try {
         if (sessionStorage.getItem(STORAGE_KEY) === '1') return;
       } catch {
