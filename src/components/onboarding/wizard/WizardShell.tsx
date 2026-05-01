@@ -518,6 +518,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         <MainOrchestrator
           internalHandoffFromTriage
           deferCompletionToParent
+          editMode={isReview}
           seedState={{
             phase: mapUnifiedToMainPhase(state.phase),
             profile: state.profile,
