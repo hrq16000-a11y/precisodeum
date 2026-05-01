@@ -16,7 +16,7 @@
  *  - É totalmente controlado — não persiste sozinho.
  *  - Todos os campos são OPCIONAIS.
  */
-import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, AlertTriangle } from 'lucide-react';
+import { MapPin, Store, ChevronDown, Sparkles, Loader2, RotateCw, AlertTriangle, Crosshair, CheckCircle2 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { lookupCep, formatCep, onlyDigits } from '@/lib/cepLookup';
@@ -65,6 +65,12 @@ interface Props {
   revealLabel?: string;
   /** Marca campos pré-preenchidos por GPS/IP/conta como "Sugerido — confirme". */
   suggestedFields?: Array<keyof CompanyAddressValue>;
+  /** Quando definido, renderiza botão "Preencher localização" no topo do form. */
+  onAutoFill?: () => void | Promise<void>;
+  /** Estado visual do auto-preenchimento (controlado pelo pai). */
+  autoFillStatus?: 'idle' | 'loading' | 'success' | 'error';
+  /** Mensagem de erro a exibir quando autoFillStatus === 'error'. */
+  autoFillError?: string;
 }
 
 /** Máscara visível 00000-000 a partir de até 8 dígitos. */
