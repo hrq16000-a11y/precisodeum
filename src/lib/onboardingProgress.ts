@@ -33,7 +33,7 @@ export interface OnboardingProgressSummary {
   /** 0..1 — útil pra Progress component. */
   ratio: number;
   /** Próxima fase pendente (ou a atual se nada falta). */
-  nextPhase: OnboardingPhase;
+  nextPhase: OnboardingPhase | UnifiedPhase;
   /** Próximo item pendente (mesma referência de `items`) ou `null` se 100%. */
   nextItem: ProgressItem | null;
   /** Categoria principal escolhida (id) — útil pra contexto WhatsApp. */
@@ -65,13 +65,13 @@ export function computeOnboardingProgress(
       id: 'name_whatsapp',
       label: 'Nome e WhatsApp',
       done: has(profile.full_name) && has(profile.whatsapp),
-      phase: 'phase1_contact',
+      phase: 'main_contact',
     },
     {
       id: 'location',
       label: 'Cidade e estado',
       done: has(profile.city) && has(profile.state),
-      phase: 'phase1_location',
+      phase: 'main_location',
     },
     {
       id: 'category',
