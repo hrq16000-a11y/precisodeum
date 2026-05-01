@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import CpfCnpjInput from '@/components/onboarding/CpfCnpjInput';
+import CompanyAddressForm from '@/components/company/CompanyAddressForm';
 import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
 import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
