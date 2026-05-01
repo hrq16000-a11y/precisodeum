@@ -292,6 +292,7 @@ export const initialWizardState: WizardState = {
     facebook_url: '',
     primary_category_id: null,
     working_hours: '',
+    go_online: true,
   },
   service: {
     service_name: '',
