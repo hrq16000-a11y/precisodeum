@@ -27,9 +27,21 @@ interface Album { id: string; name: string; description: string | null; }
 interface Step21Props {
   onContinue: () => void;
   onSkip: () => void;
+  onGoToPath?: (path: string) => Promise<void> | void;
 }
 
-const Step21_PortfolioAlbums = ({ onContinue, onSkip }: Step21Props) => {
+const Step21_PortfolioAlbums = ({ onContinue, onSkip, onGoToPath }: Step21Props) => {
+  const navigate = useNavigate();
+  const [navigating, setNavigating] = useState<string | null>(null);
+  const goTo = useCallback(async (path: string) => {
+    setNavigating(path);
+    try {
+      if (onGoToPath) await onGoToPath(path);
+      else navigate(path);
+    } finally {
+      setNavigating(null);
+    }
+  }, [navigate, onGoToPath]);
   const { user, provider } = useAuth();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
