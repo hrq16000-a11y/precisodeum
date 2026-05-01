@@ -130,22 +130,8 @@ describe('PhaseProLocation — fallback IP + escolha manual', () => {
     expect(getState().city).toBe('Curitiba');
   });
 
-  it('rejeita UF inválida digitada manualmente na prévia (ex: "ZZ")', () => {
-    renderPhase();
-    const ufInput = screen.getByTestId('preview-uf-input') as HTMLInputElement;
-    fireEvent.change(ufInput, { target: { value: 'ZZ' } });
-    // UF inválida: toast.error é chamado e o input não retém "ZZ".
-    expect(toastError).toHaveBeenCalledWith(
-      'UF inválida',
-      expect.objectContaining({ description: expect.stringContaining('ZZ') }),
-    );
-  });
-
-  it('aceita UF válida digitada manualmente na prévia (ex: "SP")', () => {
-    renderPhase();
-    const ufInput = screen.getByTestId('preview-uf-input') as HTMLInputElement;
-    fireEvent.change(ufInput, { target: { value: 'SP' } });
-    expect(toastError).not.toHaveBeenCalledWith('UF inválida', expect.anything());
-    expect(ufInput.value).toBe('SP');
-  });
+  // [UX-merge] Inputs de prévia de UF foram removidos. Validação de UF agora
+  // ocorre no CityAutocomplete (cidade só é selecionável a partir do dataset
+  // canônico do IBGE), portanto os testes específicos de "preview-uf-input"
+  // foram aposentados junto com o componente.
 });
