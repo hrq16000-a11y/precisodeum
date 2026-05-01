@@ -102,7 +102,7 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
         size="lg"
         disabled={!canFinish || submitting}
         onClick={onFinish}
-        className="group h-12 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-base font-bold text-white shadow-[0_0_24px_rgba(99,102,241,0.55)] hover:opacity-95 disabled:opacity-50"
+        className="group h-12 w-full bg-gradient-to-r from-blue-500 via-orange-500 to-orange-600 text-base font-bold text-white shadow-[0_0_24px_rgba(99,102,241,0.55)] hover:opacity-95 disabled:opacity-50"
       >
         {submitting ? 'Liberando acesso…' : 'Entrar no app agora'}
         <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />

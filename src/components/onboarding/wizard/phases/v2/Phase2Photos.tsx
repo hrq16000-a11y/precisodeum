@@ -43,7 +43,7 @@ export const Phase2Photos = ({
 
     <header className="space-y-2 text-center">
       <div
-        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-[0_0_24px_rgba(251,146,60,0.45)]"
+        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-emerald-500 shadow-[0_0_24px_rgba(251,146,60,0.45)]"
         aria-hidden="true"
       >
         <ImageIcon className="h-7 w-7 text-white" />
@@ -93,7 +93,7 @@ export const Phase2Photos = ({
         size="lg"
         onClick={onContinue}
         aria-label="Concluir esta etapa e continuar"
-        className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95"
+        className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95"
       >
         Concluir
         <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" aria-hidden="true" />

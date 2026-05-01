@@ -29,8 +29,8 @@ const ConversionInsights = ({ views, leads, services }: ConversionInsightsProps)
       label: 'Leads gerados',
       value: leads,
       format: 'number' as const,
-      color: 'text-violet-500',
-      bg: 'bg-violet-500/10',
+      color: 'text-amber-500',
+      bg: 'bg-amber-500/10',
     },
     {
       icon: Percent,

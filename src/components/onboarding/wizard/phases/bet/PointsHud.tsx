@@ -69,7 +69,7 @@ export default function PointsHud({ points, phaseLabel, progress }: Props) {
               initial={{ width: 0 }}
               animate={{ width: `${pct * 100}%` }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="h-full rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 shadow-[0_0_14px_rgba(251,146,60,0.85)]"
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-emerald-500 shadow-[0_0_14px_rgba(251,146,60,0.85)]"
             />
             {/* Faíscas no extremo do progresso */}
             <AnimatePresence>

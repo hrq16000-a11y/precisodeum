@@ -66,7 +66,7 @@ const MissionCard = () => {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -12 }}
-        className="rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/5 to-purple-500/5 p-4 sm:p-5 relative overflow-hidden"
+        className="rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/5 to-orange-500/5 p-4 sm:p-5 relative overflow-hidden"
       >
         <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-20 bg-accent" />
 

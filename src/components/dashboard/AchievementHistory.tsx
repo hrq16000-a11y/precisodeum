@@ -16,8 +16,8 @@ interface Achievement {
 
 const ACTION_MAP: Record<string, { title: string; icon: typeof Trophy; cls: string }> = {
   service_create_atomic: { title: 'Serviço cadastrado', icon: Briefcase, cls: 'text-blue-600 bg-blue-500/10' },
-  album_create_atomic: { title: 'Álbum criado', icon: ImageIcon, cls: 'text-pink-600 bg-pink-500/10' },
-  portfolio_photo_atomic: { title: 'Foto adicionada ao portfólio', icon: ImageIcon, cls: 'text-pink-600 bg-pink-500/10' },
+  album_create_atomic: { title: 'Álbum criado', icon: ImageIcon, cls: 'text-orange-600 bg-orange-500/10' },
+  portfolio_photo_atomic: { title: 'Foto adicionada ao portfólio', icon: ImageIcon, cls: 'text-orange-600 bg-orange-500/10' },
   profile_update: { title: 'Perfil atualizado', icon: User, cls: 'text-emerald-600 bg-emerald-500/10' },
   level_up: { title: 'Novo nível alcançado', icon: Star, cls: 'text-amber-600 bg-amber-500/10' },
 };
