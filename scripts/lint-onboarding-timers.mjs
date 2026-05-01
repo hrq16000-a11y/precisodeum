@@ -230,11 +230,75 @@ function effectReturnsCleanup(blockSrc, kindRegex) {
 /* -------------------------------------------------------------------------- */
 
 const TIMER_RE = /\b(setTimeout|setInterval)\s*\(/g;
-const LISTENER_RE = /\b([A-Za-z_$][\w$.]*)\.addEventListener\s*\(\s*(['"`][^'"`]+['"`])/g;
+// Captura: 1=target, 2=evento (com aspas), 3=handler raw (até a próxima `,` ou `)`)
+const LISTENER_RE = /\b([A-Za-z_$][\w$.]*)\.addEventListener\s*\(\s*(['"`][^'"`]+['"`])\s*,\s*([^,)]+)/g;
+const REMOVE_RE = /\b([A-Za-z_$][\w$.]*)\.removeEventListener\s*\(\s*(['"`][^'"`]+['"`])\s*,\s*([^,)]+)/g;
 
 const CLEAR_TIMER_ANY = /\b(clearTimeout|clearInterval)\s*\(/;
 const REMOVE_LISTENER_ANY = /\bremoveEventListener\s*\(/;
 const SCHEDULE_HELPER = /\bscheduleWizardTimeout\s*\(/;
+
+/**
+ * Strips TS casts/annotations that don't change handler identity:
+ *   `fn as EventListener`         → `fn`
+ *   `fn satisfies (e: Event)=>void` → `fn`
+ *   `<EventListener>fn`           → `fn`
+ *   `(fn)`                        → `fn`
+ *   `fn!`                         → `fn`
+ */
+function stripTsCasts(s) {
+  let prev;
+  let cur = s.trim();
+  do {
+    prev = cur;
+    // `<Type>expr` (TS angle-bracket cast) — apenas se o `<...>` parece um tipo
+    cur = cur.replace(/^<[^<>]+>\s*/, '');
+    // `expr as Type` / `expr satisfies Type` — consome até o fim, pois o tipo
+    // pode conter generics simples sem vírgulas externas.
+    cur = cur.replace(/\s+(?:as|satisfies)\s+[\w$.<>[\]\s|&,'"`-]+$/i, '');
+    // Non-null assertion `expr!`
+    cur = cur.replace(/!\s*$/, '');
+    // Parênteses externos `(expr)`
+    if (cur.startsWith('(') && cur.endsWith(')')) {
+      const inner = cur.slice(1, -1);
+      // só remove se os parênteses são realmente externos (depth 0 no fim)
+      let depth = 0, ok = true;
+      for (let i = 0; i < inner.length; i++) {
+        if (inner[i] === '(') depth++;
+        else if (inner[i] === ')') { depth--; if (depth < 0) { ok = false; break; } }
+      }
+      if (ok && depth === 0) cur = inner.trim();
+    }
+    cur = cur.trim();
+  } while (cur !== prev);
+  return cur;
+}
+
+/**
+ * Decide se um trecho de handler é uma referência a um identificador "removível".
+ * Aceita identificadores simples (`onResize`), acessos (`handlerRef.current`,
+ * `this.onClick`) e bind (`fn.bind(this)`). REJEITA literais inline:
+ * arrow functions, `function (...) {}`, `() => ...`, etc., porque a referência
+ * não pode ser reutilizada em `removeEventListener`.
+ */
+function isNamedHandler(handlerSrc) {
+  const h = stripTsCasts(handlerSrc);
+  if (!h) return false;
+  // Inline literals → leak garantido.
+  if (/^(?:async\s+)?function\b/.test(h)) return false;
+  if (/=>/.test(h)) return false;
+  if (/^\(/.test(h)) return false; // qualquer coisa começando com '(' é arrow/IIFE
+  if (/^\{/.test(h)) return false;
+  // Aceita identificador, dot-access, opcional .bind(...)
+  return /^[A-Za-z_$][\w$.[\]]*(?:\.bind\([^)]*\))?$/.test(h);
+}
+
+/** Normaliza um handler para comparação (remove casts, espaços e .bind(...)). */
+function normalizeHandler(h) {
+  return stripTsCasts(h).replace(/\.bind\([^)]*\)$/, '');
+}
+
+
 
 function lineCol(src, pos) {
   let line = 1, col = 1;
@@ -288,37 +352,73 @@ function checkTimer(masked, raw, idx) {
   return { ok: false, reason: 'no cleanup found for timer' };
 }
 
-function checkListener(masked, raw, idx, target, evt) {
-  // bloco enclosing + useEffect cleanup com removeEventListener
+function findRemovesIn(scope) {
+  const out = [];
+  REMOVE_RE.lastIndex = 0;
+  let m;
+  while ((m = REMOVE_RE.exec(scope))) {
+    out.push({ target: m[1], evt: m[2], handler: m[3] });
+  }
+  return out;
+}
+
+function checkListener(masked, raw, idx, target, evt, handler) {
+  // 1) Handler precisa ser uma referência nomeada para conseguir ser removido.
+  //    Inline arrow/function literais geram referência única → leak.
+  const inlineHandler = !isNamedHandler(handler);
+
   const block = enclosingBlock(masked, idx);
+  let blockRaw = '';
   if (block) {
     const [bs, be] = block;
-    const blockMasked = masked.slice(bs, be + 1);
-    const blockRaw = raw.slice(bs, be + 1);
-    const hook = enclosingHook(masked, bs);
-    if (hook === 'useEffect' || hook === 'useLayoutEffect' || hook === 'useInsertionEffect') {
-      // cleanup é checado no RAW (precisamos enxergar o nome do evento se houver).
-      if (effectReturnsCleanup(blockRaw, REMOVE_LISTENER_ANY)) {
-        return { ok: true, reason: `${hook} cleanup return` };
-      }
-    }
-    // par direto no mesmo bloco para o mesmo target+evento (raw, pois evt está quoted).
-    const reSameBlock = new RegExp(
-      `${target.replace(/\./g, '\\.')}\\.removeEventListener\\s*\\(\\s*${evt.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`
-    );
-    if (reSameBlock.test(blockRaw)) {
-      return { ok: true, reason: `paired removeEventListener (${target}, ${evt})` };
-    }
+    blockRaw = raw.slice(bs, be + 1);
   }
-  // par no arquivo inteiro (raw)
-  const reFile = new RegExp(
-    `${target.replace(/\./g, '\\.')}\\.removeEventListener\\s*\\(\\s*${evt.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}`
-  );
-  if (reFile.test(raw)) {
-    return { ok: true, reason: `paired removeEventListener in file (${target}, ${evt})` };
+  const fileRemoves = findRemovesIn(raw);
+  const blockRemoves = blockRaw ? findRemovesIn(blockRaw) : [];
+
+  const wantTarget = target;
+  const wantEvt = evt;
+  const wantHandler = inlineHandler ? null : normalizeHandler(handler);
+
+  const matches = (rem) => {
+    if (rem.target !== wantTarget) return false;
+    if (rem.evt !== wantEvt) return false;
+    if (wantHandler === null) return false; // inline → nunca casa
+    return normalizeHandler(rem.handler) === wantHandler;
+  };
+
+  if (inlineHandler) {
+    return {
+      ok: false,
+      reason: `inline handler in addEventListener(${evt}) cannot be removed (use a named ref)`,
+    };
   }
-  return { ok: false, reason: `no removeEventListener for (${target}, ${evt})` };
+
+  if (blockRemoves.some(matches)) {
+    return { ok: true, reason: `paired remove in same block (${target}, ${evt}, ${wantHandler})` };
+  }
+  if (fileRemoves.some(matches)) {
+    return { ok: true, reason: `paired remove in file (${target}, ${evt}, ${wantHandler})` };
+  }
+
+  // Mensagem de erro mais útil: indica se há remove com event/target diferente.
+  const sameTargetEvt = fileRemoves.find((r) => r.target === wantTarget && r.evt === wantEvt);
+  if (sameTargetEvt) {
+    return {
+      ok: false,
+      reason: `removeEventListener(${evt}) uses different handler ref (${normalizeHandler(sameTargetEvt.handler)} vs ${wantHandler})`,
+    };
+  }
+  const wrongEvt = fileRemoves.find((r) => r.target === wantTarget && r.evt !== wantEvt);
+  if (wrongEvt) {
+    return {
+      ok: false,
+      reason: `addEventListener(${evt}) but cleanup removes ${wrongEvt.evt} (event mismatch)`,
+    };
+  }
+  return { ok: false, reason: `no removeEventListener for (${target}, ${evt}, ${wantHandler})` };
 }
+
 
 function analyzeFile(absPath) {
   const rel = relative(ROOT, absPath).split(sep).join('/');
@@ -357,7 +457,8 @@ function analyzeFile(absPath) {
     if (!/[A-Za-z_$]/.test(ch)) continue;
     const target = m[1];
     const evt = m[2];
-    const res = checkListener(masked, raw, idx, target, evt);
+    const handler = m[3];
+    const res = checkListener(masked, raw, idx, target, evt, handler);
     if (DEBUG) {
       const { line, col } = lineCol(raw, idx);
       console.log(`[debug] ${rel}:${line}:${col} ${target}.addEventListener(${evt}) → ${res.ok ? 'OK' : 'FAIL'} (${res.reason})`);
