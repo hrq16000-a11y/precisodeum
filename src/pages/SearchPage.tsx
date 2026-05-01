@@ -90,6 +90,7 @@ const SearchPage = () => {
   const isMobile = useIsMobile();
   const query = searchParams.get('q') || '';
   const cityParam = searchParams.get('cidade') || '';
+  const cepParam = searchParams.get('cep') || '';
   const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, setRadius, requestPreciseLocation, geoFailed, source: geoSource, lastKnownAt, dismissGeoFailure } = useGeoCity();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoria') || '');
   const [selectedCity, setSelectedCity] = useState(cityParam);
