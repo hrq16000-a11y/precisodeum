@@ -205,6 +205,47 @@ export const ServiceCityPicker = ({
         </div>
       )}
 
+      {/* Sugestões automáticas por proximidade — ordenadas por distância. */}
+      {baseCity && baseState && (loadingNearby || filteredNearby.length > 0) && (
+        <div className="space-y-1.5 rounded-lg border border-border/60 bg-muted/20 p-2">
+          <div className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground">
+            <Sparkles className="h-3 w-3" />
+            Sugestões próximas a {baseCity}
+            {loadingNearby && <Loader2 className="ml-1 h-3 w-3 animate-spin" />}
+          </div>
+          {nearList.length > 0 && (
+            <NearbyChipRow
+              label="Até 15 km"
+              tone="near"
+              items={nearList}
+              disabled={value.length >= max}
+              onPick={(c) => addCity(`${c.name}/${c.state_uf}`)}
+            />
+          )}
+          {midList.length > 0 && (
+            <NearbyChipRow
+              label="Até 50 km"
+              tone="mid"
+              items={midList}
+              disabled={value.length >= max}
+              onPick={(c) => addCity(`${c.name}/${c.state_uf}`)}
+            />
+          )}
+          {farList.length > 0 && (
+            <NearbyChipRow
+              label="Até 100 km"
+              tone="far"
+              items={farList}
+              disabled={value.length >= max}
+              onPick={(c) => addCity(`${c.name}/${c.state_uf}`)}
+            />
+          )}
+          <p className="text-[10px] text-muted-foreground">
+            Ordem mantida por distância — mais perto da cidade-base aparece primeiro.
+          </p>
+        </div>
+      )}
+
       {!baseState && (
         <p className="text-[11px] text-muted-foreground">
           Escolha seu estado na etapa anterior para limitar as cidades automaticamente.
