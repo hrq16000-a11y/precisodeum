@@ -52,6 +52,8 @@ export interface OnboardingProfileData {
   street_suggested_cep?: string;
   /** Confirmação explícita do logradouro pelo usuário — só UX, não persistida. */
   street_confirmed?: boolean;
+  /** Histórico recente de CEPs consultados (LRU, máx 3). Persiste entre steps do wizard. */
+  cep_history?: Array<{ cep: string; digits: string; address?: string; city?: string; state?: string }>;
   /** Redes sociais institucionais (chave→URL) — só PJ. */
   social_links?: Record<string, string> | null;
 }
