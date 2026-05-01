@@ -62,9 +62,10 @@ describe('CompanyAddressForm — aria + número longo + CEP hint', () => {
     expect(screen.getByText(/CEP incompleto/i)).toBeTruthy();
   });
 
-  it('CEP vazio: nem erro nem dica', () => {
+  it('CEP vazio: sem erro, mas exibe dica convidando o usuário a digitar o CEP', () => {
     renderForm({});
-    expect(screen.queryByTestId('cep-hint')).toBeNull();
+    // O aviso "Informe o CEP — buscamos o endereço pra você" agora é a UX padrão.
+    expect(screen.getByTestId('cep-hint').textContent).toMatch(/Informe o CEP/i);
     expect(document.getElementById('cep-error')).toBeNull();
   });
 
