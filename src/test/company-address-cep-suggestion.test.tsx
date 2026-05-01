@@ -147,7 +147,7 @@ describe('CompanyAddressForm — sugestão por CEP, confirmação e retry', () =
     // Badge + caixa explicativa devem aparecer.
     const badge = await screen.findByTestId('cep-error-badge');
     expect(badge.textContent).toMatch(/Falha de rede/i);
-    expect(screen.getByText(/falha de rede/i)).toBeTruthy();
+    expect(screen.getByText(/Não conseguimos consultar o CEP/i)).toBeTruthy();
 
     // Próximo lookup retorna sucesso.
     lookupCepMock.mockResolvedValueOnce({
