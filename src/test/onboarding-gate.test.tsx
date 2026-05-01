@@ -51,7 +51,14 @@ const renderAt = (path = "/dashboard") =>
         <Routes>
           <Route path="/cadastro-inicial" element={<div>CADASTRO_PAGE</div>} />
           <Route path="/dashboard" element={<div>DASHBOARD_PAGE</div>} />
+          <Route path="/dashboard/perfil" element={<div>DASHBOARD_PROFILE_PAGE</div>} />
           <Route path="/dashboard/leads" element={<div>LEADS_PAGE</div>} />
+          <Route path="/dashboard/servicos" element={<div>SERVICES_PAGE</div>} />
+          <Route path="/dashboard/portfolio" element={<div>PORTFOLIO_PAGE</div>} />
+          <Route path="/dashboard/minha-pagina" element={<div>MY_PAGE</div>} />
+          <Route path="/dashboard/privacidade" element={<div>PRIVACY_PAGE</div>} />
+          <Route path="/dashboard/cadastro-status" element={<div>STATUS_PAGE</div>} />
+          <Route path="/onboarding-v2/sucesso" element={<div>SUCCESS_PAGE</div>} />
           <Route path="*" element={<div>CHILDREN_RENDERED</div>} />
         </Routes>
       </OnboardingGate>
@@ -147,6 +154,38 @@ describe("OnboardingGate", () => {
     renderAt("/dashboard");
     expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
     expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
+  });
+
+  it("percorre as rotas protegidas do pós-onboarding sem voltar para /cadastro-inicial", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: {
+        profile_type: "provider",
+        onboarding_completed: false,
+        onboarding_step: 4,
+        completionGraceActive: true,
+      },
+      loading: false,
+    });
+
+    const routes = [
+      ["/onboarding-v2/sucesso", "SUCCESS_PAGE"],
+      ["/dashboard", "DASHBOARD_PAGE"],
+      ["/dashboard/perfil", "DASHBOARD_PROFILE_PAGE"],
+      ["/dashboard/servicos", "SERVICES_PAGE"],
+      ["/dashboard/portfolio", "PORTFOLIO_PAGE"],
+      ["/dashboard/minha-pagina", "MY_PAGE"],
+      ["/dashboard/privacidade", "PRIVACY_PAGE"],
+      ["/dashboard/cadastro-status", "STATUS_PAGE"],
+      ["/dashboard/leads", "LEADS_PAGE"],
+    ] as const;
+
+    for (const [route, marker] of routes) {
+      const view = renderAt(route);
+      expect(screen.getByText(marker)).toBeTruthy();
+      expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
+      view.unmount();
+    }
   });
 
   it("renders children for anonymous routes (no user)", () => {
