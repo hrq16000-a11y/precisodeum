@@ -112,6 +112,7 @@ import {
   fetchRemoteDraft,
   clearRemoteDraft,
 } from './useOnboardingV2RemoteDraft';
+import { getOnboardingContactValidation } from './contactValidation';
 import {
   trackOnboardingEvent,
   markPhaseEnter,
@@ -552,6 +553,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   }, [state.phase, onPhaseChange]);
 
   useEffect(() => {
+    if (state.phase === 'phase2_photos' && (!state.firstServiceId || !user?.id)) {
+      dispatch({ type: 'NEXT' });
+    }
+  }, [state.phase, state.firstServiceId, user?.id]);
+
+  useEffect(() => {
+    if (state.phase !== 'done' || deferCompletionToParent) return;
+    clearOnboardingV2Draft();
+    const timer = window.setTimeout(() => {
+      void finishWizard();
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [state.phase, deferCompletionToParent]);
+
+  useEffect(() => {
     const goBack = () => {
       switch (state.phase) {
         case 'phase1_kind':
@@ -602,6 +618,20 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     setSaving(true);
     try {
       const p = state.profile;
+      const contactValidation = getOnboardingContactValidation({
+        fullName: p.full_name,
+        whatsapp: p.whatsapp,
+      });
+
+      if (!contactValidation.fullName) {
+        toast.error('Informe nome e sobrenome para continuar.');
+        return false;
+      }
+
+      if (!contactValidation.whatsapp) {
+        toast.error('Informe um WhatsApp válido com DDD para continuar.');
+        return false;
+      }
 
       // 1) profile (nome, avatar, profile_type, whatsapp)
       const profilePatch: any = {
@@ -702,6 +732,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       }
       return true;
     } catch (e: any) {
+      console.error('[onboardingV2] persistPhase1 failed', {
+        message: e?.message || String(e),
+        code: e?.code || null,
+        details: e?.details || null,
+        hint: e?.hint || null,
+        phase: state.phase,
+        profileSnapshot: {
+          full_name: state.profile.full_name,
+          whatsapp_digits: state.profile.whatsapp?.replace(/\D/g, '').length || 0,
+          city: state.profile.city,
+          state: state.profile.state,
+          has_latitude: typeof state.profile.latitude === 'number',
+          has_longitude: typeof state.profile.longitude === 'number',
+        },
+      });
       logWizardError({
         phase: state.phase,
         userId: user?.id,
@@ -1414,11 +1459,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           />
         );
       case 'phase2_photos':
-        // Sem serviço criado, pula direto pra celebração
-        if (!state.firstServiceId || !user?.id) {
-          dispatch({ type: 'NEXT' });
-          return null;
-        }
+        if (!state.firstServiceId || !user?.id) return null;
         return (
           <Phase2Photos
             serviceId={state.firstServiceId}
@@ -1561,10 +1602,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           />
         );
       case 'done':
-        if (deferCompletionToParent) return null;
-        // Limpa rascunho local e auto-finaliza
-        clearOnboardingV2Draft();
-        setTimeout(finishWizard, 300);
         return null;
     }
   };
