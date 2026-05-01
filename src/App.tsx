@@ -354,7 +354,11 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const onboardingStep = Number(profile?.onboarding_step ?? 0);
   const gateDecision = resolveOnboardingGateTarget({
     profile,
-    hasExistingService,
+    // hasExistingService = false: a recuperação para perfis legados é
+    // tratada de forma assíncrona por `runOnboardingSelfHeal` no efeito
+    // acima — quando ele completa, o `refetchProfile` traz a flag atualizada
+    // e este gate reavalia. Isso mantém o Gate 100% determinístico.
+    hasExistingService: false,
     completionGraceActive: isOnboardingCompletionGraceActive(),
     pathname: location.pathname,
     search: location.search,
