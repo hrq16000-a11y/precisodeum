@@ -14,7 +14,7 @@ vi.mock("@/hooks/useAuth", () => ({
 // This must stay 1:1 with the real implementation in src/App.tsx.
 import { useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { shouldForceOnboarding } from "@/lib/onboardingAccess";
+import { resolveOnboardingGateTarget } from "@/lib/onboardingAccess";
 
 const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, loading } = useAuth() as any;
@@ -29,23 +29,15 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  const mustCompleteOnboarding = !!user && !!profile && shouldForceOnboarding(profile, hasExistingService);
-  const isOnboardingRoute =
-    location.pathname === "/cadastro-inicial" ||
-    location.pathname === "/onboarding-v2/sucesso";
+  const gateDecision = resolveOnboardingGateTarget({
+    profile,
+    hasExistingService,
+    pathname: location.pathname,
+    search: location.search,
+  });
 
-  if (mustCompleteOnboarding && !isOnboardingRoute) {
-    return <Navigate to="/cadastro-inicial" replace />;
-  }
-
-  // Mirror App.tsx: bloqueia volta a /cadastro-inicial após conclusão.
-  const alreadyCompleted = !!profile && profile.onboarding_completed === true;
-  if (alreadyCompleted && location.pathname === "/cadastro-inicial") {
-    const params = new URLSearchParams(location.search);
-    const nextRaw = params.get("next");
-    const isSafeNext = !!nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//") && nextRaw !== "/cadastro-inicial";
-    const target = isSafeNext ? nextRaw! : "/dashboard";
-    return <Navigate to={target} replace />;
+  if (gateDecision.action === "redirect") {
+    return <Navigate to={gateDecision.target} replace />;
   }
 
   return <>{children}</>;
@@ -127,6 +119,17 @@ describe("OnboardingGate", () => {
     });
     renderAt("/dashboard");
     expect(screen.getByText("DASHBOARD_PAGE")).toBeTruthy();
+  });
+
+  it("permite /onboarding-v2/sucesso sem devolver ao /cadastro-inicial quando onboarding ainda está sincronizando", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "u1" },
+      profile: { profile_type: "provider", onboarding_completed: false, onboarding_step: 4 },
+      loading: false,
+    });
+    renderAt("/onboarding-v2/sucesso");
+    expect(screen.getByText("CHILDREN_RENDERED")).toBeTruthy();
+    expect(screen.queryByText("CADASTRO_PAGE")).toBeNull();
   });
 
   it("renders children for anonymous routes (no user)", () => {
