@@ -230,11 +230,38 @@ function effectReturnsCleanup(blockSrc, kindRegex) {
 /* -------------------------------------------------------------------------- */
 
 const TIMER_RE = /\b(setTimeout|setInterval)\s*\(/g;
-const LISTENER_RE = /\b([A-Za-z_$][\w$.]*)\.addEventListener\s*\(\s*(['"`][^'"`]+['"`])/g;
+// Captura: 1=target, 2=evento (com aspas), 3=handler raw (até a próxima `,` ou `)`)
+const LISTENER_RE = /\b([A-Za-z_$][\w$.]*)\.addEventListener\s*\(\s*(['"`][^'"`]+['"`])\s*,\s*([^,)]+)/g;
+const REMOVE_RE = /\b([A-Za-z_$][\w$.]*)\.removeEventListener\s*\(\s*(['"`][^'"`]+['"`])\s*,\s*([^,)]+)/g;
 
 const CLEAR_TIMER_ANY = /\b(clearTimeout|clearInterval)\s*\(/;
 const REMOVE_LISTENER_ANY = /\bremoveEventListener\s*\(/;
 const SCHEDULE_HELPER = /\bscheduleWizardTimeout\s*\(/;
+
+/**
+ * Decide se um trecho de handler é uma referência a um identificador "removível".
+ * Aceita identificadores simples (`onResize`), acessos (`handlerRef.current`,
+ * `this.onClick`) e bind (`fn.bind(this)`). REJEITA literais inline:
+ * arrow functions, `function (...) {}`, `() => ...`, etc., porque a referência
+ * não pode ser reutilizada em `removeEventListener`.
+ */
+function isNamedHandler(handlerSrc) {
+  const h = handlerSrc.trim();
+  if (!h) return false;
+  // Inline literals → leak garantido.
+  if (/^(?:async\s+)?function\b/.test(h)) return false;
+  if (/=>/.test(h)) return false;
+  if (/^\(/.test(h)) return false; // qualquer coisa começando com '(' é arrow/IIFE
+  if (/^\{/.test(h)) return false;
+  // Aceita identificador, dot-access, opcional .bind(...)
+  return /^[A-Za-z_$][\w$.[\]]*(?:\.bind\([^)]*\))?$/.test(h);
+}
+
+/** Normaliza um handler para comparação (remove espaços e .bind(...)). */
+function normalizeHandler(h) {
+  return h.trim().replace(/\.bind\([^)]*\)$/, '');
+}
+
 
 function lineCol(src, pos) {
   let line = 1, col = 1;
