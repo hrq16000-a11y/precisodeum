@@ -111,7 +111,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, saving, userI
     try {
       const { compressImage } = await import('@/lib/compressImage');
       const compressed = await compressImage(file, { maxDimension: 512, targetKB: 200 });
-      const finalFile = compressed?.file || file;
+      const finalFile = compressed || file;
       // Reaproveita o pipeline do AvatarUpload via edge function `optimize-image`.
       const { uploadWithFallback } = await import('@/lib/uploadWithFallback');
       const { data: { session } } = await supabase.auth.getSession();
