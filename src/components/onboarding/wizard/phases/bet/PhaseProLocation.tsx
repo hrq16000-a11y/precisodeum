@@ -183,11 +183,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           latency_ms,
           status: 'ok',
         });
-        // GPS confirmado também valida a prévia automaticamente.
-        setPreviewConfirmed(true);
-        setPreviewCity(result.city);
-        setPreviewStateField(result.state);
-        if (cleanNeighborhood) setPreviewNeighborhood(cleanNeighborhood);
+        // [UX-merge] Não há mais bloco de prévia; GPS já atualiza state direto.
         if (acc != null && acc > 500) {
           toast.warning('GPS impreciso', {
             description: `Margem de ~${Math.round(acc)}m. Confirme bairro e cidade manualmente.`,
