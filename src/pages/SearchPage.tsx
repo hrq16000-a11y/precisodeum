@@ -44,6 +44,7 @@ import { useUrgencyMode } from '@/hooks/useUrgencyMode';
 import { useOnlineProviders, useRecentlyOfflineSet, useRealtimeHealth } from '@/hooks/useOnlinePresence';
 import { useActiveTodayProviders } from '@/hooks/useActiveTodayProviders';
 import AskSystemDialog from '@/components/search/AskSystemDialog';
+import ScoreTooltipBadge from '@/components/search/ScoreTooltipBadge';
 import { logSearchIntent } from '@/lib/searchIntent';
 import { safeUF } from '@/lib/locationFormat';
 import CepLookupField from '@/components/CepLookupField';
