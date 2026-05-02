@@ -331,6 +331,37 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
   const pendingCount = items.filter((i) => !i.ok).length;
   const totalActions = items.reduce((acc, i) => acc + (i.ok ? 0 : i.actions.length), 0);
 
+  // Texto agregado de pendências para enviar via WhatsApp/Email/clipboard.
+  const pendingDigest = useMemo(() => {
+    const lines = items
+      .filter((i) => !i.ok && i.actions.length > 0)
+      .map((i) => `• ${i.label}: ${i.actions.join('; ')}`);
+    return lines.length
+      ? `Pendências do meu cadastro em precisodeumprofissional.com.br:\n\n${lines.join('\n')}`
+      : '';
+  }, [items]);
+
+  const copyText = async (text: string, msg = 'Pendência copiada') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(msg);
+    } catch {
+      toast.error('Não consegui copiar agora');
+    }
+  };
+
+  const sendWhatsApp = (text: string) => {
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const sendEmail = (text: string, subject = 'Pendências do meu cadastro') => {
+    const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    window.location.href = url;
+  };
+
+  const minutesOld = s.draftAgeMs ? Math.max(1, Math.round(s.draftAgeMs / 60000)) : null;
+
   return (
     <div className="mx-auto w-full max-w-md px-4 py-2 space-y-3">
       <header className="text-center space-y-0.5">
@@ -352,12 +383,54 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
             <CircleDashed className="h-3 w-3" aria-hidden /> Resumo offline (rascunho local) — pode estar desatualizado
           </p>
         )}
+        {s.source === 'local' && s.draftOutdated && (
+          <div
+            data-testid="step22-draft-outdated"
+            className="mx-auto mt-1 max-w-sm rounded-md border border-amber-400 bg-amber-50/80 p-2 text-left text-[11px] text-amber-900"
+          >
+            <p className="font-semibold">Rascunho desatualizado</p>
+            <p>
+              Seu rascunho local{minutesOld ? ` (salvo há ${minutesOld} min)` : ''} é mais antigo que a versão atual do onboarding.
+              Pode haver pequenas divergências — recomendamos clicar em <em>“Tentar de novo”</em> com a internet de volta.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void load()}
+              className="mt-1.5 h-7 text-[11px]"
+            >
+              Tentar de novo
+            </Button>
+          </div>
+        )}
       </header>
+
+      {pendingCount > 0 && pendingDigest && (
+        <div
+          data-testid="step22-digest-actions"
+          className="flex flex-wrap items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-muted/30 p-2 text-[11px]"
+        >
+          <span className="text-muted-foreground">Enviar pendências para mim:</span>
+          <Button type="button" size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={() => copyText(pendingDigest, 'Pendências copiadas')}>
+            <Copy className="h-3 w-3" /> Copiar tudo
+          </Button>
+          <Button type="button" size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={() => sendWhatsApp(pendingDigest)}>
+            <MessageCircle className="h-3 w-3" /> WhatsApp
+          </Button>
+          <Button type="button" size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={() => sendEmail(pendingDigest)}>
+            <Mail className="h-3 w-3" /> E-mail
+          </Button>
+        </div>
+      )}
 
       <ul className="divide-y divide-border rounded-lg border border-border bg-card">
         {items.map((it) => {
           const Icon = it.icon;
           const showActions = it.actions.length > 0;
+          const itemDigest = it.actions.length
+            ? `${it.label}:\n${it.actions.map((a) => `• ${a}`).join('\n')}`
+            : '';
           return (
             <li
               key={it.key}
@@ -375,17 +448,48 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
                 <p className="text-sm font-medium text-foreground">{it.label}</p>
                 <p className="text-xs text-muted-foreground">{it.detail}</p>
                 {showActions && (
-                  <ul
-                    data-testid={`review-actions-${it.key}`}
-                    className="mt-1.5 space-y-0.5 text-[11px] leading-snug text-amber-800"
-                  >
-                    {it.actions.map((a, idx) => (
-                      <li key={idx} className="flex items-start gap-1.5">
-                        <span aria-hidden className="mt-[3px] inline-block h-1 w-1 shrink-0 rounded-full bg-amber-600" />
-                        <span>{a}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <ul
+                      data-testid={`review-actions-${it.key}`}
+                      className="mt-1.5 space-y-0.5 text-[11px] leading-snug text-amber-800"
+                    >
+                      {it.actions.map((a, idx) => (
+                        <li key={idx} className="flex items-start gap-1.5">
+                          <span aria-hidden className="mt-[3px] inline-block h-1 w-1 shrink-0 rounded-full bg-amber-600" />
+                          <span>{a}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {itemDigest && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        <button
+                          type="button"
+                          data-testid={`copy-pendency-${it.key}`}
+                          onClick={() => copyText(itemDigest)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                          aria-label={`Copiar pendência de ${it.label}`}
+                        >
+                          <Copy className="h-3 w-3" /> Copiar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => sendWhatsApp(itemDigest)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                          aria-label={`Enviar pendência de ${it.label} via WhatsApp`}
+                        >
+                          <MessageCircle className="h-3 w-3" /> WhatsApp
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => sendEmail(itemDigest, `Pendência: ${it.label}`)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                          aria-label={`Enviar pendência de ${it.label} por e-mail`}
+                        >
+                          <Mail className="h-3 w-3" /> E-mail
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <Button
