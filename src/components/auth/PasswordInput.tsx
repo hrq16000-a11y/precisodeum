@@ -80,13 +80,19 @@ const PasswordInput = forwardRef<HTMLInputElement, Props>(function PasswordInput
       </div>
 
       {showRules && (
-        <ul id={rulesId} className="space-y-1 text-xs" aria-live="polite">
+        <ul
+          id={rulesId}
+          className="space-y-1 text-xs"
+          aria-live="polite"
+          aria-atomic="true"
+          role="status"
+        >
           {rules.map((rule) => {
             const ok = rule.test(v);
             return (
               <li
                 key={rule.id}
-                className={`flex items-center gap-1.5 ${ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}
+                className={`flex items-center gap-1.5 ${ok ? 'text-bet-green-fg' : 'text-muted-foreground'}`}
               >
                 {ok ? (
                   <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
