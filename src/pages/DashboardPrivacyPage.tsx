@@ -21,8 +21,32 @@ const DashboardPrivacyPage = () => {
     canonical: `${SITE_BASE_URL}/dashboard/privacidade`,
   });
 
-  const { user, profile } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleSelfDelete = async () => {
+    if (!user) { toast.error("Faça login para continuar."); return; }
+    const ok = window.confirm(
+      "ATENÇÃO: ao confirmar, sua conta será imediatamente desativada e arquivada por 90 dias antes da exclusão permanente. Você ficará impedido de criar nova conta com os mesmos dados (e-mail, WhatsApp, dispositivo) por 180 dias. Deseja continuar?"
+    );
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      const { error } = await (supabase.rpc as any)("self_delete_account", { _reason: "user_self_request" });
+      if (error) throw error;
+      toast.success("Conta arquivada. Você será desconectado.");
+      setTimeout(async () => {
+        try { await (signOut as any)?.(); } catch { /* noop */ }
+        window.location.href = "/";
+      }, 1200);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Falha ao excluir agora. Tente o fluxo padrão.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleExport = async () => {
     if (!user) {
