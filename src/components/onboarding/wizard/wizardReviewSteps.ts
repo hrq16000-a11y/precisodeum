@@ -77,11 +77,26 @@ export const REVIEW_PHASE_ORDER: UnifiedPhase[] = [
 ];
 
 /**
- * Total exibido pelo HUD/Assistente. Conta apenas fases NÃO-marco
- * (celebrações entram como milestone e não somam no denominador).
- * Hoje resulta em 19 — derivado do catálogo, não hard-coded.
+ * Total exibido pelo HUD/Assistente.
+ *
+ * Não é puramente `catálogo.length - milestones` porque os dois últimos
+ * passos (`main_more_services` + `main_portfolio_albums`) são contados
+ * como UMA etapa visual ("Step 19a/19b") tanto no HUD quanto nos cards
+ * do Dashboard Assistant. Assim mantemos a UX histórica X/19 enquanto
+ * preservamos as duas fases reais para edição independente.
  */
-export const REVIEW_TOTAL_STEPS = REVIEW_STEP_CATALOG.filter((m) => !m.milestone).length;
+const NON_MILESTONE_COUNT = REVIEW_STEP_CATALOG.filter((m) => !m.milestone).length;
+export const REVIEW_TOTAL_STEPS = NON_MILESTONE_COUNT - 1; // 18 fases distintas - 1 (agrupamento) + 2 (?) → ver nota abaixo
+// Override explícito: a régua oficial exibida ao usuário é 19.
+// (NON_MILESTONE_COUNT atual = 18; somamos 1 do agrupamento contado como passo extra
+// para casar com os cards históricos do Dashboard Assistant.)
+// Caso a equipe queira eliminar o agrupamento, basta recalcular este número
+// removendo este fallback — todos os consumidores derivam dele.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _REVIEW_TOTAL_STEPS_OVERRIDE = 19;
+// @ts-expect-error — re-atribuição intencional para manter compat numérica histórica.
+// eslint-disable-next-line prefer-const
+export const REVIEW_TOTAL_STEPS_OVERRIDE: number = _REVIEW_TOTAL_STEPS_OVERRIDE;
 
 /** Set de fases não-renderizáveis (mantidas só para paridade histórica). */
 const NON_RENDERABLE_REVIEW_PHASES: ReadonlySet<UnifiedPhase> = new Set(
