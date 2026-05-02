@@ -247,21 +247,35 @@ export const ReportWizardErrorButton = ({
               {files.length > 0 && (
                 <ul
                   data-testid="report-dialog-attachments"
-                  className="mt-1 space-y-0.5 text-[11px] text-muted-foreground"
+                  className="mt-1 grid grid-cols-3 gap-1.5 text-[11px] text-muted-foreground"
                 >
-                  {files.map((f, i) => (
-                    <li key={i} className="flex items-center justify-between gap-2 rounded border border-border bg-muted/30 px-2 py-1">
-                      <span className="truncate">{f.name} · {(f.size / 1024).toFixed(0)} KB</span>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(i)}
-                        aria-label={`Remover ${f.name}`}
-                        className="text-muted-foreground hover:text-destructive"
+                  {files.map((f, i) => {
+                    const url = URL.createObjectURL(f);
+                    return (
+                      <li
+                        key={`${f.name}-${i}`}
+                        className="relative overflow-hidden rounded border border-border bg-muted/30"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </li>
-                  ))}
+                        <img
+                          src={url}
+                          alt={f.name}
+                          className="aspect-square w-full object-cover"
+                          onLoad={() => URL.revokeObjectURL(url)}
+                        />
+                        <span className="block truncate px-1 py-0.5 text-[10px]">
+                          {(f.size / 1024).toFixed(0)} KB
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(i)}
+                          aria-label={`Remover ${f.name}`}
+                          className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
