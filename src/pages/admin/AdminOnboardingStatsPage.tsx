@@ -139,6 +139,29 @@ export default function AdminOnboardingStatsPage() {
     staleTime: 60_000,
   });
 
+  // Auditoria de "âncoras de revisão" — quantas vezes o Wizard segurou o
+  // numerador X/19 porque o usuário entrou em fase fantasma. Picos por
+  // ghost_phase indicam regressão de roteamento que merece investigação.
+  const { data: anchorAudit } = useQuery({
+    queryKey: ['admin-review-anchor-audit', days],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)(
+        'admin_review_anchor_audit',
+        { _days: days },
+      );
+      if (error) throw error;
+      return data as {
+        total: number;
+        unique_users: number;
+        by_ghost_phase: Array<{ ghost_phase: string; occurrences: number; unique_users: number }>;
+        by_anchor_phase: Array<{ anchor_phase: string; occurrences: number }>;
+        recent: Array<{ created_at: string; user_id: string | null; ghost_phase: string | null; anchor_phase: string | null; flow: string | null }>;
+      };
+    },
+    enabled: !!isAdmin,
+    staleTime: 60_000,
+  });
+
   const sourceRows = useMemo<SourceRow[]>(() => {
     const rows = data?.by_source || [];
     return [...rows].sort((a, b) => (b.submits || 0) - (a.submits || 0));
