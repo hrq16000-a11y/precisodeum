@@ -234,7 +234,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
     actions: string[];
   };
 
-  const items: ReviewItem[] = useMemo(() => [
+  const items: ReviewItem[] = [
     {
       key: 'identity',
       icon: UserRound,
