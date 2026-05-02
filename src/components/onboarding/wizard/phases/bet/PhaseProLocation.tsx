@@ -454,43 +454,23 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           </ul>
         )}
 
-        {/* Indicador discreto de status GPS — substitui o bloco explicativo grande.
-            O GPS é solicitado automaticamente ao montar a fase (sem botão).
-            Se o usuário quiser refinar manualmente, ainda há um link sutil. */}
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-          {requestingGps ? (
-            <span className="inline-flex items-center gap-1 text-orange-700 dark:text-orange-300">
-              <LocateFixed className="h-3 w-3 animate-pulse" /> Detectando localização…
-            </span>
-          ) : state.location_source === 'gps' ? (
-            <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-300">
-              <CheckCircle2 className="h-3 w-3" />
-              {gpsAccuracy != null && gpsAccuracy <= 100
-                ? `GPS preciso (±${Math.round(gpsAccuracy)}m)`
-                : gpsAccuracy != null
-                ? `GPS aproximado (±${Math.round(gpsAccuracy)}m)`
-                : 'GPS confirmado'}
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-muted-foreground">
-              <MapPin className="h-3 w-3" /> Localização aproximada por IP
-            </span>
-          )}
+        {/* Link discreto para retentar GPS — sem ocupar espaço vertical extra. */}
+        {state.location_source !== 'gps' && (
           <button
             type="button"
             onClick={handleUseGps}
             disabled={requestingGps}
-            aria-label="Usar minha localização (GPS)"
-            className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-orange-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-orange-300"
+            aria-label="Tentar localização por GPS"
+            className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-orange-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-orange-300"
           >
-            <LocateFixed className="h-3 w-3" />
-            {state.location_source === 'gps' ? 'Refazer GPS' : 'Tentar GPS de novo'}
+            <LocateFixed className={`h-3 w-3 ${requestingGps ? 'animate-pulse' : ''}`} />
+            {requestingGps ? 'Detectando…' : 'Usar GPS preciso'}
           </button>
-        </div>
+        )}
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
-        <label htmlFor="neighborhood" className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+      <div className="rounded-2xl border border-border bg-card p-3 shadow-card">
+        <label htmlFor="neighborhood" className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
           <Home className="h-3.5 w-3.5" /> Bairro
         </label>
         <Input
@@ -503,10 +483,6 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           maxLength={80}
           className={neighborhoodOk ? 'ring-2 ring-bet-green/60' : ''}
         />
-        <p className="mt-1 text-[11px] text-muted-foreground">
-          O bairro ajuda clientes da sua região a te encontrar mais rápido.
-        </p>
-
         <CepSuggestionCard
           city={state.city}
           state={state.state}
