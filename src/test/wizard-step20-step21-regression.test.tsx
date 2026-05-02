@@ -23,9 +23,9 @@ vi.mock('@/hooks/useAuth', () => ({
   }),
 }));
 
-const supabaseMock = {
-  from: vi.fn(),
-};
+const { supabaseMock } = vi.hoisted(() => ({
+  supabaseMock: { from: vi.fn() },
+}));
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: supabaseMock,
 }));
