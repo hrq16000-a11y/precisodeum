@@ -355,7 +355,10 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     geo.source === 'ip' ? 'ip' :
     geo.source === 'manual' ? 'manual' : 'unknown';
 
+  // Guard síncrono — bloqueia cliques duplos antes do setState propagar.
+  const submittingRef = useRef(false);
   async function onFinish() {
+    if (submittingRef.current) return;
     if (!canFinish || submitting) return;
     if (baseCityBlocked) {
       toast.error('Verifique a cidade-base', {
@@ -363,6 +366,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
       });
       return;
     }
+    submittingRef.current = true;
     setSubmitting(true);
     void trackOnboardingEvent({
       phase: 'pro_location' as any,
@@ -375,7 +379,10 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         gps_accuracy_m: gpsAccuracy,
       },
     });
-    try { await finish(); } finally { setSubmitting(false); }
+    try { await finish(); } finally {
+      setSubmitting(false);
+      submittingRef.current = false;
+    }
   }
 
   return (

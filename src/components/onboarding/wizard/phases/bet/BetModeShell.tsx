@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
-import { normalizeProviderPayload } from '@/lib/providerPayload';
+import { normalizeProviderPayload, mapLocationSourceToGeoSource } from '@/lib/providerPayload';
 import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { betDraftPayloadSchema, providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
@@ -537,25 +537,15 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
           ? { latitude: state.latitude, longitude: state.longitude }
           : {}),
         // Persistência de origem da localização e do bairro (auditoria + checklist).
-        // Mapeamento BLINDADO: BetState.location_source ('gps' | 'cep' | 'manual' | 'ip')
-        //   → providers.geo_source (CHECK: 'unknown' | 'gps' | 'city_center'
-        //     | 'address_geocode' | 'gps_plus_city_center' | 'gps_plus_address_geocode').
+        // Mapeamento centralizado em `mapLocationSourceToGeoSource` (providerPayload.ts):
         //   - 'gps'             → 'gps'
-        //   - 'cep' | 'manual'  → 'address_geocode' (origem informada por endereço/usuário)
-        //   - 'ip'              → 'city_center' (resolução por cidade aproximada)
+        //   - 'cep' | 'manual'  → 'address_geocode'
+        //   - 'ip'              → 'city_center'
         //   - default           → 'unknown'
-        //   Sem esse mapeamento o upsert falhava com `providers_geo_source_check`.
-        // Mapeamento: BetState.gps_accuracy_m  → providers.geo_source_confidence (numeric, em metros)
-        //             BetState.neighborhood_source → providers.neighborhood_source (text)
-        geo_source: (() => {
-          switch (state.location_source) {
-            case 'gps': return 'gps';
-            case 'cep':
-            case 'manual': return 'address_geocode';
-            case 'ip': return 'city_center';
-            default: return 'unknown';
-          }
-        })(),
+        // Sem esse mapeamento o upsert falha com `providers_geo_source_check`.
+        // Também: BetState.gps_accuracy_m  → providers.geo_source_confidence (m)
+        //         BetState.neighborhood_source → providers.neighborhood_source
+        geo_source: mapLocationSourceToGeoSource(state.location_source as any),
         ...(state.gps_accuracy_m != null && Number.isFinite(state.gps_accuracy_m)
           ? { geo_source_confidence: state.gps_accuracy_m }
           : {}),
