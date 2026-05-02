@@ -98,6 +98,7 @@ import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Ph
 import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { playWizardTransition } from '@/lib/wizardTransition';
+import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
 import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
@@ -661,11 +662,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     if (editMode) pushReviewPhase(state.phase);
   }, [state.phase, onPhaseChange, editMode]);
 
-  useEffect(() => {
-    if (state.phase === 'phase2_photos' && (!state.firstServiceId || !user?.id)) {
-      dispatch({ type: 'NEXT' });
-    }
-  }, [state.phase, state.firstServiceId, user?.id]);
+  // Antes: auto-NEXT silencioso quando faltava firstServiceId/user — isso
+  // levava à tela em branco e mensagem genérica de "algo está errado". Agora
+  // o card abaixo (case 'phase2_photos') exibe diagnóstico específico com
+  // botões de recuperação. NÃO pulamos automaticamente.
 
   useEffect(() => {
     if (state.phase !== 'done' || deferCompletionToParent) return;
@@ -1572,7 +1572,67 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           </>
         );
       case 'phase2_photos':
-        if (!state.firstServiceId || !user?.id) return null;
+        if (!state.firstServiceId || !user?.id) {
+          // Diagnóstico específico em vez de tela em branco.
+          const reason: 'no_service' | 'no_session' = !user?.id ? 'no_session' : 'no_service';
+          const title = reason === 'no_session'
+            ? 'Sua sessão expirou'
+            : 'Ainda não consegui carregar seu serviço';
+          const description = reason === 'no_session'
+            ? 'Faça login novamente para continuar de onde parou. Seu cadastro foi salvo.'
+            : 'Para subir as fotos, primeiro preciso terminar de salvar seu serviço (categoria, descrição e cidade). Volte uma etapa, confirme os dados e tente novamente.';
+          return (
+            <section
+              className="mx-auto w-full max-w-md space-y-3 px-4 py-6 text-center"
+              role="alert"
+              aria-live="polite"
+              data-testid="phase2-photos-blocked"
+            >
+              <div className="rounded-2xl border border-amber-300/60 bg-amber-50/70 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
+                <h2 className="font-display text-base font-extrabold text-amber-900 dark:text-amber-100">
+                  {title}
+                </h2>
+                <p className="mt-2 text-sm text-amber-900/90 dark:text-amber-200/90">
+                  {description}
+                </p>
+                <p className="mt-3 text-[11px] text-muted-foreground">
+                  Código: <code className="font-mono">phase2_photos:{reason}</code>
+                </p>
+                <div className="mt-4 flex flex-col gap-2">
+                  {reason === 'no_session' ? (
+                    <button
+                      type="button"
+                      onClick={() => { window.location.href = '/login?next=/cadastro-inicial'; }}
+                      className="h-11 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-sm font-bold text-white shadow-md hover:opacity-95"
+                    >
+                      Fazer login novamente
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_details' }); }}
+                      className="h-11 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-sm font-bold text-white shadow-md hover:opacity-95"
+                    >
+                      Voltar e revisar o serviço
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { track('skip', { reason: `blocked_${reason}` }); dispatch({ type: 'NEXT' }); }}
+                    className="h-10 rounded-xl text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    Pular fotos por enquanto
+                  </button>
+                </div>
+              </div>
+              <ReportWizardErrorButton
+                step={`phase2_photos:${reason}`}
+                componentName="OnboardingV2Shell"
+                label="Reportar para o suporte"
+              />
+            </section>
+          );
+        }
         return (
           <>
             <Phase2Photos
