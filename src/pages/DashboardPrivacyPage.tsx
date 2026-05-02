@@ -59,6 +59,12 @@ const DashboardPrivacyPage = () => {
       a.remove();
       URL.revokeObjectURL(url);
       toast.success("Relatório baixado com sucesso.");
+      // Histórico imutável (best-effort, sem bloquear o download)
+      recordPrivacyEvent({
+        event_type: "data_export",
+        reason: "user_requested_json_export",
+        metadata: { format: "json", channel: "dashboard" },
+      });
     } catch (e) {
       console.error(e);
       toast.error(e instanceof Error ? e.message : "Não foi possível gerar o relatório.");
