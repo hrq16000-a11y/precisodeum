@@ -1573,14 +1573,85 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         );
       case 'phase2_photos':
         if (!state.firstServiceId || !user?.id) {
-          // Diagnóstico específico em vez de tela em branco.
+          // Diagnóstico específico campo-a-campo em vez de tela em branco.
           const reason: 'no_service' | 'no_session' = !user?.id ? 'no_session' : 'no_service';
           const title = reason === 'no_session'
             ? 'Sua sessão expirou'
             : 'Ainda não consegui carregar seu serviço';
+
+          // Lista exatamente quais campos faltam no draft local/state — assim
+          // o usuário sabe se foi categoria, descrição ou cidade.
+          const missing: string[] = [];
+          if (reason === 'no_service') {
+            const hasCategory =
+              (state.service.category_ids?.length || 0) > 0 ||
+              !!state.profile.primary_category_id;
+            const hasName = !!(state.service.service_name || '').trim();
+            const hasDesc = ((state.service.description || '').trim().length) >= 10;
+            const hasCity = !!(state.profile.city || '').trim();
+            if (!hasCategory) missing.push('categoria do serviço');
+            if (!hasName) missing.push('nome do serviço');
+            if (!hasDesc) missing.push('descrição (mínimo 10 caracteres)');
+            if (!hasCity) missing.push('cidade');
+          }
+
           const description = reason === 'no_session'
             ? 'Faça login novamente para continuar de onde parou. Seu cadastro foi salvo.'
-            : 'Para subir as fotos, primeiro preciso terminar de salvar seu serviço (categoria, descrição e cidade). Volte uma etapa, confirme os dados e tente novamente.';
+            : missing.length > 0
+              ? `Faltam estes campos para publicar o serviço antes das fotos:`
+              : 'Para subir as fotos, primeiro preciso terminar de salvar seu serviço (categoria, descrição e cidade). Volte uma etapa, confirme os dados e tente novamente.';
+
+          // Telemetria estruturada com o código exato — para suporte reproduzir.
+          if (typeof window !== 'undefined' && !(window as any).__phase2BlockedLogged) {
+            (window as any).__phase2BlockedLogged = true;
+            console.warn(`[wizard] phase2_photos blocked: phase2_photos:${reason}`, {
+              missing,
+              providerId: state.providerId,
+              firstServiceId: state.firstServiceId,
+              hasUser: !!user?.id,
+            });
+            void trackEvent({
+              phase: 'phase2_photos',
+              event: 'error',
+              userId: user?.id,
+              meta: {
+                code: `phase2_photos:${reason}`,
+                missing_fields: missing,
+                has_provider: !!state.providerId,
+                has_first_service: !!state.firstServiceId,
+              },
+            });
+          }
+
+          // Tenta recuperar firstServiceId via providerId e categoria do state.
+          const handleRecoverDraft = async () => {
+            try {
+              track('next', { code: 'phase2_photos:recover_attempt' });
+              const providerId = state.providerId;
+              const categoryId =
+                state.profile.primary_category_id || state.service.category_ids?.[0] || '';
+              if (providerId) {
+                const id = await findExistingFirstService(
+                  providerId,
+                  categoryId,
+                  state.service.service_name || '',
+                );
+                if (id) {
+                  dispatch({ type: 'SET_FIRST_SERVICE_ID', id });
+                  toast.success('Recuperamos seu serviço — pronto para subir as fotos.');
+                  return;
+                }
+              }
+              toast.message('Nada para recuperar', {
+                description: 'Volte para revisar o serviço e tente publicar novamente.',
+              });
+            } catch (err: any) {
+              toast.error('Não consegui recuperar o rascunho agora.', {
+                description: err?.message || 'Tente novamente em instantes.',
+              });
+            }
+          };
+
           return (
             <section
               className="mx-auto w-full max-w-md space-y-3 px-4 py-6 text-center"
@@ -1595,6 +1666,19 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 <p className="mt-2 text-sm text-amber-900/90 dark:text-amber-200/90">
                   {description}
                 </p>
+                {reason === 'no_service' && missing.length > 0 && (
+                  <ul
+                    data-testid="phase2-photos-missing-fields"
+                    className="mx-auto mt-2 max-w-xs space-y-0.5 text-left text-xs text-amber-900 dark:text-amber-200"
+                  >
+                    {missing.map((m) => (
+                      <li key={m} className="flex items-start gap-1.5">
+                        <span aria-hidden className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-700" />
+                        <span>{m}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <p className="mt-3 text-[11px] text-muted-foreground">
                   Código: <code className="font-mono">phase2_photos:{reason}</code>
                 </p>
@@ -1608,13 +1692,23 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                       Fazer login novamente
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_details' }); }}
-                      className="h-11 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-sm font-bold text-white shadow-md hover:opacity-95"
-                    >
-                      Voltar e revisar o serviço
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_details' }); }}
+                        className="h-11 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-sm font-bold text-white shadow-md hover:opacity-95"
+                      >
+                        Voltar e revisar o serviço
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="phase2-photos-recover-draft"
+                        onClick={handleRecoverDraft}
+                        className="h-10 rounded-xl border border-amber-400/60 text-sm font-semibold text-amber-900 hover:bg-amber-100/60 dark:text-amber-100 dark:hover:bg-amber-500/10"
+                      >
+                        Recuperar rascunho do serviço
+                      </button>
+                    </>
                   )}
                   <button
                     type="button"
@@ -1629,6 +1723,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 step={`phase2_photos:${reason}`}
                 componentName="OnboardingV2Shell"
                 label="Reportar para o suporte"
+                contextSnapshot={{
+                  code: `phase2_photos:${reason}`,
+                  missing_fields: missing,
+                  category: state.profile.primary_category_id || state.service.category_ids?.[0] || null,
+                  city: state.profile.city || null,
+                  state: state.profile.state || null,
+                  has_provider: !!state.providerId,
+                  has_first_service: !!state.firstServiceId,
+                }}
               />
             </section>
           );
