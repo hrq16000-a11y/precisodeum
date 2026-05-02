@@ -40,7 +40,7 @@ const footerTaglines = [
   { headline: 'Os melhores profissionais estão aqui.', sub: 'Descubra prestadores de serviços na sua cidade com avaliações reais.' },
   { headline: 'Os melhores profissionais estão aqui.', sub: 'Escolha, entre em contato e resolva seu serviço hoje mesmo.' },
   { headline: 'Os melhores profissionais estão aqui.', sub: 'Encontre rapidamente quem você precisa e fale direto no WhatsApp.' },
-  { headline: 'Os melhores profissionais estão aqui.', sub: 'Do orçamento ao contato direto, tudo em um só lugar.' },
+  { headline: 'Os melhores profissionais estão aqui.', sub: 'Negociação direta e transparente, com valorização da mão de obra.' },
   { headline: 'Os melhores profissionais estão aqui.', sub: 'Plataforma de serviços que conecta você a profissionais da sua região.' },
   { headline: 'Os melhores profissionais estão aqui.', sub: 'Encontre prestadores de serviços locais com avaliações verificadas.' },
   { headline: 'Os melhores profissionais estão aqui.', sub: 'Conectando você aos melhores prestadores de serviços em todo o Brasil.' },
