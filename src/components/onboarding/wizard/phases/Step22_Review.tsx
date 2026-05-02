@@ -100,9 +100,14 @@ function readLocalDraftSnapshot(): Snapshot | null {
     const photoCount = Array.isArray(gallery) ? gallery.length : 0;
     const cities: unknown = service.service_area_cities ?? profile.service_area_cities;
     const draftAgeMs = env.savedAt ? Date.now() - env.savedAt : undefined;
-    const draftOutdated =
-      (env.schemaVersion && env.schemaVersion !== DRAFT_SCHEMA_VERSION) ||
-      (draftAgeMs !== undefined && draftAgeMs > DRAFT_STALE_AFTER_MS);
+    // O banner "rascunho desatualizado" dispara APENAS em divergência de
+    // schemaVersion (mudança incompatível). Idade pura (>24h) não basta:
+    // drafts recentes legítimos não devem ser sinalizados como divergentes.
+    // Drafts legados sem `schemaVersion` permanecem aceitos (não dispara).
+    const draftOutdated = Boolean(
+      env.schemaVersion && env.schemaVersion !== DRAFT_SCHEMA_VERSION,
+    );
+    void DRAFT_STALE_AFTER_MS; // mantido para compat de import
     return {
       providerOk: Boolean(profile.city || profile.cidade),
       servicesCount: service?.id || service?.name ? 1 : 0,
