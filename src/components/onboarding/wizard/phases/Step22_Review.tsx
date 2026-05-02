@@ -111,7 +111,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
     try {
       const { data: provider, error: pErr } = await supabase
         .from('providers')
-        .select('id, business_name, cpf, cnpj, working_hours_struct, city, service_area_cities, bio')
+        .select('id, business_name, cpf, cnpj, working_hours_struct, city, bio')
         .eq('user_id', user.id)
         .maybeSingle();
       if (pErr) throw pErr;
@@ -119,6 +119,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
       let servicesCount = 0;
       let photoCount = 0;
       let albumsCount = 0;
+      let hasServiceArea = false;
       if (provider?.id) {
         const [{ count: sCount }, { data: services }, { count: aCount }] = await Promise.all([
           supabase
@@ -127,7 +128,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
             .eq('provider_id', provider.id),
           supabase
             .from('services')
-            .select('id, gallery_urls')
+            .select('id, gallery_urls, cities_served')
             .eq('provider_id', provider.id)
             .limit(5),
           supabase
@@ -142,11 +143,13 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
             acc + (Array.isArray(s.gallery_urls) ? s.gallery_urls.length : 0),
           0,
         );
+        hasServiceArea = (services ?? []).some(
+          (s: any) => Array.isArray(s.cities_served) && s.cities_served.length > 0,
+        );
       }
 
       const p = provider as any;
       const wh = p?.working_hours_struct;
-      const cities = p?.service_area_cities;
       setSnap({
         providerOk: Boolean(provider?.id && p?.city),
         servicesCount,
@@ -155,7 +158,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
         albumsCount,
         hasDocument: Boolean(p?.cpf || p?.cnpj),
         hasWorkingHours: Boolean(wh && typeof wh === 'object' && Object.keys(wh).length > 0),
-        hasServiceArea: Array.isArray(cities) && cities.length > 0,
+        hasServiceArea,
         hasBio: Boolean((p?.bio || '').toString().trim().length >= 20),
         source: 'remote',
       });
