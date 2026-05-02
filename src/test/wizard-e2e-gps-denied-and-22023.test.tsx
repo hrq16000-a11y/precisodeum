@@ -187,7 +187,7 @@ describe('Wizard E2E — GPS negado + erro 22023', () => {
     expect(card.getAttribute('data-kind')).toBe('coords');
 
     const cta = screen.getByTestId('provider-integrity-primary-cta');
-    expect(cta.textContent || '').toMatch(/Tentar GPS novamente/i);
+    expect(cta.textContent || '').toMatch(/Ativar GPS preciso/i);
     // Clicar não pode lançar — apenas dispara o requestPreciseLocation mockado.
     expect(() => fireEvent.click(cta)).not.toThrow();
   });
