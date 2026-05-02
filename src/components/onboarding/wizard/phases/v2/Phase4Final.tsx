@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, ArrowLeft, Check, Wifi,
-  FileText, Calendar, Camera as CameraIcon, Globe,
+  FileText, Calendar, Camera as CameraIcon, Globe, MapPin, Eye, EyeOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -861,7 +861,60 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
         </label>
       </div>
 
-      {/* Endereço PJ NÃO é re-perguntado aqui — já foi coletado no passo do documento. */}
+      {/* Resumo do endereço PJ — apenas para CNPJ que preencheu algum campo de endereço.
+          Endereço NÃO é re-perguntado aqui (já coletado no passo do documento);
+          este card apenas confirma o que será gravado e a visibilidade pública. */}
+      {(data.kind as any) === 'pj' &&
+        (Boolean(data.street) ||
+          Boolean(data.street_number) ||
+          Boolean(data.complement) ||
+          Boolean(data.postal_code)) && (
+          <div
+            data-testid="pj-address-review"
+            className="rounded-2xl border border-amber-200/70 bg-amber-50/50 p-4 text-sm text-foreground"
+          >
+            <div className="mb-2 flex items-center gap-2 font-medium text-amber-900">
+              <MapPin className="h-4 w-4" aria-hidden="true" />
+              Endereço da empresa (CNPJ)
+            </div>
+            <ul className="space-y-1 text-[13px] text-muted-foreground">
+              {data.postal_code ? <li>CEP: {data.postal_code}</li> : null}
+              {(data.street || data.street_number) ? (
+                <li>
+                  {[data.street, data.street_number].filter(Boolean).join(', ')}
+                </li>
+              ) : null}
+              {data.complement ? <li>Complemento: {data.complement}</li> : null}
+            </ul>
+            <div className="mt-3 flex items-start gap-2 text-[12px]">
+              {data.show_full_address ? (
+                <>
+                  <Eye className="mt-0.5 h-3.5 w-3.5 text-amber-700" aria-hidden="true" />
+                  <span className="text-amber-900">
+                    Será <strong>exibido publicamente</strong> no seu perfil.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <EyeOff className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                  <span className="text-muted-foreground">
+                    Ficará oculto — apenas bairro e cidade aparecem no perfil público.
+                  </span>
+                </>
+              )}
+            </div>
+            <label className="mt-3 flex cursor-pointer items-center gap-2 text-[12px] text-foreground">
+              <input
+                type="checkbox"
+                checked={Boolean(data.show_full_address)}
+                onChange={(e) => onChange({ show_full_address: e.target.checked })}
+                className="h-4 w-4 rounded border-amber-300 text-amber-600 focus-visible:ring-2 focus-visible:ring-amber-500"
+              />
+              Exibir endereço completo no perfil público
+            </label>
+          </div>
+        )}
+
 
       <div className="flex flex-col gap-2 pt-1">
         <Button type="button" size="lg" onClick={onFinish} disabled={saving} className={ws.cta}>
