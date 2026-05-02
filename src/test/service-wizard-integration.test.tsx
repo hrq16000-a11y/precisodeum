@@ -40,27 +40,27 @@ describe('ServiceWizard integration', () => {
     onCancel: vi.fn(),
   };
 
+  const renderWizard = (props: any) =>
+    render(
+      <MemoryRouter>
+        <ServiceWizard {...props} />
+      </MemoryRouter>,
+    );
+
   it('não crasha quando providerId vem vazio', () => {
-    expect(() =>
-      render(
-        <ServiceWizard
-          {...baseProps}
-          providerId=""
-        />,
-      ),
-    ).not.toThrow();
+    expect(() => renderWizard({ ...baseProps, providerId: '' })).not.toThrow();
     // Header sempre renderiza
     expect(screen.getByText(/Cadastro Express/i)).toBeInTheDocument();
   });
 
   it('modo edição (sem serviceNumber) — não renderiza contagem expressa', () => {
-    render(<ServiceWizard {...baseProps} providerId="p-1" />);
+    renderWizard({ ...baseProps, providerId: 'p-1' });
     // Não deve mostrar "X/5"
     expect(screen.queryByLabelText(/Serviço \d+ de \d+/i)).toBeNull();
   });
 
   it('modo criação (serviceNumber=2) — renderiza badge X/5', () => {
-    render(<ServiceWizard {...baseProps} providerId="p-1" serviceNumber={2} maxServices={5} />);
+    renderWizard({ ...baseProps, providerId: 'p-1', serviceNumber: 2, maxServices: 5 });
     expect(screen.getByLabelText(/Serviço 2 de 5/i)).toBeInTheDocument();
   });
 });
