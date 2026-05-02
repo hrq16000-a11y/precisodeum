@@ -95,6 +95,7 @@ export const PROVIDER_WIZARD_PHASE_ORDER: UnifiedPhase[] = [
   'done',
 ];
 
+/**
  * REVIEW_PHASE_ORDER / REVIEW_TOTAL_STEPS / helpers de navegação foram
  * movidos para `wizardReviewSteps.ts` (fonte única, compartilhada com o
  * Dashboard Assistant). Re-exportamos aqui para manter compat de imports
