@@ -266,6 +266,8 @@ export const initialWizardState: WizardState = {
     longitude: null,
     ibge_code: null,
     location_source: null,
+    gps_accuracy_m: null,
+    neighborhood_source: null,
     pro_kind: null,
     document: '',
     company_name: '',

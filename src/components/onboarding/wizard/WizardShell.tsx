@@ -328,6 +328,8 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
             longitude: null,
             ibge_code: null,
             location_source: null,
+            gps_accuracy_m: null,
+            neighborhood_source: null,
             pro_kind: profileSeed.kind,
             document: profileSeed.document,
             company_name: profileSeed.company_name || '',
