@@ -462,7 +462,7 @@ const DashboardMyPagePage = () => {
               <h2 className="font-semibold text-foreground">📢 Textos dos Botões</h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="ctaText">Botão de orçamento</Label>
+                  <Label htmlFor="ctaText">Botão principal de contato</Label>
                   <Input id="ctaText" value={ctaText} onChange={e => setCtaText(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
