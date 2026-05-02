@@ -643,21 +643,36 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
             onGoToPath={finalizeAndNavigateTo}
           />
         </BetCardShell>
-      ) : stage === 'extras-portfolio' ? (
+      ) : stage === 'extras-portfolio' && !showReview ? (
         <BetCardShell>
           <Step21_PortfolioAlbums
             onBack={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_more_services' })}
-            onContinue={() => {
-              void finalizeUnifiedOnboarding().finally(() => {
-                dispatch({ type: 'GO_TO_PHASE', phase: 'done' });
-              });
-            }}
-            onSkip={() => {
-              void finalizeUnifiedOnboarding().finally(() => {
-                dispatch({ type: 'GO_TO_PHASE', phase: 'done' });
-              });
-            }}
+            onContinue={() => setShowReview(true)}
+            onSkip={() => setShowReview(true)}
             onGoToPath={finalizeAndNavigateTo}
+          />
+        </BetCardShell>
+      ) : stage === 'extras-portfolio' && showReview ? (
+        <BetCardShell>
+          <Step22_Review
+            onBack={() => setShowReview(false)}
+            onFinalize={() => {
+              void finalizeUnifiedOnboarding().finally(() => {
+                dispatch({ type: 'GO_TO_PHASE', phase: 'done' });
+              });
+            }}
+            onEdit={(section: Step22Section) => {
+              setShowReview(false);
+              const map: Record<Step22Section, UnifiedPhase> = {
+                identity: 'triage_identity',
+                service: 'main_service',
+                photos: 'main_photos',
+                document: 'main_document',
+                portfolio: 'main_portfolio_albums',
+                extras: 'main_extras_a',
+              };
+              dispatch({ type: 'GO_TO_PHASE', phase: map[section] });
+            }}
           />
         </BetCardShell>
       ) : stage === 'done' ? (
