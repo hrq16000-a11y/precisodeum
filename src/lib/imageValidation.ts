@@ -105,7 +105,7 @@ export async function validateImageFile(
     return {
       ok: false,
       code: 'too_large',
-      message: `Arquivo grande demais (${formatSize(file.size)}). Máximo: ${formatSize(maxSizeBytes)}.`,
+      message: `Arquivo muito grande (${formatSize(file.size)}). Envie no máximo ${formatSize(maxSizeBytes).replace('.0', '')}.`,
     };
   }
   if (file.size < minSizeBytes) {
