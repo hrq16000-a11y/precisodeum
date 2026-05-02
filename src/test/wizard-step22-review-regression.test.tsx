@@ -60,6 +60,11 @@ function makeAlbumsCount(c: number) {
 }
 
 describe('Step22_Review', () => {
+  beforeEach(() => {
+    if (typeof window !== 'undefined') localStorage.clear();
+    supabaseMock.from.mockReset();
+  });
+
   it('mostra resumo com 5 linhas após carregar', async () => {
     supabaseMock.from.mockImplementation((table: string) => {
       if (table === 'providers')
