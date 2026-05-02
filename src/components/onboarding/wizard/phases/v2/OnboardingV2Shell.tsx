@@ -97,6 +97,8 @@ import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Ph
 // Phase4Review removido — Wizard publica silenciosamente, sem tela de revisão.
 import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
+import { playWizardTransition } from '@/lib/wizardTransition';
+import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import { markPatchTouched, clearSessionTouched } from './sessionTouched';
 import { pushReviewPhase, popReviewPhase, clearReviewHistory } from './reviewHistory';
 import {
@@ -1374,8 +1376,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   };
 
   /* ───── Telemetria helpers ───── */
-  const track = (event: 'next' | 'back' | 'skip' | 'submit' | 'error', meta: Record<string, unknown> = {}) =>
+  const track = (event: 'next' | 'back' | 'skip' | 'submit' | 'error', meta: Record<string, unknown> = {}) => {
+    // Áudio leve sincronizado com a transição. Respeita reduced-motion via cooldown.
+    if (event === 'next') playWizardTransition('next');
+    else if (event === 'back') playWizardTransition('back');
+    else if (event === 'skip') playWizardTransition('skip');
     void trackEvent({ phase: state.phase, event, userId: user?.id, meta });
+  };
 
   /* ───── Render por fase ───── */
 
