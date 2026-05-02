@@ -13,9 +13,9 @@ const fieldWin = vi.fn();
 const stageWin = vi.fn(async () => {});
 const playStampSound = vi.fn();
 vi.mock('@/lib/betDopamine', () => ({
-  fieldWin: (...a: unknown[]) => fieldWin(...a),
-  stageWin: (...a: unknown[]) => stageWin(...a),
-  playStampSound: (...a: unknown[]) => playStampSound(...a),
+  fieldWin: (...a: unknown[]) => fieldWin(...(a as [])),
+  stageWin: (...a: unknown[]) => stageWin(...(a as [])),
+  playStampSound: (...a: unknown[]) => playStampSound(...(a as [])),
 }));
 
 import {
@@ -29,8 +29,7 @@ beforeEach(() => {
   stageWin.mockClear();
   playStampSound.mockClear();
   // limpar matchMedia mock
-  // @ts-expect-error test-only
-  delete window.matchMedia;
+  Object.defineProperty(window, 'matchMedia', { configurable: true, value: undefined });
 });
 
 describe('wizardTransition', () => {

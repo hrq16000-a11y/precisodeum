@@ -115,8 +115,9 @@ describe('Wizard navegação · contrato Skip/Continue/Back', () => {
     // por TODAS as fases (sem atalho mágico).
     const seq: Phase[] = ['phase2_photos'];
     let cur: Phase | 'wizard_shell' = 'phase2_photos';
-    while (cur !== 'wizard_shell') {
-      const p = prev(cur as Phase);
+    while (true) {
+      if (cur === 'wizard_shell') break;
+      const p = prev(cur);
       if (p === 'wizard_shell') break;
       seq.push(p);
       cur = p;
