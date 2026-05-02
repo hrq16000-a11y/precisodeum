@@ -45,6 +45,7 @@ import { getDeviceKind } from '@/lib/locationTelemetry';
 import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
 import { useBetRemoteDraft, fetchRemoteBetDraft, clearRemoteBetDraft } from './useBetRemoteDraft';
 import { awardBetReward, type BetRewardKey } from './betRewards';
+import { playWizardTransition } from '@/lib/wizardTransition';
 
 /** Ordem das fases — usado para resolver o "Voltar" global em uma fase anterior. */
 const BET_BACK_MAP: Partial<Record<BetPhase, BetPhase>> = {
