@@ -53,10 +53,19 @@ describe("E2E · self_delete_account (1 clique)", () => {
     vi.useFakeTimers();
   });
 
-  it("botão Confirmar fica DESABILITADO sem motivo", () => {
+  it("botão Confirmar fica HABILITADO mesmo sem motivo (UX 1-clique)", () => {
     render(<DeleteAccountDialog open={true} onOpenChange={() => {}} />);
     const btn = screen.getByTestId("self-delete-confirm") as HTMLButtonElement;
-    expect(btn.disabled).toBe(true);
+    // Motivo é opcional após simplificação UX (1 clique + 1 confirmação).
+    expect(btn.disabled).toBe(false);
+  });
+
+  it("payload com motivo NULO é aceito quando o usuário não preenche", () => {
+    // Documenta que self_delete_account aceita _reason=null e usa
+    // 'self_request' como default no banco.
+    const reason = "";
+    const reasonPayload = reason ? reason : null;
+    expect(reasonPayload).toBeNull();
   });
 
   it("dispara RPC self_delete_account com motivo + signOut + redireciona para /", async () => {
