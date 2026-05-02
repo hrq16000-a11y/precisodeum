@@ -1583,15 +1583,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             />
             <WizardEncouragement
-              tone="celebrate"
-              title="Última etapa do circuito principal"
+              tone={photoCount > 0 ? 'celebrate' : 'gentle'}
+              title={photoCount > 0 ? `Mandou bem! ${photoCount} foto${photoCount > 1 ? 's' : ''} no ar` : 'Última etapa do circuito principal'}
               description="Fotos bem feitas viram cliques. Mesmo 1 foto já libera o selo de anúncio completo."
               items={[
-                { label: 'Serviço', done: true },
-                { label: 'Detalhes', done: !!(state.service.description || '').trim() },
-                { label: 'Fotos', done: false },
+                { label: 'Serviço — pronto', done: true },
+                { label: 'Detalhes — pronto', done: !!(state.service.description || '').trim() },
+                { label: `Fotos — ${photoCount}/5`, done: photoCount > 0 },
               ]}
-              nextStep="Suba pelo menos 1 foto ou pule por enquanto — você pode voltar depois."
+              nextStep={
+                photoCount === 0
+                  ? 'Suba pelo menos 1 foto ou pule por enquanto — você pode voltar depois.'
+                  : photoCount < 3
+                    ? 'Adicione mais fotos para destacar o anúncio (até 5).'
+                    : 'Tudo pronto! Pode concluir e celebrar.'
+              }
             />
           </>
         );
