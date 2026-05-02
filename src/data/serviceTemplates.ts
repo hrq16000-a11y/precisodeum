@@ -33,7 +33,7 @@ export const SERVICE_TEMPLATES: Record<string, ServiceTemplate[]> = {
     { label: 'Textura e Grafiato', description: 'Aplicação de texturas decorativas, grafiato e efeitos especiais em paredes. Variedade de acabamentos e cores. Transforme seus ambientes com sofisticação e bom gosto.' },
   ],
   'pedreiro': [
-    { label: 'Reforma Geral', description: 'Reforma completa de casas e apartamentos: alvenaria, reboco, contrapiso, revestimentos e acabamentos. Equipe experiente, trabalho limpo e dentro do prazo. Orçamento gratuito.' },
+    { label: 'Reforma Geral', description: 'Reforma completa de casas e apartamentos: alvenaria, reboco, contrapiso, revestimentos e acabamentos. Equipe experiente, trabalho limpo e dentro do prazo. Avaliação técnica gratuita.' },
     { label: 'Construção', description: 'Construção de muros, lajes, estruturas e ampliações residenciais e comerciais. Projeto acompanhado, materiais de qualidade e cumprimento rigoroso de prazos. Experiência comprovada.' },
     { label: 'Reparos e Manutenção', description: 'Reparos em alvenaria, trincas, infiltrações e problemas estruturais. Manutenção preventiva e corretiva com agilidade. Pequenos e grandes reparos com o mesmo padrão de qualidade.' },
   ],
