@@ -896,9 +896,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         variant: 'v2',
         context: { action: 'persist_phase1', has_provider_id: !!state.providerId, flow: isCompany ? 'company' : 'default' },
       });
+      const errMsg = (e?.message || 'Falha desconhecida ao salvar').toString();
+      const errCode = e?.code ? String(e.code) : null;
+      setLastPersistError({ message: errMsg, code: errCode, at: Date.now() });
       toast.error('Não consegui salvar agora', {
-        description: (e?.message || 'Tente novamente em instantes.').slice(0, 160),
+        description: errMsg.slice(0, 200) + (errCode ? ` [cod: ${errCode}]` : ''),
         action: { label: 'Tentar novamente', onClick: () => { void persistPhase1(); } },
+        duration: 10000,
       });
       return false;
     } finally {
