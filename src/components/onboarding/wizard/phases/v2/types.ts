@@ -46,6 +46,8 @@ export interface OnboardingProfileData {
   postal_code?: string;
   /** Segmento de negócio — opcional, só PJ. */
   business_segment?: string;
+  /** Razão social / nome da empresa — opcional, só PJ. Hidratado em modo revisão. */
+  company_name?: string;
   /** Toggle de privacidade do endereço completo — só PJ. */
   show_full_address?: boolean;
   /** Última sugestão de logradouro vinda do CEP (BrasilAPI/ViaCEP) — só UX, não persistida. */
