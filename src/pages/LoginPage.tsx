@@ -110,6 +110,28 @@ const LoginPage = () => {
     const looksLikeNoAccount = signInError && /invalid login credentials|invalid_grant|user not found/i.test(errMsg);
 
     if (looksLikeNoAccount) {
+      // Bloqueio de reentrada (180 dias) — verifica antes de tentar criar a conta
+      try {
+        const { data: blockData } = await (supabase.rpc as any)('check_registration_block', {
+          _email: trimmedEmail,
+          _whatsapp: null,
+        });
+        const block = (blockData as any) || {};
+        if (block?.blocked) {
+          setLoading(false);
+          const days = typeof block.days_remaining === 'number' ? block.days_remaining : null;
+          const tail = days != null ? ` Aguarde ${days} dia${days === 1 ? '' : 's'} antes de criar nova conta.` : '';
+          toast.error(
+            `Por política de uso, este e-mail está temporariamente impedido de criar nova conta.${tail}`,
+            { duration: 8000 },
+          );
+          return;
+        }
+      } catch (e) {
+        // RPC indisponível → não bloqueia signup (fail-open intencional p/ não travar usuário legítimo)
+        console.warn('[reentry-check] skipped:', e);
+      }
+
       const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
