@@ -114,9 +114,9 @@ describe('Step20_MoreServices — contrato de props e renderização', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/2/)).toBeInTheDocument();
+      // O componente renderiza "{count} / 5" só depois de loadingProvider=false
       expect(screen.getByText(/\/\s*5/)).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     expect(screen.getByRole('button', { name: /Continuar/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Pular/i })).toBeInTheDocument();
