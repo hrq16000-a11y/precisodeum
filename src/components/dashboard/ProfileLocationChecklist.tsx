@@ -49,13 +49,21 @@ export default function ProfileLocationChecklist({ provider }: Props) {
   const status = String(provider.status || '').toLowerCase();
   if (status === 'active') return null;
 
-  const hasCity = !!(provider.city && provider.city.trim().length > 0);
-  const hasState = !!(provider.state && provider.state.trim().length === 2);
-  const hasUserNeighborhood = !!(
-    provider.neighborhood &&
-    provider.neighborhood.trim().length > 0 &&
-    provider.neighborhood_source === 'user'
-  );
+  // Defesa em profundidade: providers legados podem chegar com tipos
+  // inesperados (números, objetos, arrays) em campos string. Coerção segura.
+  const safeStr = (v: unknown): string =>
+    typeof v === 'string' ? v.trim() : '';
+
+  const cityStr = safeStr(provider.city);
+  const stateStr = safeStr(provider.state);
+  const neighborhoodStr = safeStr(provider.neighborhood);
+  const neighborhoodSourceStr = safeStr(provider.neighborhood_source);
+  const geoSourceStr = safeStr(provider.geo_source);
+
+  const hasCity = cityStr.length > 0;
+  const hasState = stateStr.length === 2;
+  const hasUserNeighborhood =
+    neighborhoodStr.length > 0 && neighborhoodSourceStr === 'user';
   const hasCoords =
     typeof provider.latitude === 'number' &&
     typeof provider.longitude === 'number' &&
@@ -76,7 +84,7 @@ export default function ProfileLocationChecklist({ provider }: Props) {
       label: 'Bairro real (não "Centro" automático)',
       done: hasUserNeighborhood,
       hint:
-        provider.neighborhood_source === 'default_centro'
+        neighborhoodSourceStr === 'default_centro'
           ? 'Seu bairro foi preenchido como "Centro" automaticamente. Edite para o bairro real.'
           : 'Informe o bairro onde você atende.',
       icon: MapPin,
@@ -86,7 +94,7 @@ export default function ProfileLocationChecklist({ provider }: Props) {
       key: 'coords',
       label: 'Coordenadas GPS',
       done: hasCoords,
-      hint: hasCoords && provider.geo_source === 'gps' && typeof provider.geo_source_confidence === 'number'
+      hint: hasCoords && geoSourceStr === 'gps' && typeof provider.geo_source_confidence === 'number' && Number.isFinite(provider.geo_source_confidence)
         ? `GPS ${provider.geo_source_confidence <= 100 ? 'preciso' : 'aproximado'} (±${Math.round(provider.geo_source_confidence)}m).`
         : 'Permite ordenar por proximidade real (Haversine) e calcular distância exata.',
       icon: Navigation,
