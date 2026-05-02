@@ -64,13 +64,20 @@ export function WizardProgressBar({
 
   // Shimmer one-shot quando entra em modo "anchored". Limpa em 220ms para
   // não interferir com a animação de spring do width.
+  // A11y: respeita `prefers-reduced-motion` (sem motion + sem shimmer).
+  // Performance: usa `transform: translateX` (composited, sem reflow) em
+  // vez de animar a propriedade `x` via framer (que recalcula layout/repaint
+  // a cada frame em barras finas). Mantido `motion` para o `width` por
+  // continuidade visual com o spring.
+  const prefersReducedMotion = useReducedMotion();
   const [shimmer, setShimmer] = useState(false);
   useEffect(() => {
     if (!anchored) return;
+    if (prefersReducedMotion) return;
     setShimmer(true);
-    const t = window.setTimeout(() => setShimmer(false), 220);
+    const t = window.setTimeout(() => setShimmer(false), 240);
     return () => window.clearTimeout(t);
-  }, [anchored, phase]);
+  }, [anchored, phase, prefersReducedMotion]);
 
   return (
     <div
@@ -82,8 +89,9 @@ export function WizardProgressBar({
       aria-label={`Etapa ${stepNumber} de ${total} — ${label}`}
       data-milestone={isMilestone || undefined}
       data-anchored={anchored || undefined}
+      data-shimmer={shimmer || undefined}
     >
-      <div className="relative h-0.5 w-full bg-muted sm:h-1">
+      <div className="relative h-0.5 w-full overflow-hidden bg-muted sm:h-1">
         <motion.div
           className={
             isMilestone
@@ -91,15 +99,19 @@ export function WizardProgressBar({
               : 'h-full bg-gradient-to-r from-accent to-primary'
           }
           animate={{ width: `${pct}%` }}
-          transition={{ type: 'spring', stiffness: 120, damping: 22 }}
+          transition={
+            prefersReducedMotion
+              ? { duration: 0 }
+              : { type: 'spring', stiffness: 120, damping: 22 }
+          }
+          style={{ willChange: 'width' }}
         />
-        {shimmer && (
-          <motion.div
+        {shimmer && !prefersReducedMotion && (
+          <span
             aria-hidden
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-bet-amber/35 to-transparent"
-            initial={{ x: '-30%', opacity: 0 }}
-            animate={{ x: '130%', opacity: [0, 1, 0] }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
+            data-testid="wizard-progress-shimmer"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-bet-amber/35 to-transparent animate-wizard-shimmer"
+            style={{ willChange: 'transform' }}
           />
         )}
       </div>
