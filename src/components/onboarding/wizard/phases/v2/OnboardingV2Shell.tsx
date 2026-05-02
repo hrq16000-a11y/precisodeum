@@ -265,6 +265,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   };
 
   const [saving, setSaving] = useState(false);
+  // Última falha real de persistPhase1 — usada para mostrar mensagem específica
+  // (em vez do toast genérico que mascarava a causa real do bloqueio).
+  const [lastPersistError, setLastPersistError] = useState<null | {
+    message: string;
+    code?: string | null;
+    at: number;
+  }>(null);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
   // Timer rastreado do hint "rascunho restaurado" (caminho remoto, fora de useEffect).
   // Mantido em ref para garantir cleanup no unmount e evitar setState zumbi.
