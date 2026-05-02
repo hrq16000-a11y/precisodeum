@@ -153,6 +153,15 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
           <span className="text-xs font-medium text-muted-foreground">Álbuns criados</span>
           <span className="text-xs font-bold">{albums.length} / {MAX_ALBUMS}</span>
         </div>
+        {providerLoadError && (
+          <div
+            role="alert"
+            data-testid="step21-provider-error"
+            className="mt-2 rounded border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-xs text-destructive"
+          >
+            {providerLoadError}
+          </div>
+        )}
         {loading ? (
           <p className="mt-2 text-xs text-muted-foreground">Carregando…</p>
         ) : albums.length === 0 ? (
