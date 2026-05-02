@@ -10,6 +10,8 @@ import DashboardGroupNav from "@/components/dashboard/DashboardGroupNav";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { RegistrationDataSummary } from "@/components/dashboard/RegistrationDataSummary";
+import { MetaTrackingSummary } from "@/components/dashboard/MetaTrackingSummary";
+import { DeleteAccountDialog } from "@/components/dashboard/DeleteAccountDialog";
 
 const FUNCTION_URL = (name: string) =>
   `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`;
