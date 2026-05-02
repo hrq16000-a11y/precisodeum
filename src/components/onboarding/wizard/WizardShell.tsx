@@ -55,17 +55,21 @@ import {
   mapUnifiedToMainPhase,
   mapTriagePhaseToUnified,
   PROVIDER_WIZARD_PHASE_ORDER,
-  REVIEW_PHASE_ORDER,
-  REVIEW_TOTAL_STEPS,
-  isReviewPhaseRenderable,
-  nextRenderableReviewPhase,
-  prevRenderableReviewPhase,
   unifiedPhaseIndex,
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
   wizardReducer,
   type UnifiedPhase,
 } from './wizardReducer';
+// Fonte ÚNICA da régua de revisão e da navegação skip-fantasma — importada
+// direto de `wizardReviewSteps`, nunca redeclarada localmente.
+import {
+  REVIEW_PHASE_ORDER,
+  REVIEW_TOTAL_STEPS,
+  nextRenderableReviewPhase,
+  prevRenderableReviewPhase,
+} from './wizardReviewSteps';
+import { useReviewAnchor, resolveUnifiedPhaseLabel } from './useReviewAnchor';
 import type { BetState } from './phases/bet/types';
 
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
@@ -465,23 +469,21 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   // Quando a fase atual é "fantasma" (não está na régua, ex.: main_action,
   // main_kind, main_location, main_contact — expurgadas mas mantidas no
   // reducer por compat), `indexOf` retorna -1 e o numerador "saltaria" para
-  // 1/19. Usamos a última fase renderável visitada como âncora para
-  // suavizar e nunca exibir saltos bruscos (ex.: 6 -> 11).
-  const lastRenderableReviewPhaseRef = useRef<UnifiedPhase | null>(null);
-  if (isReview && REVIEW_PHASE_ORDER.indexOf(state.phase) >= 0) {
-    lastRenderableReviewPhaseRef.current = state.phase;
-  }
-  const reviewAnchorPhase: UnifiedPhase =
-    isReview && REVIEW_PHASE_ORDER.indexOf(state.phase) < 0 && lastRenderableReviewPhaseRef.current
-      ? lastRenderableReviewPhaseRef.current
-      : state.phase;
-  const phaseIdx = isReview
-    ? Math.max(0, REVIEW_PHASE_ORDER.indexOf(reviewAnchorPhase))
-    : unifiedPhaseIndex(state.phase);
+  // 1/19. O hook `useReviewAnchor` é a fonte ÚNICA dessa lógica:
+  // ancora a UI na última fase renderável visitada, sem saltos visuais, e
+  // emite telemetria `review_anchor_used` para auditoria de UX.
+  const { anchorPhase: reviewAnchorPhase, anchorIndex: reviewAnchorIndex } =
+    useReviewAnchor(state.phase, isReview);
+  const phaseIdx = isReview ? reviewAnchorIndex : unifiedPhaseIndex(state.phase);
   const hudPoints = realPoints;
   const hudTotal = isReview ? REVIEW_TOTAL_STEPS : UNIFIED_VISIBLE_PHASES;
   const hudProgress = Math.min(1, (Math.min(phaseIdx + 1, hudTotal)) / hudTotal);
-  const hudLabel = UNIFIED_PHASE_LABELS[isReview ? reviewAnchorPhase : state.phase] ?? '';
+  // Invariante: HUD nunca exibe label vazio. Fases desconhecidas caem no
+  // fallback "Etapa em revisão" via `resolveUnifiedPhaseLabel`.
+  const hudLabel = resolveUnifiedPhaseLabel(
+    UNIFIED_PHASE_LABELS,
+    isReview ? reviewAnchorPhase : state.phase,
+  );
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
   // Régua de progresso: em modo revisão usa REVIEW_PHASE_ORDER (19 fases —
   // mesma régua exibida no /dashboard/assistente). Fora de review, mantém

@@ -9,12 +9,15 @@
  */
 import { motion } from 'framer-motion';
 import {
-  REVIEW_TOTAL_STEPS,
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
   unifiedPhaseIndex,
   type UnifiedPhase,
 } from './wizardReducer';
+// Fonte ÚNICA do total de passos da régua de revisão. NÃO redeclarar
+// localmente — qualquer divergência aqui dessincroniza HUD vs Dashboard.
+import { REVIEW_TOTAL_STEPS } from './wizardReviewSteps';
+import { resolveUnifiedPhaseLabel } from './useReviewAnchor';
 
 interface WizardProgressBarProps {
   phase: UnifiedPhase;
@@ -32,8 +35,13 @@ export function WizardProgressBar({ phase, phaseOrder, totalOverride, forceCompl
   const rawStep = Math.min(idx + 1, total);
   const raw = (rawStep / total) * 100;
   const pct = forceComplete || phase === 'done' ? 100 : Math.min(100, Math.max(2, raw));
-  const label = UNIFIED_PHASE_LABELS[phase] ?? '';
+  // Invariante UX: barra nunca mostra label vazio (fase desconhecida cai
+  // em "Etapa em revisão"). Mantém paridade com o HUD do WizardShell.
+  const label = resolveUnifiedPhaseLabel(UNIFIED_PHASE_LABELS, phase);
   const stepNumber = rawStep;
+  // `REVIEW_TOTAL_STEPS` é referenciado para travar o import (fonte única);
+  // o valor efetivo do total já chega via `totalOverride` do WizardShell.
+  void REVIEW_TOTAL_STEPS;
 
   return (
     <div
