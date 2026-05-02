@@ -1,10 +1,13 @@
 /**
  * DeleteAccountDialog — modal vermelho de auto-exclusão (LGPD).
  *
- * Disparado pelo botão "Excluir agora" em /dashboard/privacidade.
- * Exige confirmação explícita + Select obrigatório de motivo de saída
- * antes de chamar o RPC `self_delete_account(_reason)`. Em caso de sucesso,
- * dispara toast de despedida e redireciona para a Home (deslogado).
+ * UX simplificada (1 clique + 1 confirmação curta):
+ *   - Motivo de saída é OPCIONAL (não bloqueia o botão de confirmar).
+ *   - O usuário lê o aviso vermelho e clica em "Sim, excluir agora".
+ *   - Em sucesso: toast → deslogio → redirect para a Home.
+ *
+ * Cold storage de 90 dias e bloqueio de reentrada de 180 dias permanecem
+ * inalterados — são responsabilidades do RPC `self_delete_account` no banco.
  */
 import { useState } from "react";
 import { Loader2, ShieldAlert, Trash2 } from "lucide-react";
@@ -59,7 +62,9 @@ export function DeleteAccountDialog({ open, onOpenChange, onCompleted, signOut }
   const [otherText, setOtherText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit = !!reason && (reason !== "other" || otherText.trim().length >= 3) && !submitting;
+  // Motivo é OPCIONAL: o botão fica habilitado mesmo sem seleção.
+  // Se o usuário escolher "Outro" sem escrever nada, tratamos como vazio.
+  const canSubmit = !submitting;
 
   const reset = () => {
     setReason("");
@@ -71,10 +76,15 @@ export function DeleteAccountDialog({ open, onOpenChange, onCompleted, signOut }
     if (!canSubmit) return;
     setSubmitting(true);
     try {
-      const reasonPayload =
-        reason === "other"
-          ? `other:${otherText.trim().slice(0, 240)}`
-          : (reason as string);
+      let reasonPayload: string | null = null;
+      if (reason) {
+        if (reason === "other") {
+          const txt = otherText.trim().slice(0, 240);
+          reasonPayload = txt.length >= 3 ? `other:${txt}` : "other";
+        } else {
+          reasonPayload = reason;
+        }
+      }
 
       const { error } = await (supabase.rpc as any)("self_delete_account", {
         _reason: reasonPayload,
@@ -90,7 +100,7 @@ export function DeleteAccountDialog({ open, onOpenChange, onCompleted, signOut }
       setTimeout(async () => {
         try { await signOut?.(); } catch { /* noop */ }
         try { onCompleted?.(); } catch { /* noop */ }
-        window.location.href = "/";
+        window.location.href = "/?conta_excluida=1";
       }, 1200);
     } catch (e: any) {
       console.error("[self-delete]", e);
@@ -110,7 +120,7 @@ export function DeleteAccountDialog({ open, onOpenChange, onCompleted, signOut }
       <AlertDialogContent className="border-destructive/40">
         <AlertDialogHeader>
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-            <ShieldAlert className="h-6 w-6" />
+            <ShieldAlert className="h-6 w-6" strokeWidth={1.75} />
           </div>
           <AlertDialogTitle className="text-center text-destructive">
             Excluir minha conta agora
@@ -124,46 +134,44 @@ export function DeleteAccountDialog({ open, onOpenChange, onCompleted, signOut }
                 WhatsApp, e-mail ou dispositivo por <strong>180 dias</strong>.
               </p>
 
-              <div className="text-left">
-                <label
-                  htmlFor="self-delete-reason"
-                  className="mb-1 block text-xs font-semibold text-foreground"
-                >
-                  Por que você está saindo? <span className="text-destructive">*</span>
-                </label>
-                <Select
-                  value={reason}
-                  onValueChange={(v) => setReason(v as SelfDeleteReason)}
-                  disabled={submitting}
-                >
-                  <SelectTrigger id="self-delete-reason" data-testid="self-delete-reason">
-                    <SelectValue placeholder="Selecione um motivo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REASONS.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>
-                        {r.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {reason === "other" ? (
-                  <textarea
-                    value={otherText}
-                    onChange={(e) => setOtherText(e.target.value.slice(0, 240))}
-                    rows={3}
-                    placeholder="Conte rapidamente o motivo (mín. 3 caracteres)…"
-                    className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+              <details className="text-left">
+                <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground">
+                  Quer nos contar o motivo? <span className="font-normal">(opcional)</span>
+                </summary>
+                <div className="mt-2 space-y-2">
+                  <Select
+                    value={reason}
+                    onValueChange={(v) => setReason(v as SelfDeleteReason)}
                     disabled={submitting}
-                    data-testid="self-delete-other-text"
-                  />
-                ) : null}
-              </div>
+                  >
+                    <SelectTrigger id="self-delete-reason" data-testid="self-delete-reason">
+                      <SelectValue placeholder="Selecione um motivo (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REASONS.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>
+                          {r.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {reason === "other" ? (
+                    <textarea
+                      value={otherText}
+                      onChange={(e) => setOtherText(e.target.value.slice(0, 240))}
+                      rows={2}
+                      placeholder="Conte rapidamente o motivo (opcional)…"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                      disabled={submitting}
+                      data-testid="self-delete-other-text"
+                    />
+                  ) : null}
+                </div>
+              </details>
 
               <p className="text-left text-[11px] text-muted-foreground">
                 Ao confirmar, você será deslogado e levado de volta à página inicial.
-                O motivo será registrado de forma anônima para melhorarmos o produto.
               </p>
             </div>
           </AlertDialogDescription>
@@ -189,8 +197,8 @@ export function DeleteAccountDialog({ open, onOpenChange, onCompleted, signOut }
                 </>
               ) : (
                 <>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Excluir definitivamente
+                  <Trash2 className="mr-2 h-4 w-4" strokeWidth={1.75} />
+                  Sim, excluir agora
                 </>
               )}
             </Button>

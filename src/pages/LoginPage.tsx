@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { resolvePostLoginRoute } from '@/lib/onboardingAccess';
 import PasswordInput from '@/components/auth/PasswordInput';
+import { getDeviceFingerprint } from '@/lib/deviceFingerprint';
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
@@ -114,9 +115,11 @@ const LoginPage = () => {
       // O RPC `check_registration_block` cobre e-mail, WhatsApp e (server-side)
       // hash de dispositivo/IP, então a mensagem aqui cita os três vetores.
       try {
+        const deviceFp = await getDeviceFingerprint();
         const { data: blockData } = await (supabase.rpc as any)('check_registration_block', {
           _email: trimmedEmail,
           _whatsapp: null,
+          _device_fingerprint: deviceFp,
         });
         const block = (blockData as any) || {};
         if (block?.blocked) {
@@ -137,7 +140,9 @@ const LoginPage = () => {
               ? "este e-mail"
               : matchedVia === "whatsapp"
                 ? "este WhatsApp"
-                : "este e-mail, WhatsApp ou dispositivo";
+                : matchedVia === "device"
+                  ? "este dispositivo"
+                  : "este e-mail, WhatsApp ou dispositivo";
 
           // Motivo humanizado
           const reasonHuman =
