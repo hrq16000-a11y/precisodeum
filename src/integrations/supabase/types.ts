@@ -8237,6 +8237,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_registration_block: {
+        Args: { _email?: string; _whatsapp?: string }
+        Returns: Json
+      }
       claim_sponsor_lead: { Args: { _lead_id: string }; Returns: Json }
       close_presence_session: { Args: never; Returns: Json }
       complete_app_install_mission: { Args: never; Returns: Json }
