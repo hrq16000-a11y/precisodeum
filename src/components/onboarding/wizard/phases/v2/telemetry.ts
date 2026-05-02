@@ -29,6 +29,7 @@ export type OnboardingEventName =
   | 'error'      // falha de persistência
   | 'complete'   // wizard concluído
   | 'phase_exit' // saída de uma fase com duração medida (time-on-phase)
+  | 'review_anchor_used' // HUD ancorado em fase renderável anterior porque a fase atual é "fantasma"
   | 'abandon';   // ainda não usado — reservado para detector de saída
 
 /** Origem do rascunho carregado para a sessão atual. */

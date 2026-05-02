@@ -60,7 +60,7 @@ export function useReviewAnchor(phase: UnifiedPhase, isReview: boolean): ReviewA
     if (lastTrackedAnchorRef.current === key) return;
     lastTrackedAnchorRef.current = key;
     void trackOnboardingEvent({
-      phase: anchorPhase as any,
+      phase: anchorPhase,
       event: 'review_anchor_used',
       meta: {
         variant: 'unified',
