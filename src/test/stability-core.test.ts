@@ -53,7 +53,7 @@ describe('Critical page imports', () => {
     it(`${name} can be imported without errors`, async () => {
       const mod = await import(/* @vite-ignore */ path);
       expect(mod.default).toBeDefined();
-    });
+    }, 30_000); // cold-start do Vite pode demorar; passa em <2s isolado
   });
 });
 
