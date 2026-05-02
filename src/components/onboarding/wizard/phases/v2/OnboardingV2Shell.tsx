@@ -1502,11 +1502,19 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               title="Você está a 3 passos do seu 1º anúncio"
               description="Cadastre o serviço, capriche nos detalhes e adicione fotos — clientes da sua região já estão buscando."
               items={[
-                { label: 'Serviço', done: !!(state.service.service_name || '').trim() },
-                { label: 'Detalhes', done: false },
-                { label: 'Fotos', done: false },
+                { label: `Serviço${(state.service.service_name || '').trim() ? ' — pronto' : ''}`, done: !!(state.service.service_name || '').trim() && (state.service.category_ids?.length ?? 0) > 0 },
+                { label: `Detalhes${(state.service.description || '').trim().length >= 10 ? ' — pronto' : ''}`, done: (state.service.description || '').trim().length >= 10 },
+                { label: `Fotos${photoCount > 0 ? ` — ${photoCount}/5` : ''}`, done: photoCount > 0 },
               ]}
-              nextStep="Escolha a categoria e dê um nome curto ao serviço."
+              nextStep={
+                !(state.service.category_ids?.length ?? 0)
+                  ? 'Escolha a categoria do serviço.'
+                  : !(state.service.service_name || '').trim()
+                    ? 'Dê um nome curto e claro ao serviço.'
+                    : (state.service.description || '').trim().length < 10
+                      ? 'Escreva uma descrição (mín. 10 caracteres).'
+                      : 'Tudo pronto — pode salvar e continuar.'
+              }
             />
           </>
         );
