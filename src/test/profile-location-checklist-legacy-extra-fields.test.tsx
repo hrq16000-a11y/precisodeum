@@ -63,7 +63,8 @@ describe('ProfileLocationChecklist · providers legados com campos novos/extra n
       status: 'pending',
     } as any);
 
-    expect(screen.getByText(/3 de 3 itens completos/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tudo certo/i)).toBeInTheDocument();
+    expect(screen.getByText(/Completo/i)).toBeInTheDocument();
     expectNoBrokenRender();
   });
 
