@@ -57,6 +57,12 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     if (geo.city && geo.state) {
       autoFilledRef.current = true;
       const cleanNeighborhood = sanitizeNeighborhood(geo.neighborhood, geo.city);
+      const willFillNeighborhood = !(state.neighborhood && state.neighborhood.trim()) && !!cleanNeighborhood;
+      const nbSource = willFillNeighborhood
+        ? (geo.neighborhoodSource && geo.neighborhoodSource !== 'none'
+            ? (geo.neighborhoodSource as BetState['neighborhood_source'])
+            : null)
+        : (state.neighborhood_source ?? null);
       patch({
         city: geo.city,
         state: geo.state,
@@ -64,12 +70,24 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         ...(geo.latitude != null && geo.longitude != null
           ? { latitude: geo.latitude, longitude: geo.longitude }
           : {}),
-        ...(!(state.neighborhood && state.neighborhood.trim()) && cleanNeighborhood
-          ? { neighborhood: cleanNeighborhood }
+        ...(willFillNeighborhood
+          ? { neighborhood: cleanNeighborhood as string, neighborhood_source: nbSource }
           : {}),
       });
+      // Log estruturado de persistência (auditoria local).
+      // eslint-disable-next-line no-console
+      console.info('[loc-persist] auto-fill', {
+        city: geo.city,
+        state: geo.state,
+        neighborhood: willFillNeighborhood ? cleanNeighborhood : state.neighborhood,
+        neighborhood_source: willFillNeighborhood ? nbSource : state.neighborhood_source,
+        location_source: state.location_source ?? (geo.source === 'gps' ? 'gps' : 'ip'),
+        gps_accuracy_m: state.gps_accuracy_m,
+        precise: geo.source === 'gps',
+        trigger: 'useEffect/passive',
+      });
     }
-  }, [geo.city, geo.state, geo.neighborhood, geo.latitude, geo.longitude, geo.source, state.city, state.neighborhood, state.location_source, patch]);
+  }, [geo.city, geo.state, geo.neighborhood, geo.neighborhoodSource, geo.latitude, geo.longitude, geo.source, state.city, state.neighborhood, state.neighborhood_source, state.location_source, state.gps_accuracy_m, patch]);
 
   function awardCityOnce() {
     if (state.rewards.city) return;
