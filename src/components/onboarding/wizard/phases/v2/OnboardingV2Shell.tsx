@@ -1473,6 +1473,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // postgres_changes quando o usuário sobe/remove imagem em service_images.
   const photoCount = useServicePhotoCount(state.firstServiceId);
 
+  // Status do auto-retry de "Recuperar rascunho do serviço" no card de
+  // bloqueio de phase2_photos. Permite mostrar banner de progresso/falha
+  // ao usuário sem depender só de toast (que pode ser dismissado rápido).
+  const [phase2RetryStatus, setPhase2RetryStatus] =
+    useState<'idle' | 'running' | 'failed'>('idle');
+
   const renderPhase = () => {
     switch (state.phase) {
       // phase1_action / phase1_kind / phase1_location / phase1_contact
