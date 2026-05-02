@@ -111,7 +111,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
     try {
       const { data: provider, error: pErr } = await supabase
         .from('providers')
-        .select('id, business_name, cpf, cnpj, working_hours_struct, city, bio')
+        .select('id, business_name, cpf, cnpj, working_hours_struct, city')
         .eq('user_id', user.id)
         .maybeSingle();
       if (pErr) throw pErr;
