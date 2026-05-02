@@ -8033,6 +8033,7 @@ export type Database = {
         Args: { p_correction_id: string }
         Returns: Json
       }
+      admin_review_anchor_audit: { Args: { _days?: number }; Returns: Json }
       admin_review_sponsor_docs: {
         Args: { _decision: string; _lead_id: string; _reason?: string }
         Returns: Json

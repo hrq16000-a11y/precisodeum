@@ -119,3 +119,14 @@ export function prevRenderableReviewPhase(phase: UnifiedPhase): UnifiedPhase {
   }
   return phase;
 }
+
+/** Set de fases-marco (celebrações). Não somam no numerador X/19, mas
+ *  recebem destaque visual (selo dourado) no ProgressBar e no Assistente. */
+const MILESTONE_REVIEW_PHASES: ReadonlySet<UnifiedPhase> = new Set(
+  REVIEW_STEP_CATALOG.filter((m) => m.milestone).map((m) => m.phase),
+);
+
+export function isReviewMilestonePhase(phase: UnifiedPhase): boolean {
+  return MILESTONE_REVIEW_PHASES.has(phase);
+}
+

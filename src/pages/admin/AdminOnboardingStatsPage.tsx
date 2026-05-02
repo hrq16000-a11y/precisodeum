@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, AlertTriangle, MapPin, RefreshCcw } from "lucide-react";
+import { Activity, AlertTriangle, Anchor, MapPin, RefreshCcw } from "lucide-react";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -134,6 +134,29 @@ export default function AdminOnboardingStatsPage() {
       );
       if (error) throw error;
       return (data || []) as UserFunnelRow[];
+    },
+    enabled: !!isAdmin,
+    staleTime: 60_000,
+  });
+
+  // Auditoria de "âncoras de revisão" — quantas vezes o Wizard segurou o
+  // numerador X/19 porque o usuário entrou em fase fantasma. Picos por
+  // ghost_phase indicam regressão de roteamento que merece investigação.
+  const { data: anchorAudit } = useQuery({
+    queryKey: ['admin-review-anchor-audit', days],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)(
+        'admin_review_anchor_audit',
+        { _days: days },
+      );
+      if (error) throw error;
+      return data as {
+        total: number;
+        unique_users: number;
+        by_ghost_phase: Array<{ ghost_phase: string; occurrences: number; unique_users: number }>;
+        by_anchor_phase: Array<{ anchor_phase: string; occurrences: number }>;
+        recent: Array<{ created_at: string; user_id: string | null; ghost_phase: string | null; anchor_phase: string | null; flow: string | null }>;
+      };
     },
     enabled: !!isAdmin,
     staleTime: 60_000,
@@ -278,6 +301,67 @@ export default function AdminOnboardingStatsPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Auditoria de Âncoras de Revisão (review_anchor_used) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Anchor className="h-4 w-4 text-bet-amber" />
+                Âncoras de revisão (X/19)
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Quantas vezes o Wizard segurou o numerador porque o usuário entrou em fase
+                fantasma. Picos por <code className="rounded bg-muted px-1">ghost_phase</code>{' '}
+                = regressão de roteamento.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {!anchorAudit ? (
+                <div className="h-24 animate-pulse rounded-md bg-muted/40" />
+              ) : anchorAudit.total === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma âncora registrada na janela — UX saudável.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div>
+                      <div className="text-2xl font-semibold">{anchorAudit.total}</div>
+                      <div className="text-xs text-muted-foreground">ocorrências</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-semibold">{anchorAudit.unique_users}</div>
+                      <div className="text-xs text-muted-foreground">usuários únicos</div>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="text-xs uppercase text-muted-foreground">
+                        <tr>
+                          <th className="px-2 py-1 text-left">Ghost phase</th>
+                          <th className="px-2 py-1 text-right">Ocorrências</th>
+                          <th className="px-2 py-1 text-right">Usuários únicos</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {anchorAudit.by_ghost_phase.map((r) => (
+                          <tr key={r.ghost_phase} className="border-t">
+                            <td className="px-2 py-1">
+                              <Badge variant="outline" className="font-normal">
+                                {r.ghost_phase}
+                              </Badge>
+                            </td>
+                            <td className="px-2 py-1 text-right">{r.occurrences}</td>
+                            <td className="px-2 py-1 text-right">{r.unique_users}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Conclusão por origem */}
           <Card>
