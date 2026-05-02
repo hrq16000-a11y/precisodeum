@@ -341,6 +341,18 @@ export const Phase2Service = ({
         </p>
       </div>
 
+      {/*
+        FLUXO LINEAR (correção 2026-05-02):
+        O CTA principal "Salvar e continuar" SEMPRE avança para a próxima
+        etapa interna do wizard (phase2_details → phase2_photos), nunca
+        finaliza o cadastro nem redireciona para o dashboard. O botão
+        secundário "Salvar progresso e configurar meu painel depois"
+        foi REMOVIDO porque era redundante e confundia o usuário,
+        quebrando a percepção de progresso linear ("3 passos do 1º
+        anúncio"). O atalho de "pular tudo" continua disponível
+        apenas no botão "Pular esta etapa" do topo (em modo revisão)
+        e nos guards de saída — nunca como CTA inferior.
+      */}
       <div className="flex flex-col gap-2 pt-1">
         <Button
           type="button"
@@ -352,17 +364,7 @@ export const Phase2Service = ({
           Salvar e continuar
           <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />
         </Button>
-        {firstServiceId ? (
-          // Milestone OK — usuário JÁ tem um serviço publicado: pode salvar e ir pro painel.
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onSkip}
-            className="w-full text-muted-foreground"
-          >
-            Salvar progresso e configurar meu painel depois
-          </Button>
-        ) : (
+        {!firstServiceId && (
           // Milestone bloqueado — explica em vez de esconder, para reduzir frustração.
           <div className="rounded-md border border-amber-200 bg-amber-50/60 p-2 text-center text-[11px] leading-snug text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
             Falta pouco! Publique seu primeiro serviço para que os clientes já
