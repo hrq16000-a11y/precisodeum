@@ -16,7 +16,7 @@
  * o catálogo direto.
  */
 
-import type { UnifiedPhase } from './wizardReducer.types';
+import type { UnifiedPhase } from './wizardReducer';
 import type { OnboardingReviewSection } from '@/lib/onboardingAccess';
 
 /** Metadados completos de uma fase na régua de revisão. */
