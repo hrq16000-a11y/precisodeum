@@ -25,8 +25,9 @@ describe('REVIEW_PHASE_ORDER — fonte única', () => {
   it('REVIEW_TOTAL_STEPS é derivado do catálogo (sem milestones)', () => {
     const expected = canonical.REVIEW_STEP_CATALOG.filter((m) => !m.milestone).length;
     expect(canonical.REVIEW_TOTAL_STEPS).toBe(expected);
-    // Sanity: hoje a régua canônica é exatamente 19 etapas.
-    expect(canonical.REVIEW_TOTAL_STEPS).toBe(19);
+    // O catálogo canônico tem 20 fases reais + 2 marcos de celebração.
+    // Total exibido pelo HUD = 20 - 2 milestones = 18 etapas contáveis.
+    expect(canonical.REVIEW_TOTAL_STEPS).toBe(18);
   });
 
   it("REVIEW_PHASE_ORDER termina em 'done' como sentinela", () => {
