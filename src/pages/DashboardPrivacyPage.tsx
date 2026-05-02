@@ -156,6 +156,10 @@ const DashboardPrivacyPage = () => {
             <RegistrationDataSummary userId={user?.id} />
           </div>
 
+          <div className="mt-4">
+            <MetaTrackingSummary userId={user?.id} />
+          </div>
+
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <PrivacyLink
               to="/privacidade"
@@ -207,12 +211,20 @@ const DashboardPrivacyPage = () => {
               variant="destructive"
               size="sm"
               className="mt-3"
-              onClick={handleSelfDelete}
-              disabled={deleting || !user}
+              onClick={() => setDeleteOpen(true)}
+              disabled={!user}
+              data-testid="open-self-delete"
             >
-              {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processando…</> : <>Excluir agora</>}
+              <Trash2 className="mr-2 h-4 w-4" />
+              Excluir agora
             </Button>
           </div>
+
+          <DeleteAccountDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            signOut={signOut as any}
+          />
 
           <p className="mt-6 text-xs text-muted-foreground">
             Encarregado de tratamento de dados (DPO):{" "}
