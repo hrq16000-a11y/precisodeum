@@ -48,7 +48,9 @@ const PasswordInput = forwardRef<HTMLInputElement, Props>(function PasswordInput
 ) {
   const [visible, setVisible] = useState(false);
   const rulesId = useId();
-  const v = typeof value === 'string' ? value : String(value ?? '');
+  const fromValue = typeof value === 'string' ? value : value != null ? String(value) : '';
+  const fromDefault = typeof rest.defaultValue === 'string' ? rest.defaultValue : '';
+  const v = value !== undefined ? fromValue : fromDefault;
 
   return (
     <div className="space-y-2">
