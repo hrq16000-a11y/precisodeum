@@ -185,9 +185,12 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
         )}
 
         {!isPf && (
+          // PJ: bloco "Adicionar endereço" — Opcional. Permanece colapsado até
+          // o usuário clicar no revelador. Não impõe required em nenhum campo
+          // (validado pelo teste wizard-pj-optional-address).
           <CompanyAddressForm
             collapsible
-            revealLabel="Possui ponto de atendimento físico (loja, oficina, salão)?"
+            revealLabel="Possui ponto de atendimento físico (loja, oficina, salão)? Adicionar endereço (Opcional)"
             cityPreview={{ city: state.city, neighborhood: state.neighborhood }}
             onAutoFill={handleAutoFill}
             autoFillStatus={autoFillStatus}
