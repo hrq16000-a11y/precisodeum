@@ -24,10 +24,14 @@ import {
   UserRound,
   Loader2,
   CircleDashed,
+  Copy,
+  MessageCircle,
+  Mail,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 export type ReviewSection =
   | 'identity'
@@ -55,10 +59,22 @@ interface Snapshot {
   hasBio: boolean;
   /** 'remote' = Supabase OK; 'local' = veio do draft local (fallback). */
   source: 'remote' | 'local';
+  /** Quando o draft local é mais antigo que a versão atual, alertamos o usuário. */
+  draftOutdated?: boolean;
+  /** Idade do draft local em ms (para mostrar "salvo há X min"). */
+  draftAgeMs?: number;
 }
 
 // Chave do draft local V2 — mantida em sincronia com flushDraft.ts.
 const LOCAL_DRAFT_KEY = 'onboarding_v3_institutional_final';
+/**
+ * Versão atual do schema do draft local.
+ * Quando subimos esta versão, drafts antigos são marcados como "desatualizado"
+ * para que o usuário saiba que pode haver divergência com o onboarding atual.
+ */
+const DRAFT_SCHEMA_VERSION = 'v3.2026-05';
+/** Drafts mais antigos que isto (24h) são tratados como potencialmente stale. */
+const DRAFT_STALE_AFTER_MS = 1000 * 60 * 60 * 24;
 
 /**
  * Lê o snapshot a partir do draft local quando o Supabase não responde.
@@ -74,6 +90,8 @@ function readLocalDraftSnapshot(): Snapshot | null {
       profile?: Record<string, any>;
       service?: Record<string, any>;
       providerId?: string | null;
+      savedAt?: number;
+      schemaVersion?: string;
     };
     const profile = env.profile ?? {};
     const service = env.service ?? {};
@@ -81,6 +99,10 @@ function readLocalDraftSnapshot(): Snapshot | null {
     const gallery: unknown = service.gallery_urls ?? service.photos;
     const photoCount = Array.isArray(gallery) ? gallery.length : 0;
     const cities: unknown = service.service_area_cities ?? profile.service_area_cities;
+    const draftAgeMs = env.savedAt ? Date.now() - env.savedAt : undefined;
+    const draftOutdated =
+      (env.schemaVersion && env.schemaVersion !== DRAFT_SCHEMA_VERSION) ||
+      (draftAgeMs !== undefined && draftAgeMs > DRAFT_STALE_AFTER_MS);
     return {
       providerOk: Boolean(profile.city || profile.cidade),
       servicesCount: service?.id || service?.name ? 1 : 0,
@@ -92,6 +114,8 @@ function readLocalDraftSnapshot(): Snapshot | null {
       hasServiceArea: Array.isArray(cities) && cities.length > 0,
       hasBio: Boolean((profile.bio || service.description || '').toString().trim().length >= 20),
       source: 'local',
+      draftOutdated,
+      draftAgeMs,
     };
   } catch {
     return null;
@@ -307,6 +331,37 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
   const pendingCount = items.filter((i) => !i.ok).length;
   const totalActions = items.reduce((acc, i) => acc + (i.ok ? 0 : i.actions.length), 0);
 
+  // Texto agregado de pendências para enviar via WhatsApp/Email/clipboard.
+  // Não usamos useMemo aqui porque este código vive depois dos early returns
+  // (loading/error) e quebraria a regra "mesmo nº de hooks por render".
+  const pendingDigestLines = items
+    .filter((i) => !i.ok && i.actions.length > 0)
+    .map((i) => `• ${i.label}: ${i.actions.join('; ')}`);
+  const pendingDigest = pendingDigestLines.length
+    ? `Pendências do meu cadastro em precisodeumprofissional.com.br:\n\n${pendingDigestLines.join('\n')}`
+    : '';
+
+  const copyText = async (text: string, msg = 'Pendência copiada') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(msg);
+    } catch {
+      toast.error('Não consegui copiar agora');
+    }
+  };
+
+  const sendWhatsApp = (text: string) => {
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const sendEmail = (text: string, subject = 'Pendências do meu cadastro') => {
+    const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    window.location.href = url;
+  };
+
+  const minutesOld = s.draftAgeMs ? Math.max(1, Math.round(s.draftAgeMs / 60000)) : null;
+
   return (
     <div className="mx-auto w-full max-w-md px-4 py-2 space-y-3">
       <header className="text-center space-y-0.5">
@@ -328,12 +383,54 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
             <CircleDashed className="h-3 w-3" aria-hidden /> Resumo offline (rascunho local) — pode estar desatualizado
           </p>
         )}
+        {s.source === 'local' && s.draftOutdated && (
+          <div
+            data-testid="step22-draft-outdated"
+            className="mx-auto mt-1 max-w-sm rounded-md border border-amber-400 bg-amber-50/80 p-2 text-left text-[11px] text-amber-900"
+          >
+            <p className="font-semibold">Rascunho desatualizado</p>
+            <p>
+              Seu rascunho local{minutesOld ? ` (salvo há ${minutesOld} min)` : ''} é mais antigo que a versão atual do onboarding.
+              Pode haver pequenas divergências — recomendamos clicar em <em>“Tentar de novo”</em> com a internet de volta.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void load()}
+              className="mt-1.5 h-7 text-[11px]"
+            >
+              Tentar de novo
+            </Button>
+          </div>
+        )}
       </header>
+
+      {pendingCount > 0 && pendingDigest && (
+        <div
+          data-testid="step22-digest-actions"
+          className="flex flex-wrap items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-muted/30 p-2 text-[11px]"
+        >
+          <span className="text-muted-foreground">Enviar pendências para mim:</span>
+          <Button type="button" size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={() => copyText(pendingDigest, 'Pendências copiadas')}>
+            <Copy className="h-3 w-3" /> Copiar tudo
+          </Button>
+          <Button type="button" size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={() => sendWhatsApp(pendingDigest)}>
+            <MessageCircle className="h-3 w-3" /> WhatsApp
+          </Button>
+          <Button type="button" size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={() => sendEmail(pendingDigest)}>
+            <Mail className="h-3 w-3" /> E-mail
+          </Button>
+        </div>
+      )}
 
       <ul className="divide-y divide-border rounded-lg border border-border bg-card">
         {items.map((it) => {
           const Icon = it.icon;
           const showActions = it.actions.length > 0;
+          const itemDigest = it.actions.length
+            ? `${it.label}:\n${it.actions.map((a) => `• ${a}`).join('\n')}`
+            : '';
           return (
             <li
               key={it.key}
@@ -351,17 +448,48 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
                 <p className="text-sm font-medium text-foreground">{it.label}</p>
                 <p className="text-xs text-muted-foreground">{it.detail}</p>
                 {showActions && (
-                  <ul
-                    data-testid={`review-actions-${it.key}`}
-                    className="mt-1.5 space-y-0.5 text-[11px] leading-snug text-amber-800"
-                  >
-                    {it.actions.map((a, idx) => (
-                      <li key={idx} className="flex items-start gap-1.5">
-                        <span aria-hidden className="mt-[3px] inline-block h-1 w-1 shrink-0 rounded-full bg-amber-600" />
-                        <span>{a}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <ul
+                      data-testid={`review-actions-${it.key}`}
+                      className="mt-1.5 space-y-0.5 text-[11px] leading-snug text-amber-800"
+                    >
+                      {it.actions.map((a, idx) => (
+                        <li key={idx} className="flex items-start gap-1.5">
+                          <span aria-hidden className="mt-[3px] inline-block h-1 w-1 shrink-0 rounded-full bg-amber-600" />
+                          <span>{a}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {itemDigest && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        <button
+                          type="button"
+                          data-testid={`copy-pendency-${it.key}`}
+                          onClick={() => copyText(itemDigest)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                          aria-label={`Copiar pendência de ${it.label}`}
+                        >
+                          <Copy className="h-3 w-3" /> Copiar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => sendWhatsApp(itemDigest)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                          aria-label={`Enviar pendência de ${it.label} via WhatsApp`}
+                        >
+                          <MessageCircle className="h-3 w-3" /> WhatsApp
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => sendEmail(itemDigest, `Pendência: ${it.label}`)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                          aria-label={`Enviar pendência de ${it.label} por e-mail`}
+                        >
+                          <Mail className="h-3 w-3" /> E-mail
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <Button
