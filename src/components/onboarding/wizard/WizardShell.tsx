@@ -462,13 +462,26 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   // somados localmente em tempo real.
   // Em modo revisão o índice é calculado pela REVIEW_PHASE_ORDER (X/19), para
   // ficar idêntico ao numerador exibido pelo Dashboard Assistant.
+  // Quando a fase atual é "fantasma" (não está na régua, ex.: main_action,
+  // main_kind, main_location, main_contact — expurgadas mas mantidas no
+  // reducer por compat), `indexOf` retorna -1 e o numerador "saltaria" para
+  // 1/19. Usamos a última fase renderável visitada como âncora para
+  // suavizar e nunca exibir saltos bruscos (ex.: 6 -> 11).
+  const lastRenderableReviewPhaseRef = useRef<UnifiedPhase | null>(null);
+  if (isReview && REVIEW_PHASE_ORDER.indexOf(state.phase) >= 0) {
+    lastRenderableReviewPhaseRef.current = state.phase;
+  }
+  const reviewAnchorPhase: UnifiedPhase =
+    isReview && REVIEW_PHASE_ORDER.indexOf(state.phase) < 0 && lastRenderableReviewPhaseRef.current
+      ? lastRenderableReviewPhaseRef.current
+      : state.phase;
   const phaseIdx = isReview
-    ? Math.max(0, REVIEW_PHASE_ORDER.indexOf(state.phase))
+    ? Math.max(0, REVIEW_PHASE_ORDER.indexOf(reviewAnchorPhase))
     : unifiedPhaseIndex(state.phase);
   const hudPoints = realPoints;
   const hudTotal = isReview ? REVIEW_TOTAL_STEPS : UNIFIED_VISIBLE_PHASES;
   const hudProgress = Math.min(1, (Math.min(phaseIdx + 1, hudTotal)) / hudTotal);
-  const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
+  const hudLabel = UNIFIED_PHASE_LABELS[isReview ? reviewAnchorPhase : state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
   // Régua de progresso: em modo revisão usa REVIEW_PHASE_ORDER (19 fases —
   // mesma régua exibida no /dashboard/assistente). Fora de review, mantém
@@ -540,7 +553,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         }}
         enabled={state.phase !== 'triage_celebration' && state.phase !== 'main_celebration' && state.phase !== 'done'}
       />
-      <WizardProgressBar phase={state.phase} phaseOrder={progressOrder} totalOverride={isReview ? REVIEW_TOTAL_STEPS : undefined} />
+      <WizardProgressBar phase={isReview ? reviewAnchorPhase : state.phase} phaseOrder={progressOrder} totalOverride={isReview ? REVIEW_TOTAL_STEPS : undefined} />
       {showGlobalHud && (
         <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
       )}
