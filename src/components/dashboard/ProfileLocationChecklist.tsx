@@ -49,13 +49,21 @@ export default function ProfileLocationChecklist({ provider }: Props) {
   const status = String(provider.status || '').toLowerCase();
   if (status === 'active') return null;
 
-  const hasCity = !!(provider.city && provider.city.trim().length > 0);
-  const hasState = !!(provider.state && provider.state.trim().length === 2);
-  const hasUserNeighborhood = !!(
-    provider.neighborhood &&
-    provider.neighborhood.trim().length > 0 &&
-    provider.neighborhood_source === 'user'
-  );
+  // Defesa em profundidade: providers legados podem chegar com tipos
+  // inesperados (números, objetos, arrays) em campos string. Coerção segura.
+  const safeStr = (v: unknown): string =>
+    typeof v === 'string' ? v.trim() : '';
+
+  const cityStr = safeStr(provider.city);
+  const stateStr = safeStr(provider.state);
+  const neighborhoodStr = safeStr(provider.neighborhood);
+  const neighborhoodSourceStr = safeStr(provider.neighborhood_source);
+  const geoSourceStr = safeStr(provider.geo_source);
+
+  const hasCity = cityStr.length > 0;
+  const hasState = stateStr.length === 2;
+  const hasUserNeighborhood =
+    neighborhoodStr.length > 0 && neighborhoodSourceStr === 'user';
   const hasCoords =
     typeof provider.latitude === 'number' &&
     typeof provider.longitude === 'number' &&
