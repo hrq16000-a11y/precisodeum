@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Phone, MessageCircle, Globe, Instagram, Facebook, ExternalLink, Calendar, Star } from 'lucide-react';
+import { Building2, MapPin, Phone, MessageCircle, Globe, Instagram, Facebook, ExternalLink, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -53,8 +53,6 @@ interface CompanyRow {
   postal_code: string | null;
   show_full_address?: boolean | null;
   social_links: Record<string, string> | null;
-  founded_year?: number | null;
-  team_size?: number | null;
 }
 
 const buildMapsHref = (parts: (string | null | undefined)[]): string => {
@@ -351,23 +349,6 @@ export default function CompanyProfile() {
             <div className="container max-w-3xl">
               <h2 className="mb-3 font-display text-xl font-bold">Sobre a empresa</h2>
               <p className="whitespace-pre-line text-foreground/90">{company.description}</p>
-              {(company.founded_year || company.team_size) && (
-                <dl className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  {company.founded_year && (
-                    <div className="inline-flex items-center gap-1">
-                      <Calendar className="h-4 w-4" aria-hidden="true" />
-                      <dt className="sr-only">Fundada em</dt>
-                      <dd>Fundada em {company.founded_year}</dd>
-                    </div>
-                  )}
-                  {company.team_size && (
-                    <div>
-                      <dt className="sr-only">Tamanho da equipe</dt>
-                      <dd>{company.team_size} colaboradores</dd>
-                    </div>
-                  )}
-                </dl>
-              )}
             </div>
           </section>
         )}
