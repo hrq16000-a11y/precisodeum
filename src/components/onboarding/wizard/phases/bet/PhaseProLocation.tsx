@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Home, LocateFixed, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, MapPin, Home, LocateFixed, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
