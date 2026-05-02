@@ -51,6 +51,20 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   // Foco programático no input de Bairro quando ele está vazio após hidratação.
   const neighborhoodInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Listener: BetModeShell despacha `wizard:focus-neighborhood` quando o
+  // backend rejeita o upsert por trigger 22023 (PROVIDER_INCOMPLETE_NEIGHBORHOOD).
+  // Trazemos o foco e damos um shake visual sem precisar de prop drilling.
+  useEffect(() => {
+    function focusBairro() {
+      try {
+        neighborhoodInputRef.current?.focus({ preventScroll: false } as any);
+        neighborhoodInputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } catch { /* noop */ }
+    }
+    window.addEventListener('wizard:focus-neighborhood', focusBairro);
+    return () => window.removeEventListener('wizard:focus-neighborhood', focusBairro);
+  }, []);
+
   // Auto-sugestão (não-destrutiva): pré-preenche cidade/UF se vazios.
   // Bairro só auto-preenche se vier sanitizado (≠ cidade, não-regional).
   useEffect(() => {
@@ -416,6 +430,13 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
               <MapPin className="h-3.5 w-3.5" aria-label="Localização aproximada por IP" />
             )}
             Cidade-base
+            {cityOk && (
+              <CheckCircle2
+                className="h-3.5 w-3.5 text-emerald-600"
+                aria-label="Cidade detectada com sucesso"
+                data-testid="city-ok-check"
+              />
+            )}
           </span>
           <span
             data-testid="location-source-pill"
