@@ -24,6 +24,7 @@ import { recordMyGeoEvent } from '@/lib/providerGeoAudit';
 import { lookupCep, normalizeCep } from '@/lib/cepLookup';
 // isUF removido (input UF da prévia foi mesclado com o CityAutocomplete).
 import { trackOnboardingEvent } from '../v2/telemetry';
+import GpsConsentNotice from '@/components/onboarding/GpsConsentNotice';
 import { BET_POINTS, type BetState } from './types';
 import type { BetRewardKey } from './betRewards';
 
@@ -371,7 +372,28 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           </ul>
         )}
 
-        {/* Botão GPS posicionado logo abaixo do campo Cidade-base */}
+        {/* Bloco explicativo: o que será preenchido com aproximada vs precisa.
+            Some quando o usuário já confirmou GPS para reduzir ruído visual. */}
+        {state.location_source !== 'gps' && (
+          <GpsConsentNotice
+            className="mt-3"
+            onSkip={() => {
+              // "Continuar sem GPS": registra fonte como IP se já houve fallback,
+              // ou mantém estado atual. Isso apenas sinaliza intenção; a UI
+              // permanece preenchível manualmente.
+              if (!state.location_source) {
+                patch({ location_source: geo.city ? 'ip' : 'manual' });
+              }
+              trackOnboardingEvent({
+                event: 'skip',
+                phase: 'triage_pro_location',
+                meta: { reason: 'gps_consent_skipped', current_source: state.location_source ?? 'none' },
+              }).catch(() => {});
+            }}
+          />
+        )}
+
+        {/* Botão GPS posicionado logo abaixo do bloco explicativo */}
         <Button
           type="button"
           variant="outline"
