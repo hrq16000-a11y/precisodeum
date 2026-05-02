@@ -11,7 +11,7 @@
  * Não persiste nada e não altera o reducer público — é puramente de leitura.
  * Em caso de erro de rede, mostra mensagem clara e botão "Tentar de novo".
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,6 +23,7 @@ import {
   Camera,
   UserRound,
   Loader2,
+  CircleDashed,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,10 +46,56 @@ interface Step22Props {
 interface Snapshot {
   providerOk: boolean;
   servicesCount: number;
+  photoCount: number;
   hasPhotos: boolean;
   albumsCount: number;
   hasDocument: boolean;
   hasWorkingHours: boolean;
+  hasServiceArea: boolean;
+  hasBio: boolean;
+  /** 'remote' = Supabase OK; 'local' = veio do draft local (fallback). */
+  source: 'remote' | 'local';
+}
+
+// Chave do draft local V2 — mantida em sincronia com flushDraft.ts.
+const LOCAL_DRAFT_KEY = 'onboarding_v3_institutional_final';
+
+/**
+ * Lê o snapshot a partir do draft local quando o Supabase não responde.
+ * Não é fonte de verdade — é um fallback de UX para que voltar/continuar
+ * não mostre tela vazia ou erro completo se a query falhar transientemente.
+ */
+function readLocalDraftSnapshot(): Snapshot | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
+    if (!raw) return null;
+    const env = JSON.parse(raw) as {
+      profile?: Record<string, any>;
+      service?: Record<string, any>;
+      providerId?: string | null;
+    };
+    const profile = env.profile ?? {};
+    const service = env.service ?? {};
+    const wh = profile.working_hours_struct ?? service.working_hours_struct;
+    const gallery: unknown = service.gallery_urls ?? service.photos;
+    const photoCount = Array.isArray(gallery) ? gallery.length : 0;
+    const cities: unknown = service.service_area_cities ?? profile.service_area_cities;
+    return {
+      providerOk: Boolean(profile.city || profile.cidade),
+      servicesCount: service?.id || service?.name ? 1 : 0,
+      photoCount,
+      hasPhotos: photoCount > 0,
+      albumsCount: 0, // não persistido localmente
+      hasDocument: Boolean(profile.cpf || profile.cnpj || profile.tax_id),
+      hasWorkingHours: Boolean(wh && typeof wh === 'object' && Object.keys(wh).length > 0),
+      hasServiceArea: Array.isArray(cities) && cities.length > 0,
+      hasBio: Boolean((profile.bio || service.description || '').toString().trim().length >= 20),
+      source: 'local',
+    };
+  } catch {
+    return null;
+  }
 }
 
 const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
