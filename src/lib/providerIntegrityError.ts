@@ -41,25 +41,25 @@ export interface NotProviderIntegrityError {
 
 const MAP: Record<ProviderIntegrityKind, Omit<ProviderIntegrityError, 'matched' | 'kind' | 'rawMessage' | 'rawCode'>> = {
   neighborhood: {
-    title: 'Quase lá!',
+    title: 'Falta informar o Bairro',
     description:
-      'Precisamos que você confirme o Bairro para ativar seu perfil no mapa.',
+      'Digite o bairro da sua cidade-base (ex.: Centro, Batel, Água Verde). Sem o bairro não conseguimos exibir seu perfil corretamente nas buscas.',
     focusEvent: 'wizard:focus-neighborhood',
-    ctaLabel: 'Revisar Bairro',
+    ctaLabel: 'Preencher Bairro',
   },
   coords: {
-    title: 'Localização incompleta',
+    title: 'Falta confirmar sua localização',
     description:
-      'Não conseguimos detectar seu GPS. Toque em "Usar GPS preciso" e confirme.',
+      'Não recebemos as coordenadas do seu GPS. Toque em "Ativar GPS preciso" e permita o acesso à localização — ou informe um CEP da sua cidade-base.',
     focusEvent: 'wizard:focus-gps',
-    ctaLabel: 'Tentar GPS novamente',
+    ctaLabel: 'Ativar GPS preciso',
   },
   city: {
-    title: 'Cidade-base obrigatória',
+    title: 'Falta confirmar a Cidade-base',
     description:
-      'Confirme sua cidade-base para finalizar o cadastro.',
+      'Selecione a cidade onde você atende como base principal (ex.: Curitiba/PR). Você poderá adicionar outras cidades de atendimento depois.',
     focusEvent: 'wizard:focus-city',
-    ctaLabel: 'Revisar Cidade',
+    ctaLabel: 'Selecionar Cidade',
   },
 };
 
