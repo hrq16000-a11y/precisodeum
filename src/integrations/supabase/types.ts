@@ -7171,6 +7171,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_privacy_history: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json
+          reason: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          reason?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          reason?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -8980,6 +9013,16 @@ export type Database = {
             }
             Returns: string
           }
+      record_privacy_event: {
+        Args: {
+          _event_type: string
+          _ip_address?: string
+          _metadata?: Json
+          _reason?: string
+          _user_agent?: string
+        }
+        Returns: string
+      }
       record_registration_snapshot: {
         Args: { _payload: Json }
         Returns: string
