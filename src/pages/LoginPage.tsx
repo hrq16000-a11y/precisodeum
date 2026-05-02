@@ -110,7 +110,9 @@ const LoginPage = () => {
     const looksLikeNoAccount = signInError && /invalid login credentials|invalid_grant|user not found/i.test(errMsg);
 
     if (looksLikeNoAccount) {
-      // Bloqueio de reentrada (180 dias) — verifica antes de tentar criar a conta
+      // Bloqueio de reentrada (180 dias) — verifica antes de tentar criar a conta.
+      // O RPC `check_registration_block` cobre e-mail, WhatsApp e (server-side)
+      // hash de dispositivo/IP, então a mensagem aqui cita os três vetores.
       try {
         const { data: blockData } = await (supabase.rpc as any)('check_registration_block', {
           _email: trimmedEmail,
@@ -120,10 +122,14 @@ const LoginPage = () => {
         if (block?.blocked) {
           setLoading(false);
           const days = typeof block.days_remaining === 'number' ? block.days_remaining : null;
-          const tail = days != null ? ` Aguarde ${days} dia${days === 1 ? '' : 's'} antes de criar nova conta.` : '';
+          const reason = typeof block.reason === 'string' && block.reason ? block.reason : null;
+          const tail = days != null
+            ? ` Você poderá criar uma nova conta em ${days} dia${days === 1 ? '' : 's'}.`
+            : '';
+          const reasonTail = reason ? ` Motivo registrado: ${reason}.` : '';
           toast.error(
-            `Por política de uso, este e-mail está temporariamente impedido de criar nova conta.${tail}`,
-            { duration: 8000 },
+            `Por política de uso (LGPD), este e-mail, WhatsApp ou dispositivo está temporariamente impedido de criar nova conta.${tail}${reasonTail}`,
+            { duration: 9000 },
           );
           return;
         }
