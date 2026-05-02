@@ -490,69 +490,111 @@ export default function CompanyProfile() {
     <>
       <Header />
       <main className="bg-background">
-        {/* Hero */}
-        <section className="relative bg-gradient-to-br from-muted/40 to-background py-8 md:py-12">
+        <nav className="container py-3 text-sm text-muted-foreground">
+          <Link to="/" className="hover:text-foreground transition-colors">Início</Link>
+          <ChevronRight className="mx-1 inline h-3 w-3" />
+          <Link to="/buscar" className="hover:text-foreground transition-colors">Empresas</Link>
+          <ChevronRight className="mx-1 inline h-3 w-3" />
+          <span className="font-medium text-foreground">{displayName}</span>
+        </nav>
+
+        <section className="py-6">
           <div className="container">
-            <div className="flex flex-col gap-6 md:flex-row md:items-end">
-              <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-card shadow-md md:h-40 md:w-40">
-                {company.photo_url ? (
-                  <img
-                    src={company.photo_url}
-                    alt={`Logo ${displayName}`}
-                    fetchPriority="high"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <Building2 className="h-16 w-16 text-muted-foreground/40" aria-hidden="true" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <Badge variant="secondary" className="inline-flex items-center gap-1">
-                  <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  {isCompany ? 'Empresa / Unidade Física' : 'Perfil profissional'}
-                </Badge>
-                <h1 className="mt-2 font-display text-3xl font-bold text-foreground md:text-4xl">
-                  {displayName}
-                </h1>
-                {company.business_segment && (
-                  <p className="mt-1 text-muted-foreground">{company.business_segment}</p>
-                )}
-                {(company.rating_avg || 0) > 0 && (
-                  <div className="mt-2 flex items-center gap-1.5 text-sm">
-                    <Star className="h-4 w-4 fill-accent text-accent" aria-hidden="true" />
-                    <span className="font-bold">{Number(company.rating_avg).toFixed(1)}</span>
-                    {company.review_count ? (
-                      <span className="text-muted-foreground">
-                        ({company.review_count} avaliações)
+            <div className="mx-auto max-w-4xl overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+              <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-start">
+                <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted shadow-sm sm:h-32 sm:w-32">
+                  {company.photo_url ? (
+                    <img
+                      src={company.photo_url}
+                      alt={`Logo ${displayName}`}
+                      fetchPriority="high"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Building2 className="h-14 w-14 text-muted-foreground/40" aria-hidden="true" />
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" className="inline-flex items-center gap-1">
+                      <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      {isCompany ? 'Empresa / Unidade Física' : 'Perfil profissional'}
+                    </Badge>
+                    {cityState && (
+                      <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4" aria-hidden="true" />
+                        {cityState}
                       </span>
-                    ) : null}
+                    )}
                   </div>
-                )}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {company.whatsapp && (
-                    <Button variant="accent" asChild>
-                      <a
-                        href={whatsappLink(
-                          company.whatsapp,
-                          buildSmartMessage(displayName, company.business_segment, geoCity, geoState),
-                        )}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => trackWhatsAppClick(company.id, company.slug, 'company-profile')}
+
+                  <h1 className="mt-3 font-display text-3xl font-bold text-foreground md:text-4xl">
+                    {displayName}
+                  </h1>
+
+                  {companyCategory && (
+                    <p className="mt-1 text-base text-muted-foreground">{companyCategory}</p>
+                  )}
+
+                  {(company.rating_avg || 0) > 0 && (
+                    <div className="mt-3 flex items-center gap-1.5 text-sm">
+                      <Star className="h-4 w-4 fill-accent text-accent" aria-hidden="true" />
+                      <span className="font-bold">{Number(company.rating_avg).toFixed(1)}</span>
+                      {company.review_count ? (
+                        <span className="text-muted-foreground">({company.review_count} avaliações)</span>
+                      ) : null}
+                    </div>
+                  )}
+
+                  {heroStats.length > 0 && (
+                    <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                      {heroStats.map((stat) => {
+                        const Icon = stat.icon;
+                        return (
+                          <div key={stat.label} className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+                            <Icon className="h-4 w-4 text-accent" aria-hidden="true" />
+                            <span className="font-semibold text-foreground">{stat.value}</span>
+                            <span className="text-muted-foreground">{stat.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <Button variant="accent" size="lg" onClick={() => { setLeadSent(false); setLeadDialogOpen(true); }}>
+                      <Send className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Solicitar contato
+                    </Button>
+
+                    {effectiveWhatsApp && (
+                      <Button
+                        size="lg"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        onClick={() => {
+                          trackWhatsAppClick(company.id, company.slug, 'company-profile');
+                          requestWhatsApp({
+                            url: whatsappLink(
+                              effectiveWhatsApp,
+                              `Olá ${displayName}! Vi sua empresa no Preciso de um e gostaria de conversar sobre uma necessidade.`,
+                            ),
+                            targetType: 'provider',
+                            targetId: company.id,
+                            targetLabel: displayName,
+                            whatsappNumber: effectiveWhatsApp,
+                          });
+                        }}
                       >
                         <MessageCircle className="mr-2 h-4 w-4" aria-hidden="true" />
-                        WhatsApp
-                      </a>
-                    </Button>
-                  )}
-                  {company.phone && (
-                    <Button variant="outline" asChild>
-                      <a href={`tel:${company.phone}`}>
-                        <Phone className="mr-2 h-4 w-4" aria-hidden="true" />
-                        {company.phone}
-                      </a>
-                    </Button>
-                  )}
+                        Chamar no WhatsApp
+                      </Button>
+                    )}
+                  </div>
+
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Contato direto pela plataforma. O número só é liberado no WhatsApp para usuários cadastrados.
+                  </p>
                 </div>
               </div>
             </div>
@@ -583,6 +625,35 @@ export default function CompanyProfile() {
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   </a>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {services.length > 0 && (
+          <section className="border-t border-border py-8">
+            <div className="container max-w-4xl">
+              <h2 className="mb-4 font-display text-xl font-bold">Serviços e frentes de atendimento</h2>
+              <div className="grid gap-3 md:grid-cols-2">
+                {services.slice(0, 8).map((service) => (
+                  <article key={service.id} className="rounded-lg border border-border bg-card p-4">
+                    <h3 className="font-semibold text-foreground">{service.service_name || service.name || 'Serviço'}</h3>
+                    {service.description && (
+                      <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{service.description}</p>
+                    )}
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      {service.service_area && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
+                          <MapPin className="h-3 w-3" aria-hidden="true" />
+                          {service.service_area}
+                        </span>
+                      )}
+                      {service.serviceCategories?.map((category) => category?.name).filter(Boolean).slice(0, 2).map((categoryName) => (
+                        <span key={categoryName} className="rounded-md border border-border px-2 py-1">{categoryName}</span>
+                      ))}
+                    </div>
+                  </article>
                 ))}
               </div>
             </div>
@@ -653,11 +724,18 @@ export default function CompanyProfile() {
         )}
 
         {/* Redes sociais */}
-        {company.social_links && Object.keys(company.social_links).length > 0 && (
+        {(company.website || (company.social_links && Object.keys(company.social_links).length > 0)) && (
           <section className="py-8">
             <div className="container max-w-4xl">
               <h2 className="mb-3 font-display text-xl font-bold">Onde nos encontrar</h2>
               <div className="flex flex-wrap gap-2">
+                {company.website && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={company.website} target="_blank" rel="noopener noreferrer">
+                      <Globe className="mr-2 h-4 w-4" aria-hidden="true" /> Site
+                    </a>
+                  </Button>
+                )}
                 {company.social_links.website && (
                   <Button variant="outline" size="sm" asChild>
                     <a href={company.social_links.website} target="_blank" rel="noopener noreferrer">
@@ -683,6 +761,108 @@ export default function CompanyProfile() {
             </div>
           </section>
         )}
+
+        <Dialog open={leadDialogOpen} onOpenChange={setLeadDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10">
+                  <Send className="h-4 w-4 text-accent" />
+                </div>
+                Solicitar contato
+              </DialogTitle>
+            </DialogHeader>
+
+            {leadSent ? (
+              <div className="space-y-3 rounded-xl bg-accent/10 p-6 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/20">
+                  <CheckCircle2 className="h-7 w-7 text-accent" />
+                </div>
+                <p className="text-base font-semibold text-foreground">Solicitação enviada!</p>
+                <p className="text-sm text-muted-foreground">A empresa poderá responder pelo contato informado.</p>
+                <Button variant="outline" onClick={() => setLeadDialogOpen(false)}>Fechar</Button>
+              </div>
+            ) : (
+              <form onSubmit={handleLeadSubmit} className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Seu nome</label>
+                  <input
+                    type="text"
+                    required
+                    value={leadForm.name}
+                    onChange={(e) => setLeadForm((prev) => ({ ...prev, name: e.target.value }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none"
+                    placeholder="Como quer ser chamado?"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Telefone</label>
+                  <input
+                    type="tel"
+                    required
+                    value={leadForm.phone}
+                    onChange={(e) => setLeadForm((prev) => ({ ...prev, phone: e.target.value }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none"
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">O que você precisa?</label>
+                  <input
+                    type="text"
+                    required
+                    value={leadForm.service}
+                    onChange={(e) => setLeadForm((prev) => ({ ...prev, service: e.target.value }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none"
+                    placeholder={services[0]?.service_name || services[0]?.name || 'Ex: Instalação, manutenção, atendimento'}
+                  />
+                </div>
+                <div className="grid grid-cols-[1fr_84px] gap-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Sua cidade</label>
+                    <input
+                      type="text"
+                      value={leadForm.city}
+                      onChange={(e) => setLeadForm((prev) => ({ ...prev, city: e.target.value }))}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none"
+                      placeholder="Cidade"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">UF</label>
+                    <input
+                      type="text"
+                      maxLength={2}
+                      value={leadForm.state}
+                      onChange={(e) => setLeadForm((prev) => ({ ...prev, state: e.target.value.toUpperCase().slice(0, 2) }))}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm uppercase text-foreground outline-none"
+                      placeholder="UF"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</label>
+                  <textarea
+                    rows={3}
+                    value={leadForm.message}
+                    onChange={(e) => setLeadForm((prev) => ({ ...prev, message: e.target.value }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none"
+                    placeholder="Descreva rapidamente sua necessidade"
+                  />
+                </div>
+                <ContactWindowPicker
+                  value={preferredWindow}
+                  onChange={setPreferredWindow}
+                  providerHours={normalizeContactHours(company.contact_hours)}
+                  helperText="Ajuda a empresa a responder no melhor horário."
+                />
+                <Button type="submit" variant="accent" className="w-full gap-2">
+                  <Send className="h-4 w-4" /> Enviar solicitação
+                </Button>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
       <Footer />
     </>
