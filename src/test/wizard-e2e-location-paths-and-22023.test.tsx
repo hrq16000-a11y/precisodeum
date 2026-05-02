@@ -431,3 +431,135 @@ describe('Banner de fallback IP — explica o que aconteceu e o que revisar', ()
     expect(notice.getAttribute('aria-live')).toBe('polite');
   });
 });
+
+// ── 5) Mensagens do ProviderIntegrityErrorCard por kind ──────────────────────
+// Garante que o TÍTULO e a DESCRIÇÃO renderizados no card mudam corretamente
+// para neighborhood/coords/city — e que o texto exibido condiz com o campo
+// que o usuário precisa preencher (não há mensagens genéricas vazando).
+describe('ProviderIntegrityErrorCard — mensagens por kind condizem com o campo', () => {
+  type Expectation = {
+    msg: string;
+    kind: ProviderIntegrityKind;
+    titleMatch: RegExp;
+    /** Termos que DEVEM aparecer na descrição (todos). */
+    descMustInclude: RegExp[];
+    /** Termos que NÃO podem aparecer (cross-kind contamination). */
+    descMustNotInclude: RegExp[];
+    ctaMatch: RegExp;
+  };
+
+  const expectations: Expectation[] = [
+    {
+      msg: 'PROVIDER_INCOMPLETE_NEIGHBORHOOD',
+      kind: 'neighborhood',
+      titleMatch: /Bairro/i,
+      descMustInclude: [/bairro/i, /Centro|Batel|Água Verde/i],
+      descMustNotInclude: [/selecione.*cidade/i, /Ative.*GPS/i, /coordenadas/i],
+      ctaMatch: /Preencher Bairro/i,
+    },
+    {
+      msg: 'PROVIDER_INCOMPLETE_COORDS',
+      kind: 'coords',
+      titleMatch: /localiza/i,
+      descMustInclude: [/GPS/i, /coordenadas|CEP/i],
+      descMustNotInclude: [/^bairro$/i, /selecione.*cidade/i],
+      ctaMatch: /Ativar GPS preciso/i,
+    },
+    {
+      msg: 'PROVIDER_INCOMPLETE_CITY',
+      kind: 'city',
+      titleMatch: /Cidade-base/i,
+      descMustInclude: [/cidade/i, /Curitiba\/PR|atende.*base/i],
+      descMustNotInclude: [/digite o bairro/i, /GPS preciso/i],
+      ctaMatch: /Selecionar Cidade/i,
+    },
+  ];
+
+  for (const exp of expectations) {
+    it(`kind="${exp.kind}" exibe título, descrição e CTA específicos do campo`, async () => {
+      renderWith({ location_source: 'ip' });
+      const parsed = parseProviderIntegrityError({ code: '22023', message: exp.msg });
+      expect(parsed.matched).toBe(true);
+      if (!parsed.matched) return;
+
+      fireEvent(
+        window,
+        new CustomEvent('wizard:provider-integrity-error', { detail: parsed }),
+      );
+
+      const card = await screen.findByTestId('provider-integrity-error-card');
+      expect(card.getAttribute('data-kind')).toBe(exp.kind);
+
+      // Título (primeiro <p> com font-bold dentro do card)
+      const title = card.querySelector('p.font-bold');
+      expect(title?.textContent || '').toMatch(exp.titleMatch);
+
+      // Descrição (segundo <p>, com classes leading-snug)
+      const description = card.querySelector('p.leading-snug, p:not(.font-bold)');
+      const descText = description?.textContent || '';
+      for (const re of exp.descMustInclude) {
+        expect(descText, `desc deve incluir ${re}`).toMatch(re);
+      }
+      for (const re of exp.descMustNotInclude) {
+        expect(descText, `desc NÃO deve incluir ${re}`).not.toMatch(re);
+      }
+
+      // CTA
+      const cta = screen.getByTestId('provider-integrity-primary-cta');
+      expect(cta.textContent || '').toMatch(exp.ctaMatch);
+    });
+  }
+
+  it('títulos dos 3 kinds são DISTINTOS entre si (sem texto genérico)', async () => {
+    const titles = new Map<ProviderIntegrityKind, string>();
+
+    for (const msg of [
+      'PROVIDER_INCOMPLETE_NEIGHBORHOOD',
+      'PROVIDER_INCOMPLETE_COORDS',
+      'PROVIDER_INCOMPLETE_CITY',
+    ]) {
+      const { unmount } = renderWith({ location_source: 'ip' });
+      const parsed = parseProviderIntegrityError({ code: '22023', message: msg });
+      if (!parsed.matched) continue;
+      fireEvent(
+        window,
+        new CustomEvent('wizard:provider-integrity-error', { detail: parsed }),
+      );
+      const card = await screen.findByTestId('provider-integrity-error-card');
+      const title = card.querySelector('p.font-bold')?.textContent?.trim() || '';
+      titles.set(parsed.kind, title);
+      unmount();
+    }
+
+    expect(titles.size).toBe(3);
+    const values = Array.from(titles.values());
+    // Nenhum título vazio.
+    for (const t of values) expect(t.length).toBeGreaterThan(0);
+    // Todos os 3 títulos distintos entre si.
+    expect(new Set(values).size).toBe(3);
+  });
+
+  it('descrição menciona um EXEMPLO concreto do campo (acionável, não genérico)', async () => {
+    const cases: Array<[string, RegExp]> = [
+      // Exemplos de bairros reais
+      ['PROVIDER_INCOMPLETE_NEIGHBORHOOD', /Centro|Batel|Água Verde|Vila/i],
+      // Exemplo de cidade real
+      ['PROVIDER_INCOMPLETE_CITY', /Curitiba\/PR|São Paulo|exemplo/i],
+      // Coords menciona CEP como alternativa concreta
+      ['PROVIDER_INCOMPLETE_COORDS', /CEP/i],
+    ];
+
+    for (const [msg, expected] of cases) {
+      const { unmount } = renderWith({ location_source: 'ip' });
+      const parsed = parseProviderIntegrityError({ code: '22023', message: msg });
+      if (!parsed.matched) continue;
+      fireEvent(
+        window,
+        new CustomEvent('wizard:provider-integrity-error', { detail: parsed }),
+      );
+      const card = await screen.findByTestId('provider-integrity-error-card');
+      expect(card.textContent || '').toMatch(expected);
+      unmount();
+    }
+  });
+});
