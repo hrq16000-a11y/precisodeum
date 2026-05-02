@@ -33,7 +33,7 @@ const FAQS_BY_SLUG: Record<string, CategoryFaq[]> = {
   encanador: [
     { q: 'Quanto custa um encanador para resolver vazamento?', a: 'Diagnóstico simples começa em R$ 100–R$ 200. Reparos com troca de tubulação ou caça-vazamento podem variar de R$ 250 a R$ 800 conforme a área afetada.' },
     { q: 'Encanador faz desentupimento?', a: 'Sim. Muitos atendem desentupimento de pia, ralo e vaso sanitário. Filtre por "desentupidor" se for serviço maior com máquina rotativa.' },
-    { q: 'O profissional traz as peças?', a: 'Em geral, o cliente paga as peças à parte. Combine no orçamento se a mão de obra inclui o material.' },
+    { q: 'O profissional traz as peças?', a: 'Em geral, o cliente paga as peças à parte. Combine diretamente com o profissional se a mão de obra inclui o material.' },
   ],
   diarista: [
     { q: 'Qual o valor de uma diária de limpeza?', a: 'A diária varia entre R$ 130 e R$ 250, dependendo do tamanho do imóvel, cidade e se inclui passar roupa. Combine o escopo antes.' },
