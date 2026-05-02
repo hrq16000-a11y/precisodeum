@@ -1,0 +1,133 @@
+/**
+ * Regressão Step22_Review — etapa de resumo antes de finalizar.
+ *
+ * Trava o contrato (onBack/onFinalize/onEdit) + os 3 estados visuais:
+ *  1. Loading inicial
+ *  2. Render bem-sucedido com 5 linhas (identity/service/photos/extras/portfolio)
+ *  3. Erro de rede com botão "Tentar de novo"
+ */
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import React from 'react';
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: { id: 'u-1' } }),
+}));
+
+const { supabaseMock } = vi.hoisted(() => ({
+  supabaseMock: { from: vi.fn() },
+}));
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: supabaseMock,
+}));
+
+import Step22_Review from '@/components/onboarding/wizard/phases/Step22_Review';
+
+function makeProvidersOk(payload: any) {
+  return {
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({ data: payload, error: null }),
+      }),
+    }),
+  };
+}
+
+function makeServicesCount(c: number) {
+  return {
+    select: vi.fn().mockImplementation((_cols: string, opts?: any) => {
+      if (opts?.head) {
+        return { eq: vi.fn().mockResolvedValue({ count: c, data: null, error: null }) };
+      }
+      return {
+        eq: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue({
+            data: c > 0 ? [{ id: 's1', gallery_urls: ['x.jpg'] }] : [],
+            error: null,
+          }),
+        }),
+      };
+    }),
+  };
+}
+
+function makeAlbumsCount(c: number) {
+  return {
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ count: c, data: null, error: null }),
+    }),
+  };
+}
+
+describe('Step22_Review', () => {
+  it('mostra resumo com 5 linhas após carregar', async () => {
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'providers')
+        return makeProvidersOk({
+          id: 'p1',
+          city: 'Curitiba',
+          cpf: '12345678901',
+          working_hours_struct: { mon: { start: '09:00' } },
+        });
+      if (table === 'services') return makeServicesCount(2);
+      if (table === 'portfolio_albums') return makeAlbumsCount(1);
+      throw new Error(`unexpected ${table}`);
+    });
+
+    render(
+      <Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('review-row-identity')).toBeInTheDocument();
+      expect(screen.getByTestId('review-row-service')).toBeInTheDocument();
+      expect(screen.getByTestId('review-row-photos')).toBeInTheDocument();
+      expect(screen.getByTestId('review-row-extras')).toBeInTheDocument();
+      expect(screen.getByTestId('review-row-portfolio')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: /Finalizar cadastro/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Voltar$/i })).toBeInTheDocument();
+  });
+
+  it('dispara onEdit ao clicar em "Editar Serviços"', async () => {
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'providers')
+        return makeProvidersOk({ id: 'p1', city: 'SP', working_hours_struct: {} });
+      if (table === 'services') return makeServicesCount(1);
+      if (table === 'portfolio_albums') return makeAlbumsCount(0);
+      throw new Error(`unexpected ${table}`);
+    });
+
+    const onEdit = vi.fn();
+    render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={onEdit} />);
+
+    await waitFor(() => screen.getByTestId('review-row-service'));
+    const editServiceBtn = screen.getByRole('button', { name: /Editar Serviços/i });
+    fireEvent.click(editServiceBtn);
+    expect(onEdit).toHaveBeenCalledWith('service');
+  });
+
+  it('mostra mensagem de erro quando providers query falha', async () => {
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'providers')
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi
+                .fn()
+                .mockResolvedValue({ data: null, error: { message: 'boom' } }),
+            }),
+          }),
+        };
+      throw new Error(`unexpected ${table}`);
+    });
+
+    render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('step22-error')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: /Tentar de novo/i })).toBeInTheDocument();
+  });
+});

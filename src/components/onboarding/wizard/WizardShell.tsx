@@ -21,7 +21,7 @@
  * implementação. Toda persistência (provider, create_service_atomic,
  * patches incrementais, drafts local + remote) permanece encapsulada lá.
  */
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, LayoutDashboard, Briefcase, FolderOpen, Sparkles } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
@@ -30,6 +30,7 @@ import { buildOnboardingV2BootstrapState } from '@/components/onboarding/wizard/
 import { fetchExistingFirstService, findExistingProvider } from '@/components/onboarding/wizard/phases/v2/findExistingRecords';
 import Step20_MoreServices from '@/components/onboarding/wizard/phases/Step20_MoreServices';
 import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21_PortfolioAlbums';
+import Step22_Review, { type ReviewSection as Step22Section } from '@/components/onboarding/wizard/phases/Step22_Review';
 import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 import { Button } from '@/components/ui/button';
 import PointsHud from '@/components/onboarding/wizard/phases/bet/PointsHud';
@@ -152,6 +153,10 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     phase: isReview ? resolveReviewStartPhase(reviewSection) : initial.phase,
   }));
   const resumeBootstrapRef = useRef(false);
+  // Stage local "review" — entre portfolio e done. Não vive no reducer público
+  // (reducer linear das 19 fases é fonte blindada). Aqui é só um booleano
+  // de UI: ao chegar do Step21 mostramos o resumo; "Finalizar" vai para done.
+  const [showReview, setShowReview] = useState(false);
   // Stage continua como "qual orquestrador renderizar" — é derivado da fase.
   const stage: Stage =
     state.phase.startsWith('triage_')
@@ -638,21 +643,36 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
             onGoToPath={finalizeAndNavigateTo}
           />
         </BetCardShell>
-      ) : stage === 'extras-portfolio' ? (
+      ) : stage === 'extras-portfolio' && !showReview ? (
         <BetCardShell>
           <Step21_PortfolioAlbums
             onBack={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_more_services' })}
-            onContinue={() => {
-              void finalizeUnifiedOnboarding().finally(() => {
-                dispatch({ type: 'GO_TO_PHASE', phase: 'done' });
-              });
-            }}
-            onSkip={() => {
-              void finalizeUnifiedOnboarding().finally(() => {
-                dispatch({ type: 'GO_TO_PHASE', phase: 'done' });
-              });
-            }}
+            onContinue={() => setShowReview(true)}
+            onSkip={() => setShowReview(true)}
             onGoToPath={finalizeAndNavigateTo}
+          />
+        </BetCardShell>
+      ) : stage === 'extras-portfolio' && showReview ? (
+        <BetCardShell>
+          <Step22_Review
+            onBack={() => setShowReview(false)}
+            onFinalize={() => {
+              void finalizeUnifiedOnboarding().finally(() => {
+                dispatch({ type: 'GO_TO_PHASE', phase: 'done' });
+              });
+            }}
+            onEdit={(section: Step22Section) => {
+              setShowReview(false);
+              const map: Record<Step22Section, UnifiedPhase> = {
+                identity: 'triage_identity',
+                service: 'main_service',
+                photos: 'main_photos',
+                document: 'main_document',
+                portfolio: 'main_portfolio_albums',
+                extras: 'main_extras_a',
+              };
+              dispatch({ type: 'GO_TO_PHASE', phase: map[section] });
+            }}
           />
         </BetCardShell>
       ) : stage === 'done' ? (
