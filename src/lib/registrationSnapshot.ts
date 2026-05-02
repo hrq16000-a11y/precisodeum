@@ -25,7 +25,57 @@ interface CollectInput {
   latitude?: number | null;
   longitude?: number | null;
   accuracy_m?: number | null;
+  /** Velocidade reportada pelo Geolocation API (m/s). */
+  velocity_mps?: number | null;
+  /** Se o usuário aceitou os Termos no clique Finalizar. */
+  terms_accepted?: boolean;
+  /** Versão dos Termos aceitos (ex.: '2025-04-01'). */
+  terms_version?: string | null;
   origin_summary?: Record<string, unknown>;
+}
+
+/** Network Information API (não disponível em Safari). */
+function readNetworkInfo(): { type?: string; downlink?: number; rtt?: number } {
+  try {
+    const c = (navigator as any)?.connection
+      || (navigator as any)?.mozConnection
+      || (navigator as any)?.webkitConnection;
+    if (!c) return {};
+    return {
+      type: typeof c.effectiveType === 'string' ? c.effectiveType : (typeof c.type === 'string' ? c.type : undefined),
+      downlink: typeof c.downlink === 'number' ? c.downlink : undefined,
+      rtt: typeof c.rtt === 'number' ? c.rtt : undefined,
+    };
+  } catch { return {}; }
+}
+
+/** Heurística de movimento — em campo vs home office. */
+function inferMovement(velocity_mps?: number | null, accuracy_m?: number | null): boolean | null {
+  if (typeof velocity_mps === 'number' && Number.isFinite(velocity_mps)) {
+    return velocity_mps > 1.0; // > ~3.6 km/h ≈ caminhando
+  }
+  // Fallback: precisão muito boa em ambiente fechado costuma ser estática.
+  if (typeof accuracy_m === 'number' && Number.isFinite(accuracy_m)) {
+    return accuracy_m > 50 ? null : false;
+  }
+  return null;
+}
+
+/** Classifica origem do tráfego para meta_tracking.referrer_kind. */
+function classifyReferrer(referrer: string, utm: Record<string, string | undefined>): string {
+  if (utm.utm_source) return `utm:${utm.utm_source}`;
+  if (!referrer) return 'direct';
+  try {
+    const host = new URL(referrer).hostname.toLowerCase();
+    if (/google\./.test(host)) return 'organic:google';
+    if (/instagram\./.test(host)) return 'social:instagram';
+    if (/facebook\./.test(host) || /fb\./.test(host)) return 'social:facebook';
+    if (/linkedin\./.test(host)) return 'social:linkedin';
+    if (/twitter\.|x\.com/.test(host)) return 'social:x';
+    if (/whatsapp\.|wa\.me/.test(host)) return 'social:whatsapp';
+    if (/tiktok\./.test(host)) return 'social:tiktok';
+    return `referral:${host}`;
+  } catch { return 'unknown'; }
 }
 
 function parseUA(ua: string): {
@@ -170,6 +220,11 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
     const utm = readUtm();
     const geo = await fetchGeoIp();
     const battery = await readBattery();
+    const net = readNetworkInfo();
+    const moving = inferMovement(input.velocity_mps, input.accuracy_m);
+    const referrer = document.referrer || '';
+    const came_from_link = referrer.length > 0;
+    const referrer_kind = classifyReferrer(referrer, utm);
 
     const fp = await sha256([
       ua,
@@ -179,8 +234,7 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
       Intl.DateTimeFormat().resolvedOptions().timeZone || '',
     ].join('|'));
 
-    const referrer = document.referrer || '';
-    const came_from_link = referrer.length > 0;
+    const terms_accepted_at = input.terms_accepted ? new Date().toISOString() : null;
 
     const payload: Record<string, unknown> = {
       signup_method: getSignupMethod(user),
@@ -199,8 +253,8 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
       accuracy_m: input.accuracy_m ?? null,
-      was_moving: null,
-      velocity_mps: null,
+      was_moving: moving,
+      velocity_mps: input.velocity_mps ?? null,
 
       postal_code: input.postal_code ?? null,
       street: input.street ?? null,
@@ -215,7 +269,7 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
       user_agent: ua,
       device_brand,
       device_model,
-      device_imei: null, // só app nativo
+      device_imei: null,
       os_name,
       os_version,
       browser_name,
@@ -230,8 +284,15 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
       battery_charging: battery.charging ?? null,
       online_at_signup: navigator.onLine,
 
+      // Novos: Network Info + termos
+      connection_type: net.type ?? null,
+      connection_downlink_mbps: net.downlink ?? null,
+      connection_rtt_ms: net.rtt ?? null,
+      terms_version: input.terms_version ?? null,
+      terms_accepted_at,
+
       device_fingerprint: fp,
-      origin_summary: input.origin_summary || {},
+      origin_summary: { referrer_kind, ...(input.origin_summary || {}) },
       raw_meta: {},
     };
 
@@ -240,9 +301,43 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
       console.warn('[registrationSnapshot] RPC failed:', error.message);
       return null;
     }
+
+    // Espelho leve em providers.meta_tracking (consolidação solicitada). Best-effort.
+    try {
+      const meta_tracking = {
+        version: 1,
+        captured_at: new Date().toISOString(),
+        attribution: { referrer_kind, ...utm, came_from_link },
+        device: { os_name, os_version, browser_name, browser_version, device_brand, device_model, ua_kind: deviceKindFromScreen() },
+        screen: { w: screen.width, h: screen.height, dpr: window.devicePixelRatio || 1 },
+        locale: { language: navigator.language || null, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null },
+        network: { type: net.type ?? null, downlink_mbps: net.downlink ?? null, rtt_ms: net.rtt ?? null, online: navigator.onLine },
+        movement: { was_moving: moving, velocity_mps: input.velocity_mps ?? null, accuracy_m: input.accuracy_m ?? null },
+        terms: { accepted: !!input.terms_accepted, version: input.terms_version ?? null, accepted_at: terms_accepted_at },
+        fingerprint_short: fp ? fp.slice(0, 16) : null, // hash truncado, sem PII
+      };
+      await supabase
+        .from('providers' as any)
+        .update({ meta_tracking } as any)
+        .eq('user_id', user.id);
+    } catch (e) {
+      // não bloqueia — providers pode não existir ainda nesse exato momento
+      console.warn('[registrationSnapshot] meta_tracking mirror skipped:', e);
+    }
+
     return (data as string) || null;
   } catch (err) {
     console.warn('[registrationSnapshot] exception:', err);
     return null;
   }
+}
+
+function deviceKindFromScreen(): 'mobile' | 'tablet' | 'desktop' | 'tv' {
+  try {
+    const ua = (navigator.userAgent || '').toLowerCase();
+    if (/smarttv|smart-tv|googletv|appletv|hbbtv|netcast|viera|tizen.*tv|webos.*tv/.test(ua)) return 'tv';
+    if (/ipad|tablet/.test(ua)) return 'tablet';
+    if (/mobi|android|iphone/.test(ua)) return 'mobile';
+    return 'desktop';
+  } catch { return 'desktop'; }
 }

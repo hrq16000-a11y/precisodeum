@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_cold_storage: {
+        Row: {
+          archived_at: string
+          created_at: string
+          email: string | null
+          id: string
+          payload: Json
+          purge_after: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          payload?: Json
+          purge_after?: string
+          reason?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          payload?: Json
+          purge_after?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       account_deletion_requests: {
         Row: {
           admin_notes: string | null
@@ -4082,6 +4115,7 @@ export type Database = {
           longitude: number | null
           meta_description: string | null
           meta_title: string | null
+          meta_tracking: Json
           mission_answers: Json
           neighborhood: string
           neighborhood_source: string | null
@@ -4163,6 +4197,7 @@ export type Database = {
           longitude?: number | null
           meta_description?: string | null
           meta_title?: string | null
+          meta_tracking?: Json
           mission_answers?: Json
           neighborhood?: string
           neighborhood_source?: string | null
@@ -4244,6 +4279,7 @@ export type Database = {
           longitude?: number | null
           meta_description?: string | null
           meta_title?: string | null
+          meta_tracking?: Json
           mission_answers?: Json
           neighborhood?: string
           neighborhood_source?: string | null
@@ -4622,6 +4658,9 @@ export type Database = {
           captured_at: string
           city: string | null
           city_geoip: string | null
+          connection_downlink_mbps: number | null
+          connection_rtt_ms: number | null
+          connection_type: string | null
           country: string | null
           created_at: string
           device_brand: string | null
@@ -4652,6 +4691,8 @@ export type Database = {
           state: string | null
           street: string | null
           street_number: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
           timezone: string | null
           user_agent: string | null
           user_id: string
@@ -4675,6 +4716,9 @@ export type Database = {
           captured_at?: string
           city?: string | null
           city_geoip?: string | null
+          connection_downlink_mbps?: number | null
+          connection_rtt_ms?: number | null
+          connection_type?: string | null
           country?: string | null
           created_at?: string
           device_brand?: string | null
@@ -4705,6 +4749,8 @@ export type Database = {
           state?: string | null
           street?: string | null
           street_number?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           timezone?: string | null
           user_agent?: string | null
           user_id: string
@@ -4728,6 +4774,9 @@ export type Database = {
           captured_at?: string
           city?: string | null
           city_geoip?: string | null
+          connection_downlink_mbps?: number | null
+          connection_rtt_ms?: number | null
+          connection_type?: string | null
           country?: string | null
           created_at?: string
           device_brand?: string | null
@@ -4758,6 +4807,8 @@ export type Database = {
           state?: string | null
           street?: string | null
           street_number?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           timezone?: string | null
           user_agent?: string | null
           user_id?: string
@@ -8264,6 +8315,7 @@ export type Database = {
       }
       distribute_open_lead: { Args: { _open_lead_id: string }; Returns: number }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
+      expire_registration_blocks_180d: { Args: never; Returns: number }
       find_orphan_media: {
         Args: { _min_age_hours?: number }
         Returns: {
@@ -8865,6 +8917,7 @@ export type Database = {
       process_daily_stats: { Args: never; Returns: number }
       process_lead_followup_reminders: { Args: never; Returns: Json }
       publish_my_provider: { Args: never; Returns: Json }
+      purge_cold_storage_91d: { Args: never; Returns: number }
       realign_first_service: {
         Args: {
           _category_id: string
@@ -9045,6 +9098,7 @@ export type Database = {
           type: string
         }[]
       }
+      self_delete_account: { Args: { _reason?: string }; Returns: Json }
       service_area_is_in_catalog: { Args: { p_city: string }; Returns: boolean }
       service_description_first_forbidden_term: {
         Args: { p_text: string }
