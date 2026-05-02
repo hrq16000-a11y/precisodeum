@@ -256,8 +256,17 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       const serviceSeed = bootstrap?.service ?? currentState.service;
 
       resumeBootstrapRef.current = true;
+      // Em revisão, preserva a última fase renderizável visitada após
+      // refresh / volta de rota — `?section=` na URL ainda tem prioridade
+      // (deep-link explícito do Dashboard Assistant). Isso evita que o
+      // contador X/19 "salte" para 1 quando o usuário recarrega no meio
+      // da régua.
+      const explicitSection = reviewSection ?? getOnboardingReviewSection(window.location.search);
+      const persistedReviewPhase = isReview ? readPersistedReviewPhase(true) : null;
       const resolvedReviewPhase: UnifiedPhase | null = isReview
-        ? resolveReviewStartPhase(reviewSection ?? getOnboardingReviewSection(window.location.search))
+        ? (explicitSection
+            ? resolveReviewStartPhase(explicitSection)
+            : (persistedReviewPhase ?? resolveReviewStartPhase(null)))
         : null;
 
       // Em revisão abrindo numa fase de TRIAGEM (Steps 1–6), o BetModeShell
