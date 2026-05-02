@@ -1471,71 +1471,108 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // agora vêm 100% da triagem; a fase principal começa em phase2_service.
       case 'phase2_service':
         return (
-          <Phase2Service
-            service={state.service}
-            profile={state.profile}
-            onChangeService={patchService}
-            onChangeProfile={patchProfile}
-            onBack={() => { /* phase2_service é a primeira fase do V2 — voltar é gerenciado pelo WizardShell (sai para triage_celebration). */ track('back'); }}
-            onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
-            firstServiceId={state.firstServiceId}
-            onSkip={() => {
-              // BLINDAGEM (regression-locked): "Pular o 1º serviço" NUNCA
-              // navega para o dashboard. Em vez disso, registra a intenção
-              // via `continueWithoutFirstService`, que despacha
-              // GO_TO phase4_document e permite o usuário concluir o cadastro
-              // sem um serviço (selo "perfil incompleto" segue tratado pelo
-              // gate). Validado por `onboarding-v3-skip-first-service-e2e`.
-              track('skip', { milestone: 'skip_first_service', target: 'phase4_document' });
-              continueWithoutFirstService();
-            }}
-          />
+          <>
+            <Phase2Service
+              service={state.service}
+              profile={state.profile}
+              onChangeService={patchService}
+              onChangeProfile={patchProfile}
+              onBack={() => { /* phase2_service é a primeira fase do V2 — voltar é gerenciado pelo WizardShell (sai para triage_celebration). */ track('back'); }}
+              onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
+              firstServiceId={state.firstServiceId}
+              onSkip={() => {
+                // BLINDAGEM (regression-locked): "Pular o 1º serviço" NUNCA
+                // navega para o dashboard. Em vez disso, registra a intenção
+                // via `continueWithoutFirstService`, que despacha
+                // GO_TO phase4_document e permite o usuário concluir o cadastro
+                // sem um serviço (selo "perfil incompleto" segue tratado pelo
+                // gate). Validado por `onboarding-v3-skip-first-service-e2e`.
+                track('skip', { milestone: 'skip_first_service', target: 'phase4_document' });
+                continueWithoutFirstService();
+              }}
+            />
+            <WizardEncouragement
+              title="Você está a 3 passos do seu 1º anúncio"
+              description="Cadastre o serviço, capriche nos detalhes e adicione fotos — clientes da sua região já estão buscando."
+              items={[
+                { label: 'Serviço', done: !!(state.service.service_name || '').trim() },
+                { label: 'Detalhes', done: false },
+                { label: 'Fotos', done: false },
+              ]}
+              nextStep="Escolha a categoria e dê um nome curto ao serviço."
+            />
+          </>
         );
       case 'phase2_details':
         return (
-          <Phase2Details
-            service={state.service}
-            profile={state.profile}
-            onChangeService={patchService}
-            onChangeProfile={patchProfile}
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_service' }); }}
-            saving={saving}
-            onSkip={async () => {
-              // [FIX 2026-05-02] "Pular detalhes" NÃO joga mais para o dashboard.
-              // Salva o serviço (criando o firstServiceId) e segue para
-              // phase2_photos, mantendo o circuito viciante e permitindo voltar.
-              // Se a persistência falhar, mostra toast e mantém o usuário na fase.
-              track('skip', { milestone: 'first_service_save_continue', target: 'phase2_photos' });
-              const ok = await persistFirstService();
-              if (ok) {
-                toast.success('Serviço salvo! Agora adicione fotos para destacar seu trabalho.');
-                dispatch({ type: 'GO_TO', phase: 'phase2_photos' });
-              } else {
-                track('error', { reason: 'persist_service_failed' });
-                toast.error(
-                  'Falta pouco! Não conseguimos salvar agora — revise os campos e tente novamente.',
-                );
-              }
-            }}
-            onSubmit={async () => {
-              track('submit');
-              const ok = await persistFirstService();
-              if (ok) { track('next'); dispatch({ type: 'NEXT' }); }
-              else track('error', { reason: 'persist_service_failed' });
-            }}
-          />
+          <>
+            <Phase2Details
+              service={state.service}
+              profile={state.profile}
+              onChangeService={patchService}
+              onChangeProfile={patchProfile}
+              onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_service' }); }}
+              saving={saving}
+              onSkip={async () => {
+                // [FIX 2026-05-02] "Pular detalhes" NÃO joga mais para o dashboard.
+                // Salva o serviço (criando o firstServiceId) e segue para
+                // phase2_photos, mantendo o circuito viciante e permitindo voltar.
+                // Se a persistência falhar, mostra toast e mantém o usuário na fase.
+                track('skip', { milestone: 'first_service_save_continue', target: 'phase2_photos' });
+                const ok = await persistFirstService();
+                if (ok) {
+                  toast.success('Serviço salvo! Agora adicione fotos para destacar seu trabalho.');
+                  dispatch({ type: 'GO_TO', phase: 'phase2_photos' });
+                } else {
+                  track('error', { reason: 'persist_service_failed' });
+                  toast.error(
+                    'Falta pouco! Não conseguimos salvar agora — revise os campos e tente novamente.',
+                  );
+                }
+              }}
+              onSubmit={async () => {
+                track('submit');
+                const ok = await persistFirstService();
+                if (ok) { track('next'); dispatch({ type: 'NEXT' }); }
+                else track('error', { reason: 'persist_service_failed' });
+              }}
+            />
+            <WizardEncouragement
+              title="Detalhes vendem mais"
+              description="Anúncios com descrição e horário recebem até 3× mais contatos — você pode pular e voltar depois."
+              items={[
+                { label: 'Serviço', done: !!(state.service.service_name || '').trim() },
+                { label: 'Detalhes', done: !!(state.service.description || '').trim() },
+                { label: 'Fotos', done: false },
+              ]}
+              nextStep="Capriche em 2-3 linhas sobre o que você entrega."
+            />
+          </>
         );
       case 'phase2_photos':
         if (!state.firstServiceId || !user?.id) return null;
         return (
-          <Phase2Photos
-            serviceId={state.firstServiceId}
-            userId={user.id}
-            serviceName={state.service.service_name}
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_details' }); }}
-            onContinue={() => { track('next'); dispatch({ type: 'NEXT' }); }}
-            onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
-          />
+          <>
+            <Phase2Photos
+              serviceId={state.firstServiceId}
+              userId={user.id}
+              serviceName={state.service.service_name}
+              onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_details' }); }}
+              onContinue={() => { track('next'); dispatch({ type: 'NEXT' }); }}
+              onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
+            />
+            <WizardEncouragement
+              tone="celebrate"
+              title="Última etapa do circuito principal"
+              description="Fotos bem feitas viram cliques. Mesmo 1 foto já libera o selo de anúncio completo."
+              items={[
+                { label: 'Serviço', done: true },
+                { label: 'Detalhes', done: !!(state.service.description || '').trim() },
+                { label: 'Fotos', done: false },
+              ]}
+              nextStep="Suba pelo menos 1 foto ou pule por enquanto — você pode voltar depois."
+            />
+          </>
         );
       case 'phase3_celebration':
         return (
