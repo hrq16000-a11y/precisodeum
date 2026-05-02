@@ -609,6 +609,29 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
               details: (error as any).details,
               hint: (error as any).hint,
             });
+            // Trigger 22023 (guard_provider_activation) — feedback inteligente.
+            // Os RAISE EXCEPTION usam ERRCODE='22023' e mensagens
+            // PROVIDER_INCOMPLETE_NEIGHBORHOOD / PROVIDER_INCOMPLETE_CITY /
+            // PROVIDER_INCOMPLETE_COORDS.
+            const errCode = (error as any).code as string | undefined;
+            const errMsg = String((error as any).message || '');
+            if (errCode === '22023' || /PROVIDER_INCOMPLETE_/i.test(errMsg)) {
+              if (/NEIGHBORHOOD/i.test(errMsg)) {
+                toast.error('Quase lá!', {
+                  description: 'Precisamos que você confirme o Bairro para ativar seu perfil no mapa.',
+                });
+                try { window.dispatchEvent(new CustomEvent('wizard:focus-neighborhood')); } catch { /* noop */ }
+              } else if (/COORDS|LAT/i.test(errMsg)) {
+                toast.error('Localização incompleta', {
+                  description: 'Não conseguimos detectar seu GPS. Toque em "Usar GPS preciso" e confirme.',
+                });
+              } else {
+                toast.error('Cidade-base obrigatória', {
+                  description: 'Confirme sua cidade-base para finalizar o cadastro.',
+                });
+              }
+              throw error; // Mantém o ciclo de erro normal — sem fallback insert.
+            }
             logWizardError({
               phase: 'phase1_contact',
               userId: user?.id,
