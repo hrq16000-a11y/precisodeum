@@ -22,7 +22,7 @@ export const SERVICE_TEMPLATES: Record<string, ServiceTemplate[]> = {
     { label: 'Instalação Hidráulica', description: 'Projeto e execução de instalações hidráulicas para construções e reformas. Instalação de aquecedores, misturadores e sistemas de água quente e fria. Trabalho dentro das normas técnicas.' },
   ],
   'mecanico': [
-    { label: 'Revisão Completa', description: 'Revisão completa do veículo incluindo motor, freios, suspensão, direção e parte elétrica. Diagnóstico computadorizado e orçamento detalhado. Peças originais e garantia de serviço.' },
+    { label: 'Revisão Completa', description: 'Revisão completa do veículo incluindo motor, freios, suspensão, direção e parte elétrica. Diagnóstico computadorizado detalhado. Peças originais e garantia de serviço.' },
     { label: 'Suspensão e Freios', description: 'Manutenção e troca de componentes de suspensão e freios. Alinhamento, balanceamento e cambagem. Peças de qualidade com garantia e preço justo.' },
     { label: 'Motor e Câmbio', description: 'Reparo e retífica de motores e câmbios manuais e automáticos. Diagnóstico preciso com equipamentos modernos. Profissional experiente com anos de atuação no mercado.' },
     { label: 'Injeção Eletrônica', description: 'Diagnóstico e reparo de sistemas de injeção eletrônica, sensores e módulos. Scanner automotivo de última geração. Solução rápida para falhas, consumo alto e luz do painel acesa.' },
