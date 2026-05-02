@@ -16,10 +16,15 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn(), message: vi.fn() },
 }));
 
+const { storageUpload, dbUpdate } = vi.hoisted(() => ({
+  storageUpload: vi.fn().mockResolvedValue({ data: { path: 'p' }, error: null }),
+  dbUpdate: vi.fn().mockResolvedValue({ data: null, error: null }),
+}));
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }) },
-    from: vi.fn().mockReturnValue({
+    from: vi.fn().mockImplementation(() => ({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           order: vi.fn().mockReturnValue({
@@ -27,7 +32,15 @@ vi.mock('@/integrations/supabase/client', () => ({
           }),
         }),
       }),
-    }),
+      update: vi.fn().mockReturnValue({
+        eq: vi.fn().mockImplementation((...args: any[]) => dbUpdate(...args)),
+      }),
+    })),
+    storage: {
+      from: vi.fn().mockReturnValue({
+        upload: vi.fn().mockImplementation((...args: any[]) => storageUpload(...args)),
+      }),
+    },
   },
 }));
 
