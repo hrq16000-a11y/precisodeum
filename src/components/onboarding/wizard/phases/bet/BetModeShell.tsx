@@ -537,10 +537,25 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
           ? { latitude: state.latitude, longitude: state.longitude }
           : {}),
         // Persistência de origem da localização e do bairro (auditoria + checklist).
-        // Mapeamento: BetState.location_source → providers.geo_source
-        //             BetState.gps_accuracy_m  → providers.geo_source_confidence (numeric, em metros)
+        // Mapeamento BLINDADO: BetState.location_source ('gps' | 'cep' | 'manual' | 'ip')
+        //   → providers.geo_source (CHECK: 'unknown' | 'gps' | 'city_center'
+        //     | 'address_geocode' | 'gps_plus_city_center' | 'gps_plus_address_geocode').
+        //   - 'gps'             → 'gps'
+        //   - 'cep' | 'manual'  → 'address_geocode' (origem informada por endereço/usuário)
+        //   - 'ip'              → 'city_center' (resolução por cidade aproximada)
+        //   - default           → 'unknown'
+        //   Sem esse mapeamento o upsert falhava com `providers_geo_source_check`.
+        // Mapeamento: BetState.gps_accuracy_m  → providers.geo_source_confidence (numeric, em metros)
         //             BetState.neighborhood_source → providers.neighborhood_source (text)
-        ...(state.location_source ? { geo_source: state.location_source } : {}),
+        geo_source: (() => {
+          switch (state.location_source) {
+            case 'gps': return 'gps';
+            case 'cep':
+            case 'manual': return 'address_geocode';
+            case 'ip': return 'city_center';
+            default: return 'unknown';
+          }
+        })(),
         ...(state.gps_accuracy_m != null && Number.isFinite(state.gps_accuracy_m)
           ? { geo_source_confidence: state.gps_accuracy_m }
           : {}),

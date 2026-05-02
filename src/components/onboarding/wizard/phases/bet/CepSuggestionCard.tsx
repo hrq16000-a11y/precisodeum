@@ -212,10 +212,9 @@ export default function CepSuggestionCard({
       <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-700 dark:text-emerald-300" />
       <div className="flex-1 space-y-1">
         <p className="text-[11px] leading-snug text-emerald-900 dark:text-emerald-100">
-          <span className="font-bold">CEP encontrado: {hit!.cep}</span>
-          {hit!.street ? <> — {hit!.street}</> : null}
+          <span className="font-bold">CEP do bairro: {hit!.cep}</span>
           <span className="block text-[10px] text-emerald-800/80 dark:text-emerald-200/80">
-            {hit!.neighborhood}, {hit!.city}/{hit!.state}
+            {hit!.neighborhood} — {hit!.city}/{hit!.state}
           </span>
         </p>
         <button
