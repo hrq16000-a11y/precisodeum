@@ -26,6 +26,8 @@ interface Props {
     latitude?: number | null;
     longitude?: number | null;
     status?: string | null;
+    geo_source?: string | null;
+    geo_source_confidence?: number | null;
   } | null | undefined;
 }
 
@@ -84,7 +86,9 @@ export default function ProfileLocationChecklist({ provider }: Props) {
       key: 'coords',
       label: 'Coordenadas GPS',
       done: hasCoords,
-      hint: 'Permite ordenar por proximidade real (Haversine) e calcular distância exata.',
+      hint: hasCoords && provider.geo_source === 'gps' && typeof provider.geo_source_confidence === 'number'
+        ? `GPS ${provider.geo_source_confidence <= 100 ? 'preciso' : 'aproximado'} (±${Math.round(provider.geo_source_confidence)}m).`
+        : 'Permite ordenar por proximidade real (Haversine) e calcular distância exata.',
       icon: Navigation,
       unlocks: 'Ranking por proximidade',
     },
