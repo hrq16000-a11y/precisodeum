@@ -453,63 +453,38 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           </ul>
         )}
 
-        {/* Bloco explicativo: o que será preenchido com aproximada vs precisa.
-            Some quando o usuário já confirmou GPS para reduzir ruído visual. */}
-        {state.location_source !== 'gps' && (
-          <GpsConsentNotice
-            className="mt-3"
-            onSkip={() => {
-              // "Continuar sem GPS": registra fonte como IP se já houve fallback,
-              // ou mantém estado atual. Isso apenas sinaliza intenção; a UI
-              // permanece preenchível manualmente.
-              if (!state.location_source) {
-                patch({ location_source: geo.city ? 'ip' : 'manual' });
-              }
-              trackOnboardingEvent({
-                event: 'skip',
-                phase: 'triage_pro_location',
-                meta: { reason: 'gps_consent_skipped', current_source: state.location_source ?? 'none' },
-              }).catch(() => {});
-            }}
-          />
-        )}
-
-        {/* Botão GPS posicionado logo abaixo do bloco explicativo */}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleUseGps}
-          disabled={requestingGps}
-          className="mt-3 w-full justify-center gap-2 border-orange-300 text-orange-700 hover:bg-orange-50 disabled:opacity-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-950/40"
-        >
-          <LocateFixed className={`h-4 w-4 ${requestingGps ? 'animate-pulse' : ''}`} />
-          {requestingGps ? 'Detectando…' : state.location_source === 'gps' ? 'GPS confirmado — refinar' : 'Usar minha localização (GPS)'}
-        </Button>
-
-        {state.location_source === 'gps' && (
-          <div className="mt-2 space-y-1 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-[11px] text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
-            <p className="flex items-center gap-1 font-semibold">
+        {/* Indicador discreto de status GPS — substitui o bloco explicativo grande.
+            O GPS é solicitado automaticamente ao montar a fase (sem botão).
+            Se o usuário quiser refinar manualmente, ainda há um link sutil. */}
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+          {requestingGps ? (
+            <span className="inline-flex items-center gap-1 text-orange-700 dark:text-orange-300">
+              <LocateFixed className="h-3 w-3 animate-pulse" /> Detectando localização…
+            </span>
+          ) : state.location_source === 'gps' ? (
+            <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 className="h-3 w-3" />
               {gpsAccuracy != null && gpsAccuracy <= 100
-                ? `GPS exato (±${Math.round(gpsAccuracy)}m)`
+                ? `GPS preciso (±${Math.round(gpsAccuracy)}m)`
                 : gpsAccuracy != null
                 ? `GPS aproximado (±${Math.round(gpsAccuracy)}m)`
                 : 'GPS confirmado'}
-            </p>
-            {geo.neighborhoodSource && geo.neighborhoodSource !== 'none' && (
-              <p className="opacity-80">
-                Bairro detectado via {geo.neighborhoodSource === 'bigdatacloud'
-                  ? 'BigDataCloud'
-                  : geo.neighborhoodSource === 'nominatim'
-                  ? 'OpenStreetMap (fallback)'
-                  : geo.neighborhoodSource === 'cep'
-                  ? 'CEP'
-                  : 'manual'}.
-              </p>
-            )}
-          </div>
-        )}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              <MapPin className="h-3 w-3" /> Localização aproximada por IP
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleUseGps}
+            disabled={requestingGps}
+            className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-orange-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-orange-300"
+          >
+            <LocateFixed className="h-3 w-3" />
+            {state.location_source === 'gps' ? 'Refazer GPS' : 'Tentar GPS de novo'}
+          </button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
