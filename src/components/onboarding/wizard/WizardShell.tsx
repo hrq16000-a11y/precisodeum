@@ -637,7 +637,24 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
           editMode={isReview}
           seedState={{
             phase: mapUnifiedToMainPhase(state.phase),
-            profile: state.profile,
+            // PONTE DE HIDRATAÇÃO PJ (auditoria 2026-05): os campos
+            // institucionais (CNPJ + endereço PJ) são coletados na Triagem
+            // (Step 4 / `state.triage`) mas o V2Shell só lê de `state.profile`.
+            // Sem este merge, a Step 11 (Phase4Final) abre o formulário em
+            // branco e sobrescreve dados existentes no banco. Preferimos
+            // o valor já presente no profile (vindo do bootstrap/banco) e
+            // caímos para a triage só quando o profile estiver vazio.
+            profile: {
+              ...state.profile,
+              company_name: state.profile.company_name || state.triage.company_name || '',
+              document: state.profile.document || state.triage.document || '',
+              postal_code: state.profile.postal_code || state.triage.postal_code || '',
+              street: state.profile.street || state.triage.street || '',
+              street_number: state.profile.street_number || state.triage.street_number || '',
+              complement: state.profile.complement || state.triage.complement || '',
+              show_full_address:
+                state.profile.show_full_address ?? state.triage.show_full_address ?? false,
+            },
             service: state.service,
             providerId: state.providerId,
             firstServiceId: state.firstServiceId,
