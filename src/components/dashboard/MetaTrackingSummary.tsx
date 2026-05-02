@@ -66,25 +66,53 @@ export function MetaTrackingSummary({ userId }: { userId: string | null | undefi
   const [data, setData] = useState<MetaTracking | null>(null);
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
 
   useEffect(() => {
     let cancel = false;
     if (!userId) { setLoading(false); setEmpty(true); return; }
-    (async () => {
-      try {
-        const { data: row, error } = await supabase
-          .from("providers")
-          .select("meta_tracking")
-          .eq("user_id", userId)
-          .maybeSingle();
-        if (cancel) return;
-        if (error || !row?.meta_tracking) { setEmpty(true); return; }
-        setData(row.meta_tracking as MetaTracking);
-      } finally {
-        if (!cancel) setLoading(false);
+
+    const load = async () => {
+      const { data: row, error } = await supabase
+        .from("providers")
+        .select("meta_tracking, updated_at")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (cancel) return;
+      if (error || !row?.meta_tracking) {
+        setEmpty(true);
+        setLoading(false);
+        return;
       }
-    })();
-    return () => { cancel = true; };
+      setData(row.meta_tracking as MetaTracking);
+      setUpdatedAt((row as any).updated_at ?? null);
+      setEmpty(false);
+      setLoading(false);
+    };
+
+    load();
+
+    // Realtime: reflete novas coletas/atualizações de meta_tracking imediatamente
+    const ch = supabase
+      .channel(`meta-tracking-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "providers", filter: `user_id=eq.${userId}` },
+        (payload: any) => {
+          const next = payload?.new?.meta_tracking;
+          if (next) {
+            setData(next as MetaTracking);
+            setUpdatedAt(payload?.new?.updated_at ?? new Date().toISOString());
+            setEmpty(false);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancel = true;
+      supabase.removeChannel(ch);
+    };
   }, [userId]);
 
   if (loading) {
@@ -133,13 +161,25 @@ export function MetaTrackingSummary({ userId }: { userId: string | null | undefi
       <div className="flex items-start gap-3">
         <ShieldCheck className="mt-0.5 h-5 w-5 text-accent" />
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-foreground">
-            Seus Registros de Segurança
-          </h3>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-foreground">
+              Seus Registros de Segurança
+            </h3>
+            {updatedAt && (
+              <span
+                className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+                data-testid="meta-tracking-updated-at"
+                title="Atualizado em tempo real"
+              >
+                Atualizado: {fmtDate(updatedAt)}
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             Estes são os metadados estendidos coletados quando você criou sua conta.
             Ficam imutáveis e são usados apenas para auditoria, prevenção de fraudes e
-            conformidade com a LGPD.
+            conformidade com a LGPD. Atualizamos esta área em tempo real conforme novas
+            coletas (rede, movimento, atribuição) chegam.
           </p>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
