@@ -66,25 +66,53 @@ export function MetaTrackingSummary({ userId }: { userId: string | null | undefi
   const [data, setData] = useState<MetaTracking | null>(null);
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
 
   useEffect(() => {
     let cancel = false;
     if (!userId) { setLoading(false); setEmpty(true); return; }
-    (async () => {
-      try {
-        const { data: row, error } = await supabase
-          .from("providers")
-          .select("meta_tracking")
-          .eq("user_id", userId)
-          .maybeSingle();
-        if (cancel) return;
-        if (error || !row?.meta_tracking) { setEmpty(true); return; }
-        setData(row.meta_tracking as MetaTracking);
-      } finally {
-        if (!cancel) setLoading(false);
+
+    const load = async () => {
+      const { data: row, error } = await supabase
+        .from("providers")
+        .select("meta_tracking, updated_at")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (cancel) return;
+      if (error || !row?.meta_tracking) {
+        setEmpty(true);
+        setLoading(false);
+        return;
       }
-    })();
-    return () => { cancel = true; };
+      setData(row.meta_tracking as MetaTracking);
+      setUpdatedAt((row as any).updated_at ?? null);
+      setEmpty(false);
+      setLoading(false);
+    };
+
+    load();
+
+    // Realtime: reflete novas coletas/atualizações de meta_tracking imediatamente
+    const ch = supabase
+      .channel(`meta-tracking-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "providers", filter: `user_id=eq.${userId}` },
+        (payload: any) => {
+          const next = payload?.new?.meta_tracking;
+          if (next) {
+            setData(next as MetaTracking);
+            setUpdatedAt(payload?.new?.updated_at ?? new Date().toISOString());
+            setEmpty(false);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancel = true;
+      supabase.removeChannel(ch);
+    };
   }, [userId]);
 
   if (loading) {
