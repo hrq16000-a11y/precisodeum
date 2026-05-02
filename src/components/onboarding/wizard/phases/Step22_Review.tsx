@@ -222,19 +222,26 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
   }
 
   const s = snap!;
-  const items: Array<{
+
+  // Cada linha pode ter várias pendências acionáveis. `actions` aparece
+  // como bullets curtos abaixo do detail quando a linha não está OK.
+  type ReviewItem = {
     key: ReviewSection;
     icon: typeof Briefcase;
     label: string;
     detail: string;
     ok: boolean;
-  }> = [
+    actions: string[];
+  };
+
+  const items: ReviewItem[] = useMemo(() => [
     {
       key: 'identity',
       icon: UserRound,
       label: 'Identidade e localização',
-      detail: s.providerOk ? 'Cadastro base completo' : 'Falta cidade/dados básicos',
+      detail: s.providerOk ? 'Cadastro base completo' : 'Falta cidade ou dados básicos',
       ok: s.providerOk,
+      actions: s.providerOk ? [] : ['Confirme sua cidade e UF para aparecer nas buscas'],
     },
     {
       key: 'service',
@@ -245,20 +252,42 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
           ? 'Nenhum serviço cadastrado'
           : `${s.servicesCount} serviço${s.servicesCount === 1 ? '' : 's'} ativo${s.servicesCount === 1 ? '' : 's'}`,
       ok: s.servicesCount > 0,
+      actions: [
+        ...(s.servicesCount === 0 ? ['Cadastre pelo menos 1 serviço'] : []),
+        ...(s.hasServiceArea ? [] : ['Defina as cidades onde você atende']),
+      ],
     },
     {
       key: 'photos',
       icon: Camera,
       label: 'Fotos do serviço',
-      detail: s.hasPhotos ? 'Galeria com fotos' : 'Sem fotos — recomendado adicionar',
+      detail: s.hasPhotos
+        ? `${s.photoCount} foto${s.photoCount === 1 ? '' : 's'} na galeria`
+        : 'Sem fotos — perfis com fotos recebem mais leads',
       ok: s.hasPhotos,
+      actions: s.hasPhotos
+        ? s.photoCount < 3
+          ? [`Adicione mais ${3 - s.photoCount} foto${3 - s.photoCount === 1 ? '' : 's'} (ideal: 3+)`]
+          : []
+        : ['Adicione pelo menos 1 foto do seu trabalho'],
     },
     {
       key: 'extras',
       icon: CheckCircle2,
-      label: 'Horários e extras',
-      detail: s.hasWorkingHours ? 'Horários definidos' : 'Horários não preenchidos',
+      label: 'Horários e documento',
+      detail:
+        s.hasWorkingHours && s.hasDocument
+          ? 'Horários e documento preenchidos'
+          : !s.hasWorkingHours && !s.hasDocument
+          ? 'Horários e documento pendentes'
+          : !s.hasWorkingHours
+          ? 'Horários não preenchidos'
+          : 'Documento (CPF/CNPJ) opcional não preenchido',
       ok: s.hasWorkingHours,
+      actions: [
+        ...(s.hasWorkingHours ? [] : ['Complete seus horários de atendimento']),
+        ...(s.hasDocument ? [] : ['CPF/CNPJ é opcional, mas aumenta a confiança']),
+      ],
     },
     {
       key: 'portfolio',
@@ -266,13 +295,17 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
       label: 'Portfólio',
       detail:
         s.albumsCount === 0
-          ? 'Sem álbuns — opcional'
+          ? 'Sem álbuns — opcional, mas recomendado'
           : `${s.albumsCount} álbum${s.albumsCount === 1 ? '' : 's'} criado${s.albumsCount === 1 ? '' : 's'}`,
-      ok: true, // opcional — sempre ok
+      ok: true, // opcional — não bloqueia
+      actions: s.albumsCount === 0
+        ? ['Crie 1 álbum para mostrar trabalhos por tema']
+        : [],
     },
-  ];
+  ], [s]);
 
   const pendingCount = items.filter((i) => !i.ok).length;
+  const totalActions = items.reduce((acc, i) => acc + (i.ok ? 0 : i.actions.length), 0);
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-2 space-y-3">
@@ -283,8 +316,18 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
         <p className="text-xs text-muted-foreground">
           {pendingCount === 0
             ? 'Tudo certo! Confira o resumo e finalize.'
-            : `${pendingCount} ponto${pendingCount === 1 ? '' : 's'} de atenção. Você pode editar agora ou seguir e completar depois.`}
+            : `${pendingCount} ponto${pendingCount === 1 ? '' : 's'} de atenção${
+                totalActions > 0 ? ` · ${totalActions} ação${totalActions === 1 ? '' : 'ões'} sugerida${totalActions === 1 ? '' : 's'}` : ''
+              }. Você pode editar agora ou seguir e completar depois.`}
         </p>
+        {s.source === 'local' && (
+          <p
+            data-testid="step22-local-fallback"
+            className="mx-auto mt-1 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800"
+          >
+            <CircleDashed className="h-3 w-3" aria-hidden /> Resumo offline (rascunho local) — pode estar desatualizado
+          </p>
+        )}
       </header>
 
       <ul className="divide-y divide-border rounded-lg border border-border bg-card">
