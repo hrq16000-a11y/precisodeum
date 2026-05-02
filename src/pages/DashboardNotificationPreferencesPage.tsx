@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, MessageCircle, Bell, Smartphone, Send, BellRing, Activity, Volume2, Flame, MailCheck, Zap } from 'lucide-react';
 import { playHornBeep } from '@/lib/soundFx';
 import DashboardLayout from '@/components/DashboardLayout';
+import { ContactHoursEditor } from '@/components/dashboard/ContactHoursEditor';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
