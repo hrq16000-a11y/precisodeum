@@ -376,6 +376,15 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
             const existingAreas = existingService
               ? parseAreas(existingService.service_area) || parseAreas(existingService.address)
               : [];
+            const seedHasOnlyBaseCity =
+              Array.isArray(serviceSeed.cities_served) &&
+              serviceSeed.cities_served.length === 1 &&
+              !!profileSeed.city &&
+              serviceSeed.cities_served[0] === profileSeed.city;
+            const seedHasOnlyProfileHours =
+              !!serviceSeed.working_hours &&
+              !!profileSeed.working_hours &&
+              serviceSeed.working_hours === profileSeed.working_hours;
             return {
               ...serviceSeed,
               service_name: serviceSeed.service_name || existingService?.service_name || '',
@@ -385,18 +394,22 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
                 : existingService?.category_id
                 ? [existingService.category_id]
                 : [],
-              cities_served: serviceSeed.cities_served?.length
-                ? serviceSeed.cities_served
-                : existingAreas.length
-                ? existingAreas
-                : profileSeed.city
-                ? [profileSeed.city]
-                : [],
+              cities_served:
+                serviceSeed.cities_served?.length && !seedHasOnlyBaseCity
+                  ? serviceSeed.cities_served
+                  : existingAreas.length
+                  ? existingAreas
+                  : profileSeed.city
+                  ? [profileSeed.city]
+                  : [],
               starting_price_brl:
                 serviceSeed.starting_price_brl != null
                   ? serviceSeed.starting_price_brl
                   : parsePrice(existingService?.price),
-              working_hours: serviceSeed.working_hours || existingService?.working_hours || '',
+              working_hours:
+                serviceSeed.working_hours && !seedHasOnlyProfileHours
+                  ? serviceSeed.working_hours
+                  : existingService?.working_hours || serviceSeed.working_hours || '',
               working_hours_struct: (() => {
                 if (serviceSeed.working_hours_struct) return serviceSeed.working_hours_struct;
                 const raw = existingService?.working_hours_struct;
@@ -619,6 +632,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       ) : stage === 'extras-services' ? (
         <BetCardShell>
           <Step20_MoreServices
+            onBack={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_extras_b' })}
             onContinue={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
             onSkip={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_portfolio_albums' })}
             onGoToPath={finalizeAndNavigateTo}
@@ -627,6 +641,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       ) : stage === 'extras-portfolio' ? (
         <BetCardShell>
           <Step21_PortfolioAlbums
+            onBack={() => dispatch({ type: 'GO_TO_PHASE', phase: 'main_more_services' })}
             onContinue={() => {
               void finalizeUnifiedOnboarding().finally(() => {
                 dispatch({ type: 'GO_TO_PHASE', phase: 'done' });
@@ -665,6 +680,11 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
               <Button asChild variant="outline" className="w-full gap-2">
                 <Link to="/dashboard/portfolio">
                   <FolderOpen className="h-4 w-4" /> Abrir portfólio
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full gap-2">
+                <Link to="/cadastro-inicial?mode=review&section=cadastro&next=/dashboard">
+                  <ArrowLeft className="h-4 w-4" /> Revisar cadastro do início
                 </Link>
               </Button>
               <InstallAppCard source="wizard-unified-done" variant="inline" />
