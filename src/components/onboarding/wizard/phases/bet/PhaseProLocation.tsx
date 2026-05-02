@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Home, LocateFixed, Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, MapPin, Home, LocateFixed, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -382,32 +382,33 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
+      transition={{ duration: 0.3 }}
+      className="mx-auto w-full max-w-md space-y-2 px-4 py-2"
     >
-      <header className="space-y-2 text-center">
+      <header className="space-y-1 text-center">
         <h1 className="font-display text-lg font-extrabold leading-tight text-foreground">
           De onde você é?
         </h1>
-        <p className="text-xs text-muted-foreground">
-          Sua cidade-base aparece para clientes próximos, e o bairro é sugerido quando houver dado confiável.
+        <p className="text-[11px] text-muted-foreground">
+          Use seu município (ex: <em>São José dos Pinhais</em>) — a região metropolitana entra depois como área de atendimento.
         </p>
       </header>
 
-      {/* Aviso curto */}
-      <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
-        <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
-        <p className="leading-snug">
-          A <strong>cidade-base</strong> deve ser o seu município (ex: <em>São José dos Pinhais</em>) — não a região metropolitana.
-          Você poderá adicionar a região como <strong>área de atendimento</strong> depois.
-        </p>
-      </div>
-
-      {/* Card único: Cidade-base + GPS embaixo */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5" /> Cidade-base
+      {/* Card único: Cidade-base + status GPS compacto */}
+      <div className="rounded-2xl border border-border bg-card p-3 shadow-card">
+        <div className="mb-1.5 flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+            {requestingGps ? (
+              <LocateFixed className="h-3.5 w-3.5 animate-pulse text-orange-600" aria-label="Detectando GPS" />
+            ) : state.location_source === 'gps' ? (
+              <LocateFixed
+                className="h-3.5 w-3.5 text-emerald-600"
+                aria-label={gpsAccuracy != null && gpsAccuracy <= 100 ? 'GPS preciso' : 'GPS aproximado'}
+              />
+            ) : (
+              <MapPin className="h-3.5 w-3.5" aria-label="Localização aproximada por IP" />
+            )}
+            Cidade-base
           </span>
           <span
             data-testid="location-source-pill"
@@ -453,43 +454,23 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           </ul>
         )}
 
-        {/* Indicador discreto de status GPS — substitui o bloco explicativo grande.
-            O GPS é solicitado automaticamente ao montar a fase (sem botão).
-            Se o usuário quiser refinar manualmente, ainda há um link sutil. */}
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-          {requestingGps ? (
-            <span className="inline-flex items-center gap-1 text-orange-700 dark:text-orange-300">
-              <LocateFixed className="h-3 w-3 animate-pulse" /> Detectando localização…
-            </span>
-          ) : state.location_source === 'gps' ? (
-            <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-300">
-              <CheckCircle2 className="h-3 w-3" />
-              {gpsAccuracy != null && gpsAccuracy <= 100
-                ? `GPS preciso (±${Math.round(gpsAccuracy)}m)`
-                : gpsAccuracy != null
-                ? `GPS aproximado (±${Math.round(gpsAccuracy)}m)`
-                : 'GPS confirmado'}
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-muted-foreground">
-              <MapPin className="h-3 w-3" /> Localização aproximada por IP
-            </span>
-          )}
+        {/* Link discreto para retentar GPS — sem ocupar espaço vertical extra. */}
+        {state.location_source !== 'gps' && (
           <button
             type="button"
             onClick={handleUseGps}
             disabled={requestingGps}
-            aria-label="Usar minha localização (GPS)"
-            className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-orange-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-orange-300"
+            aria-label="Tentar localização por GPS"
+            className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-orange-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-orange-300"
           >
-            <LocateFixed className="h-3 w-3" />
-            {state.location_source === 'gps' ? 'Refazer GPS' : 'Tentar GPS de novo'}
+            <LocateFixed className={`h-3 w-3 ${requestingGps ? 'animate-pulse' : ''}`} />
+            {requestingGps ? 'Detectando…' : 'Usar GPS preciso'}
           </button>
-        </div>
+        )}
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
-        <label htmlFor="neighborhood" className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+      <div className="rounded-2xl border border-border bg-card p-3 shadow-card">
+        <label htmlFor="neighborhood" className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
           <Home className="h-3.5 w-3.5" /> Bairro
         </label>
         <Input
@@ -502,10 +483,6 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           maxLength={80}
           className={neighborhoodOk ? 'ring-2 ring-bet-green/60' : ''}
         />
-        <p className="mt-1 text-[11px] text-muted-foreground">
-          O bairro ajuda clientes da sua região a te encontrar mais rápido.
-        </p>
-
         <CepSuggestionCard
           city={state.city}
           state={state.state}
