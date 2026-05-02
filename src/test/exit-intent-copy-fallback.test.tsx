@@ -27,6 +27,17 @@ vi.mock('@/lib/conversionFunnel', () => ({
   shouldSuppressExitIntent: () => false,
   markSupportContacted: vi.fn(),
 }));
+// Em ambiente de teste o guard universal bloqueia popups (1ª visita / sem
+// scroll). Como o objetivo do teste é validar a copy do dialog, neutralizamos
+// o guard aqui — a regra real continua coberta em popup-guards.test.ts.
+vi.mock('@/lib/popupGuards', async () => {
+  const actual: any = await vi.importActual('@/lib/popupGuards');
+  return {
+    ...actual,
+    canTriggerMarketingPopup: () => true,
+    isMobileViewport: () => false,
+  };
+});
 
 describe('GlobalExitIntentDialog — constraints', () => {
   beforeEach(() => { sessionStorage.clear(); localStorage.clear(); });
