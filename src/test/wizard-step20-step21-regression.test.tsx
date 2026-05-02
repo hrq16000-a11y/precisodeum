@@ -202,3 +202,163 @@ describe('Step21_PortfolioAlbums — contrato de props e feedback de erro', () =
     });
   });
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// Cobertura adicional: RLS / retry / loading / nunca-quebra
+//
+// Esses cenários simulam falhas reais quando o providerId não pode ser
+// resolvido por motivos transitórios (rede), permanentes (RLS / sessão
+// expirada) ou estruturais (perfil ainda não criado). Em todos os casos a
+// tela do wizard não pode quebrar e deve oferecer feedback claro ao usuário.
+describe('Step21_PortfolioAlbums — RLS, retry e loading não quebram a tela', () => {
+  beforeEach(() => {
+    supabaseMock.from.mockReset();
+    vi.resetModules();
+    // useAuth sem provider → força lookup
+    vi.doMock('@/hooks/useAuth', () => ({
+      useAuth: () => ({ user: { id: 'user-rls-1' }, provider: null }),
+    }));
+    vi.doMock('@/integrations/supabase/client', () => ({ supabase: supabaseMock }));
+    vi.doMock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+    vi.doMock('@/components/onboarding/wizard/phases/PortfolioAlbumPhotoUploader', () => ({
+      default: () => <div data-testid="portfolio-uploader-stub" />,
+    }));
+  });
+
+  it('mensagem específica + CTA de retry quando consulta retorna erro tipo RLS', async () => {
+    const rlsError = { code: '42501', message: 'permission denied for table providers' };
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'portfolio_albums') return makePortfolioAlbumsQuery([]);
+      if (table === 'providers') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: rlsError }),
+            }),
+          }),
+        };
+      }
+      throw new Error(`unexpected ${table}`);
+    });
+
+    const Mod = await import('@/components/onboarding/wizard/phases/Step21_PortfolioAlbums');
+    const Comp = Mod.default;
+    render(
+      <MemoryRouter>
+        <Comp onContinue={() => {}} onSkip={() => {}} />
+      </MemoryRouter>,
+    );
+
+    const alert = await screen.findByTestId('step21-provider-error');
+    expect(alert.getAttribute('data-error-code')).toBe('rls');
+    expect(alert.textContent || '').toMatch(/permissão|expirad/i);
+    // Tela do wizard continua de pé (heading visível)
+    expect(screen.getByText(/Crie seus álbuns de portfólio/i)).toBeInTheDocument();
+    // Botão Retry visível para causa transitória/RLS
+    expect(screen.getByTestId('step21-provider-retry')).toBeInTheDocument();
+  });
+
+  it('mensagem de network + retry refaz a query e some o alerta no sucesso', async () => {
+    let callIdx = 0;
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'portfolio_albums') return makePortfolioAlbumsQuery([]);
+      if (table === 'providers') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockImplementation(async () => {
+                callIdx += 1;
+                if (callIdx === 1) throw new Error('network down');
+                return { data: { id: 'prov-recovered' }, error: null };
+              }),
+            }),
+          }),
+        };
+      }
+      throw new Error(`unexpected ${table}`);
+    });
+
+    const Mod = await import('@/components/onboarding/wizard/phases/Step21_PortfolioAlbums');
+    const Comp = Mod.default;
+    render(
+      <MemoryRouter>
+        <Comp onContinue={() => {}} onSkip={() => {}} />
+      </MemoryRouter>,
+    );
+
+    const alert = await screen.findByTestId('step21-provider-error');
+    expect(alert.getAttribute('data-error-code')).toBe('network');
+    const retry = screen.getByTestId('step21-provider-retry');
+    fireEvent.click(retry);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('step21-provider-error')).toBeNull();
+    });
+    // Tela permanece funcional após retry bem-sucedido
+    expect(screen.getByText(/Crie seus álbuns de portfólio/i)).toBeInTheDocument();
+  });
+
+  it('mensagem de "perfil ainda não disponível" quando query é OK mas vazia (sem retry)', async () => {
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'portfolio_albums') return makePortfolioAlbumsQuery([]);
+      if (table === 'providers') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+            }),
+          }),
+        };
+      }
+      throw new Error(`unexpected ${table}`);
+    });
+
+    const Mod = await import('@/components/onboarding/wizard/phases/Step21_PortfolioAlbums');
+    const Comp = Mod.default;
+    render(
+      <MemoryRouter>
+        <Comp onContinue={() => {}} onSkip={() => {}} />
+      </MemoryRouter>,
+    );
+
+    const alert = await screen.findByTestId('step21-provider-error');
+    expect(alert.getAttribute('data-error-code')).toBe('not_found');
+    // Para causa estrutural, retry não aparece (não vai ajudar)
+    expect(screen.queryByTestId('step21-provider-retry')).toBeNull();
+  });
+});
+
+describe('Step20_MoreServices — feedback de loading consistente', () => {
+  beforeEach(() => {
+    supabaseMock.from.mockReset();
+  });
+
+  it('mostra skeleton de loading enquanto o provider/contagem ainda não chegaram', async () => {
+    // services count nunca resolve sincronamente; categories também adia
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'services') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue(new Promise(() => {})),
+          }),
+        };
+      }
+      if (table === 'categories') {
+        return {
+          select: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue(new Promise(() => {})),
+          }),
+        };
+      }
+      return makeProvidersQuery('prov-1');
+    });
+
+    render(
+      <MemoryRouter>
+        <Step20_MoreServices onContinue={() => {}} onSkip={() => {}} />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByTestId('step20-loading')).toBeInTheDocument();
+  });
+});
