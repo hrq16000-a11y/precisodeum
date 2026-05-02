@@ -106,7 +106,7 @@ const SponsorOnboardingChecklist = ({ state, className = '' }: Props) => {
     {
       key: 'campaign',
       label: 'Ativar primeira campanha',
-      hint: 'Configure segmentação, orçamento e período.',
+      hint: 'Configure segmentação, verba e período.',
       done: !!hasActiveCampaign,
       href: '/sponsor-panel/campanhas',
       cta: 'Criar campanha',
