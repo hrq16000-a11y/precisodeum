@@ -302,7 +302,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
         ? ['Crie 1 álbum para mostrar trabalhos por tema']
         : [],
     },
-  ], [s]);
+  ];
 
   const pendingCount = items.filter((i) => !i.ok).length;
   const totalActions = items.reduce((acc, i) => acc + (i.ok ? 0 : i.actions.length), 0);
