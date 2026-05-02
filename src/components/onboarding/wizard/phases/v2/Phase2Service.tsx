@@ -41,13 +41,19 @@ interface ServiceProps {
   onChangeProfile: (patch: Partial<OnboardingProfileData>) => void;
   onNext: () => void;
   onBack: () => void;
-  onSkip: () => void;
-  /** Se já existe um service_id criado, libera o "Salvar progresso e configurar depois". */
+  /**
+   * @deprecated 2026-05-02 — o atalho "Salvar e configurar depois" foi
+   * removido da UI desta fase para preservar a linearidade do funil
+   * ("3 passos do 1º anúncio"). A prop é mantida na interface apenas
+   * para compatibilidade com chamadores existentes; ela é IGNORADA.
+   */
+  onSkip?: () => void;
+  /** Se já existe um service_id criado (não controla mais visibilidade na UI). */
   firstServiceId?: string | null;
 }
 
 export const Phase2Service = ({
-  service, profile, onChangeService, onChangeProfile, onNext, onBack, onSkip, firstServiceId,
+  service, profile, onChangeService, onChangeProfile, onNext, onBack, firstServiceId,
 }: ServiceProps) => {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [search, setSearch] = useState('');
