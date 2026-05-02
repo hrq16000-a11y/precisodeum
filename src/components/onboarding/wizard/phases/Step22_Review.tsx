@@ -332,14 +332,14 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
   const totalActions = items.reduce((acc, i) => acc + (i.ok ? 0 : i.actions.length), 0);
 
   // Texto agregado de pendências para enviar via WhatsApp/Email/clipboard.
-  const pendingDigest = useMemo(() => {
-    const lines = items
-      .filter((i) => !i.ok && i.actions.length > 0)
-      .map((i) => `• ${i.label}: ${i.actions.join('; ')}`);
-    return lines.length
-      ? `Pendências do meu cadastro em precisodeumprofissional.com.br:\n\n${lines.join('\n')}`
-      : '';
-  }, [items]);
+  // Não usamos useMemo aqui porque este código vive depois dos early returns
+  // (loading/error) e quebraria a regra "mesmo nº de hooks por render".
+  const pendingDigestLines = items
+    .filter((i) => !i.ok && i.actions.length > 0)
+    .map((i) => `• ${i.label}: ${i.actions.join('; ')}`);
+  const pendingDigest = pendingDigestLines.length
+    ? `Pendências do meu cadastro em precisodeumprofissional.com.br:\n\n${pendingDigestLines.join('\n')}`
+    : '';
 
   const copyText = async (text: string, msg = 'Pendência copiada') => {
     try {
