@@ -10,6 +10,8 @@ import DashboardGroupNav from "@/components/dashboard/DashboardGroupNav";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { RegistrationDataSummary } from "@/components/dashboard/RegistrationDataSummary";
+import { MetaTrackingSummary } from "@/components/dashboard/MetaTrackingSummary";
+import { DeleteAccountDialog } from "@/components/dashboard/DeleteAccountDialog";
 
 const FUNCTION_URL = (name: string) =>
   `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`;
@@ -24,30 +26,7 @@ const DashboardPrivacyPage = () => {
 
   const { user, profile, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  const handleSelfDelete = async () => {
-    if (!user) { toast.error("Faça login para continuar."); return; }
-    const ok = window.confirm(
-      "ATENÇÃO: ao confirmar, sua conta será imediatamente desativada e arquivada por 90 dias antes da exclusão permanente. Você ficará impedido de criar nova conta com os mesmos dados (e-mail, WhatsApp, dispositivo) por 180 dias. Deseja continuar?"
-    );
-    if (!ok) return;
-    setDeleting(true);
-    try {
-      const { error } = await (supabase.rpc as any)("self_delete_account", { _reason: "user_self_request" });
-      if (error) throw error;
-      toast.success("Conta arquivada. Você será desconectado.");
-      setTimeout(async () => {
-        try { await (signOut as any)?.(); } catch { /* noop */ }
-        window.location.href = "/";
-      }, 1200);
-    } catch (e: any) {
-      console.error(e);
-      toast.error(e?.message || "Falha ao excluir agora. Tente o fluxo padrão.");
-    } finally {
-      setDeleting(false);
-    }
-  };
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handleExport = async () => {
     if (!user) {
@@ -177,6 +156,10 @@ const DashboardPrivacyPage = () => {
             <RegistrationDataSummary userId={user?.id} />
           </div>
 
+          <div className="mt-4">
+            <MetaTrackingSummary userId={user?.id} />
+          </div>
+
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <PrivacyLink
               to="/privacidade"
@@ -228,12 +211,20 @@ const DashboardPrivacyPage = () => {
               variant="destructive"
               size="sm"
               className="mt-3"
-              onClick={handleSelfDelete}
-              disabled={deleting || !user}
+              onClick={() => setDeleteOpen(true)}
+              disabled={!user}
+              data-testid="open-self-delete"
             >
-              {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processando…</> : <>Excluir agora</>}
+              <Trash2 className="mr-2 h-4 w-4" />
+              Excluir agora
             </Button>
           </div>
+
+          <DeleteAccountDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            signOut={signOut as any}
+          />
 
           <p className="mt-6 text-xs text-muted-foreground">
             Encarregado de tratamento de dados (DPO):{" "}
