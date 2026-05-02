@@ -22,7 +22,7 @@ export const SERVICE_TEMPLATES: Record<string, ServiceTemplate[]> = {
     { label: 'Instalação Hidráulica', description: 'Projeto e execução de instalações hidráulicas para construções e reformas. Instalação de aquecedores, misturadores e sistemas de água quente e fria. Trabalho dentro das normas técnicas.' },
   ],
   'mecanico': [
-    { label: 'Revisão Completa', description: 'Revisão completa do veículo incluindo motor, freios, suspensão, direção e parte elétrica. Diagnóstico computadorizado e orçamento detalhado. Peças originais e garantia de serviço.' },
+    { label: 'Revisão Completa', description: 'Revisão completa do veículo incluindo motor, freios, suspensão, direção e parte elétrica. Diagnóstico computadorizado detalhado. Peças originais e garantia de serviço.' },
     { label: 'Suspensão e Freios', description: 'Manutenção e troca de componentes de suspensão e freios. Alinhamento, balanceamento e cambagem. Peças de qualidade com garantia e preço justo.' },
     { label: 'Motor e Câmbio', description: 'Reparo e retífica de motores e câmbios manuais e automáticos. Diagnóstico preciso com equipamentos modernos. Profissional experiente com anos de atuação no mercado.' },
     { label: 'Injeção Eletrônica', description: 'Diagnóstico e reparo de sistemas de injeção eletrônica, sensores e módulos. Scanner automotivo de última geração. Solução rápida para falhas, consumo alto e luz do painel acesa.' },
@@ -33,7 +33,7 @@ export const SERVICE_TEMPLATES: Record<string, ServiceTemplate[]> = {
     { label: 'Textura e Grafiato', description: 'Aplicação de texturas decorativas, grafiato e efeitos especiais em paredes. Variedade de acabamentos e cores. Transforme seus ambientes com sofisticação e bom gosto.' },
   ],
   'pedreiro': [
-    { label: 'Reforma Geral', description: 'Reforma completa de casas e apartamentos: alvenaria, reboco, contrapiso, revestimentos e acabamentos. Equipe experiente, trabalho limpo e dentro do prazo. Orçamento gratuito.' },
+    { label: 'Reforma Geral', description: 'Reforma completa de casas e apartamentos: alvenaria, reboco, contrapiso, revestimentos e acabamentos. Equipe experiente, trabalho limpo e dentro do prazo. Avaliação técnica gratuita.' },
     { label: 'Construção', description: 'Construção de muros, lajes, estruturas e ampliações residenciais e comerciais. Projeto acompanhado, materiais de qualidade e cumprimento rigoroso de prazos. Experiência comprovada.' },
     { label: 'Reparos e Manutenção', description: 'Reparos em alvenaria, trincas, infiltrações e problemas estruturais. Manutenção preventiva e corretiva com agilidade. Pequenos e grandes reparos com o mesmo padrão de qualidade.' },
   ],
@@ -82,7 +82,7 @@ export const DIFFERENTIAL_TAGS = [
   { label: '💳 Aceito Cartão', value: 'Aceito pagamento em cartão de crédito e débito, além de Pix.' },
   { label: '✅ Garantia de Serviço', value: 'Todos os serviços possuem garantia por escrito.' },
   { label: '🚗 Atendo a Domicílio', value: 'Atendimento em domicílio sem custo adicional de deslocamento.' },
-  { label: '📋 Orçamento Grátis', value: 'Orçamento gratuito e sem compromisso. Entre em contato!' },
+  { label: 'Avaliação Técnica Grátis', value: 'Avaliação técnica gratuita e sem compromisso. Entre em contato!' },
   { label: '⭐ Profissional Certificado', value: 'Profissional com certificação e cursos de especialização na área.' },
   { label: '🛡️ NF e Contrato', value: 'Emissão de nota fiscal e contrato de serviço para sua segurança.' },
   { label: '⚡ Atendimento Rápido', value: 'Resposta rápida e atendimento no mesmo dia, sujeito a disponibilidade.' },

@@ -25,7 +25,7 @@ const DEFAULT_FAQS: CategoryFaq[] = [
 
 const FAQS_BY_SLUG: Record<string, CategoryFaq[]> = {
   eletricista: [
-    { q: 'Quanto custa um eletricista para instalação ou reparo?', a: 'Os valores variam conforme a complexidade. Chamados simples (troca de tomada, disjuntor) começam em torno de R$ 80–R$ 150. Instalações maiores (quadro de luz, ar-condicionado) podem ultrapassar R$ 500. Sempre peça orçamento prévio com fotos.' },
+    { q: 'Quanto custa um eletricista para instalação ou reparo?', a: 'Os valores variam conforme a complexidade. Chamados simples (troca de tomada, disjuntor) começam em torno de R$ 80–R$ 150. Instalações maiores (quadro de luz, ar-condicionado) podem ultrapassar R$ 500. Combine os detalhes diretamente com o profissional, com fotos.' },
     { q: 'O eletricista atende emergências fora do horário comercial?', a: 'Muitos profissionais oferecem atendimento 24h. No filtro de busca, procure pela tag "atendimento de emergência" para encontrar quem trabalha em finais de semana e madrugada.' },
     { q: 'Preciso desligar a energia para receber o serviço?', a: 'Sim, em quase todos os reparos elétricos é necessário desligar o disjuntor geral. O profissional orienta no momento da visita.' },
     { q: 'Eletricista emite nota fiscal?', a: 'Profissionais com a tag "Emite NF-e" podem fornecer nota fiscal — útil para reembolsos de seguro ou condomínios.' },
@@ -33,7 +33,7 @@ const FAQS_BY_SLUG: Record<string, CategoryFaq[]> = {
   encanador: [
     { q: 'Quanto custa um encanador para resolver vazamento?', a: 'Diagnóstico simples começa em R$ 100–R$ 200. Reparos com troca de tubulação ou caça-vazamento podem variar de R$ 250 a R$ 800 conforme a área afetada.' },
     { q: 'Encanador faz desentupimento?', a: 'Sim. Muitos atendem desentupimento de pia, ralo e vaso sanitário. Filtre por "desentupidor" se for serviço maior com máquina rotativa.' },
-    { q: 'O profissional traz as peças?', a: 'Em geral, o cliente paga as peças à parte. Combine no orçamento se a mão de obra inclui o material.' },
+    { q: 'O profissional traz as peças?', a: 'Em geral, o cliente paga as peças à parte. Combine diretamente com o profissional se a mão de obra inclui o material.' },
   ],
   diarista: [
     { q: 'Qual o valor de uma diária de limpeza?', a: 'A diária varia entre R$ 130 e R$ 250, dependendo do tamanho do imóvel, cidade e se inclui passar roupa. Combine o escopo antes.' },
@@ -41,7 +41,7 @@ const FAQS_BY_SLUG: Record<string, CategoryFaq[]> = {
     { q: 'A diarista traz produto de limpeza?', a: 'Geralmente os produtos são fornecidos pelo contratante. Algumas profissionais cobram à parte se levarem material próprio.' },
   ],
   pedreiro: [
-    { q: 'Pedreiro cobra por dia ou por obra?', a: 'Depende. Para pequenos reparos (R$ 200–R$ 400/dia) é por diária. Para obras maiores, peça orçamento fechado por etapa (alvenaria, contrapiso, acabamento).' },
+    { q: 'Pedreiro cobra por dia ou por obra?', a: 'Depende. Para pequenos reparos (R$ 200–R$ 400/dia) é por diária. Para obras maiores, combine valores fechados por etapa (alvenaria, contrapiso, acabamento) diretamente com o profissional.' },
     { q: 'O pedreiro ajuda a comprar material?', a: 'Muitos auxiliam na lista de materiais e até buscam no depósito. Combine se há cobrança de deslocamento.' },
   ],
   pintor: [
@@ -49,7 +49,7 @@ const FAQS_BY_SLUG: Record<string, CategoryFaq[]> = {
     { q: 'O pintor fornece a tinta?', a: 'O comum é o cliente comprar a tinta. O profissional indica marca e quantidade após visita técnica.' },
   ],
   marceneiro: [
-    { q: 'Quanto custa um móvel planejado?', a: 'Móveis planejados variam muito (R$ 1.500/m² a R$ 4.000/m² conforme material e ferragem). Peça projeto 3D e orçamento detalhado por peça.' },
+    { q: 'Quanto custa um móvel planejado?', a: 'Móveis planejados variam muito (R$ 1.500/m² a R$ 4.000/m² conforme material e ferragem). Solicite projeto 3D e proposta detalhada por peça diretamente com o profissional.' },
     { q: 'Marceneiro faz reparo em móvel pronto?', a: 'Sim. Muitos atendem ajustes (porta desalinhada, dobradiça, gaveta), além de produção sob medida.' },
   ],
 };

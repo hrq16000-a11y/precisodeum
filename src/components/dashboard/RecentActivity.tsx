@@ -47,7 +47,7 @@ const RecentActivity = ({ providerId }: RecentActivityProps) => {
           id: `lead-${l.id}`,
           type: 'lead',
           title: l.client_name || 'Novo lead',
-          subtitle: l.service_needed || 'Solicitou orçamento',
+          subtitle: l.service_needed || 'Solicitou contato',
           time: l.created_at,
           icon: MessageSquare,
           color: 'text-amber-500 bg-amber-500/10',

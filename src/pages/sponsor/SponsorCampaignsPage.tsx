@@ -203,7 +203,7 @@ const SponsorCampaignsPage = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Orçamento (R$)</Label>
+                  <Label>Verba (R$)</Label>
                   <Input type="number" step="0.01" value={form.budget} onChange={e => setForm(p => ({ ...p, budget: e.target.value }))} placeholder="0,00" />
                 </div>
                 <Button className="w-full" onClick={handleSave} disabled={saving}>
@@ -245,7 +245,7 @@ const SponsorCampaignsPage = () => {
                 <DollarSign className="w-5 h-5 text-secondary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Orçamento Total</p>
+                <p className="text-xs text-muted-foreground">Verba Total</p>
                 <p className="text-xl font-bold">R$ {totalBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
             </CardContent>

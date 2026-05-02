@@ -150,8 +150,8 @@ const SeoPage = () => {
   const locationLabel = parsed?.neighborhood ? `${parsed.neighborhood}, ${parsed.city}` : parsed?.city || '';
   const seoTitle = locationLabel ? `${parsed?.categoryName} em ${locationLabel}` : parsed?.categoryName || '';
   const seoDesc = locationLabel
-    ? `Encontre os melhores profissionais de ${parsed?.categoryName} em ${locationLabel}. Veja avaliações e solicite orçamentos.`
-    : `Encontre os melhores profissionais de ${parsed?.categoryName}. Veja avaliações e solicite orçamentos.`;
+    ? `Encontre os melhores profissionais de ${parsed?.categoryName} em ${locationLabel}. Veja avaliações e fale direto com o profissional.`
+    : `Encontre os melhores profissionais de ${parsed?.categoryName}. Veja avaliações e fale direto com o profissional.`;
 
   useSeoHead({
     title: seoTitle || 'Buscar',

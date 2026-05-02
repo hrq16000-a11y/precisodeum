@@ -57,7 +57,7 @@ export function getCategorySeoMeta(input: CategorySeoInput): SeoMeta {
     : `${name} no Brasil - Profissionais Verificados | Preciso de Um`;
 
   const description = city
-    ? `Os melhores profissionais de ${name} em ${city}. ${providersCount} prestadores verificados, avaliados pela comunidade. Orçamento grátis pelo WhatsApp.`
+    ? `Os melhores profissionais de ${name} em ${city}. ${providersCount} prestadores verificados, avaliados pela comunidade. Contato direto pelo WhatsApp.`
     : `Encontre os melhores profissionais verificados de ${name} no Brasil. ${providersCount} prestadores cadastrados com avaliações reais.`;
 
   return {

@@ -27,7 +27,7 @@ export const EXPERT_TIPS: Record<string, string[]> = {
   pedreiro: [
     'Poste fotos de obras concluídas com luz natural — destaca acabamento.',
     'Inclua "pequenos reparos" mesmo se faz obras grandes: capta leads de entrada.',
-    'Mencione se faz orçamento gratuito no local.',
+    'Mencione se faz visita técnica gratuita para avaliar a obra.',
   ],
   pintor: [
     'Foto antes/depois é o conteúdo de maior conversão para pintura.',
