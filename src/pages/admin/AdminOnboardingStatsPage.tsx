@@ -302,6 +302,67 @@ export default function AdminOnboardingStatsPage() {
             </Card>
           </div>
 
+          {/* Auditoria de Âncoras de Revisão (review_anchor_used) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Anchor className="h-4 w-4 text-bet-amber" />
+                Âncoras de revisão (X/19)
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Quantas vezes o Wizard segurou o numerador porque o usuário entrou em fase
+                fantasma. Picos por <code className="rounded bg-muted px-1">ghost_phase</code>{' '}
+                = regressão de roteamento.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {!anchorAudit ? (
+                <div className="h-24 animate-pulse rounded-md bg-muted/40" />
+              ) : anchorAudit.total === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma âncora registrada na janela — UX saudável.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div>
+                      <div className="text-2xl font-semibold">{anchorAudit.total}</div>
+                      <div className="text-xs text-muted-foreground">ocorrências</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-semibold">{anchorAudit.unique_users}</div>
+                      <div className="text-xs text-muted-foreground">usuários únicos</div>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="text-xs uppercase text-muted-foreground">
+                        <tr>
+                          <th className="px-2 py-1 text-left">Ghost phase</th>
+                          <th className="px-2 py-1 text-right">Ocorrências</th>
+                          <th className="px-2 py-1 text-right">Usuários únicos</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {anchorAudit.by_ghost_phase.map((r) => (
+                          <tr key={r.ghost_phase} className="border-t">
+                            <td className="px-2 py-1">
+                              <Badge variant="outline" className="font-normal">
+                                {r.ghost_phase}
+                              </Badge>
+                            </td>
+                            <td className="px-2 py-1 text-right">{r.occurrences}</td>
+                            <td className="px-2 py-1 text-right">{r.unique_users}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Conclusão por origem */}
           <Card>
             <CardHeader>
