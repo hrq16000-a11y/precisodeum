@@ -153,6 +153,10 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     phase: isReview ? resolveReviewStartPhase(reviewSection) : initial.phase,
   }));
   const resumeBootstrapRef = useRef(false);
+  // Stage local "review" — entre portfolio e done. Não vive no reducer público
+  // (reducer linear das 19 fases é fonte blindada). Aqui é só um booleano
+  // de UI: ao chegar do Step21 mostramos o resumo; "Finalizar" vai para done.
+  const [showReview, setShowReview] = useState(false);
   // Stage continua como "qual orquestrador renderizar" — é derivado da fase.
   const stage: Stage =
     state.phase.startsWith('triage_')
