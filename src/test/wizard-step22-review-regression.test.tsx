@@ -14,6 +14,10 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { id: 'u-1' } }),
 }));
 
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn(), message: vi.fn() },
+}));
+
 const { supabaseMock } = vi.hoisted(() => ({
   supabaseMock: { from: vi.fn() },
 }));
