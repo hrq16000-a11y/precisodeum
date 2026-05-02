@@ -58,6 +58,8 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { extractSpecialties } from '@/lib/specialtyExtractor';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
+import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
+import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
 
 /** Fire-and-forget contact click tracker */
 const getLeadSource = () => {
