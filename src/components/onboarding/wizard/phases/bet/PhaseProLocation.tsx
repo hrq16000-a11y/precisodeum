@@ -24,7 +24,7 @@ import { recordMyGeoEvent } from '@/lib/providerGeoAudit';
 import { lookupCep, normalizeCep } from '@/lib/cepLookup';
 // isUF removido (input UF da prévia foi mesclado com o CityAutocomplete).
 import { trackOnboardingEvent } from '../v2/telemetry';
-import GpsConsentNotice from '@/components/onboarding/GpsConsentNotice';
+// GpsConsentNotice removido — GPS agora é solicitado automaticamente no mount.
 import { BET_POINTS, type BetState } from './types';
 import type { BetRewardKey } from './betRewards';
 
