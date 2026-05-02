@@ -12,6 +12,8 @@ import Footer from "@/components/Footer";
 import { RegistrationDataSummary } from "@/components/dashboard/RegistrationDataSummary";
 import { MetaTrackingSummary } from "@/components/dashboard/MetaTrackingSummary";
 import { DeleteAccountDialog } from "@/components/dashboard/DeleteAccountDialog";
+import { PrivacyHistoryTimeline } from "@/components/dashboard/PrivacyHistoryTimeline";
+import { recordPrivacyEvent } from "@/lib/privacyHistory";
 
 const FUNCTION_URL = (name: string) =>
   `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`;
@@ -57,6 +59,12 @@ const DashboardPrivacyPage = () => {
       a.remove();
       URL.revokeObjectURL(url);
       toast.success("Relatório baixado com sucesso.");
+      // Histórico imutável (best-effort, sem bloquear o download)
+      recordPrivacyEvent({
+        event_type: "data_export",
+        reason: "user_requested_json_export",
+        metadata: { format: "json", channel: "dashboard" },
+      });
     } catch (e) {
       console.error(e);
       toast.error(e instanceof Error ? e.message : "Não foi possível gerar o relatório.");
@@ -158,6 +166,10 @@ const DashboardPrivacyPage = () => {
 
           <div className="mt-4">
             <MetaTrackingSummary userId={user?.id} />
+          </div>
+
+          <div className="mt-4">
+            <PrivacyHistoryTimeline userId={user?.id} />
           </div>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
