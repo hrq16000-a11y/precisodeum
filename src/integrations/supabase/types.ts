@@ -8732,6 +8732,12 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: number
       }
+      mark_ghost_providers: {
+        Args: never
+        Returns: {
+          marked_count: number
+        }[]
+      }
       mark_lead_as_concluded: { Args: { _lead_id: string }; Returns: Json }
       mark_notification_read: {
         Args: { _notification_id: string }
