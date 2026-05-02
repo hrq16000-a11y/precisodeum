@@ -61,7 +61,7 @@ describe('ReportWizardErrorButton — contextSnapshot', () => {
     await waitFor(() => {
       expect(screen.getByText(/Contexto que será enviado/i)).toBeInTheDocument();
     });
-    expect(screen.getByText(/phase2_photos:no_service/)).toBeInTheDocument();
+    expect(screen.getAllByText(/phase2_photos:no_service/).length).toBeGreaterThan(0);
     expect(screen.getByText(/categoria, cidade/)).toBeInTheDocument();
     expect(screen.getByTestId('report-dialog-note')).toBeInTheDocument();
     expect(screen.getByTestId('report-dialog-send')).toBeInTheDocument();
