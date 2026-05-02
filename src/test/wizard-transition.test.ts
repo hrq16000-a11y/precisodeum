@@ -22,12 +22,14 @@ import {
   playWizardTransition,
   prefersReducedMotion,
   phaseTransitionClass,
+  __resetWizardTransitionCooldown,
 } from '@/lib/wizardTransition';
 
 beforeEach(() => {
   fieldWin.mockClear();
   stageWin.mockClear();
   playStampSound.mockClear();
+  __resetWizardTransitionCooldown();
   // limpar matchMedia mock
   Object.defineProperty(window, 'matchMedia', { configurable: true, value: undefined });
 });

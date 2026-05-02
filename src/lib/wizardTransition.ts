@@ -21,6 +21,11 @@ function withinCooldown(): boolean {
   return false;
 }
 
+/** Reset apenas para testes — limpa o cooldown global. */
+export function __resetWizardTransitionCooldown(): void {
+  lastPlayedAt = 0;
+}
+
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || !window.matchMedia) return false;
   try {
