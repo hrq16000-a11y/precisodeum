@@ -38,16 +38,26 @@ describe('admin/onboarding-stats — autorização', () => {
   });
 
   it('todas as RPCs da página estão atrás de `enabled: !!isAdmin`', () => {
-    // Conta quantas useQuery declaram queryKey de admin-* e quantas têm
-    // o gating. Devem ser iguais — qualquer query nova precisa do mesmo
-    // fence de segurança.
-    const queries = PAGE_TSX.match(/useQuery\(\{[\s\S]*?\}\)/g) || [];
-    const adminQueries = queries.filter((q) =>
-      /queryKey:\s*\[\s*["']admin-/.test(q),
-    );
-    expect(adminQueries.length).toBeGreaterThanOrEqual(4);
-    for (const q of adminQueries) {
-      expect(q).toMatch(/enabled:\s*!!isAdmin/);
+    // Conta todas as queryKey de admin-* e verifica que cada uma é seguida
+    // (no MESMO bloco useQuery) por `enabled: !!isAdmin`. Usa lastIndexOf
+    // do `enabled` antes do próximo `queryKey:` para evitar regex multilinha.
+    const adminKeys = [
+      ...PAGE_TSX.matchAll(/queryKey:\s*\[\s*['"](admin-[a-z0-9-]+)['"]/g),
+    ].map((m) => m[1]);
+    expect(adminKeys.length).toBeGreaterThanOrEqual(4);
+
+    for (let i = 0; i < adminKeys.length; i += 1) {
+      const startIdx = PAGE_TSX.indexOf(`'${adminKeys[i]}'`) >= 0
+        ? PAGE_TSX.indexOf(`'${adminKeys[i]}'`)
+        : PAGE_TSX.indexOf(`"${adminKeys[i]}"`);
+      const endIdx =
+        i + 1 < adminKeys.length
+          ? PAGE_TSX.indexOf(adminKeys[i + 1], startIdx + 1)
+          : PAGE_TSX.length;
+      const block = PAGE_TSX.slice(startIdx, endIdx);
+      expect(block, `query "${adminKeys[i]}" sem enabled !!isAdmin`).toMatch(
+        /enabled:\s*!!isAdmin/,
+      );
     }
   });
 
