@@ -146,7 +146,11 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
         className="rounded-lg border border-border bg-card p-4 text-center"
       >
         {count == null || loadingProvider ? (
-          <p className="text-sm text-muted-foreground">Carregando…</p>
+          <div data-testid="step20-loading" aria-live="polite" className="space-y-2">
+            <div className="mx-auto h-8 w-20 animate-pulse rounded bg-muted" />
+            <div className="mx-auto h-3 w-32 animate-pulse rounded bg-muted/70" />
+            <p className="text-xs text-muted-foreground">Carregando seus serviços…</p>
+          </div>
         ) : (
           <>
             <div className="text-3xl font-bold text-foreground">{count}<span className="text-base text-muted-foreground"> / {MAX_SERVICES}</span></div>
