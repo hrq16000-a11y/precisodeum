@@ -159,7 +159,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
         hasDocument: Boolean(p?.cpf || p?.cnpj),
         hasWorkingHours: Boolean(wh && typeof wh === 'object' && Object.keys(wh).length > 0),
         hasServiceArea,
-        hasBio: Boolean((p?.bio || '').toString().trim().length >= 20),
+        hasBio: true, // bio não vive em providers; pendência removida do escopo
         source: 'remote',
       });
     } catch (e: any) {
