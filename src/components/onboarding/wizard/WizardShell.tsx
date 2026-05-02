@@ -56,6 +56,7 @@ import {
   mapTriagePhaseToUnified,
   PROVIDER_WIZARD_PHASE_ORDER,
   REVIEW_PHASE_ORDER,
+  REVIEW_TOTAL_STEPS,
   unifiedPhaseIndex,
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
@@ -253,7 +254,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       // ANTES do dispatch (que dispara render) — assim o usuário vê
       // Nome/WhatsApp/Cidade/Foto/Documento já preenchidos na Step 1.
       if (resolvedReviewPhase && resolvedReviewPhase.startsWith('triage_')) {
-        seedBetDraftFromProfile({
+          seedBetDraftFromProfile({
           full_name: profileSeed.full_name || '',
           whatsapp: profileSeed.whatsapp || '',
           city: profileSeed.city || '',
@@ -261,6 +262,17 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
           neighborhood: profileSeed.neighborhood || '',
           pro_kind: profileSeed.kind ?? null,
           document: profileSeed.document || '',
+            company_name: profileSeed.company_name || '',
+            street: profileSeed.street || '',
+            street_number: profileSeed.street_number || '',
+            complement: profileSeed.complement || '',
+            postal_code: profileSeed.postal_code || '',
+            show_full_address: profileSeed.show_full_address === true,
+            street_suggested: profileSeed.street_suggested || '',
+            street_suggested_cep: profileSeed.street_suggested_cep || '',
+            street_confirmed: profileSeed.street_confirmed === true,
+            bairro_sugerido_cep: profileSeed.bairro_sugerido_cep || '',
+            cep_history: profileSeed.cep_history || [],
           avatar_url: profileSeed.avatar_url ?? null,
           avatar_source: profileSeed.avatar_source ?? null,
           avatar_seed: profileSeed.avatar_seed ?? 0,
@@ -291,17 +303,17 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
             location_source: null,
             pro_kind: profileSeed.kind,
             document: profileSeed.document,
-            company_name: '',
-            street: '',
-            street_number: '',
-            complement: '',
-            postal_code: '',
-            show_full_address: false,
-            street_suggested: '',
-            street_suggested_cep: '',
-            street_confirmed: false,
-            bairro_sugerido_cep: '',
-            cep_history: [],
+            company_name: profileSeed.company_name || '',
+            street: profileSeed.street || '',
+            street_number: profileSeed.street_number || '',
+            complement: profileSeed.complement || '',
+            postal_code: profileSeed.postal_code || '',
+            show_full_address: profileSeed.show_full_address === true,
+            street_suggested: profileSeed.street_suggested || '',
+            street_suggested_cep: profileSeed.street_suggested_cep || '',
+            street_confirmed: profileSeed.street_confirmed === true,
+            bairro_sugerido_cep: profileSeed.bairro_sugerido_cep || '',
+            cep_history: profileSeed.cep_history || [],
             avatar_url: profileSeed.avatar_url ?? null,
             avatar_source: profileSeed.avatar_source ?? null,
             avatar_seed: profileSeed.avatar_seed ?? 0,
@@ -395,7 +407,6 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   const showGlobalBack =
     state.phase !== 'triage_identity' &&
     state.phase !== 'triage_celebration' &&
-    state.phase !== 'main_celebration' &&
     state.phase !== 'done';
 
   // Em revisão, retrocesso linear usa REVIEW_PHASE_ORDER (régua sem
@@ -449,7 +460,8 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   // somados localmente em tempo real.
   const phaseIdx = unifiedPhaseIndex(state.phase);
   const hudPoints = realPoints;
-  const hudProgress = Math.min(1, (phaseIdx + 1) / UNIFIED_VISIBLE_PHASES);
+  const hudTotal = isReview ? REVIEW_TOTAL_STEPS : UNIFIED_VISIBLE_PHASES;
+  const hudProgress = Math.min(1, (Math.min(phaseIdx + 1, hudTotal)) / hudTotal);
   const hudLabel = UNIFIED_PHASE_LABELS[state.phase] ?? '';
   const showGlobalHud = stage !== 'triage' && stage !== 'done';
   // Régua de progresso: em modo revisão usa REVIEW_PHASE_ORDER (19 fases —
@@ -522,7 +534,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         }}
         enabled={state.phase !== 'triage_celebration' && state.phase !== 'main_celebration' && state.phase !== 'done'}
       />
-      <WizardProgressBar phase={state.phase} phaseOrder={progressOrder} />
+      <WizardProgressBar phase={state.phase} phaseOrder={progressOrder} totalOverride={isReview ? REVIEW_TOTAL_STEPS : undefined} />
       {showGlobalHud && (
         <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
       )}
