@@ -307,7 +307,24 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
   }, [state.phase]);
 
   const patch = (p: Partial<BetState>) => dispatch({ type: 'PATCH', patch: p });
-  const goto = (phase: BetPhase) => dispatch({ type: 'GOTO', phase });
+  /**
+   * `goto` unificado: dispara `playWizardTransition` em toda transição,
+   * inferindo a direção via BET_BACK_MAP.
+   *  - se `phase` é o "anterior" da fase atual → 'back'
+   *  - se `phase` é 'celebration' → 'celebrate'
+   *  - default → 'next'
+   * Idempotente (cooldown global de 220ms). Não chamar manualmente
+   * `playWizardTransition` antes/depois — para evitar duplicação.
+   */
+  const goto = (phase: BetPhase) => {
+    const prev = BET_BACK_MAP[state.phase];
+    const kind: 'back' | 'next' | 'celebrate' =
+      phase === 'celebration' ? 'celebrate'
+        : prev === phase ? 'back'
+          : 'next';
+    try { playWizardTransition(kind); } catch { /* áudio nunca quebra navegação */ }
+    dispatch({ type: 'GOTO', phase });
+  };
   const awardReward = (reward: BetRewardKey, points: number) => {
     dispatch({ type: 'AWARD_REWARD', reward, points });
   };
