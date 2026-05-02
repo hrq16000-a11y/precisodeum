@@ -1466,6 +1466,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
   };
 
+  // Contagem de fotos em tempo real para o checklist dinâmico do
+  // WizardEncouragement (phase2_service/details/photos). Atualiza via
+  // postgres_changes quando o usuário sobe/remove imagem em service_images.
+  const photoCount = useServicePhotoCount(state.firstServiceId);
+
   const renderPhase = () => {
     switch (state.phase) {
       // phase1_action / phase1_kind / phase1_location / phase1_contact
