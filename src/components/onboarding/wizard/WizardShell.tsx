@@ -405,21 +405,21 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     dispatch({ type: 'GO_TO_PHASE', phase: mapMainPhaseToUnified(v2Phase) });
   }, []);
 
-  // Botão de voltar global — usa o histórico do navegador como fallback
-  // já que cada step já tem Voltar próprio integrado ao reducer interno.
-  const showGlobalBack =
-    state.phase !== 'triage_identity' &&
-    state.phase !== 'triage_celebration' &&
-    state.phase !== 'done';
+  // Botão de voltar global — em modo revisão, fica visível em TODA fase
+  // exceto a primeira (Identidade) e o estado final (`done`). Inclusive nas
+  // celebrações (Step 6 e Step 14), porque o usuário precisa poder voltar
+  // mesmo após "publicar" o serviço quando está apenas revisando.
+  // Fora de review mantém comportamento legado (esconde nas celebrações).
+  const showGlobalBack = isReview
+    ? state.phase !== 'triage_identity' && state.phase !== 'done'
+    : state.phase !== 'triage_identity' &&
+      state.phase !== 'triage_celebration' &&
+      state.phase !== 'done';
 
-  // Em revisão, retrocesso linear usa REVIEW_PHASE_ORDER (régua sem
-  // main_action..main_contact obsoletas), garantindo que o usuário não pare
-  // em fases-fantasma sem step renderizado.
-  const prevReviewPhase = useCallback((phase: UnifiedPhase): UnifiedPhase => {
-    const i = REVIEW_PHASE_ORDER.indexOf(phase);
-    if (i <= 0) return phase;
-    return REVIEW_PHASE_ORDER[i - 1];
-  }, []);
+  // Em revisão, Voltar pula automaticamente fases não-renderizáveis
+  // (main_action/kind/location/contact — expurgadas mas mantidas na régua
+  // X/19 para paridade com o Dashboard Assistant).
+  const prevReviewPhase = useCallback(prevRenderableReviewPhase, []);
 
   const handleGlobalBack = useCallback(() => {
     void trackOnboardingEvent({
@@ -427,10 +427,10 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       event: 'back',
       meta: { variant: 'unified', source: 'global-nav' },
     });
-    // Em modo revisão, se estamos numa fase de TRIAGEM (Steps 1–6) ou na
-    // primeira fase do V2 (`main_service`), retrocedemos diretamente pela
-    // régua REVIEW_PHASE_ORDER para garantir Voltar infinito até a Step 1.
-    if (isReview && (state.phase.startsWith('triage_') || state.phase === 'main_service')) {
+    // Em modo revisão o Wizard é o "dono" da navegação: Voltar SEMPRE
+    // retrocede na régua REVIEW_PHASE_ORDER pulando fases-fantasma. Isto
+    // garante "Voltar infinito" da Step 19 até a Step 1, sem deadlock.
+    if (isReview) {
       const prev = prevReviewPhase(state.phase);
       if (prev !== state.phase) {
         dispatch({ type: 'GO_TO_PHASE', phase: prev });
@@ -447,8 +447,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     if (!isReview) return;
     const onPrevUnified = () => {
       const cur = stateRef.current.phase;
-      const i = REVIEW_PHASE_ORDER.indexOf(cur);
-      const prev = i > 0 ? REVIEW_PHASE_ORDER[i - 1] : cur;
+      const prev = prevRenderableReviewPhase(cur);
       if (prev !== cur) {
         dispatch({ type: 'GO_TO_PHASE', phase: prev });
       }
@@ -461,7 +460,11 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   // de banco a cada ação concluída). Fora da triagem usamos o valor do banco;
   // dentro da triagem o BetModeShell já renderiza seu próprio HUD com pontos
   // somados localmente em tempo real.
-  const phaseIdx = unifiedPhaseIndex(state.phase);
+  // Em modo revisão o índice é calculado pela REVIEW_PHASE_ORDER (X/19), para
+  // ficar idêntico ao numerador exibido pelo Dashboard Assistant.
+  const phaseIdx = isReview
+    ? Math.max(0, REVIEW_PHASE_ORDER.indexOf(state.phase))
+    : unifiedPhaseIndex(state.phase);
   const hudPoints = realPoints;
   const hudTotal = isReview ? REVIEW_TOTAL_STEPS : UNIFIED_VISIBLE_PHASES;
   const hudProgress = Math.min(1, (Math.min(phaseIdx + 1, hudTotal)) / hudTotal);
