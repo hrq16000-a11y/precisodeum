@@ -12,7 +12,7 @@
  *  - Sempre exibe "Pular" e "Continuar" — o passo é 100% opcional.
  *  - Quando atinge 5 serviços, esconde o botão de adicionar.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowRight, SkipForward, CheckCircle2, LayoutDashboard, UserRound } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -54,13 +54,17 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
   const [editorOpen, setEditorOpen] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(false);
   const [providerFull, setProviderFull] = useState<any>(provider);
+  const refreshMsRef = useRef<number | null>(null);
+  const providerLoadMsRef = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
     if (!user?.id) return;
+    const startedAt = performance.now();
     const { count: c } = await supabase
       .from('services')
       .select('id', { count: 'exact', head: true })
       .eq('provider_id', providerFull?.id ?? '');
+    refreshMsRef.current = Math.round(performance.now() - startedAt);
     setCount(c ?? 0);
   }, [user?.id, providerFull?.id]);
 
@@ -69,6 +73,7 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
     let active = true;
     (async () => {
       setLoadingProvider(true);
+      const startedAt = performance.now();
       try {
         let prov = providerFull;
         if (!prov?.id && user?.id) {
@@ -84,6 +89,7 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
           .select('id, name, slug, icon, parent_id')
           .order('name');
         if (!active) return;
+        providerLoadMsRef.current = Math.round(performance.now() - startedAt);
         setProviderFull(prov);
         setCategories(cats || []);
       } finally {
