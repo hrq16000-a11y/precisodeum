@@ -1691,10 +1691,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                   latitude: (state.profile as any).latitude ?? null,
                   longitude: (state.profile as any).longitude ?? null,
                   accuracy_m: (state.profile as any).accuracy_m ?? null,
+                  velocity_mps: (state.profile as any).velocity_mps ?? null,
+                  terms_accepted: true,
+                  terms_version: 'v1-2026-05',
                   origin_summary: {
                     flow: 'onboarding_v2',
                     account_type: state.profile.kind,
                     has_first_service: !!state.service.service_name,
+                    finished_via: 'skip',
                   },
                 }),
               );
