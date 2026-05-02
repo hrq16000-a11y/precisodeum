@@ -84,7 +84,7 @@ export default function ProfileLocationChecklist({ provider }: Props) {
       label: 'Bairro real (não "Centro" automático)',
       done: hasUserNeighborhood,
       hint:
-        provider.neighborhood_source === 'default_centro'
+        neighborhoodSourceStr === 'default_centro'
           ? 'Seu bairro foi preenchido como "Centro" automaticamente. Edite para o bairro real.'
           : 'Informe o bairro onde você atende.',
       icon: MapPin,
@@ -94,7 +94,7 @@ export default function ProfileLocationChecklist({ provider }: Props) {
       key: 'coords',
       label: 'Coordenadas GPS',
       done: hasCoords,
-      hint: hasCoords && provider.geo_source === 'gps' && typeof provider.geo_source_confidence === 'number'
+      hint: hasCoords && geoSourceStr === 'gps' && typeof provider.geo_source_confidence === 'number' && Number.isFinite(provider.geo_source_confidence)
         ? `GPS ${provider.geo_source_confidence <= 100 ? 'preciso' : 'aproximado'} (±${Math.round(provider.geo_source_confidence)}m).`
         : 'Permite ordenar por proximidade real (Haversine) e calcular distância exata.',
       icon: Navigation,
