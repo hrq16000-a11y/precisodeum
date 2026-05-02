@@ -213,8 +213,11 @@ describe('Step22_Review', () => {
     expect(screen.getByRole('button', { name: /Finalizar cadastro/i })).toBeInTheDocument();
   });
 
-  it('mostra banner de "rascunho desatualizado" quando o draft local é antigo', async () => {
-    const oldSavedAt = Date.now() - 1000 * 60 * 60 * 26; // 26h atrás (>24h)
+  it('NÃO mostra banner de "rascunho desatualizado" só por idade — sem schemaVersion divergente', async () => {
+    // Regra atual: idade pura (>24h) não basta para sinalizar desatualização.
+    // Apenas divergência de schemaVersion dispara o banner — drafts antigos
+    // mas compatíveis seguem usáveis sem alarme falso.
+    const oldSavedAt = Date.now() - 1000 * 60 * 60 * 26; // 26h atrás
     localStorage.setItem(
       'onboarding_v3_institutional_final',
       JSON.stringify({
@@ -239,9 +242,9 @@ describe('Step22_Review', () => {
     render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('step22-draft-outdated')).toBeInTheDocument();
+      expect(screen.getByTestId('step22-local-fallback')).toBeInTheDocument();
     });
-    expect(screen.getByText(/Rascunho desatualizado/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('step22-draft-outdated')).toBeNull();
   });
 
   it('mostra botões de copiar pendência por linha quando há ações pendentes', async () => {
