@@ -114,9 +114,9 @@ describe('Wizard navegação · contrato Skip/Continue/Back', () => {
     // partindo de phase2_photos, voltar até o início e re-avançar deve passar
     // por TODAS as fases (sem atalho mágico).
     const seq: Phase[] = ['phase2_photos'];
-    let cur: Phase | 'wizard_shell' = 'phase2_photos';
-    while (true) {
-      if (cur === 'wizard_shell') break;
+    let cur: Phase = 'phase2_photos';
+    // limite defensivo: 20 iterações é suficiente; previne loop infinito.
+    for (let i = 0; i < 20; i++) {
       const p = prev(cur);
       if (p === 'wizard_shell') break;
       seq.push(p);
