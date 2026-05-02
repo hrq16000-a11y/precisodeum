@@ -96,12 +96,16 @@ export const PROVIDER_WIZARD_PHASE_ORDER: UnifiedPhase[] = [
 ];
 
 /**
- * REVIEW_PHASE_ORDER — ordem REAL de navegação quando o Wizard é aberto pelo
- * Assistente (`mode=review`).
+ * REVIEW_PHASE_ORDER — régua oficial X/19 do modo revisão (sincronizada
+ * 1:1 com o Dashboard Assistant — `PHASE_CATALOG` em DashboardAssistantPage).
  *
- * Mantemos aqui apenas as fases renderizáveis para que o botão "Voltar" nunca
- * caia em fases-fantasma. O HUD do modo review usa esta mesma sequência linear,
- * mas com denominador compartilhado com o Assistente do Dashboard (19 etapas).
+ * Inclui as 4 fases expurgadas (`main_action/kind/location/contact`) e os
+ * 2 marcos de celebração apenas para que o numerador bata X/19 e a régua
+ * seja idêntica à do Assistente. Fases não-renderizáveis são puladas pela
+ * navegação (`nextRenderableReviewPhase` / `prevRenderableReviewPhase`).
+ *
+ * Cliente (`triage_client_city`) é exclusivo do fluxo cliente e não entra
+ * na régua do profissional — o assistente só é exibido a profissionais.
  */
 export const REVIEW_PHASE_ORDER: UnifiedPhase[] = [
   'triage_identity',         // 1
@@ -109,21 +113,63 @@ export const REVIEW_PHASE_ORDER: UnifiedPhase[] = [
   'triage_pro_kind',         // 3
   'triage_pro_document',     // 4
   'triage_pro_location',     // 5
-  'triage_celebration',      // 6
-  'main_service',            // 7
-  'main_service_details',    // 8
-  'main_photos',             // 9
-  'main_celebration',        // 10
-  'main_document',           // 11
-  'main_avatar',             // 12
-  'main_extras_a',           // 13
-  'main_extras_b',           // 14
-  'main_more_services',      // 15
-  'main_portfolio_albums',   // 16
+  'triage_celebration',      // 6  (milestone)
+  'main_action',             // 7  (expurgada — pulada na navegação)
+  'main_kind',               // 8  (expurgada — pulada na navegação)
+  'main_location',           // 9  (expurgada — pulada na navegação)
+  'main_contact',            // 10 (expurgada — pulada na navegação)
+  'main_service',            // 11
+  'main_service_details',    // 12
+  'main_photos',             // 13
+  'main_celebration',        // 14 (milestone)
+  'main_document',           // 15
+  'main_avatar',             // 16
+  'main_extras_a',           // 17
+  'main_extras_b',           // 18
+  'main_more_services',      // 19a (agrupada com portfolio)
+  'main_portfolio_albums',   // 19b
   'done',
 ];
 
-/** Régua total exibida pelo Assistente/HUD em modo review. */
+/**
+ * Fases que NÃO renderizam UI no modo revisão — usadas só para manter
+ * paridade numérica de X/19 com o Dashboard Assistant. A navegação
+ * (Voltar/Avançar) sempre as pula.
+ */
+const NON_RENDERABLE_REVIEW_PHASES: ReadonlySet<UnifiedPhase> = new Set([
+  'main_action',
+  'main_kind',
+  'main_location',
+  'main_contact',
+]);
+
+export function isReviewPhaseRenderable(phase: UnifiedPhase): boolean {
+  return !NON_RENDERABLE_REVIEW_PHASES.has(phase);
+}
+
+/** Próxima fase renderizável na régua de revisão. */
+export function nextRenderableReviewPhase(phase: UnifiedPhase): UnifiedPhase {
+  const i = REVIEW_PHASE_ORDER.indexOf(phase);
+  if (i < 0) return phase;
+  for (let k = i + 1; k < REVIEW_PHASE_ORDER.length; k++) {
+    const candidate = REVIEW_PHASE_ORDER[k];
+    if (isReviewPhaseRenderable(candidate)) return candidate;
+  }
+  return phase;
+}
+
+/** Fase renderizável anterior na régua de revisão. */
+export function prevRenderableReviewPhase(phase: UnifiedPhase): UnifiedPhase {
+  const i = REVIEW_PHASE_ORDER.indexOf(phase);
+  if (i <= 0) return phase;
+  for (let k = i - 1; k >= 0; k--) {
+    const candidate = REVIEW_PHASE_ORDER[k];
+    if (isReviewPhaseRenderable(candidate)) return candidate;
+  }
+  return phase;
+}
+
+/** Régua total exibida pelo Assistente/HUD em modo review (X/19). */
 export const REVIEW_TOTAL_STEPS = 19;
 
 /** Quantidade de fases visíveis (exclui 'done'). */
