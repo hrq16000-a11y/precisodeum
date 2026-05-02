@@ -548,6 +548,31 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         </div>
       )}
 
+      {integrityError && (
+        <ProviderIntegrityErrorCard
+          error={integrityError}
+          onPrimary={() => {
+            // CTA contextual: por kind, ou foca o bairro, ou redispara GPS,
+            // ou foca a cidade.
+            if (integrityError.kind === 'neighborhood') {
+              try {
+                neighborhoodInputRef.current?.focus({ preventScroll: false } as any);
+                neighborhoodInputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              } catch { /* noop */ }
+            } else if (integrityError.kind === 'coords') {
+              void handleUseGps();
+            } else {
+              try {
+                document.querySelector<HTMLElement>('[data-testid="location-source-pill"]')
+                  ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              } catch { /* noop */ }
+            }
+            setIntegrityError(null);
+          }}
+          onDismiss={() => setIntegrityError(null)}
+        />
+      )}
+
       <Button
         size="lg"
         disabled={!canFinish || submitting}
