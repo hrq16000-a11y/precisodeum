@@ -719,7 +719,7 @@ const AdminSponsorCrmPage = () => {
                     <TableHead>Nome</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Período</TableHead>
-                    <TableHead>Orçamento</TableHead>
+                    <TableHead>Verba</TableHead>
                     <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -894,7 +894,7 @@ const AdminSponsorCrmPage = () => {
               <div><Label>Início</Label><Input type="date" value={campaignForm.start_date} onChange={e => setCampaignForm(p => ({ ...p, start_date: e.target.value }))} /></div>
               <div><Label>Fim</Label><Input type="date" value={campaignForm.end_date} onChange={e => setCampaignForm(p => ({ ...p, end_date: e.target.value }))} /></div>
             </div>
-            <div><Label>Orçamento (R$)</Label><Input type="number" step="0.01" value={campaignForm.budget} onChange={e => setCampaignForm(p => ({ ...p, budget: e.target.value }))} /></div>
+            <div><Label>Verba (R$)</Label><Input type="number" step="0.01" value={campaignForm.budget} onChange={e => setCampaignForm(p => ({ ...p, budget: e.target.value }))} /></div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setCampaignDialog(false)}>Cancelar</Button>
               <Button type="submit" disabled={campaignMutation.isPending}>Criar</Button>
