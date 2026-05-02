@@ -8,8 +8,19 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 const mocks = vi.hoisted(() => {
+  const data = [
+    { id: 'n1', title: 'Alerta de integridade', message: 'Críticos: 2', read: false, type: 'system', link: '/admin/integridade', created_at: new Date().toISOString(), total_count: 2 },
+    { id: 'n2', title: 'Outra', message: null, read: true, type: 'system', link: null, created_at: new Date().toISOString(), total_count: 2 },
+  ];
   const rpcSpy = (() => {
-    const fn: any = (...args: any[]) => { fn.mock.calls.push(args); return Promise.resolve({ data: true, error: null }); };
+    const fn: any = (name: string, _args: any) => {
+      fn.mock.calls.push([name, _args]);
+      // search_user_notifications devolve a lista; outras RPCs (mark_*) ack.
+      if (name === 'search_user_notifications') {
+        return Promise.resolve({ data, error: null });
+      }
+      return Promise.resolve({ data: true, error: null });
+    };
     fn.mock = { calls: [] as any[] };
     fn.mockClear = () => { fn.mock.calls = []; };
     return fn;
@@ -27,16 +38,12 @@ vi.mock('@/hooks/useSeoHead', () => ({ useSeoHead: () => {} }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 vi.mock('@/integrations/supabase/client', () => {
-  const data = [
-    { id: 'n1', title: 'Alerta de integridade', message: 'Críticos: 2', read: false, type: 'system', link: '/admin/integridade', created_at: new Date().toISOString() },
-    { id: 'n2', title: 'Outra', message: null, read: true, type: 'system', link: null, created_at: new Date().toISOString() },
-  ];
   const builder: any = {};
-  builder.select = (...a: any[]) => builder;
-  builder.eq = (...a: any[]) => builder;
-  builder.order = (...a: any[]) => builder;
-  builder.or = (...a: any[]) => builder;
-  builder.range = async () => ({ data, error: null, count: data.length });
+  builder.select = (..._a: any[]) => builder;
+  builder.eq = (..._a: any[]) => builder;
+  builder.order = (..._a: any[]) => builder;
+  builder.or = (..._a: any[]) => builder;
+  builder.range = async () => ({ data: [], error: null, count: 0 });
   return {
     supabase: {
       from: () => builder,
