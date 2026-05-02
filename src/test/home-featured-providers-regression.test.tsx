@@ -27,7 +27,7 @@ vi.mock('@/hooks/useHomeFeatureFlags', () => ({
     citiesEnabled: false,
     sponsorsEnabled: false,
     heroBannersEnabled: false,
-    sectionsOrderRaw: 'categories',
+    sectionsOrderRaw: 'categories,featured',
     hiddenSectionsRaw: '',
   }),
 }));
