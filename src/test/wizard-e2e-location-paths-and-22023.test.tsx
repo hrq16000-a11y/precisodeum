@@ -454,7 +454,7 @@ describe('ProviderIntegrityErrorCard — mensagens por kind condizem com o campo
       kind: 'neighborhood',
       titleMatch: /Bairro/i,
       descMustInclude: [/bairro/i, /Centro|Batel|Água Verde/i],
-      descMustNotInclude: [/cidade-base/i, /GPS/i, /coordenadas/i],
+      descMustNotInclude: [/selecione.*cidade/i, /Ative.*GPS/i, /coordenadas/i],
       ctaMatch: /Preencher Bairro/i,
     },
     {
