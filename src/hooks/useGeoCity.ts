@@ -423,6 +423,14 @@ export function useGeoCity(): GeoStore {
           const latitude = position.coords.latitude;
           const longitude = position.coords.longitude;
           const accuracyMeters = typeof position.coords.accuracy === 'number' ? position.coords.accuracy : null;
+          // velocidade reportada pelo navegador (m/s); pode ser null em desktop ou primeiro fix.
+          const velocityMps = typeof position.coords.speed === 'number' && Number.isFinite(position.coords.speed)
+            ? position.coords.speed
+            : null;
+          try {
+            if (velocityMps !== null) safeSet(VELOCITY_KEY, String(velocityMps));
+            if (accuracyMeters !== null) safeSet(ACCURACY_KEY, String(accuracyMeters));
+          } catch { /* noop */ }
           let city = geoState.city;
           let state = geoState.state;
           let temp = geoState.temp;
