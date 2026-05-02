@@ -382,32 +382,33 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="mx-auto w-full max-w-md space-y-3 px-4 py-3"
+      transition={{ duration: 0.3 }}
+      className="mx-auto w-full max-w-md space-y-2 px-4 py-2"
     >
-      <header className="space-y-2 text-center">
+      <header className="space-y-1 text-center">
         <h1 className="font-display text-lg font-extrabold leading-tight text-foreground">
           De onde você é?
         </h1>
-        <p className="text-xs text-muted-foreground">
-          Sua cidade-base aparece para clientes próximos, e o bairro é sugerido quando houver dado confiável.
+        <p className="text-[11px] text-muted-foreground">
+          Use seu município (ex: <em>São José dos Pinhais</em>) — a região metropolitana entra depois como área de atendimento.
         </p>
       </header>
 
-      {/* Aviso curto */}
-      <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
-        <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
-        <p className="leading-snug">
-          A <strong>cidade-base</strong> deve ser o seu município (ex: <em>São José dos Pinhais</em>) — não a região metropolitana.
-          Você poderá adicionar a região como <strong>área de atendimento</strong> depois.
-        </p>
-      </div>
-
-      {/* Card único: Cidade-base + GPS embaixo */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5" /> Cidade-base
+      {/* Card único: Cidade-base + status GPS compacto */}
+      <div className="rounded-2xl border border-border bg-card p-3 shadow-card">
+        <div className="mb-1.5 flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+            {requestingGps ? (
+              <LocateFixed className="h-3.5 w-3.5 animate-pulse text-orange-600" aria-label="Detectando GPS" />
+            ) : state.location_source === 'gps' ? (
+              <LocateFixed
+                className="h-3.5 w-3.5 text-emerald-600"
+                aria-label={gpsAccuracy != null && gpsAccuracy <= 100 ? 'GPS preciso' : 'GPS aproximado'}
+              />
+            ) : (
+              <MapPin className="h-3.5 w-3.5" aria-label="Localização aproximada por IP" />
+            )}
+            Cidade-base
           </span>
           <span
             data-testid="location-source-pill"
