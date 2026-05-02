@@ -140,7 +140,9 @@ const LoginPage = () => {
               ? "este e-mail"
               : matchedVia === "whatsapp"
                 ? "este WhatsApp"
-                : "este e-mail, WhatsApp ou dispositivo";
+                : matchedVia === "device"
+                  ? "este dispositivo"
+                  : "este e-mail, WhatsApp ou dispositivo";
 
           // Motivo humanizado
           const reasonHuman =
