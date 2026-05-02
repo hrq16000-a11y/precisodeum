@@ -39,7 +39,8 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   const awarded = state.rewards.city;
   const [submitting, setSubmitting] = useState(false);
   const [requestingGps, setRequestingGps] = useState(false);
-  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  // gpsAccuracy local apenas espelha state.gps_accuracy_m para UI.
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(state.gps_accuracy_m ?? null);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
   const autoFilledRef = useRef(false);
