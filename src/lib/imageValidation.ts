@@ -105,7 +105,7 @@ export async function validateImageFile(
     return {
       ok: false,
       code: 'too_large',
-      message: `Arquivo grande demais (${formatSize(file.size)}). Máximo: ${formatSize(maxSizeBytes)}.`,
+      message: `Arquivo muito grande (${formatSize(file.size)}). Envie no máximo ${formatSize(maxSizeBytes).replace('.0', '')}.`,
     };
   }
   if (file.size < minSizeBytes) {
@@ -116,8 +116,15 @@ export async function validateImageFile(
     };
   }
 
-  // ── Dimensões (best-effort; HEIC/HEIF não decodificam em todos os browsers) ──
-  if (skipDimensionCheck || mime === 'image/heic' || mime === 'image/heif') {
+  // Dimensões (best-effort; HEIC/HEIF não decodificam em todos os browsers).
+  // Em ambientes sem decoder real (jsdom/SSR), também pulamos para não falsificar "corrupt".
+  const hasDecoder =
+    typeof URL !== 'undefined' &&
+    typeof URL.createObjectURL === 'function' &&
+    typeof Image !== 'undefined' &&
+    typeof navigator !== 'undefined' &&
+    !/jsdom/i.test(navigator.userAgent ?? '');
+  if (skipDimensionCheck || mime === 'image/heic' || mime === 'image/heif' || !hasDecoder) {
     return { ok: true };
   }
 
