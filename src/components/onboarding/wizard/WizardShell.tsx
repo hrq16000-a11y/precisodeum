@@ -30,6 +30,7 @@ import { buildOnboardingV2BootstrapState } from '@/components/onboarding/wizard/
 import { fetchExistingFirstService, findExistingProvider } from '@/components/onboarding/wizard/phases/v2/findExistingRecords';
 import Step20_MoreServices from '@/components/onboarding/wizard/phases/Step20_MoreServices';
 import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21_PortfolioAlbums';
+import Step22_Review, { type ReviewSection as Step22Section } from '@/components/onboarding/wizard/phases/Step22_Review';
 import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 import { Button } from '@/components/ui/button';
 import PointsHud from '@/components/onboarding/wizard/phases/bet/PointsHud';
