@@ -1118,6 +1118,7 @@ const ProviderProfile = () => {
       service_needed: leadForm.service,
       message: finalMessage,
       lead_context: leadContext,
+      preferred_window: preferredWindow ?? null,
     } as any);
     if (error) {
       toast.error('Erro ao enviar solicitação');
