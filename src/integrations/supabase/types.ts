@@ -9191,6 +9191,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      slugify_text: { Args: { _text: string }; Returns: string }
       sponsor_can_create_campaign: {
         Args: { _sponsor_id: string }
         Returns: boolean
