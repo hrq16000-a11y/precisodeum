@@ -17,7 +17,7 @@ const STATUS_KEYS: LeadStatus[] = ['new', 'contacted', 'scheduled', 'completed',
 
 const LOST_PRESETS = [
   'Cliente sumiu / não respondeu',
-  'Preço acima do orçamento',
+  'Valor combinado fora do que o cliente buscava',
   'Contratou outro profissional',
   'Não era meu serviço',
   'Distância / fora da minha região',
