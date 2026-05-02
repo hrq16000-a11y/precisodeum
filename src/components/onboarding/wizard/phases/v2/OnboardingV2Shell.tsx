@@ -757,6 +757,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       return false;
     }
     setSaving(true);
+    setLastPersistError(null);
     try {
       const p = state.profile;
       const contactValidation = getOnboardingContactValidation({
