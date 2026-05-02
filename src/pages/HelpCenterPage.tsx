@@ -12,7 +12,7 @@ import OpenSupportTicketCard from '@/components/support/OpenSupportTicketCard';
 
 
 const SECTIONS = [
-  { key: 'clientes', label: 'Para Clientes', icon: Users, description: 'Como buscar profissionais, avaliar e solicitar orçamentos' },
+  { key: 'clientes', label: 'Para Clientes', icon: Users, description: 'Como buscar profissionais, avaliar e falar direto com o profissional' },
   { key: 'profissionais', label: 'Para Profissionais', icon: Briefcase, description: 'Cadastro, perfil, serviços e leads' },
   { key: 'planos', label: 'Planos e Pagamentos', icon: CreditCard, description: 'Planos, assinaturas e cobranças' },
   { key: 'conta', label: 'Conta e Segurança', icon: Shield, description: 'Login, senha, privacidade e dados' },
