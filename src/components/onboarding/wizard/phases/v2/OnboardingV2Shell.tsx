@@ -1638,6 +1638,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           // do usuário) — usado para distinguir nas métricas.
           const handleRecoverDraft = async (opts?: { auto?: boolean }) => {
             const isAuto = !!opts?.auto;
+            setPhase2RetryStatus('running');
             try {
               track('next', {
                 code: isAuto
@@ -1655,12 +1656,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 );
                 if (id) {
                   dispatch({ type: 'SET_FIRST_SERVICE_ID', id });
+                  setPhase2RetryStatus('idle');
                   if (!isAuto) {
                     toast.success('Recuperamos seu serviço — pronto para subir as fotos.');
                   }
                   return true;
                 }
               }
+              setPhase2RetryStatus('failed');
               if (!isAuto) {
                 toast.message('Nada para recuperar', {
                   description: 'Volte para revisar o serviço e tente publicar novamente.',
@@ -1668,6 +1671,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               }
               return false;
             } catch (err: any) {
+              setPhase2RetryStatus('failed');
               if (!isAuto) {
                 toast.error('Não consegui recuperar o rascunho agora.', {
                   description: err?.message || 'Tente novamente em instantes.',
