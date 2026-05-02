@@ -58,6 +58,8 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { extractSpecialties } from '@/lib/specialtyExtractor';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
+import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
+import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
 
 /** Fire-and-forget contact click tracker */
 const getLeadSource = () => {
@@ -326,6 +328,7 @@ const ProviderProfile = () => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '', city: '', state: '' });
+  const [preferredWindow, setPreferredWindow] = useState<PreferredWindow | null>(null);
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
   const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
   const [showStickyContact, setShowStickyContact] = useState(false);
@@ -380,7 +383,7 @@ const ProviderProfile = () => {
 
       if (active) setLoading(true);
 
-      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, years_experience, ibge_code, latitude, longitude, created_at, updated_at, deleted_at, onboarding_progress, website, user_ref, meta_title, meta_description';
+      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, years_experience, ibge_code, latitude, longitude, created_at, updated_at, deleted_at, onboarding_progress, website, user_ref, meta_title, meta_description, contact_hours';
 
       let { data } = await supabase
         .from('providers')
@@ -1115,6 +1118,7 @@ const ProviderProfile = () => {
       service_needed: leadForm.service,
       message: finalMessage,
       lead_context: leadContext,
+      preferred_window: preferredWindow ?? null,
     } as any);
     if (error) {
       toast.error('Erro ao enviar solicitação');
@@ -2080,6 +2084,12 @@ const ProviderProfile = () => {
                     onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
                     className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none resize-none transition-all`} />
                 </div>
+                <ContactWindowPicker
+                  value={preferredWindow}
+                  onChange={setPreferredWindow}
+                  providerHours={normalizeContactHours((provider as any)?.contact_hours)}
+                  helperText="Ajuda o profissional a te ligar na hora certa."
+                />
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button type="submit" variant="accent" className="w-full gap-2 shadow-lg" style={accentBg ? { backgroundColor: accentBg } : undefined}>
                     <Send className="h-4 w-4" /> Enviar Solicitação

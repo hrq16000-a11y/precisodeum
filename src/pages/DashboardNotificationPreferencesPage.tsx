@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, MessageCircle, Bell, Smartphone, Send, BellRing, Activity, Volume2, Flame, MailCheck, Zap } from 'lucide-react';
 import { playHornBeep } from '@/lib/soundFx';
 import DashboardLayout from '@/components/DashboardLayout';
+import { ContactHoursEditor } from '@/components/dashboard/ContactHoursEditor';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
@@ -137,6 +138,9 @@ const DashboardNotificationPreferencesPage = () => {
           );
         })}
       </div>
+
+      {/* Janela de contato — dias/períodos em que o prestador aceita ser contatado */}
+      {provider?.id && <ContactHoursEditor providerId={provider.id} className="mt-8 rounded-xl border border-border bg-card p-4" />}
 
       {/* Alertas de novos leads — modo + intervalo anti-spam */}
       <NewLeadAlertSettings />
