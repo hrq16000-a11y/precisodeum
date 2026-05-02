@@ -23,6 +23,7 @@ import {
   Camera,
   UserRound,
   Loader2,
+  CircleDashed,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,10 +46,56 @@ interface Step22Props {
 interface Snapshot {
   providerOk: boolean;
   servicesCount: number;
+  photoCount: number;
   hasPhotos: boolean;
   albumsCount: number;
   hasDocument: boolean;
   hasWorkingHours: boolean;
+  hasServiceArea: boolean;
+  hasBio: boolean;
+  /** 'remote' = Supabase OK; 'local' = veio do draft local (fallback). */
+  source: 'remote' | 'local';
+}
+
+// Chave do draft local V2 — mantida em sincronia com flushDraft.ts.
+const LOCAL_DRAFT_KEY = 'onboarding_v3_institutional_final';
+
+/**
+ * Lê o snapshot a partir do draft local quando o Supabase não responde.
+ * Não é fonte de verdade — é um fallback de UX para que voltar/continuar
+ * não mostre tela vazia ou erro completo se a query falhar transientemente.
+ */
+function readLocalDraftSnapshot(): Snapshot | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
+    if (!raw) return null;
+    const env = JSON.parse(raw) as {
+      profile?: Record<string, any>;
+      service?: Record<string, any>;
+      providerId?: string | null;
+    };
+    const profile = env.profile ?? {};
+    const service = env.service ?? {};
+    const wh = profile.working_hours_struct ?? service.working_hours_struct;
+    const gallery: unknown = service.gallery_urls ?? service.photos;
+    const photoCount = Array.isArray(gallery) ? gallery.length : 0;
+    const cities: unknown = service.service_area_cities ?? profile.service_area_cities;
+    return {
+      providerOk: Boolean(profile.city || profile.cidade),
+      servicesCount: service?.id || service?.name ? 1 : 0,
+      photoCount,
+      hasPhotos: photoCount > 0,
+      albumsCount: 0, // não persistido localmente
+      hasDocument: Boolean(profile.cpf || profile.cnpj || profile.tax_id),
+      hasWorkingHours: Boolean(wh && typeof wh === 'object' && Object.keys(wh).length > 0),
+      hasServiceArea: Array.isArray(cities) && cities.length > 0,
+      hasBio: Boolean((profile.bio || service.description || '').toString().trim().length >= 20),
+      source: 'local',
+    };
+  } catch {
+    return null;
+  }
 }
 
 const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
@@ -70,8 +117,9 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
       if (pErr) throw pErr;
 
       let servicesCount = 0;
-      let hasPhotos = false;
+      let photoCount = 0;
       let albumsCount = 0;
+      let hasServiceArea = false;
       if (provider?.id) {
         const [{ count: sCount }, { data: services }, { count: aCount }] = await Promise.all([
           supabase
@@ -80,7 +128,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
             .eq('provider_id', provider.id),
           supabase
             .from('services')
-            .select('id, gallery_urls')
+            .select('id, gallery_urls, cities_served')
             .eq('provider_id', provider.id)
             .limit(5),
           supabase
@@ -90,26 +138,45 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
         ]);
         servicesCount = sCount ?? 0;
         albumsCount = aCount ?? 0;
-        hasPhotos = (services ?? []).some(
-          (s: any) => Array.isArray(s.gallery_urls) && s.gallery_urls.length > 0,
+        photoCount = (services ?? []).reduce(
+          (acc: number, s: any) =>
+            acc + (Array.isArray(s.gallery_urls) ? s.gallery_urls.length : 0),
+          0,
+        );
+        hasServiceArea = (services ?? []).some(
+          (s: any) => Array.isArray(s.cities_served) && s.cities_served.length > 0,
         );
       }
 
-      const wh = (provider as any)?.working_hours_struct;
+      const p = provider as any;
+      const wh = p?.working_hours_struct;
       setSnap({
-        providerOk: Boolean(provider?.id && (provider as any)?.city),
+        providerOk: Boolean(provider?.id && p?.city),
         servicesCount,
-        hasPhotos,
+        photoCount,
+        hasPhotos: photoCount > 0,
         albumsCount,
-        hasDocument: Boolean((provider as any)?.cpf || (provider as any)?.cnpj),
+        hasDocument: Boolean(p?.cpf || p?.cnpj),
         hasWorkingHours: Boolean(wh && typeof wh === 'object' && Object.keys(wh).length > 0),
+        hasServiceArea,
+        hasBio: true, // bio não vive em providers; pendência removida do escopo
+        source: 'remote',
       });
     } catch (e: any) {
-      setError(
-        e?.message?.includes('network') || e?.message?.includes('Failed to fetch')
-          ? 'Falha de rede ao carregar seu resumo. Verifique a conexão.'
-          : 'Não conseguimos carregar seu resumo agora.',
-      );
+      // Fallback de UX: tenta hidratar com o draft local antes de mostrar erro
+      // total. O usuário acabou de preencher tudo no wizard, então o draft
+      // costuma estar fresco e suficiente para orientar pendências.
+      const fallback = readLocalDraftSnapshot();
+      if (fallback) {
+        setSnap(fallback);
+        setError(null);
+      } else {
+        setError(
+          e?.message?.includes('network') || e?.message?.includes('Failed to fetch')
+            ? 'Falha de rede ao carregar seu resumo. Verifique a conexão.'
+            : 'Não conseguimos carregar seu resumo agora.',
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -155,19 +222,26 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
   }
 
   const s = snap!;
-  const items: Array<{
+
+  // Cada linha pode ter várias pendências acionáveis. `actions` aparece
+  // como bullets curtos abaixo do detail quando a linha não está OK.
+  type ReviewItem = {
     key: ReviewSection;
     icon: typeof Briefcase;
     label: string;
     detail: string;
     ok: boolean;
-  }> = [
+    actions: string[];
+  };
+
+  const items: ReviewItem[] = [
     {
       key: 'identity',
       icon: UserRound,
       label: 'Identidade e localização',
-      detail: s.providerOk ? 'Cadastro base completo' : 'Falta cidade/dados básicos',
+      detail: s.providerOk ? 'Cadastro base completo' : 'Falta cidade ou dados básicos',
       ok: s.providerOk,
+      actions: s.providerOk ? [] : ['Confirme sua cidade e UF para aparecer nas buscas'],
     },
     {
       key: 'service',
@@ -178,20 +252,42 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
           ? 'Nenhum serviço cadastrado'
           : `${s.servicesCount} serviço${s.servicesCount === 1 ? '' : 's'} ativo${s.servicesCount === 1 ? '' : 's'}`,
       ok: s.servicesCount > 0,
+      actions: [
+        ...(s.servicesCount === 0 ? ['Cadastre pelo menos 1 serviço'] : []),
+        ...(s.hasServiceArea ? [] : ['Defina as cidades onde você atende']),
+      ],
     },
     {
       key: 'photos',
       icon: Camera,
       label: 'Fotos do serviço',
-      detail: s.hasPhotos ? 'Galeria com fotos' : 'Sem fotos — recomendado adicionar',
+      detail: s.hasPhotos
+        ? `${s.photoCount} foto${s.photoCount === 1 ? '' : 's'} na galeria`
+        : 'Sem fotos — perfis com fotos recebem mais leads',
       ok: s.hasPhotos,
+      actions: s.hasPhotos
+        ? s.photoCount < 3
+          ? [`Adicione mais ${3 - s.photoCount} foto${3 - s.photoCount === 1 ? '' : 's'} (ideal: 3+)`]
+          : []
+        : ['Adicione pelo menos 1 foto do seu trabalho'],
     },
     {
       key: 'extras',
       icon: CheckCircle2,
-      label: 'Horários e extras',
-      detail: s.hasWorkingHours ? 'Horários definidos' : 'Horários não preenchidos',
+      label: 'Horários e documento',
+      detail:
+        s.hasWorkingHours && s.hasDocument
+          ? 'Horários e documento preenchidos'
+          : !s.hasWorkingHours && !s.hasDocument
+          ? 'Horários e documento pendentes'
+          : !s.hasWorkingHours
+          ? 'Horários não preenchidos'
+          : 'Documento (CPF/CNPJ) opcional não preenchido',
       ok: s.hasWorkingHours,
+      actions: [
+        ...(s.hasWorkingHours ? [] : ['Complete seus horários de atendimento']),
+        ...(s.hasDocument ? [] : ['CPF/CNPJ é opcional, mas aumenta a confiança']),
+      ],
     },
     {
       key: 'portfolio',
@@ -199,13 +295,17 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
       label: 'Portfólio',
       detail:
         s.albumsCount === 0
-          ? 'Sem álbuns — opcional'
+          ? 'Sem álbuns — opcional, mas recomendado'
           : `${s.albumsCount} álbum${s.albumsCount === 1 ? '' : 's'} criado${s.albumsCount === 1 ? '' : 's'}`,
-      ok: true, // opcional — sempre ok
+      ok: true, // opcional — não bloqueia
+      actions: s.albumsCount === 0
+        ? ['Crie 1 álbum para mostrar trabalhos por tema']
+        : [],
     },
   ];
 
   const pendingCount = items.filter((i) => !i.ok).length;
+  const totalActions = items.reduce((acc, i) => acc + (i.ok ? 0 : i.actions.length), 0);
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-2 space-y-3">
@@ -216,18 +316,29 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
         <p className="text-xs text-muted-foreground">
           {pendingCount === 0
             ? 'Tudo certo! Confira o resumo e finalize.'
-            : `${pendingCount} ponto${pendingCount === 1 ? '' : 's'} de atenção. Você pode editar agora ou seguir e completar depois.`}
+            : `${pendingCount} ponto${pendingCount === 1 ? '' : 's'} de atenção${
+                totalActions > 0 ? ` · ${totalActions} ação${totalActions === 1 ? '' : 'ões'} sugerida${totalActions === 1 ? '' : 's'}` : ''
+              }. Você pode editar agora ou seguir e completar depois.`}
         </p>
+        {s.source === 'local' && (
+          <p
+            data-testid="step22-local-fallback"
+            className="mx-auto mt-1 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800"
+          >
+            <CircleDashed className="h-3 w-3" aria-hidden /> Resumo offline (rascunho local) — pode estar desatualizado
+          </p>
+        )}
       </header>
 
       <ul className="divide-y divide-border rounded-lg border border-border bg-card">
         {items.map((it) => {
           const Icon = it.icon;
+          const showActions = it.actions.length > 0;
           return (
             <li
               key={it.key}
               data-testid={`review-row-${it.key}`}
-              className="flex items-center gap-3 p-3"
+              className="flex items-start gap-3 p-3"
             >
               <div
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
@@ -238,14 +349,27 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground">{it.label}</p>
-                <p className="truncate text-xs text-muted-foreground">{it.detail}</p>
+                <p className="text-xs text-muted-foreground">{it.detail}</p>
+                {showActions && (
+                  <ul
+                    data-testid={`review-actions-${it.key}`}
+                    className="mt-1.5 space-y-0.5 text-[11px] leading-snug text-amber-800"
+                  >
+                    {it.actions.map((a, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span aria-hidden className="mt-[3px] inline-block h-1 w-1 shrink-0 rounded-full bg-amber-600" />
+                        <span>{a}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => onEdit(it.key)}
-                className="gap-1"
+                className="shrink-0 gap-1"
                 aria-label={`Editar ${it.label}`}
               >
                 <Pencil className="h-3.5 w-3.5" /> Editar
