@@ -55,17 +55,21 @@ import {
   mapUnifiedToMainPhase,
   mapTriagePhaseToUnified,
   PROVIDER_WIZARD_PHASE_ORDER,
-  REVIEW_PHASE_ORDER,
-  REVIEW_TOTAL_STEPS,
-  isReviewPhaseRenderable,
-  nextRenderableReviewPhase,
-  prevRenderableReviewPhase,
   unifiedPhaseIndex,
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
   wizardReducer,
   type UnifiedPhase,
 } from './wizardReducer';
+// Fonte ÚNICA da régua de revisão e da navegação skip-fantasma — importada
+// direto de `wizardReviewSteps`, nunca redeclarada localmente.
+import {
+  REVIEW_PHASE_ORDER,
+  REVIEW_TOTAL_STEPS,
+  nextRenderableReviewPhase,
+  prevRenderableReviewPhase,
+} from './wizardReviewSteps';
+import { useReviewAnchor, resolveUnifiedPhaseLabel } from './useReviewAnchor';
 import type { BetState } from './phases/bet/types';
 
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
