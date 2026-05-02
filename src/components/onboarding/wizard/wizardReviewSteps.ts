@@ -79,24 +79,17 @@ export const REVIEW_PHASE_ORDER: UnifiedPhase[] = [
 /**
  * Total exibido pelo HUD/Assistente (numerador X/N).
  *
- * Cálculo:
- *   - Conta fases NÃO-marco (`milestone === true` é excluído).
- *   - Os dois últimos passos (`main_more_services` + `main_portfolio_albums`)
- *     são apresentados ao usuário como UMA única etapa visual ("Step 19a/19b")
- *     tanto no HUD quanto nos cards do Dashboard. Por isso subtraímos 1 do
- *     total bruto para obter "X de 19" em vez de "X de 18".
+ * Valor canônico = 19. Mantemos esta constante como CONSTANTE EXPLÍCITA
+ * (não derivada de `catalog.length`) porque a régua exibida ao usuário
+ * agrupa visualmente os dois últimos passos e inclui marcos de
+ * celebração na contagem — qualquer fórmula derivada teria que reaplicar
+ * esses ajustes e tornaria o número frágil.
  *
- * Mantém a UX histórica X/19 enquanto preserva as fases reais para edição
- * independente. Qualquer consumidor (WizardProgressBar, PointsHud, cards
- * do Assistente) deve importar esta constante — nunca hard-coded.
+ * O teste de fonte única (`wizard-review-steps-source-of-truth.test.ts`)
+ * trava a paridade entre WizardProgressBar e DashboardAssistantPage:
+ * ambos consomem ESTA constante, eliminando a duplicação histórica.
  */
-const REVIEW_NON_MILESTONE_PHASES = REVIEW_STEP_CATALOG.filter((m) => !m.milestone).length;
-const REVIEW_GROUPED_LAST_PAIR = 1; // main_more_services + main_portfolio_albums contados como 1
-export const REVIEW_TOTAL_STEPS = REVIEW_NON_MILESTONE_PHASES - REVIEW_GROUPED_LAST_PAIR + 2;
-// = 18 - 1 + 2 = 19. Os "+2" aqui é o ajuste de exibição: a triagem inicial
-// exibe 6 passos no HUD, mas o catálogo conta 5 não-marco antes da celebração;
-// o card "Conta criada" (milestone) entra na numeração visual como passo 6.
-// (Ver memo: HUD inclui marcos, denominador inclui marcos, numerador também.)
+export const REVIEW_TOTAL_STEPS = 19;
 
 /** Set de fases não-renderizáveis (mantidas só para paridade histórica). */
 const NON_RENDERABLE_REVIEW_PHASES: ReadonlySet<UnifiedPhase> = new Set(
