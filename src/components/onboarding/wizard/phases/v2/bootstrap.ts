@@ -166,6 +166,7 @@ export function buildOnboardingV2BootstrapState({ profile, provider }: Bootstrap
       street_confirmed: Boolean(provider?.street),
       primary_category_id,
       working_hours,
+      company_name: String(provider?.business_name || provider?.legal_name || '').trim(),
     },
     service: {
       service_name: '',
