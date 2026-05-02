@@ -25,7 +25,57 @@ interface CollectInput {
   latitude?: number | null;
   longitude?: number | null;
   accuracy_m?: number | null;
+  /** Velocidade reportada pelo Geolocation API (m/s). */
+  velocity_mps?: number | null;
+  /** Se o usuário aceitou os Termos no clique Finalizar. */
+  terms_accepted?: boolean;
+  /** Versão dos Termos aceitos (ex.: '2025-04-01'). */
+  terms_version?: string | null;
   origin_summary?: Record<string, unknown>;
+}
+
+/** Network Information API (não disponível em Safari). */
+function readNetworkInfo(): { type?: string; downlink?: number; rtt?: number } {
+  try {
+    const c = (navigator as any)?.connection
+      || (navigator as any)?.mozConnection
+      || (navigator as any)?.webkitConnection;
+    if (!c) return {};
+    return {
+      type: typeof c.effectiveType === 'string' ? c.effectiveType : (typeof c.type === 'string' ? c.type : undefined),
+      downlink: typeof c.downlink === 'number' ? c.downlink : undefined,
+      rtt: typeof c.rtt === 'number' ? c.rtt : undefined,
+    };
+  } catch { return {}; }
+}
+
+/** Heurística de movimento — em campo vs home office. */
+function inferMovement(velocity_mps?: number | null, accuracy_m?: number | null): boolean | null {
+  if (typeof velocity_mps === 'number' && Number.isFinite(velocity_mps)) {
+    return velocity_mps > 1.0; // > ~3.6 km/h ≈ caminhando
+  }
+  // Fallback: precisão muito boa em ambiente fechado costuma ser estática.
+  if (typeof accuracy_m === 'number' && Number.isFinite(accuracy_m)) {
+    return accuracy_m > 50 ? null : false;
+  }
+  return null;
+}
+
+/** Classifica origem do tráfego para meta_tracking.referrer_kind. */
+function classifyReferrer(referrer: string, utm: Record<string, string | undefined>): string {
+  if (utm.utm_source) return `utm:${utm.utm_source}`;
+  if (!referrer) return 'direct';
+  try {
+    const host = new URL(referrer).hostname.toLowerCase();
+    if (/google\./.test(host)) return 'organic:google';
+    if (/instagram\./.test(host)) return 'social:instagram';
+    if (/facebook\./.test(host) || /fb\./.test(host)) return 'social:facebook';
+    if (/linkedin\./.test(host)) return 'social:linkedin';
+    if (/twitter\.|x\.com/.test(host)) return 'social:x';
+    if (/whatsapp\.|wa\.me/.test(host)) return 'social:whatsapp';
+    if (/tiktok\./.test(host)) return 'social:tiktok';
+    return `referral:${host}`;
+  } catch { return 'unknown'; }
 }
 
 function parseUA(ua: string): {
