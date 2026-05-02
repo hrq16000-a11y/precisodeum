@@ -2311,6 +2311,8 @@ export type Database = {
           message: string | null
           next_followup_at: string | null
           phone: string
+          preferred_match: string
+          preferred_window: Json | null
           provider_id: string
           score_factors: Json | null
           service_needed: string | null
@@ -2333,6 +2335,8 @@ export type Database = {
           message?: string | null
           next_followup_at?: string | null
           phone: string
+          preferred_match?: string
+          preferred_window?: Json | null
           provider_id: string
           score_factors?: Json | null
           service_needed?: string | null
@@ -2355,6 +2359,8 @@ export type Database = {
           message?: string | null
           next_followup_at?: string | null
           phone?: string
+          preferred_match?: string
+          preferred_window?: Json | null
           provider_id?: string
           score_factors?: Json | null
           service_needed?: string | null
@@ -4052,6 +4058,7 @@ export type Database = {
           community_verified_at: string | null
           complement: string | null
           completion_boost_until: string | null
+          contact_hours: Json
           content_flags: Json | null
           cpf: string | null
           created_at: string
@@ -4132,6 +4139,7 @@ export type Database = {
           community_verified_at?: string | null
           complement?: string | null
           completion_boost_until?: string | null
+          contact_hours?: Json
           content_flags?: Json | null
           cpf?: string | null
           created_at?: string
@@ -4212,6 +4220,7 @@ export type Database = {
           community_verified_at?: string | null
           complement?: string | null
           completion_boost_until?: string | null
+          contact_hours?: Json
           content_flags?: Json | null
           cpf?: string | null
           created_at?: string
@@ -9057,6 +9066,14 @@ export type Database = {
           longitude: number
           name: string
           state_uf: string
+        }[]
+      }
+      suggest_next_contact_slot: {
+        Args: { _from_ts?: string; _provider_id: string }
+        Returns: {
+          day: number
+          iso_date: string
+          period: string
         }[]
       }
       touch_my_provider_activity: { Args: never; Returns: undefined }
