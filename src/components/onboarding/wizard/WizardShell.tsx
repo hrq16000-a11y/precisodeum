@@ -526,6 +526,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     clearOnboardingV2Draft();
     clearSessionTouched();
     clearBetDraft();
+    clearPersistedReviewPhase();
 
     if (user?.id) {
       void clearRemoteDraft(user.id);
