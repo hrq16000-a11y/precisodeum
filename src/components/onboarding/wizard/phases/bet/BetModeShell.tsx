@@ -513,6 +513,15 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         ...(state.latitude != null && state.longitude != null
           ? { latitude: state.latitude, longitude: state.longitude }
           : {}),
+        // Persistência de origem da localização e do bairro (auditoria + checklist).
+        // Mapeamento: BetState.location_source → providers.geo_source
+        //             BetState.gps_accuracy_m  → providers.geo_source_confidence (numeric, em metros)
+        //             BetState.neighborhood_source → providers.neighborhood_source (text)
+        ...(state.location_source ? { geo_source: state.location_source } : {}),
+        ...(state.gps_accuracy_m != null && Number.isFinite(state.gps_accuracy_m)
+          ? { geo_source_confidence: state.gps_accuracy_m }
+          : {}),
+        ...(state.neighborhood_source ? { neighborhood_source: state.neighborhood_source } : {}),
         description: '',
         // PJ — endereço institucional (opcional). normalizeProviderPayload
         // remove silenciosamente para PF e sanitiza para PJ.
