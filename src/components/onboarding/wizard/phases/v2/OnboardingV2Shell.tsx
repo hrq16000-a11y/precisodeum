@@ -1602,10 +1602,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               ? `Faltam estes campos para publicar o serviço antes das fotos:`
               : 'Para subir as fotos, primeiro preciso terminar de salvar seu serviço (categoria, descrição e cidade). Volte uma etapa, confirme os dados e tente novamente.';
 
+          // Código canônico do bloqueio (consumido por logs/telemetria/error_reports).
+          const blockCode = phase2PhotosBlockCode(reason);
+
           // Telemetria estruturada com o código exato — para suporte reproduzir.
           if (typeof window !== 'undefined' && !(window as any).__phase2BlockedLogged) {
             (window as any).__phase2BlockedLogged = true;
-            console.warn(`[wizard] phase2_photos blocked: phase2_photos:${reason}`, {
+            console.warn(`[wizard] phase2_photos blocked: ${blockCode}`, {
               missing,
               providerId: state.providerId,
               firstServiceId: state.firstServiceId,
@@ -1616,7 +1619,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               event: 'error',
               userId: user?.id,
               meta: {
-                code: `phase2_photos:${reason}`,
+                code: blockCode,
                 missing_fields: missing,
                 has_provider: !!state.providerId,
                 has_first_service: !!state.firstServiceId,
@@ -1625,9 +1628,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           }
 
           // Tenta recuperar firstServiceId via providerId e categoria do state.
-          const handleRecoverDraft = async () => {
+          // `auto` indica que o retry foi disparado automaticamente (sem clique
+          // do usuário) — usado para distinguir nas métricas.
+          const handleRecoverDraft = async (opts?: { auto?: boolean }) => {
+            const isAuto = !!opts?.auto;
             try {
-              track('next', { code: 'phase2_photos:recover_attempt' });
+              track('next', {
+                code: isAuto
+                  ? WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_AUTO
+                  : WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_ATTEMPT,
+              });
               const providerId = state.providerId;
               const categoryId =
                 state.profile.primary_category_id || state.service.category_ids?.[0] || '';
@@ -1639,19 +1649,49 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 );
                 if (id) {
                   dispatch({ type: 'SET_FIRST_SERVICE_ID', id });
-                  toast.success('Recuperamos seu serviço — pronto para subir as fotos.');
-                  return;
+                  if (!isAuto) {
+                    toast.success('Recuperamos seu serviço — pronto para subir as fotos.');
+                  }
+                  return true;
                 }
               }
-              toast.message('Nada para recuperar', {
-                description: 'Volte para revisar o serviço e tente publicar novamente.',
-              });
+              if (!isAuto) {
+                toast.message('Nada para recuperar', {
+                  description: 'Volte para revisar o serviço e tente publicar novamente.',
+                });
+              }
+              return false;
             } catch (err: any) {
-              toast.error('Não consegui recuperar o rascunho agora.', {
-                description: err?.message || 'Tente novamente em instantes.',
-              });
+              if (!isAuto) {
+                toast.error('Não consegui recuperar o rascunho agora.', {
+                  description: err?.message || 'Tente novamente em instantes.',
+                });
+              }
+              return false;
             }
           };
+
+          // Auto-retry: quando o bloqueio é por `no_service` e já temos um
+          // providerId + ao menos categoria/nome do serviço, tentamos recuperar
+          // automaticamente uma única vez por montagem deste card. Evita que o
+          // usuário precise clicar para casos transitórios (ex.: race entre
+          // criação do service e ida para fotos).
+          if (
+            typeof window !== 'undefined' &&
+            reason === 'no_service' &&
+            state.providerId &&
+            !(window as any).__phase2AutoRetryDone
+          ) {
+            const canTry =
+              !!state.profile.primary_category_id ||
+              (state.service.category_ids?.length || 0) > 0 ||
+              !!(state.service.service_name || '').trim();
+            if (canTry) {
+              (window as any).__phase2AutoRetryDone = true;
+              void handleRecoverDraft({ auto: true });
+            }
+          }
+
 
           return (
             <section
