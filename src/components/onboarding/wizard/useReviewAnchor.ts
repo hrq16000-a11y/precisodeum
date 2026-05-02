@@ -38,7 +38,7 @@ export interface ReviewAnchorState {
 
 export function useReviewAnchor(phase: UnifiedPhase, isReview: boolean): ReviewAnchorState {
   const lastRenderableRef = useRef<UnifiedPhase | null>(null);
-  const lastTrackedAnchorRef = useRef<UnifiedPhase | null>(null);
+  const lastTrackedAnchorRef = useRef<string | null>(null);
 
   // Atualiza o "último renderável" durante o render — barato e idempotente.
   if (isReview && REVIEW_PHASE_ORDER.indexOf(phase) >= 0 && isReviewPhaseRenderable(phase)) {
