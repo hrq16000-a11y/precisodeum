@@ -7996,6 +7996,7 @@ export type Database = {
         Args: { _doc_type: string; _lead_id: string; _path: string }
         Returns: undefined
       }
+      admin_meta_tracking_quality: { Args: never; Returns: Json }
       admin_notify_users: {
         Args: {
           _link?: string
