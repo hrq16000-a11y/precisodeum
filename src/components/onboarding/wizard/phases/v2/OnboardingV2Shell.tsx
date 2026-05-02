@@ -133,6 +133,7 @@ import {
 } from './bootstrap';
 import { buildWorkingHoursSummary } from './workingHours';
 import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
+import { TERMS_VERSION, readVelocityMps, readAccuracyMeters } from '@/lib/wizardSnapshotInputs';
 
 function slugify(input: string): string {
   return (input || '')
