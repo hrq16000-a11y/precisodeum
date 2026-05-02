@@ -220,6 +220,11 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
     const utm = readUtm();
     const geo = await fetchGeoIp();
     const battery = await readBattery();
+    const net = readNetworkInfo();
+    const moving = inferMovement(input.velocity_mps, input.accuracy_m);
+    const referrer = document.referrer || '';
+    const came_from_link = referrer.length > 0;
+    const referrer_kind = classifyReferrer(referrer, utm);
 
     const fp = await sha256([
       ua,
@@ -229,8 +234,7 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
       Intl.DateTimeFormat().resolvedOptions().timeZone || '',
     ].join('|'));
 
-    const referrer = document.referrer || '';
-    const came_from_link = referrer.length > 0;
+    const terms_accepted_at = input.terms_accepted ? new Date().toISOString() : null;
 
     const payload: Record<string, unknown> = {
       signup_method: getSignupMethod(user),
@@ -249,8 +253,8 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
       accuracy_m: input.accuracy_m ?? null,
-      was_moving: null,
-      velocity_mps: null,
+      was_moving: moving,
+      velocity_mps: input.velocity_mps ?? null,
 
       postal_code: input.postal_code ?? null,
       street: input.street ?? null,
@@ -265,7 +269,7 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
       user_agent: ua,
       device_brand,
       device_model,
-      device_imei: null, // só app nativo
+      device_imei: null,
       os_name,
       os_version,
       browser_name,
@@ -280,8 +284,15 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
       battery_charging: battery.charging ?? null,
       online_at_signup: navigator.onLine,
 
+      // Novos: Network Info + termos
+      connection_type: net.type ?? null,
+      connection_downlink_mbps: net.downlink ?? null,
+      connection_rtt_ms: net.rtt ?? null,
+      terms_version: input.terms_version ?? null,
+      terms_accepted_at,
+
       device_fingerprint: fp,
-      origin_summary: input.origin_summary || {},
+      origin_summary: { referrer_kind, ...(input.origin_summary || {}) },
       raw_meta: {},
     };
 
@@ -290,9 +301,43 @@ export async function recordRegistrationSnapshotOnce(input: CollectInput): Promi
       console.warn('[registrationSnapshot] RPC failed:', error.message);
       return null;
     }
+
+    // Espelho leve em providers.meta_tracking (consolidação solicitada). Best-effort.
+    try {
+      const meta_tracking = {
+        version: 1,
+        captured_at: new Date().toISOString(),
+        attribution: { referrer_kind, ...utm, came_from_link },
+        device: { os_name, os_version, browser_name, browser_version, device_brand, device_model, ua_kind: deviceKindFromScreen() },
+        screen: { w: screen.width, h: screen.height, dpr: window.devicePixelRatio || 1 },
+        locale: { language: navigator.language || null, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null },
+        network: { type: net.type ?? null, downlink_mbps: net.downlink ?? null, rtt_ms: net.rtt ?? null, online: navigator.onLine },
+        movement: { was_moving: moving, velocity_mps: input.velocity_mps ?? null, accuracy_m: input.accuracy_m ?? null },
+        terms: { accepted: !!input.terms_accepted, version: input.terms_version ?? null, accepted_at: terms_accepted_at },
+        fingerprint_short: fp ? fp.slice(0, 16) : null, // hash truncado, sem PII
+      };
+      await supabase
+        .from('providers' as any)
+        .update({ meta_tracking } as any)
+        .eq('user_id', user.id);
+    } catch (e) {
+      // não bloqueia — providers pode não existir ainda nesse exato momento
+      console.warn('[registrationSnapshot] meta_tracking mirror skipped:', e);
+    }
+
     return (data as string) || null;
   } catch (err) {
     console.warn('[registrationSnapshot] exception:', err);
     return null;
   }
+}
+
+function deviceKindFromScreen(): 'mobile' | 'tablet' | 'desktop' | 'tv' {
+  try {
+    const ua = (navigator.userAgent || '').toLowerCase();
+    if (/smarttv|smart-tv|googletv|appletv|hbbtv|netcast|viera|tizen.*tv|webos.*tv/.test(ua)) return 'tv';
+    if (/ipad|tablet/.test(ua)) return 'tablet';
+    if (/mobi|android|iphone/.test(ua)) return 'mobile';
+    return 'desktop';
+  } catch { return 'desktop'; }
 }
