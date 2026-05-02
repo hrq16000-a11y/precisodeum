@@ -307,8 +307,14 @@ const LoginPage = () => {
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">Senha</label>
-                    <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                    <PasswordInput
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="current-password"
+                      showRules
+                    />
                   </div>
                   <div className="text-right">
                     <button type="button" onClick={() => navigate('/esqueci-senha', { state: { email } })}
