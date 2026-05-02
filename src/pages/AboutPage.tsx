@@ -37,7 +37,7 @@ const staggerChild = {
 /* ── data ── */
 const philosophyPillars = [
   { icon: <Ban className="h-6 w-6" />, title: 'Não ao Leilão de Preços', description: 'Combatemos a desvalorização da mão de obra. Qualidade tem valor e defendemos o preço justo para todo profissional.', gradient: 'from-destructive/20 via-destructive/5 to-transparent' },
-  { icon: <Handshake className="h-6 w-6" />, title: 'Negociação Direta', description: 'Não intermediamos nem cobramos taxas sobre seus orçamentos. O lucro é 100% seu, sempre.', gradient: 'from-accent/20 via-accent/5 to-transparent' },
+  { icon: <Handshake className="h-6 w-6" />, title: 'Negociação Direta', description: 'Não intermediamos nem cobramos taxas sobre o trabalho fechado. O lucro é 100% seu, sempre.', gradient: 'from-accent/20 via-accent/5 to-transparent' },
   { icon: <Calculator className="h-6 w-6" />, title: 'Tabela de Referência', description: 'Oferecemos uma tabela de valores sugeridos para ajudar o profissional a cobrar com segurança e confiança.', gradient: 'from-primary/20 via-primary/5 to-transparent' },
   { icon: <MessageCircle className="h-6 w-6" />, title: 'Rede de Apoio', description: 'Grupos de WhatsApp para suporte entre colegas, troca de experiências e crescimento mútuo na profissão.', gradient: 'from-success/20 via-success/5 to-transparent' },
 ];
