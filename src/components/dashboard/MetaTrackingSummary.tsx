@@ -161,13 +161,25 @@ export function MetaTrackingSummary({ userId }: { userId: string | null | undefi
       <div className="flex items-start gap-3">
         <ShieldCheck className="mt-0.5 h-5 w-5 text-accent" />
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-foreground">
-            Seus Registros de Segurança
-          </h3>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-foreground">
+              Seus Registros de Segurança
+            </h3>
+            {updatedAt && (
+              <span
+                className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+                data-testid="meta-tracking-updated-at"
+                title="Atualizado em tempo real"
+              >
+                Atualizado: {fmtDate(updatedAt)}
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             Estes são os metadados estendidos coletados quando você criou sua conta.
             Ficam imutáveis e são usados apenas para auditoria, prevenção de fraudes e
-            conformidade com a LGPD.
+            conformidade com a LGPD. Atualizamos esta área em tempo real conforme novas
+            coletas (rede, movimento, atribuição) chegam.
           </p>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
