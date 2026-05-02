@@ -26,6 +26,16 @@ export interface BetState {
   ibge_code: string | null;
   /** Origem da localização atualmente persistida. */
   location_source: 'gps' | 'cep' | 'ip' | 'manual' | null;
+  /** Precisão do GPS em metros (null = sem GPS resolvido). Persistido em providers.geo_source_confidence. */
+  gps_accuracy_m: number | null;
+  /** Origem do bairro atualmente em state.neighborhood. Persistido em providers.neighborhood_source.
+   *  - 'user'        → digitado/confirmado pelo usuário
+   *  - 'gps'         → derivado do reverse-geocode com GPS preciso
+   *  - 'cep'         → veio do CEP (BrasilAPI/ViaCEP)
+   *  - 'bigdatacloud'/'nominatim' → reverse-geocode por IP/aproximado
+   *  - 'default_centro' → fallback do trigger DB
+   */
+  neighborhood_source: 'user' | 'gps' | 'cep' | 'bigdatacloud' | 'nominatim' | 'default_centro' | null;
   pro_kind: BetProKind | null;
   document: string;            // CPF (11) ou CNPJ (14)
   company_name: string;        // PJ apenas
@@ -75,6 +85,8 @@ export const initialBetState: BetState = {
   longitude: null,
   ibge_code: null,
   location_source: null,
+  gps_accuracy_m: null,
+  neighborhood_source: null,
   pro_kind: null,
   document: '',
   company_name: '',
