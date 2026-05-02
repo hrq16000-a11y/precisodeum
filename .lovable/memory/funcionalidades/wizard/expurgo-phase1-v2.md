@@ -28,3 +28,10 @@ Voltar do `phase2_service` em modo revisão fazia o reducer V2 cair em `phase1_l
 - Teste `onboarding-v3-unified-flow.test.ts` agora afirma que Step08-11 NÃO existem mais.
 - Teste `onboarding-v3-first-service-regression.test.ts` afirma que `Phase1Basic.tsx` foi excluído.
 - 48/48 testes do wizard passando após o expurgo.
+
+## Atualização nov/2026 — UNIFIED_PHASE_ORDER sincronizado
+- `UNIFIED_PHASE_ORDER` agora também NÃO contém `main_action/kind/location/contact` (eram fases-fantasma da régua de navegação que apontavam para steps inexistentes).
+- Régua oficial: 17 fases visíveis + `done` (era 21+done). Sincronizada com `REVIEW_PHASE_ORDER`.
+- O TIPO `UnifiedPhase` ainda lista as 4 strings para compat de telemetria histórica e referências em `DashboardAssistantPage`/`wizardMode.ts`/`onboardingProgress.ts`.
+- `nextUnifiedPhase('triage_celebration')` agora retorna `'main_service'` (antes: `'main_action'`).
+- HUD/WizardProgressBar mostram "X/16" em revisão e "X/16-17" no funil profissional, sem mais "Etapa 7/16" causada por skip de fases-fantasma.
