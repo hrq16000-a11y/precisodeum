@@ -89,6 +89,7 @@ const ROUTE_PATTERNS: readonly string[] = [
   "/dashboard/localizacao-guiada",
   "/dashboard/chat",
   "/dashboard/suporte",
+  "/admin/links-quebrados",
 ] as const;
 
 const PATTERN_REGEXES: RegExp[] = ROUTE_PATTERNS.map((pattern) => {
