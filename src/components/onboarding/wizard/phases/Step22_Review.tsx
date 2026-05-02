@@ -11,7 +11,7 @@
  * Não persiste nada e não altera o reducer público — é puramente de leitura.
  * Em caso de erro de rede, mostra mensagem clara e botão "Tentar de novo".
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
