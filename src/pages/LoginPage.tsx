@@ -115,9 +115,11 @@ const LoginPage = () => {
       // O RPC `check_registration_block` cobre e-mail, WhatsApp e (server-side)
       // hash de dispositivo/IP, então a mensagem aqui cita os três vetores.
       try {
+        const deviceFp = await getDeviceFingerprint();
         const { data: blockData } = await (supabase.rpc as any)('check_registration_block', {
           _email: trimmedEmail,
           _whatsapp: null,
+          _device_fingerprint: deviceFp,
         });
         const block = (blockData as any) || {};
         if (block?.blocked) {
