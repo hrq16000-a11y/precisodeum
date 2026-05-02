@@ -8,8 +8,8 @@
  * Por que enxuto? O upload em massa dentro do wizard travaria o fluxo.
  * Aqui criamos os "espaços" temáticos; o usuário enche depois ou via painel.
  */
-import { useCallback, useEffect, useState } from 'react';
-import { ArrowRight, SkipForward, X, FolderPlus, ChevronDown, ChevronUp } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowRight, SkipForward, X, FolderPlus, ChevronDown, ChevronUp, RefreshCw, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -52,12 +52,24 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
   const [saving, setSaving] = useState(false);
   const [providerId, setProviderId] = useState<string | null>(provider?.id ?? null);
   const [expandedAlbumId, setExpandedAlbumId] = useState<string | null>(null);
-  const [providerLoadError, setProviderLoadError] = useState<string | null>(null);
+  type ProviderError = {
+    code: 'rls' | 'network' | 'not_found' | 'query';
+    message: string;
+    hint: string;
+  } | null;
+  const [providerError, setProviderError] = useState<ProviderError>(null);
+  const [providerLoading, setProviderLoading] = useState(false);
+  const [providerRetryTick, setProviderRetryTick] = useState(0);
+  const providerLoadMsRef = useRef<number | null>(null);
 
-  // Garante providerId mesmo se o context ainda não tiver carregado
+  // Garante providerId mesmo se o context ainda não tiver carregado.
+  // Diferencia rede x RLS x ausente x erro de query, para o usuário ter
+  // contexto e poder tentar novamente sem quebrar a tela do wizard.
   useEffect(() => {
     if (providerId || !user?.id) return;
     let active = true;
+    setProviderLoading(true);
+    const startedAt = performance.now();
     (async () => {
       try {
         const { data, error } = await supabase
@@ -66,22 +78,55 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
           .eq('user_id', user.id)
           .maybeSingle();
         if (!active) return;
+        providerLoadMsRef.current = Math.round(performance.now() - startedAt);
         if (error) {
-          setProviderLoadError('Não conseguimos carregar seu perfil agora.');
+          // RLS costuma vir com code 42501 / PGRST116 / "permission denied"
+          const raw = `${(error as any).code || ''} ${error.message || ''}`.toLowerCase();
+          const isRls = /42501|permission denied|rls|pgrst116/.test(raw);
+          setProviderError(
+            isRls
+              ? {
+                  code: 'rls',
+                  message: 'Sem permissão para carregar seu perfil agora.',
+                  hint: 'Sua sessão pode ter expirado. Tente sair e entrar novamente.',
+                }
+              : {
+                  code: 'query',
+                  message: 'Erro ao consultar seu perfil.',
+                  hint: error.message || 'Tente novamente em alguns segundos.',
+                },
+          );
           return;
         }
         if (data?.id) {
           setProviderId(data.id);
-          setProviderLoadError(null);
+          setProviderError(null);
         } else {
-          setProviderLoadError('Perfil ainda não disponível — finalize as etapas anteriores.');
+          setProviderError({
+            code: 'not_found',
+            message: 'Perfil ainda não está disponível.',
+            hint: 'Finalize as etapas anteriores antes de criar álbuns de portfólio.',
+          });
         }
       } catch {
-        if (active) setProviderLoadError('Falha de rede ao carregar perfil. Verifique a conexão.');
+        if (!active) return;
+        providerLoadMsRef.current = Math.round(performance.now() - startedAt);
+        setProviderError({
+          code: 'network',
+          message: 'Falha de rede ao carregar perfil.',
+          hint: 'Verifique sua conexão e toque em "Tentar novamente".',
+        });
+      } finally {
+        if (active) setProviderLoading(false);
       }
     })();
     return () => { active = false; };
-  }, [providerId, user?.id]);
+  }, [providerId, user?.id, providerRetryTick]);
+
+  const retryProviderLoad = useCallback(() => {
+    setProviderError(null);
+    setProviderRetryTick((t) => t + 1);
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!user?.id) return;
@@ -153,17 +198,44 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
           <span className="text-xs font-medium text-muted-foreground">Álbuns criados</span>
           <span className="text-xs font-bold">{albums.length} / {MAX_ALBUMS}</span>
         </div>
-        {providerLoadError && (
+        {providerLoading && !providerError && (
+          <div
+            data-testid="step21-provider-loading"
+            className="mt-2 flex items-center gap-2 rounded border border-border bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground"
+            aria-live="polite"
+          >
+            <RefreshCw className="h-3 w-3 animate-spin" aria-hidden />
+            Carregando seu perfil…
+          </div>
+        )}
+        {providerError && (
           <div
             role="alert"
             data-testid="step21-provider-error"
-            className="mt-2 rounded border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-xs text-destructive"
+            data-error-code={providerError.code}
+            className="mt-2 space-y-1 rounded border border-destructive/40 bg-destructive/10 px-2 py-2 text-xs text-destructive"
           >
-            {providerLoadError}
+            <p className="flex items-center gap-1.5 font-medium">
+              <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+              {providerError.message}
+            </p>
+            <p className="text-[11px] text-destructive/80">{providerError.hint}</p>
+            {(providerError.code === 'network' || providerError.code === 'query' || providerError.code === 'rls') && (
+              <button
+                type="button"
+                data-testid="step21-provider-retry"
+                onClick={retryProviderLoad}
+                disabled={providerLoading}
+                className="mt-1 inline-flex items-center gap-1 rounded border border-destructive/40 bg-background px-2 py-1 text-[11px] font-medium text-destructive transition hover:bg-destructive/10 disabled:opacity-60"
+              >
+                <RefreshCw className={`h-3 w-3 ${providerLoading ? 'animate-spin' : ''}`} aria-hidden />
+                Tentar novamente
+              </button>
+            )}
           </div>
         )}
         {loading ? (
-          <p className="mt-2 text-xs text-muted-foreground">Carregando…</p>
+          <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">Carregando álbuns…</p>
         ) : albums.length === 0 ? (
           <p className="mt-2 text-xs text-muted-foreground">Nenhum álbum ainda — crie o primeiro abaixo.</p>
         ) : (
