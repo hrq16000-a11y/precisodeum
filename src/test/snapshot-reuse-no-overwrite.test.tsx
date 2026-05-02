@@ -24,9 +24,9 @@ vi.mock('@/hooks/useGeoCity', () => ({
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
 vi.mock('@/lib/providerGeoAudit', () => ({ recordMyGeoEvent: vi.fn() }));
-vi.mock('../components/onboarding/wizard/phases/v2/telemetry', () => ({
+vi.mock('@/components/onboarding/wizard/phases/v2/telemetry', () => ({
   trackOnboardingEvent: vi.fn(),
-}), { virtual: true });
+}));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }));
 
 function renderPhase(state: BetState, patch = vi.fn()) {
