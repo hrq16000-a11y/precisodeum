@@ -41,7 +41,7 @@ const FALLBACK_VARIANTS = (name: string, locale: string): string[] => {
   return [
     FALLBACK(name, locale),
     `Atuo como ${lower}${here} com foco em qualidade, prazos curtos e relacionamento próximo. ` +
-      `Faço orçamento sem compromisso e atendo tanto pequenas demandas quanto projetos completos. ` +
+      `Atendimento sem compromisso para pequenas demandas e projetos completos. ` +
       `Chame no WhatsApp para combinarmos.`,
     `Profissional de ${lower}${here} com experiência prática e ferramentas adequadas para cada serviço. ` +
       `Compromisso com pontualidade, organização e acabamento bem feito. ` +
