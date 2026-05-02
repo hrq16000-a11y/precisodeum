@@ -17,12 +17,12 @@
  * Vive ao lado de `useReviewAnchor` para manter toda a inteligência da
  * régua de revisão num só lugar.
  */
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import {
   REVIEW_PHASE_ORDER,
   isReviewPhaseRenderable,
-  type UnifiedPhase,
 } from './wizardReviewSteps';
+import type { UnifiedPhase } from './wizardReducer';
 
 const STORAGE_KEY = 'wizard:review:lastRenderablePhase:v1';
 
