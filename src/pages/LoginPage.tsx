@@ -121,15 +121,63 @@ const LoginPage = () => {
         const block = (blockData as any) || {};
         if (block?.blocked) {
           setLoading(false);
-          const days = typeof block.days_remaining === 'number' ? block.days_remaining : null;
-          const reason = typeof block.reason === 'string' && block.reason ? block.reason : null;
-          const tail = days != null
-            ? ` Você poderá criar uma nova conta em ${days} dia${days === 1 ? '' : 's'}.`
-            : '';
-          const reasonTail = reason ? ` Motivo registrado: ${reason}.` : '';
+          const days =
+            typeof block.days_remaining === "number" ? block.days_remaining : null;
+          const reasonRaw =
+            typeof block.reason === "string" && block.reason ? block.reason : null;
+          const matchedVia =
+            typeof block.matched_via === "string" ? block.matched_via : "unknown";
+          const expiresAt =
+            typeof block.expires_at === "string" ? block.expires_at : null;
+          const isPermanent = block.permanent === true;
+
+          // Vetor humanizado
+          const vector =
+            matchedVia === "email"
+              ? "este e-mail"
+              : matchedVia === "whatsapp"
+                ? "este WhatsApp"
+                : "este e-mail, WhatsApp ou dispositivo";
+
+          // Motivo humanizado
+          const reasonHuman =
+            reasonRaw === "self_deletion_180d"
+              ? "exclusão voluntária de conta (LGPD)"
+              : reasonRaw === "policy_violation"
+                ? "violação dos termos de uso"
+                : reasonRaw || "política de uso";
+
+          // Data formatada PT-BR
+          let when = "";
+          if (isPermanent) {
+            when = " O bloqueio é permanente.";
+          } else if (expiresAt) {
+            try {
+              const dt = new Date(expiresAt).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              });
+              when = ` Você poderá criar uma nova conta a partir de ${dt}${
+                days != null ? ` (em ${days} dia${days === 1 ? "" : "s"})` : ""
+              }.`;
+            } catch {
+              if (days != null) {
+                when = ` Você poderá criar uma nova conta em ${days} dia${days === 1 ? "" : "s"}.`;
+              }
+            }
+          } else if (days != null) {
+            when = ` Você poderá criar uma nova conta em ${days} dia${days === 1 ? "" : "s"}.`;
+          }
+
+          // Instruções
+          const instructions = isPermanent
+            ? " Se acreditar que isso é um engano, entre em contato pelo /ajuda."
+            : " Enquanto isso, você pode entrar em contato pelo /ajuda em caso de dúvidas ou esperar o prazo expirar.";
+
           toast.error(
-            `Por política de uso (LGPD), este e-mail, WhatsApp ou dispositivo está temporariamente impedido de criar nova conta.${tail}${reasonTail}`,
-            { duration: 9000 },
+            `Por política de uso (LGPD), ${vector} está temporariamente impedido de criar nova conta.${when} Motivo: ${reasonHuman}.${instructions}`,
+            { duration: 12000 },
           );
           return;
         }
