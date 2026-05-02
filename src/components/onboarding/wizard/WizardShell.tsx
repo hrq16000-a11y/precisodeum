@@ -583,12 +583,16 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       {showGlobalHud && (
         <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
       )}
+      {/* Botão Voltar global removido das fases padrão — cada fase já tem o seu
+          via WizardNav. Aqui só renderizamos em modo revisão (edit_profile)
+          como atalho para o passo renderizável anterior. */}
       {showGlobalBack && (
         <div className="sticky top-3 z-30 mx-auto flex w-full max-w-5xl px-4 pt-3">
           <Button
             type="button"
             variant="outline"
             onClick={handleGlobalBack}
+            aria-label="Voltar para o passo anterior"
             className="gap-2 shadow-sm"
           >
             <ArrowLeft className="h-4 w-4" /> Voltar
