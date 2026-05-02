@@ -22,12 +22,12 @@ describe('REVIEW_PHASE_ORDER — fonte única', () => {
     expect(reducer.REVIEW_TOTAL_STEPS).toBe(canonical.REVIEW_TOTAL_STEPS);
   });
 
-  it('REVIEW_TOTAL_STEPS é derivado do catálogo (sem milestones)', () => {
-    const expected = canonical.REVIEW_STEP_CATALOG.filter((m) => !m.milestone).length;
-    expect(canonical.REVIEW_TOTAL_STEPS).toBe(expected);
-    // O catálogo canônico tem 20 fases reais + 2 marcos de celebração.
-    // Total exibido pelo HUD = 20 - 2 milestones = 18 etapas contáveis.
-    expect(canonical.REVIEW_TOTAL_STEPS).toBe(18);
+  it('REVIEW_TOTAL_STEPS é a constante canônica X/19 compartilhada', () => {
+    // Valor explícito (X/19) consumido por HUD do Wizard E pelos cards do
+    // Dashboard Assistant. NÃO é derivado de catálogo.length por incluir
+    // ajustes visuais (agrupamento + marcos). Qualquer mudança futura
+    // deve ser feita APENAS em wizardReviewSteps.ts.
+    expect(canonical.REVIEW_TOTAL_STEPS).toBe(19);
   });
 
   it("REVIEW_PHASE_ORDER termina em 'done' como sentinela", () => {
