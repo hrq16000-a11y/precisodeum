@@ -11,7 +11,7 @@
  * Não persiste nada e não altera o reducer público — é puramente de leitura.
  * Em caso de erro de rede, mostra mensagem clara e botão "Tentar de novo".
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -24,10 +24,14 @@ import {
   UserRound,
   Loader2,
   CircleDashed,
+  Copy,
+  MessageCircle,
+  Mail,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 export type ReviewSection =
   | 'identity'
@@ -55,10 +59,22 @@ interface Snapshot {
   hasBio: boolean;
   /** 'remote' = Supabase OK; 'local' = veio do draft local (fallback). */
   source: 'remote' | 'local';
+  /** Quando o draft local é mais antigo que a versão atual, alertamos o usuário. */
+  draftOutdated?: boolean;
+  /** Idade do draft local em ms (para mostrar "salvo há X min"). */
+  draftAgeMs?: number;
 }
 
 // Chave do draft local V2 — mantida em sincronia com flushDraft.ts.
 const LOCAL_DRAFT_KEY = 'onboarding_v3_institutional_final';
+/**
+ * Versão atual do schema do draft local.
+ * Quando subimos esta versão, drafts antigos são marcados como "desatualizado"
+ * para que o usuário saiba que pode haver divergência com o onboarding atual.
+ */
+const DRAFT_SCHEMA_VERSION = 'v3.2026-05';
+/** Drafts mais antigos que isto (24h) são tratados como potencialmente stale. */
+const DRAFT_STALE_AFTER_MS = 1000 * 60 * 60 * 24;
 
 /**
  * Lê o snapshot a partir do draft local quando o Supabase não responde.
@@ -74,6 +90,8 @@ function readLocalDraftSnapshot(): Snapshot | null {
       profile?: Record<string, any>;
       service?: Record<string, any>;
       providerId?: string | null;
+      savedAt?: number;
+      schemaVersion?: string;
     };
     const profile = env.profile ?? {};
     const service = env.service ?? {};
@@ -81,6 +99,10 @@ function readLocalDraftSnapshot(): Snapshot | null {
     const gallery: unknown = service.gallery_urls ?? service.photos;
     const photoCount = Array.isArray(gallery) ? gallery.length : 0;
     const cities: unknown = service.service_area_cities ?? profile.service_area_cities;
+    const draftAgeMs = env.savedAt ? Date.now() - env.savedAt : undefined;
+    const draftOutdated =
+      (env.schemaVersion && env.schemaVersion !== DRAFT_SCHEMA_VERSION) ||
+      (draftAgeMs !== undefined && draftAgeMs > DRAFT_STALE_AFTER_MS);
     return {
       providerOk: Boolean(profile.city || profile.cidade),
       servicesCount: service?.id || service?.name ? 1 : 0,
@@ -92,6 +114,8 @@ function readLocalDraftSnapshot(): Snapshot | null {
       hasServiceArea: Array.isArray(cities) && cities.length > 0,
       hasBio: Boolean((profile.bio || service.description || '').toString().trim().length >= 20),
       source: 'local',
+      draftOutdated,
+      draftAgeMs,
     };
   } catch {
     return null;
