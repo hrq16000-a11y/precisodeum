@@ -553,7 +553,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         }}
         enabled={state.phase !== 'triage_celebration' && state.phase !== 'main_celebration' && state.phase !== 'done'}
       />
-      <WizardProgressBar phase={state.phase} phaseOrder={progressOrder} totalOverride={isReview ? REVIEW_TOTAL_STEPS : undefined} />
+      <WizardProgressBar phase={isReview ? reviewAnchorPhase : state.phase} phaseOrder={progressOrder} totalOverride={isReview ? REVIEW_TOTAL_STEPS : undefined} />
       {showGlobalHud && (
         <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
       )}
