@@ -3,14 +3,18 @@
  *
  * Ao clicar, abre um diálogo nativo com:
  *  - Descrição rápida (opcional)
+ *  - Captura de tela anexada (opcional, até 3 imagens, 5 MB cada)
  *  - Categoria/Cidade/Etapa/Navegador pré-preenchidos via `contextSnapshot`
  *  - Envio para `error_reports` via `reportError`
  *
- * O ID do relatório é copiado para o clipboard e exibido em toast para o
- * suporte conseguir reproduzir/priorizar.
+ * Anexos: imagens vão para o bucket privado `error-attachments` na pasta
+ * `{user_id}/{reportId}/...`. As URLs (signed paths) ficam no payload do
+ * relatório para o suporte abrir.
+ *
+ * O ID do relatório é copiado para o clipboard e exibido em toast.
  */
-import { useState } from 'react';
-import { LifeBuoy, Loader2, CheckCircle2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { LifeBuoy, Loader2, CheckCircle2, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,6 +32,10 @@ interface Props {
   contextSnapshot?: Record<string, unknown>;
 }
 
+const MAX_FILES = 3;
+const MAX_BYTES = 5 * 1024 * 1024;
+const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
+
 export const ReportWizardErrorButton = ({
   step,
   componentName = 'ServiceWizard',
@@ -39,15 +47,65 @@ export const ReportWizardErrorButton = ({
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const [note, setNote] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleAddFiles = (list: FileList | null) => {
+    if (!list) return;
+    const next: File[] = [...files];
+    for (const f of Array.from(list)) {
+      if (next.length >= MAX_FILES) {
+        toast.error(`Máximo de ${MAX_FILES} imagens.`);
+        break;
+      }
+      if (!f.type.startsWith('image/')) {
+        toast.error(`"${f.name}" não é uma imagem.`);
+        continue;
+      }
+      if (f.size > MAX_BYTES) {
+        toast.error(`"${f.name}" excede 5 MB.`);
+        continue;
+      }
+      next.push(f);
+    }
+    setFiles(next);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const uploadAttachments = async (
+    userId: string,
+    reportId: string,
+  ): Promise<string[]> => {
+    if (!files.length) return [];
+    const paths: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const ext = (f.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
+      const path = `${userId}/${reportId}/screenshot-${Date.now()}-${i}.${ext}`;
+      try {
+        const { error } = await supabase.storage
+          .from('error-attachments')
+          .upload(path, f, { contentType: f.type, upsert: false });
+        if (!error) paths.push(path);
+      } catch { /* ignore individual upload failure */ }
+    }
+    return paths;
+  };
 
   const handleSend = async () => {
     if (sending) return;
     setSending(true);
     trackAction('user_report_open', step);
 
+    let userId: string | null = null;
     let lastEvents: Array<{ phase: string; event: string; created_at: string }> = [];
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
       if (user) {
         const { data } = await supabase
           .from('onboarding_events')
@@ -71,6 +129,7 @@ export const ReportWizardErrorButton = ({
       page: typeof window !== 'undefined' ? window.location.pathname + window.location.search : null,
       actionHistory: getActionHistory().slice(-10),
       lastFunnelEvents: lastEvents,
+      attachments: [] as string[],
     };
 
     const id = await reportError({
@@ -81,17 +140,37 @@ export const ReportWizardErrorButton = ({
       errorStack: JSON.stringify(payload, null, 2),
     });
 
+    if (id && userId && files.length > 0) {
+      const paths = await uploadAttachments(userId, id);
+      if (paths.length) {
+        // Atualiza o relatório com as paths para o suporte abrir.
+        try {
+          await supabase
+            .from('error_reports' as any)
+            .update({
+              error_stack: JSON.stringify(
+                { ...payload, attachments: paths },
+                null,
+                2,
+              ),
+            } as any)
+            .eq('id', id);
+        } catch { /* ignore */ }
+      }
+    }
+
     setSending(false);
     if (id) {
       const short = id.slice(0, 8);
       setDone(short);
       try { await navigator.clipboard.writeText(short); } catch { /* ignore */ }
       toast.success('Relatório enviado', {
-        description: `Código: ${short} (copiado). Envie ao suporte se persistir.`,
+        description: `Código: ${short} (copiado).${files.length ? ` ${files.length} anexo(s).` : ''}`,
         duration: 8000,
       });
       setOpen(false);
       setNote('');
+      setFiles([]);
     } else {
       toast.error('Não foi possível enviar o relatório agora.');
     }
@@ -122,7 +201,8 @@ export const ReportWizardErrorButton = ({
             <DialogTitle>Reportar para o suporte</DialogTitle>
             <DialogDescription className="text-xs">
               Vamos anexar automaticamente etapa, navegador e seu contexto recente.
-              Você pode descrever rapidamente o que aconteceu (opcional).
+              Você pode descrever rapidamente o que aconteceu (opcional) e anexar
+              uma captura de tela.
             </DialogDescription>
           </DialogHeader>
 
@@ -138,6 +218,53 @@ export const ReportWizardErrorButton = ({
               placeholder="Ex.: cliquei em continuar e a tela ficou vazia"
               rows={3}
             />
+
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                Capturas de tela (opcional, até {MAX_FILES})
+              </Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPT}
+                multiple
+                data-testid="report-dialog-screenshot-input"
+                className="hidden"
+                onChange={(e) => handleAddFiles(e.target.files)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={files.length >= MAX_FILES}
+                data-testid="report-dialog-attach-btn"
+                className="h-8 gap-1 text-xs"
+              >
+                <ImagePlus className="h-3 w-3" />
+                Anexar imagem
+              </Button>
+              {files.length > 0 && (
+                <ul
+                  data-testid="report-dialog-attachments"
+                  className="mt-1 space-y-0.5 text-[11px] text-muted-foreground"
+                >
+                  {files.map((f, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2 rounded border border-border bg-muted/30 px-2 py-1">
+                      <span className="truncate">{f.name} · {(f.size / 1024).toFixed(0)} KB</span>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        aria-label={`Remover ${f.name}`}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
             <div className="rounded-md border border-border bg-muted/40 p-2 text-[11px] text-muted-foreground">
               <p className="font-medium text-foreground">Contexto que será enviado</p>

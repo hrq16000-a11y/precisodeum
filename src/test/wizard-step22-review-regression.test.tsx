@@ -267,4 +267,69 @@ describe('Step22_Review', () => {
     expect(screen.getByTestId('copy-pendency-photos')).toBeInTheDocument();
     expect(screen.getByTestId('step22-digest-actions')).toBeInTheDocument();
   });
+
+  it('NÃO mostra banner "rascunho desatualizado" quando o draft local é recente', async () => {
+    const recentSavedAt = Date.now() - 1000 * 60 * 5; // 5 min atrás
+    localStorage.setItem(
+      'onboarding_v3_institutional_final',
+      JSON.stringify({
+        savedAt: recentSavedAt,
+        // versão atual do schema — não deve marcar como desatualizado
+        schemaVersion: 'v3.2026-05',
+        profile: { city: 'Curitiba' },
+        service: { name: 'Pintura', gallery_urls: [] },
+      }),
+    );
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'providers')
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockRejectedValue(new Error('Failed to fetch')),
+            }),
+          }),
+        };
+      throw new Error(`unexpected ${table}`);
+    });
+
+    render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('step22-local-fallback')).toBeInTheDocument();
+    });
+    // Banner de desatualizado NÃO deve aparecer em draft fresco + schema atual
+    expect(screen.queryByTestId('step22-draft-outdated')).toBeNull();
+  });
+
+  it('mostra banner "rascunho desatualizado" quando o schemaVersion difere', async () => {
+    const recentSavedAt = Date.now() - 1000 * 60 * 5; // 5 min — recente
+    localStorage.setItem(
+      'onboarding_v3_institutional_final',
+      JSON.stringify({
+        savedAt: recentSavedAt,
+        schemaVersion: 'v2.2025-01', // versão antiga
+        profile: { city: 'Curitiba' },
+        service: { name: 'Pintura', gallery_urls: [] },
+      }),
+    );
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'providers')
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockRejectedValue(new Error('Failed to fetch')),
+            }),
+          }),
+        };
+      throw new Error(`unexpected ${table}`);
+    });
+
+    render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('step22-draft-outdated')).toBeInTheDocument();
+    });
+  });
 });
