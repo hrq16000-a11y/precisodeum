@@ -549,7 +549,7 @@ export const Phase2Details = ({
           {!saving && !blocked && <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />}
         </Button>
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className="w-full text-muted-foreground">
-          Salvar progresso e configurar meu painel depois
+          Salvar e adicionar fotos depois
         </Button>
       </div>
         );

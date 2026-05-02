@@ -1475,17 +1475,19 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_service' }); }}
             saving={saving}
             onSkip={async () => {
-              // "Salvar progresso e configurar meu painel depois" em Phase2Details:
-              // só faz sentido se a persistência do serviço ocorrer com sucesso.
-              track('skip', { milestone: 'first_service_save_only' });
+              // [FIX 2026-05-02] "Pular detalhes" NÃO joga mais para o dashboard.
+              // Salva o serviço (criando o firstServiceId) e segue para
+              // phase2_photos, mantendo o circuito viciante e permitindo voltar.
+              // Se a persistência falhar, mostra toast e mantém o usuário na fase.
+              track('skip', { milestone: 'first_service_save_continue', target: 'phase2_photos' });
               const ok = await persistFirstService();
               if (ok) {
-                toast.success('Serviço publicado! Você pode terminar o resto depois no painel.');
-                window.location.assign('/dashboard');
+                toast.success('Serviço salvo! Agora adicione fotos para destacar seu trabalho.');
+                dispatch({ type: 'GO_TO', phase: 'phase2_photos' });
               } else {
                 track('error', { reason: 'persist_service_failed' });
                 toast.error(
-                  'Falta pouco! Não conseguimos publicar agora — revise os campos e tente novamente.',
+                  'Falta pouco! Não conseguimos salvar agora — revise os campos e tente novamente.',
                 );
               }
             }}
