@@ -8108,6 +8108,21 @@ export type Database = {
           }
       admin_system_health: { Args: { _limit?: number }; Returns: Json }
       admin_system_health_full: { Args: never; Returns: Json }
+      archive_stale_incomplete_providers: {
+        Args: never
+        Returns: {
+          archived_count: number
+        }[]
+      }
+      audit_incomplete_providers_3d: {
+        Args: never
+        Returns: {
+          ambos_faltando: number
+          cidade_sem_bairro: number
+          cidade_sem_geosource: number
+          total_3d: number
+        }[]
+      }
       audit_user_ref_full: {
         Args: never
         Returns: {
