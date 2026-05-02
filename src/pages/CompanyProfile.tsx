@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, MapPin, Phone, MessageCircle, Globe, Instagram, Facebook, ExternalLink, Calendar, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -69,13 +69,14 @@ const buildMapsEmbed = (parts: (string | null | undefined)[]): string => {
 
 export default function CompanyProfile() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { city: geoCity, state: geoState } = useGeoCity();
 
   const { data: company, isLoading, error } = useQuery({
     queryKey: ['company-profile', slug],
     queryFn: async () => {
       const COLS =
-        'id, user_id, slug, business_name, legal_name, description, photo_url, city, state, neighborhood, phone, whatsapp, latitude, longitude, rating_avg, review_count, account_type, business_segment, street, street_number, complement, postal_code, show_full_address, social_links, founded_year, team_size';
+        'id, user_id, slug, business_name, legal_name, description, photo_url, city, state, neighborhood, phone, whatsapp, latitude, longitude, rating_avg, review_count, account_type, business_segment, street, street_number, complement, postal_code, show_full_address, social_links';
 
       const param = (slug || '').trim();
       // 1) Tenta resolver por slug (caminho canônico).
@@ -198,6 +199,14 @@ export default function CompanyProfile() {
   useEffect(() => {
     if (company) trackProfileClick(company.id, company.slug, 'company-profile');
   }, [company]);
+
+  useEffect(() => {
+    const param = (slug || '').trim();
+    if (!company?.slug || !param) return;
+    if (param !== company.slug) {
+      navigate(`/empresa/${company.slug}`, { replace: true });
+    }
+  }, [company?.slug, navigate, slug]);
 
   if (isLoading) {
     return (
