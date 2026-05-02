@@ -88,7 +88,7 @@ describe('loc-persist · bairroSource e precise', () => {
     const patch = vi.fn();
     renderPhase({ ...initialBetState, city: 'Curitiba', state: 'PR' }, patch);
 
-    const input = screen.getByPlaceholderText(/bairro/i) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/Centro, Boa Vista/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Centro Cívico' } });
 
     const last = patch.mock.calls.at(-1)?.[0];
@@ -106,7 +106,7 @@ describe('loc-persist · bairroSource e precise', () => {
       { ...initialBetState, city: 'Curitiba', state: 'PR', neighborhood: 'X', neighborhood_source: 'user' },
       patch,
     );
-    const input = screen.getByPlaceholderText(/bairro/i) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/Centro, Boa Vista/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: '' } });
     const last = patch.mock.calls.at(-1)?.[0];
     expect(last).toMatchObject({ neighborhood: '', neighborhood_source: null });
