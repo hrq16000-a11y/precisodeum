@@ -2084,6 +2084,12 @@ const ProviderProfile = () => {
                     onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
                     className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none resize-none transition-all`} />
                 </div>
+                <ContactWindowPicker
+                  value={preferredWindow}
+                  onChange={setPreferredWindow}
+                  providerHours={normalizeContactHours((provider as any)?.contact_hours)}
+                  helperText="Ajuda o profissional a te ligar na hora certa."
+                />
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button type="submit" variant="accent" className="w-full gap-2 shadow-lg" style={accentBg ? { backgroundColor: accentBg } : undefined}>
                     <Send className="h-4 w-4" /> Enviar Solicitação
