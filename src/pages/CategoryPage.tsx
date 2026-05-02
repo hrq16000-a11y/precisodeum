@@ -132,7 +132,7 @@ const CategoryPage = () => {
   const seoCount = seoEligibleProviders.length || allProviders.length;
   const dynamicDescription = category
     ? (cityForSeo
-        ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${seoCount} prestadores com cidade validada e perfil completo. Orçamento grátis pelo WhatsApp.`
+        ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${seoCount} prestadores com cidade validada e perfil completo. Contato direto pelo WhatsApp.`
         : `Encontre os melhores profissionais de ${category.name} no Brasil. ${seoCount} prestadores com perfil completo e cidade validada.`)
     : 'Encontre profissionais por categoria.';
 
