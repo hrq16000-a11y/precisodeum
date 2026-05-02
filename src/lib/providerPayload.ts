@@ -256,3 +256,27 @@ export const PROVIDER_VALIDATION_MESSAGES: Record<ProviderValidationIssue, strin
   missing_full_name: 'Informe seu nome completo antes de continuar.',
   missing_whatsapp: 'WhatsApp válido é obrigatório (com DDD).',
 };
+
+/**
+ * Mapeia a origem da localização (front-end) para os valores aceitos
+ * no CHECK constraint `providers_geo_source_check`:
+ *   'unknown' | 'gps' | 'city_center' | 'address_geocode'
+ *   | 'gps_plus_city_center' | 'gps_plus_address_geocode'
+ *
+ * Sem esse mapeamento o upsert falha com erro de constraint quando o
+ * front envia 'cep' / 'manual' / 'ip' diretamente.
+ */
+export type FrontLocationSource = 'gps' | 'cep' | 'manual' | 'ip' | null | undefined;
+export type DbGeoSource =
+  | 'gps' | 'city_center' | 'address_geocode' | 'unknown'
+  | 'gps_plus_city_center' | 'gps_plus_address_geocode';
+
+export function mapLocationSourceToGeoSource(src: FrontLocationSource): DbGeoSource {
+  switch (src) {
+    case 'gps': return 'gps';
+    case 'cep':
+    case 'manual': return 'address_geocode';
+    case 'ip': return 'city_center';
+    default: return 'unknown';
+  }
+}
