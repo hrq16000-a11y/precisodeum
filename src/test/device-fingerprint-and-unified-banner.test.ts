@@ -86,7 +86,7 @@ describe("LoginPage · encaminha device_fingerprint para check_registration_bloc
   });
 
   it("humaniza o vetor 'device' como 'este dispositivo'", () => {
-    expect(loginPage).toMatch(/matched_via\s*===\s*["']device["']/);
+    expect(loginPage).toMatch(/matchedVia\s*===\s*["']device["']/);
     expect(loginPage).toMatch(/este dispositivo/);
   });
 });
