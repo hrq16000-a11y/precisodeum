@@ -46,7 +46,7 @@ interface Report {
 }
 
 export default function AdminSitemapAuditPage() {
-  useSeoHead({ title: 'Auditoria Sitemap Auditoria SEO — Admin Robots — Admin', description: 'Auditoria de sitemap.xml e robots.txt.' });
+  useSeoHead({ title: 'Auditoria Sitemap Auditoria SEO — Admin Robots — Admin', description: 'Auditoria de sitemap.xml e robots.txt.', noindex: true });
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
