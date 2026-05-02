@@ -52,18 +52,33 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
   const [saving, setSaving] = useState(false);
   const [providerId, setProviderId] = useState<string | null>(provider?.id ?? null);
   const [expandedAlbumId, setExpandedAlbumId] = useState<string | null>(null);
+  const [providerLoadError, setProviderLoadError] = useState<string | null>(null);
 
   // Garante providerId mesmo se o context ainda não tiver carregado
   useEffect(() => {
     if (providerId || !user?.id) return;
     let active = true;
     (async () => {
-      const { data } = await supabase
-        .from('providers')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (active && data?.id) setProviderId(data.id);
+      try {
+        const { data, error } = await supabase
+          .from('providers')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (!active) return;
+        if (error) {
+          setProviderLoadError('Não conseguimos carregar seu perfil agora.');
+          return;
+        }
+        if (data?.id) {
+          setProviderId(data.id);
+          setProviderLoadError(null);
+        } else {
+          setProviderLoadError('Perfil ainda não disponível — finalize as etapas anteriores.');
+        }
+      } catch {
+        if (active) setProviderLoadError('Falha de rede ao carregar perfil. Verifique a conexão.');
+      }
     })();
     return () => { active = false; };
   }, [providerId, user?.id]);
