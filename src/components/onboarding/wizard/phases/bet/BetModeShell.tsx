@@ -26,6 +26,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload, mapLocationSourceToGeoSource } from '@/lib/providerPayload';
+import { parseProviderIntegrityError, dispatchProviderIntegrityFocus } from '@/lib/providerIntegrityError';
 import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { betDraftPayloadSchema, providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
@@ -602,35 +603,24 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
             .from('providers').upsert(providerPayload, { onConflict: 'user_id' });
           if (error) {
             // Observabilidade: registra o motivo REAL do upsert antes do fallback.
-            // Sem isso, o usuário só vê "erro genérico" e perdemos a constraint culpada.
             console.warn('[BetModeShell] providers.upsert falhou — caindo para insert puro', {
               code: (error as any).code,
               message: (error as any).message,
               details: (error as any).details,
               hint: (error as any).hint,
             });
-            // Trigger 22023 (guard_provider_activation) — feedback inteligente.
-            // Os RAISE EXCEPTION usam ERRCODE='22023' e mensagens
-            // PROVIDER_INCOMPLETE_NEIGHBORHOOD / PROVIDER_INCOMPLETE_CITY /
-            // PROVIDER_INCOMPLETE_COORDS.
-            const errCode = (error as any).code as string | undefined;
-            const errMsg = String((error as any).message || '');
-            if (errCode === '22023' || /PROVIDER_INCOMPLETE_/i.test(errMsg)) {
-              if (/NEIGHBORHOOD/i.test(errMsg)) {
-                toast.error('Quase lá!', {
-                  description: 'Precisamos que você confirme o Bairro para ativar seu perfil no mapa.',
-                });
-                try { window.dispatchEvent(new CustomEvent('wizard:focus-neighborhood')); } catch { /* noop */ }
-              } else if (/COORDS|LAT/i.test(errMsg)) {
-                toast.error('Localização incompleta', {
-                  description: 'Não conseguimos detectar seu GPS. Toque em "Usar GPS preciso" e confirme.',
-                });
-              } else {
-                toast.error('Cidade-base obrigatória', {
-                  description: 'Confirme sua cidade-base para finalizar o cadastro.',
-                });
-              }
-              throw error; // Mantém o ciclo de erro normal — sem fallback insert.
+            // Trigger 22023 (guard_provider_activation) — feedback inteligente
+            // via parser único `parseProviderIntegrityError`. Sem regex inline.
+            const parsed = parseProviderIntegrityError(error);
+            if (parsed.matched) {
+              toast.error(parsed.title, { description: parsed.description });
+              dispatchProviderIntegrityFocus(parsed);
+              try {
+                window.dispatchEvent(new CustomEvent('wizard:provider-integrity-error', {
+                  detail: parsed,
+                }));
+              } catch { /* noop */ }
+              throw error; // mantém o ciclo normal de erro — sem fallback insert.
             }
             logWizardError({
               phase: 'phase1_contact',
