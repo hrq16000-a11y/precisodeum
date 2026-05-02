@@ -70,6 +70,11 @@ import {
   prevRenderableReviewPhase,
 } from './wizardReviewSteps';
 import { useReviewAnchor, resolveUnifiedPhaseLabel } from './useReviewAnchor';
+import {
+  readPersistedReviewPhase,
+  useReviewPhasePersistence,
+  clearPersistedReviewPhase,
+} from './useReviewPhasePersistence';
 import type { BetState } from './phases/bet/types';
 
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
@@ -251,8 +256,17 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       const serviceSeed = bootstrap?.service ?? currentState.service;
 
       resumeBootstrapRef.current = true;
+      // Em revisão, preserva a última fase renderizável visitada após
+      // refresh / volta de rota — `?section=` na URL ainda tem prioridade
+      // (deep-link explícito do Dashboard Assistant). Isso evita que o
+      // contador X/19 "salte" para 1 quando o usuário recarrega no meio
+      // da régua.
+      const explicitSection = reviewSection ?? getOnboardingReviewSection(window.location.search);
+      const persistedReviewPhase = isReview ? readPersistedReviewPhase(true) : null;
       const resolvedReviewPhase: UnifiedPhase | null = isReview
-        ? resolveReviewStartPhase(reviewSection ?? getOnboardingReviewSection(window.location.search))
+        ? (explicitSection
+            ? resolveReviewStartPhase(explicitSection)
+            : (persistedReviewPhase ?? resolveReviewStartPhase(null)))
         : null;
 
       // Em revisão abrindo numa fase de TRIAGEM (Steps 1–6), o BetModeShell
@@ -474,6 +488,9 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   // emite telemetria `review_anchor_used` para auditoria de UX.
   const { anchorPhase: reviewAnchorPhase, anchorIndex: reviewAnchorIndex, isAnchored: reviewIsAnchored } =
     useReviewAnchor(state.phase, isReview);
+  // Persiste a última fase renderizável (sessionStorage) — sobrevive a
+  // refresh e mudanças de rota, prevenindo saltos no contador X/19.
+  useReviewPhasePersistence(state.phase, isReview);
   const phaseIdx = isReview ? reviewAnchorIndex : unifiedPhaseIndex(state.phase);
   const hudPoints = realPoints;
   const hudTotal = isReview ? REVIEW_TOTAL_STEPS : UNIFIED_VISIBLE_PHASES;
@@ -509,6 +526,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     clearOnboardingV2Draft();
     clearSessionTouched();
     clearBetDraft();
+    clearPersistedReviewPhase();
 
     if (user?.id) {
       void clearRemoteDraft(user.id);

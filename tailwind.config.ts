@@ -200,6 +200,11 @@ export default {
         "shimmer": {
           "100%": { transform: "translateX(100%)" },
         },
+        "wizard-shimmer": {
+          "0%": { transform: "translateX(-100%)", opacity: "0" },
+          "20%": { opacity: "1" },
+          "100%": { transform: "translateX(100%)", opacity: "0" },
+        },
         "online-pulse": {
           "0%": { transform: "scale(0.85)", opacity: "0.55" },
           "70%": { transform: "scale(1.6)", opacity: "0" },
@@ -224,6 +229,7 @@ export default {
         "gradient-shift": "gradient-shift 6s ease infinite",
         "online-pulse": "online-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "online-breath": "online-breath 2.4s ease-in-out infinite",
+        "wizard-shimmer": "wizard-shimmer 240ms ease-out 1",
       },
     },
   },
