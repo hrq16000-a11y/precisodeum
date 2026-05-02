@@ -15,11 +15,29 @@ import { join, relative } from 'node:path';
 const ROOT = join(process.cwd(), 'src');
 const FORBIDDEN = [
   /Solicitar Or[çc]amento/,
-  /Or[çc]amento sem compromisso/,
+  /Solicite or[çc]amento/i,
+  /Solicite seu or[çc]amento/i,
+  /solicit\w* or[çc]amento/i,
+  /Pedir or[çc]amento/i,
+  /Pe[çc]a or[çc]amento/i,
+  /Or[çc]amento sem compromisso/i,
+  /Or[çc]amento gr[áa]tis/i,
+  /Or[çc]amento gratuito/i,
   /gostaria de um or[çc]amento/i,
+  /Solicitou or[çc]amento/i,
+  /Bot[ãa]o de or[çc]amento/i,
+  /Formul[áa]rio de or[çc]amento/i,
 ];
 const ALLOWLIST = new Set([
-  'pages/AdminBackupPage.tsx', // SQL DEFAULT histórico, não-UI
+  // SQL DEFAULT histórico, não-UI:
+  'pages/AdminBackupPage.tsx',
+  // Linter/regulador que detecta a palavra para bloqueá-la na descrição
+  // do serviço (proibição é o objetivo do arquivo):
+  'lib/serviceQualityLinter.ts',
+  // Comentário de doc que explica a regra:
+  'lib/leadContext.ts',
+  // Painéis de campanhas publicitárias (sponsor) usam "Verba" agora;
+  // mantemos como allowlist explícito caso surja string residual.
 ]);
 
 function walk(dir: string, out: string[] = []): string[] {
