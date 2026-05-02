@@ -198,18 +198,47 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
           <span className="text-xs font-medium text-muted-foreground">Álbuns criados</span>
           <span className="text-xs font-bold">{albums.length} / {MAX_ALBUMS}</span>
         </div>
-        {providerLoadError && (
+        {providerLoading && !providerError && (
+          <div
+            data-testid="step21-provider-loading"
+            className="mt-2 flex items-center gap-2 rounded border border-border bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground"
+            aria-live="polite"
+          >
+            <RefreshCw className="h-3 w-3 animate-spin" aria-hidden />
+            Carregando seu perfil…
+          </div>
+        )}
+        {providerError && (
           <div
             role="alert"
             data-testid="step21-provider-error"
-            className="mt-2 rounded border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-xs text-destructive"
+            data-error-code={providerError.code}
+            className="mt-2 space-y-1 rounded border border-destructive/40 bg-destructive/10 px-2 py-2 text-xs text-destructive"
           >
-            {providerLoadError}
+            <p className="flex items-center gap-1.5 font-medium">
+              <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+              {providerError.message}
+            </p>
+            <p className="text-[11px] text-destructive/80">{providerError.hint}</p>
+            {(providerError.code === 'network' || providerError.code === 'query' || providerError.code === 'rls') && (
+              <button
+                type="button"
+                data-testid="step21-provider-retry"
+                onClick={retryProviderLoad}
+                disabled={providerLoading}
+                className="mt-1 inline-flex items-center gap-1 rounded border border-destructive/40 bg-background px-2 py-1 text-[11px] font-medium text-destructive transition hover:bg-destructive/10 disabled:opacity-60"
+              >
+                <RefreshCw className={`h-3 w-3 ${providerLoading ? 'animate-spin' : ''}`} aria-hidden />
+                Tentar novamente
+              </button>
+            )}
           </div>
         )}
         {loading ? (
-          <p className="mt-2 text-xs text-muted-foreground">Carregando…</p>
+          <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">Carregando álbuns…</p>
         ) : albums.length === 0 ? (
+          <p className="mt-2 text-xs text-muted-foreground">Nenhum álbum ainda — crie o primeiro abaixo.</p>
+        ) : (
           <p className="mt-2 text-xs text-muted-foreground">Nenhum álbum ainda — crie o primeiro abaixo.</p>
         ) : (
           <ul className="mt-2 divide-y divide-border">
