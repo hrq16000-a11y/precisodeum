@@ -5,6 +5,7 @@ import AuthPageShell from '@/components/auth/AuthPageShell';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { buildLoginUrl, sanitizeNextPath } from '@/lib/authRedirect';
+import PasswordInput from '@/components/auth/PasswordInput';
 
 const ResetPasswordPage = () => {
   const [password, setPassword] = useState('');
@@ -106,14 +107,24 @@ const ResetPasswordPage = () => {
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Nova senha</label>
-                  <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                  <PasswordInput
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                    autoComplete="new-password"
+                    showRules
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">Confirmar senha</label>
-                  <input type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                  <PasswordInput
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                  />
                 </div>
                 <Button type="submit" variant="accent" className="w-full" disabled={loading}>
                   {loading ? 'Salvando...' : 'Salvar nova senha'}
