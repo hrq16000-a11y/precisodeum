@@ -333,11 +333,12 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
       <ul className="divide-y divide-border rounded-lg border border-border bg-card">
         {items.map((it) => {
           const Icon = it.icon;
+          const showActions = it.actions.length > 0;
           return (
             <li
               key={it.key}
               data-testid={`review-row-${it.key}`}
-              className="flex items-center gap-3 p-3"
+              className="flex items-start gap-3 p-3"
             >
               <div
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
@@ -348,14 +349,27 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground">{it.label}</p>
-                <p className="truncate text-xs text-muted-foreground">{it.detail}</p>
+                <p className="text-xs text-muted-foreground">{it.detail}</p>
+                {showActions && (
+                  <ul
+                    data-testid={`review-actions-${it.key}`}
+                    className="mt-1.5 space-y-0.5 text-[11px] leading-snug text-amber-800"
+                  >
+                    {it.actions.map((a, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span aria-hidden className="mt-[3px] inline-block h-1 w-1 shrink-0 rounded-full bg-amber-600" />
+                        <span>{a}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => onEdit(it.key)}
-                className="gap-1"
+                className="shrink-0 gap-1"
                 aria-label={`Editar ${it.label}`}
               >
                 <Pencil className="h-3.5 w-3.5" /> Editar
