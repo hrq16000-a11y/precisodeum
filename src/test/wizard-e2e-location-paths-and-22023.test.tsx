@@ -396,3 +396,38 @@ describe('Trigger 22023 — variantes de PROVIDER_INCOMPLETE_*', () => {
     expect(screen.queryByTestId('provider-integrity-error-card')).toBeNull();
   });
 });
+
+// ── 4) Banner explicativo de fallback IP ─────────────────────────────────────
+describe('Banner de fallback IP — explica o que aconteceu e o que revisar', () => {
+  it('aparece quando location_source="ip" e descreve Cidade-base + Bairro', async () => {
+    renderWith({ location_source: 'ip' });
+    const notice = await screen.findByTestId('ip-fallback-notice');
+    const text = notice.textContent || '';
+    expect(text).toMatch(/Localização aproximada pelo seu IP/i);
+    expect(text).toMatch(/Cidade-base/i);
+    expect(text).toMatch(/Bairro/i);
+    expect(text).toMatch(/GPS|navegador.*bloqueado/i);
+  });
+
+  it('NÃO aparece quando location_source="gps"', () => {
+    renderWith({ location_source: 'gps' });
+    expect(screen.queryByTestId('ip-fallback-notice')).toBeNull();
+  });
+
+  it('NÃO aparece quando location_source="cep"', () => {
+    renderWith({ location_source: 'cep' });
+    expect(screen.queryByTestId('ip-fallback-notice')).toBeNull();
+  });
+
+  it('NÃO aparece quando location_source="manual"', () => {
+    renderWith({ location_source: 'manual' });
+    expect(screen.queryByTestId('ip-fallback-notice')).toBeNull();
+  });
+
+  it('tem role="status" e aria-live="polite" para leitores de tela', async () => {
+    renderWith({ location_source: 'ip' });
+    const notice = await screen.findByTestId('ip-fallback-notice');
+    expect(notice.getAttribute('role')).toBe('status');
+    expect(notice.getAttribute('aria-live')).toBe('polite');
+  });
+});
