@@ -479,6 +479,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
             type="button"
             onClick={handleUseGps}
             disabled={requestingGps}
+            aria-label="Usar minha localização (GPS)"
             className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-orange-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-orange-300"
           >
             <LocateFixed className="h-3 w-3" />
