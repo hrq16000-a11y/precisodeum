@@ -361,7 +361,7 @@ const SearchPage = () => {
     ? `${query ? `Resultados para "${query}"` : `${seoCategory}`}${seoCity ? ` em ${seoCity}` : ''}${seoFilterSuffix}`
     : seoCity ? `Profissionais em ${seoCity}${seoFilterSuffix}` : 'Buscar Profissionais';
 
-  const seoDesc = `Encontre ${seoSubject}${seoCity ? ` em ${seoCity}` : ' no Brasil'}${seoFilterSuffix}. ${totalDisplay > 0 ? `${totalDisplay} ${totalDisplay === 1 ? 'profissional disponível' : 'profissionais disponíveis'}.` : ''} Compare avaliações e solicite orçamentos.`.trim();
+  const seoDesc = `Encontre ${seoSubject}${seoCity ? ` em ${seoCity}` : ' no Brasil'}${seoFilterSuffix}. ${totalDisplay > 0 ? `${totalDisplay} ${totalDisplay === 1 ? 'profissional disponível' : 'profissionais disponíveis'}.` : ''} Veja avaliações e fale direto com o profissional.`.trim();
 
   // Canonical estável: NÃO inclui `page` nem `disponivel` (filtros voláteis/de UI).
   // Toda página paginada e qualquer recorte por disponibilidade aponta canonical
