@@ -100,6 +100,7 @@ import { nullifyEmpty } from './optionalPatch';
 import { playWizardTransition } from '@/lib/wizardTransition';
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
+import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
 import { markPatchTouched, clearSessionTouched } from './sessionTouched';
 import { pushReviewPhase, popReviewPhase, clearReviewHistory } from './reviewHistory';
 import {
@@ -1465,6 +1466,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
   };
 
+  // Contagem de fotos em tempo real para o checklist dinâmico do
+  // WizardEncouragement (phase2_service/details/photos). Atualiza via
+  // postgres_changes quando o usuário sobe/remove imagem em service_images.
+  const photoCount = useServicePhotoCount(state.firstServiceId);
+
   const renderPhase = () => {
     switch (state.phase) {
       // phase1_action / phase1_kind / phase1_location / phase1_contact
@@ -1496,11 +1502,19 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               title="Você está a 3 passos do seu 1º anúncio"
               description="Cadastre o serviço, capriche nos detalhes e adicione fotos — clientes da sua região já estão buscando."
               items={[
-                { label: 'Serviço', done: !!(state.service.service_name || '').trim() },
-                { label: 'Detalhes', done: false },
-                { label: 'Fotos', done: false },
+                { label: `Serviço${(state.service.service_name || '').trim() ? ' — pronto' : ''}`, done: !!(state.service.service_name || '').trim() && (state.service.category_ids?.length ?? 0) > 0 },
+                { label: `Detalhes${(state.service.description || '').trim().length >= 10 ? ' — pronto' : ''}`, done: (state.service.description || '').trim().length >= 10 },
+                { label: `Fotos${photoCount > 0 ? ` — ${photoCount}/5` : ''}`, done: photoCount > 0 },
               ]}
-              nextStep="Escolha a categoria e dê um nome curto ao serviço."
+              nextStep={
+                !(state.service.category_ids?.length ?? 0)
+                  ? 'Escolha a categoria do serviço.'
+                  : !(state.service.service_name || '').trim()
+                    ? 'Dê um nome curto e claro ao serviço.'
+                    : (state.service.description || '').trim().length < 10
+                      ? 'Escreva uma descrição (mín. 10 caracteres).'
+                      : 'Tudo pronto — pode salvar e continuar.'
+              }
             />
           </>
         );
@@ -1542,11 +1556,17 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               title="Detalhes vendem mais"
               description="Anúncios com descrição e horário recebem até 3× mais contatos — você pode pular e voltar depois."
               items={[
-                { label: 'Serviço', done: !!(state.service.service_name || '').trim() },
-                { label: 'Detalhes', done: !!(state.service.description || '').trim() },
-                { label: 'Fotos', done: false },
+                { label: 'Serviço — pronto', done: !!(state.service.service_name || '').trim() },
+                { label: `Detalhes${(state.service.cities_served?.length ?? 0) > 0 && (state.service.working_hours || '').trim() ? ' — completo' : ''}`, done: (state.service.cities_served?.length ?? 0) > 0 && (state.service.working_hours || '').trim().length > 0 },
+                { label: `Fotos${photoCount > 0 ? ` — ${photoCount}/5` : ''}`, done: photoCount > 0 },
               ]}
-              nextStep="Capriche em 2-3 linhas sobre o que você entrega."
+              nextStep={
+                (state.service.cities_served?.length ?? 0) === 0
+                  ? 'Adicione pelo menos 1 cidade onde você atende.'
+                  : !(state.service.working_hours || '').trim()
+                    ? 'Defina seus horários de atendimento.'
+                    : 'Pode salvar e seguir para as fotos.'
+              }
             />
           </>
         );
@@ -1563,15 +1583,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             />
             <WizardEncouragement
-              tone="celebrate"
-              title="Última etapa do circuito principal"
+              tone={photoCount > 0 ? 'celebrate' : 'gentle'}
+              title={photoCount > 0 ? `Mandou bem! ${photoCount} foto${photoCount > 1 ? 's' : ''} no ar` : 'Última etapa do circuito principal'}
               description="Fotos bem feitas viram cliques. Mesmo 1 foto já libera o selo de anúncio completo."
               items={[
-                { label: 'Serviço', done: true },
-                { label: 'Detalhes', done: !!(state.service.description || '').trim() },
-                { label: 'Fotos', done: false },
+                { label: 'Serviço — pronto', done: true },
+                { label: 'Detalhes — pronto', done: !!(state.service.description || '').trim() },
+                { label: `Fotos — ${photoCount}/5`, done: photoCount > 0 },
               ]}
-              nextStep="Suba pelo menos 1 foto ou pule por enquanto — você pode voltar depois."
+              nextStep={
+                photoCount === 0
+                  ? 'Suba pelo menos 1 foto ou pule por enquanto — você pode voltar depois.'
+                  : photoCount < 3
+                    ? 'Adicione mais fotos para destacar o anúncio (até 5).'
+                    : 'Tudo pronto! Pode concluir e celebrar.'
+              }
             />
           </>
         );
