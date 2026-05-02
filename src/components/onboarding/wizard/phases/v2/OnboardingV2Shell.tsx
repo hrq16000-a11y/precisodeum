@@ -661,11 +661,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     if (editMode) pushReviewPhase(state.phase);
   }, [state.phase, onPhaseChange, editMode]);
 
-  useEffect(() => {
-    if (state.phase === 'phase2_photos' && (!state.firstServiceId || !user?.id)) {
-      dispatch({ type: 'NEXT' });
-    }
-  }, [state.phase, state.firstServiceId, user?.id]);
+  // Antes: auto-NEXT silencioso quando faltava firstServiceId/user — isso
+  // levava à tela em branco e mensagem genérica de "algo está errado". Agora
+  // o card abaixo (case 'phase2_photos') exibe diagnóstico específico com
+  // botões de recuperação. NÃO pulamos automaticamente.
 
   useEffect(() => {
     if (state.phase !== 'done' || deferCompletionToParent) return;
