@@ -1724,10 +1724,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                   state: state.profile.state,
                   latitude: (state.profile as any).latitude ?? null,
                   longitude: (state.profile as any).longitude ?? null,
-                  accuracy_m: (state.profile as any).accuracy_m ?? null,
-                  velocity_mps: (state.profile as any).velocity_mps ?? null,
+                  accuracy_m: (state.profile as any).accuracy_m ?? readAccuracyMeters(),
+                  velocity_mps: (state.profile as any).velocity_mps ?? readVelocityMps(),
                   terms_accepted: true, // clique Finalizar = aceite explícito dos Termos
-                  terms_version: 'v1-2026-05',
+                  terms_version: TERMS_VERSION,
                   origin_summary: {
                     flow: 'onboarding_v2',
                     account_type: state.profile.kind,
