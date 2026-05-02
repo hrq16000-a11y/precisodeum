@@ -200,6 +200,11 @@ export default {
         "shimmer": {
           "100%": { transform: "translateX(100%)" },
         },
+        "wizard-shimmer": {
+          "0%": { transform: "translateX(-100%)", opacity: "0" },
+          "20%": { opacity: "1" },
+          "100%": { transform: "translateX(100%)", opacity: "0" },
+        },
         "online-pulse": {
           "0%": { transform: "scale(0.85)", opacity: "0.55" },
           "70%": { transform: "scale(1.6)", opacity: "0" },
