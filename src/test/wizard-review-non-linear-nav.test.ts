@@ -15,13 +15,14 @@ import { describe, it, expect } from 'vitest';
 import { getOnboardingReviewSection } from '@/lib/onboardingAccess';
 import {
   REVIEW_PHASE_ORDER,
+  prevRenderableReviewPhase,
   unifiedPhaseIndex,
 } from '@/components/onboarding/wizard/wizardReducer';
 
-// Helper local que espelha o usado no WizardShell em modo revisão.
+// Helper espelhado no WizardShell em modo revisão. Pula fases-fantasma
+// (main_action/kind/location/contact) que existem só para paridade X/19.
 function prevReview(phase: string): string {
-  const i = REVIEW_PHASE_ORDER.indexOf(phase as any);
-  return i <= 0 ? phase : REVIEW_PHASE_ORDER[i - 1];
+  return prevRenderableReviewPhase(phase as any);
 }
 
 describe('Wizard review · navegação não-linear', () => {
