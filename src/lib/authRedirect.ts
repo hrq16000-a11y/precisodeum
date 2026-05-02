@@ -1,3 +1,5 @@
+import { isValidRoute } from "@/lib/routeValidator";
+
 export const DEFAULT_AUTH_NEXT = '/dashboard';
 
 export const sanitizeNextPath = (
@@ -6,6 +8,9 @@ export const sanitizeNextPath = (
 ): string => {
   if (!candidate || typeof candidate !== 'string') return fallback;
   if (!candidate.startsWith('/') || candidate.startsWith('//')) return fallback;
+  // Garante que o destino é uma rota declarada no router — caso contrário,
+  // cai no fallback para evitar mandar o usuário para uma página 404.
+  if (!isValidRoute(candidate)) return fallback;
   return candidate;
 };
 

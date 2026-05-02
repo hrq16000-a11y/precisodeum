@@ -7769,6 +7769,25 @@ export type Database = {
         Returns: undefined
       }
       admin_ban_suspicious: { Args: { _user_ids: string[] }; Returns: number }
+      admin_broken_links_by_referrer: {
+        Args: { _days?: number }
+        Returns: {
+          distinct_paths: number
+          hits: number
+          last_seen: string
+          referrer: string
+        }[]
+      }
+      admin_broken_links_stats: {
+        Args: { _days?: number }
+        Returns: {
+          distinct_users: number
+          hits: number
+          last_seen: string
+          path: string
+          top_referrer: string
+        }[]
+      }
       admin_bulk_fix_provider_neighborhood: {
         Args: {
           _new_neighborhood: string
