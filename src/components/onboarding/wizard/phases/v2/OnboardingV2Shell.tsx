@@ -265,6 +265,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   };
 
   const [saving, setSaving] = useState(false);
+  // Última falha real de persistPhase1 — usada para mostrar mensagem específica
+  // (em vez do toast genérico que mascarava a causa real do bloqueio).
+  const [lastPersistError, setLastPersistError] = useState<null | {
+    message: string;
+    code?: string | null;
+    at: number;
+  }>(null);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
   // Timer rastreado do hint "rascunho restaurado" (caminho remoto, fora de useEffect).
   // Mantido em ref para garantir cleanup no unmount e evitar setState zumbi.
@@ -750,6 +757,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       return false;
     }
     setSaving(true);
+    setLastPersistError(null);
     try {
       const p = state.profile;
       const contactValidation = getOnboardingContactValidation({
@@ -888,9 +896,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         variant: 'v2',
         context: { action: 'persist_phase1', has_provider_id: !!state.providerId, flow: isCompany ? 'company' : 'default' },
       });
+      const errMsg = (e?.message || 'Falha desconhecida ao salvar').toString();
+      const errCode = e?.code ? String(e.code) : null;
+      setLastPersistError({ message: errMsg, code: errCode, at: Date.now() });
       toast.error('Não consegui salvar agora', {
-        description: (e?.message || 'Tente novamente em instantes.').slice(0, 160),
+        description: errMsg.slice(0, 200) + (errCode ? ` [cod: ${errCode}]` : ''),
         action: { label: 'Tentar novamente', onClick: () => { void persistPhase1(); } },
+        duration: 10000,
       });
       return false;
     } finally {
@@ -933,7 +945,53 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     if (!user) return false;
     let workingProviderId = await ensureProviderId();
     if (!workingProviderId) {
-      toast.error('Não conseguimos preparar seu perfil agora. Volte um passo e tente novamente.');
+      // Diagnóstico cirúrgico: em vez de "Volte um passo" genérico, lista o
+      // que realmente impediu a criação do provider (campos faltando OU erro
+      // técnico capturado em persistPhase1) e oferece CTA real de retry.
+      const p = state.profile;
+      const missing: string[] = [];
+      if (!(p.full_name || '').trim()) missing.push('nome completo');
+      if ((p.whatsapp || '').replace(/\D/g, '').length < 10) missing.push('WhatsApp com DDD');
+      if (!(p.city || '').trim()) missing.push('cidade');
+      if (!(p.state || '').trim()) missing.push('estado (UF)');
+
+      const techMsg = lastPersistError?.message;
+      const techCode = lastPersistError?.code;
+      let description: string;
+      if (missing.length > 0) {
+        description = `Falta preencher: ${missing.join(', ')}. Toque em "Voltar" e complete esses campos.`;
+      } else if (techMsg) {
+        description = `Erro técnico: ${techMsg.slice(0, 180)}${techCode ? ` [cod: ${techCode}]` : ''}. Toque em "Tentar novamente".`;
+      } else {
+        description = 'Sua conexão pode ter caído. Toque em "Tentar novamente" — se persistir, reporte ao suporte.';
+      }
+
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: {
+          code: 'persist_first_service:no_provider',
+          missing_fields: missing,
+          tech_message: techMsg || null,
+          tech_code: techCode || null,
+        },
+      });
+
+      toast.error('Não conseguimos preparar seu perfil agora', {
+        description,
+        action: {
+          label: missing.length > 0 ? 'Voltar e completar' : 'Tentar novamente',
+          onClick: () => {
+            if (missing.length > 0) {
+              window.dispatchEvent(new CustomEvent('wizard:request-back'));
+            } else {
+              void persistFirstService();
+            }
+          },
+        },
+        duration: 12000,
+      });
       return false;
     }
     setSaving(true);
