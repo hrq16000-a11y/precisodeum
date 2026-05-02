@@ -173,6 +173,10 @@ const DashboardPrivacyPage = () => {
             </div>
           </section>
 
+          <div className="mt-4">
+            <RegistrationDataSummary userId={user?.id} />
+          </div>
+
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <PrivacyLink
               to="/privacidade"
