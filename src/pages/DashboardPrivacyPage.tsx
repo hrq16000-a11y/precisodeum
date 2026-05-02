@@ -206,10 +206,28 @@ const DashboardPrivacyPage = () => {
             <PrivacyLink
               to="/excluir-conta"
               icon={Trash2}
-              title="Excluir minha conta"
-              description="Solicite a exclusão definitiva da sua conta e dados."
+              title="Excluir minha conta (fluxo padrão)"
+              description="Solicitação revisada por nossa equipe em até 30 dias."
               destructive
             />
+          </div>
+
+          <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+            <p className="text-sm font-semibold text-destructive">Excluir agora (1 clique)</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Desativa imediatamente, arquiva seus dados em "cold storage" por 90 dias e bloqueia
+              recadastro com mesmo e-mail, WhatsApp ou dispositivo por 180 dias.
+            </p>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="mt-3"
+              onClick={handleSelfDelete}
+              disabled={deleting || !user}
+            >
+              {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processando…</> : <>Excluir agora</>}
+            </Button>
           </div>
 
           <p className="mt-6 text-xs text-muted-foreground">
