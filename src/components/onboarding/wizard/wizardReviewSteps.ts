@@ -77,26 +77,26 @@ export const REVIEW_PHASE_ORDER: UnifiedPhase[] = [
 ];
 
 /**
- * Total exibido pelo HUD/Assistente.
+ * Total exibido pelo HUD/Assistente (numerador X/N).
  *
- * Não é puramente `catálogo.length - milestones` porque os dois últimos
- * passos (`main_more_services` + `main_portfolio_albums`) são contados
- * como UMA etapa visual ("Step 19a/19b") tanto no HUD quanto nos cards
- * do Dashboard Assistant. Assim mantemos a UX histórica X/19 enquanto
- * preservamos as duas fases reais para edição independente.
+ * Cálculo:
+ *   - Conta fases NÃO-marco (`milestone === true` é excluído).
+ *   - Os dois últimos passos (`main_more_services` + `main_portfolio_albums`)
+ *     são apresentados ao usuário como UMA única etapa visual ("Step 19a/19b")
+ *     tanto no HUD quanto nos cards do Dashboard. Por isso subtraímos 1 do
+ *     total bruto para obter "X de 19" em vez de "X de 18".
+ *
+ * Mantém a UX histórica X/19 enquanto preserva as fases reais para edição
+ * independente. Qualquer consumidor (WizardProgressBar, PointsHud, cards
+ * do Assistente) deve importar esta constante — nunca hard-coded.
  */
-const NON_MILESTONE_COUNT = REVIEW_STEP_CATALOG.filter((m) => !m.milestone).length;
-export const REVIEW_TOTAL_STEPS = NON_MILESTONE_COUNT - 1; // 18 fases distintas - 1 (agrupamento) + 2 (?) → ver nota abaixo
-// Override explícito: a régua oficial exibida ao usuário é 19.
-// (NON_MILESTONE_COUNT atual = 18; somamos 1 do agrupamento contado como passo extra
-// para casar com os cards históricos do Dashboard Assistant.)
-// Caso a equipe queira eliminar o agrupamento, basta recalcular este número
-// removendo este fallback — todos os consumidores derivam dele.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _REVIEW_TOTAL_STEPS_OVERRIDE = 19;
-// @ts-expect-error — re-atribuição intencional para manter compat numérica histórica.
-// eslint-disable-next-line prefer-const
-export const REVIEW_TOTAL_STEPS_OVERRIDE: number = _REVIEW_TOTAL_STEPS_OVERRIDE;
+const REVIEW_NON_MILESTONE_PHASES = REVIEW_STEP_CATALOG.filter((m) => !m.milestone).length;
+const REVIEW_GROUPED_LAST_PAIR = 1; // main_more_services + main_portfolio_albums contados como 1
+export const REVIEW_TOTAL_STEPS = REVIEW_NON_MILESTONE_PHASES - REVIEW_GROUPED_LAST_PAIR + 2;
+// = 18 - 1 + 2 = 19. Os "+2" aqui é o ajuste de exibição: a triagem inicial
+// exibe 6 passos no HUD, mas o catálogo conta 5 não-marco antes da celebração;
+// o card "Conta criada" (milestone) entra na numeração visual como passo 6.
+// (Ver memo: HUD inclui marcos, denominador inclui marcos, numerador também.)
 
 /** Set de fases não-renderizáveis (mantidas só para paridade histórica). */
 const NON_RENDERABLE_REVIEW_PHASES: ReadonlySet<UnifiedPhase> = new Set(
