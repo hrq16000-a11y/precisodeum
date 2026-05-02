@@ -111,13 +111,13 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
     try {
       const { data: provider, error: pErr } = await supabase
         .from('providers')
-        .select('id, business_name, cpf, cnpj, working_hours_struct, city')
+        .select('id, business_name, cpf, cnpj, working_hours_struct, city, service_area_cities, bio')
         .eq('user_id', user.id)
         .maybeSingle();
       if (pErr) throw pErr;
 
       let servicesCount = 0;
-      let hasPhotos = false;
+      let photoCount = 0;
       let albumsCount = 0;
       if (provider?.id) {
         const [{ count: sCount }, { data: services }, { count: aCount }] = await Promise.all([
@@ -137,26 +137,43 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
         ]);
         servicesCount = sCount ?? 0;
         albumsCount = aCount ?? 0;
-        hasPhotos = (services ?? []).some(
-          (s: any) => Array.isArray(s.gallery_urls) && s.gallery_urls.length > 0,
+        photoCount = (services ?? []).reduce(
+          (acc: number, s: any) =>
+            acc + (Array.isArray(s.gallery_urls) ? s.gallery_urls.length : 0),
+          0,
         );
       }
 
-      const wh = (provider as any)?.working_hours_struct;
+      const p = provider as any;
+      const wh = p?.working_hours_struct;
+      const cities = p?.service_area_cities;
       setSnap({
-        providerOk: Boolean(provider?.id && (provider as any)?.city),
+        providerOk: Boolean(provider?.id && p?.city),
         servicesCount,
-        hasPhotos,
+        photoCount,
+        hasPhotos: photoCount > 0,
         albumsCount,
-        hasDocument: Boolean((provider as any)?.cpf || (provider as any)?.cnpj),
+        hasDocument: Boolean(p?.cpf || p?.cnpj),
         hasWorkingHours: Boolean(wh && typeof wh === 'object' && Object.keys(wh).length > 0),
+        hasServiceArea: Array.isArray(cities) && cities.length > 0,
+        hasBio: Boolean((p?.bio || '').toString().trim().length >= 20),
+        source: 'remote',
       });
     } catch (e: any) {
-      setError(
-        e?.message?.includes('network') || e?.message?.includes('Failed to fetch')
-          ? 'Falha de rede ao carregar seu resumo. Verifique a conexão.'
-          : 'Não conseguimos carregar seu resumo agora.',
-      );
+      // Fallback de UX: tenta hidratar com o draft local antes de mostrar erro
+      // total. O usuário acabou de preencher tudo no wizard, então o draft
+      // costuma estar fresco e suficiente para orientar pendências.
+      const fallback = readLocalDraftSnapshot();
+      if (fallback) {
+        setSnap(fallback);
+        setError(null);
+      } else {
+        setError(
+          e?.message?.includes('network') || e?.message?.includes('Failed to fetch')
+            ? 'Falha de rede ao carregar seu resumo. Verifique a conexão.'
+            : 'Não conseguimos carregar seu resumo agora.',
+        );
+      }
     } finally {
       setLoading(false);
     }
