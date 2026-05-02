@@ -298,7 +298,7 @@ describe('Trigger 22023 — variantes de PROVIDER_INCOMPLETE_*', () => {
     );
   });
 
-  it('CTA coords aciona requestPreciseLocation (sem lançar)', async () => {
+  it('CTA coords chama requestPreciseLocation e dismissa o card', async () => {
     renderWith({ location_source: 'ip' });
     const parsed = parseProviderIntegrityError({
       code: '22023',
@@ -309,9 +309,54 @@ describe('Trigger 22023 — variantes de PROVIDER_INCOMPLETE_*', () => {
       new CustomEvent('wizard:provider-integrity-error', { detail: parsed }),
     );
 
-    const cta = await screen.findByTestId('provider-integrity-primary-cta');
-    expect(() => fireEvent.click(cta)).not.toThrow();
+    const card = await screen.findByTestId('provider-integrity-error-card');
+    expect(card.getAttribute('data-kind')).toBe('coords');
+
+    const cta = screen.getByTestId('provider-integrity-primary-cta');
+    expect(cta.textContent || '').toMatch(/Ativar GPS preciso/i);
+    expect(requestPreciseLocationMock).not.toHaveBeenCalled();
+
+    fireEvent.click(cta);
+
+    await waitFor(() => expect(requestPreciseLocationMock).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.queryByTestId('provider-integrity-error-card')).toBeNull(),
+    );
   });
+
+  it('CTA city faz scrollIntoView na pill de origem e dismissa o card', async () => {
+    renderWith({ location_source: 'ip' });
+    const parsed = parseProviderIntegrityError({
+      code: '22023',
+      message: 'PROVIDER_INCOMPLETE_CITY',
+    });
+    fireEvent(
+      window,
+      new CustomEvent('wizard:provider-integrity-error', { detail: parsed }),
+    );
+
+    const card = await screen.findByTestId('provider-integrity-error-card');
+    expect(card.getAttribute('data-kind')).toBe('city');
+
+    const cta = screen.getByTestId('provider-integrity-primary-cta');
+    expect(cta.textContent || '').toMatch(/Selecionar Cidade/i);
+
+    // Espia scrollIntoView da pill de origem (alvo do handler de kind=city).
+    const pill = screen.getByTestId('location-source-pill');
+    const scrollSpy = vi.fn();
+    pill.scrollIntoView = scrollSpy as unknown as Element['scrollIntoView'];
+
+    fireEvent.click(cta);
+
+    await waitFor(() => expect(scrollSpy).toHaveBeenCalled());
+    const callArg = scrollSpy.mock.calls[0]?.[0];
+    expect(callArg).toMatchObject({ block: 'center' });
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('provider-integrity-error-card')).toBeNull(),
+    );
+  });
+
 
   it('Botão Fechar dismissa em qualquer kind', async () => {
     for (const msg of [
