@@ -82,7 +82,7 @@ export const DIFFERENTIAL_TAGS = [
   { label: '💳 Aceito Cartão', value: 'Aceito pagamento em cartão de crédito e débito, além de Pix.' },
   { label: '✅ Garantia de Serviço', value: 'Todos os serviços possuem garantia por escrito.' },
   { label: '🚗 Atendo a Domicílio', value: 'Atendimento em domicílio sem custo adicional de deslocamento.' },
-  { label: '📋 Orçamento Grátis', value: 'Orçamento gratuito e sem compromisso. Entre em contato!' },
+  { label: 'Avaliação Técnica Grátis', value: 'Avaliação técnica gratuita e sem compromisso. Entre em contato!' },
   { label: '⭐ Profissional Certificado', value: 'Profissional com certificação e cursos de especialização na área.' },
   { label: '🛡️ NF e Contrato', value: 'Emissão de nota fiscal e contrato de serviço para sua segurança.' },
   { label: '⚡ Atendimento Rápido', value: 'Resposta rápida e atendimento no mesmo dia, sujeito a disponibilidade.' },
