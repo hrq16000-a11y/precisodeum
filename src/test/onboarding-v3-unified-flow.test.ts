@@ -188,9 +188,9 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
 });
 
 describe('wizardReducer — máquina linear unificada', () => {
-  it('possui 21 fases visíveis + done (CPF/CNPJ removido da triagem; coletado em main_document após 1º serviço)', () => {
-    expect(UNIFIED_VISIBLE_PHASES).toBe(21);
-    expect(UNIFIED_PHASE_ORDER).toHaveLength(22);
+  it('possui 17 fases visíveis + done (4 fases main_action/kind/location/contact expurgadas em mai/2026)', () => {
+    expect(UNIFIED_VISIBLE_PHASES).toBe(17);
+    expect(UNIFIED_PHASE_ORDER).toHaveLength(18);
     expect(UNIFIED_PHASE_ORDER[0]).toBe('triage_identity');
     // triage_pro_document está presente na triagem (CPF/CNPJ opcional, valida selo).
     expect(UNIFIED_PHASE_ORDER).toContain('triage_pro_document');
@@ -198,6 +198,11 @@ describe('wizardReducer — máquina linear unificada', () => {
     // Garante que extras de serviços e portfólio são as últimas antes do done
     expect(UNIFIED_PHASE_ORDER[UNIFIED_PHASE_ORDER.length - 3]).toBe('main_more_services');
     expect(UNIFIED_PHASE_ORDER[UNIFIED_PHASE_ORDER.length - 2]).toBe('main_portfolio_albums');
+    // As 4 fases expurgadas NÃO entram na régua de navegação (apenas no tipo, para compat).
+    expect(UNIFIED_PHASE_ORDER).not.toContain('main_action');
+    expect(UNIFIED_PHASE_ORDER).not.toContain('main_kind');
+    expect(UNIFIED_PHASE_ORDER).not.toContain('main_location');
+    expect(UNIFIED_PHASE_ORDER).not.toContain('main_contact');
   });
 
   it('NEXT_PHASE avança linearmente até done sem regredir', () => {
@@ -217,8 +222,9 @@ describe('wizardReducer — máquina linear unificada', () => {
     let s = initialWizardState;
     s = wizardReducer(s, { type: 'PREV_PHASE' });
     expect(s.phase).toBe('triage_identity');
+    // main_service é precedida diretamente por triage_celebration (4 fases removidas).
     s = wizardReducer({ ...s, phase: 'main_service' }, { type: 'PREV_PHASE' });
-    expect(s.phase).toBe('main_contact');
+    expect(s.phase).toBe('triage_celebration');
   });
 
   it('GO_TO_PHASE permite saltar (ex: pular 1º serviço para main_document)', () => {
@@ -240,6 +246,7 @@ describe('wizardReducer — máquina linear unificada', () => {
   it('helpers nextUnifiedPhase/prevUnifiedPhase respeitam limites', () => {
     expect(nextUnifiedPhase('done')).toBe('done');
     expect(prevUnifiedPhase('triage_identity')).toBe('triage_identity');
-    expect(nextUnifiedPhase('triage_celebration')).toBe('main_action');
+    // triage_celebration agora avança direto para main_service (4 fases removidas).
+    expect(nextUnifiedPhase('triage_celebration')).toBe('main_service');
   });
 });

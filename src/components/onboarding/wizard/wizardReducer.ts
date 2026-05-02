@@ -49,6 +49,11 @@ export type UnifiedPhase =
   | 'main_portfolio_albums'
   | 'done';
 
+// UNIFIED_PHASE_ORDER — régua oficial da jornada (sincronizada com REVIEW_PHASE_ORDER).
+// As fases main_action/main_kind/main_location/main_contact foram expurgadas em
+// mai/2026 (memória "Expurgo Phase1 V2") e NÃO renderizam UI; mantemos os tipos
+// no `UnifiedPhase` apenas para compat de telemetria histórica e telas legadas
+// (ex: DashboardAssistantPage), mas elas NÃO entram na régua de navegação.
 export const UNIFIED_PHASE_ORDER: UnifiedPhase[] = [
   'triage_identity',
   'triage_who',
@@ -57,10 +62,6 @@ export const UNIFIED_PHASE_ORDER: UnifiedPhase[] = [
   'triage_pro_document',
   'triage_pro_location',
   'triage_celebration',
-  'main_action',
-  'main_kind',
-  'main_location',
-  'main_contact',
   'main_service',
   'main_service_details',
   'main_photos',
