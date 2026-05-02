@@ -45,9 +45,11 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   const preferredUF = state.state || geo.state || '';
   const autoFilledRef = useRef(false);
   const cepLookupRef = useRef<string>('');
-  // [UX-merge] Prévia removida — cidade-base + bairro são o único ponto de
-  // edição. A confirmação é implícita: assim que houver cidade/UF válidos +
-  // fonte conhecida (gps/cep/manual/ip), o usuário pode finalizar.
+  // Auto-trigger do GPS uma única vez por montagem da fase. Se o usuário já
+  // tem GPS no state, ou se o navegador não suporta geolocation, não faz nada.
+  const gpsAutoTriggeredRef = useRef(false);
+  // Foco programático no input de Bairro quando ele está vazio após hidratação.
+  const neighborhoodInputRef = useRef<HTMLInputElement | null>(null);
 
   // Auto-sugestão (não-destrutiva): pré-preenche cidade/UF se vazios.
   // Bairro só auto-preenche se vier sanitizado (≠ cidade, não-regional).
