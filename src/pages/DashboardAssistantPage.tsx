@@ -40,51 +40,20 @@ import {
   type UnifiedPhase,
   type WizardState,
 } from '@/components/onboarding/wizard/wizardReducer';
+import {
+  REVIEW_STEP_CATALOG,
+  type ReviewStepMeta,
+} from '@/components/onboarding/wizard/wizardReviewSteps';
 import { isPhaseFullyCompleted } from '@/components/onboarding/wizard/wizardMode';
 import type { OnboardingReviewSection } from '@/lib/onboardingAccess';
 
 // ──────────────────────────────────────────────────────────────────────────
-// Catálogo de fases para a tela (rótulo, descrição, seção de revisão).
-// `section: null` ⇒ fase não tem rota de edição direta (ex.: celebrações,
-// triagem). Nesses casos o card aparece como "Concluída" sem CTA de editar.
+// Catálogo canônico de fases — vem de `wizardReviewSteps.ts` (fonte única
+// compartilhada com o HUD do Wizard). Qualquer alteração na ordem/rótulos
+// deve ser feita LÁ, não aqui.
 // ──────────────────────────────────────────────────────────────────────────
-type AssistantPhaseMeta = {
-  phase: UnifiedPhase;
-  title: string;
-  description: string;
-  /** Seção do wizard a abrir em modo review. Null = somente leitura. */
-  section: OnboardingReviewSection | null;
-  /** True quando a fase é apenas marco visual (celebração) — não conta na barra. */
-  milestone?: boolean;
-};
-
-const PHASE_CATALOG: AssistantPhaseMeta[] = [
-  { phase: 'triage_identity',     title: 'Identidade',                 description: 'Foto, nome e WhatsApp.',                              section: 'cadastro' },
-  { phase: 'triage_who',          title: 'Tipo de uso',                description: 'Cliente, profissional, empresa ou RH.',               section: 'cadastro' },
-  { phase: 'triage_client_city',  title: 'Cidade do cliente',          description: 'Onde você procura serviços.',                         section: null },
-  { phase: 'triage_pro_kind',     title: 'Tipo de profissional',       description: 'Autônomo ou empresa.',                                section: 'cadastro' },
-  { phase: 'triage_pro_document', title: 'Documento (CPF/CNPJ)',       description: 'Opcional — concede selo verificado.',                  section: 'dados' },
-  { phase: 'triage_pro_location', title: 'Cidade-base e bairro',       description: 'Onde sua empresa atende.',                            section: 'cadastro' },
-  { phase: 'triage_celebration',  title: 'Conta criada',               description: 'Marco de conclusão da triagem inicial.',              section: null, milestone: true },
-
-  { phase: 'main_action',         title: 'Próxima ação',               description: 'O que você quer fazer agora.',                        section: null },
-  { phase: 'main_kind',           title: 'Tipo de conta',              description: 'Pessoa Física ou Jurídica.',                          section: 'cadastro' },
-  { phase: 'main_location',       title: 'Localização do perfil',      description: 'Cidade e estado base do seu perfil.',                 section: 'cadastro' },
-  { phase: 'main_contact',        title: 'Contato',                    description: 'Nome completo e WhatsApp principal.',                 section: 'cadastro' },
-
-  { phase: 'main_service',        title: '1º serviço — categoria',     description: 'Qual categoria descreve seu trabalho.',               section: 'servicos' },
-  { phase: 'main_service_details', title: '1º serviço — detalhes',     description: 'Nome, descrição e cidades atendidas.',                section: 'servicos' },
-  { phase: 'main_photos',         title: 'Fotos do serviço',           description: 'Fotos que valorizam seu trabalho (opcional).',        section: 'portfolio' },
-  { phase: 'main_celebration',    title: 'Serviço publicado',          description: 'Marco de publicação do primeiro serviço.',            section: null, milestone: true },
-
-  { phase: 'main_document',       title: 'Documentos do perfil',       description: 'CPF/CNPJ e dados fiscais (opcional).',                section: 'dados' },
-  { phase: 'main_avatar',         title: 'Avatar',                     description: 'Sua foto de perfil pública.',                         section: 'cadastro' },
-  { phase: 'main_extras_a',       title: 'Bairro e bio',               description: 'Bairro de atuação e mini-currículo.',                 section: 'cadastro' },
-  { phase: 'main_extras_b',       title: 'Redes sociais',              description: 'Instagram, site, etc. (opcional).',                   section: 'url' },
-
-  { phase: 'main_more_services',  title: 'Mais serviços',              description: 'Adicione novos serviços ao seu perfil.',              section: 'servicos' },
-  { phase: 'main_portfolio_albums', title: 'Álbuns de portfólio',      description: 'Organize fotos por trabalho.',                        section: 'portfolio' },
-];
+type AssistantPhaseMeta = ReviewStepMeta;
+const PHASE_CATALOG: AssistantPhaseMeta[] = REVIEW_STEP_CATALOG;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Status derivation
