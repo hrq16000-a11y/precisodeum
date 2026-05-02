@@ -12,10 +12,23 @@ const NotFound = () => {
   useEffect(() => {
     console.warn("404 Error: User attempted to access non-existent route:", location.pathname);
 
-    // Telemetria fire-and-forget alinhada com ErrorPage
+    // Telemetria fire-and-forget — captura referrer interno (link quebrado
+    // dentro da própria plataforma) vs externo para priorizar correções.
     const path = location.pathname + location.search;
     const referrer = typeof document !== "undefined" ? document.referrer || null : null;
     const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : null;
+    let referrerKind: "internal" | "external" | "direct" = "direct";
+    if (referrer) {
+      try {
+        const refUrl = new URL(referrer);
+        referrerKind =
+          typeof window !== "undefined" && refUrl.host === window.location.host
+            ? "internal"
+            : "external";
+      } catch {
+        referrerKind = "external";
+      }
+    }
     (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -24,7 +37,7 @@ const NotFound = () => {
           code: 404,
           referrer,
           user_id: user?.id ?? null,
-          user_agent: userAgent,
+          user_agent: userAgent ? `${userAgent.slice(0, 240)} | kind:${referrerKind}` : `kind:${referrerKind}`,
         } as any);
       } catch (e) {
         console.debug("[NotFound] Failed to log event:", e);
