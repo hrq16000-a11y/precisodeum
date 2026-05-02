@@ -25,12 +25,13 @@ const MAX_ALBUMS = 5;
 interface Album { id: string; name: string; description: string | null; }
 
 interface Step21Props {
+  onBack?: () => void;
   onContinue: () => void;
   onSkip: () => void;
   onGoToPath?: (path: string) => Promise<void> | void;
 }
 
-const Step21_PortfolioAlbums = ({ onContinue, onSkip, onGoToPath }: Step21Props) => {
+const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step21Props) => {
   const navigate = useNavigate();
   const [navigating, setNavigating] = useState<string | null>(null);
   const goTo = useCallback(async (path: string) => {

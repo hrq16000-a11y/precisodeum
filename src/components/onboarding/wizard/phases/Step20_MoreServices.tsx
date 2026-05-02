@@ -25,12 +25,13 @@ import { subscribeDraftChange } from './v2/crossTabSync';
 const MAX_SERVICES = 5;
 
 interface Step20Props {
+  onBack?: () => void;
   onContinue: () => void;
   onSkip: () => void;
   onGoToPath?: (path: string) => Promise<void> | void;
 }
 
-const Step20_MoreServices = ({ onContinue, onSkip, onGoToPath }: Step20Props) => {
+const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20Props) => {
   const { user, provider } = useAuth();
   const navigate = useNavigate();
   const [navigating, setNavigating] = useState<string | null>(null);
