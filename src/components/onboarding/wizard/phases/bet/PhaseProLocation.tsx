@@ -109,7 +109,13 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   }
 
   function handleNeighborhood(e: React.ChangeEvent<HTMLInputElement>) {
-    patch({ neighborhood: e.target.value });
+    const value = e.target.value;
+    patch({
+      neighborhood: value,
+      // Edição manual sempre carimba 'user' assim que houver conteúdo;
+      // limpar o campo volta a fonte para null para o trigger DB cair em default.
+      neighborhood_source: value.trim().length > 0 ? 'user' : null,
+    });
   }
 
   async function applyCepSuggestion(cep: string) {
