@@ -153,7 +153,7 @@ const buildMapsEmbed = (parts: (string | null | undefined)[]): string => {
 export default function CompanyProfile() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { city: geoCity, state: geoState } = useGeoCity();
+  useGeoCity();
   const { requestWhatsApp } = useWhatsAppGate();
   const [leadDialogOpen, setLeadDialogOpen] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
@@ -246,7 +246,7 @@ export default function CompanyProfile() {
   });
 
   // Galeria — primeiras 9 fotos do portfólio (se houver). Falha silenciosa.
-  const { data: gallery } = useQuery({
+  const { data: gallery = [] } = useQuery({
     queryKey: ['company-gallery', company?.id],
     queryFn: async () => {
       if (!company?.id) return [];
@@ -736,21 +736,21 @@ export default function CompanyProfile() {
                     </a>
                   </Button>
                 )}
-                {company.social_links.website && (
+                {company.social_links?.website && (
                   <Button variant="outline" size="sm" asChild>
                     <a href={company.social_links.website} target="_blank" rel="noopener noreferrer">
                       <Globe className="mr-2 h-4 w-4" aria-hidden="true" /> Site
                     </a>
                   </Button>
                 )}
-                {company.social_links.instagram && (
+                {company.social_links?.instagram && (
                   <Button variant="outline" size="sm" asChild>
                     <a href={company.social_links.instagram} target="_blank" rel="noopener noreferrer">
                       <Instagram className="mr-2 h-4 w-4" aria-hidden="true" /> Instagram
                     </a>
                   </Button>
                 )}
-                {company.social_links.facebook && (
+                {company.social_links?.facebook && (
                   <Button variant="outline" size="sm" asChild>
                     <a href={company.social_links.facebook} target="_blank" rel="noopener noreferrer">
                       <Facebook className="mr-2 h-4 w-4" aria-hidden="true" /> Facebook
