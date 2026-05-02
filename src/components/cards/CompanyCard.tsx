@@ -83,63 +83,75 @@ const CompanyCard = memo(function CompanyCard({
   return (
     <article
       ref={impressionRef as any}
-      className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+      className="group relative flex h-full min-h-[248px] w-full min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card-hover"
       aria-label={`Empresa ${displayName}`}
     >
-      {/* Header — logo retangular */}
-      <Link
-        to={profileHref}
-        onClick={() => trackProfileClick(p.id, p.slug, trackingSource)}
-        className="relative block aspect-[16/9] w-full overflow-hidden bg-muted"
-      >
-        {logoSrc ? (
-          <LazyImage
-            src={logoSrc}
-            alt={`Logo ${displayName}`}
-            // Hero do card → priority + sizes wide
-            priority
-            sizesPreset="card-wide"
-            surface="company-card"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-            <Building2 className="h-14 w-14 text-muted-foreground/40" aria-hidden="true" />
-          </div>
-        )}
-        <Badge
-          variant="secondary"
-          className="absolute left-3 top-3 inline-flex items-center gap-1 bg-background/90 text-foreground shadow-sm backdrop-blur"
-        >
-          <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
-          Empresa
-        </Badge>
-      </Link>
-
-      {/* Body */}
-      <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
-        <div className="min-w-0">
+      {/* Body — layout compacto, avatar + texto (paridade com ProviderCard) */}
+      <div className="relative flex min-w-0 flex-1 flex-col p-4 sm:p-5">
+        <div className="flex items-start gap-3 sm:gap-4">
           <Link
             to={profileHref}
             onClick={() => trackProfileClick(p.id, p.slug, trackingSource)}
-            className="block"
+            className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-muted ring-2 ring-transparent transition-transform duration-300 group-hover:scale-105 group-hover:ring-accent/20 sm:h-14 sm:w-14"
+            aria-label={`Ver empresa ${displayName}`}
           >
-            <h3 className="font-display text-base font-bold text-foreground transition-colors group-hover:text-accent sm:text-lg line-clamp-2">
-              {displayName}
-            </h3>
+            {logoSrc ? (
+              <LazyImage
+                src={logoSrc}
+                alt={`Logo ${displayName}`}
+                priority
+                sizesPreset="avatar"
+                surface="company-card"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                <Building2 className="h-6 w-6 text-muted-foreground/60 sm:h-7 sm:w-7" aria-hidden="true" />
+              </div>
+            )}
           </Link>
-          {p.businessSegment && (
-            <p className="mt-0.5 truncate text-[12px] font-medium text-muted-foreground">
-              {p.businessSegment}
-            </p>
-          )}
-          {p.category && !p.businessSegment && (
-            <p className="mt-0.5 truncate text-[12px] font-medium text-accent">{p.category}</p>
-          )}
+
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <div className="mb-1 flex items-center gap-1.5">
+              <Badge
+                variant="secondary"
+                className="inline-flex h-5 items-center gap-1 px-1.5 py-0 text-[10px] font-semibold"
+              >
+                <Building2 className="h-3 w-3" aria-hidden="true" />
+                Empresa
+              </Badge>
+              {hasPhysicalLocation && (
+                <Badge
+                  variant="outline"
+                  className="inline-flex h-5 items-center gap-1 border-amber-500/40 px-1.5 py-0 text-[10px] font-semibold text-amber-700 dark:text-amber-300"
+                >
+                  <Store className="h-3 w-3" aria-hidden="true" />
+                  Loja física
+                </Badge>
+              )}
+            </div>
+
+            <Link
+              to={profileHref}
+              onClick={() => trackProfileClick(p.id, p.slug, trackingSource)}
+              className="block min-w-0 max-w-full"
+            >
+              <h3 className="font-display text-base font-bold text-foreground transition-colors group-hover:text-accent sm:text-lg line-clamp-2">
+                {displayName}
+              </h3>
+            </Link>
+            {p.businessSegment ? (
+              <p className="mt-0.5 truncate text-[12px] font-medium text-muted-foreground">
+                {p.businessSegment}
+              </p>
+            ) : p.category ? (
+              <p className="mt-0.5 truncate text-[12px] font-medium text-accent">{p.category}</p>
+            ) : null}
+          </div>
         </div>
 
         {(p.rating > 0 || p.reviewCount > 0) && (
-          <div className="flex items-center gap-1.5 text-xs">
+          <div className="mt-2 flex items-center gap-1.5 text-xs">
             <Star className="h-3.5 w-3.5 fill-accent text-accent" aria-hidden="true" />
             <span className="font-bold text-foreground">
               {p.rating > 0 ? p.rating.toFixed(1) : '—'}
@@ -151,10 +163,10 @@ const CompanyCard = memo(function CompanyCard({
         )}
 
         {p.description && (
-          <p className="line-clamp-2 text-[13px] text-muted-foreground">{p.description}</p>
+          <p className="mt-2 line-clamp-2 text-[13px] text-muted-foreground">{p.description}</p>
         )}
 
-        <div className="mt-auto flex flex-wrap gap-2 pt-2">
+        <div className="mt-auto flex flex-wrap gap-2 pt-3">
           {p.whatsapp && (
             <Button variant="accent" size="sm" className="h-9 flex-1 text-xs" asChild>
               <a
@@ -183,14 +195,6 @@ const CompanyCard = memo(function CompanyCard({
         </div>
       </div>
 
-      {/* Badge — indica unidade física, sem revelar endereço quando privacidade off */}
-      {hasPhysicalLocation && (
-        <div className="flex items-center gap-2 border-t border-border bg-amber-500/5 px-4 py-2 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-          <Store className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span>Ponto de Atendimento Físico</span>
-        </div>
-      )}
-
       {/* Banda inferior — endereço (público ou parcial conforme privacidade). */}
       {publicAddress && (
         showFull ? (
@@ -205,7 +209,7 @@ const CompanyCard = memo(function CompanyCard({
             ])}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-2.5 text-[12px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-2 text-[12px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
             aria-label={`Abrir endereço de ${displayName} no Google Maps`}
           >
             <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -214,7 +218,7 @@ const CompanyCard = memo(function CompanyCard({
           </a>
         ) : (
           <div
-            className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-2.5 text-[12px] text-muted-foreground"
+            className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-2 text-[12px] text-muted-foreground"
             aria-label={`Localização aproximada de ${displayName}`}
           >
             <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
