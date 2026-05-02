@@ -472,7 +472,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   // 1/19. O hook `useReviewAnchor` é a fonte ÚNICA dessa lógica:
   // ancora a UI na última fase renderável visitada, sem saltos visuais, e
   // emite telemetria `review_anchor_used` para auditoria de UX.
-  const { anchorPhase: reviewAnchorPhase, anchorIndex: reviewAnchorIndex } =
+  const { anchorPhase: reviewAnchorPhase, anchorIndex: reviewAnchorIndex, isAnchored: reviewIsAnchored } =
     useReviewAnchor(state.phase, isReview);
   const phaseIdx = isReview ? reviewAnchorIndex : unifiedPhaseIndex(state.phase);
   const hudPoints = realPoints;
@@ -555,7 +555,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         }}
         enabled={state.phase !== 'triage_celebration' && state.phase !== 'main_celebration' && state.phase !== 'done'}
       />
-      <WizardProgressBar phase={isReview ? reviewAnchorPhase : state.phase} phaseOrder={progressOrder} totalOverride={isReview ? REVIEW_TOTAL_STEPS : undefined} />
+      <WizardProgressBar phase={isReview ? reviewAnchorPhase : state.phase} phaseOrder={progressOrder} totalOverride={isReview ? REVIEW_TOTAL_STEPS : undefined} anchored={isReview && reviewIsAnchored} />
       {showGlobalHud && (
         <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
       )}
