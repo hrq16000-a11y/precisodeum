@@ -151,13 +151,26 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
       } catch { /* silencioso — bairro continua opcional */ }
     }
 
+    const willFillFromCep = !!cleanNeighborhood && !state.neighborhood?.trim();
     patch({
       city: r.city,
       state: r.state,
-      ...(cleanNeighborhood && !state.neighborhood?.trim() ? { neighborhood: cleanNeighborhood } : {}),
+      ...(willFillFromCep
+        ? { neighborhood: cleanNeighborhood as string, neighborhood_source: 'cep' }
+        : {}),
       // BrasilAPI v2 traz ibge em data.city_ibge; lookupCep não expõe. Mantemos null aqui — o
       // backend fará a normalização final via sync_cidade trigger. Coordenadas só por GPS.
       location_source: 'cep',
+    });
+    // eslint-disable-next-line no-console
+    console.info('[loc-persist] cep', {
+      cep: norm,
+      city: r.city,
+      state: r.state,
+      neighborhood: willFillFromCep ? cleanNeighborhood : state.neighborhood,
+      neighborhood_source: willFillFromCep ? 'cep' : state.neighborhood_source,
+      location_source: 'cep',
+      precise: false,
     });
     if (r.city && r.state) awardCityOnce();
   }
@@ -175,20 +188,33 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         autoFilledRef.current = true;
         const cleanNeighborhood = sanitizeNeighborhood(result.neighborhood, result.city);
         const currentNeighborhood = (state.neighborhood || '').trim();
+        const acc = result.accuracyMeters ?? null;
+        const willFillFromGps = !!cleanNeighborhood && !currentNeighborhood;
         const patchObj: Partial<BetState> = {
           city: result.city,
           state: result.state,
           latitude: geo.latitude,
           longitude: geo.longitude,
           location_source: 'gps',
+          gps_accuracy_m: acc,
         };
-        if (cleanNeighborhood && !currentNeighborhood) {
-          patchObj.neighborhood = cleanNeighborhood;
+        if (willFillFromGps) {
+          patchObj.neighborhood = cleanNeighborhood as string;
+          patchObj.neighborhood_source = 'gps';
         }
         patch(patchObj);
-        setGpsAccuracy(result.accuracyMeters ?? null);
+        setGpsAccuracy(acc);
         awardCityOnce();
-        const acc = result.accuracyMeters;
+        // eslint-disable-next-line no-console
+        console.info('[loc-persist] gps', {
+          city: result.city,
+          state: result.state,
+          neighborhood: willFillFromGps ? cleanNeighborhood : currentNeighborhood,
+          neighborhood_source: willFillFromGps ? 'gps' : state.neighborhood_source,
+          location_source: 'gps',
+          gps_accuracy_m: acc,
+          precise: acc != null && acc <= 100,
+        });
         trackGpsAttempt({
           phase: 'pro_location',
           userId: user?.id || null,
