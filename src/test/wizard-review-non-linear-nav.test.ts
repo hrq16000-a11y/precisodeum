@@ -26,13 +26,11 @@ function prevReview(phase: string): string {
 }
 
 describe('Wizard review · navegação não-linear', () => {
-  it('REVIEW_PHASE_ORDER tem 19 fases visíveis + done', () => {
+  it('REVIEW_PHASE_ORDER tem régua canônica X/19 + done (paridade Assistente)', () => {
     expect(REVIEW_PHASE_ORDER[REVIEW_PHASE_ORDER.length - 1]).toBe('done');
-    expect(REVIEW_PHASE_ORDER.length - 1).toBeGreaterThanOrEqual(16);
-    expect(REVIEW_PHASE_ORDER.length - 1).toBeLessThanOrEqual(20);
     // Step 1 = triage_identity
     expect(REVIEW_PHASE_ORDER[0]).toBe('triage_identity');
-    // Inclui triagem completa
+    // Inclui triagem completa (Steps 1–6)
     ['triage_identity', 'triage_who', 'triage_pro_kind',
      'triage_pro_document', 'triage_pro_location', 'triage_celebration']
       .forEach(p => expect(REVIEW_PHASE_ORDER).toContain(p));
@@ -40,6 +38,10 @@ describe('Wizard review · navegação não-linear', () => {
     ['main_service', 'main_service_details', 'main_photos',
      'main_celebration', 'main_document', 'main_avatar',
      'main_extras_a', 'main_extras_b']
+      .forEach(p => expect(REVIEW_PHASE_ORDER).toContain(p));
+    // Régua paridade com Dashboard Assistant — inclui as 4 fases-fantasma
+    // (main_action/kind/location/contact) só para o numerador bater X/19.
+    ['main_action', 'main_kind', 'main_location', 'main_contact']
       .forEach(p => expect(REVIEW_PHASE_ORDER).toContain(p));
   });
 
