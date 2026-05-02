@@ -42,7 +42,7 @@ export default function AdminLocationDebugPage() {
     try {
       const [profilesRes, providersRes, agenciesRes] = await Promise.all([
         supabase.from('profiles').select('id, user_ref, full_name, city, state').limit(500),
-        supabase.from('providers').select('id, user_ref, display_name, city, state').limit(500),
+        supabase.from('providers').select('id, user_ref, business_name, legal_name, city, state').limit(500),
         supabase.from('agencies').select('id, name, city, state').limit(200),
       ]);
       const all: Row[] = [];
@@ -50,7 +50,7 @@ export default function AdminLocationDebugPage() {
         all.push({ source: 'profiles', id: r.id, user_ref: r.user_ref, display_name: r.full_name, city_raw: r.city, state_raw: r.state }),
       );
       (providersRes.data || []).forEach((r: any) =>
-        all.push({ source: 'providers', id: r.id, user_ref: r.user_ref, display_name: r.display_name, city_raw: r.city, state_raw: r.state }),
+        all.push({ source: 'providers', id: r.id, user_ref: r.user_ref, display_name: r.business_name || r.legal_name, city_raw: r.city, state_raw: r.state }),
       );
       (agenciesRes.data || []).forEach((r: any) =>
         all.push({ source: 'agencies', id: r.id, display_name: r.name, city_raw: r.city, state_raw: r.state }),

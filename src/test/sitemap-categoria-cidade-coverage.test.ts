@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-describe('sitemap coverage — categoria/cidade/profissional', () => {
+describe('sitemap coverage — categoria/cidade/profissional/empresa', () => {
   const src = readFileSync(
     path.resolve(__dirname, '../../supabase/functions/sitemap/index.ts'),
     'utf-8',
@@ -27,6 +27,10 @@ describe('sitemap coverage — categoria/cidade/profissional', () => {
 
   it('emite URLs em /profissional/{slug}', () => {
     expect(src).toMatch(/\/profissional\/\$\{[^}]*slug[^}]*\}/);
+  });
+
+  it('emite URLs em /empresa/{slug}', () => {
+    expect(src).toMatch(/\/empresa\/\$\{[^}]*slug[^}]*\}/);
   });
 
   it('emite combinação categoria × cidade /categoria/{slug}/em/{cidade}', () => {
@@ -53,5 +57,10 @@ describe('sitemap coverage — categoria/cidade/profissional', () => {
   it('filtra providers aprovados com slug não-nulo (canonical apenas perfis públicos)', () => {
     expect(src).toMatch(/eq\(['"]status['"],\s*['"]approved['"]\)/);
     expect(src).toMatch(/not\(['"]slug['"],\s*['"]is['"],\s*null\)/);
+  });
+
+  it('inclui sub-sitemap dedicado para empresas aprovadas', () => {
+    expect(src).toContain("'companies'");
+    expect(src).toMatch(/eq\(['"]account_type['"],\s*['"]company['"]\)/);
   });
 });

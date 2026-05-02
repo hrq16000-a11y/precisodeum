@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       especialidades: pagesFor(categoriesCount.count),
     };
     const sitemaps = [
-      'static', 'categories', 'especialidades', 'providers', 'cities',
+      'static', 'categories', 'especialidades', 'providers', 'companies', 'cities',
       'blog', 'jobs', 'pages', 'popular', 'seo', 'seo-cep',
     ];
     const entries: string[] = [];
@@ -169,6 +169,19 @@ ${entries.join('\n')}
     for (const p of data || []) {
       if (!eligibleProviderSlugs.has(p.slug)) continue; // gate de qualidade
       urls += entry(siteUrl, `/profissional/${p.slug}`, fmtDate(p.updated_at), 'weekly', '0.7');
+    }
+  }
+
+  if (type === 'companies') {
+    const { data } = await supabase
+      .from('providers')
+      .select('slug, updated_at, account_type')
+      .eq('status', 'approved')
+      .eq('account_type', 'company')
+      .not('slug', 'is', null)
+      .range(offset, offset + limit - 1);
+    for (const p of data || []) {
+      urls += entry(siteUrl, `/empresa/${p.slug}`, fmtDate(p.updated_at), 'weekly', '0.7');
     }
   }
 
