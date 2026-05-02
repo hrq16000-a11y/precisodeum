@@ -47,11 +47,11 @@ export default function AdminLocationSeoAuditPage() {
 
       const providers = await supabase
         .from('providers')
-        .select('slug, display_name, city, state')
+        .select('slug, business_name, legal_name, city, state')
         .not('slug', 'is', null)
         .limit(300);
       (providers.data || []).forEach((p: any) => {
-        all.push(audit(p.city, p.state, `/profissional/${p.slug}`, `Profissional: ${p.display_name || p.slug}`));
+        all.push(audit(p.city, p.state, `/profissional/${p.slug}`, `Profissional: ${p.business_name || p.legal_name || p.slug}`));
       });
 
       setFindings(all);
