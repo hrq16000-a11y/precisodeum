@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, AlertTriangle, MapPin, RefreshCcw } from "lucide-react";
+import { Activity, AlertTriangle, Anchor, MapPin, RefreshCcw } from "lucide-react";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
