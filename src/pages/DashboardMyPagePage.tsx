@@ -92,7 +92,7 @@ const ALL_SECTIONS = [
   { id: 'portfolio', label: 'Portfólio', icon: '📸' },
   { id: 'services', label: 'Serviços', icon: '🛠️' },
   { id: 'reviews', label: 'Avaliações', icon: '⭐' },
-  { id: 'lead_form', label: 'Formulário de orçamento', icon: '📋' },
+  { id: 'lead_form', label: 'Formulário de contato', icon: '📋' },
 ];
 
 const DashboardMyPagePage = () => {
