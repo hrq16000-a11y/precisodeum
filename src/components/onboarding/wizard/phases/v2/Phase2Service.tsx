@@ -396,6 +396,17 @@ export const Phase2Details = ({
   service, profile, onChangeService, onChangeProfile, onSubmit, onBack, onSkip, saving,
 }: DetailsProps) => {
   const [priceText, setPriceText] = useState(service.starting_price_brl != null ? String(service.starting_price_brl) : '');
+  // Hidratação tardia: em modo revisão o `service.starting_price_brl` chega
+  // depois que o componente monta (bootstrap remoto). Sem este efeito, o
+  // input ficaria vazio mesmo com o valor correto no estado global, e o
+  // próximo onBlur sobrescreveria o banco com null. Sincroniza apenas
+  // quando o input está vazio E há valor no estado, NUNCA sobrescrevendo
+  // edições do usuário em andamento.
+  useEffect(() => {
+    if (priceText !== '' || service.starting_price_brl == null) return;
+    setPriceText(String(service.starting_price_brl));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [service.starting_price_brl]);
   const focusCities = useFocusFieldFromReview('cities_served');
 
   // G13: dedupe defensivo de cliques em "Salvar e continuar".
