@@ -1556,11 +1556,17 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               title="Detalhes vendem mais"
               description="Anúncios com descrição e horário recebem até 3× mais contatos — você pode pular e voltar depois."
               items={[
-                { label: 'Serviço', done: !!(state.service.service_name || '').trim() },
-                { label: 'Detalhes', done: !!(state.service.description || '').trim() },
-                { label: 'Fotos', done: false },
+                { label: 'Serviço — pronto', done: !!(state.service.service_name || '').trim() },
+                { label: `Detalhes${(state.service.cities_served?.length ?? 0) > 0 && (state.service.working_hours || '').trim() ? ' — completo' : ''}`, done: (state.service.cities_served?.length ?? 0) > 0 && (state.service.working_hours || '').trim().length > 0 },
+                { label: `Fotos${photoCount > 0 ? ` — ${photoCount}/5` : ''}`, done: photoCount > 0 },
               ]}
-              nextStep="Capriche em 2-3 linhas sobre o que você entrega."
+              nextStep={
+                (state.service.cities_served?.length ?? 0) === 0
+                  ? 'Adicione pelo menos 1 cidade onde você atende.'
+                  : !(state.service.working_hours || '').trim()
+                    ? 'Defina seus horários de atendimento.'
+                    : 'Pode salvar e seguir para as fotos.'
+              }
             />
           </>
         );
