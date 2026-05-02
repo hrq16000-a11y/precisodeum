@@ -83,47 +83,59 @@ const CookieConsent = () => {
         <div
           role="dialog"
           aria-live="polite"
-          aria-label="Consentimento de cookies"
-          className="fixed bottom-0 left-0 right-0 z-[9998] border-t border-border bg-card/95 p-4 shadow-lg backdrop-blur-lg"
+          aria-label="Consentimento de cookies e privacidade"
+          className="fixed bottom-0 left-0 right-0 z-[9998] border-t border-border/50 bg-background/70 p-4 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-background/60"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 60px)" }}
         >
           <div className="container flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div className="text-sm text-muted-foreground lg:max-w-2xl">
-              <p className="font-medium text-foreground">Sua privacidade importa</p>
-              <p className="mt-1">
-                Usamos cookies essenciais para o funcionamento do site e, com seu consentimento,
-                cookies funcionais, analíticos e de marketing. Você pode escolher por categoria
-                a qualquer momento.
-              </p>
-              <ul className="mt-2 grid gap-1 text-xs sm:grid-cols-2">
-                <li>
-                  <strong className="text-foreground">Essenciais:</strong> sempre ativos — login, segurança e roteamento.
-                </li>
-                <li>
-                  <strong className="text-foreground">Funcionais:</strong> cidade detectada, tema, suporte offline.
-                </li>
-                <li>
-                  <strong className="text-foreground">Analíticos:</strong> métricas agregadas e anônimas de uso.
-                </li>
-                <li>
-                  <strong className="text-foreground">Marketing:</strong> mensuração de campanhas e patrocinadores.
-                </li>
-              </ul>
-              <p className="mt-2 text-xs">
-                Detalhes na{" "}
-                <Link to="/cookies" className="font-medium text-accent hover:underline">
-                  Política de Cookies
-                </Link>
-                ,{" "}
-                <Link to="/privacidade" className="font-medium text-accent hover:underline">
-                  Política de Privacidade
-                </Link>{" "}
-                e{" "}
-                <Link to="/termos" className="font-medium text-accent hover:underline">
-                  Termos de Uso
-                </Link>
-                .
-              </p>
+            <div className="flex gap-3 text-sm text-muted-foreground lg:max-w-2xl">
+              <div className="hidden shrink-0 items-start pt-1 sm:flex" aria-hidden="true">
+                <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-accent">
+                  <ShieldCheck className="h-5 w-5" strokeWidth={1.75} />
+                  <Cookie className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-background p-0.5 text-foreground/80" strokeWidth={1.75} />
+                </span>
+              </div>
+              <div>
+                <p className="flex items-center gap-2 font-medium text-foreground sm:gap-0">
+                  <ShieldCheck className="h-4 w-4 text-accent sm:hidden" strokeWidth={1.75} />
+                  Sua privacidade importa
+                </p>
+                <p className="mt-1">
+                  Usamos cookies essenciais para o funcionamento do site e, com seu consentimento,
+                  cookies funcionais, analíticos e de marketing. Você pode escolher por categoria
+                  a qualquer momento. O uso da plataforma implica aceitação dos Termos e da
+                  Política de Privacidade.
+                </p>
+                <ul className="mt-2 grid gap-1 text-xs sm:grid-cols-2">
+                  <li>
+                    <strong className="text-foreground">Essenciais:</strong> sempre ativos — login, segurança e roteamento.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Funcionais:</strong> cidade detectada, tema, suporte offline.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Analíticos:</strong> métricas agregadas e anônimas de uso.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Marketing:</strong> mensuração de campanhas e patrocinadores.
+                  </li>
+                </ul>
+                <p className="mt-2 text-xs">
+                  Detalhes na{" "}
+                  <Link to="/cookies" className="font-medium text-accent hover:underline">
+                    Política de Cookies
+                  </Link>
+                  ,{" "}
+                  <Link to="/privacidade" className="font-medium text-accent hover:underline">
+                    Política de Privacidade
+                  </Link>{" "}
+                  e{" "}
+                  <Link to="/termos" className="font-medium text-accent hover:underline">
+                    Termos de Uso
+                  </Link>
+                  .
+                </p>
+              </div>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={() => setOpenPrefs(true)}>
