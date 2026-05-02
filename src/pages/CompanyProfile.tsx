@@ -74,16 +74,33 @@ export default function CompanyProfile() {
   const { data: company, isLoading, error } = useQuery({
     queryKey: ['company-profile', slug],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const COLS =
+        'id, user_id, slug, business_name, legal_name, description, photo_url, city, state, neighborhood, phone, whatsapp, latitude, longitude, rating_avg, review_count, account_type, business_segment, street, street_number, complement, postal_code, show_full_address, social_links, founded_year, team_size';
+
+      const param = (slug || '').trim();
+      // 1) Tenta resolver por slug (caminho canônico).
+      let { data, error } = await (supabase as any)
         .from('providers')
-        .select(
-          'id, user_id, slug, business_name, legal_name, description, photo_url, city, state, neighborhood, phone, whatsapp, latitude, longitude, rating_avg, review_count, account_type, business_segment, street, street_number, complement, postal_code, show_full_address, social_links, founded_year, team_size',
-        )
-        .eq('slug', slug || '')
+        .select(COLS)
+        .eq('slug', param)
         .eq('status', 'approved')
         .is('deleted_at', null)
         .maybeSingle();
       if (error) throw error;
+
+      // 2) Fallback: se o param parecer UUID e nada foi encontrado, busca por id.
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
+      if (!data && isUuid) {
+        const { data: byId, error: errById } = await (supabase as any)
+          .from('providers')
+          .select(COLS)
+          .eq('id', param)
+          .eq('status', 'approved')
+          .is('deleted_at', null)
+          .maybeSingle();
+        if (errById) throw errById;
+        data = byId;
+      }
       return (data as unknown) as CompanyRow | null;
     },
     enabled: !!slug,
