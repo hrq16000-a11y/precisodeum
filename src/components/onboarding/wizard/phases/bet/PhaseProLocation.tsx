@@ -35,6 +35,9 @@ interface Props {
   awardReward: (reward: BetRewardKey, points: number) => void;
 }
 
+import ProviderIntegrityErrorCard from './ProviderIntegrityErrorCard';
+import type { ProviderIntegrityError } from '@/lib/providerIntegrityError';
+
 export default function PhaseProLocation({ state, patch, finish, awardReward }: Props) {
   const awarded = state.rewards.city;
   const [submitting, setSubmitting] = useState(false);
@@ -51,9 +54,14 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   // Foco programático no input de Bairro quando ele está vazio após hidratação.
   const neighborhoodInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Listener: BetModeShell despacha `wizard:focus-neighborhood` quando o
-  // backend rejeita o upsert por trigger 22023 (PROVIDER_INCOMPLETE_NEIGHBORHOOD).
-  // Trazemos o foco e damos um shake visual sem precisar de prop drilling.
+  // Estado de feedback dedicado para erro 22023 (trigger guard_provider_activation).
+  // Populado pelo CustomEvent `wizard:provider-integrity-error` despachado pelo
+  // BetModeShell.finishPro. Mostra um card persistente com CTA, em vez de
+  // depender só do toast efêmero.
+  const [integrityError, setIntegrityError] = useState<ProviderIntegrityError | null>(null);
+
+  // Listeners globais despachados pelo BetModeShell quando o backend rejeita
+  // o upsert por trigger 22023. Centraliza foco/UI sem prop drilling.
   useEffect(() => {
     function focusBairro() {
       try {
@@ -61,8 +69,16 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         neighborhoodInputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       } catch { /* noop */ }
     }
+    function onIntegrityError(ev: Event) {
+      const detail = (ev as CustomEvent<ProviderIntegrityError>).detail;
+      if (detail && detail.matched) setIntegrityError(detail);
+    }
     window.addEventListener('wizard:focus-neighborhood', focusBairro);
-    return () => window.removeEventListener('wizard:focus-neighborhood', focusBairro);
+    window.addEventListener('wizard:provider-integrity-error', onIntegrityError as EventListener);
+    return () => {
+      window.removeEventListener('wizard:focus-neighborhood', focusBairro);
+      window.removeEventListener('wizard:provider-integrity-error', onIntegrityError as EventListener);
+    };
   }, []);
 
   // Auto-sugestão (não-destrutiva): pré-preenche cidade/UF se vazios.
