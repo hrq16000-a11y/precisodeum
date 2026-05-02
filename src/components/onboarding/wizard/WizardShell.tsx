@@ -144,7 +144,13 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   const { user, profile, provider } = useAuth();
   const navigate = useNavigate();
   const realPoints = useEngagementPointsValue(user?.id);
-  const [state, dispatch] = useReducer(wizardReducer, initialWizardState);
+  // Lazy initializer — em modo edit_profile (review), começa na fase
+  // resolvida pela section da URL (ou na Step 1 quando não há section).
+  // Isso evita um "flash" da Step 1 antes do effect de bootstrap reposicionar.
+  const [state, dispatch] = useReducer(wizardReducer, initialWizardState, (initial) => ({
+    ...initial,
+    phase: isReview ? resolveReviewStartPhase(reviewSection) : initial.phase,
+  }));
   const resumeBootstrapRef = useRef(false);
   // Stage continua como "qual orquestrador renderizar" — é derivado da fase.
   const stage: Stage =
