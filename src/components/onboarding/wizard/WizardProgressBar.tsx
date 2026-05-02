@@ -9,6 +9,7 @@
  */
 import { motion } from 'framer-motion';
 import {
+  REVIEW_TOTAL_STEPS,
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
   unifiedPhaseIndex,
@@ -18,18 +19,21 @@ import {
 interface WizardProgressBarProps {
   phase: UnifiedPhase;
   phaseOrder?: UnifiedPhase[];
+  totalOverride?: number;
   /** Quando true, força 100% (usado em telas de celebração final). */
   forceComplete?: boolean;
 }
 
-export function WizardProgressBar({ phase, phaseOrder, forceComplete = false }: WizardProgressBarProps) {
+export function WizardProgressBar({ phase, phaseOrder, totalOverride, forceComplete = false }: WizardProgressBarProps) {
   const activeOrder = phaseOrder && phaseOrder.length > 0 ? phaseOrder : undefined;
   const idx = activeOrder ? Math.max(0, activeOrder.indexOf(phase)) : unifiedPhaseIndex(phase);
-  const total = activeOrder ? Math.max(1, activeOrder.length - 1) : UNIFIED_VISIBLE_PHASES;
-  const raw = ((idx + 1) / total) * 100;
+  const derivedTotal = activeOrder ? Math.max(1, activeOrder.length - 1) : UNIFIED_VISIBLE_PHASES;
+  const total = Math.max(1, totalOverride ?? derivedTotal);
+  const rawStep = Math.min(idx + 1, total);
+  const raw = (rawStep / total) * 100;
   const pct = forceComplete || phase === 'done' ? 100 : Math.min(100, Math.max(2, raw));
   const label = UNIFIED_PHASE_LABELS[phase] ?? '';
-  const stepNumber = Math.min(idx + 1, total);
+  const stepNumber = rawStep;
 
   return (
     <div
