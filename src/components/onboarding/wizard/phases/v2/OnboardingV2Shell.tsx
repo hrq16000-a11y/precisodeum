@@ -1744,7 +1744,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                       <button
                         type="button"
                         data-testid="phase2-photos-recover-draft"
-                        onClick={handleRecoverDraft}
+                        onClick={() => { void handleRecoverDraft(); }}
                         className="h-10 rounded-xl border border-amber-400/60 text-sm font-semibold text-amber-900 hover:bg-amber-100/60 dark:text-amber-100 dark:hover:bg-amber-500/10"
                       >
                         Recuperar rascunho do serviço
