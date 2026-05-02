@@ -97,6 +97,34 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     fieldWin();
   }
 
+  // Auto-trigger do GPS no mount — sem botão. Solicita permissão nativa
+  // imediatamente. Se negado/erro, segue silenciosamente com o fallback IP
+  // já carregado por useGeoCity. Roda só uma vez por montagem.
+  useEffect(() => {
+    if (gpsAutoTriggeredRef.current) return;
+    gpsAutoTriggeredRef.current = true;
+    // Já temos GPS confirmado neste cadastro? Não pede de novo.
+    if (state.location_source === 'gps') return;
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) return;
+    // Dispara em microtask para garantir que o componente está montado.
+    const id = window.setTimeout(() => { void handleUseGps(); }, 50);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Após hidratação inicial: se cidade-base já está OK e o bairro está vazio,
+  // foca o input de bairro para o usuário continuar de imediato sem caçar o campo.
+  useEffect(() => {
+    const cityReady = !!state.city && !!state.state;
+    const nbEmpty = !((state.neighborhood || '').trim());
+    if (cityReady && nbEmpty && !requestingGps) {
+      const id = window.setTimeout(() => {
+        try { neighborhoodInputRef.current?.focus({ preventScroll: true } as any); } catch { /* noop */ }
+      }, 250);
+      return () => window.clearTimeout(id);
+    }
+  }, [state.city, state.state, state.neighborhood, requestingGps]);
+
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
     autoFilledRef.current = true;
