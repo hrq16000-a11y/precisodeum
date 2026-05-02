@@ -41,7 +41,7 @@ const FAQS_BY_SLUG: Record<string, CategoryFaq[]> = {
     { q: 'A diarista traz produto de limpeza?', a: 'Geralmente os produtos são fornecidos pelo contratante. Algumas profissionais cobram à parte se levarem material próprio.' },
   ],
   pedreiro: [
-    { q: 'Pedreiro cobra por dia ou por obra?', a: 'Depende. Para pequenos reparos (R$ 200–R$ 400/dia) é por diária. Para obras maiores, peça orçamento fechado por etapa (alvenaria, contrapiso, acabamento).' },
+    { q: 'Pedreiro cobra por dia ou por obra?', a: 'Depende. Para pequenos reparos (R$ 200–R$ 400/dia) é por diária. Para obras maiores, combine valores fechados por etapa (alvenaria, contrapiso, acabamento) diretamente com o profissional.' },
     { q: 'O pedreiro ajuda a comprar material?', a: 'Muitos auxiliam na lista de materiais e até buscam no depósito. Combine se há cobrança de deslocamento.' },
   ],
   pintor: [
