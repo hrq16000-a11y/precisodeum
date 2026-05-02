@@ -139,6 +139,9 @@ const DashboardNotificationPreferencesPage = () => {
         })}
       </div>
 
+      {/* Janela de contato — dias/períodos em que o prestador aceita ser contatado */}
+      {provider?.id && <ContactHoursEditor providerId={provider.id} className="mt-8 rounded-xl border border-border bg-card p-4" />}
+
       {/* Alertas de novos leads — modo + intervalo anti-spam */}
       <NewLeadAlertSettings />
 
