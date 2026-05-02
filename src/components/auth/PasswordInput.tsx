@@ -58,7 +58,7 @@ const PasswordInput = forwardRef<HTMLInputElement, Props>(function PasswordInput
         <input
           ref={ref}
           {...rest}
-          value={value}
+          {...(value !== undefined ? { value } : {})}
           type={visible ? 'text' : 'password'}
           aria-describedby={showRules ? rulesId : undefined}
           className={
