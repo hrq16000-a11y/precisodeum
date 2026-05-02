@@ -555,6 +555,21 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         context: { isPj, hasDoc: !!taxIdValue, action: 'bet_finish_pro' },
         onRetry: () => { void finishPro(); },
         fn: async () => {
+          // Log estruturado: confirma quais sinais de localização estão indo para o banco.
+          // eslint-disable-next-line no-console
+          console.info('[loc-persist] save→providers', {
+            user_id: user.id,
+            city: providerPayload.city,
+            state: providerPayload.state,
+            neighborhood: providerPayload.neighborhood,
+            neighborhood_source: (providerPayload as any).neighborhood_source ?? null,
+            geo_source: (providerPayload as any).geo_source ?? null,
+            geo_source_confidence: (providerPayload as any).geo_source_confidence ?? null,
+            precise:
+              (providerPayload as any).geo_source === 'gps' &&
+              typeof (providerPayload as any).geo_source_confidence === 'number' &&
+              (providerPayload as any).geo_source_confidence <= 100,
+          });
           const { error } = await (supabase as any)
             .from('providers').upsert(providerPayload, { onConflict: 'user_id' });
           if (error) {
