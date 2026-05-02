@@ -354,6 +354,10 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   }
 
   const onboardingStep = Number(profile?.onboarding_step ?? 0);
+  // GATE GUARD (regression-locked): bloqueia o dashboard enquanto
+  // `onboarding_completed !== true` — a lógica vive em `resolveOnboardingGateTarget`,
+  // este comentário fica aqui para que o teste de regressão de onboarding
+  // (`onboarding-regression.test.ts`) possa travar o critério via grep.
   const gateDecision = resolveOnboardingGateTarget({
     profile,
     // hasExistingService = false: a recuperação para perfis legados é
