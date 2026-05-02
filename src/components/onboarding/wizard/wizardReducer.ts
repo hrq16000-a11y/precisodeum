@@ -96,14 +96,12 @@ export const PROVIDER_WIZARD_PHASE_ORDER: UnifiedPhase[] = [
 ];
 
 /**
- * REVIEW_PHASE_ORDER — régua usada quando o Wizard é aberto pelo Assistente
- * (`mode=review`). 19 fases visíveis + `done`, casando com o que o
- * /dashboard/assistente exibe ao usuário (sem `triage_client_city` que é
- * exclusiva do fluxo cliente, e sem os 2 extras opcionais finais).
+ * REVIEW_PHASE_ORDER — ordem REAL de navegação quando o Wizard é aberto pelo
+ * Assistente (`mode=review`).
  *
- * Ordem espelha o funil profissional completo: triagem (Steps 1–6) → criação
- * de serviço (Steps 7–9) → celebração → ajustes de perfil (Steps 11–14) →
- * extras opcionais.
+ * Mantemos aqui apenas as fases renderizáveis para que o botão "Voltar" nunca
+ * caia em fases-fantasma. O HUD do modo review usa esta mesma sequência linear,
+ * mas com denominador compartilhado com o Assistente do Dashboard (19 etapas).
  */
 export const REVIEW_PHASE_ORDER: UnifiedPhase[] = [
   'triage_identity',         // 1
@@ -124,6 +122,9 @@ export const REVIEW_PHASE_ORDER: UnifiedPhase[] = [
   'main_portfolio_albums',   // 16
   'done',
 ];
+
+/** Régua total exibida pelo Assistente/HUD em modo review. */
+export const REVIEW_TOTAL_STEPS = 19;
 
 /** Quantidade de fases visíveis (exclui 'done'). */
 export const UNIFIED_VISIBLE_PHASES = UNIFIED_PHASE_ORDER.length - 1;
