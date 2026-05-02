@@ -49,7 +49,7 @@ const FAQS_BY_SLUG: Record<string, CategoryFaq[]> = {
     { q: 'O pintor fornece a tinta?', a: 'O comum é o cliente comprar a tinta. O profissional indica marca e quantidade após visita técnica.' },
   ],
   marceneiro: [
-    { q: 'Quanto custa um móvel planejado?', a: 'Móveis planejados variam muito (R$ 1.500/m² a R$ 4.000/m² conforme material e ferragem). Peça projeto 3D e orçamento detalhado por peça.' },
+    { q: 'Quanto custa um móvel planejado?', a: 'Móveis planejados variam muito (R$ 1.500/m² a R$ 4.000/m² conforme material e ferragem). Solicite projeto 3D e proposta detalhada por peça diretamente com o profissional.' },
     { q: 'Marceneiro faz reparo em móvel pronto?', a: 'Sim. Muitos atendem ajustes (porta desalinhada, dobradiça, gaveta), além de produção sob medida.' },
   ],
 };
