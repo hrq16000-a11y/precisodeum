@@ -212,4 +212,59 @@ describe('Step22_Review', () => {
     expect(screen.getByTestId('review-row-photos')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Finalizar cadastro/i })).toBeInTheDocument();
   });
+
+  it('mostra banner de "rascunho desatualizado" quando o draft local é antigo', async () => {
+    const oldSavedAt = Date.now() - 1000 * 60 * 60 * 26; // 26h atrás (>24h)
+    localStorage.setItem(
+      'onboarding_v3_institutional_final',
+      JSON.stringify({
+        savedAt: oldSavedAt,
+        profile: { city: 'Curitiba' },
+        service: { name: 'Pintura', gallery_urls: [] },
+      }),
+    );
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'providers')
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockRejectedValue(new Error('Failed to fetch')),
+            }),
+          }),
+        };
+      throw new Error(`unexpected ${table}`);
+    });
+
+    render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('step22-draft-outdated')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Rascunho desatualizado/i)).toBeInTheDocument();
+  });
+
+  it('mostra botões de copiar pendência por linha quando há ações pendentes', async () => {
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'providers')
+        return makeProvidersOk({
+          id: 'p1',
+          city: 'Curitiba',
+          working_hours_struct: {},
+          cpf: null,
+          cnpj: null,
+        });
+      if (table === 'services') return makeServicesCount(0);
+      if (table === 'portfolio_albums') return makeAlbumsCount(0);
+      throw new Error(`unexpected ${table}`);
+    });
+
+    render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
+
+    await waitFor(() => screen.getByTestId('review-row-service'));
+
+    expect(screen.getByTestId('copy-pendency-service')).toBeInTheDocument();
+    expect(screen.getByTestId('copy-pendency-photos')).toBeInTheDocument();
+    expect(screen.getByTestId('step22-digest-actions')).toBeInTheDocument();
+  });
 });
