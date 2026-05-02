@@ -239,8 +239,6 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
         ) : albums.length === 0 ? (
           <p className="mt-2 text-xs text-muted-foreground">Nenhum álbum ainda — crie o primeiro abaixo.</p>
         ) : (
-          <p className="mt-2 text-xs text-muted-foreground">Nenhum álbum ainda — crie o primeiro abaixo.</p>
-        ) : (
           <ul className="mt-2 divide-y divide-border">
             {albums.map(a => {
               const expanded = expandedAlbumId === a.id;
