@@ -23,10 +23,14 @@ const SHELL_PATH = resolve(
 describe('Wizard · pular detalhes não joga no /dashboard', () => {
   const src = readFileSync(SHELL_PATH, 'utf8');
 
-  // Localiza o bloco do case phase2_details (até o próximo case '/' ou o
-  // fechamento `case 'phase2_photos'` para ser robusto a refatorações).
-  const detailsStart = src.indexOf("case 'phase2_details':");
-  const detailsEnd = src.indexOf("case 'phase2_photos':", detailsStart);
+  // Pega o ÚLTIMO case 'phase2_details' (o do switch de renderPhase, que é o
+  // que efetivamente roda ao usuário clicar). Existem outros matches em
+  // switches auxiliares (ex.: meta() para milestone) que não interessam aqui.
+  const detailsStart = src.lastIndexOf("case 'phase2_details':");
+  // Próximo "case 'xxx':" após o nosso bloco
+  const after = src.slice(detailsStart + 1);
+  const nextCaseRel = after.search(/\n\s+case '[a-z0-9_]+':/);
+  const detailsEnd = nextCaseRel >= 0 ? detailsStart + 1 + nextCaseRel : src.length;
   const block = src.slice(detailsStart, detailsEnd);
 
   it('contém o case phase2_details', () => {
