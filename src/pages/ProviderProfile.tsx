@@ -328,6 +328,7 @@ const ProviderProfile = () => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '', city: '', state: '' });
+  const [preferredWindow, setPreferredWindow] = useState<PreferredWindow | null>(null);
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
   const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
   const [showStickyContact, setShowStickyContact] = useState(false);
