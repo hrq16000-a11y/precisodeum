@@ -1454,16 +1454,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
             firstServiceId={state.firstServiceId}
             onSkip={() => {
-              // Milestone — só permite "configurar depois" quando JÁ existe um service_id.
-              if (!state.firstServiceId) {
-                toast.warning(
-                  'Falta pouco! Publique seu primeiro serviço para que os clientes já possam te encontrar enquanto você termina o resto depois.',
-                );
-                return;
-              }
-              track('skip', { exit: 'dashboard', milestone: 'first_service_done' });
-              toast.success('Progresso salvo! Você pode continuar de onde parou no painel.');
-              window.location.assign('/dashboard');
+              // BLINDAGEM (regression-locked): "Pular o 1º serviço" NUNCA
+              // navega para o dashboard. Em vez disso, registra a intenção
+              // via `continueWithoutFirstService`, que despacha
+              // GO_TO phase4_document e permite o usuário concluir o cadastro
+              // sem um serviço (selo "perfil incompleto" segue tratado pelo
+              // gate). Validado por `onboarding-v3-skip-first-service-e2e`.
+              track('skip', { milestone: 'skip_first_service', target: 'phase4_document' });
+              continueWithoutFirstService();
             }}
           />
         );

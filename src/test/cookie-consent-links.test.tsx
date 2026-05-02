@@ -22,15 +22,17 @@ describe("Banner /cookies — links e URLs", () => {
     localStorage.clear();
   });
 
-  it("banner exibe link para /cookies (Política de Cookies)", () => {
+  it("banner exibe link para /cookies (Política de Cookies)", async () => {
     renderInRouter(<CookieConsent />);
-    const cookiesLinks = screen.queryAllByRole("link", { name: /cookies|privacidade|preferências/i });
+    // Aguarda o effect async (hydrateConsentFromServer) resolver e o banner aparecer.
+    const cookiesLinks = await screen.findAllByRole("link", { name: /cookies|privacidade|preferências/i });
     const hrefs = cookiesLinks.map((a) => a.getAttribute("href"));
     expect(hrefs.some((h) => h === "/cookies" || h === "/privacidade")).toBe(true);
   });
 
-  it("links do banner não apontam para domínios externos não esperados", () => {
+  it("links do banner não apontam para domínios externos não esperados", async () => {
     renderInRouter(<CookieConsent />);
+    await screen.findAllByRole("link", { name: /cookies|privacidade/i });
     const links = screen.queryAllByRole("link");
     for (const a of links) {
       const href = a.getAttribute("href") || "";
