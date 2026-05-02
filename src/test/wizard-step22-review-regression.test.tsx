@@ -135,4 +135,77 @@ describe('Step22_Review', () => {
     });
     expect(screen.getByRole('button', { name: /Tentar de novo/i })).toBeInTheDocument();
   });
+
+  it('mostra lista detalhada de pendências (actions) quando há lacunas', async () => {
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'providers')
+        return makeProvidersOk({
+          id: 'p1',
+          city: 'Curitiba',
+          working_hours_struct: {},
+          cpf: null,
+          cnpj: null,
+        });
+      if (table === 'services') return makeServicesCount(0);
+      if (table === 'portfolio_albums') return makeAlbumsCount(0);
+      throw new Error(`unexpected ${table}`);
+    });
+
+    render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
+
+    await waitFor(() => screen.getByTestId('review-row-service'));
+
+    const serviceActions = screen.getByTestId('review-actions-service');
+    expect(serviceActions.textContent || '').toMatch(/Cadastre pelo menos 1 serviço/i);
+
+    const photoActions = screen.getByTestId('review-actions-photos');
+    expect(photoActions.textContent || '').toMatch(/Adicione pelo menos 1 foto/i);
+
+    const extrasActions = screen.getByTestId('review-actions-extras');
+    expect(extrasActions.textContent || '').toMatch(/horários de atendimento/i);
+
+    const portfolioActions = screen.getByTestId('review-actions-portfolio');
+    expect(portfolioActions.textContent || '').toMatch(/Crie 1 álbum/i);
+
+    expect(screen.getByText(/ações? sugerida/i)).toBeInTheDocument();
+  });
+
+  it('faz fallback para draft local quando providers query lança e draft existe', async () => {
+    localStorage.setItem(
+      'onboarding_v3_institutional_final',
+      JSON.stringify({
+        savedAt: Date.now(),
+        profile: { city: 'Curitiba', cpf: '12345678901' },
+        service: {
+          name: 'Pintura',
+          description: 'desc',
+          gallery_urls: ['p1.jpg', 'p2.jpg'],
+          cities_served: ['Curitiba', 'Pinhais'],
+          working_hours_struct: { mon: { start: '09:00' } },
+        },
+      }),
+    );
+
+    supabaseMock.from.mockImplementation((table: string) => {
+      if (table === 'providers')
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockRejectedValue(new Error('Failed to fetch')),
+            }),
+          }),
+        };
+      throw new Error(`unexpected ${table}`);
+    });
+
+    render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('step22-local-fallback')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('step22-error')).toBeNull();
+    expect(screen.getByTestId('review-row-identity')).toBeInTheDocument();
+    expect(screen.getByTestId('review-row-photos')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Finalizar cadastro/i })).toBeInTheDocument();
+  });
 });
