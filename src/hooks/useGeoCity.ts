@@ -44,6 +44,8 @@ const FETCH_TS_KEY = 'geo_fetch_ts';
 const SOURCE_KEY = 'geo_source';
 const LAST_KNOWN_KEY = 'geo_last_known_at';
 const NEIGHBORHOOD_SOURCE_KEY = 'geo_neighborhood_source';
+const VELOCITY_KEY = 'geo_velocity_mps';
+const ACCURACY_KEY = 'geo_accuracy_m';
 const GEO_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 function safeGet(key: string): string | null {
