@@ -99,6 +99,7 @@ import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { playWizardTransition } from '@/lib/wizardTransition';
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
+import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
 import { markPatchTouched, clearSessionTouched } from './sessionTouched';
 import { pushReviewPhase, popReviewPhase, clearReviewHistory } from './reviewHistory';
 import {
