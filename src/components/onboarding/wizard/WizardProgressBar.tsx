@@ -14,7 +14,7 @@
  *    está ancorado em fase renderável anterior — sinaliza ao usuário que
  *    "algo aconteceu" sem confundir com avanço real do progresso.
  */
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import {
