@@ -1,17 +1,25 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Phone, MessageCircle, Globe, Instagram, Facebook, ExternalLink, Star } from 'lucide-react';
+import { Building2, MapPin, MessageCircle, Globe, Instagram, Facebook, ExternalLink, Star, Send, ChevronRight, Image as ImageIcon, Briefcase, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { whatsappLink, toCanonical } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { capitalizeName } from '@/lib/normalize';
+import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
+import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
+import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
+import { toast } from 'sonner';
+import { formatCityState } from '@/lib/locationFormat';
+import { sanitizeSlug } from '@/lib/slugify';
 
 /**
  * CompanyProfile — página institucional para perfis PJ (/empresa/:slug).
@@ -53,7 +61,84 @@ interface CompanyRow {
   postal_code: string | null;
   show_full_address?: boolean | null;
   social_links: Record<string, string> | null;
+  working_hours_struct?: Record<string, unknown> | null;
+  contact_hours?: Record<string, unknown> | null;
+  website?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
 }
+
+interface CompanyService {
+  id: string;
+  name?: string | null;
+  service_name?: string | null;
+  description?: string | null;
+  service_area?: string | null;
+  price?: number | null;
+  price_min?: number | null;
+  price_max?: number | null;
+  serviceCategories?: Array<{ name?: string | null; icon?: string | null }>;
+}
+
+interface LeadFormState {
+  name: string;
+  phone: string;
+  service: string;
+  message: string;
+  city: string;
+  state: string;
+}
+
+const COMPANY_PUBLIC_COLS = [
+  'id',
+  'user_id',
+  'slug',
+  'business_name',
+  'legal_name',
+  'description',
+  'photo_url',
+  'city',
+  'state',
+  'neighborhood',
+  'phone',
+  'whatsapp',
+  'latitude',
+  'longitude',
+  'rating_avg',
+  'review_count',
+  'account_type',
+  'business_segment',
+  'street',
+  'street_number',
+  'complement',
+  'postal_code',
+  'show_full_address',
+  'social_links',
+  'working_hours_struct',
+  'contact_hours',
+  'website',
+  'meta_title',
+  'meta_description',
+].join(', ');
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const getLeadSource = () => {
+  if (typeof window === 'undefined') return 'direto';
+  const params = new URLSearchParams(window.location.search);
+  const source = (params.get('origem') || params.get('utm_source') || '').toLowerCase();
+  if (source.includes('busca') || document.referrer.includes('/buscar')) return 'busca';
+  if (source.includes('categoria') || document.referrer.includes('/categoria/')) return 'categoria';
+  return 'direto';
+};
+
+const truncateAt = (text: string, max: number) => {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (clean.length <= max) return clean;
+  const slice = clean.slice(0, max - 1);
+  const lastSpace = slice.lastIndexOf(' ');
+  return (lastSpace > max * 0.6 ? slice.slice(0, lastSpace) : slice).replace(/[\s,.;:-]+$/, '') + '…';
+};
 
 const buildMapsHref = (parts: (string | null | undefined)[]): string => {
   const q = parts.filter((p) => !!p && String(p).trim().length > 0).join(', ');
