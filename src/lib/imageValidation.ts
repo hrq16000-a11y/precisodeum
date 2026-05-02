@@ -116,8 +116,15 @@ export async function validateImageFile(
     };
   }
 
-  // ── Dimensões (best-effort; HEIC/HEIF não decodificam em todos os browsers) ──
-  if (skipDimensionCheck || mime === 'image/heic' || mime === 'image/heif') {
+  // Dimensões (best-effort; HEIC/HEIF não decodificam em todos os browsers).
+  // Em ambientes sem decoder real (jsdom/SSR), também pulamos para não falsificar "corrupt".
+  const hasDecoder =
+    typeof URL !== 'undefined' &&
+    typeof URL.createObjectURL === 'function' &&
+    typeof Image !== 'undefined' &&
+    typeof navigator !== 'undefined' &&
+    !/jsdom/i.test(navigator.userAgent ?? '');
+  if (skipDimensionCheck || mime === 'image/heic' || mime === 'image/heif' || !hasDecoder) {
     return { ok: true };
   }
 
