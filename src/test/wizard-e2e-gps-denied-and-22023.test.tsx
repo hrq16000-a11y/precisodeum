@@ -158,9 +158,9 @@ describe('Wizard E2E — GPS negado + erro 22023', () => {
     expect(card.getAttribute('data-kind')).toBe('neighborhood');
     expect(card.textContent || '').toMatch(/bairro/i);
 
-    // CTA "Revisar Bairro" foca o input de Bairro.
+    // CTA "Preencher Bairro" foca o input de Bairro.
     const cta = screen.getByTestId('provider-integrity-primary-cta');
-    expect(cta.textContent || '').toMatch(/Revisar Bairro/i);
+    expect(cta.textContent || '').toMatch(/Preencher Bairro/i);
 
     const bairroInput = screen.getByPlaceholderText(/Centro, Batel/i) as HTMLInputElement;
     fireEvent.click(cta);
@@ -187,7 +187,7 @@ describe('Wizard E2E — GPS negado + erro 22023', () => {
     expect(card.getAttribute('data-kind')).toBe('coords');
 
     const cta = screen.getByTestId('provider-integrity-primary-cta');
-    expect(cta.textContent || '').toMatch(/Tentar GPS novamente/i);
+    expect(cta.textContent || '').toMatch(/Ativar GPS preciso/i);
     // Clicar não pode lançar — apenas dispara o requestPreciseLocation mockado.
     expect(() => fireEvent.click(cta)).not.toThrow();
   });
