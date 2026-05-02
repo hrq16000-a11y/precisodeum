@@ -19,8 +19,11 @@ import { renderHook, act } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-// Mock telemetry ANTES de importar o hook
-const trackOnboardingEvent = vi.fn().mockResolvedValue(undefined);
+// Mock telemetry — usar vi.hoisted para que o spy fique disponível
+// antes do hoist do vi.mock (Vitest move vi.mock para o topo do arquivo).
+const { trackOnboardingEvent } = vi.hoisted(() => ({
+  trackOnboardingEvent: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('@/components/onboarding/wizard/phases/v2/telemetry', () => ({
   trackOnboardingEvent,
   setOnboardingIntent: vi.fn(),
