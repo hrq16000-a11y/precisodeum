@@ -25,7 +25,7 @@ const DEFAULT_FAQS: CategoryFaq[] = [
 
 const FAQS_BY_SLUG: Record<string, CategoryFaq[]> = {
   eletricista: [
-    { q: 'Quanto custa um eletricista para instalação ou reparo?', a: 'Os valores variam conforme a complexidade. Chamados simples (troca de tomada, disjuntor) começam em torno de R$ 80–R$ 150. Instalações maiores (quadro de luz, ar-condicionado) podem ultrapassar R$ 500. Sempre peça orçamento prévio com fotos.' },
+    { q: 'Quanto custa um eletricista para instalação ou reparo?', a: 'Os valores variam conforme a complexidade. Chamados simples (troca de tomada, disjuntor) começam em torno de R$ 80–R$ 150. Instalações maiores (quadro de luz, ar-condicionado) podem ultrapassar R$ 500. Combine os detalhes diretamente com o profissional, com fotos.' },
     { q: 'O eletricista atende emergências fora do horário comercial?', a: 'Muitos profissionais oferecem atendimento 24h. No filtro de busca, procure pela tag "atendimento de emergência" para encontrar quem trabalha em finais de semana e madrugada.' },
     { q: 'Preciso desligar a energia para receber o serviço?', a: 'Sim, em quase todos os reparos elétricos é necessário desligar o disjuntor geral. O profissional orienta no momento da visita.' },
     { q: 'Eletricista emite nota fiscal?', a: 'Profissionais com a tag "Emite NF-e" podem fornecer nota fiscal — útil para reembolsos de seguro ou condomínios.' },
