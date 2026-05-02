@@ -64,7 +64,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
     try {
       const { data: provider, error: pErr } = await supabase
         .from('providers')
-        .select('id, business_name, document, working_hours, city')
+        .select('id, business_name, cpf, cnpj, working_hours_struct, city')
         .eq('user_id', user.id)
         .maybeSingle();
       if (pErr) throw pErr;
@@ -95,15 +95,14 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
         );
       }
 
+      const wh = (provider as any)?.working_hours_struct;
       setSnap({
-        providerOk: Boolean(provider?.id && provider?.city),
+        providerOk: Boolean(provider?.id && (provider as any)?.city),
         servicesCount,
         hasPhotos,
         albumsCount,
-        hasDocument: Boolean(provider?.document),
-        hasWorkingHours: Boolean(
-          provider?.working_hours && Object.keys(provider.working_hours as object).length > 0,
-        ),
+        hasDocument: Boolean((provider as any)?.cpf || (provider as any)?.cnpj),
+        hasWorkingHours: Boolean(wh && typeof wh === 'object' && Object.keys(wh).length > 0),
       });
     } catch (e: any) {
       setError(
