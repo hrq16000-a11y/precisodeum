@@ -98,6 +98,7 @@ import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Ph
 import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { playWizardTransition } from '@/lib/wizardTransition';
+import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
 import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
