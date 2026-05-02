@@ -269,7 +269,10 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       // tem seus próprios controles de back e o Bet NÃO deve interferir.
       if (state.phase === 'done' || state.phase === 'celebration') return;
       const prev = BET_BACK_MAP[state.phase];
-      if (prev) dispatch({ type: 'GOTO', phase: prev });
+      if (prev) {
+        try { playWizardTransition('back'); } catch { /* noop */ }
+        dispatch({ type: 'GOTO', phase: prev });
+      }
     }
     function handlePopState(ev: PopStateEvent) {
       // GUARDA UNIFICADA — antes existia um listener "passivo" no
@@ -288,12 +291,14 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       if (target && target !== state.phase) {
         // Restaura a fase do history sem empurrar nova entrada.
         lastPushedPhase.current = target;
+        try { playWizardTransition('back'); } catch { /* noop */ }
         dispatch({ type: 'GOTO', phase: target });
       } else {
         // Fallback: comporta-se como o "Voltar" do wizard.
         const prev = BET_BACK_MAP[state.phase];
         if (prev) {
           lastPushedPhase.current = prev;
+          try { playWizardTransition('back'); } catch { /* noop */ }
           dispatch({ type: 'GOTO', phase: prev });
         }
       }
