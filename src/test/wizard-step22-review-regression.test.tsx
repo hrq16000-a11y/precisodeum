@@ -6,7 +6,7 @@
  *  2. Render bem-sucedido com 5 linhas (identity/service/photos/extras/portfolio)
  *  3. Erro de rede com botão "Tentar de novo"
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import React from 'react';
 
