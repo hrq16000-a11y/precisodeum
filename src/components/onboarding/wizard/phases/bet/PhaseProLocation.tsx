@@ -420,7 +420,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
           placeholder="Ex: Centro, Boa Vista, Vila Nova"
           autoComplete="address-level3"
           maxLength={80}
-          className={neighborhoodOk ? 'ring-2 ring-emerald-300/60' : ''}
+          className={neighborhoodOk ? 'ring-2 ring-bet-green/60' : ''}
         />
         <p className="mt-1 text-[11px] text-muted-foreground">
           O bairro ajuda clientes da sua região a te encontrar mais rápido.
