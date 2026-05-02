@@ -91,6 +91,7 @@ const AdminSitemapAuditPage = lazy(() => import("./pages/admin/AdminSitemapAudit
 const AdminOnboardingStatsPage = lazy(() => import("./pages/admin/AdminOnboardingStatsPage"));
 const AdminUploadStressTestPage = lazy(() => import("./pages/admin/AdminUploadStressTestPage"));
 const AdminSearchSortingPage = lazy(() => import("./pages/admin/AdminSearchSortingPage"));
+const AdminMetaTrackingQualityPage = lazy(() => import("./pages/admin/AdminMetaTrackingQualityPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
