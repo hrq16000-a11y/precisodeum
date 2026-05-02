@@ -31,7 +31,7 @@ const ServicesPage = () => {
 
   useSeoHead({
     title: 'Serviços Profissionais | Preciso de um',
-    description: 'Confira todos os serviços profissionais disponíveis na plataforma. Eletricista, encanador, pintor, pedreiro e muito mais. Solicite orçamentos grátis.',
+    description: 'Confira todos os serviços profissionais disponíveis na plataforma. Eletricista, encanador, pintor, pedreiro e muito mais. Fale direto com o profissional.',
     canonical: `${SITE_BASE_URL}/servicos`,
   });
 
