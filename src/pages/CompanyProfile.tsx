@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Phone, MessageCircle, Globe, Instagram, Facebook, ExternalLink, Calendar, Star } from 'lucide-react';
+import { Building2, MapPin, Phone, MessageCircle, Globe, Instagram, Facebook, ExternalLink, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -53,8 +53,6 @@ interface CompanyRow {
   postal_code: string | null;
   show_full_address?: boolean | null;
   social_links: Record<string, string> | null;
-  founded_year?: number | null;
-  team_size?: number | null;
 }
 
 const buildMapsHref = (parts: (string | null | undefined)[]): string => {
@@ -69,13 +67,14 @@ const buildMapsEmbed = (parts: (string | null | undefined)[]): string => {
 
 export default function CompanyProfile() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { city: geoCity, state: geoState } = useGeoCity();
 
   const { data: company, isLoading, error } = useQuery({
     queryKey: ['company-profile', slug],
     queryFn: async () => {
       const COLS =
-        'id, user_id, slug, business_name, legal_name, description, photo_url, city, state, neighborhood, phone, whatsapp, latitude, longitude, rating_avg, review_count, account_type, business_segment, street, street_number, complement, postal_code, show_full_address, social_links, founded_year, team_size';
+        'id, user_id, slug, business_name, legal_name, description, photo_url, city, state, neighborhood, phone, whatsapp, latitude, longitude, rating_avg, review_count, account_type, business_segment, street, street_number, complement, postal_code, show_full_address, social_links';
 
       const param = (slug || '').trim();
       // 1) Tenta resolver por slug (caminho canônico).
@@ -198,6 +197,14 @@ export default function CompanyProfile() {
   useEffect(() => {
     if (company) trackProfileClick(company.id, company.slug, 'company-profile');
   }, [company]);
+
+  useEffect(() => {
+    const param = (slug || '').trim();
+    if (!company?.slug || !param) return;
+    if (param !== company.slug) {
+      navigate(`/empresa/${company.slug}`, { replace: true });
+    }
+  }, [company?.slug, navigate, slug]);
 
   if (isLoading) {
     return (
@@ -342,23 +349,6 @@ export default function CompanyProfile() {
             <div className="container max-w-3xl">
               <h2 className="mb-3 font-display text-xl font-bold">Sobre a empresa</h2>
               <p className="whitespace-pre-line text-foreground/90">{company.description}</p>
-              {(company.founded_year || company.team_size) && (
-                <dl className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  {company.founded_year && (
-                    <div className="inline-flex items-center gap-1">
-                      <Calendar className="h-4 w-4" aria-hidden="true" />
-                      <dt className="sr-only">Fundada em</dt>
-                      <dd>Fundada em {company.founded_year}</dd>
-                    </div>
-                  )}
-                  {company.team_size && (
-                    <div>
-                      <dt className="sr-only">Tamanho da equipe</dt>
-                      <dd>{company.team_size} colaboradores</dd>
-                    </div>
-                  )}
-                </dl>
-              )}
             </div>
           </section>
         )}
