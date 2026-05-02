@@ -219,6 +219,25 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     };
   });
 
+  // Guard de rota: enquanto estiver entre phase2_service / details / photos,
+  // qualquer tentativa de cair em /dashboard é bloqueada e devolvida ao wizard.
+  // Não interfere em fases ≥ phase3_celebration nem em editMode.
+  useWizardExitGuard({
+    phase: state.phase,
+    enabled: !editMode,
+    onBlocked: ({ from, attemptedPath }) => {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: { reason: 'exit_guard_blocked', from, attemptedPath },
+      });
+      toast.message('Falta pouco!', {
+        description: 'Conclua o 1º serviço para acessar o painel.',
+      });
+    },
+  });
+
   // Listener global do botão "Pular esta etapa" exibido pelo WizardShell em
   // modo edit_profile. Avança a fase atual via NEXT — mesmo comportamento
   // dos botões "Pular" internos. Idempotente; cleanup garante zero zumbi.
