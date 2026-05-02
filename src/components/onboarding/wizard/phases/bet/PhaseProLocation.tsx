@@ -493,9 +493,10 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         </label>
         <Input
           id="neighborhood"
+          ref={neighborhoodInputRef}
           value={state.neighborhood}
           onChange={handleNeighborhood}
-          placeholder="Ex: Centro, Boa Vista, Vila Nova"
+          placeholder="Ex: Centro, Batel, Afonso Pena"
           autoComplete="address-level3"
           maxLength={80}
           className={neighborhoodOk ? 'ring-2 ring-bet-green/60' : ''}
