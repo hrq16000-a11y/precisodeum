@@ -488,6 +488,9 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   // emite telemetria `review_anchor_used` para auditoria de UX.
   const { anchorPhase: reviewAnchorPhase, anchorIndex: reviewAnchorIndex, isAnchored: reviewIsAnchored } =
     useReviewAnchor(state.phase, isReview);
+  // Persiste a última fase renderizável (sessionStorage) — sobrevive a
+  // refresh e mudanças de rota, prevenindo saltos no contador X/19.
+  useReviewPhasePersistence(state.phase, isReview);
   const phaseIdx = isReview ? reviewAnchorIndex : unifiedPhaseIndex(state.phase);
   const hudPoints = realPoints;
   const hudTotal = isReview ? REVIEW_TOTAL_STEPS : UNIFIED_VISIBLE_PHASES;
