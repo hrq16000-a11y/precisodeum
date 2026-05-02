@@ -170,7 +170,9 @@ export async function resilientUpload<T = any>(
       });
       clearTimeout(timer);
 
-      if (!res.ok) {
+      // Treat ok===undefined (lightweight mocks/SSR shims) as success when a json() exists.
+      const isOk = res.ok === true || (res.ok === undefined && typeof res.json === 'function');
+      if (!isOk) {
         if (res.status < 500) {
           let errMsg = `upload_failed_${res.status}`;
           try {
