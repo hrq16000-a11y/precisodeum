@@ -39,7 +39,8 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   const awarded = state.rewards.city;
   const [submitting, setSubmitting] = useState(false);
   const [requestingGps, setRequestingGps] = useState(false);
-  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  // gpsAccuracy local apenas espelha state.gps_accuracy_m para UI.
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(state.gps_accuracy_m ?? null);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
   const autoFilledRef = useRef(false);
@@ -56,6 +57,12 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     if (geo.city && geo.state) {
       autoFilledRef.current = true;
       const cleanNeighborhood = sanitizeNeighborhood(geo.neighborhood, geo.city);
+      const willFillNeighborhood = !(state.neighborhood && state.neighborhood.trim()) && !!cleanNeighborhood;
+      const nbSource = willFillNeighborhood
+        ? (geo.neighborhoodSource && geo.neighborhoodSource !== 'none'
+            ? (geo.neighborhoodSource as BetState['neighborhood_source'])
+            : null)
+        : (state.neighborhood_source ?? null);
       patch({
         city: geo.city,
         state: geo.state,
@@ -63,12 +70,24 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         ...(geo.latitude != null && geo.longitude != null
           ? { latitude: geo.latitude, longitude: geo.longitude }
           : {}),
-        ...(!(state.neighborhood && state.neighborhood.trim()) && cleanNeighborhood
-          ? { neighborhood: cleanNeighborhood }
+        ...(willFillNeighborhood
+          ? { neighborhood: cleanNeighborhood as string, neighborhood_source: nbSource }
           : {}),
       });
+      // Log estruturado de persistência (auditoria local).
+      // eslint-disable-next-line no-console
+      console.info('[loc-persist] auto-fill', {
+        city: geo.city,
+        state: geo.state,
+        neighborhood: willFillNeighborhood ? cleanNeighborhood : state.neighborhood,
+        neighborhood_source: willFillNeighborhood ? nbSource : state.neighborhood_source,
+        location_source: state.location_source ?? (geo.source === 'gps' ? 'gps' : 'ip'),
+        gps_accuracy_m: state.gps_accuracy_m,
+        precise: geo.source === 'gps',
+        trigger: 'useEffect/passive',
+      });
     }
-  }, [geo.city, geo.state, geo.neighborhood, geo.latitude, geo.longitude, geo.source, state.city, state.neighborhood, state.location_source, patch]);
+  }, [geo.city, geo.state, geo.neighborhood, geo.neighborhoodSource, geo.latitude, geo.longitude, geo.source, state.city, state.neighborhood, state.neighborhood_source, state.location_source, state.gps_accuracy_m, patch]);
 
   function awardCityOnce() {
     if (state.rewards.city) return;
@@ -90,7 +109,13 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   }
 
   function handleNeighborhood(e: React.ChangeEvent<HTMLInputElement>) {
-    patch({ neighborhood: e.target.value });
+    const value = e.target.value;
+    patch({
+      neighborhood: value,
+      // Edição manual sempre carimba 'user' assim que houver conteúdo;
+      // limpar o campo volta a fonte para null para o trigger DB cair em default.
+      neighborhood_source: value.trim().length > 0 ? 'user' : null,
+    });
   }
 
   async function applyCepSuggestion(cep: string) {
@@ -126,13 +151,26 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
       } catch { /* silencioso — bairro continua opcional */ }
     }
 
+    const willFillFromCep = !!cleanNeighborhood && !state.neighborhood?.trim();
     patch({
       city: r.city,
       state: r.state,
-      ...(cleanNeighborhood && !state.neighborhood?.trim() ? { neighborhood: cleanNeighborhood } : {}),
+      ...(willFillFromCep
+        ? { neighborhood: cleanNeighborhood as string, neighborhood_source: 'cep' }
+        : {}),
       // BrasilAPI v2 traz ibge em data.city_ibge; lookupCep não expõe. Mantemos null aqui — o
       // backend fará a normalização final via sync_cidade trigger. Coordenadas só por GPS.
       location_source: 'cep',
+    });
+    // eslint-disable-next-line no-console
+    console.info('[loc-persist] cep', {
+      cep: norm,
+      city: r.city,
+      state: r.state,
+      neighborhood: willFillFromCep ? cleanNeighborhood : state.neighborhood,
+      neighborhood_source: willFillFromCep ? 'cep' : state.neighborhood_source,
+      location_source: 'cep',
+      precise: false,
     });
     if (r.city && r.state) awardCityOnce();
   }
@@ -150,20 +188,33 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         autoFilledRef.current = true;
         const cleanNeighborhood = sanitizeNeighborhood(result.neighborhood, result.city);
         const currentNeighborhood = (state.neighborhood || '').trim();
+        const acc = result.accuracyMeters ?? null;
+        const willFillFromGps = !!cleanNeighborhood && !currentNeighborhood;
         const patchObj: Partial<BetState> = {
           city: result.city,
           state: result.state,
           latitude: geo.latitude,
           longitude: geo.longitude,
           location_source: 'gps',
+          gps_accuracy_m: acc,
         };
-        if (cleanNeighborhood && !currentNeighborhood) {
-          patchObj.neighborhood = cleanNeighborhood;
+        if (willFillFromGps) {
+          patchObj.neighborhood = cleanNeighborhood as string;
+          patchObj.neighborhood_source = 'gps';
         }
         patch(patchObj);
-        setGpsAccuracy(result.accuracyMeters ?? null);
+        setGpsAccuracy(acc);
         awardCityOnce();
-        const acc = result.accuracyMeters;
+        // eslint-disable-next-line no-console
+        console.info('[loc-persist] gps', {
+          city: result.city,
+          state: result.state,
+          neighborhood: willFillFromGps ? cleanNeighborhood : currentNeighborhood,
+          neighborhood_source: willFillFromGps ? 'gps' : state.neighborhood_source,
+          location_source: 'gps',
+          gps_accuracy_m: acc,
+          precise: acc != null && acc <= 100,
+        });
         trackGpsAttempt({
           phase: 'pro_location',
           userId: user?.id || null,

@@ -513,6 +513,15 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         ...(state.latitude != null && state.longitude != null
           ? { latitude: state.latitude, longitude: state.longitude }
           : {}),
+        // Persistência de origem da localização e do bairro (auditoria + checklist).
+        // Mapeamento: BetState.location_source → providers.geo_source
+        //             BetState.gps_accuracy_m  → providers.geo_source_confidence (numeric, em metros)
+        //             BetState.neighborhood_source → providers.neighborhood_source (text)
+        ...(state.location_source ? { geo_source: state.location_source } : {}),
+        ...(state.gps_accuracy_m != null && Number.isFinite(state.gps_accuracy_m)
+          ? { geo_source_confidence: state.gps_accuracy_m }
+          : {}),
+        ...(state.neighborhood_source ? { neighborhood_source: state.neighborhood_source } : {}),
         description: '',
         // PJ — endereço institucional (opcional). normalizeProviderPayload
         // remove silenciosamente para PF e sanitiza para PJ.
@@ -546,6 +555,21 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
         context: { isPj, hasDoc: !!taxIdValue, action: 'bet_finish_pro' },
         onRetry: () => { void finishPro(); },
         fn: async () => {
+          // Log estruturado: confirma quais sinais de localização estão indo para o banco.
+          // eslint-disable-next-line no-console
+          console.info('[loc-persist] save→providers', {
+            user_id: user.id,
+            city: providerPayload.city,
+            state: providerPayload.state,
+            neighborhood: providerPayload.neighborhood,
+            neighborhood_source: (providerPayload as any).neighborhood_source ?? null,
+            geo_source: (providerPayload as any).geo_source ?? null,
+            geo_source_confidence: (providerPayload as any).geo_source_confidence ?? null,
+            precise:
+              (providerPayload as any).geo_source === 'gps' &&
+              typeof (providerPayload as any).geo_source_confidence === 'number' &&
+              (providerPayload as any).geo_source_confidence <= 100,
+          });
           const { error } = await (supabase as any)
             .from('providers').upsert(providerPayload, { onConflict: 'user_id' });
           if (error) {
