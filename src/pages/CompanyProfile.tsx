@@ -154,30 +154,50 @@ export default function CompanyProfile() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { city: geoCity, state: geoState } = useGeoCity();
+  const { requestWhatsApp } = useWhatsAppGate();
+  const [leadDialogOpen, setLeadDialogOpen] = useState(false);
+  const [leadSent, setLeadSent] = useState(false);
+  const [preferredWindow, setPreferredWindow] = useState<PreferredWindow | null>(null);
+  const [leadForm, setLeadForm] = useState<LeadFormState>({
+    name: '',
+    phone: '',
+    service: '',
+    message: '',
+    city: '',
+    state: '',
+  });
 
   const { data: company, isLoading, error } = useQuery({
     queryKey: ['company-profile', slug],
     queryFn: async () => {
-      const COLS =
-        'id, user_id, slug, business_name, legal_name, description, photo_url, city, state, neighborhood, phone, whatsapp, latitude, longitude, rating_avg, review_count, account_type, business_segment, street, street_number, complement, postal_code, show_full_address, social_links';
-
       const param = (slug || '').trim();
-      // 1) Tenta resolver por slug (caminho canônico).
       let { data, error } = await (supabase as any)
         .from('providers')
-        .select(COLS)
+        .select(COMPANY_PUBLIC_COLS)
         .eq('slug', param)
         .eq('status', 'approved')
         .is('deleted_at', null)
         .maybeSingle();
       if (error) throw error;
 
-      // 2) Fallback: se o param parecer UUID e nada foi encontrado, busca por id.
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
+      const sanitized = sanitizeSlug(param);
+      if (!data && sanitized && sanitized !== param) {
+        const { data: bySanitized, error: bySanitizedError } = await (supabase as any)
+          .from('providers')
+          .select(COMPANY_PUBLIC_COLS)
+          .eq('slug', sanitized)
+          .eq('status', 'approved')
+          .is('deleted_at', null)
+          .maybeSingle();
+        if (bySanitizedError) throw bySanitizedError;
+        data = bySanitized;
+      }
+
+      const isUuid = UUID_RE.test(param);
       if (!data && isUuid) {
         const { data: byId, error: errById } = await (supabase as any)
           .from('providers')
-          .select(COLS)
+          .select(COMPANY_PUBLIC_COLS)
           .eq('id', param)
           .eq('status', 'approved')
           .is('deleted_at', null)
@@ -189,6 +209,40 @@ export default function CompanyProfile() {
     },
     enabled: !!slug,
     staleTime: 1000 * 60 * 2,
+  });
+
+  const { data: services = [] } = useQuery({
+    queryKey: ['company-services', company?.id],
+    queryFn: async () => {
+      if (!company?.id) return [] as CompanyService[];
+      const { data: svc } = await supabase
+        .from('services')
+        .select('*')
+        .eq('provider_id', company.id)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+
+      if (!svc || svc.length === 0) return [] as CompanyService[];
+
+      const serviceIds = svc.map((service: any) => service.id);
+      const { data: serviceCategories } = await supabase
+        .from('service_categories')
+        .select('service_id, categories(name, icon)')
+        .in('service_id', serviceIds);
+
+      const categoryMap: Record<string, Array<{ name?: string | null; icon?: string | null }>> = {};
+      (serviceCategories || []).forEach((row: any) => {
+        if (!categoryMap[row.service_id]) categoryMap[row.service_id] = [];
+        if (row.categories) categoryMap[row.service_id].push(row.categories);
+      });
+
+      return (svc as any[]).map((service) => ({
+        ...service,
+        serviceCategories: categoryMap[service.id] || [],
+      }));
+    },
+    enabled: !!company?.id,
+    staleTime: 1000 * 60 * 5,
   });
 
   // Galeria — primeiras 9 fotos do portfólio (se houver). Falha silenciosa.
@@ -217,6 +271,13 @@ export default function CompanyProfile() {
   );
 
   const showFull = company?.show_full_address === true;
+  const effectiveWhatsApp = company ? toCanonical(company.whatsapp || company.phone || '') : '';
+  const heroStats = [
+    company?.review_count ? { icon: Star, label: 'Avaliações', value: company.review_count } : null,
+    services.length > 0 ? { icon: Briefcase, label: 'Serviços', value: services.length } : null,
+    gallery.length > 0 ? { icon: ImageIcon, label: 'Fotos', value: gallery.length } : null,
+  ].filter(Boolean) as Array<{ icon: typeof Star; label: string; value: number }>;
+
   const fullAddress = useMemo(() => {
     if (!company) return '';
     if (!showFull) {
@@ -235,18 +296,54 @@ export default function CompanyProfile() {
       .join(' • ');
   }, [company, showFull]);
 
-  // SEO: JSON-LD LocalBusiness
+  const cityState = formatCityState(company?.city || '', company?.state || '') || company?.city || '';
+  const companyCategory = useMemo(() => {
+    const firstNamed = services.flatMap((service) => service.serviceCategories || []).find((category) => category?.name)?.name;
+    return company?.business_segment || firstNamed || 'Empresa local';
+  }, [company?.business_segment, services]);
+
+  const seoTitle = truncateAt(
+    company?.meta_title?.trim() || `${displayName} em ${cityState || 'sua cidade'} | Preciso de um`,
+    60,
+  );
+  const seoDescription = truncateAt(
+    company?.meta_description?.trim() ||
+      `${displayName}${companyCategory ? `, ${companyCategory}` : ''}${cityState ? ` em ${cityState}` : ''}. Solicite contato direto pela plataforma e converse com segurança.`,
+    160,
+  );
+
+  useSeoHead({
+    title: seoTitle,
+    description: seoDescription,
+    canonical: company?.slug ? `${SITE_BASE_URL}/empresa/${company.slug}` : undefined,
+    ogImage: company?.photo_url || gallery[0]?.optimized_url || gallery[0]?.url || undefined,
+    ogType: 'profile',
+  });
+
+  const breadcrumbLd = useMemo(() => {
+    if (!company?.slug) return null;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'Empresas', item: `${SITE_BASE_URL}/buscar` },
+        { '@type': 'ListItem', position: 3, name: displayName, item: `${SITE_BASE_URL}/empresa/${company.slug}` },
+      ],
+    };
+  }, [company?.slug, displayName]);
+
   const jsonLd = useMemo(() => {
     if (!company) return null;
     return {
       '@context': 'https://schema.org',
-      '@type': 'LocalBusiness',
+      '@type': ['Organization', 'LocalBusiness'],
+      '@id': `${SITE_BASE_URL}/empresa/${company.slug}`,
       name: displayName,
       legalName: company.legal_name || undefined,
       description: company.description || undefined,
       image: company.photo_url || undefined,
-      url: typeof window !== 'undefined' ? `${window.location.origin}/empresa/${company.slug}` : undefined,
-      telephone: company.phone || company.whatsapp || undefined,
+      url: `${SITE_BASE_URL}/empresa/${company.slug}`,
       address: {
         '@type': 'PostalAddress',
         streetAddress: showFull ? ([company.street, company.street_number].filter(Boolean).join(', ') || undefined) : undefined,
@@ -274,9 +371,23 @@ export default function CompanyProfile() {
       sameAs: company.social_links
         ? Object.values(company.social_links).filter((v) => typeof v === 'string' && v.startsWith('http'))
         : undefined,
+      makesOffer: services.slice(0, 8).map((service) => ({
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Service',
+          name: service.service_name || service.name || 'Serviço',
+          description: service.description || undefined,
+          areaServed: service.service_area
+            ? { '@type': 'City', name: service.service_area }
+            : company.city
+              ? { '@type': 'City', name: company.city }
+              : undefined,
+        },
+      })),
     };
-  }, [company, displayName]);
+  }, [company, displayName, services, showFull]);
 
+  useJsonLd(breadcrumbLd, `company-breadcrumb-${company?.id || slug}`);
   useJsonLd(jsonLd, `company-${company?.id || slug}`);
 
   useEffect(() => {
@@ -290,6 +401,56 @@ export default function CompanyProfile() {
       navigate(`/empresa/${company.slug}`, { replace: true });
     }
   }, [company?.slug, navigate, slug]);
+
+  useEffect(() => {
+    if (!company) return;
+    setLeadForm((prev) => ({
+      ...prev,
+      city: prev.city || company.city || '',
+      state: prev.state || (company.state || '').toUpperCase(),
+      service: prev.service || services[0]?.service_name || services[0]?.name || '',
+    }));
+  }, [company, services]);
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!company) return;
+    const ctxParts: string[] = [];
+    const locStr = [leadForm.city, leadForm.state].filter(Boolean).join(' - ');
+    if (locStr) ctxParts.push(`Localização: ${locStr}`);
+    const origin = getLeadSource();
+    if (origin && origin !== 'direto') ctxParts.push(`Origem: ${origin}`);
+    if (companyCategory) ctxParts.push(`Segmento: ${companyCategory}`);
+    const ctxBlock = ctxParts.length ? `\n\n— Contexto —\n${ctxParts.join('\n')}` : '';
+    const finalMessage = `${leadForm.message || ''}${ctxBlock}`.trim();
+
+    const { error: insertError } = await supabase.from('leads').insert({
+      provider_id: company.id,
+      client_name: leadForm.name,
+      phone: leadForm.phone,
+      service_needed: leadForm.service,
+      message: finalMessage,
+      lead_context: {
+        city: leadForm.city || null,
+        state: leadForm.state || null,
+        category: companyCategory || null,
+        origin: origin || 'direto',
+        page: 'company_profile',
+        provider_slug: company.slug,
+        referrer: typeof document !== 'undefined' ? document.referrer || null : null,
+        captured_at: new Date().toISOString(),
+      },
+      preferred_window: preferredWindow ?? null,
+    } as any);
+
+    if (insertError) {
+      toast.error('Erro ao enviar solicitação');
+      return;
+    }
+
+    setLeadSent(true);
+    toast.success('Solicitação enviada com sucesso!');
+  };
 
   if (isLoading) {
     return (
