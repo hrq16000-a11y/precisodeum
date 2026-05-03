@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { compressImage } from '@/lib/compressImage';
 import { format } from 'date-fns';
 import {
@@ -21,6 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { invokeWithGuard, EDGE_GUARD_FALLBACK_MESSAGE } from '@/lib/edgeInvoke';
 import { toast } from 'sonner';
+import { toastAssertiveError } from '@/lib/a11yToast';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { handleImageError } from '@/lib/imageResolver';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
@@ -106,6 +107,21 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   // Timeline
   const [activityTimeline, setActivityTimeline] = useState<any[]>([]);
 
+  // Double-fetch — a listagem agora vem com allowlist enxuta; ao abrir o sheet
+  // fazemos um SELECT * por ID para garantir que campos sensíveis (whatsapp,
+  // tax_id, permissions, suspended_reason, metadados) estejam presentes.
+  const [fullProfile, setFullProfile] = useState<any | null>(null);
+  const [loadingFull, setLoadingFull] = useState(false);
+
+  // effectiveUser = props da lista mescladas com o SELECT * por ID.
+  // Garante que campos não selecionados na allowlist (whatsapp, permissions,
+  // tax_id, suspended_reason, metadados) estejam disponíveis sem quebrar o JSX
+  // existente que lê `user.<campo>` diretamente.
+  const effectiveUser = useMemo(
+    () => (user ? { ...user, ...(fullProfile || {}) } : user),
+    [user, fullProfile],
+  );
+
   useEffect(() => {
     if (!user) return;
     setTab('summary');
@@ -116,6 +132,36 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     setShowResetPw(false);
     setNewPassword('');
     setSuspendReason('');
+    setFullProfile(null);
+    setLoadingFull(true);
+
+    // === Double-fetch: SELECT * por ID ===
+    // A listagem usa allowlist (id, name, status, created_at, ...) por
+    // performance. Aqui buscamos o registro completo para hidratar campos
+    // como whatsapp, permissions, tax_id, suspended_reason, metadados, etc.
+    supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          toastAssertiveError('Não foi possível carregar todos os dados do usuário.');
+          setLoadingFull(false);
+          return;
+        }
+        const full = data ?? user;
+        setFullProfile(full);
+        setProfileForm({
+          full_name: full.full_name || '',
+          phone: full.phone || '',
+          whatsapp: full.whatsapp || '',
+          profile_type: full.profile_type || full.role || 'client',
+          status: full.status || 'active',
+          level_id: full.level_id || '',
+          account_type_id: full.account_type_id || '',
+          department: full.department || '',
+        });
+        setLoadingFull(false);
+      });
+
+    // Hidratação otimista imediata com o que veio da lista (evita "flash" vazio)
     setProfileForm({
       full_name: user.full_name || '',
       phone: user.phone || '',
@@ -571,6 +617,16 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   return (
     <Sheet open={!!user} onOpenChange={open => !open && onClose()}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0">
+        {loadingFull && (
+          <div
+            className="flex items-center gap-2 px-3 sm:px-6 py-1.5 bg-muted/50 text-[11px] text-muted-foreground border-b border-border"
+            role="status"
+            aria-live="polite"
+          >
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Carregando dados completos do usuário…
+          </div>
+        )}
         {/* ===== HERO HEADER ===== */}
         <div className={`relative px-3 sm:px-6 pt-5 pb-4 ${isBanned ? 'bg-gradient-to-r from-destructive/15 to-destructive/5' : isSuspended ? 'bg-gradient-to-r from-amber-500/15 to-amber-500/5' : 'bg-gradient-to-r from-primary/10 to-accent/10'}`}>
           {/* Creation date prominent */}
@@ -689,17 +745,17 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 {isBanned ? <Ban className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
                 {isBanned ? 'Conta banida' : 'Conta suspensa'}
               </div>
-              {user.suspended_reason && <p className="mt-1 opacity-80">Motivo: {user.suspended_reason}</p>}
-              {user.suspended_at && <p className="mt-0.5 opacity-60">Em: {format(new Date(user.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
+              {effectiveUser.suspended_reason && <p className="mt-1 opacity-80">Motivo: {effectiveUser.suspended_reason}</p>}
+              {effectiveUser.suspended_at && <p className="mt-0.5 opacity-60">Em: {format(new Date(effectiveUser.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
               <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" onClick={reactivateUser} disabled={suspendLoading}>Reativar</Button>
             </div>
           )}
 
           {/* Quick links */}
           <div className="flex flex-wrap gap-2 mt-3">
-            {(user.whatsapp || provider?.whatsapp) && (
+            {(effectiveUser.whatsapp || provider?.whatsapp) && (
               <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
-                <a href={`https://wa.me/${sanitizePhone(user.whatsapp || provider?.whatsapp || '')}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://wa.me/${sanitizePhone(effectiveUser.whatsapp || provider?.whatsapp || '')}`} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="h-3 w-3" /> WhatsApp
                 </a>
               </Button>
@@ -775,7 +831,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                   <div className="space-y-2">
                     <InfoRow icon={<Mail className="h-4 w-4" />} label="E-mail" value={user.email || '—'} />
                     <InfoRow icon={<Phone className="h-4 w-4" />} label="Telefone" value={user.phone ? formatPhoneDisplay(user.phone) : '—'} />
-                    <InfoRow icon={<MessageCircle className="h-4 w-4" />} label="WhatsApp" value={user.whatsapp ? formatPhoneDisplay(user.whatsapp) : '—'} />
+                    <InfoRow icon={<MessageCircle className="h-4 w-4" />} label="WhatsApp" value={effectiveUser.whatsapp ? formatPhoneDisplay(effectiveUser.whatsapp) : '—'} />
                     {user.department && <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Depto" value={user.department} />}
                     <InfoRow icon={<ArrowUp className="h-4 w-4" />} label="Pontos" value={String(user.engagement_points || 0)} />
                   </div>
@@ -1275,8 +1331,8 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                       {isBanned ? <Ban className="h-5 w-5 text-destructive" /> : <AlertTriangle className="h-5 w-5 text-amber-600" />}
                       <span className="font-medium text-sm">{isBanned ? 'Banido' : 'Suspenso'}</span>
                     </div>
-                    {user.suspended_reason && <p className="text-xs text-muted-foreground">Motivo: {user.suspended_reason}</p>}
-                    {user.suspended_at && <p className="text-xs text-muted-foreground">Data: {format(new Date(user.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
+                    {effectiveUser.suspended_reason && <p className="text-xs text-muted-foreground">Motivo: {effectiveUser.suspended_reason}</p>}
+                    {effectiveUser.suspended_at && <p className="text-xs text-muted-foreground">Data: {format(new Date(effectiveUser.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
                     <Button size="sm" onClick={reactivateUser} disabled={suspendLoading} className="w-full">Reativar</Button>
                   </div>
                 ) : (
@@ -1338,7 +1394,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               </div>
 
               {/* Granular permissions */}
-              <UserPermissionsPanel user={user} onRefresh={onRefresh} />
+              <UserPermissionsPanel user={effectiveUser} onRefresh={onRefresh} />
             </TabsContent>
 
             {/* ====== PAGE SETTINGS TAB ====== */}

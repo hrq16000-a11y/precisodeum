@@ -15,10 +15,22 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * Perfil de timeout adaptativo:
+ *  - 'admin'      → 20s. Operações de back-office; rede tipicamente boa.
+ *  - 'user'       → 35s. Conexões móveis 3G instáveis (interior do Brasil),
+ *                   exclusão de conta, uploads de usuário final.
+ *  - 'background' → 45s. Cron-like, sem UI travando.
+ */
+export type InvokeTimeoutProfile = 'admin' | 'user' | 'background';
+
 export interface InvokeGuardOptions {
   body?: Record<string, unknown>;
   headers?: Record<string, string>;
+  /** Timeout explícito em ms. Sobrescreve `timeoutProfile`. */
   timeoutMs?: number;
+  /** Perfil adaptativo (default 'admin' = 20s). */
+  timeoutProfile?: InvokeTimeoutProfile;
   /** Quando true (default), gera idempotencyKey e injeta. */
   idempotent?: boolean;
   /** Quando true (default), tenta 1 retry em erros transitórios. */
@@ -37,6 +49,18 @@ export interface InvokeGuardResult<T = unknown> {
 }
 
 const DEFAULT_TIMEOUT_MS = 20_000;
+
+const TIMEOUT_PROFILE_MS: Record<InvokeTimeoutProfile, number> = {
+  admin: 20_000,
+  user: 35_000,
+  background: 45_000,
+};
+
+function resolveTimeout(opts: { timeoutMs?: number; timeoutProfile?: InvokeTimeoutProfile }): number {
+  if (typeof opts.timeoutMs === 'number' && opts.timeoutMs > 0) return opts.timeoutMs;
+  if (opts.timeoutProfile) return TIMEOUT_PROFILE_MS[opts.timeoutProfile];
+  return DEFAULT_TIMEOUT_MS;
+}
 
 function genUuid(): string {
   try {
@@ -127,10 +151,10 @@ export async function invokeWithGuard<T = unknown>(
   const {
     body,
     headers: extraHeaders = {},
-    timeoutMs = DEFAULT_TIMEOUT_MS,
     idempotent = true,
     retry = true,
   } = opts;
+  const timeoutMs = resolveTimeout(opts);
 
   const idempotencyKey = idempotent ? genUuid() : null;
   const headers: Record<string, string> = { ...extraHeaders };

@@ -6,6 +6,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { invokeWithGuard, EDGE_GUARD_FALLBACK_MESSAGE } from '@/lib/edgeInvoke';
+import { toastAssertiveError } from '@/lib/a11yToast';
 import { toast } from 'sonner';
 import {
   Users, Key, Trash2, Download, CheckSquare, UserCog, Shield, UserPlus,
@@ -551,7 +552,7 @@ const AdminUsersPage = () => {
         body: { user_id: pwUser.id, new_password: newPassword },
       });
       if (res.timedOut) {
-        toast.error(EDGE_GUARD_FALLBACK_MESSAGE);
+        toastAssertiveError(EDGE_GUARD_FALLBACK_MESSAGE);
         return;
       }
       if (res.error) throw res.error;
@@ -672,7 +673,7 @@ const AdminUsersPage = () => {
         },
       });
       if (res.timedOut) {
-        toast.error(EDGE_GUARD_FALLBACK_MESSAGE);
+        toastAssertiveError(EDGE_GUARD_FALLBACK_MESSAGE);
         fetchProfiles();
         return;
       }
