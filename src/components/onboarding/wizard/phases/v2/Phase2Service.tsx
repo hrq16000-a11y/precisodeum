@@ -212,13 +212,8 @@ export const Phase2Service = ({
       role="region"
       aria-labelledby="phase2-service-title"
     >
-      <button
-        onClick={onBack}
-        className="text-xs text-muted-foreground hover:text-foreground"
-        aria-label="Voltar para a etapa anterior"
-      >
-        ← Voltar
-      </button>
+      <BackButton onBack={onBack} />
+
       <header className="space-y-2 text-center">
         <h1 id="phase2-service-title" className="font-display text-lg font-extrabold leading-tight text-foreground">
           Qual serviço você quer cadastrar?
