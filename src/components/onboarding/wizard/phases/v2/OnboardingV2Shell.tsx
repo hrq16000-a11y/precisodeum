@@ -2196,6 +2196,23 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         onContinue={handleRemoteContinue}
         onDiscard={handleRemoteDiscard}
       />
+
+      <WizardErrorModal
+        open={!!errorModal}
+        onOpenChange={(v) => { if (!v) setErrorModal(null); }}
+        code={errorModal?.code || ''}
+        step={String(state.phase)}
+        missingFields={errorModal?.missingFields}
+        technicalMessage={errorModal?.techMessage ?? null}
+        technicalCode={errorModal?.techCode ?? null}
+        contextSnapshot={{
+          category: state.service?.category_label || state.service?.category_id || null,
+          city: state.profile?.city || null,
+          state_uf: state.profile?.state || null,
+        }}
+        onRetry={() => errorModal?.onRetry?.()}
+        onBack={() => window.dispatchEvent(new CustomEvent('wizard:request-back'))}
+      />
     </>
   );
 };
