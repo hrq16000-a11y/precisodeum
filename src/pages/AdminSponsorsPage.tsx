@@ -312,7 +312,7 @@ const AdminSponsorsPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [detectedShape, setDetectedShape] = useState<{ width: number; height: number; shape: BannerShape } | null>(null);
-  const [search, setSearch] = useState('');
+  // `search`/`debouncedSearch` declarados acima (alimenta a query principal).
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('all');
   const [tierFilter, setTierFilter] = useState('all');
