@@ -2860,6 +2860,36 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_events_daily_stats: {
+        Row: {
+          created_at: string
+          day: string
+          error_code: string
+          event: string
+          phase: string
+          total_count: number
+          unique_users: number
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          error_code: string
+          event: string
+          phase: string
+          total_count?: number
+          unique_users?: number
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          error_code?: string
+          event?: string
+          phase?: string
+          total_count?: number
+          unique_users?: number
+        }
+        Relationships: []
+      }
       onboarding_settings: {
         Row: {
           active: boolean
@@ -9121,6 +9151,7 @@ export type Database = {
       process_lead_followup_reminders: { Args: never; Returns: Json }
       publish_my_provider: { Args: never; Returns: Json }
       purge_cold_storage_91d: { Args: never; Returns: number }
+      purge_onboarding_events: { Args: never; Returns: Json }
       realign_first_service: {
         Args: {
           _category_id: string
