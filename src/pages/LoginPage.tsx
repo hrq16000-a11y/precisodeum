@@ -118,11 +118,27 @@ const LoginPage = () => {
       });
 
       if (!signInError && signInData.session) {
+        if (import.meta.env.DEV) {
+          console.info('[login][diag] signIn OK', {
+            user_id: signInData.user?.id,
+            has_session: !!signInData.session,
+          });
+        }
         // Navegação explícita imediata: não dependemos só do useEffect/onAuthStateChange.
         // /cadastro-inicial tem seu próprio gate que decide o destino final.
         toast.success('Bem-vindo(a)!');
         navigate('/cadastro-inicial', { replace: true, state: from ? { from } : undefined });
         return;
+      }
+
+      if (import.meta.env.DEV && signInError) {
+        const status = (signInError as any)?.status;
+        const code = status === 403 ? 'C_RLS_403' : 'A_AUTH_FAIL';
+        console.warn('[login][diag] signIn failed', {
+          category: code,
+          status,
+          message: signInError.message,
+        });
       }
 
       const errMsg = signInError?.message || '';
