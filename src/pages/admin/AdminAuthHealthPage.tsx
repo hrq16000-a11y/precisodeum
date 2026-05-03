@@ -174,7 +174,31 @@ export default function AdminAuthHealthPage() {
       if (error) throw error;
       return (data || []) as EventRow[];
     },
-    staleTime: 30_000,
+    // Cache de 1 min para não re-fetchar agressivamente enquanto o admin
+    // analisa os gráficos. Refetch manual via botão Recarregar.
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  // Sumário agregado (RPC) — evita contar 500+ linhas no JS quando o
+  // volume de logs cresce. Usa a mesma janela do recordset paginado.
+  const bucketParam = pickBucketForPeriod(period);
+  const summaryQuery = useQuery({
+    queryKey: ["admin-auth-health-summary", period, sinceISO, bucketParam],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_auth_health_summary", {
+        _since: sinceISO,
+        _bucket: bucketParam,
+      });
+      if (error) throw error;
+      return data as {
+        counts: Record<string, number>;
+        funnel: { detected: number; attempted: number; healed: number; failed: number; loop_guard_unique_users: number };
+        series: Array<{ bucket: string; B_PROFILE_NULL: number; C_RLS_403: number; A_AUTH_FAIL: number }>;
+        total_errors: number;
+      } | null;
+    },
+    staleTime: 60_000,
     retry: false,
   });
 
