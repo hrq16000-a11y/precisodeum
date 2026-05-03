@@ -30,9 +30,24 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     // carregando ou falhou), derivamos do pathname para nunca deixar
     // metadados em branco para o crawler.
     const fb = seoFallbackFromPath(typeof window !== 'undefined' ? window.location.pathname : '/');
-    const safeTitle = (title && title.trim().length >= 3) ? title : fb.title;
-    const safeDescription = (description && description.trim().length >= 30) ? description : fb.description;
+    const titleOk = !!(title && title.trim().length >= 3);
+    // Limite reduzido (30 → 10) para não substituir descrições curtas mas válidas
+    // (ex.: meta de perfis enxutos). Fallback só entra em string realmente vazia/lixo.
+    const descOk = !!(description && description.trim().length >= 10);
+    const safeTitle = titleOk ? title : fb.title;
+    const safeDescription = descOk ? description : fb.description;
     const safeOgType = ogType || fb.ogType;
+
+    if (import.meta.env?.DEV && (!titleOk || !descOk)) {
+      // eslint-disable-next-line no-console
+      console.warn('[useSeoHead] Fallback de URL aplicado', {
+        path: typeof window !== 'undefined' ? window.location.pathname : '/',
+        usedTitleFallback: !titleOk,
+        usedDescriptionFallback: !descOk,
+        receivedTitle: title,
+        receivedDescription: description,
+      });
+    }
 
     const fullTitle = safeTitle.includes('Preciso de um') ? safeTitle : `${safeTitle} | Preciso de um`;
     document.title = fullTitle;
