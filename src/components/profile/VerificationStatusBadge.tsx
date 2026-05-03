@@ -216,7 +216,7 @@ export const VerificationStatusBadge = ({
         {badge}
         {hasDoc && state !== 'verified' && (
           <span className="text-[11px] text-muted-foreground">
-            Documento já enviado
+            Documento preenchido
           </span>
         )}
       </div>
