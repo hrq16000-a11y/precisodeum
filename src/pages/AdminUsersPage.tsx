@@ -546,9 +546,13 @@ const AdminUsersPage = () => {
     if (newPassword.length < 6) { toast.error('A senha deve ter no mínimo 6 caracteres'); return; }
     setResettingPw(true);
     try {
-      const res = await supabase.functions.invoke('admin-reset-password', {
+      const res = await invokeWithGuard<{ error?: string }>('admin-reset-password', {
         body: { user_id: pwUser.id, new_password: newPassword },
       });
+      if (res.timedOut) {
+        toast.error(EDGE_GUARD_FALLBACK_MESSAGE);
+        return;
+      }
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
       await logAuditAction({
@@ -560,8 +564,9 @@ const AdminUsersPage = () => {
       setNewPassword('');
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'Falha ao redefinir senha'));
+    } finally {
+      setResettingPw(false);
     }
-    setResettingPw(false);
   };
 
   const handleBlock = async (p: any) => {
@@ -653,7 +658,7 @@ const AdminUsersPage = () => {
     if (createType === 'sponsor' && !createSponsorId) { toast.error('Selecione qual patrocinador este usuário irá gerenciar'); return; }
     setCreating(true);
     try {
-      const res = await supabase.functions.invoke('admin-create-user', {
+      const res = await invokeWithGuard<{ user_id?: string; error?: string }>('admin-create-user', {
         body: {
           email: createEmail,
           password: createPassword,
@@ -665,6 +670,11 @@ const AdminUsersPage = () => {
           sponsor_id: createType === 'sponsor' ? createSponsorId : null,
         },
       });
+      if (res.timedOut) {
+        toast.error(EDGE_GUARD_FALLBACK_MESSAGE);
+        fetchProfiles();
+        return;
+      }
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
       await logAuditAction({ action: 'create', resource_type: 'user', resource_id: res.data?.user_id, details: { email: createEmail, profile_type: createType, staff_role: createStaffRole, sponsor_id: createSponsorId || null } });
@@ -675,8 +685,9 @@ const AdminUsersPage = () => {
       fetchProfiles();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'Falha ao criar usuário'));
+    } finally {
+      setCreating(false);
     }
-    setCreating(false);
   };
 
   // ── Metrics exports ──
