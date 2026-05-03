@@ -167,7 +167,7 @@ const AdminUsersPage = () => {
         { count: 'exact' }
       ).order('created_at', { ascending: false }).limit(ADMIN_FETCH_CAP),
       supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj, photo_url, whatsapp, phone, description, services_count, latitude, longitude', { count: 'exact' }).is('deleted_at', null).limit(ADMIN_FETCH_CAP),
-      supabase.from('user_tags').select('*').limit(ADMIN_FETCH_CAP),
+      supabase.from('user_tags').select('id, user_id, tag_name, created_at').limit(ADMIN_FETCH_CAP),
       supabase.from('sponsor_contacts' as any).select('user_id').limit(ADMIN_FETCH_CAP),
       supabase.rpc('get_latest_user_access_logs' as any),
     ]).then(([pRes, prRes, tRes, scRes, alRes]) => {
