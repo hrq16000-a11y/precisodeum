@@ -67,7 +67,7 @@ const InstitutionalPage = () => {
         <h1 className="text-3xl font-bold text-foreground mb-6">{page.title}</h1>
         <div
           className="prose prose-sm max-w-none text-foreground"
-          dangerouslySetInnerHTML={{ __html: page.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.content) }}
         />
       </main>
       <Footer />
