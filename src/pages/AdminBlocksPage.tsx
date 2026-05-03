@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import DOMPurify from 'dompurify';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
@@ -322,9 +322,9 @@ const AdminBlocksPage = () => {
                     </Button>
                   </div>
                   {showHtmlPreview ? (
-                    <div
+                    <SafeHTML
+                      html={htmlText}
                       className="rounded-lg border border-border bg-background p-4 min-h-[200px] prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlText) }}
                     />
                   ) : (
                     <Textarea
