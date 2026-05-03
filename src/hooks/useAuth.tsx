@@ -5,6 +5,39 @@ import { usePresenceTracker } from '@/hooks/useOnlinePresence';
 import { geocodeCity } from '@/lib/geoUtils';
 import { resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/celebrate';
 import { reportError } from '@/lib/errorReporter';
+import { queryClient } from '@/lib/queryClient';
+
+/**
+ * Detecta de forma síncrona se há um token de sessão Supabase persistido
+ * em localStorage. Usado para inicializar `loading` corretamente:
+ *  - Sem token → loading=false (visitante anônimo, render imediato).
+ *  - Com token → loading=true (vamos restaurar a sessão; evita redirect
+ *    espúrio para /login no refresh de rota privada).
+ *
+ * O prefixo é derivado de VITE_SUPABASE_PROJECT_ID para nunca depender de
+ * um ID hardcoded — qualquer ambiente (preview, custom domain, fork) detecta
+ * o próprio token corretamente.
+ */
+const hasPersistedSupabaseSession = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const projectId = (import.meta as any)?.env?.VITE_SUPABASE_PROJECT_ID as string | undefined;
+    if (projectId) {
+      const key = `sb-${projectId}-auth-token`;
+      if (window.localStorage.getItem(key)) return true;
+    }
+    // Fallback defensivo: varre por qualquer chave sb-*-auth-token (cobre
+    // ambientes onde a env não foi injetada a tempo do bootstrap).
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) return true;
+    }
+  } catch {
+    // localStorage pode estar bloqueado (modo privado / iframe sandbox) —
+    // nesse caso assumimos visitante anônimo (loading=false).
+  }
+  return false;
+};
 
 interface AuthContextType {
   session: Session | null;
@@ -34,7 +67,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [provider, setProvider] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Loading inteligente: só inicia em `true` quando há token persistido a
+  // restaurar — evita o flash de redirect para /login no refresh de rotas
+  // privadas (race entre primeiro render e getSession()).
+  const [loading, setLoading] = useState<boolean>(() => hasPersistedSupabaseSession());
   const [needsTypeSelection, setNeedsTypeSelection] = useState(false);
 
   // Monotonic generation counter used to discard out-of-order fetchProfile results.
@@ -277,13 +313,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user?.id, refetchProfile]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    // 1) Encerra a sessão no Supabase (revoga refresh token + limpa storage sb-*).
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      // Mesmo com falha de rede limpamos estado local — token expira sozinho.
+      console.warn('[useAuth] signOut(): supabase.auth.signOut falhou, limpando local mesmo assim', err);
+    }
+
+    // 2) Reset de estado de auth em memória.
     setSession(null);
     setUser(null);
     setProfile(null);
     setProvider(null);
     setCelebrationMuted(false);
     setNeedsTypeSelection(false);
+
+    // 3) Cache do React Query — vital para impedir vazamento de PII (leads,
+    //    notificações, perfil, mensagens) em dispositivos compartilhados.
+    try {
+      queryClient.cancelQueries();
+      queryClient.clear();
+    } catch (err) {
+      console.warn('[useAuth] signOut(): queryClient.clear falhou', err);
+    }
+
+    // 4) sessionStorage — limpa estados temporários (impersonação, drafts de
+    //    fluxos sensíveis, telemetria de funil). localStorage é preservado
+    //    para manter preferências persistidas (consent LGPD, tema, etc.).
+    try {
+      if (typeof window !== 'undefined') {
+        const ss = window.sessionStorage;
+        // Remove explicitamente chaves de impersonação/admin que NUNCA podem
+        // sobreviver a um logout, mesmo que o clear() abaixo falhe.
+        const sensitiveKeys = [
+          'impersonation_admin_token',
+          'impersonation_admin_refresh',
+          'impersonation_session_id',
+          'impersonation_target_user',
+        ];
+        for (const k of sensitiveKeys) {
+          try { ss.removeItem(k); } catch { /* noop */ }
+        }
+        try { ss.clear(); } catch { /* noop */ }
+      }
+    } catch (err) {
+      console.warn('[useAuth] signOut(): sessionStorage.clear falhou', err);
+    }
   }, []);
   // Track online presence for the current user, including their city
   const providerCity = provider?.city;

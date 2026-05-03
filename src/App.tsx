@@ -1,5 +1,5 @@
 import { lazy as reactLazy, Suspense, useEffect, useState, type ComponentType } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 const Sonner = reactLazy(() => importWithRetry(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster }))));
 const Toaster = reactLazy(() => importWithRetry(() => import("@/components/ui/toaster").then(m => ({ default: m.Toaster }))));
@@ -37,15 +37,6 @@ type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
   reactLazy(() => importWithRetry(importer));
 
-const isTransientNetworkError = (error: unknown) => {
-  if (!(error instanceof Error)) return false;
-  const message = error.message.toLowerCase();
-  return (
-    message.includes("failed to fetch") ||
-    message.includes("network") ||
-    message.includes("fetch")
-  );
-};
 
 // Route-level chunks — keep App shell light and split every page by route.
 const Index = lazy(() => import("./pages/Index"));
@@ -240,22 +231,7 @@ const PageFallback = () => null;
 const hasRequestIdleCallback = () => typeof window !== 'undefined' && typeof (window as any).requestIdleCallback === 'function';
 const hasCancelIdleCallback = () => typeof window !== 'undefined' && typeof (window as any).cancelIdleCallback === 'function';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 30,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
-      refetchOnMount: false,
-      retry: (failureCount, error) => {
-        if (isTransientNetworkError(error)) return failureCount < 3;
-        return failureCount < 1;
-      },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    },
-  },
-});
+import { queryClient } from '@/lib/queryClient';
 
 const WizardSupportTestHarness = () => {
   const search = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
