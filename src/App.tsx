@@ -240,22 +240,7 @@ const PageFallback = () => null;
 const hasRequestIdleCallback = () => typeof window !== 'undefined' && typeof (window as any).requestIdleCallback === 'function';
 const hasCancelIdleCallback = () => typeof window !== 'undefined' && typeof (window as any).cancelIdleCallback === 'function';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 30,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
-      refetchOnMount: false,
-      retry: (failureCount, error) => {
-        if (isTransientNetworkError(error)) return failureCount < 3;
-        return failureCount < 1;
-      },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    },
-  },
-});
+import { queryClient } from '@/lib/queryClient';
 
 const WizardSupportTestHarness = () => {
   const search = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
