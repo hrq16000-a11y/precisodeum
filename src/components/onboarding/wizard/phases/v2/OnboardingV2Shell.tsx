@@ -804,7 +804,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               city: (currentProfile.city || '').trim() ? currentProfile.city : (prof.city || currentProfile.city),
               state: (currentProfile.state || '').trim() ? currentProfile.state : (prof.state || currentProfile.state),
               neighborhood: (currentProfile.neighborhood || '').trim() ? currentProfile.neighborhood : (prof.neighborhood || currentProfile.neighborhood),
-              profile_type: currentProfile.profile_type || prof.profile_type || 'provider',
+              profile_type: (currentProfile.profile_type || (prof.profile_type as typeof currentProfile.profile_type) || 'provider') as typeof currentProfile.profile_type,
               avatar_url: currentProfile.avatar_url || prof.avatar_url || currentProfile.avatar_url,
             };
             p = merged;
