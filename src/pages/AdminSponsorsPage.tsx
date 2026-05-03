@@ -23,7 +23,7 @@ import {
   Megaphone, Users, FileText, StickyNote, AlertTriangle, TrendingUp, Settings2,
   Link2, Globe, MapPin, Building2, Phone, Mail, Star, Crown, Zap, CreditCard,
   PanelTop, Columns, Monitor, BarChart3, ArrowRight, Image as ImageIcon, Filter,
-  Download, Bell, Power, Activity, Send, Heart, HeartCrack, Gauge
+  Download, Bell, Power, Activity, Send, Heart, HeartCrack, Gauge, Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -1308,6 +1308,7 @@ const AdminSponsorsPage = () => {
                   <SheetTitle className="flex items-center gap-2">
                     {s.logo_url && <Avatar className="h-8 w-8"><AvatarImage src={s.logo_url} /><AvatarFallback>{s.title[0]}</AvatarFallback></Avatar>}
                     <span>{s.title}</span>
+                    {detailHydrating && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" aria-label="Carregando dados completos" />}
                   </SheetTitle>
                 </SheetHeader>
 
