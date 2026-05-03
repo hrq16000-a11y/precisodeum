@@ -259,7 +259,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user?.id, refetchProfile]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
@@ -267,14 +267,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProvider(null);
     setCelebrationMuted(false);
     setNeedsTypeSelection(false);
-  };
+  }, []);
   // Track online presence for the current user, including their city
   const providerCity = provider?.city;
   const presenceMeta = useMemo(() => (providerCity ? { city: providerCity } : undefined), [providerCity]);
   usePresenceTracker(user?.id, presenceMeta);
 
+  // Memoize the context value so consumers (~50+ across the app) don't re-render
+  // unless one of the actual primitives changes. Without this, every parent
+  // re-render of AuthProvider cascaded a re-render to every `useAuth()` consumer.
+  const contextValue = useMemo<AuthContextType>(
+    () => ({ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }),
+    [session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile],
+  );
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
