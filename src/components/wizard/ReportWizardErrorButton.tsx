@@ -450,7 +450,7 @@ export const ReportWizardErrorButton = ({
                         </code>
                       </li>
                     ))}
-                    <li>Navegador: {typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 60) + '…' : '—'}</li>
+                    <li>Dispositivo: <code className="font-mono break-all">{deviceSummary()}</code></li>
                   </ul>
                 </div>
               </div>
