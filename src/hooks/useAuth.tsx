@@ -149,7 +149,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Safety net: never block UI for more than 3s on initial auth
-    const safetyTimer = window.setTimeout(() => setLoading(false), 3000);
+    // Safety net: only flips loading=false as a true LAST RESORT — i.e. when
+    // no fetchProfile call has settled within 3s. If a fetch is still in-flight
+    // we let it resolve naturally, avoiding the "ghost user" state where
+    // `user !== null && profile === null && loading === false`.
+    const safetyTimer = window.setTimeout(() => {
+      if (!fetchProfileSettledRef.current) setLoading(false);
+    }, 3000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
