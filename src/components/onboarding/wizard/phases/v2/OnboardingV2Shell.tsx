@@ -2076,6 +2076,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                   state: state.profile.state || null,
                   has_provider: !!state.providerId,
                   has_first_service: !!state.firstServiceId,
+                  lastPersistError: lastPersistError
+                    ? { message: lastPersistError.message, code: lastPersistError.code || null }
+                    : null,
                 }}
               />
             </section>
