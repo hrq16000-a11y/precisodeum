@@ -278,6 +278,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     code?: string | null;
     at: number;
   }>(null);
+  // Modal de erro contextual (substitui tela em branco): mostra código,
+  // campos faltantes e CTAs claros (Voltar / Tentar novamente / Reportar).
+  const [errorModal, setErrorModal] = useState<null | {
+    code: string;
+    missingFields: string[];
+    techMessage?: string | null;
+    techCode?: string | null;
+    onRetry?: () => void;
+  }>(null);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
   // Timer rastreado do hint "rascunho restaurado" (caminho remoto, fora de useEffect).
   // Mantido em ref para garantir cleanup no unmount e evitar setState zumbi.
