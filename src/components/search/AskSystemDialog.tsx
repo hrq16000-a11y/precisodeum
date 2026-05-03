@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useSubmitGuard } from '@/hooks/useSubmitGuard';
+import { sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
 
 const schema = z.object({
   service_query: z.string().trim().min(3, 'Descreva o serviço (mín. 3 caracteres)').max(200),
