@@ -1291,7 +1291,7 @@ const AdminSponsorsPage = () => {
       <Sheet open={!!detailSponsor} onOpenChange={v => { if (!v) setDetailSponsor(null); }}>
         <SheetContent className="w-[95vw] max-w-lg overflow-y-auto">
           {detailSponsor && (() => {
-            const s = detailSponsor;
+            const s = { ...detailSponsor, ...(detailFull || {}) } as Sponsor;
             const tierCfg = TIER_CONFIG[s.tier || s.plan_tier] || TIER_CONFIG.basic;
             const typeCfg = TYPE_CONFIG[s.sponsor_type] || TYPE_CONFIG.global;
             const pos = POSITION_MAP[s.position];
@@ -1348,7 +1348,7 @@ const AdminSponsorsPage = () => {
                   {(s.phone || s.whatsapp || s.external_link) && (
                     <div className="flex flex-wrap gap-2 text-xs">
                       {s.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {s.phone}</span>}
-                      {s.whatsapp && <span className="flex items-center gap-1">📱 {s.whatsapp}</span>}
+                      {s.whatsapp && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {s.whatsapp}</span>}
                       {s.external_link && <a href={s.external_link} target="_blank" className="flex items-center gap-1 text-primary"><ExternalLink className="h-3 w-3" /> Link</a>}
                     </div>
                   )}
@@ -1394,7 +1394,7 @@ const AdminSponsorsPage = () => {
                   {/* Campaigns */}
                   {sCampaigns.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold mb-1.5">📢 Campanhas ({sCampaigns.length})</h3>
+                      <h3 className="text-sm font-semibold mb-1.5 flex items-center gap-1"><Megaphone className="h-3.5 w-3.5" /> Campanhas ({sCampaigns.length})</h3>
                       {sCampaigns.map((c: any) => (
                         <div key={c.id} className="text-xs border-b border-border py-1.5 flex justify-between">
                           <span>{c.name} <Badge variant="secondary" className="text-[9px] ml-1 capitalize">{c.status}</Badge></span>
@@ -1407,7 +1407,7 @@ const AdminSponsorsPage = () => {
                   {/* Contracts */}
                   {sContracts.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold mb-1.5">📄 Contratos ({sContracts.length})</h3>
+                      <h3 className="text-sm font-semibold mb-1.5 flex items-center gap-1"><FileText className="h-3.5 w-3.5" /> Contratos ({sContracts.length})</h3>
                       {sContracts.map((c: any) => (
                         <div key={c.id} className="text-xs border-b border-border py-1.5 flex justify-between">
                           <span>Nº {c.contract_number || '—'} <Badge variant="secondary" className="text-[9px] ml-1 capitalize">{c.status}</Badge></span>
@@ -1420,7 +1420,7 @@ const AdminSponsorsPage = () => {
                   {/* Notes */}
                   {sNotes.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold mb-1.5">📝 Notas ({sNotes.length})</h3>
+                      <h3 className="text-sm font-semibold mb-1.5 flex items-center gap-1"><StickyNote className="h-3.5 w-3.5" /> Notas ({sNotes.length})</h3>
                       {sNotes.map((n: any) => (
                         <div key={n.id} className="text-xs border-b border-border py-1.5">
                           <span className="text-muted-foreground">{format(new Date(n.created_at), 'dd/MM HH:mm')}</span> — {n.content}
