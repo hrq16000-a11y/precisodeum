@@ -64,15 +64,36 @@ const AdminLeadsPage = () => {
   // Limite explícito para evitar truncamento silencioso do default 1000 do Supabase.
   // Paginação visual ainda é client-side (ver `page`/`PAGE_SIZE`); o cap aqui é defensivo.
   const ADMIN_FETCH_CAP = 500;
+
+  // Sanitiza termo para o operador `.or()` do PostgREST: caracteres como
+  // vírgula, parêntese e aspas têm significado sintático e quebram a query.
+  const sanitizeOrTerm = (raw: string) =>
+    raw.replace(/[,()*"\\]/g, ' ').replace(/\s+/g, ' ').trim();
+
   const fetchLeads = async () => {
     // Allowlist explícita: apenas colunas exibidas/filtráveis na listagem admin.
     // Exclui mensagens longas/metadata internos que só fazem sentido no detalhe.
-    const { data, error, count } = await supabase
+    let query = supabase
       .from('leads')
       .select(
         'id, status, created_at, client_name, phone, service_needed, message, lead_score, score_factors, provider_id, providers(business_name)',
         { count: 'exact' }
-      )
+      );
+
+    // Busca server-side: dispara filtro `.or()` cobrindo client_email
+    // (que NÃO está no allowlist) sempre que o termo tenha 3+ chars OU
+    // contenha "@" (e-mail provável). Permite encontrar lead pelo e-mail
+    // mesmo fora dos primeiros 500 do payload.
+    const term = sanitizeOrTerm(debouncedSearch);
+    const isEmailLike = /@/.test(term);
+    if (term && (term.length >= 3 || isEmailLike)) {
+      const safe = `%${term}%`;
+      query = query.or(
+        `client_name.ilike.${safe},phone.ilike.${safe},client_email.ilike.${safe},service_needed.ilike.${safe}`
+      );
+    }
+
+    const { data, error, count } = await query
       .order('lead_score', { ascending: false })
       .limit(ADMIN_FETCH_CAP);
     if (error) { toast.error('Erro: ' + error.message); return; }
@@ -82,7 +103,9 @@ const AdminLeadsPage = () => {
     }
   };
 
-  useEffect(() => { if (isAdmin) fetchLeads(); }, [isAdmin]);
+  // Re-busca server-side quando o termo (debounced) muda — necessário para
+  // que o filtro `.or()` rode com o valor mais recente.
+  useEffect(() => { if (isAdmin) fetchLeads(); }, [isAdmin, debouncedSearch]);
 
   const bulk = useAdminBulkActions({
     table: 'leads',
