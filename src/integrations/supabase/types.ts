@@ -348,7 +348,10 @@ export type Database = {
         Row: {
           attempts: number
           duration_ms: number
+          environment: string | null
           id: string
+          lock_broken_count: number
+          outcome: string | null
           recorded_at: string
           succeeded: boolean
           user_id: string | null
@@ -356,7 +359,10 @@ export type Database = {
         Insert: {
           attempts?: number
           duration_ms?: number
+          environment?: string | null
           id?: string
+          lock_broken_count?: number
+          outcome?: string | null
           recorded_at?: string
           succeeded?: boolean
           user_id?: string | null
@@ -364,7 +370,10 @@ export type Database = {
         Update: {
           attempts?: number
           duration_ms?: number
+          environment?: string | null
           id?: string
+          lock_broken_count?: number
+          outcome?: string | null
           recorded_at?: string
           succeeded?: boolean
           user_id?: string | null
