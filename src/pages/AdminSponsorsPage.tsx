@@ -281,6 +281,21 @@ const AdminSponsorsPage = () => {
   const [tierFilter, setTierFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [detailSponsor, setDetailSponsor] = useState<Sponsor | null>(null);
+  // Double-fetch: ao abrir o sheet de detalhe, busca o registro completo do
+  // patrocinador (notes, address, tax_id, metadata, etc.) que ficam fora do
+  // SPONSOR_COLS otimizado da listagem.
+  const { data: detailFull, isFetching: detailHydrating } = useQuery({
+    queryKey: ['admin-sponsor-detail', detailSponsor?.id],
+    enabled: !!detailSponsor?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sponsors')
+        .select('*')
+        .eq('id', detailSponsor!.id)
+        .maybeSingle();
+      return data as any;
+    },
+  });
 
   // CRM dialogs
   const [linkDialog, setLinkDialog] = useState(false);
