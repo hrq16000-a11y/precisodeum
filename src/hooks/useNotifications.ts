@@ -28,21 +28,21 @@ export interface Notification {
 export function useNotifications(options?: { limit?: number | null }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const limit = options?.limit ?? 50;
+  // Truncation guard: null/undefined fall back to default 50.
+  // Query never runs without an explicit .limit() — prevents silent 1000-row truncation.
+  const rawLimit = options?.limit;
+  const limit = typeof rawLimit === 'number' && rawLimit > 0 ? rawLimit : 50;
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.id, limit],
     enabled: !!user?.id,
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user!.id)
-        .order('created_at', { ascending: false });
-      if (limit !== null) {
-        query = query.limit(limit);
-      }
-      const { data, error } = await query;
+        .order('created_at', { ascending: false })
+        .limit(limit);
       if (error) throw error;
       return (data || []) as Notification[];
     },
