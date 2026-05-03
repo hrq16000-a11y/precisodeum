@@ -1,25 +1,19 @@
 /**
  * ReportWizardErrorButton — botão "Reportar erro" com formulário curto opcional.
  *
- * Fluxo do diálogo:
- *  1. Usuário descreve (opcional) e anexa até 3 imagens.
- *     - Contador "x/3" sempre visível.
- *     - Validação de tipo/tamanho roda ao escolher arquivos; o botão Enviar
- *       fica desabilitado enquanto há validação em andamento.
- *  2. Ao enviar, criamos o relatório em `error_reports` com payload
- *     padronizado (categoria, cidade, etapa, navegador e `code`).
- *  3. Após sucesso, mostramos uma etapa "recebido" no próprio diálogo com:
- *      - Número do ticket (8 caracteres do UUID)
- *      - Botão para reenviar anexos caso o upload tenha falhado.
- *
- * Anexos: imagens vão para o bucket privado `error-attachments` na pasta
- * `{user_id}/{reportId}/...`. As paths ficam no payload do relatório.
- *
- * Códigos canônicos: `support_report:open|sent|failed|attachment_failed`
- * (ver `wizardErrorCodes.ts`).
+ * Fluxo:
+ *  1. Usuário descreve (opcional) e anexa até 3 imagens (validação async).
+ *  2. Ao enviar, criamos `error_reports` com payload padronizado contendo o
+ *     `code` canônico do wizard (ex.: phase2_photos:no_session).
+ *  3. Após sucesso, mostramos a etapa "recebido" com:
+ *      - O **code canônico** + ticket (8 chars do UUID).
+ *      - Lista detalhada de anexos com status (enviado/falhou) e botão de
+ *        reenviar **apenas os que falharam**.
+ *  4. O receipt fica persistido em `localStorage` (`wizard_support_receipt:{code}`)
+ *     para que recarregar a página mostre o mesmo ticket sem reenviar.
  */
 import { useEffect, useRef, useState } from 'react';
-import { LifeBuoy, Loader2, CheckCircle2, ImagePlus, X, RefreshCw, AlertTriangle } from 'lucide-react';
+import { LifeBuoy, Loader2, CheckCircle2, ImagePlus, X, RefreshCw, AlertTriangle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,13 +37,53 @@ const MAX_FILES = 3;
 const MAX_BYTES = 5 * 1024 * 1024;
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 
+type UploadStatus = 'pending' | 'uploaded' | 'failed';
+
 interface Attachment {
   file: File;
-  /** URL local de pré-visualização (createObjectURL). */
   preview: string;
-  /** Status de validação assíncrona (dimensões/extensão). */
   status: 'validating' | 'ready' | 'invalid';
   reason?: string;
+  /** Status de upload, atualizado após Enviar. */
+  upload: UploadStatus;
+  /** Path no bucket após upload bem-sucedido. */
+  path?: string;
+  /** Mensagem do erro de upload (se falhou). */
+  uploadError?: string;
+}
+
+interface PersistedReceipt {
+  reportId: string;
+  ticket: string;
+  code: string;
+  step: string;
+  at: number;
+  uploadedPaths: string[];
+}
+
+const RECEIPT_STORAGE_PREFIX = 'wizard_support_receipt:';
+const RECEIPT_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 dias
+
+const receiptKey = (code: string) => `${RECEIPT_STORAGE_PREFIX}${code}`;
+
+function readPersistedReceipt(code: string): PersistedReceipt | null {
+  try {
+    const raw = localStorage.getItem(receiptKey(code));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PersistedReceipt;
+    if (!parsed?.reportId || !parsed?.ticket) return null;
+    if (Date.now() - (parsed.at || 0) > RECEIPT_TTL_MS) {
+      localStorage.removeItem(receiptKey(code));
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writePersistedReceipt(receipt: PersistedReceipt) {
+  try { localStorage.setItem(receiptKey(receipt.code), JSON.stringify(receipt)); } catch { /* noop */ }
 }
 
 async function validateImage(file: File): Promise<{ ok: boolean; reason?: string }> {
@@ -62,8 +96,6 @@ async function validateImage(file: File): Promise<{ ok: boolean; reason?: string
       resolve({ ok: false, reason: 'maior que 5 MB' });
       return;
     }
-    // Carrega a imagem para garantir que ela é decodificável (não é, ex.,
-    // um PDF renomeado ou um arquivo corrompido).
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => { URL.revokeObjectURL(url); resolve({ ok: true }); };
@@ -79,24 +111,37 @@ export const ReportWizardErrorButton = ({
   variant = 'ghost',
   contextSnapshot,
 }: Props) => {
+  // O code canônico vem do contextSnapshot (preferido) ou cai no `step`.
+  const canonicalCode =
+    (contextSnapshot && typeof (contextSnapshot as any).code === 'string' && (contextSnapshot as any).code) || step;
+
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Etapa "recebido": após sucesso, em vez de fechar o diálogo, mostramos
-  // o ticket. Permite reenviar anexos caso o upload tenha falhado.
   const [receipt, setReceipt] = useState<{
     reportId: string;
     ticket: string;
     userId: string | null;
-    uploadedPaths: string[];
     attachmentError: boolean;
   } | null>(null);
   const [reuploading, setReuploading] = useState(false);
 
-  // Limpa preview URLs ao desmontar para não vazar memória.
+  // Hidrata do localStorage no mount — se já reportou, mostra o ticket.
+  useEffect(() => {
+    const persisted = readPersistedReceipt(canonicalCode);
+    if (persisted) {
+      setReceipt({
+        reportId: persisted.reportId,
+        ticket: persisted.ticket,
+        userId: null,
+        attachmentError: false,
+      });
+    }
+  }, [canonicalCode]);
+
   useEffect(() => () => {
     attachments.forEach((a) => { try { URL.revokeObjectURL(a.preview); } catch { /* noop */ } });
   }, [attachments]);
@@ -104,7 +149,6 @@ export const ReportWizardErrorButton = ({
   useEffect(() => {
     if (open) {
       void supabase.auth.getUser().then(({ data }) => {
-        // marca abertura para telemetria (best-effort)
         trackAction(WIZARD_ERROR_CODES.SUPPORT_REPORT_OPEN, step);
         return data;
       });
@@ -113,6 +157,7 @@ export const ReportWizardErrorButton = ({
 
   const validatingCount = attachments.filter((a) => a.status === 'validating').length;
   const validCount = attachments.filter((a) => a.status === 'ready').length;
+  const failedCount = attachments.filter((a) => a.upload === 'failed').length;
   const canSend = !sending && validatingCount === 0;
 
   const handleAddFiles = async (list: FileList | null) => {
@@ -133,12 +178,11 @@ export const ReportWizardErrorButton = ({
       file,
       preview: URL.createObjectURL(file),
       status: 'validating',
+      upload: 'pending',
     }));
     setAttachments((prev) => [...prev, ...provisional]);
     if (fileInputRef.current) fileInputRef.current.value = '';
 
-    // Valida cada arquivo de forma independente — o botão Enviar fica
-    // desabilitado enquanto algum estiver "validating".
     for (const att of provisional) {
       const res = await validateImage(att.file);
       setAttachments((prev) =>
@@ -165,26 +209,39 @@ export const ReportWizardErrorButton = ({
     });
   };
 
-  const uploadAttachments = async (
+  /** Faz upload de uma seleção de attachments e atualiza o estado por arquivo. */
+  const uploadSelected = async (
     userId: string,
     reportId: string,
-    files: File[],
+    targets: Attachment[],
   ): Promise<{ paths: string[]; failed: number }> => {
-    if (!files.length) return { paths: [], failed: 0 };
+    if (!targets.length) return { paths: [], failed: 0 };
     const paths: string[] = [];
     let failed = 0;
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i];
-      const ext = (f.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
+    for (let i = 0; i < targets.length; i++) {
+      const att = targets[i];
+      const ext = (att.file.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
       const path = `${userId}/${reportId}/screenshot-${Date.now()}-${i}.${ext}`;
       try {
         const { error } = await supabase.storage
           .from('error-attachments')
-          .upload(path, f, { contentType: f.type, upsert: false });
-        if (error) { failed++; continue; }
+          .upload(path, att.file, { contentType: att.file.type, upsert: false });
+        if (error) {
+          failed++;
+          setAttachments((prev) =>
+            prev.map((a) => (a === att ? { ...a, upload: 'failed', uploadError: error.message } : a)),
+          );
+          continue;
+        }
         paths.push(path);
-      } catch {
+        setAttachments((prev) =>
+          prev.map((a) => (a === att ? { ...a, upload: 'uploaded', path } : a)),
+        );
+      } catch (err: any) {
         failed++;
+        setAttachments((prev) =>
+          prev.map((a) => (a === att ? { ...a, upload: 'failed', uploadError: String(err?.message || err) } : a)),
+        );
       }
     }
     return { paths, failed };
@@ -193,7 +250,7 @@ export const ReportWizardErrorButton = ({
   const buildPayload = (uploadedPaths: string[]) => {
     const device = typeof navigator !== 'undefined' ? parseDeviceInfo() : null;
     return {
-      code: (contextSnapshot && (contextSnapshot as any).code) || step,
+      code: canonicalCode,
       step,
       note: note.trim() || null,
       contextSnapshot: contextSnapshot || null,
@@ -225,7 +282,7 @@ export const ReportWizardErrorButton = ({
       userId = user?.id ?? null;
     } catch { /* ignore */ }
 
-    const validFiles = attachments.filter((a) => a.status === 'ready').map((a) => a.file);
+    const validAttachments = attachments.filter((a) => a.status === 'ready');
     const initialPayload = buildPayload([]);
 
     const id = await reportError({
@@ -245,8 +302,8 @@ export const ReportWizardErrorButton = ({
 
     let uploadedPaths: string[] = [];
     let failed = 0;
-    if (userId && validFiles.length > 0) {
-      const result = await uploadAttachments(userId, id, validFiles);
+    if (userId && validAttachments.length > 0) {
+      const result = await uploadSelected(userId, id, validAttachments);
       uploadedPaths = result.paths;
       failed = result.failed;
       if (uploadedPaths.length) {
@@ -265,41 +322,58 @@ export const ReportWizardErrorButton = ({
     trackAction(WIZARD_ERROR_CODES.SUPPORT_REPORT_SENT, step);
     const ticket = id.slice(0, 8);
     try { await navigator.clipboard.writeText(ticket); } catch { /* ignore */ }
+    writePersistedReceipt({
+      reportId: id,
+      ticket,
+      code: canonicalCode,
+      step,
+      at: Date.now(),
+      uploadedPaths,
+    });
     setReceipt({
       reportId: id,
       ticket,
       userId,
-      uploadedPaths,
       attachmentError: failed > 0,
     });
     setSending(false);
   };
 
-  const handleReuploadAttachments = async () => {
-    if (!receipt || !receipt.userId) return;
-    const validFiles = attachments.filter((a) => a.status === 'ready').map((a) => a.file);
-    if (!validFiles.length) return;
+  /** Reenvia somente os anexos com upload === 'failed'. */
+  const handleReuploadFailed = async () => {
+    if (!receipt) return;
+    let userId = receipt.userId;
+    if (!userId) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        userId = user?.id ?? null;
+      } catch { /* ignore */ }
+    }
+    if (!userId) {
+      toast.error('Sessão expirada — entre novamente para reenviar anexos.');
+      return;
+    }
+    const targets = attachments.filter((a) => a.upload === 'failed');
+    if (!targets.length) return;
     setReuploading(true);
-    const { paths, failed } = await uploadAttachments(receipt.userId, receipt.reportId, validFiles);
+    const { paths, failed } = await uploadSelected(userId, receipt.reportId, targets);
+    const allUploadedPaths = attachments.filter((a) => a.upload === 'uploaded').map((a) => a.path!).concat(paths);
     if (paths.length) {
       try {
         await supabase
           .from('error_reports' as any)
           .update({
-            error_stack: JSON.stringify(
-              buildPayload([...receipt.uploadedPaths, ...paths]),
-              null,
-              2,
-            ),
+            error_stack: JSON.stringify(buildPayload(allUploadedPaths), null, 2),
           } as any)
           .eq('id', receipt.reportId);
       } catch { /* ignore */ }
+      // Atualiza receipt persistido com os novos paths
+      const persisted = readPersistedReceipt(canonicalCode);
+      if (persisted) {
+        writePersistedReceipt({ ...persisted, uploadedPaths: allUploadedPaths });
+      }
     }
-    setReceipt({
-      ...receipt,
-      uploadedPaths: [...receipt.uploadedPaths, ...paths],
-      attachmentError: failed > 0,
-    });
+    setReceipt({ ...receipt, userId, attachmentError: failed > 0 });
     setReuploading(false);
     if (failed === 0) toast.success('Anexos reenviados com sucesso.');
     else toast.error(`${failed} anexo(s) ainda falharam.`);
@@ -308,11 +382,11 @@ export const ReportWizardErrorButton = ({
   const handleClose = () => {
     if (sending) return;
     setOpen(false);
-    // Limpa o estado para a próxima abertura.
     setNote('');
     attachments.forEach((a) => { try { URL.revokeObjectURL(a.preview); } catch { /* noop */ } });
     setAttachments([]);
-    setReceipt(null);
+    // NOTA: não limpamos o `receipt` — ele permanece na sessão e em
+    // localStorage (durante TTL) para que reabrir mostre o mesmo ticket.
   };
 
   return (
@@ -442,14 +516,20 @@ export const ReportWizardErrorButton = ({
                 <div className="rounded-md border border-border bg-muted/40 p-2 text-[11px] text-muted-foreground">
                   <p className="font-medium text-foreground">Contexto que será enviado</p>
                   <ul className="mt-1 space-y-0.5">
+                    <li>
+                      Código: <code data-testid="report-dialog-code" className="font-mono">{canonicalCode}</code>
+                    </li>
                     <li>Etapa: <code className="font-mono">{step}</code></li>
-                    {contextSnapshot && Object.entries(contextSnapshot).slice(0, 6).map(([k, v]) => (
-                      <li key={k}>
-                        {k}: <code className="font-mono break-all">
-                          {Array.isArray(v) ? (v.length ? v.join(', ') : '—') : String(v ?? '—')}
-                        </code>
-                      </li>
-                    ))}
+                    {contextSnapshot && Object.entries(contextSnapshot)
+                      .filter(([k]) => k !== 'code')
+                      .slice(0, 6)
+                      .map(([k, v]) => (
+                        <li key={k}>
+                          {k}: <code className="font-mono break-all">
+                            {Array.isArray(v) ? (v.length ? v.join(', ') : '—') : String(v ?? '—')}
+                          </code>
+                        </li>
+                      ))}
                     <li>Dispositivo: <code className="font-mono break-all">{deviceSummary()}</code></li>
                   </ul>
                 </div>
@@ -498,46 +578,64 @@ export const ReportWizardErrorButton = ({
                   #{receipt.ticket}
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Copiado para a área de transferência.
+                  Código: <code data-testid="report-dialog-receipt-code" className="font-mono">{canonicalCode}</code>
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Salvo neste navegador — se recarregar, o ticket continua aqui.
                 </p>
               </div>
 
               {attachments.length > 0 && (
                 <div
                   data-testid="report-dialog-attachments-summary"
-                  className={
-                    'rounded-md border p-2 text-xs ' +
-                    (receipt.attachmentError
-                      ? 'border-rose-400/60 bg-rose-50/70 text-rose-900 dark:bg-rose-500/10 dark:text-rose-100'
-                      : 'border-border bg-muted/40 text-muted-foreground')
-                  }
+                  className="rounded-md border border-border bg-muted/40 p-2 text-xs"
                 >
-                  {receipt.attachmentError ? (
-                    <div className="space-y-2">
-                      <p className="flex items-center gap-1.5 font-medium">
-                        <AlertTriangle className="h-3.5 w-3.5" />
-                        Alguns anexos falharam ao subir.
-                      </p>
-                      <p className="text-[11px]">
-                        {receipt.uploadedPaths.length} de {attachments.filter((a) => a.status === 'ready').length} enviados.
+                  <p className="mb-1 font-medium text-foreground">Anexos</p>
+                  <ul data-testid="report-dialog-attachments-status" className="space-y-1">
+                    {attachments.filter((a) => a.status === 'ready').map((a, i) => (
+                      <li
+                        key={`status-${i}`}
+                        data-upload-status={a.upload}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <span className="flex-1 truncate text-[11px]">{a.file.name}</span>
+                        {a.upload === 'uploaded' && (
+                          <span className="flex items-center gap-1 text-emerald-600 text-[10px] font-medium">
+                            <CheckCircle2 className="h-3 w-3" /> enviado
+                          </span>
+                        )}
+                        {a.upload === 'failed' && (
+                          <span className="flex items-center gap-1 text-rose-600 text-[10px] font-medium">
+                            <XCircle className="h-3 w-3" /> falhou
+                          </span>
+                        )}
+                        {a.upload === 'pending' && (
+                          <span className="text-muted-foreground text-[10px]">aguardando</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {failedCount > 0 && (
+                    <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">
+                      <p className="flex items-center gap-1 text-[11px] text-rose-700 dark:text-rose-300">
+                        <AlertTriangle className="h-3 w-3" />
+                        {failedCount} anexo(s) falharam.
                       </p>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 gap-1 text-xs"
+                        className="h-7 gap-1 text-xs"
                         disabled={reuploading}
-                        onClick={() => { void handleReuploadAttachments(); }}
+                        onClick={() => { void handleReuploadFailed(); }}
                         data-testid="report-dialog-reupload"
                       >
                         {reuploading ? (
                           <><Loader2 className="h-3 w-3 animate-spin" /> Reenviando…</>
                         ) : (
-                          <><RefreshCw className="h-3 w-3" /> Reenviar anexos</>
+                          <><RefreshCw className="h-3 w-3" /> Reenviar falhos</>
                         )}
                       </Button>
                     </div>
-                  ) : (
-                    <p>{receipt.uploadedPaths.length} anexo(s) enviado(s).</p>
                   )}
                 </div>
               )}

@@ -44,7 +44,7 @@ vi.mock('@/lib/errorReporter', () => ({
 import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
 
 describe('ReportWizardErrorButton — receipt + counter', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); });
 
   it('mostra contador x/MAX antes de qualquer anexo', async () => {
     render(<ReportWizardErrorButton step="phase2_photos:no_service" />);
@@ -82,8 +82,41 @@ describe('ReportWizardErrorButton — receipt + counter', () => {
     const receipt = await screen.findByTestId('report-dialog-receipt');
     expect(receipt).toBeInTheDocument();
     const ticket = await screen.findByTestId('report-dialog-ticket');
-    // 'abcdef0123-receipt-456'.slice(0,8) === 'abcdef01'
     expect(ticket.textContent).toContain('abcdef01');
     expect(screen.getByTestId('report-dialog-close')).toBeInTheDocument();
+    // code canônico exibido no recibo
+    expect(screen.getByTestId('report-dialog-receipt-code').textContent).toContain('phase2_photos:no_service');
+  });
+
+  it('persiste ticket em localStorage e re-hidrata em remount sem reenviar', async () => {
+    const code = 'phase2_photos:no_session';
+    localStorage.removeItem(`wizard_support_receipt:${code}`);
+
+    const { unmount } = render(
+      <ReportWizardErrorButton step={code} contextSnapshot={{ code }} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Reportar erro/i }));
+    fireEvent.click(await screen.findByTestId('report-dialog-send'));
+    await screen.findByTestId('report-dialog-ticket');
+
+    const stored = localStorage.getItem(`wizard_support_receipt:${code}`);
+    expect(stored).toBeTruthy();
+    const parsed = JSON.parse(stored!);
+    expect(parsed.ticket).toBe('abcdef01');
+    expect(parsed.code).toBe(code);
+
+    const { reportError } = await import('@/lib/errorReporter');
+    const callsBefore = (reportError as any).mock.calls.length;
+
+    unmount();
+    render(<ReportWizardErrorButton step={code} contextSnapshot={{ code }} />);
+    // Botão deve já indicar "Enviado (abcdef01)" sem reenviar.
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Enviado \(abcdef01\)/i })).toBeInTheDocument();
+    });
+    expect((reportError as any).mock.calls.length).toBe(callsBefore);
+
+    localStorage.removeItem(`wizard_support_receipt:${code}`);
   });
 });
+
