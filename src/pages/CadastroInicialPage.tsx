@@ -111,7 +111,7 @@ function inspectLocalDraft(): { exists: boolean; phase: string | null; savedAt: 
 
 
 export default function CadastroInicialPage() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refetchProfile } = useAuth();
   const location = useLocation();
   const [params] = useSearchParams();
   const reviewMode = isOnboardingReviewMode(location.search);
