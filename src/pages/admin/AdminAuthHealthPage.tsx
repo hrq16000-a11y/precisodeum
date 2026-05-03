@@ -363,10 +363,11 @@ export default function AdminAuthHealthPage() {
                       (m.error_code as string) ||
                       (m.reason as string) ||
                       "OUTRO";
-                    const message =
+                    const message = sanitizeMessage(
                       (m.error_message as string) ||
                       (m.reason as string) ||
-                      "—";
+                      ""
+                    );
                     return (
                       <TableRow key={row.id}>
                         <TableCell className="font-mono text-[11px] text-muted-foreground">
