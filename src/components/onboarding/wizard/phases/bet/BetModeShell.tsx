@@ -437,11 +437,18 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       // state.points pode já estar hidratado com dbPoints — garante que só soma o delta.
       const delta = Math.max(0, state.points - dbPoints);
       if (delta <= 0) return;
-      await (supabase as any)
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({ engagement_points: dbPoints + delta })
         .eq('id', user!.id);
-    } catch { /* noop */ }
+      if (error) {
+        // Pontos são UX-only — não bloqueiam navegação, mas falha sistemática
+        // precisa ser visível em telemetria/console.
+        console.warn('[BetModeShell] addSessionPointsToProfile update failed', error);
+      }
+    } catch (err) {
+      console.warn('[BetModeShell] addSessionPointsToProfile threw', err);
+    }
   }
 
   /** Cliente fast-pass: salva, libera o gate e redireciona DIRETO ao destino — sem tela extra. */
