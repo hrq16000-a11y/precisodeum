@@ -202,6 +202,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // do próprio efeito (setSession/setUser/setLoading).
     let isMounted = true;
 
+    // [TELEMETRIA] Tempo até `loading=false` (boot do auth) e contagem de
+    // ocorrências de "Lock broken" do navigatorLock. Best-effort, fail-soft.
+    const authBootStartedAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    let bootResolved = false;
+    let lockBrokenCount = 0;
+    const reportAuthBoot = (outcome: 'resolved' | 'watchdog_forced' | 'no_session') => {
+      if (bootResolved) return;
+      bootResolved = true;
+      const ms = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - authBootStartedAt);
+      try {
+        supabase.from('auth_profile_metrics' as any).insert({
+          duration_ms: ms,
+          attempts: 0,
+          succeeded: outcome === 'resolved' || outcome === 'no_session',
+          // Reaproveita campo livre via `notes` se existir; senão a row registra só ms+outcome implícito.
+        } as any).then(() => undefined, () => undefined);
+      } catch { /* noop */ }
+      if (outcome === 'watchdog_forced' || lockBrokenCount > 0) {
+        console.warn('[useAuth] boot telemetry', { outcome, ms, lockBrokenCount });
+      }
+    };
+
     // [FIX — White Screen Watchdog]
     // Caso `getSession()` ou `fetchProfile()` fiquem pendentes (Lock broken
     // do navigatorLock, refresh token preso, rede 3G muito lenta), garantimos
@@ -212,6 +234,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading((prev) => {
         if (prev) {
           console.warn('[useAuth] watchdog: forçando loading=false após 8s pendente');
+          reportAuthBoot('watchdog_forced');
         }
         return false;
       });
@@ -225,7 +248,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const onUnhandledRejection = (ev: PromiseRejectionEvent) => {
       const msg = String((ev.reason as any)?.message || ev.reason || '');
       if (/Lock broken by another request|navigatorLock/i.test(msg)) {
+        lockBrokenCount += 1;
         ev.preventDefault();
+        // Eventos pontuais (1º e múltiplos de 5) viram log para auditoria.
+        if (lockBrokenCount === 1 || lockBrokenCount % 5 === 0) {
+          console.warn('[useAuth] navigatorLock broken (benign)', { count: lockBrokenCount });
+        }
       }
     };
     window.addEventListener('unhandledrejection', onUnhandledRejection);
