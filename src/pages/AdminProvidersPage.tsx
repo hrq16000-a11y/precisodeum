@@ -185,13 +185,18 @@ const AdminProvidersPage = () => {
     }
   };
 
+  const ADMIN_FETCH_CAP = 500;
   const fetchProviders = async () => {
-    const { data: providerData } = await supabase
+    const { data: providerData, count } = await supabase
       .from('providers')
-      .select('*, categories(name, icon)')
+      .select('*, categories(name, icon)', { count: 'exact' })
       .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(ADMIN_FETCH_CAP);
     if (!providerData || providerData.length === 0) { setProviders([]); setAllProviders([]); return; }
+    if (typeof count === 'number' && count > ADMIN_FETCH_CAP) {
+      toast.warning(`Exibindo ${ADMIN_FETCH_CAP} de ${count} prestadores — use os filtros para ver os demais.`);
+    }
 
     setAllProviders(providerData);
 
