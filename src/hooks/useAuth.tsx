@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresenceTracker } from '@/hooks/useOnlinePresence';
@@ -37,7 +37,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [needsTypeSelection, setNeedsTypeSelection] = useState(false);
 
+  // Tracks if any fetchProfile call has settled (resolved or rejected) at least once.
+  // Used by the safety timer to avoid prematurely flipping `loading=false` while
+  // the initial fetchProfile is still in-flight (root cause of "ghost user" state).
+  const fetchProfileSettledRef = useRef(false);
+  // Monotonic generation counter used to discard out-of-order fetchProfile results.
+  // Every new fetch bumps this; the resolver ignores its setState writes if a
+  // newer generation has started in the meantime.
+  const fetchGenerationRef = useRef(0);
+
   const fetchProfile = useCallback(async (userId: string, authUser?: User | null) => {
+    // Generation guard: bumped on every call. If a newer call starts before this
+    // one finishes, the older one's setState writes are silently discarded.
+    const generation = ++fetchGenerationRef.current;
+    const isStale = () => fetchGenerationRef.current !== generation;
+    try {
     // Retry/polling: o trigger handle_new_user pode levar alguns ms após o signup.
     // Evita a race condition que deixa o usuário "preso" sem profile carregado.
     let profileData: any = null;
@@ -77,6 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
 
+    if (isStale()) return profileData ?? null;
     setProfile(profileData);
     setCelebrationMuted(resolveCelebrationMutedPreference(profileData?.celebration_muted));
 
@@ -92,7 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (providerRows && providerRows.length > 0) {
       const best = providerRows.find(p => p.city && p.description) || providerRows[0];
-      setProvider(best);
+      if (!isStale()) setProvider(best);
 
       if (best.city && best.city !== 'Não informada' && best.state && (best.latitude == null || best.longitude == null)) {
         window.setTimeout(() => {
@@ -100,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .then(({ latitude, longitude }) => {
               if (latitude != null && longitude != null) {
                 supabase.from('providers').update({ latitude, longitude }).eq('id', best.id).then(() => {
-                  setProvider(prev => prev ? { ...prev, latitude, longitude } : prev);
+                  if (!isStale()) setProvider(prev => prev ? { ...prev, latitude, longitude } : prev);
                 });
               }
             })
@@ -108,10 +123,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }, 1200);
       }
     } else {
-      setProvider(null);
+      if (!isStale()) setProvider(null);
     }
 
     return profileData ?? null;
+    } finally {
+      // Mark as settled regardless of staleness — the safety timer only cares
+      // that *some* fetchProfile call has completed.
+      fetchProfileSettledRef.current = true;
+    }
   }, []);
 
   const refetchProfile = useCallback(async () => {
@@ -129,7 +149,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Safety net: never block UI for more than 3s on initial auth
-    const safetyTimer = window.setTimeout(() => setLoading(false), 3000);
+    // Safety net: only flips loading=false as a true LAST RESORT — i.e. when
+    // no fetchProfile call has settled within 3s. If a fetch is still in-flight
+    // we let it resolve naturally, avoiding the "ghost user" state where
+    // `user !== null && profile === null && loading === false`.
+    const safetyTimer = window.setTimeout(() => {
+      if (!fetchProfileSettledRef.current) setLoading(false);
+    }, 3000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -214,18 +240,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       )
       .subscribe();
 
+    let visibilityTimer: number | null = null;
     const refreshOnFocus = () => {
-      if (document.visibilityState === 'visible') void refetchProfile();
+      if (document.visibilityState !== 'visible') return;
+      // Debounce: rapid alt-tab / tab switches should result in a single refetch.
+      if (visibilityTimer != null) window.clearTimeout(visibilityTimer);
+      visibilityTimer = window.setTimeout(() => {
+        visibilityTimer = null;
+        void refetchProfile();
+      }, 500);
     };
     document.addEventListener('visibilitychange', refreshOnFocus);
 
     return () => {
+      if (visibilityTimer != null) window.clearTimeout(visibilityTimer);
       document.removeEventListener('visibilitychange', refreshOnFocus);
       supabase.removeChannel(channel);
     };
   }, [user?.id, refetchProfile]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
@@ -233,14 +267,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProvider(null);
     setCelebrationMuted(false);
     setNeedsTypeSelection(false);
-  };
+  }, []);
   // Track online presence for the current user, including their city
   const providerCity = provider?.city;
   const presenceMeta = useMemo(() => (providerCity ? { city: providerCity } : undefined), [providerCity]);
   usePresenceTracker(user?.id, presenceMeta);
 
+  // Memoize the context value so consumers (~50+ across the app) don't re-render
+  // unless one of the actual primitives changes. Without this, every parent
+  // re-render of AuthProvider cascaded a re-render to every `useAuth()` consumer.
+  const contextValue = useMemo<AuthContextType>(
+    () => ({ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }),
+    [session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile],
+  );
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
