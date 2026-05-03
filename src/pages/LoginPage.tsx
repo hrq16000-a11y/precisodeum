@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
@@ -38,6 +38,8 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
 
   // Mantemos a rota salva apenas para jornadas futuras; o pós-auth cai sempre no V3 (/cadastro-bet).
   const from = (location.state as any)?.from || null;
@@ -234,11 +236,9 @@ const LoginPage = () => {
         if (signUpError) {
           const m = signUpError.message || '';
           if (/already.*registered|user.*already.*exists|already_registered/i.test(m)) {
-            setForgotEmail(trimmedEmail);
-            setShowForgot(true);
-            toast.error('Já existe uma conta com esse e-mail. Redefina sua senha para continuar.', {
-              duration: 6000,
-            });
+            // PATH 7: e-mail já cadastrado — inline, sem abrir dialog automaticamente
+            setEmailError('Este e-mail já possui conta. Use sua senha ou clique em "Esqueci minha senha".');
+            emailRef.current?.focus();
             return;
           }
           if (/password.*(short|6 characters)|weak_password|pwned|weak/i.test(m)) {
@@ -260,11 +260,9 @@ const LoginPage = () => {
         // Heurística: identities=[] indica e-mail já existente
         const identities = (signUpData.user as any)?.identities;
         if (Array.isArray(identities) && identities.length === 0) {
-          setForgotEmail(trimmedEmail);
-          setShowForgot(true);
-          toast.error('Já existe uma conta com esse e-mail. Redefina sua senha para continuar.', {
-            duration: 6000,
-          });
+          // PATH 7 (heurística): inline, sem abrir dialog automaticamente
+          setEmailError('Este e-mail já possui conta. Use sua senha ou clique em "Esqueci minha senha".');
+          emailRef.current?.focus();
           return;
         }
         if (signUpData.session) {
@@ -280,8 +278,9 @@ const LoginPage = () => {
       if (/rate limit|too many/i.test(errMsg)) {
         toast.error('Muitas tentativas de login. Aguarde alguns minutos.');
       } else {
+        // PATH 3: senha incorreta — inline + foco no campo senha (sem dialog automático)
         setPasswordError('E-mail ou senha inválidos.');
-        toast.error('E-mail ou senha inválidos.');
+        passwordRef.current?.focus();
       }
     } catch (err: any) {
       // Falha de rede ou exceção inesperada — não deixa o botão travado
@@ -428,6 +427,9 @@ const LoginPage = () => {
                     <input
                       type="email"
                       required
+                      ref={emailRef}
+                      autoComplete="email"
+                      inputMode="email"
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
                       aria-invalid={!!emailError}
@@ -443,6 +445,7 @@ const LoginPage = () => {
                     <PasswordInput
                       required
                       minLength={6}
+                      ref={passwordRef}
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(null); }}
                       autoComplete="current-password"
