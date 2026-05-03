@@ -1,4 +1,5 @@
 import { fetchExistingFirstService, findExistingProvider } from '@/components/onboarding/wizard/phases/v2/findExistingRecords';
+import { isWizardSessionLockActive } from '@/lib/wizardSessionLock';
 
 const ONBOARDING_COMPLETION_GRACE_KEY = 'onboarding_completion_grace_v1';
 const ONBOARDING_COMPLETION_GRACE_TTL_MS = 2 * 60 * 1000;
@@ -120,6 +121,17 @@ export function resolveOnboardingGateTarget({
   const mustCompleteOnboarding = !!profile && !hasUnlocked;
   const isOnboardingRoute = pathname === '/cadastro-inicial' || pathname === '/onboarding-v2/sucesso';
   const reviewMode = pathname === '/cadastro-inicial' && isOnboardingReviewMode(search);
+
+  // ── ACTIVE-SESSION LOCK (Fase 1) ────────────────────────────────────────
+  // Enquanto o usuário estiver com o Wizard montado em `/cadastro-inicial`
+  // a flag `onboarding_wizard_active` está ligada. Nesse caso o Gate NÃO
+  // pode redirecionar — independentemente do valor de `onboarding_completed`.
+  // Isso elimina a corrida em que `runOnboardingSelfHeal` (ou um update
+  // disparado pelo próprio wizard) marca o perfil como completo no meio do
+  // fluxo e o Gate eject o usuário para `/dashboard` no próximo re-render.
+  if (pathname === '/cadastro-inicial' && isWizardSessionLockActive()) {
+    return { action: 'allow' as const, target: null, reason: null };
+  }
 
   if (mustCompleteOnboarding && !isOnboardingRoute) {
     return {

@@ -16,6 +16,7 @@ import {
   fetchExistingFirstService,
   findExistingProvider,
 } from '@/components/onboarding/wizard/phases/v2/findExistingRecords';
+import { isWizardSessionLockActive } from '@/lib/wizardSessionLock';
 
 const HEALED_USERS = new Set<string>();
 const IN_FLIGHT = new Map<string, Promise<boolean>>();
@@ -38,6 +39,13 @@ export async function runOnboardingSelfHeal({
 }: SelfHealInput): Promise<boolean> {
   if (!userId || !profile) return false;
   if (HEALED_USERS.has(userId)) return false;
+
+  // ── ACTIVE-SESSION LOCK (Fase 1) ────────────────────────────────────────
+  // Se o Wizard está montado nesta aba, NÃO escrevemos nada no banco.
+  // Qualquer write aqui dispara `refetchProfile` no Gate e ejeta o usuário
+  // para `/dashboard` no próximo re-render. Aborto silencioso, sem marcar
+  // HEALED para que rode normalmente assim que o Wizard for desmontado.
+  if (isWizardSessionLockActive()) return false;
 
   // Pré-condições determinísticas: só faz sentido para profissionais cujo
   // perfil ainda não foi marcado como concluído.
