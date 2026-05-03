@@ -485,15 +485,22 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
   }, [state.phase, isReview, prevReviewPhase]);
 
-  // Listener para retrocesso na régua unificada disparado pelo V2 quando a
-  // pilha de revisão esgota (modo "Assistente é dono do Wizard").
+  // Listener para retrocesso na régua unificada disparado pelo V2.
+  // - Em modo revisão: retrocede na REVIEW_PHASE_ORDER (assistente).
+  // - Em fluxo normal (new_signup): da phase2_service volta para a triagem
+  //   (triage_celebration), que é a fase imediatamente anterior na régua.
   useEffect(() => {
-    if (!isReview) return;
     const onPrevUnified = () => {
       const cur = stateRef.current.phase;
-      const prev = prevRenderableReviewPhase(cur);
-      if (prev !== cur) {
-        dispatch({ type: 'GO_TO_PHASE', phase: prev });
+      if (isReview) {
+        const prev = prevRenderableReviewPhase(cur);
+        if (prev !== cur) dispatch({ type: 'GO_TO_PHASE', phase: prev });
+        return;
+      }
+      // Fluxo normal: phase2_service → triage_celebration. Outras fases V2
+      // têm onBack próprio dentro do OnboardingV2Shell.
+      if ((cur as string) === 'phase2_service' || cur === 'main_service') {
+        dispatch({ type: 'GO_TO_PHASE', phase: 'triage_celebration' as any });
       }
     };
     window.addEventListener('wizard:request-prev-unified', onPrevUnified as EventListener);
