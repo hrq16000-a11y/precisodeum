@@ -8,7 +8,8 @@ export function useSiteSettings() {
       const { data } = await supabase
         .from('site_settings' as any)
         .select('*')
-        .order('key');
+        .order('key')
+        .limit(200);
       const map: Record<string, boolean> = {};
       const raw: Record<string, string> = {};
       (data || []).forEach((s: any) => {

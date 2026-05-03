@@ -47,7 +47,8 @@ async function fetchRules(): Promise<GovernanceRule[]> {
     .from('governance_rules' as any)
     .select('*')
     .eq('status', 'active')
-    .order('scope');
+    .order('scope')
+    .limit(200);
 
   if (error) {
     console.error('[GovernanceEngine] Failed to fetch rules:', error.message);
