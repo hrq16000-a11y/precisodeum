@@ -48,7 +48,7 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     };
 
     // Basic meta
-    setMeta('description', description);
+    setMeta('description', safeDescription);
     setMeta('robots', noindex ? 'noindex, nofollow' : 'index, follow');
 
     const resolvedOgImage = normalizeSocialImageUrl(ogImage || socialImageUrl(ogImage), 'og:image');
@@ -60,22 +60,22 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
       setMeta('og:image:type', content.toLowerCase().endsWith('.jpg') || content.toLowerCase().endsWith('.jpeg') ? 'image/jpeg' : 'image/png', 'property');
       setMeta('og:image:width', '1200', 'property');
       setMeta('og:image:height', '630', 'property');
-      setMeta('og:image:alt', `${title} — Preciso de um`, 'property');
+      setMeta('og:image:alt', `${safeTitle} — Preciso de um`, 'property');
       setMeta('twitter:image', content);
-      setMeta('twitter:image:alt', `${title} — Preciso de um`);
+      setMeta('twitter:image:alt', `${safeTitle} — Preciso de um`);
     };
 
     // Open Graph
     setMeta('og:title', fullTitle, 'property');
-    setMeta('og:description', description, 'property');
-    setMeta('og:type', ogType || 'website', 'property');
+    setMeta('og:description', safeDescription, 'property');
+    setMeta('og:type', safeOgType, 'property');
     setSocialImageMeta(resolvedOgImage);
     setMeta('og:site_name', 'Preciso de um', 'property');
     setMeta('og:locale', 'pt_BR', 'property');
     setMeta('logo', resolvedLogo, 'property');
 
     // Article-specific OG tags
-    if (ogType === 'article') {
+    if (safeOgType === 'article') {
       if (articlePublishedTime) setMeta('article:published_time', articlePublishedTime, 'property');
       if (articleModifiedTime) setMeta('article:modified_time', articleModifiedTime, 'property');
       if (articleAuthor) setMeta('article:author', articleAuthor, 'property');
@@ -84,7 +84,7 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     // Twitter
     setMeta('twitter:card', 'summary_large_image');
     setMeta('twitter:title', fullTitle);
-    setMeta('twitter:description', description);
+    setMeta('twitter:description', safeDescription);
 
     let cancelled = false;
     let imageProbe: HTMLImageElement | null = null;
