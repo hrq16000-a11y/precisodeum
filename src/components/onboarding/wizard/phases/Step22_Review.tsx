@@ -138,12 +138,13 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
     setLoading(true);
     setError(null);
     try {
-      const { data: provider, error: pErr } = await supabase
-        .from('providers')
-        .select('id, business_name, cpf, cnpj, working_hours_struct, city')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // CNPJ/CPF estão protegidos por column-level REVOKE em providers.
+      // Usamos RPC SECURITY DEFINER que valida auth.uid()=user_id no servidor
+      // e devolve os campos sensíveis apenas para o próprio dono.
+      const { data: providerRows, error: pErr } = await supabase
+        .rpc('get_my_provider_details');
       if (pErr) throw pErr;
+      const provider = Array.isArray(providerRows) ? providerRows[0] ?? null : providerRows;
 
       let servicesCount = 0;
       let photoCount = 0;
