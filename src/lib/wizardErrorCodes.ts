@@ -23,6 +23,19 @@ export const WIZARD_ERROR_CODES = {
   SUPPORT_REPORT_SENT: 'support_report:sent',
   SUPPORT_REPORT_FAILED: 'support_report:failed',
   SUPPORT_REPORT_ATTACHMENT_FAILED: 'support_report:attachment_failed',
+  // Persistência da Fase 1 (identidade/contato)
+  PERSIST_PHASE1_NO_USER: 'persist_phase1:no_user',
+  PERSIST_PHASE1_MISSING_FIELDS: 'persist_phase1:missing_fields',
+  PERSIST_PHASE1_DB_ERROR: 'persist_phase1:db_error',
+  PERSIST_PHASE1_NETWORK: 'persist_phase1:network',
+  // Garantia do provider_id (lookup/insert do registro de prestador)
+  ENSURE_PROVIDER_ID_NO_USER: 'ensure_provider_id:no_user',
+  ENSURE_PROVIDER_ID_LOOKUP_FAILED: 'ensure_provider_id:lookup_failed',
+  ENSURE_PROVIDER_ID_INSERT_FAILED: 'ensure_provider_id:insert_failed',
+  ENSURE_PROVIDER_ID_RETRY_EXHAUSTED: 'ensure_provider_id:retry_exhausted',
+  // Persistência do primeiro serviço (categoria/descrição)
+  PERSIST_FIRST_SERVICE_NO_PROVIDER: 'persist_first_service:no_provider',
+  PERSIST_FIRST_SERVICE_DB_ERROR: 'persist_first_service:db_error',
 } as const;
 
 export type WizardErrorCode =
