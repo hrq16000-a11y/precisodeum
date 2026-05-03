@@ -212,11 +212,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       bootResolved = true;
       const ms = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - authBootStartedAt);
       try {
+        const host = typeof window !== 'undefined' ? window.location.hostname : '';
+        const env = /lovable\.app$/i.test(host)
+          ? 'preview'
+          : (host === 'localhost' || host === '127.0.0.1' ? 'development' : 'production');
         supabase.from('auth_profile_metrics' as any).insert({
+          user_id: (typeof window !== 'undefined' ? null : null),
           duration_ms: ms,
           attempts: 0,
           succeeded: outcome === 'resolved' || outcome === 'no_session',
-          // Reaproveita campo livre via `notes` se existir; senão a row registra só ms+outcome implícito.
+          outcome,
+          lock_broken_count: lockBrokenCount,
+          environment: env,
         } as any).then(() => undefined, () => undefined);
       } catch { /* noop */ }
       if (outcome === 'watchdog_forced' || lockBrokenCount > 0) {

@@ -4,6 +4,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AuthHealthPanel from "@/components/admin/AuthHealthPanel";
+import AuthBootMetricsPanel from "@/components/admin/AuthBootMetricsPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Activity, ShieldAlert, MailWarning, Clock4, KeyRound, UserPlus } from "lucide-react";
@@ -107,6 +108,8 @@ const AdminAuthMetricsPage = () => {
             })}
           </div>
         </div>
+
+        <AuthBootMetricsPanel />
 
         <AuthHealthPanel />
       </main>
