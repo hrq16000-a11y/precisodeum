@@ -1355,7 +1355,7 @@ const SearchPage = () => {
                                   weights={scoreWeights}
                                 />
                               )}
-                              <ProviderRenderer provider={p} isFallback={isFallback} />
+                              <ProviderRenderer provider={p} isFallback={isFallback} index={idx} />
                             </motion.div>
                             {/* Inject sponsor ad every 5 results */}
                             {(idx + 1) % 5 === 0 && (
