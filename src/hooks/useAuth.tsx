@@ -123,11 +123,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return profileData ?? null;
-    } finally {
-      // Mark as settled regardless of staleness — the safety timer only cares
-      // that *some* fetchProfile call has completed.
-      fetchProfileSettledRef.current = true;
-    }
   }, []);
 
   const refetchProfile = useCallback(async () => {
