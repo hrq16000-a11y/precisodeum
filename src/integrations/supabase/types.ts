@@ -8379,6 +8379,10 @@ export type Database = {
       distribute_open_lead: { Args: { _open_lead_id: string }; Returns: number }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
       expire_registration_blocks_180d: { Args: never; Returns: number }
+      finalize_onboarding_atomic: {
+        Args: { _profile_type: string; _user_id: string }
+        Returns: Json
+      }
       find_orphan_media: {
         Args: { _min_age_hours?: number }
         Returns: {
