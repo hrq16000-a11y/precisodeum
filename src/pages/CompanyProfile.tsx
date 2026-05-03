@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
-import { whatsappLink, toCanonical } from '@/lib/whatsapp';
+import { whatsappLink, toCanonical, sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
+import { useSubmitGuard } from '@/hooks/useSubmitGuard';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
@@ -412,9 +413,15 @@ export default function CompanyProfile() {
     }));
   }, [company, services]);
 
-  const handleLeadSubmit = async (e: React.FormEvent) => {
+  const [isSubmittingLead, handleLeadSubmit] = useSubmitGuard(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!company) return;
+    const phoneCheck = validateWhatsapp(leadForm.phone);
+    if (!phoneCheck.valid) {
+      toast.error(phoneCheck.message);
+      return;
+    }
+    const phoneSanitized = sanitizePhone(leadForm.phone);
     const ctxParts: string[] = [];
     const locStr = [leadForm.city, leadForm.state].filter(Boolean).join(' - ');
     if (locStr) ctxParts.push(`Localização: ${locStr}`);
@@ -427,7 +434,7 @@ export default function CompanyProfile() {
     const { error: insertError } = await supabase.from('leads').insert({
       provider_id: company.id,
       client_name: leadForm.name,
-      phone: leadForm.phone,
+      phone: phoneSanitized,
       service_needed: leadForm.service,
       message: finalMessage,
       lead_context: {
@@ -450,7 +457,7 @@ export default function CompanyProfile() {
 
     setLeadSent(true);
     toast.success('Solicitação enviada com sucesso!');
-  };
+  });
 
   if (isLoading) {
     return (
