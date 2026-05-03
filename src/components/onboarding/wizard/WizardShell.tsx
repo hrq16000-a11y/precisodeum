@@ -594,9 +594,10 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   }, [state.phase]);
 
   const finalizeUnifiedOnboarding = useCallback(async () => {
+    if (!user?.id) return;
     clearPersistedReviewPhase();
     await finalizeOnboarding({
-      userId: user?.id,
+      userId: user.id,
       extraProfilePatch: { profile_type: 'provider' },
     });
   }, [user?.id]);

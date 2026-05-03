@@ -81,7 +81,7 @@ export async function finalizeOnboarding(
   }
 
   // 4) UPDATE em `profiles` (sem userId, retornamos no-op com sucesso lógico).
-  if (!userId) return { ok: true };
+  if (!userId) return { ok: false, error: 'no_user_id' };
 
   // Sanitiza para garantir que o callsite não consiga sobrescrever os campos
   // governados por este módulo (`onboarding_completed`/`onboarding_step` agora
