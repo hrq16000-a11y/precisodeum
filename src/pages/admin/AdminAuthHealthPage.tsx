@@ -138,7 +138,7 @@ export default function AdminAuthHealthPage() {
 
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE);
 
-  const { data, isLoading, isFetching, refetch } = useQuery({
+  const { data, isLoading, isFetching, refetch, error: queryError } = useQuery({
     queryKey: ["admin-auth-health", period, pageSize],
     queryFn: async (): Promise<EventRow[]> => {
       const { data, error } = await supabase
@@ -152,7 +152,16 @@ export default function AdminAuthHealthPage() {
       return (data || []) as EventRow[];
     },
     staleTime: 30_000,
+    retry: false,
   });
+
+  // Detecta bloqueio de RLS / permissão sem expor detalhes técnicos
+  const isAccessDenied = useMemo(() => {
+    if (!queryError) return false;
+    const msg = String((queryError as Error)?.message || "").toLowerCase();
+    return msg.includes("permission") || msg.includes("denied") || msg.includes("rls") || msg.includes("403");
+  }, [queryError]);
+
 
   const stats = useMemo(() => {
     const counts: Record<string, number> = {};
