@@ -49,7 +49,7 @@ const SENSITIVE_KEY_RE = /\b(password|senha|token|access_token|refresh_token|sec
 const JWT_RE = /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g;
 const EMAIL_RE = /\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g;
 
-function sanitizeMessage(input: unknown): string {
+export function sanitizeMessage(input: unknown): string {
   if (input == null) return "—";
   let s = typeof input === "string" ? input : String(input);
   s = s.replace(JWT_RE, "[token]");
