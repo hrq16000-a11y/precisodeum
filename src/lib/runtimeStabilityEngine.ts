@@ -100,7 +100,8 @@ const RuntimeStabilityEngine = {
     const { data } = await supabase
       .from('runtime_component_health' as any)
       .select('*')
-      .order('status', { ascending: true });
+      .order('status', { ascending: true })
+      .limit(200);
     return (data || []) as unknown as ComponentHealth[];
   },
 
@@ -112,7 +113,8 @@ const RuntimeStabilityEngine = {
       .from('runtime_component_health' as any)
       .select('*')
       .neq('status', 'healthy')
-      .order('failure_count', { ascending: false });
+      .order('failure_count', { ascending: false })
+      .limit(200);
     return (data || []) as unknown as ComponentHealth[];
   },
 

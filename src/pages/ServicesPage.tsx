@@ -50,7 +50,8 @@ const ServicesPage = () => {
         .from('popular_services')
         .select('*')
         .eq('active', true)
-        .order('display_order');
+        .order('display_order')
+        .limit(50);
       if (error) throw error;
       return (data || []) as PopularService[];
     },

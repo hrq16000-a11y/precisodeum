@@ -84,7 +84,8 @@ export function useSponsorsBySlot(
         .select('*')
         .eq('active', true)
         .eq('position', position)
-        .order('display_order');
+        .order('display_order')
+        .limit(50);
 
       if (filters?.city) {
         q = q.eq('linked_city', filters.city);
@@ -142,7 +143,8 @@ export function useSponsorSlotLimits() {
     queryFn: async () => {
       const { data } = await supabase
         .from('sponsor_slot_limits')
-        .select('*');
+        .select('*')
+        .limit(20);
       return data || [];
     },
     staleTime: 1000 * 60 * 10,
