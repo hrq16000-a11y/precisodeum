@@ -1803,7 +1803,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
           return (
             <section
-              className="mx-auto w-full max-w-md space-y-3 px-4 py-6 text-center"
+              className="mx-auto w-full max-w-md space-y-3 px-4 py-5 text-center"
               role="alert"
               aria-live="polite"
               data-testid="phase2-photos-blocked"
