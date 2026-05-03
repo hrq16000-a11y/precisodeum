@@ -414,8 +414,18 @@ const LoginPage = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">E-mail</label>
-                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
+                      aria-invalid={!!emailError}
+                      aria-describedby={emailError ? 'login-email-error' : undefined}
+                      className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground ${emailError ? 'border-destructive focus:outline-none focus:ring-1 focus:ring-destructive' : 'border-input'}`}
+                    />
+                    {emailError && (
+                      <p id="login-email-error" className="mt-1 text-xs text-destructive">{emailError}</p>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">Senha</label>
@@ -423,10 +433,15 @@ const LoginPage = () => {
                       required
                       minLength={6}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(null); }}
                       autoComplete="current-password"
                       showRules
+                      aria-invalid={!!passwordError}
+                      aria-describedby={passwordError ? 'login-password-error' : undefined}
                     />
+                    {passwordError && (
+                      <p id="login-password-error" className="mt-1 text-xs text-destructive">{passwordError}</p>
+                    )}
                   </div>
                   <div className="text-right">
                     <button type="button" onClick={() => navigate('/esqueci-senha', { state: { email } })}
