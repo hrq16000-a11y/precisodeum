@@ -496,7 +496,8 @@ async function fetchProvidersLightweight(query: any) {
       .from('provider_impressions' as any)
       .select('provider_id, impressions')
       .in('provider_id', providerIds)
-      .gte('date', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)) as any,
+      .gte('date', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
+      .limit(200) as any,
     getRankingConfig(),
     // Fetch engagement points + level priority + trial boost for meritocracy scoring
     supabase
