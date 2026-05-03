@@ -63,7 +63,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
           {block.title && <h2 className="text-2xl font-bold text-foreground mb-2">{block.title}</h2>}
           {block.subtitle && <p className="text-muted-foreground mb-4">{block.subtitle}</p>}
           {content.body && (
-            <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: content.body }} />
+            <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.body) }} />
           )}
         </section>
       );
