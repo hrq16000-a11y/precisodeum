@@ -132,6 +132,8 @@ import {
   setOnboardingFlow,
 } from './telemetry';
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
+import WizardErrorModal from '@/components/wizard/WizardErrorModal';
+import { WIZARD_ERROR_CODES } from '@/lib/wizardErrorCodes';
 import {
   buildOnboardingCoreLocks,
   buildOnboardingV2BootstrapState,
