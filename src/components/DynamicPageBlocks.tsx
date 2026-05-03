@@ -102,7 +102,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
     case 'html':
       return (
         <section className="container mx-auto px-4">
-          <div dangerouslySetInnerHTML={{ __html: content.html || '' }} />
+          <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.html || '') }} />
         </section>
       );
 
