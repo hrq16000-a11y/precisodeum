@@ -7899,6 +7899,10 @@ export type Database = {
         Args: { _reason?: string; _reset_after?: boolean }
         Returns: string
       }
+      admin_capture_db_perf_snapshot_system: {
+        Args: { _reason?: string; _reset_after?: boolean }
+        Returns: string
+      }
       admin_capture_rls_snapshot: {
         Args: never
         Returns: {
