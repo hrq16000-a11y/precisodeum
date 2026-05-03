@@ -251,6 +251,16 @@ export default function CadastroInicialPage() {
             category: 'B_PROFILE_NULL', user_id: user.id,
           });
         }
+
+        // [Telemetria granular] Evento de DETECÇÃO — emitido antes do INSERT
+        // para permitir o funil "Detectado → Tentativa → Resultado" no painel
+        // /admin/health-check.
+        void trackOnboardingEvent({
+          phase: 'unknown' as any,
+          event: 'error',
+          meta: { reason: 'profile_missing_detected', error_code: 'B_PROFILE_NULL' },
+        });
+
         const meta = (user.user_metadata || {}) as Record<string, any>;
         const { error: insertError } = await supabase
           .from('profiles')
@@ -274,17 +284,57 @@ export default function CadastroInicialPage() {
           toast.message('Configurando seu perfil...', { duration: 2000 });
           // Re-hidrata o useAuth sem reload — preserva estado React e evita
           // perder rascunhos em memória que ainda não fizeram flush.
-          try {
-            await refetchProfile();
+          // Retry com backoff exponencial: 500ms, 1200ms, 2500ms (máx 3).
+          const RETRY_DELAYS = [500, 1200, 2500];
+          let hydrated = false;
+          for (let attempt = 0; attempt < RETRY_DELAYS.length; attempt++) {
+            try {
+              const result = await refetchProfile();
+              if (result) {
+                hydrated = true;
+                if (attempt > 0) {
+                  void trackOnboardingEvent({
+                    phase: 'unknown' as any,
+                    event: 'error',
+                    meta: {
+                      reason: 'profile_refetch_recovered',
+                      error_code: 'B_PROFILE_NULL_HEALED',
+                      attempts: attempt + 1,
+                    },
+                  });
+                }
+                break;
+              }
+            } catch (refetchErr) {
+              if (import.meta.env.DEV) {
+                console.warn('[cadastro-inicial][diag] refetchProfile attempt failed', {
+                  attempt: attempt + 1, error: refetchErr,
+                });
+              }
+            }
+            // Backoff antes da próxima tentativa (exceto após a última).
+            if (attempt < RETRY_DELAYS.length - 1) {
+              await new Promise((r) => window.setTimeout(r, RETRY_DELAYS[attempt]));
+            }
+          }
+
+          if (hydrated) {
             // Sucesso: limpa a flag para que próximas sessões possam tentar
             // novamente caso o problema recorra com outro user.
             try { window.sessionStorage.removeItem(SELF_HEAL_FLAG); } catch { /* noop */ }
-          } catch (refetchErr) {
-            if (import.meta.env.DEV) {
-              console.error('[cadastro-inicial][diag] refetchProfile failed', refetchErr);
-            }
-            // Fallback: reload uma única vez (a flag já está setada, então
-            // não vai reentrar no self-heal após o reload).
+          } else {
+            void trackOnboardingEvent({
+              phase: 'unknown' as any,
+              event: 'error',
+              meta: {
+                reason: 'profile_refetch_exhausted',
+                error_code: 'B_PROFILE_NULL_HEAL_FAIL',
+                attempts: RETRY_DELAYS.length,
+              },
+            });
+            // Loop Guard preservado: SELF_HEAL_FLAG continua setada → após o
+            // reload, o effect cai no branch `alreadyAttempted` e emite
+            // B_PROFILE_NULL_LOOP_GUARD.
             window.setTimeout(() => window.location.reload(), 400);
           }
         } else if (import.meta.env.DEV) {
