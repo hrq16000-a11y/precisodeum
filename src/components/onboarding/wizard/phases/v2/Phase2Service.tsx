@@ -29,6 +29,7 @@ import { buildWorkingHoursSummary, formatStruct, legacyToStruct, validateStruct,
 import WorkingHoursPicker from './WorkingHoursPicker';
 import ServiceCityPicker from './ServiceCityPicker';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
+import { BackButton } from '@/components/onboarding/wizard/BackButton';
 
 interface CategoryRow { id: string; name: string; icon?: string | null }
 
@@ -212,13 +213,8 @@ export const Phase2Service = ({
       role="region"
       aria-labelledby="phase2-service-title"
     >
-      <button
-        onClick={onBack}
-        className="text-xs text-muted-foreground hover:text-foreground"
-        aria-label="Voltar para a etapa anterior"
-      >
-        ← Voltar
-      </button>
+      <BackButton onBack={onBack} />
+
       <header className="space-y-2 text-center">
         <h1 id="phase2-service-title" className="font-display text-lg font-extrabold leading-tight text-foreground">
           Qual serviço você quer cadastrar?
@@ -484,13 +480,7 @@ export const Phase2Details = ({
       role="region"
       aria-labelledby="phase2-details-title"
     >
-      <button
-        onClick={onBack}
-        className="text-xs text-muted-foreground hover:text-foreground"
-        aria-label="Voltar para a etapa anterior"
-      >
-        ← Voltar
-      </button>
+      <BackButton onBack={onBack} />
       <header className="space-y-2 text-center">
         <h1 id="phase2-details-title" className="font-display text-lg font-extrabold leading-tight text-foreground">
           Para quem e por quanto?

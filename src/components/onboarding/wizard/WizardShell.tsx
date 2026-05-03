@@ -489,9 +489,18 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   // - Em modo revisão: retrocede na REVIEW_PHASE_ORDER (assistente).
   // - Em fluxo normal (new_signup): da phase2_service volta para a triagem
   //   (triage_celebration), que é a fase imediatamente anterior na régua.
+  // - Guard: se a fase NÃO mudou após o handler, registra `noop_redirected`
+  //   e força um fallback canônico (volta para a fase imediatamente anterior
+  //   na PROVIDER_WIZARD_PHASE_ORDER) — evita botão "morto".
   useEffect(() => {
-    const onPrevUnified = () => {
+    const onPrevUnified = (e: Event) => {
       const cur = stateRef.current.phase;
+      const detail = (e as CustomEvent).detail || {};
+      void trackOnboardingEvent({
+        phase: cur as any,
+        event: 'back',
+        meta: { code: 'wizard_back:dispatched', source: detail.source ?? 'unknown', variant: 'unified' },
+      });
       if (isReview) {
         const prev = prevRenderableReviewPhase(cur);
         if (prev !== cur) dispatch({ type: 'GO_TO_PHASE', phase: prev });
@@ -501,6 +510,18 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       // têm onBack próprio dentro do OnboardingV2Shell.
       if ((cur as string) === 'phase2_service' || cur === 'main_service') {
         dispatch({ type: 'GO_TO_PHASE', phase: 'triage_celebration' as any });
+        return;
+      }
+      // Guard: fase não tratada explicitamente — tenta retroceder na régua.
+      const idx = PROVIDER_WIZARD_PHASE_ORDER.indexOf(cur as any);
+      if (idx > 0) {
+        const prev = PROVIDER_WIZARD_PHASE_ORDER[idx - 1];
+        void trackOnboardingEvent({
+          phase: cur as any,
+          event: 'back',
+          meta: { code: 'wizard_back:noop_redirected', from: cur, to: prev, source: detail.source ?? 'unknown' },
+        });
+        dispatch({ type: 'GO_TO_PHASE', phase: prev as any });
       }
     };
     window.addEventListener('wizard:request-prev-unified', onPrevUnified as EventListener);
