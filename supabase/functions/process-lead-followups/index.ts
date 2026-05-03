@@ -2,6 +2,7 @@
 // Chama a função SQL `process_lead_followup_reminders` que insere notificações
 // para cada lead vencido (status new/contacted) e reagenda a próxima janela.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { validateCronRequest } from '../_shared/cronAuth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +11,9 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  const authError = validateCronRequest(req);
+  if (authError) return authError;
 
   try {
     const supabase = createClient(
