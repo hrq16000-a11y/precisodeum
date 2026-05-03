@@ -1007,6 +1007,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         },
         duration: 12000,
       });
+      // Modal claro com detalhes técnicos (não mascara, complementa o toast).
+      setErrorModal({
+        code: 'persist_first_service:no_provider',
+        missingFields: missing,
+        techMessage: techMsg ?? null,
+        techCode: techCode ?? null,
+        onRetry: () => { void persistFirstService(); },
+      });
       return false;
     }
     setSaving(true);
