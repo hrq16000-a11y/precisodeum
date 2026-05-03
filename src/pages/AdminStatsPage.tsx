@@ -72,7 +72,7 @@ const AdminStatsPage = () => {
         providersRes, servicesRes, leadsRes, reviewsRes, jobsRes, blogRes,
         pagesRes, menuRes, blocksRes, sponsorsRes, categoriesRes, clicksRes,
       ] = await Promise.all([
-        supabase.from('providers').select('id, status, city, photo_url, description, featured, created_at, whatsapp, phone, working_hours, latitude, longitude, services_count, categories(name)').is('deleted_at', null),
+        supabase.from('providers').select('id, status, city, photo_url, description, featured, created_at, whatsapp, phone, working_hours, latitude, longitude, services_count, categories(name)').is('deleted_at', null).limit(1000),
         supabase.from('services').select('id, provider_id, created_at').is('deleted_at', null),
         supabase.from('leads').select('id, client_name, created_at, providers:provider_id(business_name, city)').order('created_at', { ascending: false }).limit(50),
         supabase.from('reviews').select('id, approval_status'),
