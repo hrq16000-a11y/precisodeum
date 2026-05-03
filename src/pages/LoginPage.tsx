@@ -276,6 +276,7 @@ const LoginPage = () => {
     if (/rate limit|too many/i.test(errMsg)) {
       toast.error('Muitas tentativas de login. Aguarde alguns minutos.');
     } else {
+      setPasswordError('E-mail ou senha inválidos.');
       toast.error('E-mail ou senha inválidos.');
     }
   };
