@@ -91,6 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
 
+    if (isStale()) return profileData ?? null;
     setProfile(profileData);
     setCelebrationMuted(resolveCelebrationMutedPreference(profileData?.celebration_muted));
 
@@ -106,7 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (providerRows && providerRows.length > 0) {
       const best = providerRows.find(p => p.city && p.description) || providerRows[0];
-      setProvider(best);
+      if (!isStale()) setProvider(best);
 
       if (best.city && best.city !== 'Não informada' && best.state && (best.latitude == null || best.longitude == null)) {
         window.setTimeout(() => {
@@ -114,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .then(({ latitude, longitude }) => {
               if (latitude != null && longitude != null) {
                 supabase.from('providers').update({ latitude, longitude }).eq('id', best.id).then(() => {
-                  setProvider(prev => prev ? { ...prev, latitude, longitude } : prev);
+                  if (!isStale()) setProvider(prev => prev ? { ...prev, latitude, longitude } : prev);
                 });
               }
             })
@@ -122,10 +123,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }, 1200);
       }
     } else {
-      setProvider(null);
+      if (!isStale()) setProvider(null);
     }
 
     return profileData ?? null;
+    } finally {
+      // Mark as settled regardless of staleness — the safety timer only cares
+      // that *some* fetchProfile call has completed.
+      fetchProfileSettledRef.current = true;
+    }
   }, []);
 
   const refetchProfile = useCallback(async () => {
