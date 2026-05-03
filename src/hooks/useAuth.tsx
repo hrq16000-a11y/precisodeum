@@ -240,12 +240,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       )
       .subscribe();
 
+    let visibilityTimer: number | null = null;
     const refreshOnFocus = () => {
-      if (document.visibilityState === 'visible') void refetchProfile();
+      if (document.visibilityState !== 'visible') return;
+      // Debounce: rapid alt-tab / tab switches should result in a single refetch.
+      if (visibilityTimer != null) window.clearTimeout(visibilityTimer);
+      visibilityTimer = window.setTimeout(() => {
+        visibilityTimer = null;
+        void refetchProfile();
+      }, 500);
     };
     document.addEventListener('visibilitychange', refreshOnFocus);
 
     return () => {
+      if (visibilityTimer != null) window.clearTimeout(visibilityTimer);
       document.removeEventListener('visibilitychange', refreshOnFocus);
       supabase.removeChannel(channel);
     };
