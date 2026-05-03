@@ -132,6 +132,7 @@ import {
   setOnboardingFlow,
 } from './telemetry';
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
+import WizardErrorModal from '@/components/wizard/WizardErrorModal';
 import {
   buildOnboardingCoreLocks,
   buildOnboardingV2BootstrapState,
@@ -276,6 +277,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     message: string;
     code?: string | null;
     at: number;
+  }>(null);
+  // Modal de erro contextual (substitui tela em branco): mostra código,
+  // campos faltantes e CTAs claros (Voltar / Tentar novamente / Reportar).
+  const [errorModal, setErrorModal] = useState<null | {
+    code: string;
+    missingFields: string[];
+    techMessage?: string | null;
+    techCode?: string | null;
+    onRetry?: () => void;
   }>(null);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
   // Timer rastreado do hint "rascunho restaurado" (caminho remoto, fora de useEffect).
@@ -996,6 +1006,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           },
         },
         duration: 12000,
+      });
+      // Modal claro com detalhes técnicos (não mascara, complementa o toast).
+      setErrorModal({
+        code: 'persist_first_service:no_provider',
+        missingFields: missing,
+        techMessage: techMsg ?? null,
+        techCode: techCode ?? null,
+        onRetry: () => { void persistFirstService(); },
       });
       return false;
     }
@@ -2177,6 +2195,23 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         updatedAt={remoteDraft?.updated_at || null}
         onContinue={handleRemoteContinue}
         onDiscard={handleRemoteDiscard}
+      />
+
+      <WizardErrorModal
+        open={!!errorModal}
+        onOpenChange={(v) => { if (!v) setErrorModal(null); }}
+        code={errorModal?.code || ''}
+        step={String(state.phase)}
+        missingFields={errorModal?.missingFields}
+        technicalMessage={errorModal?.techMessage ?? null}
+        technicalCode={errorModal?.techCode ?? null}
+        contextSnapshot={{
+          category: (state.service?.category_ids?.[0]) || null,
+          city: state.profile?.city || null,
+          state_uf: state.profile?.state || null,
+        }}
+        onRetry={() => errorModal?.onRetry?.()}
+        onBack={() => window.dispatchEvent(new CustomEvent('wizard:request-back'))}
       />
     </>
   );

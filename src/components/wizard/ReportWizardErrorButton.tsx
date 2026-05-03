@@ -28,6 +28,7 @@ import { reportError, getActionHistory, trackAction } from '@/lib/errorReporter'
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { WIZARD_ERROR_CODES } from '@/lib/wizardErrorCodes';
+import { parseDeviceInfo, deviceSummary } from '@/lib/deviceInfo';
 
 interface Props {
   step: string;
@@ -189,20 +190,29 @@ export const ReportWizardErrorButton = ({
     return { paths, failed };
   };
 
-  const buildPayload = (uploadedPaths: string[]) => ({
-    code: (contextSnapshot && (contextSnapshot as any).code) || step,
-    step,
-    note: note.trim() || null,
-    contextSnapshot: contextSnapshot || null,
-    browser: typeof navigator !== 'undefined' ? {
-      userAgent: navigator.userAgent,
-      language: navigator.language,
-      platform: (navigator as any).platform || null,
-    } : null,
-    page: typeof window !== 'undefined' ? window.location.pathname + window.location.search : null,
-    actionHistory: getActionHistory().slice(-10),
-    attachments: uploadedPaths,
-  });
+  const buildPayload = (uploadedPaths: string[]) => {
+    const device = typeof navigator !== 'undefined' ? parseDeviceInfo() : null;
+    return {
+      code: (contextSnapshot && (contextSnapshot as any).code) || step,
+      step,
+      note: note.trim() || null,
+      contextSnapshot: contextSnapshot || null,
+      browser: device ? {
+        userAgent: device.userAgent,
+        language: typeof navigator !== 'undefined' ? navigator.language : null,
+        platform: (typeof navigator !== 'undefined' ? (navigator as any).platform : null) || null,
+        os: device.os,
+        osVersion: device.osVersion,
+        model: device.model,
+        name: device.browser,
+        version: device.browserVersion,
+        isMobile: device.isMobile,
+      } : null,
+      page: typeof window !== 'undefined' ? window.location.pathname + window.location.search : null,
+      actionHistory: getActionHistory().slice(-10),
+      attachments: uploadedPaths,
+    };
+  };
 
   const handleSend = async () => {
     if (!canSend) return;
@@ -440,7 +450,7 @@ export const ReportWizardErrorButton = ({
                         </code>
                       </li>
                     ))}
-                    <li>Navegador: {typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 60) + '…' : '—'}</li>
+                    <li>Dispositivo: <code className="font-mono break-all">{deviceSummary()}</code></li>
                   </ul>
                 </div>
               </div>

@@ -591,10 +591,6 @@ export default function CompanyProfile() {
                       </Button>
                     )}
                   </div>
-
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Contato direto pela plataforma. O número só é liberado no WhatsApp para usuários cadastrados.
-                  </p>
                 </div>
               </div>
             </div>
