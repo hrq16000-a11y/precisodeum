@@ -1309,7 +1309,7 @@ const SearchPage = () => {
                               animate="show"
                               variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
                             >
-                              {items.map((p) => (
+                              {items.map((p, idx) => (
                                 <motion.div
                                   key={p.id}
                                   variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
@@ -1325,7 +1325,7 @@ const SearchPage = () => {
                                       weights={scoreWeights}
                                     />
                                   )}
-                                  <ProviderRenderer provider={p} isFallback={isFallback} />
+                                  <ProviderRenderer provider={p} isFallback={isFallback} index={idx} />
                                 </motion.div>
                               ))}
                             </motion.div>
@@ -1355,7 +1355,7 @@ const SearchPage = () => {
                                   weights={scoreWeights}
                                 />
                               )}
-                              <ProviderRenderer provider={p} isFallback={isFallback} />
+                              <ProviderRenderer provider={p} isFallback={isFallback} index={idx} />
                             </motion.div>
                             {/* Inject sponsor ad every 5 results */}
                             {(idx + 1) % 5 === 0 && (
