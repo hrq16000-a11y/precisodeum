@@ -172,14 +172,13 @@ export default function AdminAuthHealthPage() {
       counts[code] = (counts[code] || 0) + 1;
       if (code === "B_PROFILE_NULL_LOOP_GUARD" && row.user_id) uniqueLoopUsers.add(row.user_id);
     }
-    const profileNull =
-      (counts.B_PROFILE_NULL_HEALED || 0) +
-      (counts.B_PROFILE_NULL_HEAL_FAIL || 0) +
-      (counts.B_PROFILE_NULL || 0);
+    // [Funil] Detectado → Tentativa → Resultado.
+    // "Detectado" = B_PROFILE_NULL emitido ANTES do INSERT.
+    const detected = counts.B_PROFILE_NULL || 0;
     const healed = counts.B_PROFILE_NULL_HEALED || 0;
     const failed = counts.B_PROFILE_NULL_HEAL_FAIL || 0;
-    const totalHeal = healed + failed;
-    const healRate = totalHeal === 0 ? null : (healed / totalHeal) * 100;
+    const attempted = healed + failed;
+    const healRate = attempted === 0 ? null : (healed / attempted) * 100;
     const rls = counts.C_RLS_403 || 0;
     const loopGuard = uniqueLoopUsers.size;
 
@@ -187,7 +186,7 @@ export default function AdminAuthHealthPage() {
       .map((code) => ({ code, label: CODE_LABEL[code], count: counts[code] || 0 }))
       .filter((d) => d.count > 0);
 
-    return { counts, profileNull, healRate, rls, loopGuard, chartData };
+    return { counts, detected, attempted, healed, failed, healRate, rls, loopGuard, chartData };
   }, [data]);
 
   return (
@@ -263,8 +262,8 @@ export default function AdminAuthHealthPage() {
           <Kpi
             icon={<AlertTriangle className="h-5 w-5 text-bet-amber" aria-hidden />}
             label="Perfis ausentes detectados"
-            value={isLoading ? null : stats.profileNull}
-            hint="Eventos B_PROFILE_NULL* no período"
+            value={isLoading ? null : stats.detected}
+            hint={`${stats.attempted} tentativa(s) · ${stats.healed} OK · ${stats.failed} falhas`}
           />
           <Kpi
             icon={<CheckCircle2 className="h-5 w-5 text-bet-green" aria-hidden />}
