@@ -2355,6 +2355,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           category: (state.service?.category_ids?.[0]) || null,
           city: state.profile?.city || null,
           state_uf: state.profile?.state || null,
+          lastPersistError: lastPersistError
+            ? { message: lastPersistError.message, code: lastPersistError.code || null }
+            : null,
         }}
         onRetry={() => errorModal?.onRetry?.()}
         onBack={() => window.dispatchEvent(new CustomEvent('wizard:request-back'))}
