@@ -1,16 +1,24 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, AlertTriangle, ShieldAlert, Zap, RefreshCcw, CheckCircle2 } from "lucide-react";
+import { Activity, AlertTriangle, ShieldAlert, Zap, RefreshCcw, CheckCircle2, TrendingDown, LineChart } from "lucide-react";
+import {
+  aggregateByTime,
+  buildSelfHealFunnel,
+  pickBucketForPeriod,
+} from "@/lib/authHealthAggregations";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -189,6 +197,12 @@ export default function AdminAuthHealthPage() {
     return { counts, detected, attempted, healed, failed, healRate, rls, loopGuard, chartData };
   }, [data]);
 
+  const funnel = useMemo(() => buildSelfHealFunnel(data || []), [data]);
+  const series = useMemo(
+    () => aggregateByTime(data || [], pickBucketForPeriod(period)),
+    [data, period],
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -332,6 +346,167 @@ export default function AdminAuthHealthPage() {
                       ))}
                     </Bar>
                   </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Funil de Self-Heal */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingDown className="h-4 w-4" aria-hidden />
+              Funil de Self-Heal — Detectado → Tentativa → Sucesso
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-56 w-full" />
+            ) : funnel[0].count === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                Nenhuma detecção de perfil ausente no período.
+              </p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-[1fr_220px]">
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={funnel}
+                      margin={{ top: 8, right: 16, left: 16, bottom: 8 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                      <YAxis
+                        type="category"
+                        dataKey="stage"
+                        tick={{ fontSize: 12 }}
+                        width={90}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--popover))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 6,
+                          fontSize: 12,
+                        }}
+                        formatter={(value: number, _name, p: any) => {
+                          const drop = p?.payload?.dropPct;
+                          return drop && drop > 0
+                            ? [`${value} (queda ${drop.toFixed(0)}%)`, "Eventos"]
+                            : [`${value}`, "Eventos"];
+                        }}
+                      />
+                      <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                        {funnel.map((row) => (
+                          <Cell
+                            key={row.stage}
+                            fill={
+                              row.stage === "Sucesso"
+                                ? "hsl(var(--bet-green))"
+                                : row.stage === "Tentativa"
+                                  ? "hsl(var(--bet-amber))"
+                                  : "hsl(var(--bet-orange))"
+                            }
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <ul className="space-y-2 text-xs" aria-label="Resumo do funil">
+                  {funnel.map((row, i) => (
+                    <li key={row.stage} className="rounded border border-border bg-card p-3">
+                      <div className="flex items-baseline justify-between">
+                        <span className="font-medium text-foreground">{row.stage}</span>
+                        <span className="font-mono text-base">{row.count}</span>
+                      </div>
+                      {i > 0 && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Drop-off: {row.dropFromPrev}{" "}
+                          {row.dropPct > 0 && (
+                            <span
+                              className={
+                                row.dropPct >= 30
+                                  ? "text-bet-error"
+                                  : "text-muted-foreground"
+                              }
+                            >
+                              ({row.dropPct.toFixed(0)}%)
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Tendência temporal */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <LineChart className="h-4 w-4" aria-hidden />
+              Tendência temporal de erros ({pickBucketForPeriod(period) === "hour" ? "por hora" : "por dia"})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : series.length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                Sem amostras de B_PROFILE_NULL, C_RLS_403 ou A_AUTH_FAIL no período.
+              </p>
+            ) : (
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 11 }}
+                      interval="preserveStartEnd"
+                      minTickGap={24}
+                    />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--popover))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 6,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Area
+                      type="monotone"
+                      dataKey="B_PROFILE_NULL"
+                      stackId="1"
+                      stroke="hsl(var(--bet-amber))"
+                      fill="hsl(var(--bet-amber) / 0.5)"
+                      name="Perfil ausente"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="C_RLS_403"
+                      stackId="1"
+                      stroke="hsl(var(--bet-error))"
+                      fill="hsl(var(--bet-error) / 0.5)"
+                      name="RLS 403"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="A_AUTH_FAIL"
+                      stackId="1"
+                      stroke="hsl(var(--bet-orange))"
+                      fill="hsl(var(--bet-orange) / 0.5)"
+                      name="Auth fail"
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             )}
