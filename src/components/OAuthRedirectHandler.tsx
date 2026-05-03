@@ -4,32 +4,64 @@ import { useAuth } from '@/hooks/useAuth';
 import { resolvePostLoginRoute } from '@/lib/onboardingAccess';
 
 /**
- * After OAuth login (Google), o fluxo sempre passa por /cadastro-bet (V3).
+ * After OAuth login (Google), o fluxo sempre passa por /cadastro-inicial.
  * O próprio gate decide a saída final se o onboarding já estiver completo.
+ *
+ * Blindagem contra StrictMode (dev) e remontagens:
+ *  - Dedupe global por `user.id` em `Set` no escopo do módulo (resiste a
+ *    unmount/remount do StrictMode, ao contrário de `useRef` local).
+ *  - A intenção `auth_redirect` (sessionStorage) é LIDA E REMOVIDA
+ *    imediatamente, num único passo, antes de qualquer await — evita
+ *    que uma segunda execução repita o redirect ou caia em loop.
  */
+const handledUsers = new Set<string>();
+
+function consumePostLoginIntent(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const value = window.sessionStorage.getItem('auth_redirect');
+    // Limpa imediatamente: intenção é one-shot.
+    window.sessionStorage.removeItem('auth_redirect');
+    if (!value) return null;
+    // Aceita só caminhos internos (defesa contra open redirect).
+    if (!value.startsWith('/') || value.startsWith('//')) return null;
+    return value;
+  } catch {
+    return null;
+  }
+}
+
 const OAuthRedirectHandler = () => {
   const { user, profile, provider, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const handled = useRef(false);
+  const handledLocally = useRef(false);
 
   useEffect(() => {
-    if (loading || handled.current) return;
-    if (!user) return;
-    if (!profile) return;
+    if (loading || handledLocally.current) return;
+    if (!user || !profile) return;
+    if (handledUsers.has(user.id)) {
+      handledLocally.current = true;
+      return;
+    }
 
-    handled.current = true;
+    handledLocally.current = true;
+    handledUsers.add(user.id);
+
+    // Consome a intenção pós-login antes de qualquer await:
+    // se chamarmos depois, o StrictMode pode ler 2x.
+    const explicitNext = consumePostLoginIntent();
 
     void (async () => {
-      const nextRoute = await resolvePostLoginRoute({
+      const resolvedRoute = await resolvePostLoginRoute({
         userId: user.id,
         profile,
         provider,
-        fallbackAuthorizedRoute: '/dashboard',
+        fallbackAuthorizedRoute: explicitNext || '/dashboard',
       });
 
-      if (location.pathname !== nextRoute) {
-        navigate(nextRoute, { replace: true });
+      if (location.pathname !== resolvedRoute) {
+        navigate(resolvedRoute, { replace: true });
       }
     })();
   }, [user, profile, provider, loading, navigate, location.pathname]);
