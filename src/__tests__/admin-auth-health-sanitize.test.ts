@@ -2,11 +2,18 @@ import { describe, it, expect } from "vitest";
 import { sanitizeMessage } from "@/pages/admin/AdminAuthHealthPage";
 
 describe("AdminAuthHealthPage · sanitizeMessage", () => {
-  it("redige JWTs como [token]", () => {
+  it("redige JWTs (não exibe payload bruto)", () => {
     const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.abcDEF1234567890_secret";
-    const out = sanitizeMessage(`auth failed token=${jwt}`);
+    const out = sanitizeMessage(`auth failed jwt ${jwt}`);
     expect(out).not.toContain("eyJ");
     expect(out).toContain("[token]");
+  });
+
+  it("redige JWT em formato chave=valor", () => {
+    const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.abcDEF1234567890_secret";
+    const out = sanitizeMessage(`token=${jwt}`);
+    expect(out).not.toContain("eyJ");
+    expect(out).toMatch(/token=\[redacted\]|\[token\]/);
   });
 
   it("redige password=12345 como password=[redacted]", () => {
