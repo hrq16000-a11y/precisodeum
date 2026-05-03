@@ -85,6 +85,8 @@ const AdminOnboardingStatsPage = lazy(() => import("./pages/admin/AdminOnboardin
 const AdminUploadStressTestPage = lazy(() => import("./pages/admin/AdminUploadStressTestPage"));
 const AdminSearchSortingPage = lazy(() => import("./pages/admin/AdminSearchSortingPage"));
 const AdminMetaTrackingQualityPage = lazy(() => import("./pages/admin/AdminMetaTrackingQualityPage"));
+const AdminDbPerformancePage = lazy(() => import("./pages/admin/AdminDbPerformancePage"));
+const AdminLoadTestsPage = lazy(() => import("./pages/admin/AdminLoadTestsPage"));
 const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
@@ -577,6 +579,8 @@ const App = () => {
                 <Route path="/admin/onboarding-stats" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingStatsPage"><AdminOnboardingStatsPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/integridade" element={<AdminGuard><RouteErrorBoundary sectionName="AdminIntegrityReportsPage"><AdminIntegrityReportsPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/upload-stress-test" element={<AdminGuard><RouteErrorBoundary sectionName="AdminUploadStressTestPage"><AdminUploadStressTestPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/db-performance" element={<AdminGuard><RouteErrorBoundary sectionName="AdminDbPerformancePage"><AdminDbPerformancePage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/load-tests" element={<AdminGuard><RouteErrorBoundary sectionName="AdminLoadTestsPage"><AdminLoadTestsPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/caixa-notificacoes" element={<AdminGuard><RouteErrorBoundary sectionName="AdminInboxPage"><AdminInboxPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/sitemap-audit" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSitemapAuditPage"><AdminSitemapAuditPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/busca-ordenacao" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSearchSortingPage"><AdminSearchSortingPage /></RouteErrorBoundary></AdminGuard>} />
