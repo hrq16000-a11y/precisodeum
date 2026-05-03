@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { validateCronRequest } from "../_shared/cronAuth.ts";
 
 Deno.serve(async (req) => {
   const corsHeaders = {
@@ -9,6 +10,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  const authError = validateCronRequest(req);
+  if (authError) return authError;
 
   try {
     const supabase = createClient(

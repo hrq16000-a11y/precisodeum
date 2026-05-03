@@ -1,5 +1,7 @@
 // Cron job: sincroniza provider.city com services.service_area diariamente.
 // Chamado por pg_cron (03:00 no timezone configurado em site_settings).
+import { validateCronRequest } from '../_shared/cronAuth.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -7,6 +9,9 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  const authError = validateCronRequest(req);
+  if (authError) return authError;
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
   const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

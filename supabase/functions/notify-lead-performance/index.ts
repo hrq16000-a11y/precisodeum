@@ -5,6 +5,7 @@
 // Throttle: só envia 1 notificação a cada 24h por prestador (chave em notifications.type='lead_performance').
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { validateCronRequest } from "../_shared/cronAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,6 +16,9 @@ const THRESHOLD = 5;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const authError = validateCronRequest(req);
+  if (authError) return authError;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
