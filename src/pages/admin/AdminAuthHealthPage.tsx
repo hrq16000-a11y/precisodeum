@@ -33,6 +33,35 @@ import { supabase } from "@/integrations/supabase/client";
 type Period = "24h" | "7d" | "30d";
 
 const PERIOD_HOURS: Record<Period, number> = { "24h": 24, "7d": 24 * 7, "30d": 24 * 30 };
+const PAGE_SIZE = 100;
+const MAX_ROWS = 2000;
+
+function safeMeta(meta: unknown): Record<string, unknown> {
+  if (!meta || typeof meta !== "object") return {};
+  return meta as Record<string, unknown>;
+}
+
+function toCsv(rows: EventRow[]): string {
+  const header = ["created_at", "user_id", "phase", "event", "error_code", "error_message", "raw_meta"];
+  const escape = (v: unknown) => {
+    const s = v == null ? "" : typeof v === "string" ? v : JSON.stringify(v);
+    return `"${String(s).replace(/"/g, '""')}"`;
+  };
+  const lines = [header.join(",")];
+  for (const r of rows) {
+    const m = safeMeta(r.meta);
+    lines.push([
+      escape(r.created_at),
+      escape(r.user_id ?? ""),
+      escape(r.phase ?? ""),
+      escape(r.event ?? ""),
+      escape(m.error_code ?? m.reason ?? ""),
+      escape(m.error_message ?? ""),
+      escape(r.meta ?? ""),
+    ].join(","));
+  }
+  return lines.join("\n");
+}
 
 /** Códigos rastreados pela telemetria de auth/self-heal (em meta.error_code). */
 const TRACKED_CODES = [
@@ -88,8 +117,10 @@ export default function AdminAuthHealthPage() {
     return d.toISOString();
   }, [period]);
 
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE);
+
   const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["admin-auth-health", period],
+    queryKey: ["admin-auth-health", period, pageSize],
     queryFn: async (): Promise<EventRow[]> => {
       const { data, error } = await supabase
         .from("onboarding_events")
@@ -97,7 +128,7 @@ export default function AdminAuthHealthPage() {
         .eq("event", "error")
         .gte("created_at", sinceISO)
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(pageSize);
       if (error) throw error;
       return (data || []) as EventRow[];
     },
@@ -108,7 +139,8 @@ export default function AdminAuthHealthPage() {
     const counts: Record<string, number> = {};
     const uniqueLoopUsers = new Set<string>();
     for (const row of data || []) {
-      const code = (row.meta?.error_code as string) || (row.meta?.reason as string) || "OUTRO";
+      const m = safeMeta(row.meta);
+      const code = (m.error_code as string) || (m.reason as string) || "OUTRO";
       counts[code] = (counts[code] || 0) + 1;
       if (code === "B_PROFILE_NULL_LOOP_GUARD" && row.user_id) uniqueLoopUsers.add(row.user_id);
     }
@@ -151,6 +183,23 @@ export default function AdminAuthHealthPage() {
                 <TabsTrigger value="30d">30 dias</TabsTrigger>
               </TabsList>
             </Tabs>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const csv = toCsv(data || []);
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `auth-health-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              disabled={!data || data.length === 0}
+            >
+              Exportar CSV
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -246,8 +295,20 @@ export default function AdminAuthHealthPage() {
 
         {/* Logs recentes */}
         <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-base">Logs recentes (até 500)</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">
+              Logs recentes ({data?.length ?? 0} de até {pageSize})
+            </CardTitle>
+            {pageSize < MAX_ROWS && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPageSize((s) => Math.min(s + PAGE_SIZE, MAX_ROWS))}
+                disabled={isFetching}
+              >
+                Carregar mais
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {isLoading ? (
@@ -269,13 +330,14 @@ export default function AdminAuthHealthPage() {
                 </TableHeader>
                 <TableBody>
                   {(data || []).map((row) => {
+                    const m = safeMeta(row.meta);
                     const code =
-                      (row.meta?.error_code as string) ||
-                      (row.meta?.reason as string) ||
+                      (m.error_code as string) ||
+                      (m.reason as string) ||
                       "OUTRO";
                     const message =
-                      (row.meta?.error_message as string) ||
-                      (row.meta?.reason as string) ||
+                      (m.error_message as string) ||
+                      (m.reason as string) ||
                       "—";
                     return (
                       <TableRow key={row.id}>
