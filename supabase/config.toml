@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.og-profile]
 verify_jwt = false
+
+[functions.notify-auth-errors]
+verify_jwt = false
