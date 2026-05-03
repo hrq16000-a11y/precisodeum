@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithGuard, EDGE_GUARD_FALLBACK_MESSAGE } from '@/lib/edgeInvoke';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { handleImageError } from '@/lib/imageResolver';
