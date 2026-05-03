@@ -47,6 +47,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchGenerationRef = useRef(0);
 
   const fetchProfile = useCallback(async (userId: string, authUser?: User | null) => {
+    // Generation guard: bumped on every call. If a newer call starts before this
+    // one finishes, the older one's setState writes are silently discarded.
+    const generation = ++fetchGenerationRef.current;
+    const isStale = () => fetchGenerationRef.current !== generation;
+    try {
     // Retry/polling: o trigger handle_new_user pode levar alguns ms após o signup.
     // Evita a race condition que deixa o usuário "preso" sem profile carregado.
     let profileData: any = null;
