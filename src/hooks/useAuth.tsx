@@ -91,6 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (isStale()) return profileData ?? null;
     setProfile(profileData);
+    if (isStale()) return profileData ?? null;
     setCelebrationMuted(resolveCelebrationMutedPreference(profileData?.celebration_muted));
 
     const metaChosen = authUser?.user_metadata?.profile_type_chosen === true;
@@ -98,6 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Só força o wizard quando NÃO existe profile_type no banco.
     // Se já tem tipo gravado mas a flag de metadata está ausente (contas antigas / OAuth),
     // sincroniza silenciosamente — sem reabrir o wizard.
+    if (isStale()) return profileData ?? null;
     setNeedsTypeSelection(!!profileData && !hasType);
     if (hasType && !metaChosen) {
       supabase.auth.updateUser({ data: { profile_type_chosen: true } }).catch((err) => {
