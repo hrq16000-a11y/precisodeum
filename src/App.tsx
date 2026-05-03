@@ -521,6 +521,7 @@ const App = () => {
                 {/* Wizard unificado — porta ÚNICA /cadastro-inicial. Rotas legadas /cadastro-bet,
                     /onboarding-v2 e /triagem foram REMOVIDAS na Consolidação Fase 2. Acessos
                     diretos caem em /404 — tracking de tentativas via NotFound + telemetria. */}
+                <Route path="/__test/report-button" element={<WizardSupportTestHarness />} />
                 <Route path="/cadastro-inicial" element={<CadastroInicialPage />} />
                 <Route path="/onboarding-v2/sucesso" element={<ProtectedRoute><OnboardingV2SuccessPage /></ProtectedRoute>} />
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
