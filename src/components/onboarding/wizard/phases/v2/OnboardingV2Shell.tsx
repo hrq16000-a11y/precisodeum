@@ -926,10 +926,24 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
   };
 
+  /**
+   * ensureProviderId — resolve o provider_id de forma resiliente.
+   *
+   * Camadas (em ordem) — qualquer uma que devolver id curto-circuita o resto:
+   *   1. state.providerId já em memória.
+   *   2. Lookup direto em providers por user_id (cobre triggers/abas paralelas).
+   *   3. Hidratação de identidade a partir de `profiles` quando state.profile
+   *      vier vazio (caso comum: Bet Mode preencheu o profile mas não hidratou
+   *      o reducer V2 antes de cair na Phase2Details).
+   *   4. persistPhase1 (cria/atualiza profile + provider).
+   *   5. Re-lookup com backoff exponencial (cobre race do trigger DB que
+   *      materializa o provider depois do insert do profile).
+   */
   const ensureProviderId = async (): Promise<string | null> => {
     if (!user) return null;
     if (state.providerId) return state.providerId;
 
+    // 2) lookup direto antes de qualquer escrita
     try {
       const reusedId = await findExistingProvider(user.id, state.userRef ?? null);
       if (reusedId) {
@@ -940,17 +954,49 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       /* noop */
     }
 
-    const created = await persistPhase1();
-    if (!created) return null;
-
+    // 3) hidrata profile a partir do DB se faltar identidade local
+    //    (evita persistPhase1 falhar por full_name/city ausentes em memória).
     try {
-      const recoveredId = await findExistingProvider(user.id, state.userRef ?? null);
-      if (recoveredId) {
-        dispatch({ type: 'SET_PROVIDER_ID', id: recoveredId });
-        return recoveredId;
+      const p = state.profile;
+      const needsHydration =
+        !(p.full_name || '').trim() ||
+        !(p.whatsapp || '').trim() ||
+        !(p.city || '').trim() ||
+        !(p.state || '').trim();
+      if (needsHydration) {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('full_name, whatsapp, city, state, neighborhood, profile_type, user_ref')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (prof) {
+          const patch: Partial<typeof p> = {};
+          if (!(p.full_name || '').trim() && prof.full_name) patch.full_name = prof.full_name;
+          if (!(p.whatsapp || '').trim() && prof.whatsapp) patch.whatsapp = prof.whatsapp;
+          if (!(p.city || '').trim() && prof.city) patch.city = prof.city;
+          if (!(p.state || '').trim() && prof.state) patch.state = prof.state;
+          if (!(p.neighborhood || '').trim() && prof.neighborhood) patch.neighborhood = prof.neighborhood;
+          if (Object.keys(patch).length > 0) dispatch({ type: 'PATCH_PROFILE', patch });
+          if (prof.user_ref && !state.userRef) dispatch({ type: 'SET_USER_REF', userRef: prof.user_ref });
+        }
       }
-    } catch {
-      /* noop */
+    } catch { /* hidratação é best-effort */ }
+
+    // 4) cria/atualiza
+    const created = await persistPhase1();
+
+    // 5) backoff exponencial cobrindo race com triggers DB
+    const delays = [0, 400, 1200];
+    for (let i = 0; i < delays.length; i++) {
+      if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+      try {
+        const recoveredId = await findExistingProvider(user.id, state.userRef ?? null);
+        if (recoveredId) {
+          dispatch({ type: 'SET_PROVIDER_ID', id: recoveredId });
+          return recoveredId;
+        }
+      } catch { /* tenta de novo */ }
+      if (!created && i === 0) break; // sem persist e sem registro: não adianta esperar
     }
 
     return null;
