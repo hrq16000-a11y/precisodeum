@@ -480,13 +480,7 @@ export const Phase2Details = ({
       role="region"
       aria-labelledby="phase2-details-title"
     >
-      <button
-        onClick={onBack}
-        className="text-xs text-muted-foreground hover:text-foreground"
-        aria-label="Voltar para a etapa anterior"
-      >
-        ← Voltar
-      </button>
+      <BackButton onBack={onBack} />
       <header className="space-y-2 text-center">
         <h1 id="phase2-details-title" className="font-display text-lg font-extrabold leading-tight text-foreground">
           Para quem e por quanto?
