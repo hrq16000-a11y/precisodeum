@@ -28,12 +28,16 @@ export const WIZARD_ERROR_CODES = {
   PERSIST_PHASE1_MISSING_FIELDS: 'persist_phase1:missing_fields',
   PERSIST_PHASE1_DB_ERROR: 'persist_phase1:db_error',
   PERSIST_PHASE1_NETWORK: 'persist_phase1:network',
+  // Persistência do primeiro serviço (categoria/descrição)
+  PERSIST_FIRST_SERVICE_PRECHECK_FAILED: 'persist_first_service:precheck_failed',
+  PERSIST_FIRST_SERVICE_PRECONDITION_FAILED: 'persist_first_service:precondition_failed',
+  PERSIST_FIRST_SERVICE_TERMINAL: 'persist_first_service:terminal',
   // Garantia do provider_id (lookup/insert do registro de prestador)
   ENSURE_PROVIDER_ID_NO_USER: 'ensure_provider_id:no_user',
   ENSURE_PROVIDER_ID_LOOKUP_FAILED: 'ensure_provider_id:lookup_failed',
+  ENSURE_PROVIDER_ID_HYDRATED_PROFILE: 'ensure_provider_id:hydrated_profile',
   ENSURE_PROVIDER_ID_INSERT_FAILED: 'ensure_provider_id:insert_failed',
   ENSURE_PROVIDER_ID_RETRY_EXHAUSTED: 'ensure_provider_id:retry_exhausted',
-  // Persistência do primeiro serviço (categoria/descrição)
   PERSIST_FIRST_SERVICE_NO_PROVIDER: 'persist_first_service:no_provider',
   PERSIST_FIRST_SERVICE_DB_ERROR: 'persist_first_service:db_error',
 } as const;
