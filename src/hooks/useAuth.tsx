@@ -82,7 +82,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         componentName: 'useAuth',
         actionContext: 'auth.profile_timeout',
         severity: 'error',
-      }).catch(() => {});
+      }).catch((err) => {
+        // Telemetria de telemetria — só log; não exibimos toast pra evitar loop.
+        console.warn('[useAuth] reportError(profile_timeout) failed', err);
+      });
     }
 
 
@@ -97,7 +100,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // sincroniza silenciosamente — sem reabrir o wizard.
     setNeedsTypeSelection(!!profileData && !hasType);
     if (hasType && !metaChosen) {
-      supabase.auth.updateUser({ data: { profile_type_chosen: true } }).catch(() => {});
+      supabase.auth.updateUser({ data: { profile_type_chosen: true } }).catch((err) => {
+        // Sync silencioso de metadata — não bloqueia UX, mas registramos
+        // para auditoria caso o auth.updateUser falhe sistematicamente.
+        console.warn('[useAuth] auth.updateUser(profile_type_chosen) failed', err);
+      });
     }
 
     if (providerRows && providerRows.length > 0) {
@@ -114,7 +121,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 });
               }
             })
-            .catch(() => {});
+            .catch((err) => {
+              // Geocode best-effort — não bloqueia o login, mas logamos
+              // para detectar quedas sistemáticas do provedor de geocoding.
+              console.warn('[useAuth] geocodeCity background update failed', err);
+            });
         }, 1200);
       }
     } else {
