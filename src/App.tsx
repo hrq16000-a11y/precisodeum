@@ -508,7 +508,7 @@ const App = () => {
                 <Route path="/buscar" element={<SearchPage />} />
                 <Route path="/categoria/:slug" element={<CategoryPage />} />
                 <Route path="/categoria/:slug/em/:cidade" element={<CategoryCityPage />} />
-                <Route path="/profissional/:slug" element={<ProviderProfile />} />
+                <Route path="/profissional/:slug" element={<RouteErrorBoundary sectionName="ProviderProfile"><ProviderProfile /></RouteErrorBoundary>} />
                 <Route path="/empresa/:slug" element={<CompanyProfile />} />
                 <Route path="/agencia/:slug" element={<AgencyPublicPage />} />
                 <Route path="/patrocinador/:slug" element={<SponsorPublicPage />} />
@@ -526,7 +526,7 @@ const App = () => {
                     /onboarding-v2 e /triagem foram REMOVIDAS na Consolidação Fase 2. Acessos
                     diretos caem em /404 — tracking de tentativas via NotFound + telemetria. */}
                 <Route path="/__test/report-button" element={<WizardSupportTestHarness />} />
-                <Route path="/cadastro-inicial" element={<CadastroInicialPage />} />
+                <Route path="/cadastro-inicial" element={<RouteErrorBoundary sectionName="Wizard"><CadastroInicialPage /></RouteErrorBoundary>} />
                 <Route path="/onboarding-v2/sucesso" element={<ProtectedRoute><OnboardingV2SuccessPage /></ProtectedRoute>} />
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                 <Route path="/dashboard/perfil" element={<ProtectedRoute><ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard></ProtectedRoute>} />
