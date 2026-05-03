@@ -104,6 +104,7 @@ import {
   phase2PhotosBlockCode,
   RECOVER_BACKOFF_DELAYS_MS,
   RECOVER_MAX_ATTEMPTS,
+  recoverBackoffDelayMs,
 } from '@/lib/wizardErrorCodes';
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
