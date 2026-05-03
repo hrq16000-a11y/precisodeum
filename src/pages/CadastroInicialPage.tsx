@@ -238,66 +238,75 @@ export default function CadastroInicialPage() {
     try { window.sessionStorage.setItem(SELF_HEAL_FLAG, '1'); } catch { /* noop */ }
 
     void (async () => {
-      const { data, error, status } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
+      try {
+        const { data, error, status } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      if (error && status === 403) {
-        if (import.meta.env.DEV) {
-          console.error('[cadastro-inicial][diag] profile fetch RLS 403', {
+        if (error && status === 403) {
+          console.error('[cadastro-inicial] RLS 403 ao buscar perfil', {
             category: 'C_RLS_403', status, message: error.message, user_id: user.id,
           });
+          setSelfHealFailed(true);
+          toast.error('Não conseguimos carregar seu perfil. Faça login novamente.');
+          void trackOnboardingEvent({
+            phase: 'unknown' as any,
+            event: 'error',
+            meta: { reason: 'profile_rls_403', error_code: 'C_RLS_403', error_message: error.message },
+          });
+          return;
         }
-        void trackOnboardingEvent({
-          phase: 'unknown' as any,
-          event: 'error',
-          meta: { reason: 'profile_rls_403', error_code: 'C_RLS_403', error_message: error.message },
-        });
-        return;
-      }
 
-      if (!data) {
-        if (import.meta.env.DEV) {
-          console.warn('[cadastro-inicial][diag] profile MISSING — self-heal insert', {
+        if (error) {
+          console.error('[cadastro-inicial] erro ao buscar perfil', error);
+          setSelfHealFailed(true);
+          toast.error('Erro ao carregar seu perfil. Tente novamente.');
+          return;
+        }
+
+        if (!data) {
+          console.warn('[cadastro-inicial] perfil ausente — iniciando self-heal', {
             category: 'B_PROFILE_NULL', user_id: user.id,
           });
-        }
 
-        // [Telemetria granular] Evento de DETECÇÃO — emitido antes do INSERT
-        // para permitir o funil "Detectado → Tentativa → Resultado" no painel
-        // /admin/health-check.
-        void trackOnboardingEvent({
-          phase: 'unknown' as any,
-          event: 'error',
-          meta: { reason: 'profile_missing_detected', error_code: 'B_PROFILE_NULL' },
-        });
+          void trackOnboardingEvent({
+            phase: 'unknown' as any,
+            event: 'error',
+            meta: { reason: 'profile_missing_detected', error_code: 'B_PROFILE_NULL' },
+          });
 
-        const meta = (user.user_metadata || {}) as Record<string, any>;
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            full_name: meta.full_name ?? null,
-            avatar_url: meta.avatar_url ?? null,
-          } as any);
+          const meta = (user.user_metadata || {}) as Record<string, any>;
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              full_name: meta.full_name ?? null,
+              avatar_url: meta.avatar_url ?? null,
+            } as any);
 
-        void trackOnboardingEvent({
-          phase: 'unknown' as any,
-          event: 'error',
-          meta: {
-            reason: insertError ? 'profile_self_heal_failed' : 'profile_self_heal_ok',
-            error_code: insertError ? 'B_PROFILE_NULL_HEAL_FAIL' : 'B_PROFILE_NULL_HEALED',
-            error_message: insertError?.message ?? null,
-          },
-        });
+          void trackOnboardingEvent({
+            phase: 'unknown' as any,
+            event: 'error',
+            meta: {
+              reason: insertError ? 'profile_self_heal_failed' : 'profile_self_heal_ok',
+              error_code: insertError ? 'B_PROFILE_NULL_HEAL_FAIL' : 'B_PROFILE_NULL_HEALED',
+              error_message: insertError?.message ?? null,
+            },
+          });
 
-        if (!insertError) {
+          if (insertError) {
+            console.error('[cadastro-inicial] falha ao criar perfil', insertError);
+            setSelfHealFailed(true);
+            toast.error(
+              `Não conseguimos preparar sua conta: ${insertError.message}. Tente novamente em instantes.`,
+              { duration: 8000 },
+            );
+            return;
+          }
+
           toast.message('Configurando seu perfil...', { duration: 2000 });
-          // Re-hidrata o useAuth sem reload — preserva estado React e evita
-          // perder rascunhos em memória que ainda não fizeram flush.
-          // Retry com backoff exponencial: 500ms, 1200ms, 2500ms (máx 3).
           const RETRY_DELAYS = [500, 1200, 2500];
           let hydrated = false;
           for (let attempt = 0; attempt < RETRY_DELAYS.length; attempt++) {
@@ -319,21 +328,16 @@ export default function CadastroInicialPage() {
                 break;
               }
             } catch (refetchErr) {
-              if (import.meta.env.DEV) {
-                console.warn('[cadastro-inicial][diag] refetchProfile attempt failed', {
-                  attempt: attempt + 1, error: refetchErr,
-                });
-              }
+              console.warn('[cadastro-inicial] refetchProfile falhou', {
+                attempt: attempt + 1, error: refetchErr,
+              });
             }
-            // Backoff antes da próxima tentativa (exceto após a última).
             if (attempt < RETRY_DELAYS.length - 1) {
               await new Promise((r) => window.setTimeout(r, RETRY_DELAYS[attempt]));
             }
           }
 
           if (hydrated) {
-            // Sucesso: limpa a flag para que próximas sessões possam tentar
-            // novamente caso o problema recorra com outro user.
             try { window.sessionStorage.removeItem(SELF_HEAL_FLAG); } catch { /* noop */ }
           } else {
             void trackOnboardingEvent({
@@ -345,17 +349,23 @@ export default function CadastroInicialPage() {
                 attempts: RETRY_DELAYS.length,
               },
             });
-            // Loop Guard preservado: SELF_HEAL_FLAG continua setada → após o
-            // reload, o effect cai no branch `alreadyAttempted` e emite
-            // B_PROFILE_NULL_LOOP_GUARD.
-            window.setTimeout(() => window.location.reload(), 400);
+            // [FIX tela branca] Antes recarregava silenciosamente, levando
+            // ao loop_guard sem feedback. Agora exibimos fallback visível
+            // com botão de retry manual.
+            console.error('[cadastro-inicial] esgotaram retries de refetchProfile');
+            setSelfHealFailed(true);
+            toast.error('Não foi possível carregar seu perfil. Use o botão para tentar de novo.');
           }
-        } else if (import.meta.env.DEV) {
-          console.error('[cadastro-inicial][diag] self-heal insert failed', insertError);
+        } else {
+          // Profile existe no DB mas não chegou ao contexto — só re-hidrata.
+          try { await refetchProfile(); } catch (e) {
+            console.warn('[cadastro-inicial] refetchProfile pós-existência falhou', e);
+          }
         }
-      } else {
-        // Profile existe no DB mas não chegou ao contexto — só re-hidrata.
-        try { await refetchProfile(); } catch { /* noop */ }
+      } catch (err) {
+        console.error('[cadastro-inicial] erro inesperado no self-heal', err);
+        setSelfHealFailed(true);
+        toast.error('Ocorreu um erro inesperado. Tente recarregar a página.');
       }
     })();
   }, [loading, authSettled, user, profile, refetchProfile]);
