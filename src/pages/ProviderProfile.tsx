@@ -1849,7 +1849,7 @@ const ProviderProfile = () => {
 
             {/* ── CTA Buttons ── */}
             <motion.div
-              className="mt-6 flex flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-2"
+              className="mt-6 flex min-h-[44px] flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-2"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.5 }}
