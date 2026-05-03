@@ -313,13 +313,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user?.id, refetchProfile]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    // 1) Encerra a sessão no Supabase (revoga refresh token + limpa storage sb-*).
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      // Mesmo com falha de rede limpamos estado local — token expira sozinho.
+      console.warn('[useAuth] signOut(): supabase.auth.signOut falhou, limpando local mesmo assim', err);
+    }
+
+    // 2) Reset de estado de auth em memória.
     setSession(null);
     setUser(null);
     setProfile(null);
     setProvider(null);
     setCelebrationMuted(false);
     setNeedsTypeSelection(false);
+
+    // 3) Cache do React Query — vital para impedir vazamento de PII (leads,
+    //    notificações, perfil, mensagens) em dispositivos compartilhados.
+    try {
+      queryClient.cancelQueries();
+      queryClient.clear();
+    } catch (err) {
+      console.warn('[useAuth] signOut(): queryClient.clear falhou', err);
+    }
+
+    // 4) sessionStorage — limpa estados temporários (impersonação, drafts de
+    //    fluxos sensíveis, telemetria de funil). localStorage é preservado
+    //    para manter preferências persistidas (consent LGPD, tema, etc.).
+    try {
+      if (typeof window !== 'undefined') {
+        const ss = window.sessionStorage;
+        // Remove explicitamente chaves de impersonação/admin que NUNCA podem
+        // sobreviver a um logout, mesmo que o clear() abaixo falhe.
+        const sensitiveKeys = [
+          'impersonation_admin_token',
+          'impersonation_admin_refresh',
+          'impersonation_session_id',
+          'impersonation_target_user',
+        ];
+        for (const k of sensitiveKeys) {
+          try { ss.removeItem(k); } catch { /* noop */ }
+        }
+        try { ss.clear(); } catch { /* noop */ }
+      }
+    } catch (err) {
+      console.warn('[useAuth] signOut(): sessionStorage.clear falhou', err);
+    }
   }, []);
   // Track online presence for the current user, including their city
   const providerCity = provider?.city;
