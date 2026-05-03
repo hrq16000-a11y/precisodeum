@@ -617,6 +617,16 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   return (
     <Sheet open={!!user} onOpenChange={open => !open && onClose()}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0">
+        {loadingFull && (
+          <div
+            className="flex items-center gap-2 px-3 sm:px-6 py-1.5 bg-muted/50 text-[11px] text-muted-foreground border-b border-border"
+            role="status"
+            aria-live="polite"
+          >
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Carregando dados completos do usuário…
+          </div>
+        )}
         {/* ===== HERO HEADER ===== */}
         <div className={`relative px-3 sm:px-6 pt-5 pb-4 ${isBanned ? 'bg-gradient-to-r from-destructive/15 to-destructive/5' : isSuspended ? 'bg-gradient-to-r from-amber-500/15 to-amber-500/5' : 'bg-gradient-to-r from-primary/10 to-accent/10'}`}>
           {/* Creation date prominent */}
