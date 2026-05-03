@@ -65,9 +65,14 @@ const AdminLeadsPage = () => {
   // Paginação visual ainda é client-side (ver `page`/`PAGE_SIZE`); o cap aqui é defensivo.
   const ADMIN_FETCH_CAP = 500;
   const fetchLeads = async () => {
+    // Allowlist explícita: apenas colunas exibidas/filtráveis na listagem admin.
+    // Exclui mensagens longas/metadata internos que só fazem sentido no detalhe.
     const { data, error, count } = await supabase
       .from('leads')
-      .select('*, providers(business_name)', { count: 'exact' })
+      .select(
+        'id, status, created_at, client_name, phone, service_needed, message, lead_score, score_factors, provider_id, providers(business_name)',
+        { count: 'exact' }
+      )
       .order('lead_score', { ascending: false })
       .limit(ADMIN_FETCH_CAP);
     if (error) { toast.error('Erro: ' + error.message); return; }
