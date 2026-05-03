@@ -33,6 +33,35 @@ import { supabase } from "@/integrations/supabase/client";
 type Period = "24h" | "7d" | "30d";
 
 const PERIOD_HOURS: Record<Period, number> = { "24h": 24, "7d": 24 * 7, "30d": 24 * 30 };
+const PAGE_SIZE = 100;
+const MAX_ROWS = 2000;
+
+function safeMeta(meta: unknown): Record<string, unknown> {
+  if (!meta || typeof meta !== "object") return {};
+  return meta as Record<string, unknown>;
+}
+
+function toCsv(rows: EventRow[]): string {
+  const header = ["created_at", "user_id", "phase", "event", "error_code", "error_message", "raw_meta"];
+  const escape = (v: unknown) => {
+    const s = v == null ? "" : typeof v === "string" ? v : JSON.stringify(v);
+    return `"${String(s).replace(/"/g, '""')}"`;
+  };
+  const lines = [header.join(",")];
+  for (const r of rows) {
+    const m = safeMeta(r.meta);
+    lines.push([
+      escape(r.created_at),
+      escape(r.user_id ?? ""),
+      escape(r.phase ?? ""),
+      escape(r.event ?? ""),
+      escape(m.error_code ?? m.reason ?? ""),
+      escape(m.error_message ?? ""),
+      escape(r.meta ?? ""),
+    ].join(","));
+  }
+  return lines.join("\n");
+}
 
 /** Códigos rastreados pela telemetria de auth/self-heal (em meta.error_code). */
 const TRACKED_CODES = [
