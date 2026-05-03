@@ -29,25 +29,34 @@ const AdminGuard = ({ children, denyToast }: AdminGuardProps) => {
 
   useEffect(() => {
     let cancelled = false;
-    if (authLoading) return;
+
+    if (authLoading) {
+      return () => { cancelled = true; };
+    }
 
     if (!user) {
-      setState('denied');
-      return;
+      if (!cancelled) setState('denied');
+      return () => { cancelled = true; };
     }
 
     void (async () => {
-      const { data, error } = await supabase.rpc('has_role', {
-        _user_id: user.id,
-        _role: 'admin',
-      });
-      if (cancelled) return;
-      if (error || !data) {
+      try {
+        const { data, error } = await supabase.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin',
+        });
+        if (cancelled) return;
+        if (error || !data) {
+          setState('denied');
+          toast.error(denyToast || 'Acesso restrito ao painel administrativo.');
+          return;
+        }
+        setState('allowed');
+      } catch (err) {
+        if (cancelled) return;
+        console.error('[AdminGuard] has_role check failed:', err);
         setState('denied');
-        toast.error(denyToast || 'Acesso restrito ao painel administrativo.');
-        return;
       }
-      setState('allowed');
     })();
 
     return () => { cancelled = true; };

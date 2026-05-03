@@ -191,8 +191,6 @@ const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ErrorPage = lazy(() => import("./pages/ErrorPage"));
-const Index02 = lazy(() => import("./pages/Index02"));
-const Index03 = lazy(() => import("./pages/Index03"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const AccountDeletionPage = lazy(() => import("./pages/AccountDeletionPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
@@ -382,9 +380,13 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     if (location.pathname === '/cadastro-inicial') return;
 
     let cancelled = false;
-    void runOnboardingSelfHeal({ userId: user.id, profile, provider }).then((healed) => {
-      if (!cancelled && healed) void refetchProfile();
-    });
+    void runOnboardingSelfHeal({ userId: user.id, profile, provider })
+      .then((healed) => {
+        if (!cancelled && healed) void refetchProfile();
+      })
+      .catch((err) => {
+        console.error('[selfHeal] unhandled:', err);
+      });
     return () => {
       cancelled = true;
     };
@@ -502,11 +504,6 @@ const App = () => {
                 <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/index" element={<Index />} />
-                <Route path="/index02" element={<Index02 />} />
-                <Route path="/index02.html" element={<Index02 />} />
-                <Route path="/pg03" element={<Index03 />} />
-                <Route path="/pg03.html" element={<Index03 />} />
-                <Route path="/index03" element={<Index03 />} />
                 <Route path="/buscar" element={<SearchPage />} />
                 <Route path="/categoria/:slug" element={<CategoryPage />} />
                 <Route path="/categoria/:slug/em/:cidade" element={<CategoryCityPage />} />
