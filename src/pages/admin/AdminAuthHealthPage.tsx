@@ -330,13 +330,14 @@ export default function AdminAuthHealthPage() {
                 </TableHeader>
                 <TableBody>
                   {(data || []).map((row) => {
+                    const m = safeMeta(row.meta);
                     const code =
-                      (row.meta?.error_code as string) ||
-                      (row.meta?.reason as string) ||
+                      (m.error_code as string) ||
+                      (m.reason as string) ||
                       "OUTRO";
                     const message =
-                      (row.meta?.error_message as string) ||
-                      (row.meta?.reason as string) ||
+                      (m.error_message as string) ||
+                      (m.reason as string) ||
                       "—";
                     return (
                       <TableRow key={row.id}>
