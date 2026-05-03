@@ -500,11 +500,6 @@ const App = () => {
                 <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/index" element={<Index />} />
-                <Route path="/index02" element={<Index02 />} />
-                <Route path="/index02.html" element={<Index02 />} />
-                <Route path="/pg03" element={<Index03 />} />
-                <Route path="/pg03.html" element={<Index03 />} />
-                <Route path="/index03" element={<Index03 />} />
                 <Route path="/buscar" element={<SearchPage />} />
                 <Route path="/categoria/:slug" element={<CategoryPage />} />
                 <Route path="/categoria/:slug/em/:cidade" element={<CategoryCityPage />} />
