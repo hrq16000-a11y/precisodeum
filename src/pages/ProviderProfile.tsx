@@ -639,6 +639,30 @@ const ProviderProfile = () => {
     return () => { supabase.removeChannel(channel); };
   }, [provider?.id]);
 
+  /**
+   * Preload do LCP (cover image) — assim que `pageSettings.cover_image_url`
+   * é resolvido, injeta `<link rel="preload" as="image">` no <head> com a
+   * URL JÁ transformada (800×450 WebP). O navegador começa o download em
+   * paralelo ao restante da hidratação React, cortando ~500ms do LCP mobile.
+   *
+   * `imagesrcset` permite o navegador escolher 1x/2x conforme DPR sem precisar
+   * de duas requests. Removemos o link no cleanup para não vazar entre perfis.
+   */
+  useEffect(() => {
+    const url = pageSettings.cover_image_url;
+    if (!url || typeof document === 'undefined') return;
+    const optimized = coverImage(url);
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = optimized;
+    link.setAttribute('fetchpriority', 'high');
+    document.head.appendChild(link);
+    return () => {
+      try { document.head.removeChild(link); } catch { /* já removido */ }
+    };
+  }, [pageSettings.cover_image_url]);
+
   useEffect(() => {
     const currentWhatsApp = toCanonical(provider?.whatsapp || provider?.phone || '');
     if (!isMobile || !currentWhatsApp) {
