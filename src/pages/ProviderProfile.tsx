@@ -1186,13 +1186,16 @@ const ProviderProfile = () => {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
+        {/* Capa: mesmo aspect-ratio (16:5) da capa real → sem CLS quando o
+            conteúdo final hidratar. Header CTA reserva 44px de altura. */}
+        <Skeleton className="w-full aspect-[16/5] rounded-none" />
         <div className="container py-8 space-y-4">
-          <Skeleton className="h-56 rounded-2xl" />
           <div className="grid grid-cols-3 gap-3">
             <Skeleton className="h-20 rounded-xl" />
             <Skeleton className="h-20 rounded-xl" />
             <Skeleton className="h-20 rounded-xl" />
           </div>
+          <Skeleton className="h-11 w-full sm:w-48 rounded-md" />
           <Skeleton className="h-40 rounded-xl" />
           <Skeleton className="h-32 rounded-xl" />
         </div>
