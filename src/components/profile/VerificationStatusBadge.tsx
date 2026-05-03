@@ -135,12 +135,10 @@ export const VerificationStatusBadge = ({
 
     (async () => {
       try {
-        const { data: prof } = await supabase
-          .from('profiles')
-          .select('tax_id')
-          .eq('id', userId)
-          .maybeSingle();
-        const taxIdFilled = !!(prof as any)?.tax_id;
+        // Privacidade: usamos RPC SECURITY DEFINER que retorna apenas
+        // um booleano (has_tax_id) — o número real do CPF/CNPJ nunca trafega.
+        const { data: status } = await supabase.rpc('get_my_profile_status' as any);
+        const taxIdFilled = !!(status as any)?.has_tax_id;
         if (alive) setHasDoc(taxIdFilled);
 
         const { data: prov } = await supabase
@@ -218,7 +216,7 @@ export const VerificationStatusBadge = ({
         {badge}
         {hasDoc && state !== 'verified' && (
           <span className="text-[11px] text-muted-foreground">
-            Documento já enviado
+            Documento preenchido
           </span>
         )}
       </div>

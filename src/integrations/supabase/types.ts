@@ -8563,6 +8563,7 @@ export type Database = {
           total_points: number
         }[]
       }
+      get_my_profile_status: { Args: never; Returns: Json }
       get_my_provider_details: {
         Args: never
         Returns: {
