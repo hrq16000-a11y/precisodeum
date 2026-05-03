@@ -145,17 +145,24 @@ export default function CadastroInicialPage() {
   // o estado inicial (Auth ainda hidratando) de uma sessão de fato ausente.
   // Evita o flicker que expulsava o utilizador antes do token ser lido.
   const [authSettled, setAuthSettled] = useState(false);
+  // [FIX — Manual escape hatch] Após 5s de loading, exibimos um botão
+  // "Ir para login agora" para o usuário não ficar refém do skeleton em
+  // conexões lentas / Lock broken silencioso.
+  const [showManualLogin, setShowManualLogin] = useState(false);
   useEffect(() => {
     if (loading) {
       setAuthSettled(false);
-      // [FIX — White Screen Failsafe] Mesmo com `loading=true`, encerramos
-      // o gate após 6s para não deixar o usuário em skeleton infinito caso
-      // o useAuth.watchdog (8s) ainda não tenha disparado ou a rede esteja
-      // muito lenta. Se `user` continuar null, cai no Navigate→/login.
+      setShowManualLogin(false);
+      // Botão manual aos 5s; failsafe automático encurtado para 6s.
+      const manualBtn = window.setTimeout(() => setShowManualLogin(true), 5000);
       const fail = window.setTimeout(() => setAuthSettled(true), 6000);
-      return () => window.clearTimeout(fail);
+      return () => {
+        window.clearTimeout(manualBtn);
+        window.clearTimeout(fail);
+      };
     }
-    const t = window.setTimeout(() => setAuthSettled(true), 120);
+    // Settle quase imediato quando auth resolveu — reduz skeleton flicker.
+    const t = window.setTimeout(() => setAuthSettled(true), 60);
     return () => window.clearTimeout(t);
   }, [loading]);
 
@@ -239,6 +246,19 @@ export default function CadastroInicialPage() {
           <div className="h-8 w-3/4 animate-pulse rounded-lg bg-muted" />
           <div className="h-4 w-full animate-pulse rounded bg-muted" />
           <div className="h-4 w-5/6 animate-pulse rounded bg-muted" />
+          {showManualLogin && (
+            <div className="pt-4 text-center">
+              <p className="mb-3 text-sm text-muted-foreground">
+                Demorando mais que o esperado?
+              </p>
+              <a
+                href={`/login?next=${encodeURIComponent(`${location.pathname}${location.search || ''}` || '/cadastro-inicial')}`}
+                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Ir para login agora
+              </a>
+            </div>
+          )}
         </div>
       </div>
     );
