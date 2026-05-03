@@ -1077,6 +1077,51 @@ export type Database = {
         }
         Relationships: []
       }
+      db_perf_snapshots: {
+        Row: {
+          captured_at: string
+          created_by: string | null
+          id: string
+          index_usage: Json
+          nearby_calls: number | null
+          nearby_max_ms: number | null
+          nearby_mean_ms: number | null
+          nearby_p95_ms: number | null
+          reason: string
+          reset_after: boolean
+          table_sizes: Json
+          top_queries: Json
+        }
+        Insert: {
+          captured_at?: string
+          created_by?: string | null
+          id?: string
+          index_usage?: Json
+          nearby_calls?: number | null
+          nearby_max_ms?: number | null
+          nearby_mean_ms?: number | null
+          nearby_p95_ms?: number | null
+          reason?: string
+          reset_after?: boolean
+          table_sizes?: Json
+          top_queries?: Json
+        }
+        Update: {
+          captured_at?: string
+          created_by?: string | null
+          id?: string
+          index_usage?: Json
+          nearby_calls?: number | null
+          nearby_max_ms?: number | null
+          nearby_mean_ms?: number | null
+          nearby_p95_ms?: number | null
+          reason?: string
+          reset_after?: boolean
+          table_sizes?: Json
+          top_queries?: Json
+        }
+        Relationships: []
+      }
       email_events: {
         Row: {
           created_at: string
@@ -2134,6 +2179,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      k6_runs: {
+        Row: {
+          avg_ms: number | null
+          created_at: string
+          created_by: string | null
+          duration_seconds: number | null
+          error_rate: number | null
+          http_reqs: number | null
+          id: string
+          iterations: number | null
+          notes: string | null
+          p95_ms: number | null
+          p99_ms: number | null
+          passed_slo: boolean | null
+          raw_summary: Json
+          scenario: string
+          vus_max: number | null
+        }
+        Insert: {
+          avg_ms?: number | null
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          error_rate?: number | null
+          http_reqs?: number | null
+          id?: string
+          iterations?: number | null
+          notes?: string | null
+          p95_ms?: number | null
+          p99_ms?: number | null
+          passed_slo?: boolean | null
+          raw_summary?: Json
+          scenario: string
+          vus_max?: number | null
+        }
+        Update: {
+          avg_ms?: number | null
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          error_rate?: number | null
+          http_reqs?: number | null
+          id?: string
+          iterations?: number | null
+          notes?: string | null
+          p95_ms?: number | null
+          p99_ms?: number | null
+          passed_slo?: boolean | null
+          raw_summary?: Json
+          scenario?: string
+          vus_max?: number | null
+        }
+        Relationships: []
       }
       lead_alert_preferences: {
         Row: {
@@ -7796,6 +7895,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_capture_db_perf_snapshot: {
+        Args: { _reason?: string; _reset_after?: boolean }
+        Returns: string
+      }
       admin_capture_rls_snapshot: {
         Args: never
         Returns: {
@@ -7819,6 +7922,7 @@ export type Database = {
           total_whatsapp_clicks: number
         }[]
       }
+      admin_db_perf_dashboard: { Args: never; Returns: Json }
       admin_diff_rls_snapshots: {
         Args: { from_date: string; to_date: string }
         Returns: {
