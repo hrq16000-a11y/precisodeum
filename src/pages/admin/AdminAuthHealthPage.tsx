@@ -68,6 +68,20 @@ export function sanitizeMessage(input: unknown): string {
 }
 
 
+/**
+ * Sanitiza linhas para CSV: remove segredos de meta antes de exportar.
+ * Mantém o mesmo formato de colunas mas garante que JWTs/tokens/emails
+ * sejam redigidos tanto em campos planos quanto no `raw_meta`.
+ */
+function sanitizeMetaForExport(meta: unknown): Record<string, unknown> {
+  const obj = safeMeta(meta);
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = typeof v === "string" ? sanitizeMessage(v) : v;
+  }
+  return out;
+}
+
 function toCsv(rows: EventRow[]): string {
   const header = ["created_at", "user_id", "phase", "event", "error_code", "error_message", "raw_meta"];
   const escape = (v: unknown) => {
@@ -77,14 +91,15 @@ function toCsv(rows: EventRow[]): string {
   const lines = [header.join(",")];
   for (const r of rows) {
     const m = safeMeta(r.meta);
+    const safeMetaObj = sanitizeMetaForExport(r.meta);
     lines.push([
       escape(r.created_at),
       escape(r.user_id ?? ""),
       escape(r.phase ?? ""),
       escape(r.event ?? ""),
-      escape(m.error_code ?? m.reason ?? ""),
-      escape(m.error_message ?? ""),
-      escape(r.meta ?? ""),
+      escape(sanitizeMessage(m.error_code ?? m.reason ?? "")),
+      escape(sanitizeMessage(m.error_message ?? "")),
+      escape(safeMetaObj),
     ].join(","));
   }
   return lines.join("\n");
