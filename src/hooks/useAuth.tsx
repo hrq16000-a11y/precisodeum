@@ -37,13 +37,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [needsTypeSelection, setNeedsTypeSelection] = useState(false);
 
-  // Tracks if any fetchProfile call has settled (resolved or rejected) at least once.
-  // Used by the safety timer to avoid prematurely flipping `loading=false` while
-  // the initial fetchProfile is still in-flight (root cause of "ghost user" state).
-  const fetchProfileSettledRef = useRef(false);
   // Monotonic generation counter used to discard out-of-order fetchProfile results.
   // Every new fetch bumps this; the resolver ignores its setState writes if a
-  // newer generation has started in the meantime.
+  // newer generation has started in the meantime (FIX #2 — race condition).
   const fetchGenerationRef = useRef(0);
 
   const fetchProfile = useCallback(async (userId: string, authUser?: User | null) => {
@@ -51,7 +47,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // one finishes, the older one's setState writes are silently discarded.
     const generation = ++fetchGenerationRef.current;
     const isStale = () => fetchGenerationRef.current !== generation;
-    try {
     // Retry/polling: o trigger handle_new_user pode levar alguns ms após o signup.
     // Evita a race condition que deixa o usuário "preso" sem profile carregado.
     let profileData: any = null;
@@ -127,11 +122,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return profileData ?? null;
-    } finally {
-      // Mark as settled regardless of staleness — the safety timer only cares
-      // that *some* fetchProfile call has completed.
-      fetchProfileSettledRef.current = true;
-    }
   }, []);
 
   const refetchProfile = useCallback(async () => {
@@ -148,22 +138,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, fetchProfile]);
 
   useEffect(() => {
-    // Safety net: never block UI for more than 3s on initial auth
-    // Safety net: only flips loading=false as a true LAST RESORT — i.e. when
-    // no fetchProfile call has settled within 3s. If a fetch is still in-flight
-    // we let it resolve naturally, avoiding the "ghost user" state where
-    // `user !== null && profile === null && loading === false`.
-    const safetyTimer = window.setTimeout(() => {
-      if (!fetchProfileSettledRef.current) setLoading(false);
-    }, 3000);
+    // [FIX #2 — Race Condition Guard]
+    // `isMounted` impede que callbacks atrasados de auth/fetchProfile escrevam
+    // estado depois do unmount. O cancelamento por geração já vive dentro de
+    // `fetchProfile` (fetchGenerationRef) — aqui cuidamos apenas das writes
+    // do próprio efeito (setSession/setUser/setLoading).
+    let isMounted = true;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!isMounted) return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          // Background fetch — do NOT toggle global loading
+          // Background fetch — fetchProfile internamente descarta resultados
+          // obsoletos via fetchGenerationRef, então múltiplos eventos rápidos
+          // (SIGNED_IN → TOKEN_REFRESHED) só aplicam o último.
           setTimeout(() => {
+            if (!isMounted) return;
             try {
               void fetchProfile(session.user.id, session.user).catch((err) => {
                 console.error('[useAuth] fetchProfile failed:', err);
@@ -189,8 +181,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
+    // [FIX #1 — Safety Timer removido]
+    // O loading global agora SÓ flipa para false quando getSession()/fetchProfile()
+    // realmente resolverem ou rejeitarem. Sem timer arbitrário de 3s para evitar
+    // o estado fantasma `user && !profile && !loading`.
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
+        if (!isMounted) return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -198,23 +195,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           fetchProfile(session.user.id, session.user)
             .catch((err) => console.error('[useAuth] initial fetchProfile failed:', err))
             .finally(() => {
+              if (!isMounted) return;
               setLoading(false);
-              window.clearTimeout(safetyTimer);
             });
         } else {
           setLoading(false);
-          window.clearTimeout(safetyTimer);
         }
       })
       .catch((err) => {
         console.error('[useAuth] getSession failed:', err);
+        if (!isMounted) return;
         setLoading(false);
-        window.clearTimeout(safetyTimer);
       });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
-      window.clearTimeout(safetyTimer);
     };
   }, [fetchProfile]);
 
