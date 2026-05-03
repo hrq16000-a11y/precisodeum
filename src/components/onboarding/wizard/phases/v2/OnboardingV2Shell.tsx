@@ -1575,10 +1575,29 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // A categoria principal vive em providers.category_id (já atualizada
       // acima); profiles.primary_category_id é apenas estado de UI no wizard.
       // O entrypoint também libera o active-session lock e limpa drafts.
-      await finalizeOnboarding({
+      // FAIL-LOUD: se a finalização (UPDATE profiles + RPC atômica) falhar,
+      // NÃO podemos mentir para o usuário — abortamos o fluxo, mostramos
+      // toast com retry e mantemos o wizard aberto.
+      const finalizeResult = await finalizeOnboarding({
         userId: user.id,
         extraProfilePatch: { profile_type: 'provider' },
       });
+      if (!finalizeResult.ok) {
+        const finalizeErr: any = finalizeResult.error;
+        logWizardError({
+          phase: state.phase,
+          userId: user?.id,
+          error: finalizeErr instanceof Error ? finalizeErr : new Error(String(finalizeErr ?? 'finalize_failed')),
+          variant: 'v2',
+          context: { action: 'finalize_onboarding_after_first_service' },
+        });
+        toast.error('Não foi possível concluir seu cadastro agora.', {
+          description: 'Seu serviço foi salvo. Tente finalizar novamente em instantes.',
+          duration: 10000,
+          action: { label: 'Tentar novamente', onClick: () => { void persistFirstService(); } },
+        });
+        return false;
+      }
 
       // Notifica o checklist do dashboard pra atualizar imediatamente
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
@@ -1672,19 +1691,37 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   /* ───── Render por fase ───── */
 
   const finishWizard = async () => {
-    // BLINDAGEM: o usuário SEMPRE precisa sair do wizard ao chegar em `done`.
-    // `finalizeOnboarding` libera o active-session lock, limpa drafts (local
-    // + remoto) e marca `onboarding_completed=true`. Falhas são fail-soft —
-    // navegamos mesmo assim para a tela de sucesso (whitelisted no Gate).
+    // FAIL-LOUD: o usuário SEMPRE precisa sair do wizard ao chegar em `done`,
+    // MAS apenas se a transação do banco realmente concluiu. Se
+    // `finalizeOnboarding` retornar !ok, NÃO navegamos para a tela de sucesso
+    // — caso contrário ficamos com falso-sucesso (perfil não marcado como
+    // completo, mas usuário levado a /sucesso e depois ao dashboard, onde o
+    // Gate o jogará de volta ao wizard, gerando loop).
     if (user?.id) {
       const result = await finalizeOnboarding({
         userId: user.id,
         extraProfilePatch: { profile_type: 'provider' },
       });
       if (!result.ok) {
-        toast.warning('Concluímos seu cadastro, mas houve um aviso ao salvar o status. Você pode seguir normalmente.');
+        const finalizeErr: any = result.error;
+        logWizardError({
+          phase: state.phase,
+          userId: user?.id,
+          error: finalizeErr instanceof Error ? finalizeErr : new Error(String(finalizeErr ?? 'finalize_failed')),
+          variant: 'v2',
+          context: { action: 'finish_wizard' },
+        });
+        toast.error('Não foi possível concluir seu cadastro agora.', {
+          description: 'Verifique sua conexão e tente novamente — seus dados foram salvos.',
+          duration: 12000,
+          action: { label: 'Tentar novamente', onClick: () => { void finishWizard(); } },
+        });
+        return;
       }
-      try { await refetchProfile?.(); } catch { /* noop — navegação ainda ocorre */ }
+      try { await refetchProfile?.(); } catch (e) {
+        // Refetch é só de UI — não bloqueia, mas registra para auditoria.
+        console.warn('[finishWizard] refetchProfile failed (non-blocking)', e);
+      }
     }
 
     toast.success('Perfil completo! Bem-vindo.');
