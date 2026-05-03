@@ -66,7 +66,7 @@ class RouteErrorBoundaryInner extends Component<Props, State> {
       errorStack: (error.stack || "") + "\n\nComponent Stack:" + (info?.componentStack || ""),
       componentName: section,
       actionContext: `Erro de renderização em ${section}`,
-      severity: "high",
+      severity: "error",
     }).catch(() => undefined);
   }
 
