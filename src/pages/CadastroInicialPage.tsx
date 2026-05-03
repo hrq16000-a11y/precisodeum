@@ -203,9 +203,18 @@ export default function CadastroInicialPage() {
   //   re-hidratar useAuth sem reboot completo.
   const SELF_HEAL_FLAG = 'cadastro_self_heal_attempted';
   const selfHealRef = useRef(false);
+  // [FIX tela branca] Quando o self-heal falha em todas as tentativas OU
+  // o loop_guard impede nova tentativa e `profile` segue nulo, exibimos
+  // um fallback visível em vez de renderizar o WizardShell com dados nulos
+  // (que poderia quebrar silenciosamente em hooks downstream).
+  const [selfHealFailed, setSelfHealFailed] = useState(false);
   useEffect(() => {
     if (loading || !authSettled || !user) return;
-    if (profile) return;
+    if (profile) {
+      // Recuperou — limpa qualquer estado de erro residual.
+      if (selfHealFailed) setSelfHealFailed(false);
+      return;
+    }
     if (selfHealRef.current) return;
 
     // Anti-loop entre reloads: se já tentamos nesta aba, não tente de novo.
@@ -213,6 +222,10 @@ export default function CadastroInicialPage() {
     try { alreadyAttempted = window.sessionStorage.getItem(SELF_HEAL_FLAG) === '1'; } catch { /* noop */ }
     if (alreadyAttempted) {
       selfHealRef.current = true;
+      console.error('[cadastro-inicial] perfil ausente após reload — loop guard ativo', {
+        user_id: user.id,
+      });
+      setSelfHealFailed(true);
       void trackOnboardingEvent({
         phase: 'unknown' as any,
         event: 'error',
