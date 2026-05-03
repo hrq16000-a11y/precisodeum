@@ -41,6 +41,25 @@ function safeMeta(meta: unknown): Record<string, unknown> {
   return meta as Record<string, unknown>;
 }
 
+/**
+ * Sanitiza mensagens de erro vindas de meta para evitar exibir
+ * tokens, hashes, e-mails ou JWTs no painel.
+ */
+const SENSITIVE_KEY_RE = /\b(password|senha|token|access_token|refresh_token|secret|api[_-]?key|authorization|bearer|hash)\b\s*[:=]\s*\S+/gi;
+const JWT_RE = /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g;
+const EMAIL_RE = /\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g;
+
+function sanitizeMessage(input: unknown): string {
+  if (input == null) return "—";
+  let s = typeof input === "string" ? input : String(input);
+  s = s.replace(JWT_RE, "[token]");
+  s = s.replace(SENSITIVE_KEY_RE, (m) => m.split(/[:=]/)[0] + "=[redacted]");
+  s = s.replace(EMAIL_RE, "[email]");
+  if (s.length > 280) s = s.slice(0, 280) + "…";
+  return s || "—";
+}
+
+
 function toCsv(rows: EventRow[]): string {
   const header = ["created_at", "user_id", "phase", "event", "error_code", "error_message", "raw_meta"];
   const escape = (v: unknown) => {
@@ -119,7 +138,7 @@ export default function AdminAuthHealthPage() {
 
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE);
 
-  const { data, isLoading, isFetching, refetch } = useQuery({
+  const { data, isLoading, isFetching, refetch, error: queryError } = useQuery({
     queryKey: ["admin-auth-health", period, pageSize],
     queryFn: async (): Promise<EventRow[]> => {
       const { data, error } = await supabase
@@ -133,7 +152,16 @@ export default function AdminAuthHealthPage() {
       return (data || []) as EventRow[];
     },
     staleTime: 30_000,
+    retry: false,
   });
+
+  // Detecta bloqueio de RLS / permissão sem expor detalhes técnicos
+  const isAccessDenied = useMemo(() => {
+    if (!queryError) return false;
+    const msg = String((queryError as Error)?.message || "").toLowerCase();
+    return msg.includes("permission") || msg.includes("denied") || msg.includes("rls") || msg.includes("403");
+  }, [queryError]);
+
 
   const stats = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -211,6 +239,24 @@ export default function AdminAuthHealthPage() {
             </Button>
           </div>
         </div>
+
+        {queryError && (
+          <Card className="mb-4 border-destructive/40 bg-destructive/5">
+            <CardContent className="flex items-start gap-3 p-4">
+              <ShieldAlert className="mt-0.5 h-5 w-5 text-destructive" aria-hidden />
+              <div className="text-sm">
+                <p className="font-medium text-foreground">
+                  {isAccessDenied ? "Acesso negado" : "Não foi possível carregar os dados"}
+                </p>
+                <p className="text-muted-foreground">
+                  {isAccessDenied
+                    ? "Sua conta não tem permissão para visualizar este painel. Faça login com uma conta administrativa."
+                    : "Tente novamente em alguns instantes. Se o problema persistir, recarregue a página."}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* KPIs */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -335,10 +381,11 @@ export default function AdminAuthHealthPage() {
                       (m.error_code as string) ||
                       (m.reason as string) ||
                       "OUTRO";
-                    const message =
+                    const message = sanitizeMessage(
                       (m.error_message as string) ||
                       (m.reason as string) ||
-                      "—";
+                      ""
+                    );
                     return (
                       <TableRow key={row.id}>
                         <TableCell className="font-mono text-[11px] text-muted-foreground">
