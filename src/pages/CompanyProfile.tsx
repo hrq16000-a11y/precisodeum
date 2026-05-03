@@ -308,7 +308,7 @@ export default function CompanyProfile() {
   );
   const seoDescription = truncateAt(
     company?.meta_description?.trim() ||
-      `${displayName}${companyCategory ? `, ${companyCategory}` : ''}${cityState ? ` em ${cityState}` : ''}. Solicite contato direto pela plataforma e converse com segurança.`,
+      `${displayName}${companyCategory ? `, ${companyCategory}` : ''}${cityState ? ` em ${cityState}` : ''}. Envie sua solicitação e converse pelos canais disponíveis no perfil.`,
     160,
   );
 
