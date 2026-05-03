@@ -282,8 +282,9 @@ const LoginPage = () => {
       if (/rate limit|too many/i.test(errMsg)) {
         toast.error('Muitas tentativas de login. Aguarde alguns minutos.');
       } else {
+        // PATH 3: senha incorreta — inline + foco no campo senha (sem dialog automático)
         setPasswordError('E-mail ou senha inválidos.');
-        toast.error('E-mail ou senha inválidos.');
+        passwordRef.current?.focus();
       }
     } catch (err: any) {
       // Falha de rede ou exceção inesperada — não deixa o botão travado
