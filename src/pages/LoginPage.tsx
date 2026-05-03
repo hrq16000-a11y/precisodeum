@@ -427,6 +427,9 @@ const LoginPage = () => {
                     <input
                       type="email"
                       required
+                      ref={emailRef}
+                      autoComplete="email"
+                      inputMode="email"
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
                       aria-invalid={!!emailError}
