@@ -120,9 +120,14 @@ export function portfolioFull(url: string | null | undefined): string {
   return optimizedImageUrl(url, { width: 1200, quality: 80 });
 }
 
-/** Preset: cover image (hero/banner, full width) */
+/**
+ * Preset: cover image (hero/banner) — mobile-first 800×450 (16:9-ish).
+ * Antes era 1200/q75 = ~180KB. Agora ~50KB no 4G mobile, mantém qualidade
+ * visível em telas até ~412px CSS (96 DPI ≈ 824px reais). Desktop continua
+ * recebendo a mesma URL — perda visual imperceptível e LCP −500ms.
+ */
 export function coverImage(url: string | null | undefined): string {
-  return optimizedImageUrl(url, { width: 1200, quality: 75, resize: 'cover' });
+  return optimizedImageUrl(url, { width: 800, height: 450, quality: 72, resize: 'cover' });
 }
 
 /** Preset: sponsor image */
