@@ -68,6 +68,20 @@ export function sanitizeMessage(input: unknown): string {
 }
 
 
+/**
+ * Sanitiza linhas para CSV: remove segredos de meta antes de exportar.
+ * Mantém o mesmo formato de colunas mas garante que JWTs/tokens/emails
+ * sejam redigidos tanto em campos planos quanto no `raw_meta`.
+ */
+function sanitizeMetaForExport(meta: unknown): Record<string, unknown> {
+  const obj = safeMeta(meta);
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = typeof v === "string" ? sanitizeMessage(v) : v;
+  }
+  return out;
+}
+
 function toCsv(rows: EventRow[]): string {
   const header = ["created_at", "user_id", "phase", "event", "error_code", "error_message", "raw_meta"];
   const escape = (v: unknown) => {
@@ -77,14 +91,15 @@ function toCsv(rows: EventRow[]): string {
   const lines = [header.join(",")];
   for (const r of rows) {
     const m = safeMeta(r.meta);
+    const safeMetaObj = sanitizeMetaForExport(r.meta);
     lines.push([
       escape(r.created_at),
       escape(r.user_id ?? ""),
       escape(r.phase ?? ""),
       escape(r.event ?? ""),
-      escape(m.error_code ?? m.reason ?? ""),
-      escape(m.error_message ?? ""),
-      escape(r.meta ?? ""),
+      escape(sanitizeMessage(m.error_code ?? m.reason ?? "")),
+      escape(sanitizeMessage(m.error_message ?? "")),
+      escape(safeMetaObj),
     ].join(","));
   }
   return lines.join("\n");
@@ -159,7 +174,31 @@ export default function AdminAuthHealthPage() {
       if (error) throw error;
       return (data || []) as EventRow[];
     },
-    staleTime: 30_000,
+    // Cache de 1 min para não re-fetchar agressivamente enquanto o admin
+    // analisa os gráficos. Refetch manual via botão Recarregar.
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  // Sumário agregado (RPC) — evita contar 500+ linhas no JS quando o
+  // volume de logs cresce. Usa a mesma janela do recordset paginado.
+  const bucketParam = pickBucketForPeriod(period);
+  const summaryQuery = useQuery({
+    queryKey: ["admin-auth-health-summary", period, sinceISO, bucketParam],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_auth_health_summary", {
+        _since: sinceISO,
+        _bucket: bucketParam,
+      });
+      if (error) throw error;
+      return data as {
+        counts: Record<string, number>;
+        funnel: { detected: number; attempted: number; healed: number; failed: number; loop_guard_unique_users: number };
+        series: Array<{ bucket: string; B_PROFILE_NULL: number; C_RLS_403: number; A_AUTH_FAIL: number }>;
+        total_errors: number;
+      } | null;
+    },
+    staleTime: 60_000,
     retry: false,
   });
 
@@ -171,7 +210,25 @@ export default function AdminAuthHealthPage() {
   }, [queryError]);
 
 
+  // Stats: prefere o sumário agregado pelo Postgres (full-window).
+  // Quando indisponível (RPC falhou ou ainda carregando), faz fallback
+  // para a contagem em memória sobre o recordset paginado.
   const stats = useMemo(() => {
+    const summary = summaryQuery.data;
+    if (summary) {
+      const counts = summary.counts || {};
+      const detected = summary.funnel.detected;
+      const healed = summary.funnel.healed;
+      const failed = summary.funnel.failed;
+      const attempted = summary.funnel.attempted;
+      const healRate = attempted === 0 ? null : (healed / attempted) * 100;
+      const rls = counts.C_RLS_403 || 0;
+      const loopGuard = summary.funnel.loop_guard_unique_users;
+      const chartData = TRACKED_CODES
+        .map((code) => ({ code, label: CODE_LABEL[code], count: counts[code] || 0 }))
+        .filter((d) => d.count > 0);
+      return { counts, detected, attempted, healed, failed, healRate, rls, loopGuard, chartData };
+    }
     const counts: Record<string, number> = {};
     const uniqueLoopUsers = new Set<string>();
     for (const row of data || []) {
@@ -180,8 +237,6 @@ export default function AdminAuthHealthPage() {
       counts[code] = (counts[code] || 0) + 1;
       if (code === "B_PROFILE_NULL_LOOP_GUARD" && row.user_id) uniqueLoopUsers.add(row.user_id);
     }
-    // [Funil] Detectado → Tentativa → Resultado.
-    // "Detectado" = B_PROFILE_NULL emitido ANTES do INSERT.
     const detected = counts.B_PROFILE_NULL || 0;
     const healed = counts.B_PROFILE_NULL_HEALED || 0;
     const failed = counts.B_PROFILE_NULL_HEAL_FAIL || 0;
@@ -189,19 +244,51 @@ export default function AdminAuthHealthPage() {
     const healRate = attempted === 0 ? null : (healed / attempted) * 100;
     const rls = counts.C_RLS_403 || 0;
     const loopGuard = uniqueLoopUsers.size;
-
     const chartData = TRACKED_CODES
       .map((code) => ({ code, label: CODE_LABEL[code], count: counts[code] || 0 }))
       .filter((d) => d.count > 0);
-
     return { counts, detected, attempted, healed, failed, healRate, rls, loopGuard, chartData };
-  }, [data]);
+  }, [data, summaryQuery.data]);
 
-  const funnel = useMemo(() => buildSelfHealFunnel(data || []), [data]);
-  const series = useMemo(
-    () => aggregateByTime(data || [], pickBucketForPeriod(period)),
-    [data, period],
-  );
+  const funnel = useMemo(() => {
+    const s = summaryQuery.data?.funnel;
+    if (s) {
+      const stages: Array<{ stage: "Detectado" | "Tentativa" | "Sucesso"; count: number }> = [
+        { stage: "Detectado", count: s.detected },
+        { stage: "Tentativa", count: s.attempted },
+        { stage: "Sucesso", count: s.healed },
+      ];
+      return stages.map((st, i) => {
+        const prev = i === 0 ? st.count : stages[i - 1].count;
+        const drop = Math.max(0, prev - st.count);
+        const pct = prev === 0 ? 0 : (drop / prev) * 100;
+        return { ...st, dropFromPrev: drop, dropPct: pct };
+      });
+    }
+    return buildSelfHealFunnel(data || []);
+  }, [data, summaryQuery.data]);
+
+  const series = useMemo(() => {
+    const s = summaryQuery.data?.series;
+    if (s && s.length) {
+      const isDay = bucketParam === "day";
+      return s.map((p) => {
+        const d = new Date(p.bucket);
+        const label = isDay
+          ? d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+          : d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+        return {
+          bucket: p.bucket,
+          label,
+          B_PROFILE_NULL: p.B_PROFILE_NULL || 0,
+          C_RLS_403: p.C_RLS_403 || 0,
+          A_AUTH_FAIL: p.A_AUTH_FAIL || 0,
+          total: (p.B_PROFILE_NULL || 0) + (p.C_RLS_403 || 0) + (p.A_AUTH_FAIL || 0),
+        };
+      });
+    }
+    return aggregateByTime(data || [], bucketParam);
+  }, [data, summaryQuery.data, bucketParam]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -355,10 +442,21 @@ export default function AdminAuthHealthPage() {
         {/* Funil de Self-Heal */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <TrendingDown className="h-4 w-4" aria-hidden />
-              Funil de Self-Heal — Detectado → Tentativa → Sucesso
-            </CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingDown className="h-4 w-4" aria-hidden />
+                Funil de Self-Heal — Detectado → Tentativa → Sucesso
+              </CardTitle>
+              {funnel[0].count > 0 && (
+                <Badge
+                  variant="outline"
+                  className="font-mono text-[11px]"
+                  aria-label="Taxa de recuperação"
+                >
+                  Recuperação: {funnel[0].count === 0 ? "—" : `${((funnel[2].count / funnel[0].count) * 100).toFixed(0)}%`}
+                </Badge>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (

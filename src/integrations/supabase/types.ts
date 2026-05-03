@@ -7906,6 +7906,10 @@ export type Database = {
         Args: { _level_id: string; _user_id: string }
         Returns: undefined
       }
+      admin_auth_health_summary: {
+        Args: { _bucket?: string; _since: string }
+        Returns: Json
+      }
       admin_ban_suspicious: { Args: { _user_ids: string[] }; Returns: number }
       admin_broken_links_by_referrer: {
         Args: { _days?: number }
