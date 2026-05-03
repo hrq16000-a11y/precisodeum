@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { invokeWithGuard, EDGE_GUARD_FALLBACK_MESSAGE } from "@/lib/edgeInvoke";
 import { useSeoHead, SITE_BASE_URL } from "@/hooks/useSeoHead";
 import { toast } from "sonner";
+import { toastAssertiveError } from "@/lib/a11yToast";
 import { CheckCircle2, AlertCircle, ShieldCheck, Mail, Trash2 } from "lucide-react";
 
 const APP_NAME = "Preciso de Um";
