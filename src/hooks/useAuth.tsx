@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (!profileData) {
       reportError({
-        errorMessage: `Profile fetch timeout after ${MAX_ATTEMPTS} attempts (${elapsedMs}ms)`,
+        errorMessage: `Profile fetch timeout after ${MAX_ATTEMPTS} attempts (${elapsedMs}ms)${lastErrorMessage ? ` — last error: ${lastErrorMessage}` : ''}`,
         componentName: 'useAuth',
         actionContext: 'auth.profile_timeout',
         severity: 'error',
