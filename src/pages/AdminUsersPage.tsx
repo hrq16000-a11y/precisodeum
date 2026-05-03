@@ -5,6 +5,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithGuard, EDGE_GUARD_FALLBACK_MESSAGE } from '@/lib/edgeInvoke';
 import { toast } from 'sonner';
 import {
   Users, Key, Trash2, Download, CheckSquare, UserCog, Shield, UserPlus,

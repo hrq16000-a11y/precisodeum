@@ -446,7 +446,8 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     if (newPassword.length < 6) { toast.error('Mínimo 6 caracteres'); return; }
     setResettingPw(true);
     try {
-      const res = await supabase.functions.invoke('admin-reset-password', { body: { user_id: user.id, new_password: newPassword } });
+      const res = await invokeWithGuard<{ error?: string }>('admin-reset-password', { body: { user_id: user.id, new_password: newPassword } });
+      if (res.timedOut) { toast.error(EDGE_GUARD_FALLBACK_MESSAGE); return; }
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
       await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { password: { from: '***', to: '***' } } } });
@@ -454,7 +455,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       setShowResetPw(false);
       setNewPassword('');
     } catch (err: any) { toast.error('Erro: ' + (err.message || 'Falha')); }
-    setResettingPw(false);
+    finally { setResettingPw(false); }
   };
 
   // === Phone → WhatsApp auto-sync ===
