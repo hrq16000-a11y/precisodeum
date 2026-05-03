@@ -165,19 +165,30 @@ const AdminSponsorsPage = () => {
   }, [!!user && isAdmin, loading, navigate]);
 
   // ── Data ──
+  // Allowlist explícita: lista exatamente as colunas usadas na UI/edição
+  // (interface Sponsor + guaranteed_impressions/delivered_impressions usados em alerts).
+  // Exclui metadados internos, JSONB e qualquer coluna não exibida.
+  const SPONSOR_COLS =
+    'id, title, company_name, image_url, logo_url, link_url, position, active, display_order, created_at, ' +
+    'start_date, end_date, impressions, clicks, sponsor_type, short_description, full_description, phone, ' +
+    'whatsapp, external_link, linked_city, linked_category, plan_tier, badge_type, status, tier, ad_format, ' +
+    'max_width, max_height, target_pages, cnpj, email, guaranteed_impressions, delivered_impressions';
+
   const { data: sponsors = [], isLoading } = useQuery({
     queryKey: ['admin-sponsors'],
     enabled: !!user && isAdmin,
     queryFn: async () => {
-      const { data } = await supabase.from('sponsors').select('*').is('deleted_at', null).order('display_order');
-      return (data || []) as Sponsor[];
+      const { data } = await supabase.from('sponsors').select(SPONSOR_COLS).is('deleted_at', null).order('display_order');
+      return (data || []) as unknown as Sponsor[];
     },
   });
 
   const { data: contacts = [] } = useQuery({
     queryKey: ['admin-sponsor-contacts'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_contacts' as any).select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_contacts' as any)
+        .select('id, sponsor_id, user_id, contact_name, email, phone, permissions, created_at')
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
@@ -185,7 +196,9 @@ const AdminSponsorsPage = () => {
   const { data: campaigns = [] } = useQuery({
     queryKey: ['admin-sponsor-campaigns'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_campaigns' as any).select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_campaigns' as any)
+        .select('id, sponsor_id, name, status, start_date, end_date, budget, created_at')
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
@@ -193,7 +206,9 @@ const AdminSponsorsPage = () => {
   const { data: contracts = [] } = useQuery({
     queryKey: ['admin-sponsor-contracts'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_contracts' as any).select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_contracts' as any)
+        .select('id, sponsor_id, contract_number, status, start_date, end_date, value, created_at')
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
@@ -201,7 +216,9 @@ const AdminSponsorsPage = () => {
   const { data: notes = [] } = useQuery({
     queryKey: ['admin-sponsor-notes'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_notes' as any).select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_notes' as any)
+        .select('id, sponsor_id, content, created_at')
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
@@ -210,7 +227,9 @@ const AdminSponsorsPage = () => {
     queryKey: ['admin-sponsor-metrics-30d'],
     queryFn: async () => {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
-      const { data } = await supabase.from('sponsor_metrics' as any).select('*').gte('event_date', thirtyDaysAgo);
+      const { data } = await supabase.from('sponsor_metrics' as any)
+        .select('sponsor_id, event_type, count, event_date')
+        .gte('event_date', thirtyDaysAgo);
       return (data || []) as any[];
     },
   });
@@ -218,7 +237,9 @@ const AdminSponsorsPage = () => {
   const { data: regions = [] } = useQuery({
     queryKey: ['admin-sponsor-regions'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_regions').select('*, cities(name, state_uf)').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_regions')
+        .select('id, sponsor_id, state_uf, exclusive, notes, created_at, cities(name, state_uf)')
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
@@ -226,7 +247,9 @@ const AdminSponsorsPage = () => {
   const { data: plans = [] } = useQuery({
     queryKey: ['admin-sponsor-plans'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_plans').select('*').order('display_order');
+      const { data } = await supabase.from('sponsor_plans')
+        .select('id, name, slug, description, price_monthly, price_yearly, max_impressions, max_slots, features, active, display_order')
+        .order('display_order');
       return (data || []) as any[];
     },
   });
@@ -234,7 +257,9 @@ const AdminSponsorsPage = () => {
   const { data: subscriptions = [] } = useQuery({
     queryKey: ['admin-sponsor-subscriptions'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_subscriptions').select('*, sponsor_plans!sponsor_subscriptions_plan_id_fkey(name)').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_subscriptions')
+        .select('id, sponsor_id, plan_id, status, billing_cycle, current_period_start, current_period_end, amount_paid, created_at, sponsor_plans!sponsor_subscriptions_plan_id_fkey(name)')
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
