@@ -262,8 +262,8 @@ export default function AdminAuthHealthPage() {
           <Kpi
             icon={<AlertTriangle className="h-5 w-5 text-bet-amber" aria-hidden />}
             label="Perfis ausentes detectados"
-            value={isLoading ? null : stats.profileNull}
-            hint="Eventos B_PROFILE_NULL* no período"
+            value={isLoading ? null : stats.detected}
+            hint={`${stats.attempted} tentativa(s) · ${stats.healed} OK · ${stats.failed} falhas`}
           />
           <Kpi
             icon={<CheckCircle2 className="h-5 w-5 text-bet-green" aria-hidden />}
