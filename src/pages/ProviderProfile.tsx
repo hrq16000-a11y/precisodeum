@@ -639,6 +639,30 @@ const ProviderProfile = () => {
     return () => { supabase.removeChannel(channel); };
   }, [provider?.id]);
 
+  /**
+   * Preload do LCP (cover image) — assim que `pageSettings.cover_image_url`
+   * é resolvido, injeta `<link rel="preload" as="image">` no <head> com a
+   * URL JÁ transformada (800×450 WebP). O navegador começa o download em
+   * paralelo ao restante da hidratação React, cortando ~500ms do LCP mobile.
+   *
+   * `imagesrcset` permite o navegador escolher 1x/2x conforme DPR sem precisar
+   * de duas requests. Removemos o link no cleanup para não vazar entre perfis.
+   */
+  useEffect(() => {
+    const url = pageSettings.cover_image_url;
+    if (!url || typeof document === 'undefined') return;
+    const optimized = coverImage(url);
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = optimized;
+    link.setAttribute('fetchpriority', 'high');
+    document.head.appendChild(link);
+    return () => {
+      try { document.head.removeChild(link); } catch { /* já removido */ }
+    };
+  }, [pageSettings.cover_image_url]);
+
   useEffect(() => {
     const currentWhatsApp = toCanonical(provider?.whatsapp || provider?.phone || '');
     if (!isMobile || !currentWhatsApp) {
@@ -1162,13 +1186,16 @@ const ProviderProfile = () => {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
+        {/* Capa: mesmo aspect-ratio (16:5) da capa real → sem CLS quando o
+            conteúdo final hidratar. Header CTA reserva 44px de altura. */}
+        <Skeleton className="w-full aspect-[16/5] rounded-none" />
         <div className="container py-8 space-y-4">
-          <Skeleton className="h-56 rounded-2xl" />
           <div className="grid grid-cols-3 gap-3">
             <Skeleton className="h-20 rounded-xl" />
             <Skeleton className="h-20 rounded-xl" />
             <Skeleton className="h-20 rounded-xl" />
           </div>
+          <Skeleton className="h-11 w-full sm:w-48 rounded-md" />
           <Skeleton className="h-40 rounded-xl" />
           <Skeleton className="h-32 rounded-xl" />
         </div>
@@ -1503,10 +1530,12 @@ const ProviderProfile = () => {
     <div className={`flex min-h-screen flex-col ${tc.page} ${tc.fontBody}`} style={accentStyle}>
       <Header />
 
-      {/* Cover Image Hero */}
+      {/* Cover Image Hero — aspect-ratio reservado ANTES da imagem chegar
+          (CLS = 0). bg-muted serve de placeholder; o `motion.img` preenche
+          com object-cover. width/height intrínsecos batem com o transform. */}
       {pageSettings.cover_image_url && (
         <motion.div
-          className="relative w-full aspect-[16/5] overflow-hidden"
+          className="relative w-full aspect-[16/5] overflow-hidden bg-muted"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
@@ -1514,6 +1543,8 @@ const ProviderProfile = () => {
           <motion.img
             src={coverImage(pageSettings.cover_image_url)}
             alt="Capa"
+            width={1600}
+            height={500}
             className="h-full w-full object-cover"
             loading="eager"
             fetchPriority="high"
@@ -1818,7 +1849,7 @@ const ProviderProfile = () => {
 
             {/* ── CTA Buttons ── */}
             <motion.div
-              className="mt-6 flex flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-2"
+              className="mt-6 flex min-h-[44px] flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-2"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.5 }}
