@@ -247,16 +247,29 @@ export default function CadastroInicialPage() {
           <div className="h-4 w-full animate-pulse rounded bg-muted" />
           <div className="h-4 w-5/6 animate-pulse rounded bg-muted" />
           {showManualLogin && (
-            <div className="pt-4 text-center">
-              <p className="mb-3 text-sm text-muted-foreground">
-                Demorando mais que o esperado?
+            <div
+              role="alert"
+              className="mt-4 rounded-lg border border-amber-300/60 bg-amber-50 p-4 text-center dark:border-amber-700/60 dark:bg-amber-950/40"
+              data-testid="cadastro-stuck-banner"
+            >
+              <p className="mb-3 text-sm font-medium text-amber-900 dark:text-amber-200">
+                A verificação está demorando mais do que o normal. Você pode continuar:
               </p>
-              <a
-                href={`/login?next=${encodeURIComponent(`${location.pathname}${location.search || ''}` || '/cadastro-inicial')}`}
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                Ir para login agora
-              </a>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  Recarregar página
+                </button>
+                <a
+                  href={`/login?next=${encodeURIComponent(`${location.pathname}${location.search || ''}` || '/cadastro-inicial')}`}
+                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Ir para login agora
+                </a>
+              </div>
             </div>
           )}
         </div>
