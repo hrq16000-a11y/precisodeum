@@ -44,7 +44,7 @@ vi.mock('@/lib/errorReporter', () => ({
 import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
 
 describe('ReportWizardErrorButton — receipt + counter', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); });
 
   it('mostra contador x/MAX antes de qualquer anexo', async () => {
     render(<ReportWizardErrorButton step="phase2_photos:no_service" />);
