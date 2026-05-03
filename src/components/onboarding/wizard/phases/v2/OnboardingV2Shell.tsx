@@ -1738,7 +1738,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               return false;
             }
             for (let attempt = 0; attempt < RECOVER_MAX_ATTEMPTS; attempt++) {
-              const delay = RECOVER_BACKOFF_DELAYS_MS[attempt];
+              const delay = recoverBackoffDelayMs(attempt);
               if (delay > 0) {
                 await new Promise((r) => setTimeout(r, delay));
                 track('next', {
