@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useSubmitGuard } from '@/hooks/useSubmitGuard';
+import { sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
 
 const schema = z.object({
   service_query: z.string().trim().min(3, 'Descreva o serviço (mín. 3 caracteres)').max(200),
@@ -28,14 +30,14 @@ const AskSystemDialog = ({ defaultService = '', defaultCategory }: Props) => {
   const { user, profile } = useAuth();
   const { city: geoCity, state: geoState } = useGeoCity();
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // Loading state vem do useSubmitGuard (imune a re-renders).
   const [serviceQuery, setServiceQuery] = useState(defaultService);
   const [city, setCity] = useState(geoCity || '');
   const [name, setName] = useState(profile?.full_name || '');
   const [whatsapp, setWhatsapp] = useState((profile as any)?.whatsapp || '');
   const [description, setDescription] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [loading, handleSubmit] = useSubmitGuard(async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse({
       service_query: serviceQuery,
@@ -48,14 +50,20 @@ const AskSystemDialog = ({ defaultService = '', defaultCategory }: Props) => {
       toast.error(parsed.error.issues[0]?.message || 'Verifique os dados informados');
       return;
     }
-    setLoading(true);
+    // Normalização + validação de WhatsApp antes do INSERT.
+    const phoneCheck = validateWhatsapp(parsed.data.client_whatsapp);
+    if (!phoneCheck.valid) {
+      toast.error(phoneCheck.message);
+      return;
+    }
+    const phoneSanitized = sanitizePhone(parsed.data.client_whatsapp);
     try {
       const { data: lead, error } = await supabase
         .from('open_leads')
         .insert({
           client_user_id: user?.id || null,
           client_name: parsed.data.client_name,
-          client_whatsapp: parsed.data.client_whatsapp,
+          client_whatsapp: phoneSanitized,
           service_query: parsed.data.service_query,
           category_slug: defaultCategory || null,
           city: parsed.data.city,
@@ -79,10 +87,8 @@ const AskSystemDialog = ({ defaultService = '', defaultCategory }: Props) => {
     } catch (err: any) {
       toast.error('Não foi possível enviar agora. Tente novamente.');
       console.error(err);
-    } finally {
-      setLoading(false);
     }
-  };
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

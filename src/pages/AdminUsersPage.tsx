@@ -157,11 +157,12 @@ const AdminUsersPage = () => {
   };
 
   const fetchProfiles = useCallback(() => {
+    const ADMIN_FETCH_CAP = 500;
     Promise.all([
-      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj, photo_url, whatsapp, phone, description, services_count, latitude, longitude').is('deleted_at', null),
-      supabase.from('user_tags').select('*'),
-      supabase.from('sponsor_contacts' as any).select('user_id'),
+      supabase.from('profiles').select('*', { count: 'exact' }).order('created_at', { ascending: false }).limit(ADMIN_FETCH_CAP),
+      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj, photo_url, whatsapp, phone, description, services_count, latitude, longitude', { count: 'exact' }).is('deleted_at', null).limit(ADMIN_FETCH_CAP),
+      supabase.from('user_tags').select('*').limit(ADMIN_FETCH_CAP),
+      supabase.from('sponsor_contacts' as any).select('user_id').limit(ADMIN_FETCH_CAP),
       supabase.rpc('get_latest_user_access_logs' as any),
     ]).then(([pRes, prRes, tRes, scRes, alRes]) => {
       setProfiles(pRes.data || []);
@@ -175,6 +176,13 @@ const AdminUsersPage = () => {
       const logsMap: Record<string, any> = {};
       ((alRes as any)?.data || []).forEach((row: any) => { logsMap[row.user_id] = row; });
       setAccessLogsMap(logsMap);
+      const profilesCount = (pRes as any)?.count;
+      const providersCount = (prRes as any)?.count;
+      if (typeof profilesCount === 'number' && profilesCount > ADMIN_FETCH_CAP) {
+        toast.warning(`Exibindo ${ADMIN_FETCH_CAP} de ${profilesCount} perfis — use a busca para refinar.`);
+      } else if (typeof providersCount === 'number' && providersCount > ADMIN_FETCH_CAP) {
+        toast.warning(`Exibindo ${ADMIN_FETCH_CAP} de ${providersCount} prestadores — use a busca para refinar.`);
+      }
     });
   }, []);
 

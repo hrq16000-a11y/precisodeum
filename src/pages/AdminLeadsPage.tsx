@@ -61,13 +61,20 @@ const AdminLeadsPage = () => {
   const [editLead, setEditLead] = useState<any | null>(null);
   const debouncedSearch = useDebounce(search ?? '', 300);
 
+  // Limite explícito para evitar truncamento silencioso do default 1000 do Supabase.
+  // Paginação visual ainda é client-side (ver `page`/`PAGE_SIZE`); o cap aqui é defensivo.
+  const ADMIN_FETCH_CAP = 500;
   const fetchLeads = async () => {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from('leads')
-      .select('*, providers(business_name)')
-      .order('lead_score', { ascending: false });
+      .select('*, providers(business_name)', { count: 'exact' })
+      .order('lead_score', { ascending: false })
+      .limit(ADMIN_FETCH_CAP);
     if (error) { toast.error('Erro: ' + error.message); return; }
     setLeads(data || []);
+    if (typeof count === 'number' && count > ADMIN_FETCH_CAP) {
+      toast.warning(`Exibindo ${ADMIN_FETCH_CAP} de ${count} leads — refine os filtros para ver os demais.`);
+    }
   };
 
   useEffect(() => { if (isAdmin) fetchLeads(); }, [isAdmin]);
