@@ -38,6 +38,8 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
 
   // Mantemos a rota salva apenas para jornadas futuras; o pós-auth cai sempre no V3 (/cadastro-bet).
   const from = (location.state as any)?.from || null;
