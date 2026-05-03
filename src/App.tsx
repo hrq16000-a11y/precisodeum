@@ -415,9 +415,15 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     };
   }, [loading, user, profile, provider, refetchProfile, location.pathname]);
 
+  // [V8 PERF] Rotas públicas renderizam IMEDIATAMENTE — sem esperar auth.
+  // ProtectedRoute é responsável pelo spinner/redirect em rotas privadas.
+  if (publicRoute || isWizardTestRoute) {
+    return <>{children}</>;
+  }
+
   // While auth is resolving, or user exists but profile not yet loaded,
   // render an accessible skeleton instead of null to avoid blank screens.
-  if (!isWizardTestRoute && (loading || (user && !profile))) {
+  if (loading || (user && !profile)) {
     return (
       <div
         role="status"
