@@ -159,7 +159,13 @@ const AdminUsersPage = () => {
   const fetchProfiles = useCallback(() => {
     const ADMIN_FETCH_CAP = 500;
     Promise.all([
-      supabase.from('profiles').select('*', { count: 'exact' }).order('created_at', { ascending: false }).limit(ADMIN_FETCH_CAP),
+      // Allowlist explícita: apenas colunas exibidas/filtráveis na tabela.
+      // Exclui PII pesado (tax_id, fingerprint, social_links, JSONBs longos) e
+      // campos que não aparecem na listagem (avatar_url, bio, onboarding_*, etc.).
+      supabase.from('profiles').select(
+        'id, user_id, full_name, email, phone, whatsapp, profile_type, role, status, created_at, city, commercial_plan, engagement_points, is_suspicious, services_count, staff_role, user_ref',
+        { count: 'exact' }
+      ).order('created_at', { ascending: false }).limit(ADMIN_FETCH_CAP),
       supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj, photo_url, whatsapp, phone, description, services_count, latitude, longitude', { count: 'exact' }).is('deleted_at', null).limit(ADMIN_FETCH_CAP),
       supabase.from('user_tags').select('*').limit(ADMIN_FETCH_CAP),
       supabase.from('sponsor_contacts' as any).select('user_id').limit(ADMIN_FETCH_CAP),
