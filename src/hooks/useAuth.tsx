@@ -310,15 +310,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .finally(() => {
               if (!isMounted) return;
               setLoading(false);
+              reportAuthBoot('resolved');
             });
         } else {
           setLoading(false);
+          reportAuthBoot('no_session');
         }
       })
       .catch((err) => {
         console.error('[useAuth] getSession failed:', err);
         if (!isMounted) return;
         setLoading(false);
+        reportAuthBoot('no_session');
       });
 
     return () => {
