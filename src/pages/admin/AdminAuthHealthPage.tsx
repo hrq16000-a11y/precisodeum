@@ -1,16 +1,24 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, AlertTriangle, ShieldAlert, Zap, RefreshCcw, CheckCircle2 } from "lucide-react";
+import { Activity, AlertTriangle, ShieldAlert, Zap, RefreshCcw, CheckCircle2, TrendingDown, LineChart } from "lucide-react";
+import {
+  aggregateByTime,
+  buildSelfHealFunnel,
+  pickBucketForPeriod,
+} from "@/lib/authHealthAggregations";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
