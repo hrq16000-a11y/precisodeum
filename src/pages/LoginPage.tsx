@@ -260,11 +260,9 @@ const LoginPage = () => {
         // Heurística: identities=[] indica e-mail já existente
         const identities = (signUpData.user as any)?.identities;
         if (Array.isArray(identities) && identities.length === 0) {
-          setForgotEmail(trimmedEmail);
-          setShowForgot(true);
-          toast.error('Já existe uma conta com esse e-mail. Redefina sua senha para continuar.', {
-            duration: 6000,
-          });
+          // PATH 7 (heurística): inline, sem abrir dialog automaticamente
+          setEmailError('Este e-mail já possui conta. Use sua senha ou clique em "Esqueci minha senha".');
+          emailRef.current?.focus();
           return;
         }
         if (signUpData.session) {
