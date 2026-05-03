@@ -39,6 +39,8 @@ export type WizardBackSource =
   | 'step20_more_services'
   | 'step21_portfolio'
   | 'step22_review'
+  | 'error_modal'
+  | 'error_toast'
   | 'global_nav'
   | 'unknown';
 
@@ -93,6 +95,48 @@ export function requestWizardBackFallback({ phase, source, meta }: RequestBackOp
     window.dispatchEvent(
       new CustomEvent(WIZARD_BACK_EVENTS.REQUEST_BACK, {
         detail: { phase, source, fallback: true },
+      }),
+    );
+  } catch {
+    /* fail-soft */
+  }
+}
+
+interface RequestBackForPhaseOptions extends RequestBackOptions {
+  /** Em revisão, o listener legado do V2 é o dono da pilha de retorno. */
+  editMode?: boolean;
+}
+
+/**
+ * Escolhe automaticamente o canal correto de "Voltar" para a fase atual.
+ *
+ * Regra prática:
+ * - `phase2_service` fora de revisão precisa falar com o WizardShell unificado
+ *   (`wizard:request-prev-unified`) para voltar à triagem.
+ * - Todas as demais fases do V2 continuam usando o listener legado
+ *   (`wizard:request-back`), que conhece o mapa local phase→phase.
+ */
+export function requestWizardBackForPhase({ phase, source, meta, editMode = false }: RequestBackForPhaseOptions): void {
+  const shouldUseUnified = !editMode && (phase === 'phase2_service' || phase === 'main_service');
+  if (shouldUseUnified) {
+    requestWizardBack({ phase, source, meta });
+    return;
+  }
+  void trackOnboardingEvent({
+    phase: phase as any,
+    event: 'back',
+    meta: {
+      ...meta,
+      code: WIZARD_BACK_CODES.CLICK,
+      source,
+      target_event: WIZARD_BACK_EVENTS.REQUEST_BACK,
+      variant: 'unified',
+    },
+  });
+  try {
+    window.dispatchEvent(
+      new CustomEvent(WIZARD_BACK_EVENTS.REQUEST_BACK, {
+        detail: { phase, source, ...meta },
       }),
     );
   } catch {

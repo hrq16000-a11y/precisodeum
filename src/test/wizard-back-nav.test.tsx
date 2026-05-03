@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import {
   requestWizardBack,
+  requestWizardBackForPhase,
   requestWizardBackFallback,
   WIZARD_BACK_EVENTS,
   WIZARD_BACK_CODES,
@@ -53,6 +54,34 @@ describe('wizardBackNav helper', () => {
     const ev = trackedEvents.find((e) => e.meta?.code === WIZARD_BACK_CODES.GUARD_FALLBACK);
     expect(ev).toBeTruthy();
     window.removeEventListener(WIZARD_BACK_EVENTS.REQUEST_BACK, spy);
+  });
+
+  it('phase2_service fora de revisão usa o evento unificado para voltar à triagem', () => {
+    const unifiedSpy = vi.fn();
+    const legacySpy = vi.fn();
+    window.addEventListener(WIZARD_BACK_EVENTS.PREV_UNIFIED, unifiedSpy);
+    window.addEventListener(WIZARD_BACK_EVENTS.REQUEST_BACK, legacySpy);
+
+    requestWizardBackForPhase({ phase: 'phase2_service', source: 'error_modal', editMode: false });
+
+    expect(unifiedSpy).toHaveBeenCalledTimes(1);
+    expect(legacySpy).not.toHaveBeenCalled();
+    window.removeEventListener(WIZARD_BACK_EVENTS.PREV_UNIFIED, unifiedSpy);
+    window.removeEventListener(WIZARD_BACK_EVENTS.REQUEST_BACK, legacySpy);
+  });
+
+  it('phase2_service em revisão usa o listener legado do V2 para respeitar a pilha real', () => {
+    const unifiedSpy = vi.fn();
+    const legacySpy = vi.fn();
+    window.addEventListener(WIZARD_BACK_EVENTS.PREV_UNIFIED, unifiedSpy);
+    window.addEventListener(WIZARD_BACK_EVENTS.REQUEST_BACK, legacySpy);
+
+    requestWizardBackForPhase({ phase: 'phase2_service', source: 'error_modal', editMode: true });
+
+    expect(legacySpy).toHaveBeenCalledTimes(1);
+    expect(unifiedSpy).not.toHaveBeenCalled();
+    window.removeEventListener(WIZARD_BACK_EVENTS.PREV_UNIFIED, unifiedSpy);
+    window.removeEventListener(WIZARD_BACK_EVENTS.REQUEST_BACK, legacySpy);
   });
 });
 

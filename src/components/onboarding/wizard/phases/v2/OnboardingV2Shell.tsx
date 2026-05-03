@@ -1075,10 +1075,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     // 4) cria/atualiza
     const created = await persistPhase1();
 
-    // 5) backoff exponencial cobrindo race com triggers DB
-    const delays = [0, 400, 1200];
-    for (let i = 0; i < delays.length; i++) {
-      if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+    // 5) backoff canônico com jitter cobrindo race com triggers/concorrência
+    for (let i = 0; i < RECOVER_MAX_ATTEMPTS; i++) {
+      const delay = recoverBackoffDelayMs(i);
+      if (delay > 0) await new Promise((r) => setTimeout(r, delay));
       try {
         const recoveredId = await findExistingProvider(user.id, state.userRef ?? null);
         if (recoveredId) {
@@ -1165,20 +1165,27 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
       toast.error('Não conseguimos preparar seu perfil agora', {
         description,
-        action: {
-          label: missing.length > 0 ? 'Voltar e completar' : 'Tentar novamente',
-          onClick: () => {
-            if (missing.length > 0) {
-              window.dispatchEvent(new CustomEvent('wizard:request-back'));
-            } else {
-              void persistFirstService();
-            }
+          action: {
+            label: missing.length > 0 ? 'Voltar e completar' : 'Tentar novamente',
+            onClick: () => {
+              if (missing.length > 0) {
+                void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
+                  requestWizardBackForPhase({
+                    phase: state.phase,
+                    source: 'error_toast',
+                    editMode,
+                    meta: { code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_NO_PROVIDER },
+                  });
+                });
+              } else {
+                void persistFirstService();
+              }
+            },
           },
-        },
         duration: 12000,
       });
       // Modal claro com detalhes técnicos (não mascara, complementa o toast).
-      setErrorModal({
+        setErrorModal({
         code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_NO_PROVIDER,
         missingFields: missing,
         techMessage: techMsg ?? null,
@@ -2395,7 +2402,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             : null,
         }}
         onRetry={() => errorModal?.onRetry?.()}
-        onBack={() => window.dispatchEvent(new CustomEvent('wizard:request-back'))}
+        onBack={() => {
+          void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
+            requestWizardBackForPhase({
+              phase: state.phase,
+              source: 'error_modal',
+              editMode,
+              meta: { code: errorModal?.code || null },
+            });
+          });
+        }}
       />
     </>
   );
