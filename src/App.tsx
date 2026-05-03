@@ -380,9 +380,13 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     if (location.pathname === '/cadastro-inicial') return;
 
     let cancelled = false;
-    void runOnboardingSelfHeal({ userId: user.id, profile, provider }).then((healed) => {
-      if (!cancelled && healed) void refetchProfile();
-    });
+    void runOnboardingSelfHeal({ userId: user.id, profile, provider })
+      .then((healed) => {
+        if (!cancelled && healed) void refetchProfile();
+      })
+      .catch((err) => {
+        console.error('[selfHeal] unhandled:', err);
+      });
     return () => {
       cancelled = true;
     };
