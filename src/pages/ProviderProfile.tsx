@@ -1516,6 +1516,8 @@ const ProviderProfile = () => {
             alt="Capa"
             className="h-full w-full object-cover"
             loading="eager"
+            fetchPriority="high"
+            decoding="async"
             onError={handleImageError}
             initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
