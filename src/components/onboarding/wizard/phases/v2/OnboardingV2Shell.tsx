@@ -769,24 +769,101 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
     if (!user) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: { code: WIZARD_ERROR_CODES.PERSIST_PHASE1_NO_USER },
+      });
       toast.error('Sessão expirou. Faça login novamente.');
       return false;
     }
     setSaving(true);
     setLastPersistError(null);
     try {
-      const p = state.profile;
+      const currentProfile = state.profile;
+      let p = currentProfile;
+      const needsHydration =
+        !(currentProfile.full_name || '').trim() ||
+        !(currentProfile.whatsapp || '').trim() ||
+        !(currentProfile.city || '').trim() ||
+        !(currentProfile.state || '').trim();
+
+      if (needsHydration) {
+        try {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('full_name, whatsapp, city, state, neighborhood, profile_type, user_ref, avatar_url')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (prof) {
+            const merged = {
+              ...currentProfile,
+              full_name: (currentProfile.full_name || '').trim() ? currentProfile.full_name : (prof.full_name || currentProfile.full_name),
+              whatsapp: (currentProfile.whatsapp || '').trim() ? currentProfile.whatsapp : (prof.whatsapp || currentProfile.whatsapp),
+              city: (currentProfile.city || '').trim() ? currentProfile.city : (prof.city || currentProfile.city),
+              state: (currentProfile.state || '').trim() ? currentProfile.state : (prof.state || currentProfile.state),
+              neighborhood: (currentProfile.neighborhood || '').trim() ? currentProfile.neighborhood : (prof.neighborhood || currentProfile.neighborhood),
+              profile_type: (currentProfile.profile_type || (prof.profile_type as typeof currentProfile.profile_type) || 'provider') as typeof currentProfile.profile_type,
+              avatar_url: currentProfile.avatar_url || prof.avatar_url || currentProfile.avatar_url,
+            };
+            p = merged;
+            const patch: Partial<typeof currentProfile> = {};
+            if (merged.full_name !== currentProfile.full_name) patch.full_name = merged.full_name;
+            if (merged.whatsapp !== currentProfile.whatsapp) patch.whatsapp = merged.whatsapp;
+            if (merged.city !== currentProfile.city) patch.city = merged.city;
+            if (merged.state !== currentProfile.state) patch.state = merged.state;
+            if (merged.neighborhood !== currentProfile.neighborhood) patch.neighborhood = merged.neighborhood;
+            if (merged.profile_type !== currentProfile.profile_type) patch.profile_type = merged.profile_type as any;
+            if (merged.avatar_url !== currentProfile.avatar_url) patch.avatar_url = merged.avatar_url as any;
+            if (Object.keys(patch).length > 0) {
+              dispatch({ type: 'PATCH_PROFILE', patch });
+            }
+            if (prof.user_ref && !state.userRef) dispatch({ type: 'SET_USER_REF', userRef: prof.user_ref });
+            void trackEvent({
+              phase: state.phase,
+              event: 'next',
+              userId: user?.id,
+              meta: {
+                code: WIZARD_ERROR_CODES.ENSURE_PROVIDER_ID_HYDRATED_PROFILE,
+                hydrated_fields: Object.keys(patch),
+              },
+            });
+          }
+        } catch {
+          // best-effort
+        }
+      }
+
       const contactValidation = getOnboardingContactValidation({
         fullName: p.full_name,
         whatsapp: p.whatsapp,
       });
 
       if (!contactValidation.fullName) {
+        void trackEvent({
+          phase: state.phase,
+          event: 'error',
+          userId: user?.id,
+          meta: {
+            code: WIZARD_ERROR_CODES.PERSIST_PHASE1_MISSING_FIELDS,
+            missing_fields: ['full_name'],
+          },
+        });
         toast.error('Informe nome e sobrenome para continuar.');
         return false;
       }
 
       if (!contactValidation.whatsapp) {
+        void trackEvent({
+          phase: state.phase,
+          event: 'error',
+          userId: user?.id,
+          meta: {
+            code: WIZARD_ERROR_CODES.PERSIST_PHASE1_MISSING_FIELDS,
+            missing_fields: ['whatsapp'],
+          },
+        });
         toast.error('Informe um WhatsApp válido com DDD para continuar.');
         return false;
       }
@@ -905,12 +982,25 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           has_longitude: typeof state.profile.longitude === 'number',
         },
       });
+      const code = /fetch|network|timeout|offline|failed to fetch/i.test(String(e?.message || ''))
+        ? WIZARD_ERROR_CODES.PERSIST_PHASE1_NETWORK
+        : WIZARD_ERROR_CODES.PERSIST_PHASE1_DB_ERROR;
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: {
+          code,
+          error_code: e?.code || null,
+          error_message: String(e?.message || 'Falha desconhecida ao salvar').slice(0, 300),
+        },
+      });
       logWizardError({
         phase: state.phase,
         userId: user?.id,
         error: e,
         variant: 'v2',
-        context: { action: 'persist_phase1', has_provider_id: !!state.providerId, flow: isCompany ? 'company' : 'default' },
+        context: { action: 'persist_phase1', code, has_provider_id: !!state.providerId, flow: isCompany ? 'company' : 'default' },
       });
       const errMsg = (e?.message || 'Falha desconhecida ao salvar').toString();
       const errCode = e?.code ? String(e.code) : null;
@@ -1033,7 +1123,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         event: 'error',
         userId: user?.id,
         meta: {
-          code: 'persist_first_service:no_provider',
+          code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_NO_PROVIDER,
           missing_fields: missing,
           tech_message: techMsg || null,
           tech_code: techCode || null,
@@ -1056,7 +1146,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       });
       // Modal claro com detalhes técnicos (não mascara, complementa o toast).
       setErrorModal({
-        code: 'persist_first_service:no_provider',
+        code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_NO_PROVIDER,
         missingFields: missing,
         techMessage: techMsg ?? null,
         techCode: techCode ?? null,
@@ -1191,7 +1281,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               event: 'error',
               userId: user?.id,
               meta: {
-                reason: 'persist_first_service_preflight_fail',
+                code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_PRECHECK_FAILED,
                 missing: preflightFailures,
                 provider_id: workingProviderId || null,
                 category_id: categoryId || null,
@@ -1208,7 +1298,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 event: 'error',
                 userId: user?.id,
                 meta: {
-                  reason: 'persist_first_service_precondition_failed',
+                  code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_PRECONDITION_FAILED,
                   has_provider_id: Boolean(workingProviderId),
                   has_category_id: Boolean(categoryId),
                   has_category_name: Boolean(resolvedCategoryName),
@@ -1463,7 +1553,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         event: 'error',
         userId: user?.id,
         meta: {
-          reason: 'persist_first_service_terminal_catch',
+          code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_TERMINAL,
           error_code: e?.code || null,
           error_message: fullMessage.slice(0, 600),
           error_details: e?.details ? String(e.details).slice(0, 300) : null,
@@ -1986,6 +2076,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                   state: state.profile.state || null,
                   has_provider: !!state.providerId,
                   has_first_service: !!state.firstServiceId,
+                  lastPersistError: lastPersistError
+                    ? { message: lastPersistError.message, code: lastPersistError.code || null }
+                    : null,
                 }}
               />
             </section>
@@ -2265,6 +2358,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           category: (state.service?.category_ids?.[0]) || null,
           city: state.profile?.city || null,
           state_uf: state.profile?.state || null,
+          lastPersistError: lastPersistError
+            ? { message: lastPersistError.message, code: lastPersistError.code || null }
+            : null,
         }}
         onRetry={() => errorModal?.onRetry?.()}
         onBack={() => window.dispatchEvent(new CustomEvent('wizard:request-back'))}

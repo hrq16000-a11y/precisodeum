@@ -308,7 +308,7 @@ export default function CompanyProfile() {
   );
   const seoDescription = truncateAt(
     company?.meta_description?.trim() ||
-      `${displayName}${companyCategory ? `, ${companyCategory}` : ''}${cityState ? ` em ${cityState}` : ''}. Solicite contato direto pela plataforma e converse com segurança.`,
+      `${displayName}${companyCategory ? `, ${companyCategory}` : ''}${cityState ? ` em ${cityState}` : ''}. Envie sua solicitação e converse pelos canais disponíveis no perfil.`,
     160,
   );
 
@@ -775,7 +775,7 @@ export default function CompanyProfile() {
                   <CheckCircle2 className="h-7 w-7 text-accent" />
                 </div>
                 <p className="text-base font-semibold text-foreground">Solicitação enviada!</p>
-                <p className="text-sm text-muted-foreground">A empresa poderá responder pelo contato informado.</p>
+                <p className="text-sm text-muted-foreground">A empresa receberá sua solicitação e poderá responder pelos canais disponíveis no perfil.</p>
                 <Button variant="outline" onClick={() => setLeadDialogOpen(false)}>Fechar</Button>
               </div>
             ) : (

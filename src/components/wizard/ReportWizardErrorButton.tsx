@@ -249,11 +249,21 @@ export const ReportWizardErrorButton = ({
 
   const buildPayload = (uploadedPaths: string[]) => {
     const device = typeof navigator !== 'undefined' ? parseDeviceInfo() : null;
+    const snapshot = contextSnapshot || null;
+    const lastPersistError = snapshot && typeof snapshot === 'object' && 'lastPersistError' in snapshot
+      ? (snapshot as any).lastPersistError
+      : {
+          message: snapshot && typeof (snapshot as any).tech_message === 'string' ? (snapshot as any).tech_message : null,
+          code: snapshot && typeof (snapshot as any).tech_code === 'string' ? (snapshot as any).tech_code : null,
+        };
     return {
       code: canonicalCode,
       step,
       note: note.trim() || null,
-      contextSnapshot: contextSnapshot || null,
+       contextSnapshot: snapshot,
+       category: snapshot && typeof (snapshot as any).category === 'string' ? (snapshot as any).category : null,
+       city: snapshot && typeof (snapshot as any).city === 'string' ? (snapshot as any).city : null,
+       lastPersistError,
       browser: device ? {
         userAgent: device.userAgent,
         language: typeof navigator !== 'undefined' ? navigator.language : null,
@@ -265,6 +275,11 @@ export const ReportWizardErrorButton = ({
         version: device.browserVersion,
         isMobile: device.isMobile,
       } : null,
+       device: device ? {
+         model: device.model,
+         os: device.os,
+         browser: device.browser,
+       } : null,
       page: typeof window !== 'undefined' ? window.location.pathname + window.location.search : null,
       actionHistory: getActionHistory().slice(-10),
       attachments: uploadedPaths,
