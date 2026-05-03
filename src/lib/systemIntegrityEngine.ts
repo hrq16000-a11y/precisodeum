@@ -66,7 +66,8 @@ const SystemIntegrityEngine = {
       .from('system_drift_reports' as any)
       .select('*')
       .eq('resolved', false)
-      .order('detected_at', { ascending: false });
+      .order('detected_at', { ascending: false })
+      .limit(200);
     return (data || []) as unknown as DriftReport[];
   },
 
@@ -106,7 +107,8 @@ const SystemIntegrityEngine = {
     const { data } = await supabase
       .from('system_contract_map' as any)
       .select('*')
-      .order('entity_name');
+      .order('entity_name')
+      .limit(200);
     return (data || []) as unknown as ContractEntry[];
   },
 

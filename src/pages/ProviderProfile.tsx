@@ -441,11 +441,12 @@ const ProviderProfile = () => {
         const providerWithProfile = { ...data, profiles: profile, levelInfo, accTypeInfo };
 
         const [{ data: svc }, { data: rev }, { data: ps }] = await Promise.all([
-          supabase.from('services').select('*').eq('provider_id', data.id),
+          supabase.from('services').select('*').eq('provider_id', data.id).limit(50),
           supabase.from('reviews')
             .select('*, user_id')
             .eq('provider_id', data.id)
-            .order('created_at', { ascending: false }),
+            .order('created_at', { ascending: false })
+            .limit(50),
           supabase.from('provider_page_settings').select('*').eq('provider_id', data.id).maybeSingle(),
         ]);
 
@@ -476,7 +477,8 @@ const ProviderProfile = () => {
             supabase.from('service_images')
               .select('*')
               .in('service_id', svcIds)
-              .order('display_order'),
+              .order('display_order')
+              .limit(200),
           ]);
 
           const catMap: Record<string, any[]> = {};
