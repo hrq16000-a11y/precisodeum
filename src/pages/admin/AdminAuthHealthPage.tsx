@@ -442,10 +442,21 @@ export default function AdminAuthHealthPage() {
         {/* Funil de Self-Heal */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <TrendingDown className="h-4 w-4" aria-hidden />
-              Funil de Self-Heal — Detectado → Tentativa → Sucesso
-            </CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingDown className="h-4 w-4" aria-hidden />
+                Funil de Self-Heal — Detectado → Tentativa → Sucesso
+              </CardTitle>
+              {funnel[0].count > 0 && (
+                <Badge
+                  variant="outline"
+                  className="font-mono text-[11px]"
+                  aria-label="Taxa de recuperação"
+                >
+                  Recuperação: {funnel[0].count === 0 ? "—" : `${((funnel[2].count / funnel[0].count) * 100).toFixed(0)}%`}
+                </Badge>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
