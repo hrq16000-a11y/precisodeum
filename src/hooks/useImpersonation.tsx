@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { invokeWithGuard, EDGE_GUARD_FALLBACK_MESSAGE } from '@/lib/edgeInvoke';
 import { toast } from 'sonner';
+import { toastAssertiveError } from '@/lib/a11yToast';
 
 const STORAGE_KEY = 'lov_impersonation_state_v1';
 
@@ -55,7 +56,7 @@ export async function startImpersonation(opts: {
     { body: { target_user_id: opts.targetUserId, reason: opts.reason ?? null } },
   );
   if (res.timedOut) {
-    toast.error(EDGE_GUARD_FALLBACK_MESSAGE);
+    toastAssertiveError(EDGE_GUARD_FALLBACK_MESSAGE);
     return false;
   }
   const data = res.data;
