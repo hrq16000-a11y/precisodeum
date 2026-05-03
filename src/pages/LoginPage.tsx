@@ -250,6 +250,9 @@ const LoginPage = () => {
       }
       if (signUpData.session) {
         toast.success('Conta criada! Vamos configurar seu perfil.');
+        // Navegação explícita: não dependemos só do onAuthStateChange para
+        // evitar usuário preso vendo o toast sem ir adiante.
+        navigate('/cadastro-inicial', { replace: true });
       } else {
         toast.success('Conta criada! Verifique seu e-mail para confirmar e depois faça login.');
       }
