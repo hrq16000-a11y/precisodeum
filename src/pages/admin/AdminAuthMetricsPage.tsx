@@ -109,6 +109,8 @@ const AdminAuthMetricsPage = () => {
           </div>
         </div>
 
+        <AuthBootMetricsPanel />
+
         <AuthHealthPanel />
       </main>
       <Footer />
