@@ -499,7 +499,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       }
       // Fluxo normal: phase2_service → triage_celebration. Outras fases V2
       // têm onBack próprio dentro do OnboardingV2Shell.
-      if (cur === 'phase2_service' || cur === 'main_service') {
+      if ((cur as string) === 'phase2_service' || cur === 'main_service') {
         dispatch({ type: 'GO_TO_PHASE', phase: 'triage_celebration' as any });
       }
     };
