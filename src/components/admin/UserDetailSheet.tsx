@@ -735,17 +735,17 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 {isBanned ? <Ban className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
                 {isBanned ? 'Conta banida' : 'Conta suspensa'}
               </div>
-              {user.suspended_reason && <p className="mt-1 opacity-80">Motivo: {user.suspended_reason}</p>}
-              {user.suspended_at && <p className="mt-0.5 opacity-60">Em: {format(new Date(user.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
+              {effectiveUser.suspended_reason && <p className="mt-1 opacity-80">Motivo: {effectiveUser.suspended_reason}</p>}
+              {effectiveUser.suspended_at && <p className="mt-0.5 opacity-60">Em: {format(new Date(effectiveUser.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
               <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" onClick={reactivateUser} disabled={suspendLoading}>Reativar</Button>
             </div>
           )}
 
           {/* Quick links */}
           <div className="flex flex-wrap gap-2 mt-3">
-            {(user.whatsapp || provider?.whatsapp) && (
+            {(effectiveUser.whatsapp || provider?.whatsapp) && (
               <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
-                <a href={`https://wa.me/${sanitizePhone(user.whatsapp || provider?.whatsapp || '')}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://wa.me/${sanitizePhone(effectiveUser.whatsapp || provider?.whatsapp || '')}`} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="h-3 w-3" /> WhatsApp
                 </a>
               </Button>
@@ -821,7 +821,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                   <div className="space-y-2">
                     <InfoRow icon={<Mail className="h-4 w-4" />} label="E-mail" value={user.email || '—'} />
                     <InfoRow icon={<Phone className="h-4 w-4" />} label="Telefone" value={user.phone ? formatPhoneDisplay(user.phone) : '—'} />
-                    <InfoRow icon={<MessageCircle className="h-4 w-4" />} label="WhatsApp" value={user.whatsapp ? formatPhoneDisplay(user.whatsapp) : '—'} />
+                    <InfoRow icon={<MessageCircle className="h-4 w-4" />} label="WhatsApp" value={effectiveUser.whatsapp ? formatPhoneDisplay(effectiveUser.whatsapp) : '—'} />
                     {user.department && <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Depto" value={user.department} />}
                     <InfoRow icon={<ArrowUp className="h-4 w-4" />} label="Pontos" value={String(user.engagement_points || 0)} />
                   </div>
@@ -1321,8 +1321,8 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                       {isBanned ? <Ban className="h-5 w-5 text-destructive" /> : <AlertTriangle className="h-5 w-5 text-amber-600" />}
                       <span className="font-medium text-sm">{isBanned ? 'Banido' : 'Suspenso'}</span>
                     </div>
-                    {user.suspended_reason && <p className="text-xs text-muted-foreground">Motivo: {user.suspended_reason}</p>}
-                    {user.suspended_at && <p className="text-xs text-muted-foreground">Data: {format(new Date(user.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
+                    {effectiveUser.suspended_reason && <p className="text-xs text-muted-foreground">Motivo: {effectiveUser.suspended_reason}</p>}
+                    {effectiveUser.suspended_at && <p className="text-xs text-muted-foreground">Data: {format(new Date(effectiveUser.suspended_at), 'dd/MM/yyyy HH:mm')}</p>}
                     <Button size="sm" onClick={reactivateUser} disabled={suspendLoading} className="w-full">Reativar</Button>
                   </div>
                 ) : (
@@ -1384,7 +1384,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
               </div>
 
               {/* Granular permissions */}
-              <UserPermissionsPanel user={user} onRefresh={onRefresh} />
+              <UserPermissionsPanel user={effectiveUser} onRefresh={onRefresh} />
             </TabsContent>
 
             {/* ====== PAGE SETTINGS TAB ====== */}
