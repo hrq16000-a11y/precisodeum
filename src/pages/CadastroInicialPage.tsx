@@ -455,5 +455,46 @@ export default function CadastroInicialPage() {
       </div>
     );
   }
+  // [FIX tela branca] Auth está OK mas o perfil não foi carregado/criado.
+  // Em vez de renderizar o WizardShell com profile=null (que pode quebrar
+  // silenciosamente), exibe fallback explícito com retry manual.
+  if (selfHealFailed && !profile) {
+    return (
+      <div
+        role="alert"
+        className="flex min-h-screen items-center justify-center bg-background px-4"
+      >
+        <div className="w-full max-w-md space-y-4 rounded-lg border border-border bg-card p-6 text-center shadow-sm">
+          <h1 className="text-lg font-semibold text-foreground">
+            Não conseguimos preparar seu cadastro
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Houve uma falha temporária ao carregar seu perfil. Você pode tentar
+            novamente agora ou voltar para a página inicial.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                try { window.sessionStorage.removeItem('cadastro_self_heal_attempted'); } catch { /* noop */ }
+                window.location.reload();
+              }}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              data-testid="cadastro-retry-button"
+            >
+              Tentar novamente
+            </button>
+            <a
+              href="/"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+            >
+              Voltar ao início
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return <WizardShell mode={reviewMode ? 'edit_profile' : 'new_signup'} reviewSection={reviewSection} />;
 }
