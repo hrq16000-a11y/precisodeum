@@ -1087,8 +1087,15 @@ const ProviderProfile = () => {
   useJsonLd(localBusinessLd);
   useJsonLd(personLd);
 
-  const handleLeadSubmit = async (e: React.FormEvent) => {
+  const [isSubmittingLead, handleLeadSubmit] = useSubmitGuard(async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validação do telefone antes do INSERT (reusa whatsapp.ts).
+    const phoneCheck = validateWhatsapp(leadForm.phone);
+    if (!phoneCheck.valid) {
+      toast.error(phoneCheck.message);
+      return;
+    }
+    const phoneSanitized = sanitizePhone(leadForm.phone);
     // Anexa contexto (cidade/UF + origem) ao final da mensagem para o provider ver
     // de onde veio o lead, sem depender de novas colunas no banco.
     const ctxParts: string[] = [];
@@ -1114,7 +1121,7 @@ const ProviderProfile = () => {
     const { error } = await supabase.from('leads').insert({
       provider_id: provider.id,
       client_name: leadForm.name,
-      phone: leadForm.phone,
+      phone: phoneSanitized,
       service_needed: leadForm.service,
       message: finalMessage,
       lead_context: leadContext,
@@ -2091,8 +2098,8 @@ const ProviderProfile = () => {
                   helperText="Ajuda o profissional a te ligar na hora certa."
                 />
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button type="submit" variant="accent" className="w-full gap-2 shadow-lg" style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                    <Send className="h-4 w-4" /> Enviar Solicitação
+                  <Button type="submit" disabled={isSubmittingLead} variant="accent" className="w-full gap-2 shadow-lg" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                    <Send className="h-4 w-4" /> {isSubmittingLead ? 'Enviando…' : 'Enviar Solicitação'}
                   </Button>
                 </motion.div>
               </motion.form>
