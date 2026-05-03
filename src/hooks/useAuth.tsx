@@ -37,13 +37,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [needsTypeSelection, setNeedsTypeSelection] = useState(false);
 
-  // Tracks if any fetchProfile call has settled (resolved or rejected) at least once.
-  // Used by the safety timer to avoid prematurely flipping `loading=false` while
-  // the initial fetchProfile is still in-flight (root cause of "ghost user" state).
-  const fetchProfileSettledRef = useRef(false);
   // Monotonic generation counter used to discard out-of-order fetchProfile results.
   // Every new fetch bumps this; the resolver ignores its setState writes if a
-  // newer generation has started in the meantime.
+  // newer generation has started in the meantime (FIX #2 — race condition).
   const fetchGenerationRef = useRef(0);
 
   const fetchProfile = useCallback(async (userId: string, authUser?: User | null) => {
