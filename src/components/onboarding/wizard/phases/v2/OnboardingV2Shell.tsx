@@ -99,7 +99,12 @@ import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { playWizardTransition } from '@/lib/wizardTransition';
 import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
-import { WIZARD_ERROR_CODES, phase2PhotosBlockCode } from '@/lib/wizardErrorCodes';
+import {
+  WIZARD_ERROR_CODES,
+  phase2PhotosBlockCode,
+  RECOVER_BACKOFF_DELAYS_MS,
+  RECOVER_MAX_ATTEMPTS,
+} from '@/lib/wizardErrorCodes';
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
 import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
