@@ -202,6 +202,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // do próprio efeito (setSession/setUser/setLoading).
     let isMounted = true;
 
+    // [FIX — White Screen Watchdog]
+    // Caso `getSession()` ou `fetchProfile()` fiquem pendentes (Lock broken
+    // do navigatorLock, refresh token preso, rede 3G muito lenta), garantimos
+    // que `loading` flipa para `false` em no máximo 8s. Sem isso, gates como
+    // /cadastro-inicial ficam em skeleton infinito → tela branca.
+    const watchdog = window.setTimeout(() => {
+      if (!isMounted) return;
+      setLoading((prev) => {
+        if (prev) {
+          console.warn('[useAuth] watchdog: forçando loading=false após 8s pendente');
+        }
+        return false;
+      });
+    }, 8000);
+
+    // [FIX — Lock broken benigno]
+    // O Supabase auto-refresh usa navigator.locks com option 'steal'. Quando
+    // outra aba/SW rouba o lock, o Promise interno rejeita com AbortError.
+    // É esperado e não deve poluir o ErrorGuard global. Suprimimos só esse
+    // caso específico — qualquer outra rejection segue o fluxo normal.
+    const onUnhandledRejection = (ev: PromiseRejectionEvent) => {
+      const msg = String((ev.reason as any)?.message || ev.reason || '');
+      if (/Lock broken by another request|navigatorLock/i.test(msg)) {
+        ev.preventDefault();
+      }
+    };
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
@@ -267,6 +295,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       isMounted = false;
+      window.clearTimeout(watchdog);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
       subscription.unsubscribe();
     };
   }, [fetchProfile]);

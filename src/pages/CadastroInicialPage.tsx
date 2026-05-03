@@ -148,7 +148,12 @@ export default function CadastroInicialPage() {
   useEffect(() => {
     if (loading) {
       setAuthSettled(false);
-      return;
+      // [FIX — White Screen Failsafe] Mesmo com `loading=true`, encerramos
+      // o gate após 6s para não deixar o usuário em skeleton infinito caso
+      // o useAuth.watchdog (8s) ainda não tenha disparado ou a rede esteja
+      // muito lenta. Se `user` continuar null, cai no Navigate→/login.
+      const fail = window.setTimeout(() => setAuthSettled(true), 6000);
+      return () => window.clearTimeout(fail);
     }
     const t = window.setTimeout(() => setAuthSettled(true), 120);
     return () => window.clearTimeout(t);
