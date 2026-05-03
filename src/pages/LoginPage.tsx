@@ -40,26 +40,41 @@ const LoginPage = () => {
   const from = (location.state as any)?.from || null;
 
   useEffect(() => {
-    if (authLoading || !user || !profile) return;
+    if (authLoading || !user) return;
 
     let cancelled = false;
-    void (async () => {
-      const fallbackAuthorizedRoute = typeof from === 'string' && from.startsWith('/')
-        ? from
-        : '/dashboard';
+    let fallbackTimer: number | null = null;
 
-      const nextRoute = await resolvePostLoginRoute({
-        userId: user.id,
-        profile,
-        fallbackAuthorizedRoute,
-      });
+    // Caminho feliz: profile carregado → resolve rota normalmente.
+    if (profile) {
+      void (async () => {
+        const fallbackAuthorizedRoute = typeof from === 'string' && from.startsWith('/')
+          ? from
+          : '/dashboard';
 
-      if (cancelled) return;
-      navigate(nextRoute, { replace: true, state: from ? { from } : undefined });
-    })();
+        const nextRoute = await resolvePostLoginRoute({
+          userId: user.id,
+          profile,
+          fallbackAuthorizedRoute,
+        });
+
+        if (cancelled) return;
+        navigate(nextRoute, { replace: true, state: from ? { from } : undefined });
+      })();
+    } else {
+      // Fallback: usuário autenticado mas profile ainda não chegou (race do
+      // trigger handle_new_user, RLS, rede lenta). Após 3s, manda pro
+      // /cadastro-inicial que faz seu próprio gate e não deixa o usuário
+      // preso na tela de login mostrando "Bem-vindo(a)!" indefinidamente.
+      fallbackTimer = window.setTimeout(() => {
+        if (cancelled) return;
+        navigate('/cadastro-inicial', { replace: true, state: from ? { from } : undefined });
+      }, 3000);
+    }
 
     return () => {
       cancelled = true;
+      if (fallbackTimer) window.clearTimeout(fallbackTimer);
     };
   }, [user, profile, authLoading, from, navigate]);
 
