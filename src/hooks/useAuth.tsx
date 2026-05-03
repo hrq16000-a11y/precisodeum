@@ -67,7 +67,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [provider, setProvider] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Loading inteligente: só inicia em `true` quando há token persistido a
+  // restaurar — evita o flash de redirect para /login no refresh de rotas
+  // privadas (race entre primeiro render e getSession()).
+  const [loading, setLoading] = useState<boolean>(() => hasPersistedSupabaseSession());
   const [needsTypeSelection, setNeedsTypeSelection] = useState(false);
 
   // Monotonic generation counter used to discard out-of-order fetchProfile results.
