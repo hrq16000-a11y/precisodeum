@@ -236,11 +236,9 @@ const LoginPage = () => {
         if (signUpError) {
           const m = signUpError.message || '';
           if (/already.*registered|user.*already.*exists|already_registered/i.test(m)) {
-            setForgotEmail(trimmedEmail);
-            setShowForgot(true);
-            toast.error('Já existe uma conta com esse e-mail. Redefina sua senha para continuar.', {
-              duration: 6000,
-            });
+            // PATH 7: e-mail já cadastrado — inline, sem abrir dialog automaticamente
+            setEmailError('Este e-mail já possui conta. Use sua senha ou clique em "Esqueci minha senha".');
+            emailRef.current?.focus();
             return;
           }
           if (/password.*(short|6 characters)|weak_password|pwned|weak/i.test(m)) {
