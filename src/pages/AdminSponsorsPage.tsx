@@ -175,16 +175,50 @@ const AdminSponsorsPage = () => {
     'whatsapp, external_link, linked_city, linked_category, plan_tier, badge_type, status, tier, ad_format, ' +
     'max_width, max_height, target_pages, cnpj, email, guaranteed_impressions, delivered_impressions';
 
-  // ─── Busca server-side: ver `search` state abaixo (debounced) ───
-  // Movemos a leitura do termo para fora do queryFn via closure pelo
-  // queryKey, que é definido após declarar o state. Por isso usamos um
-  // ref-via-state através de useDebounce abaixo.
-
   const SPONSOR_SAFE_FETCH_CAP = 1000;
 
+  // Sanitiza termo para uso seguro com `.or()` do PostgREST.
   const sanitizeOrTerm = (raw: string) =>
     raw.replace(/[,()*"\\]/g, ' ').replace(/\s+/g, ' ').trim();
 
+  // ─── Search state (declarado cedo para alimentar a query principal) ───
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search ?? '', 300);
+
+  const { data: sponsors = [], isLoading } = useQuery({
+    queryKey: ['admin-sponsors', debouncedSearch],
+    enabled: !!user && isAdmin,
+    queryFn: async () => {
+      let q = supabase
+        .from('sponsors')
+        .select(SPONSOR_COLS, { count: 'exact' })
+        .is('deleted_at', null);
+
+      // Busca server-side: 3+ chars OU contém "@" → filtra título, empresa,
+      // CNPJ e e-mail. CNPJ/email NÃO estão no input do filtro client-side,
+      // então server-side é a única forma de encontrar por esses campos.
+      const term = sanitizeOrTerm(debouncedSearch);
+      const isEmailLike = /@/.test(term);
+      if (term && (term.length >= 3 || isEmailLike)) {
+        const safe = `%${term}%`;
+        q = q.or(
+          `title.ilike.${safe},company_name.ilike.${safe},cnpj.ilike.${safe},email.ilike.${safe}`
+        );
+      }
+
+      const { data, count } = await q
+        .order('display_order')
+        .limit(SPONSOR_SAFE_FETCH_CAP);
+
+      if (typeof count === 'number' && count > SPONSOR_SAFE_FETCH_CAP) {
+        toast({
+          title: 'Limite de 1000 patrocinadores atingido. Use os filtros para refinar.',
+          variant: 'default',
+        });
+      }
+      return (data || []) as unknown as Sponsor[];
+    },
+  });
 
   const { data: contacts = [] } = useQuery({
     queryKey: ['admin-sponsor-contacts'],
