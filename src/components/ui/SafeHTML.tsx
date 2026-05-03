@@ -24,7 +24,10 @@ export function SafeHTML({
   const clean = useMemo(() => {
     if (!html) return "";
 
-    const config: DOMPurify.Config = {
+    const config: Parameters<typeof DOMPurify.sanitize>[1] & {
+      ADD_TAGS?: string[];
+      ADD_ATTR?: string[];
+    } = {
       FORBID_TAGS: ["script", "style", "object", "embed", "base", "form"],
       // Bloqueio rigoroso de event handlers in-line.
       FORBID_ATTR: [
@@ -66,7 +69,7 @@ export function SafeHTML({
       ];
     }
 
-    return DOMPurify.sanitize(html, config) as string;
+    return DOMPurify.sanitize(html, config) as unknown as string;
   }, [html, allowIframes]);
 
   return (
