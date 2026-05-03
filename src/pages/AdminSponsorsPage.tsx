@@ -26,6 +26,7 @@ import {
   Download, Bell, Power, Activity, Send, Heart, HeartCrack, Gauge, Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -174,11 +175,47 @@ const AdminSponsorsPage = () => {
     'whatsapp, external_link, linked_city, linked_category, plan_tier, badge_type, status, tier, ad_format, ' +
     'max_width, max_height, target_pages, cnpj, email, guaranteed_impressions, delivered_impressions';
 
+  const SPONSOR_SAFE_FETCH_CAP = 1000;
+
+  // Sanitiza termo para uso seguro com `.or()` do PostgREST.
+  const sanitizeOrTerm = (raw: string) =>
+    raw.replace(/[,()*"\\]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // ─── Search state (declarado cedo para alimentar a query principal) ───
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search ?? '', 300);
+
   const { data: sponsors = [], isLoading } = useQuery({
-    queryKey: ['admin-sponsors'],
+    queryKey: ['admin-sponsors', debouncedSearch],
     enabled: !!user && isAdmin,
     queryFn: async () => {
-      const { data } = await supabase.from('sponsors').select(SPONSOR_COLS).is('deleted_at', null).order('display_order');
+      let q = supabase
+        .from('sponsors')
+        .select(SPONSOR_COLS, { count: 'exact' })
+        .is('deleted_at', null);
+
+      // Busca server-side: 3+ chars OU contém "@" → filtra título, empresa,
+      // CNPJ e e-mail. CNPJ/email NÃO estão no input do filtro client-side,
+      // então server-side é a única forma de encontrar por esses campos.
+      const term = sanitizeOrTerm(debouncedSearch);
+      const isEmailLike = /@/.test(term);
+      if (term && (term.length >= 3 || isEmailLike)) {
+        const safe = `%${term}%`;
+        q = q.or(
+          `title.ilike.${safe},company_name.ilike.${safe},cnpj.ilike.${safe},email.ilike.${safe}`
+        );
+      }
+
+      const { data, count } = await q
+        .order('display_order')
+        .limit(SPONSOR_SAFE_FETCH_CAP);
+
+      if (typeof count === 'number' && count > SPONSOR_SAFE_FETCH_CAP) {
+        toast({
+          title: 'Limite de 1000 patrocinadores atingido. Use os filtros para refinar.',
+          variant: 'default',
+        });
+      }
       return (data || []) as unknown as Sponsor[];
     },
   });
@@ -275,7 +312,7 @@ const AdminSponsorsPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [detectedShape, setDetectedShape] = useState<{ width: number; height: number; shape: BannerShape } | null>(null);
-  const [search, setSearch] = useState('');
+  // `search`/`debouncedSearch` declarados acima (alimenta a query principal).
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('all');
   const [tierFilter, setTierFilter] = useState('all');
