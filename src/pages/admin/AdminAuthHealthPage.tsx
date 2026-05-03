@@ -295,8 +295,20 @@ export default function AdminAuthHealthPage() {
 
         {/* Logs recentes */}
         <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-base">Logs recentes (até 500)</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">
+              Logs recentes ({data?.length ?? 0} de até {pageSize})
+            </CardTitle>
+            {pageSize < MAX_ROWS && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPageSize((s) => Math.min(s + PAGE_SIZE, MAX_ROWS))}
+                disabled={isFetching}
+              >
+                Carregar mais
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {isLoading ? (
