@@ -966,7 +966,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       if (needsHydration) {
         const { data: prof } = await supabase
           .from('profiles')
-          .select('full_name, whatsapp, city, state, neighborhood, latitude, longitude, profile_type, user_ref')
+          .select('full_name, whatsapp, city, state, neighborhood, profile_type, user_ref')
           .eq('id', user.id)
           .maybeSingle();
         if (prof) {
@@ -976,8 +976,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           if (!(p.city || '').trim() && prof.city) patch.city = prof.city;
           if (!(p.state || '').trim() && prof.state) patch.state = prof.state;
           if (!(p.neighborhood || '').trim() && prof.neighborhood) patch.neighborhood = prof.neighborhood;
-          if ((p as any).latitude == null && typeof prof.latitude === 'number') (patch as any).latitude = prof.latitude;
-          if ((p as any).longitude == null && typeof prof.longitude === 'number') (patch as any).longitude = prof.longitude;
           if (Object.keys(patch).length > 0) dispatch({ type: 'PATCH_PROFILE', patch });
           if (prof.user_ref && !state.userRef) dispatch({ type: 'SET_USER_REF', userRef: prof.user_ref });
         }
