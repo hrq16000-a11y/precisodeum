@@ -364,6 +364,7 @@ const RoutePrefetcher = () => {
 const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, provider, loading, refetchProfile } = useAuth();
   const location = useLocation();
+  const isWizardTestRoute = location.pathname === '/__test/report-button';
 
   // Self-heal idempotente para perfis legados (provider + 1º serviço já criados
   // mas com `onboarding_completed=false`). Roda no MÁXIMO uma vez por user.id
@@ -386,7 +387,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
 
   // While auth is resolving, or user exists but profile not yet loaded,
   // render an accessible skeleton instead of null to avoid blank screens.
-  if (loading || (user && !profile)) {
+  if (!isWizardTestRoute && (loading || (user && !profile))) {
     return (
       <div
         role="status"
@@ -422,7 +423,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     search: location.search,
   });
 
-  if (gateDecision.action === 'redirect' && gateDecision.reason === 'global-onboarding-gate') {
+  if (!isWizardTestRoute && gateDecision.action === 'redirect' && gateDecision.reason === 'global-onboarding-gate') {
     appendWizardResetDebugLog({
       source: 'onboarding-gate-redirect',
       route: `${location.pathname}${location.search}`,
