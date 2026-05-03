@@ -1711,14 +1711,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               onChangeService={patchService}
               onChangeProfile={patchProfile}
               onBack={() => {
-                // phase2_service é a 1ª fase viva do V2. O Voltar precisa
-                // delegar ao WizardShell para retroceder na régua unificada
-                // (triage_celebration → triage_*). Antes era noop, o que fazia
-                // o botão "← Voltar" interno parecer travado.
+                // phase2_service é a 1ª fase viva do V2. O Voltar delega ao
+                // WizardShell via helper canônico (`requestWizardBack`), que
+                // centraliza telemetria + nome do evento + guard de fallback.
                 track('back');
-                try {
-                  window.dispatchEvent(new CustomEvent('wizard:request-prev-unified', { detail: { fromV2Phase: 'phase2_service' } }));
-                } catch { /* fail-soft */ }
+                import('@/lib/wizardBackNav').then(({ requestWizardBack }) => {
+                  requestWizardBack({ phase: 'phase2_service', source: 'phase2_service' });
+                });
               }}
               onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
               firstServiceId={state.firstServiceId}
