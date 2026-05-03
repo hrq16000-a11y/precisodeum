@@ -8563,6 +8563,24 @@ export type Database = {
           total_points: number
         }[]
       }
+      get_my_provider_details: {
+        Args: never
+        Returns: {
+          account_type: string
+          business_name: string
+          city: string
+          cnpj: string
+          cpf: string
+          id: string
+          legal_name: string
+          neighborhood: string
+          slug: string
+          state: string
+          status: string
+          user_id: string
+          working_hours_struct: Json
+        }[]
+      }
       get_my_referral_points_timeline: {
         Args: { _period_days?: number }
         Returns: Json
