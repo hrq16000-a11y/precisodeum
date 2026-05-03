@@ -205,11 +205,11 @@ const AdminUsersPage = () => {
   };
 
   const fetchLevels = () => {
-    supabase.from('user_levels').select('*').order('priority', { ascending: false })
+    supabase.from('user_levels').select('id, name, min_points, priority, color, icon, active').order('priority', { ascending: false })
       .then(({ data }) => setLevels(data || []));
   };
   const fetchAccountTypes = () => {
-    supabase.from('account_types').select('*').order('display_order')
+    supabase.from('account_types').select('id, name, slug, display_order, active').order('display_order')
       .then(({ data }) => setAccountTypes(data || []));
   };
 
