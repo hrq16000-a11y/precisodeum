@@ -246,6 +246,19 @@ export default function CadastroInicialPage() {
           <div className="h-8 w-3/4 animate-pulse rounded-lg bg-muted" />
           <div className="h-4 w-full animate-pulse rounded bg-muted" />
           <div className="h-4 w-5/6 animate-pulse rounded bg-muted" />
+          {showManualLogin && (
+            <div className="pt-4 text-center">
+              <p className="mb-3 text-sm text-muted-foreground">
+                Demorando mais que o esperado?
+              </p>
+              <a
+                href={`/login?next=${encodeURIComponent(`${location.pathname}${location.search || ''}` || '/cadastro-inicial')}`}
+                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Ir para login agora
+              </a>
+            </div>
+          )}
         </div>
       </div>
     );
