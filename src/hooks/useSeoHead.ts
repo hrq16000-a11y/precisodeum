@@ -3,6 +3,7 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import { DEFAULT_LOGO_URL, DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL, SITE_BASE_URL as SITE_URL, socialImageUrl, toAbsoluteSiteUrl } from '@/lib/siteAssets';
 import { buildCanonicalUrl } from '@/lib/canonicalUrl';
 import { normalizeSocialImageUrl } from '@/lib/imageUrlNormalizer';
+import { seoFallbackFromPath } from '@/lib/seoUrlFallback';
 
 interface SeoHeadProps {
   title: string;
@@ -25,7 +26,15 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
   const gaId = useSettingValue('google_analytics_id');
 
   useEffect(() => {
-    const fullTitle = title.includes('Preciso de um') ? title : `${title} | Preciso de um`;
+    // Resiliência: se title/description vierem vazios (ex.: query ainda
+    // carregando ou falhou), derivamos do pathname para nunca deixar
+    // metadados em branco para o crawler.
+    const fb = seoFallbackFromPath(typeof window !== 'undefined' ? window.location.pathname : '/');
+    const safeTitle = (title && title.trim().length >= 3) ? title : fb.title;
+    const safeDescription = (description && description.trim().length >= 30) ? description : fb.description;
+    const safeOgType = ogType || fb.ogType;
+
+    const fullTitle = safeTitle.includes('Preciso de um') ? safeTitle : `${safeTitle} | Preciso de um`;
     document.title = fullTitle;
 
     const setMeta = (name: string, content: string, attr = 'name') => {
