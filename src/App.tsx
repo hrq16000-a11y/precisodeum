@@ -191,8 +191,6 @@ const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ErrorPage = lazy(() => import("./pages/ErrorPage"));
-const Index02 = lazy(() => import("./pages/Index02"));
-const Index03 = lazy(() => import("./pages/Index03"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const AccountDeletionPage = lazy(() => import("./pages/AccountDeletionPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
