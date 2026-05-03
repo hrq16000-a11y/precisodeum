@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { compressImage } from '@/lib/compressImage';
 import { format } from 'date-fns';
 import {
@@ -112,6 +112,15 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   // tax_id, permissions, suspended_reason, metadados) estejam presentes.
   const [fullProfile, setFullProfile] = useState<any | null>(null);
   const [loadingFull, setLoadingFull] = useState(false);
+
+  // effectiveUser = props da lista mescladas com o SELECT * por ID.
+  // Garante que campos não selecionados na allowlist (whatsapp, permissions,
+  // tax_id, suspended_reason, metadados) estejam disponíveis sem quebrar o JSX
+  // existente que lê `user.<campo>` diretamente.
+  const effectiveUser = useMemo(
+    () => (user ? { ...user, ...(fullProfile || {}) } : user),
+    [user, fullProfile],
+  );
 
   useEffect(() => {
     if (!user) return;
