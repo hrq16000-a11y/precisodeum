@@ -175,14 +175,16 @@ const AdminSponsorsPage = () => {
     'whatsapp, external_link, linked_city, linked_category, plan_tier, badge_type, status, tier, ad_format, ' +
     'max_width, max_height, target_pages, cnpj, email, guaranteed_impressions, delivered_impressions';
 
-  const { data: sponsors = [], isLoading } = useQuery({
-    queryKey: ['admin-sponsors'],
-    enabled: !!user && isAdmin,
-    queryFn: async () => {
-      const { data } = await supabase.from('sponsors').select(SPONSOR_COLS).is('deleted_at', null).order('display_order');
-      return (data || []) as unknown as Sponsor[];
-    },
-  });
+  // ─── Busca server-side: ver `search` state abaixo (debounced) ───
+  // Movemos a leitura do termo para fora do queryFn via closure pelo
+  // queryKey, que é definido após declarar o state. Por isso usamos um
+  // ref-via-state através de useDebounce abaixo.
+
+  const SPONSOR_SAFE_FETCH_CAP = 1000;
+
+  const sanitizeOrTerm = (raw: string) =>
+    raw.replace(/[,()*"\\]/g, ' ').replace(/\s+/g, ' ').trim();
+
 
   const { data: contacts = [] } = useQuery({
     queryKey: ['admin-sponsor-contacts'],
