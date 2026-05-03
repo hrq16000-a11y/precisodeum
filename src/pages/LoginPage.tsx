@@ -445,6 +445,7 @@ const LoginPage = () => {
                     <PasswordInput
                       required
                       minLength={6}
+                      ref={passwordRef}
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(null); }}
                       autoComplete="current-password"
