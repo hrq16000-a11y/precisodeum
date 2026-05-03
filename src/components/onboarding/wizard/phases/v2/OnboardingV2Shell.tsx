@@ -1096,14 +1096,46 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   const persistFirstService = async (): Promise<boolean> => {
     if (!user) return false;
     let workingProviderId = await ensureProviderId();
+
+    // BLINDAGEM no_provider — se ensureProviderId falhou, fazemos UMA última
+    // tentativa lendo o perfil DIRETO do DB (snapshot fresco, sem depender de
+    // state.profile que pode estar desatualizado no mesmo ciclo de render) e
+    // re-lookup do provider. Só após esse fallback declaramos falha terminal.
+    let freshProfile: any = null;
     if (!workingProviderId) {
-      // Diagnóstico cirúrgico: em vez de "Volte um passo" genérico, lista o
-      // que realmente impediu a criação do provider (campos faltando OU erro
-      // técnico capturado em persistPhase1) e oferece CTA real de retry.
-      const p = state.profile;
+      try {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('full_name, whatsapp, city, state, neighborhood, profile_type, user_ref')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (prof) {
+          freshProfile = prof;
+          // Sincroniza o reducer (não bloqueante para esta execução).
+          dispatch({ type: 'PATCH_PROFILE', patch: prof as any });
+        }
+        // re-lookup final do provider (cobre trigger materializando após persist).
+        const recoveredId = await findExistingProvider(user.id, state.userRef ?? freshProfile?.user_ref ?? null);
+        if (recoveredId) {
+          dispatch({ type: 'SET_PROVIDER_ID', id: recoveredId });
+          workingProviderId = recoveredId;
+          void trackEvent({
+            phase: state.phase,
+            event: 'next',
+            userId: user?.id,
+            meta: { code: WIZARD_ERROR_CODES.ENSURE_PROVIDER_ID_HYDRATED_PROFILE, recovered: true },
+          });
+        }
+      } catch { /* fallback é best-effort */ }
+    }
+
+    if (!workingProviderId) {
+      // Diagnóstico cirúrgico usando o SNAPSHOT MAIS FRESCO disponível
+      // (freshProfile do DB > state.profile em memória).
+      const p = freshProfile ?? state.profile;
       const missing: string[] = [];
       if (!(p.full_name || '').trim()) missing.push('nome completo');
-      if ((p.whatsapp || '').replace(/\D/g, '').length < 10) missing.push('WhatsApp com DDD');
+      if (((p.whatsapp || '').replace(/\D/g, '').length) < 10) missing.push('WhatsApp com DDD');
       if (!(p.city || '').trim()) missing.push('cidade');
       if (!(p.state || '').trim()) missing.push('estado (UF)');
 
@@ -1127,6 +1159,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           missing_fields: missing,
           tech_message: techMsg || null,
           tech_code: techCode || null,
+          used_fresh_profile: !!freshProfile,
         },
       });
 
