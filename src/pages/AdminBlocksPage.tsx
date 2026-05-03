@@ -324,7 +324,7 @@ const AdminBlocksPage = () => {
                   {showHtmlPreview ? (
                     <div
                       className="rounded-lg border border-border bg-background p-4 min-h-[200px] prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: htmlText }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlText) }}
                     />
                   ) : (
                     <Textarea
