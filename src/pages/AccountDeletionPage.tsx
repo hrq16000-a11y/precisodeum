@@ -50,11 +50,13 @@ const AccountDeletionPage = () => {
           full_name: fullName.trim() || undefined,
           reason: reason.trim() || undefined,
         },
+        // Usuário final em rede móvel — 35s comporta cold start + 3G instável
+        timeoutProfile: 'user',
       });
       if (res.timedOut) {
         setStatus("error");
         setErrorMsg(EDGE_GUARD_FALLBACK_MESSAGE);
-        toast.error(EDGE_GUARD_FALLBACK_MESSAGE);
+        toastAssertiveError(EDGE_GUARD_FALLBACK_MESSAGE);
         return;
       }
       if (res.error) throw res.error;
