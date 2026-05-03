@@ -859,8 +859,8 @@ export default function CompanyProfile() {
                   providerHours={normalizeContactHours(company.contact_hours)}
                   helperText="Ajuda a empresa a responder no melhor horário."
                 />
-                <Button type="submit" variant="accent" className="w-full gap-2">
-                  <Send className="h-4 w-4" /> Enviar solicitação
+                <Button type="submit" disabled={isSubmittingLead} variant="accent" className="w-full gap-2">
+                  <Send className="h-4 w-4" /> {isSubmittingLead ? 'Enviando…' : 'Enviar solicitação'}
                 </Button>
               </form>
             )}
