@@ -111,7 +111,7 @@ function inspectLocalDraft(): { exists: boolean; phase: string | null; savedAt: 
 
 
 export default function CadastroInicialPage() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refetchProfile } = useAuth();
   const location = useLocation();
   const [params] = useSearchParams();
   const reviewMode = isOnboardingReviewMode(location.search);
@@ -195,15 +195,34 @@ export default function CadastroInicialPage() {
   }, [loading, authSettled, user]);
 
   // [Self-heal] Se o auth resolveu, há sessão, mas `profile` continua nulo,
-  // pode ser: (B) Perfil Nulo (trigger falhou) ou (C) RLS 403. Vamos checar
-  // diretamente no banco — se a linha realmente não existir, inserimos um
-  // perfil mínimo para que o WizardShell consiga prosseguir.
+  // pode ser: (B) Perfil Nulo (trigger falhou) ou (C) RLS 403. Checa direto
+  // no banco; se a linha não existir, insere perfil mínimo. Idempotente:
+  // - selfHealRef impede re-execução no mesmo mount;
+  // - sessionStorage flag (`SELF_HEAL_FLAG`) impede loop após reload;
+  // - usa `refetchProfile()` em vez de `window.location.reload()` para
+  //   re-hidratar useAuth sem reboot completo.
+  const SELF_HEAL_FLAG = 'cadastro_self_heal_attempted';
   const selfHealRef = useRef(false);
   useEffect(() => {
     if (loading || !authSettled || !user) return;
     if (profile) return;
     if (selfHealRef.current) return;
+
+    // Anti-loop entre reloads: se já tentamos nesta aba, não tente de novo.
+    let alreadyAttempted = false;
+    try { alreadyAttempted = window.sessionStorage.getItem(SELF_HEAL_FLAG) === '1'; } catch { /* noop */ }
+    if (alreadyAttempted) {
+      selfHealRef.current = true;
+      void trackOnboardingEvent({
+        phase: 'unknown' as any,
+        event: 'error',
+        meta: { reason: 'profile_self_heal_skipped_loop_guard', error_code: 'B_PROFILE_NULL_LOOP_GUARD' },
+      });
+      return;
+    }
+
     selfHealRef.current = true;
+    try { window.sessionStorage.setItem(SELF_HEAL_FLAG, '1'); } catch { /* noop */ }
 
     void (async () => {
       const { data, error, status } = await supabase
@@ -221,7 +240,7 @@ export default function CadastroInicialPage() {
         void trackOnboardingEvent({
           phase: 'unknown' as any,
           event: 'error',
-          meta: { reason: 'profile_rls_403', error_code: 'C_RLS_403' },
+          meta: { reason: 'profile_rls_403', error_code: 'C_RLS_403', error_message: error.message },
         });
         return;
       }
@@ -252,15 +271,32 @@ export default function CadastroInicialPage() {
         });
 
         if (!insertError) {
-          toast.message('Configurando seu perfil...', { duration: 2500 });
-          // Recarrega para o useAuth pegar o profile recém-criado.
-          window.setTimeout(() => window.location.reload(), 600);
+          toast.message('Configurando seu perfil...', { duration: 2000 });
+          // Re-hidrata o useAuth sem reload — preserva estado React e evita
+          // perder rascunhos em memória que ainda não fizeram flush.
+          try {
+            await refetchProfile();
+            // Sucesso: limpa a flag para que próximas sessões possam tentar
+            // novamente caso o problema recorra com outro user.
+            try { window.sessionStorage.removeItem(SELF_HEAL_FLAG); } catch { /* noop */ }
+          } catch (refetchErr) {
+            if (import.meta.env.DEV) {
+              console.error('[cadastro-inicial][diag] refetchProfile failed', refetchErr);
+            }
+            // Fallback: reload uma única vez (a flag já está setada, então
+            // não vai reentrar no self-heal após o reload).
+            window.setTimeout(() => window.location.reload(), 400);
+          }
         } else if (import.meta.env.DEV) {
           console.error('[cadastro-inicial][diag] self-heal insert failed', insertError);
         }
+      } else {
+        // Profile existe no DB mas não chegou ao contexto — só re-hidrata.
+        try { await refetchProfile(); } catch { /* noop */ }
       }
     })();
-  }, [loading, authSettled, user, profile]);
+  }, [loading, authSettled, user, profile, refetchProfile]);
+
 
 
   // Side-effect ÚNICO de telemetria/toast quando vamos redirecionar para
