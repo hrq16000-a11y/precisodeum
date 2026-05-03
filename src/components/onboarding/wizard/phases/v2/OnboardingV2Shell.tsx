@@ -1123,7 +1123,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         event: 'error',
         userId: user?.id,
         meta: {
-          code: 'persist_first_service:no_provider',
+          code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_NO_PROVIDER,
           missing_fields: missing,
           tech_message: techMsg || null,
           tech_code: techCode || null,
@@ -1146,7 +1146,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       });
       // Modal claro com detalhes técnicos (não mascara, complementa o toast).
       setErrorModal({
-        code: 'persist_first_service:no_provider',
+        code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_NO_PROVIDER,
         missingFields: missing,
         techMessage: techMsg ?? null,
         techCode: techCode ?? null,
@@ -1281,7 +1281,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               event: 'error',
               userId: user?.id,
               meta: {
-                reason: 'persist_first_service_preflight_fail',
+                code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_PRECHECK_FAILED,
                 missing: preflightFailures,
                 provider_id: workingProviderId || null,
                 category_id: categoryId || null,
@@ -1298,7 +1298,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 event: 'error',
                 userId: user?.id,
                 meta: {
-                  reason: 'persist_first_service_precondition_failed',
+                  code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_PRECONDITION_FAILED,
                   has_provider_id: Boolean(workingProviderId),
                   has_category_id: Boolean(categoryId),
                   has_category_name: Boolean(resolvedCategoryName),
@@ -1553,7 +1553,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         event: 'error',
         userId: user?.id,
         meta: {
-          reason: 'persist_first_service_terminal_catch',
+          code: WIZARD_ERROR_CODES.PERSIST_FIRST_SERVICE_TERMINAL,
           error_code: e?.code || null,
           error_message: fullMessage.slice(0, 600),
           error_details: e?.details ? String(e.details).slice(0, 300) : null,
