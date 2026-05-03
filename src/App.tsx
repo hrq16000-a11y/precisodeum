@@ -558,27 +558,27 @@ const App = () => {
                 <Route path="/dashboard/localizacao-guiada" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLocationGuidedPage /></ProtectedRoute>} />
                 <Route path="/dashboard/chat" element={<ProtectedRoute><DashboardChatPage /></ProtectedRoute>} />
                 <Route path="/dashboard/suporte" element={<ProtectedRoute><DashboardSupportPage /></ProtectedRoute>} />
-                <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
-                <Route path="/admin/prestadores" element={<AdminGuard><AdminProvidersPage /></AdminGuard>} />
-                <Route path="/admin/bairro-default" element={<AdminGuard><AdminDefaultNeighborhoodPage /></AdminGuard>} />
-                <Route path="/admin/service-area-corrections" element={<AdminGuard><AdminServiceAreaCorrectionsPage /></AdminGuard>} />
-                <Route path="/admin/kill-switch-blocks" element={<AdminGuard><AdminKillSwitchBlocksPage /></AdminGuard>} />
-                <Route path="/admin/avaliacoes" element={<AdminGuard><AdminReviewsPage /></AdminGuard>} />
-                <Route path="/admin/usuarios" element={<AdminGuard><AdminUsersPage /></AdminGuard>} />
-                <Route path="/admin/crm-usuarios" element={<AdminGuard><AdminUsersCrmPage /></AdminGuard>} />
-                <Route path="/admin/categorias" element={<AdminGuard><AdminCategoriesPage /></AdminGuard>} />
-                <Route path="/admin/estatisticas" element={<AdminGuard><AdminStatsPage /></AdminGuard>} />
-                <Route path="/admin/conversao" element={<AdminGuard><AdminConversionMetricsPage /></AdminGuard>} />
-                <Route path="/admin/onboarding-funnel" element={<AdminGuard><AdminOnboardingFunnelPage /></AdminGuard>} />
-                <Route path="/admin/onboarding-stats" element={<AdminGuard><AdminOnboardingStatsPage /></AdminGuard>} />
-                <Route path="/admin/integridade" element={<AdminGuard><AdminIntegrityReportsPage /></AdminGuard>} />
-                <Route path="/admin/upload-stress-test" element={<AdminGuard><AdminUploadStressTestPage /></AdminGuard>} />
-                <Route path="/admin/caixa-notificacoes" element={<AdminGuard><AdminInboxPage /></AdminGuard>} />
-                <Route path="/admin/sitemap-audit" element={<AdminGuard><AdminSitemapAuditPage /></AdminGuard>} />
-                <Route path="/admin/busca-ordenacao" element={<AdminGuard><AdminSearchSortingPage /></AdminGuard>} />
-                <Route path="/admin/meta-tracking-quality" element={<AdminGuard><AdminMetaTrackingQualityPage /></AdminGuard>} />
+                <Route path="/admin" element={<AdminGuard><RouteErrorBoundary sectionName="AdminPage"><AdminPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/prestadores" element={<AdminGuard><RouteErrorBoundary sectionName="AdminProvidersPage"><AdminProvidersPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/bairro-default" element={<AdminGuard><RouteErrorBoundary sectionName="AdminDefaultNeighborhoodPage"><AdminDefaultNeighborhoodPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/service-area-corrections" element={<AdminGuard><RouteErrorBoundary sectionName="AdminServiceAreaCorrectionsPage"><AdminServiceAreaCorrectionsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/kill-switch-blocks" element={<AdminGuard><RouteErrorBoundary sectionName="AdminKillSwitchBlocksPage"><AdminKillSwitchBlocksPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/avaliacoes" element={<AdminGuard><RouteErrorBoundary sectionName="AdminReviewsPage"><AdminReviewsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/usuarios" element={<AdminGuard><RouteErrorBoundary sectionName="AdminUsersPage"><AdminUsersPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/crm-usuarios" element={<AdminGuard><RouteErrorBoundary sectionName="AdminUsersCrmPage"><AdminUsersCrmPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/categorias" element={<AdminGuard><RouteErrorBoundary sectionName="AdminCategoriesPage"><AdminCategoriesPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/estatisticas" element={<AdminGuard><RouteErrorBoundary sectionName="AdminStatsPage"><AdminStatsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/conversao" element={<AdminGuard><RouteErrorBoundary sectionName="AdminConversionMetricsPage"><AdminConversionMetricsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/onboarding-funnel" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingFunnelPage"><AdminOnboardingFunnelPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/onboarding-stats" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingStatsPage"><AdminOnboardingStatsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/integridade" element={<AdminGuard><RouteErrorBoundary sectionName="AdminIntegrityReportsPage"><AdminIntegrityReportsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/upload-stress-test" element={<AdminGuard><RouteErrorBoundary sectionName="AdminUploadStressTestPage"><AdminUploadStressTestPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/caixa-notificacoes" element={<AdminGuard><RouteErrorBoundary sectionName="AdminInboxPage"><AdminInboxPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/sitemap-audit" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSitemapAuditPage"><AdminSitemapAuditPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/busca-ordenacao" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSearchSortingPage"><AdminSearchSortingPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/meta-tracking-quality" element={<AdminGuard><RouteErrorBoundary sectionName="AdminMetaTrackingQualityPage"><AdminMetaTrackingQualityPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/erros-500" element={<AdminError500Page />} />
-                <Route path="/admin/links-quebrados" element={<AdminGuard><AdminBrokenLinksPage /></AdminGuard>} />
+                <Route path="/admin/links-quebrados" element={<AdminGuard><RouteErrorBoundary sectionName="AdminBrokenLinksPage"><AdminBrokenLinksPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
                 <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
                 <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
