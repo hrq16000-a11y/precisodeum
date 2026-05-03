@@ -117,8 +117,10 @@ export default function AdminAuthHealthPage() {
     return d.toISOString();
   }, [period]);
 
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE);
+
   const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["admin-auth-health", period],
+    queryKey: ["admin-auth-health", period, pageSize],
     queryFn: async (): Promise<EventRow[]> => {
       const { data, error } = await supabase
         .from("onboarding_events")
@@ -126,7 +128,7 @@ export default function AdminAuthHealthPage() {
         .eq("event", "error")
         .gte("created_at", sinceISO)
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(pageSize);
       if (error) throw error;
       return (data || []) as EventRow[];
     },
@@ -137,7 +139,8 @@ export default function AdminAuthHealthPage() {
     const counts: Record<string, number> = {};
     const uniqueLoopUsers = new Set<string>();
     for (const row of data || []) {
-      const code = (row.meta?.error_code as string) || (row.meta?.reason as string) || "OUTRO";
+      const m = safeMeta(row.meta);
+      const code = (m.error_code as string) || (m.reason as string) || "OUTRO";
       counts[code] = (counts[code] || 0) + 1;
       if (code === "B_PROFILE_NULL_LOOP_GUARD" && row.user_id) uniqueLoopUsers.add(row.user_id);
     }
