@@ -87,9 +87,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Evita a race condition que deixa o usuário "preso" sem profile carregado.
     let profileData: any = null;
     let providerRows: any[] | null = null;
-    const MAX_ATTEMPTS = 8;
+    const MAX_ATTEMPTS = 5;
+    const PER_ATTEMPT_TIMEOUT_MS = 6000;
     const startedAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     let attemptsUsed = 0;
+    let lastErrorMessage: string | null = null;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       attemptsUsed = attempt + 1;
       // SEGURANÇA (PII): nunca usar select('*') aqui — colunas sensíveis
@@ -100,15 +102,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         'id, full_name, avatar_url, profile_type, onboarding_completed, onboarding_step, ' +
         'city, state, celebration_muted, role, permissions, account_type, account_type_id, ' +
         'level_id, engagement_points, primary_category_id, user_ref, created_at';
-      const [{ data: pData }, { data: pvRows }] = await Promise.all([
-        supabase.from('profiles').select(PROFILE_AUTH_COLUMNS).eq('id', userId).maybeSingle(),
-        supabase.from('providers').select('*, categories(name, slug, icon)').eq('user_id', userId).order('created_at', { ascending: true }),
-      ]);
-      profileData = pData;
-      providerRows = pvRows;
-      if (profileData) break;
-      // Backoff: 150ms, 300ms, 600ms, 1200ms, 2400ms, 4800ms, 9600ms
-      await new Promise(resolve => setTimeout(resolve, 150 * Math.pow(2, attempt)));
+      try {
+        // Per-attempt timeout: em mobile com rede ruim, requests do Supabase
+        // podem ficar penduradas indefinidamente. Promise.race garante que
+        // sempre retentamos antes de exaurir o orçamento total.
+        const queryPromise = Promise.all([
+          supabase.from('profiles').select(PROFILE_AUTH_COLUMNS).eq('id', userId).maybeSingle(),
+          supabase.from('providers').select('*, categories(name, slug, icon)').eq('user_id', userId).order('created_at', { ascending: true }),
+        ]);
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`fetchProfile attempt ${attemptsUsed} timed out after ${PER_ATTEMPT_TIMEOUT_MS}ms`)), PER_ATTEMPT_TIMEOUT_MS),
+        );
+        const [{ data: pData, error: pErr }, { data: pvRows, error: pvErr }] = await Promise.race([queryPromise, timeoutPromise]);
+        if (pErr) {
+          lastErrorMessage = `profiles: ${pErr.message ?? String(pErr)}`;
+          console.warn('[useAuth] profiles query error', pErr);
+        }
+        if (pvErr) {
+          lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)}`;
+          console.warn('[useAuth] providers query error', pvErr);
+        }
+        profileData = pData;
+        providerRows = pvRows;
+        if (profileData) break;
+      } catch (err: any) {
+        lastErrorMessage = err?.message ?? String(err);
+        console.warn(`[useAuth] fetchProfile attempt ${attemptsUsed} failed:`, err);
+      }
+      // Backoff curto: 200ms, 400ms, 800ms, 1600ms (total ~3s + ~6s timeout * tentativas)
+      if (attempt < MAX_ATTEMPTS - 1) {
+        await new Promise(resolve => setTimeout(resolve, 200 * Math.pow(2, attempt)));
+      }
     }
 
     const elapsedMs = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - startedAt);
