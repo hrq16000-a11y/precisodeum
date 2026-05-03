@@ -2206,7 +2206,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         technicalMessage={errorModal?.techMessage ?? null}
         technicalCode={errorModal?.techCode ?? null}
         contextSnapshot={{
-          category: state.service?.category_label || state.service?.category_id || null,
+          category: (state.service?.category_ids?.[0]) || null,
           city: state.profile?.city || null,
           state_uf: state.profile?.state || null,
         }}
