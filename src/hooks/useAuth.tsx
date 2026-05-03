@@ -56,8 +56,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let attemptsUsed = 0;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       attemptsUsed = attempt + 1;
+      // SEGURANÇA (PII): nunca usar select('*') aqui — colunas sensíveis
+      // (tax_id, whatsapp, cpf, cnpj, phone, suspicious_ip, lat/long, postal_code,
+      // street, neighborhood, complement, document, social URLs) NÃO entram no
+      // estado global de auth. Quem precisar lê on-demand via query específica.
+      const PROFILE_AUTH_COLUMNS =
+        'id, full_name, avatar_url, profile_type, onboarding_completed, onboarding_step, ' +
+        'city, state, celebration_muted, role, permissions, account_type, account_type_id, ' +
+        'level_id, engagement_points, primary_category_id, user_ref, created_at';
       const [{ data: pData }, { data: pvRows }] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        supabase.from('profiles').select(PROFILE_AUTH_COLUMNS).eq('id', userId).maybeSingle(),
         supabase.from('providers').select('*, categories(name, slug, icon)').eq('user_id', userId).order('created_at', { ascending: true }),
       ]);
       profileData = pData;
