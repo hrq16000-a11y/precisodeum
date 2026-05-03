@@ -197,6 +197,12 @@ export default function AdminAuthHealthPage() {
     return { counts, detected, attempted, healed, failed, healRate, rls, loopGuard, chartData };
   }, [data]);
 
+  const funnel = useMemo(() => buildSelfHealFunnel(data || []), [data]);
+  const series = useMemo(
+    () => aggregateByTime(data || [], pickBucketForPeriod(period)),
+    [data, period],
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
