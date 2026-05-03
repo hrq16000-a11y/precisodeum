@@ -2402,7 +2402,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             : null,
         }}
         onRetry={() => errorModal?.onRetry?.()}
-        onBack={() => window.dispatchEvent(new CustomEvent('wizard:request-back'))}
+        onBack={() => {
+          void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
+            requestWizardBackForPhase({
+              phase: state.phase,
+              source: 'error_modal',
+              editMode,
+              meta: { code: errorModal?.code || null },
+            });
+          });
+        }}
       />
     </>
   );
