@@ -5,7 +5,8 @@ import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, 
 import CategoryIcon from '@/components/CategoryIcon';
 import WorkingHoursDisplay from '@/components/profile/WorkingHoursDisplay';
 import { useAuth } from '@/hooks/useAuth';
-import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
+import { whatsappLink, telLink, toCanonical, sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
+import { useSubmitGuard } from '@/hooks/useSubmitGuard';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
 import { formatCityState, safeUF } from '@/lib/locationFormat';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -1133,7 +1134,7 @@ const ProviderProfile = () => {
     }
     setLeadSent(true);
     toast.success('Solicitação enviada com sucesso!');
-  };
+  });
 
   const openPortfolioLightbox = (index: number) => {
     setLightboxImages(portfolioRawUrls);
