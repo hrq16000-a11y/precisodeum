@@ -21,6 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { invokeWithGuard, EDGE_GUARD_FALLBACK_MESSAGE } from '@/lib/edgeInvoke';
 import { toast } from 'sonner';
+import { toastAssertiveError } from '@/lib/a11yToast';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { handleImageError } from '@/lib/imageResolver';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
@@ -106,6 +107,12 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   // Timeline
   const [activityTimeline, setActivityTimeline] = useState<any[]>([]);
 
+  // Double-fetch — a listagem agora vem com allowlist enxuta; ao abrir o sheet
+  // fazemos um SELECT * por ID para garantir que campos sensíveis (whatsapp,
+  // tax_id, permissions, suspended_reason, metadados) estejam presentes.
+  const [fullProfile, setFullProfile] = useState<any | null>(null);
+  const [loadingFull, setLoadingFull] = useState(false);
+
   useEffect(() => {
     if (!user) return;
     setTab('summary');
@@ -116,6 +123,36 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     setShowResetPw(false);
     setNewPassword('');
     setSuspendReason('');
+    setFullProfile(null);
+    setLoadingFull(true);
+
+    // === Double-fetch: SELECT * por ID ===
+    // A listagem usa allowlist (id, name, status, created_at, ...) por
+    // performance. Aqui buscamos o registro completo para hidratar campos
+    // como whatsapp, permissions, tax_id, suspended_reason, metadados, etc.
+    supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          toastAssertiveError('Não foi possível carregar todos os dados do usuário.');
+          setLoadingFull(false);
+          return;
+        }
+        const full = data ?? user;
+        setFullProfile(full);
+        setProfileForm({
+          full_name: full.full_name || '',
+          phone: full.phone || '',
+          whatsapp: full.whatsapp || '',
+          profile_type: full.profile_type || full.role || 'client',
+          status: full.status || 'active',
+          level_id: full.level_id || '',
+          account_type_id: full.account_type_id || '',
+          department: full.department || '',
+        });
+        setLoadingFull(false);
+      });
+
+    // Hidratação otimista imediata com o que veio da lista (evita "flash" vazio)
     setProfileForm({
       full_name: user.full_name || '',
       phone: user.phone || '',
