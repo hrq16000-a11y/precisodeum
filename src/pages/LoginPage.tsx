@@ -460,8 +460,13 @@ const LoginPage = () => {
                       Esqueci minha senha
                     </button>
                   </div>
-                  <Button type="submit" variant="outline" className="w-full" disabled={loading}>
-                    {loading ? 'Processando...' : 'Continuar'}
+                  <Button type="submit" variant="outline" className="w-full" disabled={loading} aria-busy={loading}>
+                    {loading ? (
+                      <span className="inline-flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        Processando...
+                      </span>
+                    ) : 'Continuar'}
                   </Button>
                   <p className="text-center text-[11px] text-muted-foreground">
                     Se você ainda não tem conta, criamos uma automaticamente.
