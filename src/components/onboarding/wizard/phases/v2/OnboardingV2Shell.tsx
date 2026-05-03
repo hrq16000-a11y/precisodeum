@@ -99,7 +99,12 @@ import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { playWizardTransition } from '@/lib/wizardTransition';
 import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
-import { WIZARD_ERROR_CODES, phase2PhotosBlockCode } from '@/lib/wizardErrorCodes';
+import {
+  WIZARD_ERROR_CODES,
+  phase2PhotosBlockCode,
+  RECOVER_BACKOFF_DELAYS_MS,
+  RECOVER_MAX_ATTEMPTS,
+} from '@/lib/wizardErrorCodes';
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
 import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
@@ -1691,22 +1696,40 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             });
           }
 
-          // Tenta recuperar firstServiceId via providerId e categoria do state.
-          // `auto` indica que o retry foi disparado automaticamente (sem clique
-          // do usuário) — usado para distinguir nas métricas.
+          // Tenta recuperar firstServiceId com backoff exponencial.
+          // 3 tentativas (0ms, 800ms, 2400ms) antes de marcar como falha — cobre
+          // races transitórias entre create_service_atomic e mudança de fase.
           const handleRecoverDraft = async (opts?: { auto?: boolean }) => {
             const isAuto = !!opts?.auto;
             setPhase2RetryStatus('running');
-            try {
-              track('next', {
-                code: isAuto
-                  ? WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_AUTO
-                  : WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_ATTEMPT,
-              });
-              const providerId = state.providerId;
-              const categoryId =
-                state.profile.primary_category_id || state.service.category_ids?.[0] || '';
-              if (providerId) {
+            track('next', {
+              code: isAuto
+                ? WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_AUTO
+                : WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_ATTEMPT,
+            });
+            const providerId = state.providerId;
+            const categoryId =
+              state.profile.primary_category_id || state.service.category_ids?.[0] || '';
+            if (!providerId) {
+              setPhase2RetryStatus('failed');
+              if (!isAuto) {
+                toast.message('Nada para recuperar', {
+                  description: 'Volte para revisar o serviço e tente publicar novamente.',
+                });
+              }
+              return false;
+            }
+            for (let attempt = 0; attempt < RECOVER_MAX_ATTEMPTS; attempt++) {
+              const delay = RECOVER_BACKOFF_DELAYS_MS[attempt];
+              if (delay > 0) {
+                await new Promise((r) => setTimeout(r, delay));
+                track('next', {
+                  code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_BACKOFF,
+                  attempt: attempt + 1,
+                  delay_ms: delay,
+                });
+              }
+              try {
                 const id = await findExistingFirstService(
                   providerId,
                   categoryId,
@@ -1715,28 +1738,45 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 if (id) {
                   dispatch({ type: 'SET_FIRST_SERVICE_ID', id });
                   setPhase2RetryStatus('idle');
+                  track('next', {
+                    code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_SUCCESS,
+                    attempt: attempt + 1,
+                  });
                   if (!isAuto) {
                     toast.success('Recuperamos seu serviço — pronto para subir as fotos.');
                   }
                   return true;
                 }
+              } catch (err: any) {
+                // Em erro de rede/RLS: continua para a próxima tentativa.
+                if (attempt === RECOVER_MAX_ATTEMPTS - 1) {
+                  setPhase2RetryStatus('failed');
+                  track('error', {
+                    code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_EXHAUSTED,
+                    attempts: RECOVER_MAX_ATTEMPTS,
+                    message: String(err?.message || err).slice(0, 160),
+                  });
+                  if (!isAuto) {
+                    toast.error('Não consegui recuperar o rascunho agora.', {
+                      description: err?.message || 'Tente novamente em instantes.',
+                    });
+                  }
+                  return false;
+                }
               }
-              setPhase2RetryStatus('failed');
-              if (!isAuto) {
-                toast.message('Nada para recuperar', {
-                  description: 'Volte para revisar o serviço e tente publicar novamente.',
-                });
-              }
-              return false;
-            } catch (err: any) {
-              setPhase2RetryStatus('failed');
-              if (!isAuto) {
-                toast.error('Não consegui recuperar o rascunho agora.', {
-                  description: err?.message || 'Tente novamente em instantes.',
-                });
-              }
-              return false;
             }
+            // Todas as tentativas retornaram null — sem registro encontrado.
+            setPhase2RetryStatus('failed');
+            track('error', {
+              code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_EXHAUSTED,
+              attempts: RECOVER_MAX_ATTEMPTS,
+            });
+            if (!isAuto) {
+              toast.message('Nada para recuperar', {
+                description: 'Volte para revisar o serviço e tente publicar novamente.',
+              });
+            }
+            return false;
           };
 
           // Auto-retry: quando o bloqueio é por `no_service` e já temos um
@@ -1763,7 +1803,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
           return (
             <section
-              className="mx-auto w-full max-w-md space-y-3 px-4 py-6 text-center"
+              className="mx-auto w-full max-w-md space-y-3 px-4 py-5 text-center"
               role="alert"
               aria-live="polite"
               data-testid="phase2-photos-blocked"
