@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import DOMPurify from 'dompurify';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -65,9 +65,9 @@ const InstitutionalPage = () => {
       <Header />
       <main className="container mx-auto px-4 py-12 max-w-3xl">
         <h1 className="text-3xl font-bold text-foreground mb-6">{page.title}</h1>
-        <div
+        <SafeHTML
+          html={page.content}
           className="prose prose-sm max-w-none text-foreground"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.content) }}
         />
       </main>
       <Footer />
