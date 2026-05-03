@@ -476,11 +476,13 @@ async function fetchProvidersLightweight(query: any) {
     supabase
       .from('public_profiles' as any)
       .select('id, full_name, avatar_url')
-      .in('id', userIds) as unknown as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
+      .in('id', userIds)
+      .limit(200) as unknown as Promise<{ data: { id: string; full_name: string; avatar_url: string | null }[] | null }>,
     supabase
       .from('services')
       .select('id, provider_id, service_name, description, whatsapp, service_area, is_emergency, seo_tags, service_images(image_url, display_order)')
-      .in('provider_id', providerIds),
+      .in('provider_id', providerIds)
+      .limit(500),
     supabase
       .from('provider_boosts' as any)
       .select('provider_id, boost_weight')
@@ -488,6 +490,7 @@ async function fetchProvidersLightweight(query: any) {
       .eq('is_active', true)
       .lte('start_at', new Date().toISOString())
       .gte('end_at', new Date().toISOString())
+      .limit(200)
       .then((res: any) => ({ data: res.error ? [] : (res.data || []) })),
     supabase
       .from('provider_impressions' as any)
@@ -499,7 +502,8 @@ async function fetchProvidersLightweight(query: any) {
     supabase
       .from('profiles')
       .select('id, engagement_points, level_id, trial_boost_until, gamification_levels!profiles_level_id_fkey(name, priority)')
-      .in('id', userIds) as any,
+      .in('id', userIds)
+      .limit(200) as any,
   ]);
 
   const profileMap: Record<string, { name: string; avatar?: string }> = {};
