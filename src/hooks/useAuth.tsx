@@ -295,6 +295,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       isMounted = false;
+      window.clearTimeout(watchdog);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
       subscription.unsubscribe();
     };
   }, [fetchProfile]);
