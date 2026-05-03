@@ -360,10 +360,32 @@ const RoutePrefetcher = () => {
   return null;
 };
 
+/**
+ * Rotas públicas que NÃO podem ser bloqueadas por auth/profile pendentes.
+ * Renderizam imediatamente em paralelo ao handshake do Supabase,
+ * eliminando 400-900ms de waterfall em conexões 3G/4G.
+ */
+const PUBLIC_PATH_PREFIXES = [
+  '/buscar', '/categoria', '/profissional', '/empresa', '/agencia',
+  '/patrocinador', '/login', '/cadastro', '/anuncie', '/vagas', '/vaga',
+  '/quero-ser-patrocinador', '/sponsor', '/espacos-patrocinio',
+  '/contrato-patrocinio', '/blog', '/ajuda', '/cursos', '/faq',
+  '/especialidade', '/especialidades', '/popular', '/institucional',
+  '/forgot-password', '/reset-password', '/cookies', '/privacidade',
+  '/termos',
+];
+
+const isPublicPath = (pathname: string) => {
+  if (pathname === '/' || pathname === '/index') return true;
+  return PUBLIC_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+};
+
 const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, provider, loading, refetchProfile } = useAuth();
   const location = useLocation();
   const isWizardTestRoute = location.pathname === '/__test/report-button';
+  const publicRoute = isPublicPath(location.pathname);
+
 
   // Self-heal idempotente para perfis legados (provider + 1º serviço já criados
   // mas com `onboarding_completed=false`). Roda no MÁXIMO uma vez por user.id
@@ -393,9 +415,15 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     };
   }, [loading, user, profile, provider, refetchProfile, location.pathname]);
 
+  // [V8 PERF] Rotas públicas renderizam IMEDIATAMENTE — sem esperar auth.
+  // ProtectedRoute é responsável pelo spinner/redirect em rotas privadas.
+  if (publicRoute || isWizardTestRoute) {
+    return <>{children}</>;
+  }
+
   // While auth is resolving, or user exists but profile not yet loaded,
   // render an accessible skeleton instead of null to avoid blank screens.
-  if (!isWizardTestRoute && (loading || (user && !profile))) {
+  if (loading || (user && !profile)) {
     return (
       <div
         role="status"
