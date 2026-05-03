@@ -47,6 +47,7 @@ import { useBetDraft, loadBetDraft, clearBetDraft } from './useBetDraft';
 import { useBetRemoteDraft, fetchRemoteBetDraft, clearRemoteBetDraft } from './useBetRemoteDraft';
 import { awardBetReward, type BetRewardKey } from './betRewards';
 import { playWizardTransition } from '@/lib/wizardTransition';
+import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 
 /** Ordem das fases — usado para resolver o "Voltar" global em uma fase anterior. */
 const BET_BACK_MAP: Partial<Record<BetPhase, BetPhase>> = {
@@ -349,23 +350,21 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       return;
     }
     try {
-      const { error } = await (supabase as any)
-        .from('profiles')
-        .update({
+      // Finalize via entrypoint único — libera active-session lock, limpa
+      // drafts (local + remoto) e marca onboarding completo de forma atômica.
+      const result = await finalizeOnboarding({
+        userId: user.id,
+        extraProfilePatch: {
           full_name: state.full_name.trim(),
           whatsapp: state.whatsapp,
           city: state.city || null,
           state: state.state || null,
           profile_type: 'rh',
-          onboarding_step: 5,
-          onboarding_completed: true,
-        })
-        .eq('id', user.id);
-      if (error) throw error;
+        },
+      });
+      if (!result.ok) throw result.error || new Error('Falha ao salvar');
       await addSessionPointsToProfile();
       await refetchProfile?.();
-      clearBetDraft();
-      void clearRemoteBetDraft(user.id);
       navigate('/dashboard/agencia', { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_rh' } });
@@ -383,23 +382,19 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
       return;
     }
     try {
-      const { error } = await (supabase as any)
-        .from('profiles')
-        .update({
+      const result = await finalizeOnboarding({
+        userId: user.id,
+        extraProfilePatch: {
           full_name: state.full_name.trim(),
           whatsapp: state.whatsapp,
           city: state.city || null,
           state: state.state || null,
           profile_type: 'client',
-          onboarding_step: 5,
-          onboarding_completed: true,
-        })
-        .eq('id', user.id);
-      if (error) throw error;
+        },
+      });
+      if (!result.ok) throw result.error || new Error('Falha ao salvar');
       await addSessionPointsToProfile();
       await refetchProfile?.();
-      clearBetDraft();
-      void clearRemoteBetDraft(user.id);
       navigate('/quero-ser-patrocinador', { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_sponsor' } });
@@ -453,9 +448,9 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
   async function finishClient() {
     if (!user) { toast.error('Faça login antes de continuar'); return; }
     try {
-      const { error } = await (supabase as any)
-        .from('profiles')
-        .update({
+      const result = await finalizeOnboarding({
+        userId: user.id,
+        extraProfilePatch: {
           full_name: state.full_name.trim(),
           whatsapp: state.whatsapp,
           city: state.city,
@@ -463,16 +458,12 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
           // Bairro do cliente (opcional) — refina a busca por proximidade.
           neighborhood: (state.neighborhood || '').trim() || null,
           profile_type: 'client',
-          onboarding_step: 5,
-          onboarding_completed: true,
-        })
-        .eq('id', user.id);
-      if (error) throw error;
+        },
+      });
+      if (!result.ok) throw result.error || new Error('Falha ao salvar');
       await addSessionPointsToProfile();
       await refetchProfile?.();
       toast.success(`+${state.points} pts conquistados!`, { description: 'Bem-vindo. Levando você ao destino…' });
-      clearBetDraft();
-      void clearRemoteBetDraft(user.id);
       navigate(next, { replace: true });
     } catch (err: any) {
       logWizardError({ phase: 'phase1_contact', userId: user?.id, error: err, variant: 'v1', context: { action: 'finish_client' } });

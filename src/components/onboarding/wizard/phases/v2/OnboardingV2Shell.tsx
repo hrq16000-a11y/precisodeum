@@ -31,6 +31,7 @@ import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload, detectForbiddenAddressKeys } from '@/lib/providerPayload';
 import { logWizardError } from '@/lib/wizardErrorGuard';
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
+import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 import { setActiveWizardPhase, scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 
 // Aviso única vez por sessão para evitar spam
@@ -1570,11 +1571,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         console.warn('[onboardingV2] read-back falhou (não bloqueante):', readbackErr?.message);
       }
 
-      // 3) Marca onboarding completo. A categoria principal vive em providers.category_id
-      // (já atualizada acima); profiles.primary_category_id é apenas estado de UI no wizard.
-      await supabase.from('profiles')
-        .update({ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true })
-        .eq('id', user.id);
+      // 3) Marca onboarding completo via entrypoint único `finalizeOnboarding`.
+      // A categoria principal vive em providers.category_id (já atualizada
+      // acima); profiles.primary_category_id é apenas estado de UI no wizard.
+      // O entrypoint também libera o active-session lock e limpa drafts.
+      await finalizeOnboarding({
+        userId: user.id,
+        extraProfilePatch: { profile_type: 'provider' },
+      });
 
       // Notifica o checklist do dashboard pra atualizar imediatamente
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
@@ -1668,30 +1672,18 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   /* ───── Render por fase ───── */
 
   const finishWizard = async () => {
-    markOnboardingCompletionGrace();
-    clearOnboardingV2Draft();
-    clearSessionTouched();
-    if (user?.id) void clearRemoteDraft(user.id);
-
     // BLINDAGEM: o usuário SEMPRE precisa sair do wizard ao chegar em `done`.
-    // Marcamos o perfil como concluído e fazemos refetch, mas QUALQUER falha
-    // (rede, RLS, race) é fail-soft: navegamos mesmo assim para a tela de
-    // sucesso, que por sua vez tem CTA explícito para o /dashboard. O
-    // OnboardingGate revalida o estado global lá e não devolve o usuário
-    // para /cadastro-inicial porque a tela de sucesso é whitelisted.
+    // `finalizeOnboarding` libera o active-session lock, limpa drafts (local
+    // + remoto) e marca `onboarding_completed=true`. Falhas são fail-soft —
+    // navegamos mesmo assim para a tela de sucesso (whitelisted no Gate).
     if (user?.id) {
-      try {
-        const { error } = await supabase.from('profiles')
-          .update({ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true })
-          .eq('id', user.id);
-        if (error) {
-          console.warn('[finishWizard] profile update failed (fail-soft)', error);
-          toast.warning('Concluímos seu cadastro, mas houve um aviso ao salvar o status. Você pode seguir normalmente.');
-        }
-      } catch (e) {
-        console.warn('[finishWizard] profile update threw (fail-soft)', e);
+      const result = await finalizeOnboarding({
+        userId: user.id,
+        extraProfilePatch: { profile_type: 'provider' },
+      });
+      if (!result.ok) {
+        toast.warning('Concluímos seu cadastro, mas houve um aviso ao salvar o status. Você pode seguir normalmente.');
       }
-
       try { await refetchProfile?.(); } catch { /* noop — navegação ainda ocorre */ }
     }
 

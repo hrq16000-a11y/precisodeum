@@ -38,13 +38,10 @@ import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
 import { useEngagementPointsValue } from '@/hooks/useEngagementPoints';
 import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
-import { getOnboardingReviewSection, markOnboardingCompletionGrace, type OnboardingReviewSection } from '@/lib/onboardingAccess';
-import { supabase } from '@/integrations/supabase/client';
-import { clearOnboardingV2Draft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2Draft';
-import { clearSessionTouched } from '@/components/onboarding/wizard/phases/v2/sessionTouched';
-import { clearRemoteDraft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2RemoteDraft';
-import { clearBetDraft, seedBetDraftFromProfile } from '@/components/onboarding/wizard/phases/bet/useBetDraft';
-import { clearRemoteBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetRemoteDraft';
+import { getOnboardingReviewSection, type OnboardingReviewSection } from '@/lib/onboardingAccess';
+import { seedBetDraftFromProfile } from '@/components/onboarding/wizard/phases/bet/useBetDraft';
+import { acquireWizardSessionLock, releaseWizardSessionLock } from '@/lib/wizardSessionLock';
+import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
 import EditModeSkipButton from './EditModeSkipButton';
@@ -575,27 +572,33 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     }
   }, [state.triage.intent]);
 
-  const finalizeUnifiedOnboarding = useCallback(async () => {
-    markOnboardingCompletionGrace();
-    clearOnboardingV2Draft();
-    clearSessionTouched();
-    clearBetDraft();
-    clearPersistedReviewPhase();
+  // ── ACTIVE-SESSION LOCK (Fase 1) ────────────────────────────────────────
+  // Adquire o lock ao montar o Wizard e enquanto a fase for diferente de
+  // `done`/celebrações terminais. Libera no unmount como rede de proteção
+  // (o lock também é liberado dentro de `finalizeOnboarding`, mas aqui
+  // garantimos limpeza mesmo em casos de navegação imperativa).
+  useEffect(() => {
+    acquireWizardSessionLock();
+    return () => {
+      releaseWizardSessionLock();
+    };
+  }, []);
 
-    if (user?.id) {
-      void clearRemoteDraft(user.id);
-      void clearRemoteBetDraft(user.id);
-
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true })
-          .eq('id', user.id);
-        if (error) console.warn('[WizardShell] unified finalize profile update failed (fail-soft)', error);
-      } catch (error) {
-        console.warn('[WizardShell] unified finalize profile update threw (fail-soft)', error);
-      }
+  useEffect(() => {
+    // Re-arma a cada troca de fase para fases ativas; libera ao chegar em done.
+    if (state.phase === 'done') {
+      releaseWizardSessionLock();
+    } else {
+      acquireWizardSessionLock();
     }
+  }, [state.phase]);
+
+  const finalizeUnifiedOnboarding = useCallback(async () => {
+    clearPersistedReviewPhase();
+    await finalizeOnboarding({
+      userId: user?.id,
+      extraProfilePatch: { profile_type: 'provider' },
+    });
   }, [user?.id]);
 
   // Finaliza o onboarding e navega para o caminho informado. Garante que o
