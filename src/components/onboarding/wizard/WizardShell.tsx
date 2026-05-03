@@ -45,6 +45,8 @@ import { clearSessionTouched } from '@/components/onboarding/wizard/phases/v2/se
 import { clearRemoteDraft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2RemoteDraft';
 import { clearBetDraft, seedBetDraftFromProfile } from '@/components/onboarding/wizard/phases/bet/useBetDraft';
 import { clearRemoteBetDraft } from '@/components/onboarding/wizard/phases/bet/useBetRemoteDraft';
+import { acquireWizardSessionLock, releaseWizardSessionLock } from '@/lib/wizardSessionLock';
+import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
 import EditModeSkipButton from './EditModeSkipButton';
