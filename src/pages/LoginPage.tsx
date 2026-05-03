@@ -88,18 +88,24 @@ const LoginPage = () => {
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEmailError(null);
+    setPasswordError(null);
     const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail || !password) {
-      toast.error('Preencha e-mail e senha.');
+    if (!trimmedEmail) {
+      setEmailError('Informe seu e-mail.');
+      return;
+    }
+    if (!password) {
+      setPasswordError('Informe sua senha.');
       return;
     }
     // Validação local antes de bater no servidor — evita mensagens genéricas
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      toast.error('Digite um e-mail válido.');
+      setEmailError('Digite um e-mail válido.');
       return;
     }
     if (password.length < 6) {
-      toast.error('A senha precisa ter pelo menos 6 caracteres.');
+      setPasswordError('A senha precisa ter pelo menos 6 caracteres.');
       return;
     }
     setLoading(true);
@@ -110,10 +116,14 @@ const LoginPage = () => {
     });
 
     if (!signInError && signInData.session) {
-      setLoading(false);
+      // Navegação explícita imediata: não dependemos só do useEffect/onAuthStateChange.
+      // /cadastro-inicial tem seu próprio gate que decide o destino final.
       toast.success('Bem-vindo(a)!');
+      navigate('/cadastro-inicial', { replace: true, state: from ? { from } : undefined });
+      setLoading(false);
       return;
     }
+
 
     const errMsg = signInError?.message || '';
 
