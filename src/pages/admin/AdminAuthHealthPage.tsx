@@ -186,6 +186,23 @@ export default function AdminAuthHealthPage() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => {
+                const csv = toCsv(data || []);
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `auth-health-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              disabled={!data || data.length === 0}
+            >
+              Exportar CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => refetch()}
               disabled={isFetching}
               aria-label="Recarregar"
