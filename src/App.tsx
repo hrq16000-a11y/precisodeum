@@ -375,6 +375,11 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     if (!user || !profile) return;
     if (profile.profile_type !== 'provider') return;
     if (profile.onboarding_completed === true) return;
+    // Guard: nunca rodar self-heal enquanto o usuário está dentro do Wizard.
+    // O WizardShell adquire o wizardSessionLock no mount, mas há uma janela
+    // entre o Gate montar e o Shell montar onde o self-heal poderia escrever
+    // onboarding_completed=true e ejetar o usuário para o /dashboard.
+    if (location.pathname === '/cadastro-inicial') return;
 
     let cancelled = false;
     void runOnboardingSelfHeal({ userId: user.id, profile, provider }).then((healed) => {
@@ -383,7 +388,7 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, [loading, user, profile, provider, refetchProfile]);
+  }, [loading, user, profile, provider, refetchProfile, location.pathname]);
 
   // While auth is resolving, or user exists but profile not yet loaded,
   // render an accessible skeleton instead of null to avoid blank screens.
