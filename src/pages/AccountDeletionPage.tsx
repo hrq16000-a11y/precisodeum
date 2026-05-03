@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithGuard, EDGE_GUARD_FALLBACK_MESSAGE } from "@/lib/edgeInvoke";
 import { useSeoHead, SITE_BASE_URL } from "@/hooks/useSeoHead";
 import { toast } from "sonner";
 import { CheckCircle2, AlertCircle, ShieldCheck, Mail, Trash2 } from "lucide-react";
@@ -43,15 +44,21 @@ const AccountDeletionPage = () => {
     }
     setStatus("sending");
     try {
-      const { data, error } = await supabase.functions.invoke("request-account-deletion", {
+      const res = await invokeWithGuard<{ request_id?: string }>("request-account-deletion", {
         body: {
           email: email.trim().toLowerCase(),
           full_name: fullName.trim() || undefined,
           reason: reason.trim() || undefined,
         },
       });
-      if (error) throw error;
-      setProtocol((data as any)?.request_id ?? null);
+      if (res.timedOut) {
+        setStatus("error");
+        setErrorMsg(EDGE_GUARD_FALLBACK_MESSAGE);
+        toast.error(EDGE_GUARD_FALLBACK_MESSAGE);
+        return;
+      }
+      if (res.error) throw res.error;
+      setProtocol(res.data?.request_id ?? null);
       setStatus("sent");
       toast.success("Solicitação de exclusão registrada.");
     } catch (err: any) {

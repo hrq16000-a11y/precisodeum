@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithGuard, EDGE_GUARD_FALLBACK_MESSAGE } from '@/lib/edgeInvoke';
 import { toast } from 'sonner';
 
 const STORAGE_KEY = 'lov_impersonation_state_v1';
@@ -49,11 +50,17 @@ export async function startImpersonation(opts: {
     return false;
   }
 
-  const { data, error } = await supabase.functions.invoke('admin-impersonate', {
-    body: { target_user_id: opts.targetUserId, reason: opts.reason ?? null },
-  });
-  if (error || !data?.hashed_token) {
-    toast.error(error?.message ?? 'Falha ao gerar acesso');
+  const res = await invokeWithGuard<{ hashed_token?: string; session_id?: string }>(
+    'admin-impersonate',
+    { body: { target_user_id: opts.targetUserId, reason: opts.reason ?? null } },
+  );
+  if (res.timedOut) {
+    toast.error(EDGE_GUARD_FALLBACK_MESSAGE);
+    return false;
+  }
+  const data = res.data;
+  if (res.error || !data?.hashed_token) {
+    toast.error(res.error?.message ?? 'Falha ao gerar acesso');
     return false;
   }
 
