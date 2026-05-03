@@ -103,7 +103,7 @@ const PAGE_SIZE = 20;
 const DashboardNotificationsPage = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } = useNotifications({ limit: null });
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } = useNotifications({ limit: 200 });
   const [selectedType, setSelectedType] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [dateFrom, setDateFrom] = useState<string>('');
