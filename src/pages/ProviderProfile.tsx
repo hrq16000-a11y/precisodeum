@@ -1527,10 +1527,12 @@ const ProviderProfile = () => {
     <div className={`flex min-h-screen flex-col ${tc.page} ${tc.fontBody}`} style={accentStyle}>
       <Header />
 
-      {/* Cover Image Hero */}
+      {/* Cover Image Hero — aspect-ratio reservado ANTES da imagem chegar
+          (CLS = 0). bg-muted serve de placeholder; o `motion.img` preenche
+          com object-cover. width/height intrínsecos batem com o transform. */}
       {pageSettings.cover_image_url && (
         <motion.div
-          className="relative w-full aspect-[16/5] overflow-hidden"
+          className="relative w-full aspect-[16/5] overflow-hidden bg-muted"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
@@ -1538,6 +1540,8 @@ const ProviderProfile = () => {
           <motion.img
             src={coverImage(pageSettings.cover_image_url)}
             alt="Capa"
+            width={1600}
+            height={500}
             className="h-full w-full object-cover"
             loading="eager"
             fetchPriority="high"
