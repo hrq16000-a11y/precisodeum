@@ -27,6 +27,8 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
@@ -86,18 +88,24 @@ const LoginPage = () => {
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEmailError(null);
+    setPasswordError(null);
     const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail || !password) {
-      toast.error('Preencha e-mail e senha.');
+    if (!trimmedEmail) {
+      setEmailError('Informe seu e-mail.');
+      return;
+    }
+    if (!password) {
+      setPasswordError('Informe sua senha.');
       return;
     }
     // Validação local antes de bater no servidor — evita mensagens genéricas
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      toast.error('Digite um e-mail válido.');
+      setEmailError('Digite um e-mail válido.');
       return;
     }
     if (password.length < 6) {
-      toast.error('A senha precisa ter pelo menos 6 caracteres.');
+      setPasswordError('A senha precisa ter pelo menos 6 caracteres.');
       return;
     }
     setLoading(true);
@@ -108,10 +116,14 @@ const LoginPage = () => {
     });
 
     if (!signInError && signInData.session) {
-      setLoading(false);
+      // Navegação explícita imediata: não dependemos só do useEffect/onAuthStateChange.
+      // /cadastro-inicial tem seu próprio gate que decide o destino final.
       toast.success('Bem-vindo(a)!');
+      navigate('/cadastro-inicial', { replace: true, state: from ? { from } : undefined });
+      setLoading(false);
       return;
     }
+
 
     const errMsg = signInError?.message || '';
 
@@ -264,6 +276,7 @@ const LoginPage = () => {
     if (/rate limit|too many/i.test(errMsg)) {
       toast.error('Muitas tentativas de login. Aguarde alguns minutos.');
     } else {
+      setPasswordError('E-mail ou senha inválidos.');
       toast.error('E-mail ou senha inválidos.');
     }
   };
@@ -401,8 +414,18 @@ const LoginPage = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">E-mail</label>
-                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
+                      aria-invalid={!!emailError}
+                      aria-describedby={emailError ? 'login-email-error' : undefined}
+                      className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground ${emailError ? 'border-destructive focus:outline-none focus:ring-1 focus:ring-destructive' : 'border-input'}`}
+                    />
+                    {emailError && (
+                      <p id="login-email-error" className="mt-1 text-xs text-destructive">{emailError}</p>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">Senha</label>
@@ -410,10 +433,15 @@ const LoginPage = () => {
                       required
                       minLength={6}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(null); }}
                       autoComplete="current-password"
                       showRules
+                      aria-invalid={!!passwordError}
+                      aria-describedby={passwordError ? 'login-password-error' : undefined}
                     />
+                    {passwordError && (
+                      <p id="login-password-error" className="mt-1 text-xs text-destructive">{passwordError}</p>
+                    )}
                   </div>
                   <div className="text-right">
                     <button type="button" onClick={() => navigate('/esqueci-senha', { state: { email } })}
