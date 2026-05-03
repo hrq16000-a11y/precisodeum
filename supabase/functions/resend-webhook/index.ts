@@ -4,6 +4,7 @@
 // Configure no painel do Resend: https://resend.com/webhooks
 // URL: https://<project-ref>.supabase.co/functions/v1/resend-webhook
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { validateResendWebhook } from "../_shared/webhookAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,46 +26,19 @@ Deno.serve(async (req) => {
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Verificação opcional do secret (Svix). Configure RESEND_WEBHOOK_SECRET para ativar.
-    const secret = Deno.env.get("RESEND_WEBHOOK_SECRET");
+    // Lê o body UMA vez (stream consumível) — necessário para validar HMAC
+    // antes de fazer JSON.parse.
     const rawBody = await req.text();
 
-    if (secret) {
-      const sig = req.headers.get("svix-signature");
-      const id = req.headers.get("svix-id");
-      const ts = req.headers.get("svix-timestamp");
-      if (!sig || !id || !ts) {
-        return new Response(JSON.stringify({ error: "Assinatura ausente" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      // Validação simplificada — Svix usa HMAC SHA-256 com secret base64.
-      try {
-        const secretBytes = Uint8Array.from(
-          atob(secret.replace(/^whsec_/, "")),
-          (c) => c.charCodeAt(0),
-        );
-        const data = new TextEncoder().encode(`${id}.${ts}.${rawBody}`);
-        const key = await crypto.subtle.importKey(
-          "raw",
-          secretBytes,
-          { name: "HMAC", hash: "SHA-256" },
-          false,
-          ["sign"],
-        );
-        const mac = await crypto.subtle.sign("HMAC", key, data);
-        const expected = btoa(String.fromCharCode(...new Uint8Array(mac)));
-        const provided = sig.split(" ").map((s) => s.split(",")[1]).filter(Boolean);
-        if (!provided.includes(expected)) {
-          return new Response(JSON.stringify({ error: "Assinatura inválida" }), {
-            status: 401,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-      } catch (e) {
-        console.error("svix verify error", e);
-      }
+    // Validação fail-closed: sem secret configurado retorna 500;
+    // headers ausentes / timestamp fora da janela / assinatura inválida → 401.
+    const authError = await validateResendWebhook(req, rawBody);
+    if (authError) {
+      // Reaplica corsHeaders na resposta (helper só seta Content-Type).
+      return new Response(authError.body, {
+        status: authError.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const evt = JSON.parse(rawBody);
