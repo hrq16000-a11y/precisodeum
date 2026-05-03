@@ -110,124 +110,139 @@ const LoginPage = () => {
     }
     setLoading(true);
 
-    const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
-      email: trimmedEmail,
-      password,
-    });
-
-    if (!signInError && signInData.session) {
-      // Navegação explícita imediata: não dependemos só do useEffect/onAuthStateChange.
-      // /cadastro-inicial tem seu próprio gate que decide o destino final.
-      toast.success('Bem-vindo(a)!');
-      navigate('/cadastro-inicial', { replace: true, state: from ? { from } : undefined });
-      setLoading(false);
-      return;
-    }
-
-
-    const errMsg = signInError?.message || '';
-
-    // E-mail não confirmado → orientar verificação
-    if (/email.*not.*confirmed|email_not_confirmed/i.test(errMsg)) {
-      setLoading(false);
-      toast.error('Confirme seu e-mail antes de entrar. Enviamos o link na criação da conta.');
-      return;
-    }
-
-    // Conta não existe → cria silenciosamente (porta única)
-    const looksLikeNoAccount = signInError && /invalid login credentials|invalid_grant|user not found/i.test(errMsg);
-
-    if (looksLikeNoAccount) {
-      // Bloqueio de reentrada (180 dias) — verifica antes de tentar criar a conta.
-      // O RPC `check_registration_block` cobre e-mail, WhatsApp e (server-side)
-      // hash de dispositivo/IP, então a mensagem aqui cita os três vetores.
-      try {
-        const deviceFp = await getDeviceFingerprint();
-        const { data: blockData } = await (supabase.rpc as any)('check_registration_block', {
-          _email: trimmedEmail,
-          _whatsapp: null,
-          _device_fingerprint: deviceFp,
-        });
-        const block = (blockData as any) || {};
-        if (block?.blocked) {
-          setLoading(false);
-          const days =
-            typeof block.days_remaining === "number" ? block.days_remaining : null;
-          const reasonRaw =
-            typeof block.reason === "string" && block.reason ? block.reason : null;
-          const matchedVia =
-            typeof block.matched_via === "string" ? block.matched_via : "unknown";
-          const expiresAt =
-            typeof block.expires_at === "string" ? block.expires_at : null;
-          const isPermanent = block.permanent === true;
-
-          // Vetor humanizado
-          const vector =
-            matchedVia === "email"
-              ? "este e-mail"
-              : matchedVia === "whatsapp"
-                ? "este WhatsApp"
-                : matchedVia === "device"
-                  ? "este dispositivo"
-                  : "este e-mail, WhatsApp ou dispositivo";
-
-          // Motivo humanizado
-          const reasonHuman =
-            reasonRaw === "self_deletion_180d"
-              ? "exclusão voluntária de conta (LGPD)"
-              : reasonRaw === "policy_violation"
-                ? "violação dos termos de uso"
-                : reasonRaw || "política de uso";
-
-          // Data formatada PT-BR
-          let when = "";
-          if (isPermanent) {
-            when = " O bloqueio é permanente.";
-          } else if (expiresAt) {
-            try {
-              const dt = new Date(expiresAt).toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              });
-              when = ` Você poderá criar uma nova conta a partir de ${dt}${
-                days != null ? ` (em ${days} dia${days === 1 ? "" : "s"})` : ""
-              }.`;
-            } catch {
-              if (days != null) {
-                when = ` Você poderá criar uma nova conta em ${days} dia${days === 1 ? "" : "s"}.`;
-              }
-            }
-          } else if (days != null) {
-            when = ` Você poderá criar uma nova conta em ${days} dia${days === 1 ? "" : "s"}.`;
-          }
-
-          // Instruções
-          const instructions = isPermanent
-            ? " Se acreditar que isso é um engano, entre em contato pelo /ajuda."
-            : " Enquanto isso, você pode entrar em contato pelo /ajuda em caso de dúvidas ou esperar o prazo expirar.";
-
-          toast.error(
-            `Por política de uso (LGPD), ${vector} está temporariamente impedido de criar nova conta.${when} Motivo: ${reasonHuman}.${instructions}`,
-            { duration: 12000 },
-          );
-          return;
-        }
-      } catch (e) {
-        // RPC indisponível → não bloqueia signup (fail-open intencional p/ não travar usuário legítimo)
-        console.warn('[reentry-check] skipped:', e);
-      }
-
-      const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
+    try {
+      const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/cadastro-inicial` },
       });
-      setLoading(false);
-      if (signUpError) {
-        const m = signUpError.message || '';
-        // Conta já existe → senha digitada está incorreta. Pré-preenche o forgot e abre o flow.
-        if (/already.*registered|user.*already.*exists|already_registered/i.test(m)) {
+
+      if (!signInError && signInData.session) {
+        // Navegação explícita imediata: não dependemos só do useEffect/onAuthStateChange.
+        // /cadastro-inicial tem seu próprio gate que decide o destino final.
+        toast.success('Bem-vindo(a)!');
+        navigate('/cadastro-inicial', { replace: true, state: from ? { from } : undefined });
+        return;
+      }
+
+      const errMsg = signInError?.message || '';
+
+      // E-mail não confirmado → orientar verificação
+      if (/email.*not.*confirmed|email_not_confirmed/i.test(errMsg)) {
+        toast.error('Confirme seu e-mail antes de entrar. Enviamos o link na criação da conta.');
+        return;
+      }
+
+      // Conta não existe → cria silenciosamente (porta única)
+      const looksLikeNoAccount = signInError && /invalid login credentials|invalid_grant|user not found/i.test(errMsg);
+
+      if (looksLikeNoAccount) {
+        // Bloqueio de reentrada (180 dias) — verifica antes de tentar criar a conta.
+        try {
+          const deviceFp = await getDeviceFingerprint();
+          const { data: blockData } = await (supabase.rpc as any)('check_registration_block', {
+            _email: trimmedEmail,
+            _whatsapp: null,
+            _device_fingerprint: deviceFp,
+          });
+          const block = (blockData as any) || {};
+          if (block?.blocked) {
+            const days =
+              typeof block.days_remaining === "number" ? block.days_remaining : null;
+            const reasonRaw =
+              typeof block.reason === "string" && block.reason ? block.reason : null;
+            const matchedVia =
+              typeof block.matched_via === "string" ? block.matched_via : "unknown";
+            const expiresAt =
+              typeof block.expires_at === "string" ? block.expires_at : null;
+            const isPermanent = block.permanent === true;
+
+            const vector =
+              matchedVia === "email"
+                ? "este e-mail"
+                : matchedVia === "whatsapp"
+                  ? "este WhatsApp"
+                  : matchedVia === "device"
+                    ? "este dispositivo"
+                    : "este e-mail, WhatsApp ou dispositivo";
+
+            const reasonHuman =
+              reasonRaw === "self_deletion_180d"
+                ? "exclusão voluntária de conta (LGPD)"
+                : reasonRaw === "policy_violation"
+                  ? "violação dos termos de uso"
+                  : reasonRaw || "política de uso";
+
+            let when = "";
+            if (isPermanent) {
+              when = " O bloqueio é permanente.";
+            } else if (expiresAt) {
+              try {
+                const dt = new Date(expiresAt).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                });
+                when = ` Você poderá criar uma nova conta a partir de ${dt}${
+                  days != null ? ` (em ${days} dia${days === 1 ? "" : "s"})` : ""
+                }.`;
+              } catch {
+                if (days != null) {
+                  when = ` Você poderá criar uma nova conta em ${days} dia${days === 1 ? "" : "s"}.`;
+                }
+              }
+            } else if (days != null) {
+              when = ` Você poderá criar uma nova conta em ${days} dia${days === 1 ? "" : "s"}.`;
+            }
+
+            const instructions = isPermanent
+              ? " Se acreditar que isso é um engano, entre em contato pelo /ajuda."
+              : " Enquanto isso, você pode entrar em contato pelo /ajuda em caso de dúvidas ou esperar o prazo expirar.";
+
+            toast.error(
+              `Por política de uso (LGPD), ${vector} está temporariamente impedido de criar nova conta.${when} Motivo: ${reasonHuman}.${instructions}`,
+              { duration: 12000 },
+            );
+            return;
+          }
+        } catch (e) {
+          // RPC indisponível → fail-open intencional
+          console.warn('[reentry-check] skipped:', e);
+        }
+
+        const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
+          email: trimmedEmail,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/cadastro-inicial` },
+        });
+        if (signUpError) {
+          const m = signUpError.message || '';
+          if (/already.*registered|user.*already.*exists|already_registered/i.test(m)) {
+            setForgotEmail(trimmedEmail);
+            setShowForgot(true);
+            toast.error('Já existe uma conta com esse e-mail. Redefina sua senha para continuar.', {
+              duration: 6000,
+            });
+            return;
+          }
+          if (/password.*(short|6 characters)|weak_password|pwned|weak/i.test(m)) {
+            toast.error('Escolha uma senha mais forte. Evite sequências fáceis e combinações comuns.');
+            return;
+          }
+          if (/rate limit|too many/i.test(m)) {
+            toast.error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+            return;
+          }
+          if (/invalid.*email|validate email|invalid.*format/i.test(m)) {
+            setEmailError('E-mail inválido.');
+            toast.error('E-mail inválido.');
+            return;
+          }
+          toast.error('Não foi possível criar sua conta. Tente novamente em instantes.');
+          return;
+        }
+        // Heurística: identities=[] indica e-mail já existente
+        const identities = (signUpData.user as any)?.identities;
+        if (Array.isArray(identities) && identities.length === 0) {
           setForgotEmail(trimmedEmail);
           setShowForgot(true);
           toast.error('Já existe uma conta com esse e-mail. Redefina sua senha para continuar.', {
@@ -235,49 +250,28 @@ const LoginPage = () => {
           });
           return;
         }
-        if (/password.*(short|6 characters)|weak_password|pwned|weak/i.test(m)) {
-          toast.error('Escolha uma senha mais forte. Evite sequências fáceis e combinações comuns.');
-          return;
+        if (signUpData.session) {
+          toast.success('Conta criada! Vamos configurar seu perfil.');
+          navigate('/cadastro-inicial', { replace: true, state: from ? { from } : undefined });
+        } else {
+          toast.success('Conta criada! Verifique seu e-mail para confirmar e depois faça login.');
         }
-        if (/rate limit|too many/i.test(m)) {
-          toast.error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
-          return;
-        }
-        if (/invalid.*email|validate email|invalid.*format/i.test(m)) {
-          toast.error('E-mail inválido.');
-          return;
-        }
-        toast.error('Não foi possível criar sua conta. Tente novamente em instantes.');
         return;
       }
-      // Heurística adicional: Supabase às vezes responde com sucesso + identities=[] quando o e-mail já existe
-      const identities = (signUpData.user as any)?.identities;
-      if (Array.isArray(identities) && identities.length === 0) {
-        setForgotEmail(trimmedEmail);
-        setShowForgot(true);
-        toast.error('Já existe uma conta com esse e-mail. Redefina sua senha para continuar.', {
-          duration: 6000,
-        });
-        return;
-      }
-      if (signUpData.session) {
-        toast.success('Conta criada! Vamos configurar seu perfil.');
-        // Navegação explícita: não dependemos só do onAuthStateChange para
-        // evitar usuário preso vendo o toast sem ir adiante.
-        navigate('/cadastro-inicial', { replace: true });
-      } else {
-        toast.success('Conta criada! Verifique seu e-mail para confirmar e depois faça login.');
-      }
-      return;
-    }
 
-    setLoading(false);
-    // Erros mais explícitos para outros casos
-    if (/rate limit|too many/i.test(errMsg)) {
-      toast.error('Muitas tentativas de login. Aguarde alguns minutos.');
-    } else {
-      setPasswordError('E-mail ou senha inválidos.');
-      toast.error('E-mail ou senha inválidos.');
+      // Erros mais explícitos para outros casos
+      if (/rate limit|too many/i.test(errMsg)) {
+        toast.error('Muitas tentativas de login. Aguarde alguns minutos.');
+      } else {
+        setPasswordError('E-mail ou senha inválidos.');
+        toast.error('E-mail ou senha inválidos.');
+      }
+    } catch (err: any) {
+      // Falha de rede ou exceção inesperada — não deixa o botão travado
+      console.error('[login] unexpected error:', err);
+      toast.error('Erro inesperado. Verifique sua conexão e tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
