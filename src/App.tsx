@@ -37,15 +37,6 @@ type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
   reactLazy(() => importWithRetry(importer));
 
-const isTransientNetworkError = (error: unknown) => {
-  if (!(error instanceof Error)) return false;
-  const message = error.message.toLowerCase();
-  return (
-    message.includes("failed to fetch") ||
-    message.includes("network") ||
-    message.includes("fetch")
-  );
-};
 
 // Route-level chunks — keep App shell light and split every page by route.
 const Index = lazy(() => import("./pages/Index"));
