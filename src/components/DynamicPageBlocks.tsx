@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
 import CategoryIcon from '@/components/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 
