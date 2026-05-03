@@ -1,5 +1,14 @@
 import { QueryClient } from '@tanstack/react-query';
-import { isTransientNetworkError } from '@/lib/networkErrors';
+
+const isTransientNetworkError = (error: unknown) => {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('failed to fetch') ||
+    message.includes('network') ||
+    message.includes('fetch')
+  );
+};
 
 /**
  * QueryClient global — extraído para evitar ciclos de import entre
