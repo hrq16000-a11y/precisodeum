@@ -84,28 +84,49 @@ export async function finalizeOnboarding(
   if (!userId) return { ok: true };
 
   // Sanitiza para garantir que o callsite não consiga sobrescrever os campos
-  // governados por este módulo.
+  // governados por este módulo (`onboarding_completed`/`onboarding_step` agora
+  // são responsabilidade exclusiva da RPC server-side).
   const sanitizedExtra = { ...(extraProfilePatch ?? {}) };
   delete (sanitizedExtra as any).onboarding_completed;
   delete (sanitizedExtra as any).onboarding_step;
 
-  const payload = {
-    ...sanitizedExtra,
-    onboarding_step: 5,
-    onboarding_completed: true,
-  };
+  // `profile_type` é obrigatório para a RPC atômica. Extraímos do extra patch
+  // (todos os callsites já o passam) e validamos contra a whitelist server-side.
+  const profileType = (sanitizedExtra as any).profile_type as string | undefined;
+  delete (sanitizedExtra as any).profile_type;
 
   try {
-    const { error } = await supabase
-      .from('profiles')
-      .update(payload as any)
-      .eq('id', userId);
+    // 4a) Campos auxiliares (full_name, whatsapp, city, etc.) — UPDATE comum.
+    //     Roda ANTES da RPC para que, em caso de falha do UPDATE auxiliar,
+    //     o flag canônico `onboarding_completed` não seja marcado.
+    if (Object.keys(sanitizedExtra).length > 0) {
+      const { error: extraErr } = await supabase
+        .from('profiles')
+        .update(sanitizedExtra as any)
+        .eq('id', userId);
+      if (extraErr) {
+        console.warn('[finalizeOnboarding] extra profile update failed (fail-soft)', extraErr);
+        return { ok: false, error: extraErr };
+      }
+    }
+
+    // 4b) RPC atômica server-side: marca os 3 campos canônicos em uma única
+    //     transação, validando caller (auth.uid()) e profile_type.
+    const { data, error } = await (supabase.rpc as any)('finalize_onboarding_atomic', {
+      _user_id: userId,
+      _profile_type: profileType,
+    });
     if (error) {
-      console.warn('[finalizeOnboarding] profile update failed (fail-soft)', error);
+      console.warn('[finalizeOnboarding] finalize_onboarding_atomic RPC failed', error);
       return { ok: false, error };
     }
+    const result = data as { ok?: boolean; error?: unknown } | null;
+    if (!result || result.ok !== true) {
+      console.warn('[finalizeOnboarding] finalize_onboarding_atomic returned not-ok', result);
+      return { ok: false, error: result?.error ?? 'finalize_atomic_not_ok' };
+    }
   } catch (error) {
-    console.warn('[finalizeOnboarding] profile update threw (fail-soft)', error);
+    console.warn('[finalizeOnboarding] finalize threw (fail-soft)', error);
     return { ok: false, error };
   }
 
