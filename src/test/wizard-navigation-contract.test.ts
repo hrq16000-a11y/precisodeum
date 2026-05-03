@@ -15,6 +15,7 @@
  *  - Phase4 (avatar/extras) Skip e Back devem alternar dentro do circuito V2.
  */
 import { describe, it, expect } from 'vitest';
+import { recoverBackoffDelayMs } from '@/lib/wizardErrorCodes';
 
 // Mapa expectativas: o teste apenas garante que o switch do reducer não muda.
 // Reproduz o comportamento documentado no `OnboardingV2Shell.tsx` (PREV/NEXT cases).
@@ -124,5 +125,15 @@ describe('Wizard navegação · contrato Skip/Continue/Back', () => {
     }
     // Ordem visitada de trás-pra-frente:
     expect(seq).toEqual(['phase2_photos', 'phase2_details', 'phase2_service']);
+  });
+
+  it('backoff de recuperação do wizard mantém faixa esperada com jitter', () => {
+    const secondAttempt = recoverBackoffDelayMs(1);
+    const thirdAttempt = recoverBackoffDelayMs(2);
+
+    expect(secondAttempt).toBeGreaterThanOrEqual(600);
+    expect(secondAttempt).toBeLessThanOrEqual(1000);
+    expect(thirdAttempt).toBeGreaterThanOrEqual(1800);
+    expect(thirdAttempt).toBeLessThanOrEqual(3000);
   });
 });
