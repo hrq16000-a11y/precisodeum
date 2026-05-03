@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import WizardShell from '@/components/onboarding/wizard/WizardShell';
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 import { getOnboardingReviewSection, isOnboardingReviewMode } from '@/lib/onboardingAccess';
@@ -192,6 +193,75 @@ export default function CadastroInicialPage() {
       duration: 6000,
     });
   }, [loading, authSettled, user]);
+
+  // [Self-heal] Se o auth resolveu, há sessão, mas `profile` continua nulo,
+  // pode ser: (B) Perfil Nulo (trigger falhou) ou (C) RLS 403. Vamos checar
+  // diretamente no banco — se a linha realmente não existir, inserimos um
+  // perfil mínimo para que o WizardShell consiga prosseguir.
+  const selfHealRef = useRef(false);
+  useEffect(() => {
+    if (loading || !authSettled || !user) return;
+    if (profile) return;
+    if (selfHealRef.current) return;
+    selfHealRef.current = true;
+
+    void (async () => {
+      const { data, error, status } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error && status === 403) {
+        if (import.meta.env.DEV) {
+          console.error('[cadastro-inicial][diag] profile fetch RLS 403', {
+            category: 'C_RLS_403', status, message: error.message, user_id: user.id,
+          });
+        }
+        void trackOnboardingEvent({
+          phase: 'unknown' as any,
+          event: 'error',
+          meta: { reason: 'profile_rls_403', error_code: 'C_RLS_403' },
+        });
+        return;
+      }
+
+      if (!data) {
+        if (import.meta.env.DEV) {
+          console.warn('[cadastro-inicial][diag] profile MISSING — self-heal insert', {
+            category: 'B_PROFILE_NULL', user_id: user.id,
+          });
+        }
+        const meta = (user.user_metadata || {}) as Record<string, any>;
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            full_name: meta.full_name ?? null,
+            avatar_url: meta.avatar_url ?? null,
+          } as any);
+
+        void trackOnboardingEvent({
+          phase: 'unknown' as any,
+          event: 'error',
+          meta: {
+            reason: insertError ? 'profile_self_heal_failed' : 'profile_self_heal_ok',
+            error_code: insertError ? 'B_PROFILE_NULL_HEAL_FAIL' : 'B_PROFILE_NULL_HEALED',
+            error_message: insertError?.message ?? null,
+          },
+        });
+
+        if (!insertError) {
+          toast.message('Configurando seu perfil...', { duration: 2500 });
+          // Recarrega para o useAuth pegar o profile recém-criado.
+          window.setTimeout(() => window.location.reload(), 600);
+        } else if (import.meta.env.DEV) {
+          console.error('[cadastro-inicial][diag] self-heal insert failed', insertError);
+        }
+      }
+    })();
+  }, [loading, authSettled, user, profile]);
+
 
   // Side-effect ÚNICO de telemetria/toast quando vamos redirecionar para
   // /login. NÃO navega (a navegação é declarativa via `<Navigate>` abaixo).
