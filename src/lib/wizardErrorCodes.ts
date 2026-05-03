@@ -58,3 +58,20 @@ export function phase2PhotosBlockCode(
  */
 export const RECOVER_BACKOFF_DELAYS_MS = [0, 800, 2400] as const;
 export const RECOVER_MAX_ATTEMPTS = RECOVER_BACKOFF_DELAYS_MS.length;
+
+/**
+ * Calcula o delay (ms) da tentativa `attempt` com **jitter** (±25%).
+ *
+ * Por que jitter: em cenários de concorrência (várias abas/instâncias do mesmo
+ * usuário tentando recuperar o mesmo `firstServiceId`), atrasos fixos colidem
+ * e geram contention no banco. O jitter aleatório distribui as tentativas e
+ * melhora a taxa de recuperação. A primeira tentativa (índice 0) permanece
+ * imediata para preservar a UX (resposta instantânea quando funciona de cara).
+ */
+export function recoverBackoffDelayMs(attempt: number): number {
+  const base = RECOVER_BACKOFF_DELAYS_MS[attempt] ?? 0;
+  if (base === 0) return 0;
+  // jitter ±25% — evita colisões sem aumentar muito o pior caso
+  const jitter = base * 0.25 * (Math.random() * 2 - 1);
+  return Math.max(0, Math.round(base + jitter));
+}
