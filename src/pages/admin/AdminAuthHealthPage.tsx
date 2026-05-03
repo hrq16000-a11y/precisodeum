@@ -240,6 +240,24 @@ export default function AdminAuthHealthPage() {
           </div>
         </div>
 
+        {queryError && (
+          <Card className="mb-4 border-destructive/40 bg-destructive/5">
+            <CardContent className="flex items-start gap-3 p-4">
+              <ShieldAlert className="mt-0.5 h-5 w-5 text-destructive" aria-hidden />
+              <div className="text-sm">
+                <p className="font-medium text-foreground">
+                  {isAccessDenied ? "Acesso negado" : "Não foi possível carregar os dados"}
+                </p>
+                <p className="text-muted-foreground">
+                  {isAccessDenied
+                    ? "Sua conta não tem permissão para visualizar este painel. Faça login com uma conta administrativa."
+                    : "Tente novamente em alguns instantes. Se o problema persistir, recarregue a página."}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* KPIs */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi
