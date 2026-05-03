@@ -5,6 +5,39 @@ import { usePresenceTracker } from '@/hooks/useOnlinePresence';
 import { geocodeCity } from '@/lib/geoUtils';
 import { resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/celebrate';
 import { reportError } from '@/lib/errorReporter';
+import { queryClient } from '@/lib/queryClient';
+
+/**
+ * Detecta de forma síncrona se há um token de sessão Supabase persistido
+ * em localStorage. Usado para inicializar `loading` corretamente:
+ *  - Sem token → loading=false (visitante anônimo, render imediato).
+ *  - Com token → loading=true (vamos restaurar a sessão; evita redirect
+ *    espúrio para /login no refresh de rota privada).
+ *
+ * O prefixo é derivado de VITE_SUPABASE_PROJECT_ID para nunca depender de
+ * um ID hardcoded — qualquer ambiente (preview, custom domain, fork) detecta
+ * o próprio token corretamente.
+ */
+const hasPersistedSupabaseSession = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const projectId = (import.meta as any)?.env?.VITE_SUPABASE_PROJECT_ID as string | undefined;
+    if (projectId) {
+      const key = `sb-${projectId}-auth-token`;
+      if (window.localStorage.getItem(key)) return true;
+    }
+    // Fallback defensivo: varre por qualquer chave sb-*-auth-token (cobre
+    // ambientes onde a env não foi injetada a tempo do bootstrap).
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) return true;
+    }
+  } catch {
+    // localStorage pode estar bloqueado (modo privado / iframe sandbox) —
+    // nesse caso assumimos visitante anônimo (loading=false).
+  }
+  return false;
+};
 
 interface AuthContextType {
   session: Session | null;
