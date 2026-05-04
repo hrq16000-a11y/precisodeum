@@ -123,11 +123,12 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
   const [params] = useSearchParams();
   const next = params.get('next') || '/dashboard';
   const { user, profile, refetchProfile } = useAuth();
+  const initialDraft = loadBetDraft();
   const [state, dispatch] = useReducer(reducer, undefined as unknown as BetState, () => ({
-    ...loadBetDraft(),
+    ...initialDraft,
     ...(seedState || {}),
     rewards: {
-      ...loadBetDraft().rewards,
+      ...initialDraft.rewards,
       ...(seedState?.rewards || {}),
     },
   }));
@@ -149,8 +150,9 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
   const draftOrigin = useRef<'remote' | 'localStorage' | 'none'>(
     (state.full_name || state.whatsapp || state.city) ? 'localStorage' : 'none'
   );
+  const seedHydratedRef = useRef(false);
   useEffect(() => {
-    if (!seedState) return;
+    if (!seedState || seedHydratedRef.current) return;
     const patchObj: Partial<BetState> = {};
     (Object.keys(seedState) as Array<keyof BetState>).forEach((key) => {
       const incoming = seedState[key];
@@ -175,6 +177,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
     if (Object.keys(patchObj).length > 0) {
       dispatch({ type: 'PATCH', patch: patchObj });
     }
+    seedHydratedRef.current = true;
   }, [seedState, state]);
   useEffect(() => {
     if (!user?.id || hydratedFromRemote.current) return;
