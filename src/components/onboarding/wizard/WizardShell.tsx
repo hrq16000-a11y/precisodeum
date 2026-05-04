@@ -23,7 +23,7 @@
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, LayoutDashboard, Briefcase, FolderOpen, Sparkles, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Briefcase, FolderOpen, Sparkles, ExternalLink } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
 import { buildOnboardingV2BootstrapState } from '@/components/onboarding/wizard/phases/v2/bootstrap';
@@ -458,44 +458,6 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     dispatch({ type: 'GO_TO_PHASE', phase: mapMainPhaseToUnified(v2Phase) });
   }, []);
 
-  // O botão global do topo deve existir APENAS no modo revisão.
-  // No fluxo normal, mantemos somente o botão "Voltar" interno de cada card,
-  // evitando duplicidade visual e conflito com o layout mobile.
-  const showGlobalBack = isReview && state.phase !== 'triage_identity' && state.phase !== 'done';
-
-  // Em revisão, Voltar pula automaticamente fases não-renderizáveis
-  // (main_action/kind/location/contact — expurgadas mas mantidas na régua
-  // X/19 para paridade com o Dashboard Assistant).
-  const prevReviewPhase = useCallback(prevRenderableReviewPhase, []);
-
-  const handleGlobalBack = useCallback(() => {
-    void trackOnboardingEvent({
-      phase: state.phase as any,
-      event: 'back',
-      meta: { variant: 'unified', source: 'global-nav' },
-    });
-    // Em modo revisão o Wizard é o "dono" da navegação: Voltar SEMPRE
-    // retrocede na régua REVIEW_PHASE_ORDER pulando fases-fantasma. Isto
-    // garante "Voltar infinito" da Step 19 até a Step 1, sem deadlock.
-    if (isReview) {
-      const prev = prevReviewPhase(state.phase);
-      if (prev !== state.phase) {
-        dispatch({ type: 'GO_TO_PHASE', phase: prev });
-        return;
-      }
-    }
-    // Fluxo normal: phase2_service/main_service voltam para a triagem
-    // (triage_celebration). O OnboardingV2Shell trata phase2_service como
-    // noop no listener `wizard:request-back`, então precisamos resolver aqui
-    // — caso contrário o botão global "Voltar" fica morto nessa fase.
-    if ((state.phase as string) === 'phase2_service' || state.phase === 'main_service') {
-      dispatch({ type: 'GO_TO_PHASE', phase: 'triage_celebration' as any });
-      return;
-    }
-    // Caso contrário, despacha o evento DOM tratado pelos orquestradores.
-    window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
-  }, [state.phase, isReview, prevReviewPhase]);
-
   // Listener para retrocesso na régua unificada disparado pelo V2.
   // - Em modo revisão: retrocede na REVIEW_PHASE_ORDER (assistente).
   // - Em fluxo normal (new_signup): da phase2_service volta para a triagem
@@ -673,22 +635,6 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         anchored={isReview && reviewIsAnchored}
         points={stage === 'triage' ? state.triage.points : realPoints}
       />
-      {/* Botão Voltar global removido das fases padrão — cada fase já tem o seu
-          via WizardNav. Aqui só renderizamos em modo revisão (edit_profile)
-          como atalho para o passo renderizável anterior. */}
-      {showGlobalBack && (
-        <div className="sticky top-3 z-30 mx-auto flex w-full max-w-5xl px-4 pt-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGlobalBack}
-            aria-label="Voltar para o passo anterior"
-            className="gap-2 shadow-sm"
-          >
-            <ArrowLeft className="h-4 w-4" /> Voltar
-          </Button>
-        </div>
-      )}
       {holdTriageWhileReviewBootstraps ? (
         <div className="mx-auto w-full max-w-md px-4 py-10">
           <BetCardShell>
