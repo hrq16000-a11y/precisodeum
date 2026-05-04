@@ -799,9 +799,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           break;
       }
     };
-    const handler = (e: Event) => { void goBack(); };
+    // Registra como owner 'v2' do orquestrador unificado de Voltar.
+    // V2 tem prioridade sobre Bet — quando ambos estão registrados (durante
+    // handoff), apenas o V2 processa o evento.
+    const releaseOwner = registerBackOwner('v2');
+    const handler = (e: Event) => {
+      // Mutex global: ignora se outro listener já consumiu este evento ou
+      // se ainda estamos no cooldown anti-double-tap (400ms).
+      if (!claimBackEvent('v2', e)) return;
+      void goBack();
+    };
     window.addEventListener('wizard:request-back', handler as EventListener);
-    return () => window.removeEventListener('wizard:request-back', handler as EventListener);
+    return () => {
+      window.removeEventListener('wizard:request-back', handler as EventListener);
+      releaseOwner();
+    };
   }, [state, editMode, navigate, user?.id]);
 
   // Limpeza do histórico de revisão ao SAIR do modo edit_profile (ex.: usuário
