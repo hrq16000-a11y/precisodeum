@@ -16,7 +16,7 @@
  */
 import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Trophy } from 'lucide-react';
 import {
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
@@ -32,6 +32,7 @@ interface WizardProgressBarProps {
   phase: UnifiedPhase;
   phaseOrder?: UnifiedPhase[];
   totalOverride?: number;
+  points?: number;
   /** Quando true, força 100% (usado em telas de celebração final). */
   forceComplete?: boolean;
   /** Quando true, sinaliza que o numerador exibido é uma âncora (fase atual
@@ -43,6 +44,7 @@ export function WizardProgressBar({
   phase,
   phaseOrder,
   totalOverride,
+  points,
   forceComplete = false,
   anchored = false,
 }: WizardProgressBarProps) {
@@ -115,8 +117,8 @@ export function WizardProgressBar({
           />
         )}
       </div>
-      <div className="mx-auto flex max-w-md items-center justify-between px-4 py-0.5 text-[10px] text-muted-foreground sm:py-1.5 sm:text-[11px]">
-        <span className="flex items-center gap-1.5 font-medium text-foreground">
+      <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-0.5 text-[10px] text-muted-foreground sm:py-1.5 sm:text-[11px]">
+        <span className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
           {isMilestone && (
             <Sparkles
               className="h-3 w-3 text-bet-amber drop-shadow-[0_0_4px_hsl(var(--bet-amber)/0.6)]"
@@ -126,7 +128,13 @@ export function WizardProgressBar({
           )}
           Etapa {stepNumber}/{total}
         </span>
-        <span className="truncate pl-3">{label}</span>
+        <span className="min-w-0 flex-1 truncate pl-1 text-right">{label}</span>
+        {typeof points === 'number' && (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-background/80 px-2 py-0.5 font-semibold text-foreground">
+            <Trophy className="h-3 w-3 text-bet-amber" aria-hidden strokeWidth={1.9} />
+            <span>{Math.max(0, Math.trunc(points))} pts</span>
+          </span>
+        )}
       </div>
     </div>
   );
