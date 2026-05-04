@@ -118,6 +118,15 @@ export function WizardProgressBar({
         )}
       </div>
       <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-0.5 text-[10px] text-muted-foreground sm:py-1.5 sm:text-[11px]">
+        {typeof points === 'number' && (
+          <span
+            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-bet-amber/40 bg-bet-amber/10 px-2 py-0.5 font-bold text-foreground shadow-[0_0_8px_hsl(var(--bet-amber)/0.35)]"
+            aria-label={`${Math.max(0, Math.trunc(points))} pontos`}
+          >
+            <Trophy className="h-3 w-3 text-bet-amber" aria-hidden strokeWidth={1.9} />
+            <span className="tabular-nums">{Math.max(0, Math.trunc(points))} pts</span>
+          </span>
+        )}
         <span className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
           {isMilestone && (
             <Sparkles
@@ -129,12 +138,6 @@ export function WizardProgressBar({
           Etapa {stepNumber}/{total}
         </span>
         <span className="min-w-0 flex-1 truncate pl-1 text-right">{label}</span>
-        {typeof points === 'number' && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-background/80 px-2 py-0.5 font-semibold text-foreground">
-            <Trophy className="h-3 w-3 text-bet-amber" aria-hidden strokeWidth={1.9} />
-            <span>{Math.max(0, Math.trunc(points))} pts</span>
-          </span>
-        )}
       </div>
     </div>
   );
