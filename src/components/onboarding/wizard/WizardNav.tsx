@@ -39,7 +39,7 @@ export function WizardNav({
   saving = false,
 }: WizardNavProps) {
   return (
-    <div className="mx-auto mt-4 flex w-full max-w-md items-center justify-between gap-3 px-4 pb-4">
+    <div className="sticky bottom-0 left-0 right-0 z-50 mx-auto flex w-full max-w-md items-center justify-between gap-3 border-t border-border bg-background px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
       {!hideBack ? (
         <Button
           type="button"
