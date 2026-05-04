@@ -63,15 +63,16 @@ interface RequestBackOptions {
  *   `requestWizardBackFallback` para acionar o evento legado.
  */
 export function requestWizardBack({ phase, source, meta }: RequestBackOptions): void {
+  const __backEventId = makeBackEventId();
   void trackOnboardingEvent({
     phase: phase as any,
     event: 'back',
-    meta: { ...meta, code: WIZARD_BACK_CODES.CLICK, source, variant: 'unified' },
+    meta: { ...meta, code: WIZARD_BACK_CODES.CLICK, source, variant: 'unified', event_id: __backEventId },
   });
   try {
     window.dispatchEvent(
       new CustomEvent(WIZARD_BACK_EVENTS.PREV_UNIFIED, {
-        detail: { phase, source, ...meta },
+        detail: { phase, source, ...meta, __backEventId },
       }),
     );
   } catch {
