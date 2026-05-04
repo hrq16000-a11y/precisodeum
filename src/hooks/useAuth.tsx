@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // estado global de auth. Quem precisar lê on-demand via query específica.
       const PROFILE_AUTH_COLUMNS =
         'id, full_name, avatar_url, profile_type, onboarding_completed, onboarding_step, ' +
-        'city, state, celebration_muted, role, permissions, account_type, account_type_id, ' +
+        'city, state, celebration_muted, role, permissions, account_type_id, ' +
         'level_id, engagement_points, primary_category_id, user_ref, created_at';
       try {
         // Per-attempt timeout: em mobile com rede ruim, requests do Supabase
@@ -122,7 +122,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)}`;
           console.warn('[useAuth] providers query error', pvErr);
         }
-        profileData = pData;
+        let derivedAccountType: string | null = null;
+        if (Array.isArray(pvRows) && pvRows.length > 0) {
+          derivedAccountType = String(
+            pvRows.find((row: any) => row?.account_type)?.account_type ?? pvRows[0]?.account_type ?? '',
+          ).trim() || null;
+        }
+        profileData = pData && typeof pData === 'object'
+          ? {
+              ...(pData as Record<string, unknown>),
+              account_type: (pData as any)?.account_type ?? derivedAccountType,
+            }
+          : pData;
         providerRows = pvRows;
         if (profileData) break;
       } catch (err: any) {
