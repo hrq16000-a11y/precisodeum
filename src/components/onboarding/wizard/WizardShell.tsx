@@ -463,34 +463,6 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   // X/19 para paridade com o Dashboard Assistant).
   const prevReviewPhase = useCallback(prevRenderableReviewPhase, []);
 
-  const handleGlobalBack = useCallback(() => {
-    void trackOnboardingEvent({
-      phase: state.phase as any,
-      event: 'back',
-      meta: { variant: 'unified', source: 'global-nav' },
-    });
-    // Em modo revisão o Wizard é o "dono" da navegação: Voltar SEMPRE
-    // retrocede na régua REVIEW_PHASE_ORDER pulando fases-fantasma. Isto
-    // garante "Voltar infinito" da Step 19 até a Step 1, sem deadlock.
-    if (isReview) {
-      const prev = prevReviewPhase(state.phase);
-      if (prev !== state.phase) {
-        dispatch({ type: 'GO_TO_PHASE', phase: prev });
-        return;
-      }
-    }
-    // Fluxo normal: phase2_service/main_service voltam para a triagem
-    // (triage_celebration). O OnboardingV2Shell trata phase2_service como
-    // noop no listener `wizard:request-back`, então precisamos resolver aqui
-    // — caso contrário o botão global "Voltar" fica morto nessa fase.
-    if ((state.phase as string) === 'phase2_service' || state.phase === 'main_service') {
-      dispatch({ type: 'GO_TO_PHASE', phase: 'triage_celebration' as any });
-      return;
-    }
-    // Caso contrário, despacha o evento DOM tratado pelos orquestradores.
-    window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
-  }, [state.phase, isReview, prevReviewPhase]);
-
   // Listener para retrocesso na régua unificada disparado pelo V2.
   // - Em modo revisão: retrocede na REVIEW_PHASE_ORDER (assistente).
   // - Em fluxo normal (new_signup): da phase2_service volta para a triagem
