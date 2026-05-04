@@ -230,15 +230,6 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
 
   return (
     <motion.div {...wizardEnter} className={ws.container}>
-      <button
-        type="button"
-        onClick={handleBackTop}
-        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
-        aria-label="Voltar para a etapa anterior do cadastro"
-        data-testid="phase4-avatar-back"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
-      </button>
       <header className={ws.headerWrap}>
         <div className={ws.chip}>
           <CameraIcon className="h-3 w-3" /> Foto de perfil
@@ -527,16 +518,6 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
     <AnimatePresence mode="wait">
       {!verified ? (
         <motion.div key="doc" {...wizardEnter} className={ws.container}>
-          <button
-            type="button"
-            onClick={handleBack}
-            className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
-            aria-label="Voltar para a etapa anterior do cadastro"
-            data-testid="phase4-doc-back"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
-          </button>
-
           <header className={ws.headerWrap}>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-emerald-500 text-white shadow-[0_0_24px_rgba(251,146,60,0.45)]">
               <ShieldCheck className="h-7 w-7" aria-hidden="true" />
@@ -712,15 +693,6 @@ export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: Ex
   };
   return (
     <motion.div {...wizardEnter} className={ws.container}>
-      <button
-        type="button"
-        onClick={handleBackTop}
-        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
-        aria-label="Voltar para a etapa anterior do cadastro"
-        data-testid="phase4-extras-a-back"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
-      </button>
       <header className={ws.headerWrap}>
         <h1 className={ws.title}>Quase lá — falta só ajustar seu perfil.</h1>
         <p className={ws.subtitle}>Ajuda quem busca por você na sua região.</p>
@@ -800,16 +772,6 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
 
   return (
     <motion.div {...wizardEnter} className={ws.container}>
-      <button
-        type="button"
-        onClick={handleBackTop}
-        disabled={saving}
-        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
-        aria-label="Voltar para a etapa anterior do cadastro"
-        data-testid="phase4-extras-b-back"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
-      </button>
       <header className={ws.headerWrap}>
         <h1 className={ws.title}>Suas redes (opcional)</h1>
         <p className={ws.subtitle}>Mostre seu trabalho onde já existe.</p>
