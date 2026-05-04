@@ -467,6 +467,10 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     ? state.phase !== 'triage_identity' && state.phase !== 'done'
     : state.phase !== 'triage_identity' &&
       state.phase !== 'triage_celebration' &&
+      state.phase !== 'main_document' &&
+      state.phase !== 'main_avatar' &&
+      state.phase !== 'main_extras_a' &&
+      state.phase !== 'main_extras_b' &&
       state.phase !== 'done';
 
   // Em revisão, Voltar pula automaticamente fases não-renderizáveis
