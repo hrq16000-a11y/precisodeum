@@ -1679,7 +1679,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // conforme o kind (PF → cpf, PJ → cnpj). Isso evita o erro
       // "Could not find the 'tax_id' column of 'providers'" reportado em produção.
       const { tax_id: incomingTaxId, ...rawProviderPatch } = patch as Record<string, any>;
-      const providerPatch = buildProviderSocialPatch(rawProviderPatch, state.profile);
+      const providerPatch = withProviderLocationFallback(
+        buildProviderSocialPatch(rawProviderPatch, state.profile),
+        state.profile,
+      );
       if (incomingTaxId) {
         const isPj = state.profile.kind === 'pj';
         if (isPj) providerPatch.cnpj = incomingTaxId;
@@ -1696,11 +1699,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
       return true;
     } catch (e: any) {
+      const parsed = parseProviderIntegrityError(e);
+      if (parsed.matched) {
+        dispatchProviderIntegrityFocus(parsed);
+        toast.error(parsed.title, {
+          description: parsed.description,
+          action: { label: parsed.ctaLabel, onClick: () => dispatchProviderIntegrityFocus(parsed) },
+        });
+      }
       logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'persist_patch', keys: Object.keys(patch || {}), flow: isCompany ? 'company' : 'default' } });
-      toast.error('Não consegui salvar este passo agora', {
-        description: (e?.message || '').slice(0, 160) || undefined,
-        action: { label: 'Tentar novamente', onClick: () => { void persistPatch(patch); } },
-      });
+      if (!parsed.matched) {
+        toast.error('Não consegui salvar este passo agora', {
+          description: (e?.message || '').slice(0, 160) || undefined,
+          action: { label: 'Tentar novamente', onClick: () => { void persistPatch(patch); } },
+        });
+      }
       return false;
     } finally {
       setSaving(false);
