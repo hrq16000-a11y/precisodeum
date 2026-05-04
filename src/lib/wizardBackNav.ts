@@ -14,6 +14,7 @@
  *  - Use SEMPRE `requestWizardBack({ phase, source })` no onBack das fases.
  */
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
+import { makeBackEventId } from '@/lib/wizardBackOrchestrator';
 
 export const WIZARD_BACK_EVENTS = {
   /** Evento principal: tratado pelo WizardShell (régua unificada / revisão). */
@@ -62,15 +63,16 @@ interface RequestBackOptions {
  *   `requestWizardBackFallback` para acionar o evento legado.
  */
 export function requestWizardBack({ phase, source, meta }: RequestBackOptions): void {
+  const __backEventId = makeBackEventId();
   void trackOnboardingEvent({
     phase: phase as any,
     event: 'back',
-    meta: { ...meta, code: WIZARD_BACK_CODES.CLICK, source, variant: 'unified' },
+    meta: { ...meta, code: WIZARD_BACK_CODES.CLICK, source, variant: 'unified', event_id: __backEventId },
   });
   try {
     window.dispatchEvent(
       new CustomEvent(WIZARD_BACK_EVENTS.PREV_UNIFIED, {
-        detail: { phase, source, ...meta },
+        detail: { phase, source, ...meta, __backEventId },
       }),
     );
   } catch {
@@ -86,15 +88,16 @@ export function requestWizardBack({ phase, source, meta }: RequestBackOptions): 
  * registrado na régua atual).
  */
 export function requestWizardBackFallback({ phase, source, meta }: RequestBackOptions): void {
+  const __backEventId = makeBackEventId();
   void trackOnboardingEvent({
     phase: phase as any,
     event: 'back',
-    meta: { ...meta, code: WIZARD_BACK_CODES.GUARD_FALLBACK, source },
+    meta: { ...meta, code: WIZARD_BACK_CODES.GUARD_FALLBACK, source, event_id: __backEventId },
   });
   try {
     window.dispatchEvent(
       new CustomEvent(WIZARD_BACK_EVENTS.REQUEST_BACK, {
-        detail: { phase, source, fallback: true },
+        detail: { phase, source, fallback: true, __backEventId },
       }),
     );
   } catch {
@@ -122,6 +125,7 @@ export function requestWizardBackForPhase({ phase, source, meta, editMode = fals
     requestWizardBack({ phase, source, meta });
     return;
   }
+  const __backEventId = makeBackEventId();
   void trackOnboardingEvent({
     phase: phase as any,
     event: 'back',
@@ -131,12 +135,13 @@ export function requestWizardBackForPhase({ phase, source, meta, editMode = fals
       source,
       target_event: WIZARD_BACK_EVENTS.REQUEST_BACK,
       variant: 'unified',
+      event_id: __backEventId,
     },
   });
   try {
     window.dispatchEvent(
       new CustomEvent(WIZARD_BACK_EVENTS.REQUEST_BACK, {
-        detail: { phase, source, ...meta },
+        detail: { phase, source, ...meta, __backEventId },
       }),
     );
   } catch {

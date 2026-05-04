@@ -28,6 +28,7 @@ import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload, mapLocationSourceToGeoSource } from '@/lib/providerPayload';
 import { parseProviderIntegrityError, dispatchProviderIntegrityFocus } from '@/lib/providerIntegrityError';
 import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
+import { registerBackOwner, claimBackEvent } from '@/lib/wizardBackOrchestrator';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { betDraftPayloadSchema, providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
 
@@ -284,7 +285,16 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
   }, [state.phase]);
 
   useEffect(() => {
-    function handleBack() {
+    // Registra como owner 'bet' do orquestrador unificado de Voltar.
+    // Em fluxo profissional, quando o V2 monta, ele tem prioridade — o Bet
+    // continua registrado mas `claimBackEvent('bet')` retornará false enquanto
+    // V2 estiver na arena. Isso evita o bug clássico de listeners concorrentes.
+    const releaseOwner = registerBackOwner('bet');
+
+    function handleBack(ev: Event) {
+      // Mutex: só processa se for o owner ativo (sem V2 montado) e dentro do
+      // cooldown de 400ms (anti-double-tap).
+      if (!claimBackEvent('bet', ev)) return;
       // Guarda rígida: só responde quando o BetModeShell é o orquestrador
       // ativo (fase de triagem). Em fluxos PJ/empresa ou já no V2, o Main
       // tem seus próprios controles de back e o Bet NÃO deve interferir.
@@ -329,6 +339,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
     return () => {
       window.removeEventListener('wizard:request-back', handleBack as EventListener);
       window.removeEventListener('popstate', handlePopState);
+      releaseOwner();
     };
   }, [state.phase]);
 
