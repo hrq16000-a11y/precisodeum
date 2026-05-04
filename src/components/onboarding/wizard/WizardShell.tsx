@@ -458,20 +458,10 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     dispatch({ type: 'GO_TO_PHASE', phase: mapMainPhaseToUnified(v2Phase) });
   }, []);
 
-  // Botão de voltar global — em modo revisão, fica visível em TODA fase
-  // exceto a primeira (Identidade) e o estado final (`done`). Inclusive nas
-  // celebrações (Step 6 e Step 14), porque o usuário precisa poder voltar
-  // mesmo após "publicar" o serviço quando está apenas revisando.
-  // Fora de review mantém comportamento legado (esconde nas celebrações).
-  const showGlobalBack = isReview
-    ? state.phase !== 'triage_identity' && state.phase !== 'done'
-    : state.phase !== 'triage_identity' &&
-      state.phase !== 'triage_celebration' &&
-      state.phase !== 'main_document' &&
-      state.phase !== 'main_avatar' &&
-      state.phase !== 'main_extras_a' &&
-      state.phase !== 'main_extras_b' &&
-      state.phase !== 'done';
+  // O botão global do topo deve existir APENAS no modo revisão.
+  // No fluxo normal, mantemos somente o botão "Voltar" interno de cada card,
+  // evitando duplicidade visual e conflito com o layout mobile.
+  const showGlobalBack = isReview && state.phase !== 'triage_identity' && state.phase !== 'done';
 
   // Em revisão, Voltar pula automaticamente fases não-renderizáveis
   // (main_action/kind/location/contact — expurgadas mas mantidas na régua
