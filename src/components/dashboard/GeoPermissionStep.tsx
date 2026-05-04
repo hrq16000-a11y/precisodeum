@@ -42,7 +42,7 @@ export default function GeoPermissionStep({ catalog, onConfirm, onSkipToManual }
     try {
       const res = await geo.requestPreciseLocation({ force: true });
       if (!res.ok) {
-        toast.message('Não foi possível obter o GPS. Usaremos sua localização aproximada por IP.', {
+        toast.message('Não foi possível obter o GPS.', {
           description: 'Você pode digitar a cidade manualmente abaixo.',
         });
       }
