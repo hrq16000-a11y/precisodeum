@@ -32,7 +32,7 @@ export default function GeoPermissionStep({ catalog, onConfirm, onSkipToManual }
   const cataloged = detectedCity ? isCatalogedCity(detectedCity, catalog) : false;
   const sourceLabel =
     geo.source === 'gps' ? 'GPS preciso'
-    : geo.source === 'ip' ? 'localização aproximada por IP'
+    : geo.source === 'ip' ? 'localização detectada'
     : geo.source === 'cache' ? 'localização salva anteriormente'
     : geo.source === 'manual' ? 'cidade definida por você'
     : 'localização desconhecida';
