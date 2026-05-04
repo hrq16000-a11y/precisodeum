@@ -37,11 +37,24 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
   const safe: WorkingHoursStruct = value && Array.isArray(value.ranges) ? value : makeEmptyStruct();
   const [customMode, setCustomMode] = useState<boolean>(() => detectPreset(safe) === null);
   const activePreset = detectPreset(safe);
+  // Accordion para presets secundários — fechado por padrão para não poluir.
+  const [showOtherPresets, setShowOtherPresets] = useState(false);
+
+  // Default automático: se o usuário entrou na etapa SEM nenhuma faixa
+  // configurada, pré-seleciona "Comercial (Seg–Sex 08–18h)" para reduzir
+  // fricção. Só dispara uma vez quando o struct está vazio.
+  useEffect(() => {
+    if (safe.ranges.length === 0 && activePreset === null) {
+      onChange(applyPreset('commercial'));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Se o usuário aplicou um preset, fechamos o ajuste fino automaticamente.
   useEffect(() => {
     if (activePreset && activePreset !== 'on_demand') setCustomMode(false);
   }, [activePreset]);
+
 
   const setStruct = (next: WorkingHoursStruct) => onChange(next);
 
