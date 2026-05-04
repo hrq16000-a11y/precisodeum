@@ -71,28 +71,6 @@ function reducer(s: BetState, a: Action): BetState {
   }
 }
 
-const PHASE_LABELS: Record<BetPhase, string> = {
-  identity: 'Identificação',
-  who: 'Quem é você',
-  client_city: 'Sua cidade',
-  pro_kind: 'Tipo de conta',
-  pro_document: 'Documento',
-  pro_location: 'Cidade base',
-  celebration: 'Conquista',
-  done: 'Concluído',
-};
-
-const PHASE_PROGRESS: Record<BetPhase, number> = {
-  identity: 0.15,
-  who: 0.35,
-  client_city: 0.85,
-  pro_kind: 0.55,
-  pro_document: 0.75,
-  pro_location: 0.9,
-  celebration: 1,
-  done: 1,
-};
-
 // IDs reais das contas em public.account_types
 const ACCOUNT_TYPE_ID_PF = '61f51480-d8c2-4c78-8f44-6a17e8b6b968'; // Profissional Autônomo
 const ACCOUNT_TYPE_ID_PJ = '4e322d19-c999-4563-ac63-45ccefd78736'; // Empresa / Agência
