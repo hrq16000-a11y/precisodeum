@@ -89,6 +89,17 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
             aria-hidden
             className="pointer-events-none absolute -inset-x-10 -top-10 h-24 rotate-12 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 transition-all duration-700 group-hover:translate-x-[160%] group-hover:opacity-100 dark:via-white/10"
           />
+          {state.pro_kind === 'pf' && (
+            <motion.div
+              initial={{ scale: 0, rotate: -30 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 14 }}
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg"
+              aria-hidden
+            >
+              <Check className="h-5 w-5" strokeWidth={3} />
+            </motion.div>
+          )}
           <div className="flex items-center gap-4">
             <motion.div
               animate={{ y: [0, -4, 0] }}
