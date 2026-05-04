@@ -31,7 +31,6 @@ import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { betDraftPayloadSchema, providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
 
-import PointsHud from './PointsHud';
 import PhaseIdentity from './PhaseIdentity';
 import PhaseWho from './PhaseWho';
 import PhaseClientCity from './PhaseClientCity';
@@ -733,11 +732,6 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
-      <PointsHud
-        points={state.points}
-        phaseLabel={PHASE_LABELS[state.phase]}
-        progress={PHASE_PROGRESS[state.phase]}
-      />
       {state.phase === 'identity' && (
         <PhaseIdentity state={state} patch={patch} next={() => goto('who')} awardReward={awardReward} />
       )}
