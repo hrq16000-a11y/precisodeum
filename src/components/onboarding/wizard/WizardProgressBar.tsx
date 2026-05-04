@@ -17,6 +17,7 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { Sparkles, Trophy } from 'lucide-react';
+import DopamineCounter from '@/components/dashboard/DopamineCounter';
 import {
   UNIFIED_PHASE_LABELS,
   UNIFIED_VISIBLE_PHASES,
@@ -117,14 +118,20 @@ export function WizardProgressBar({
           />
         )}
       </div>
-      <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-0.5 text-[10px] text-muted-foreground sm:py-1.5 sm:text-[11px]">
+      <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-1 text-[10px] text-muted-foreground sm:py-1.5 sm:text-[11px]">
         {typeof points === 'number' && (
           <span
-            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-bet-amber/40 bg-bet-amber/10 px-2 py-0.5 font-bold text-foreground shadow-[0_0_8px_hsl(var(--bet-amber)/0.35)]"
+            className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-bet-amber/40 bg-gradient-to-br from-bet-amber-soft via-background to-bet-orange-soft px-3 py-2 font-bold text-foreground shadow-[0_0_24px_hsl(var(--bet-amber)/0.32)]"
             aria-label={`${Math.max(0, Math.trunc(points))} pontos`}
           >
-            <Trophy className="h-3 w-3 text-bet-amber" aria-hidden strokeWidth={1.9} />
-            <span className="tabular-nums">{Math.max(0, Math.trunc(points))} pts</span>
+            <Trophy className="h-4 w-4 text-bet-amber" aria-hidden strokeWidth={1.9} />
+            <DopamineCounter
+              value={Math.max(0, Math.trunc(points))}
+              duration={700}
+              suffix=" pts"
+              celebrateOnComplete={false}
+              className="text-base font-extrabold tabular-nums text-foreground"
+            />
           </span>
         )}
         <span className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
