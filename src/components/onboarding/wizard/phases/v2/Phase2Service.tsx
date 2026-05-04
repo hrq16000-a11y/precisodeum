@@ -480,7 +480,7 @@ export const Phase2Details = ({
       role="region"
       aria-labelledby="phase2-details-title"
     >
-      <BackButton onBack={onBack} />
+      {/* BackButton removido — Voltar global vem do WizardShell. */}
       <header className="space-y-2 text-center">
         <h1 id="phase2-details-title" className="font-display text-lg font-extrabold leading-tight text-foreground">
           Para quem e por quanto?
