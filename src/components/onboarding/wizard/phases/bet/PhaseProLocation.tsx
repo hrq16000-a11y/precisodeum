@@ -446,7 +446,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
                 aria-label={gpsAccuracy != null && gpsAccuracy <= 100 ? 'GPS preciso' : 'GPS aproximado'}
               />
             ) : (
-              <MapPin className="h-3.5 w-3.5" aria-label="Localização aproximada por IP" />
+              <MapPin className="h-3.5 w-3.5" aria-label="Localização" />
             )}
             Cidade-base
             {cityOk && (
