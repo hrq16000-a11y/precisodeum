@@ -23,7 +23,7 @@
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, LayoutDashboard, Briefcase, FolderOpen, Sparkles } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Briefcase, FolderOpen, Sparkles, ExternalLink } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';
 import { buildOnboardingV2BootstrapState } from '@/components/onboarding/wizard/phases/v2/bootstrap';
@@ -758,10 +758,6 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
               Escolha por onde quer continuar:
             </p>
             <div className="mt-5 flex flex-col gap-2">
-              {/* CORREÇÃO 2 — InstallAppCard antes do CTA principal.
-                  O próprio componente retorna null quando já está em
-                  display-mode: standalone (PWA instalado). */}
-              <InstallAppCard source="wizard-unified-done" />
               <Button asChild className="w-full gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(251,146,60,0.7)] hover:opacity-95">
                 <Link to="/dashboard">
                   <LayoutDashboard className="h-4 w-4" /> Ir para o dashboard
@@ -777,6 +773,14 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
                   <FolderOpen className="h-4 w-4" /> Criar Portfólio
                 </Link>
               </Button>
+              {provider?.slug ? (
+                <Button asChild variant="outline" className="w-full gap-2">
+                  <Link to={`/profissional/${provider.slug}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" /> Ver minha página
+                  </Link>
+                </Button>
+              ) : null}
+              <InstallAppCard source="wizard-unified-done" alwaysShow />
             </div>
           </BetCardShell>
         </div>
