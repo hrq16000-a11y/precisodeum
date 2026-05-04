@@ -43,7 +43,7 @@ import { acquireWizardSessionLock, releaseWizardSessionLock } from '@/lib/wizard
 import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
-import EditModeSkipButton from './EditModeSkipButton';
+// EditModeSkipButton removido — botão "Pular esta etapa" desativado globalmente.
 import { WizardModeContext, resolveWizardMode, type WizardMode } from './wizardMode';
 import { trackOnboardingEvent, setOnboardingIntent } from './phases/v2/telemetry';
 import {
