@@ -77,6 +77,19 @@ import type { BetState } from './phases/bet/types';
 
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
 
+/**
+ * Fases consideradas opcionais — exibem o botão "Pular" no slot fixo
+ * superior direito (Correção 1). Mantém paridade com os botões "Pular
+ * por enquanto" já presentes nas fases internas.
+ */
+const OPTIONAL_PHASES = new Set<UnifiedPhase>([
+  'main_photos',
+  'main_extras_a',
+  'main_extras_b',
+  'main_more_services',
+  'main_portfolio_albums',
+]);
+
 interface WizardShellProps {
   /**
    * Modo de operação do wizard.
@@ -613,6 +626,38 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     <WizardModeContext.Provider value={{ mode: resolvedMode, isEditing: isReview }}>
     <div className="min-h-[100svh] text-[15px] leading-snug bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
       <EditModeSkipButton state={state} phase={state.phase} />
+      {/* CORREÇÃO 1 — Slot FIXO no topo direito para o botão "Pular".
+          Aparece APENAS nas fases opcionais (fotos, extras A/B, portfolio,
+          mais serviços). As fases internas continuam tendo seus próprios
+          botões "Pular por enquanto"; este aqui é um atalho global e
+          discreto que NÃO some no scroll (position: fixed + safe-area). */}
+      {OPTIONAL_PHASES.has(state.phase) && (
+        <div
+          className="fixed right-4 z-50"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              void trackOnboardingEvent({
+                phase: state.phase as any,
+                event: 'skip',
+                meta: { variant: 'unified', source: 'global-skip-slot', reason: 'optional_phase' },
+              });
+              window.dispatchEvent(
+                new CustomEvent('wizard:request-skip', {
+                  detail: { phase: state.phase, source: 'global-skip-slot' },
+                }),
+              );
+            }}
+            className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring rounded"
+            aria-label="Pular esta etapa opcional"
+          >
+            Pular
+          </button>
+        </div>
+      )}
+
       <ExitIntentDialog
         phase={state.phase}
         intent={
@@ -719,9 +764,13 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
               Escolha por onde quer continuar:
             </p>
             <div className="mt-5 flex flex-col gap-2">
+              {/* CORREÇÃO 2 — InstallAppCard antes do CTA principal.
+                  O próprio componente retorna null quando já está em
+                  display-mode: standalone (PWA instalado). */}
+              <InstallAppCard source="wizard-unified-done" variant="inline" />
               <Button asChild className="w-full gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(251,146,60,0.7)] hover:opacity-95">
                 <Link to="/dashboard">
-                  <LayoutDashboard className="h-4 w-4" /> Conhecer o dashboard
+                  <LayoutDashboard className="h-4 w-4" /> Ir para o dashboard
                 </Link>
               </Button>
               <Button asChild variant="outline" className="w-full gap-2">
@@ -734,12 +783,22 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
                   <FolderOpen className="h-4 w-4" /> Abrir portfólio
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="w-full gap-2">
-                <Link to="/cadastro-inicial?mode=review&section=cadastro&next=/dashboard">
-                  <ArrowLeft className="h-4 w-4" /> Revisar cadastro do início
-                </Link>
+              {/* CORREÇÃO 3 — limpa firstServiceId antes de redirecionar
+                  para o modo revisão, garantindo que o serviço cadastrado
+                  não seja tratado como "novo" pelas fases. A flag
+                  ?mode=review faz EditModeSkipButton aparecer em todas as
+                  fases já completas. */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => {
+                  dispatch({ type: 'HYDRATE', state: { firstServiceId: null } });
+                  navigate('/cadastro-inicial?mode=review&section=cadastro&next=/dashboard');
+                }}
+              >
+                <ArrowLeft className="h-4 w-4" /> Revisar cadastro do início
               </Button>
-              <InstallAppCard source="wizard-unified-done" variant="inline" />
             </div>
           </BetCardShell>
         </div>
