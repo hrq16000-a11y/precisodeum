@@ -33,6 +33,7 @@ import { logWizardError } from '@/lib/wizardErrorGuard';
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
 import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 import { setActiveWizardPhase, scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
+import { parseProviderIntegrityError, dispatchProviderIntegrityFocus } from '@/lib/providerIntegrityError';
 
 // Aviso única vez por sessão para evitar spam
 let _addressWarnedOnce = false;
@@ -80,6 +81,33 @@ function buildProviderSocialPatch(patch: Record<string, any>, currentProfile: { 
 
   nextPatch.social_links = socialLinks;
   return nextPatch;
+}
+
+function withProviderLocationFallback(
+  patch: Record<string, any>,
+  profile: {
+    city?: string;
+    state?: string;
+    neighborhood?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  },
+) {
+  const next = { ...patch };
+  if (!('city' in next) || typeof next.city !== 'string' || !next.city.trim()) {
+    next.city = profile.city || '';
+  }
+  if (!('state' in next) || typeof next.state !== 'string' || !next.state.trim()) {
+    next.state = profile.state || '';
+  }
+  if (!('neighborhood' in next) || typeof next.neighborhood !== 'string' || !next.neighborhood.trim()) {
+    next.neighborhood = profile.neighborhood || '';
+  }
+  if ((next.latitude == null || next.longitude == null) && profile.latitude != null && profile.longitude != null) {
+    next.latitude = profile.latitude;
+    next.longitude = profile.longitude;
+  }
+  return next;
 }
 import { useWizardDuplicateCheck } from '@/hooks/useWizardDuplicateCheck';
 import {
@@ -1651,7 +1679,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // conforme o kind (PF → cpf, PJ → cnpj). Isso evita o erro
       // "Could not find the 'tax_id' column of 'providers'" reportado em produção.
       const { tax_id: incomingTaxId, ...rawProviderPatch } = patch as Record<string, any>;
-      const providerPatch = buildProviderSocialPatch(rawProviderPatch, state.profile);
+      const providerPatch = withProviderLocationFallback(
+        buildProviderSocialPatch(rawProviderPatch, state.profile),
+        state.profile,
+      );
       if (incomingTaxId) {
         const isPj = state.profile.kind === 'pj';
         if (isPj) providerPatch.cnpj = incomingTaxId;
@@ -1668,11 +1699,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
       return true;
     } catch (e: any) {
+      const parsed = parseProviderIntegrityError(e);
+      if (parsed.matched) {
+        dispatchProviderIntegrityFocus(parsed);
+        toast.error(parsed.title, {
+          description: parsed.description,
+          action: { label: parsed.ctaLabel, onClick: () => dispatchProviderIntegrityFocus(parsed) },
+        });
+      }
       logWizardError({ phase: state.phase, userId: user?.id, error: e, variant: 'v2', context: { action: 'persist_patch', keys: Object.keys(patch || {}), flow: isCompany ? 'company' : 'default' } });
-      toast.error('Não consegui salvar este passo agora', {
-        description: (e?.message || '').slice(0, 160) || undefined,
-        action: { label: 'Tentar novamente', onClick: () => { void persistPatch(patch); } },
-      });
+      if (!parsed.matched) {
+        toast.error('Não consegui salvar este passo agora', {
+          description: (e?.message || '').slice(0, 160) || undefined,
+          action: { label: 'Tentar novamente', onClick: () => { void persistPatch(patch); } },
+        });
+      }
       return false;
     } finally {
       setSaving(false);
@@ -2202,8 +2243,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onContinue={async () => {
               track('submit');
+              let ok = true;
               if (!coreLocks.document) {
-                await persistPatch({ tax_id: state.profile.document });
+                ok = await persistPatch({ tax_id: state.profile.document });
+              }
+              if (!ok) {
+                return;
               }
               track('next');
               dispatch({ type: 'NEXT' });
@@ -2222,7 +2267,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onContinue={async () => {
               track('submit');
               if (state.profile.avatar_url) {
-                await persistPatch({ photo_url: state.profile.avatar_url });
+                const ok = await persistPatch({ photo_url: state.profile.avatar_url });
+                if (!ok) return;
                 await supabase.from('profiles')
                   .update({ avatar_url: state.profile.avatar_url })
                   .eq('id', user!.id);
@@ -2241,11 +2287,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onContinue={async () => {
               track('submit');
-              await persistPatch(nullifyEmpty({
+              const ok = await persistPatch(nullifyEmpty({
                 years_experience: state.profile.years_experience,
                 neighborhood: state.profile.neighborhood,
                 description: state.profile.bio,
               }));
+              if (!ok) return;
               track('next');
               dispatch({ type: 'NEXT' });
             }}
@@ -2287,11 +2334,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase4_extras_a' }); }}
             onFinish={async () => {
               track('submit');
-              await persistPatch(nullifyEmpty({
+              const ok = await persistPatch(nullifyEmpty({
                 instagram_url: state.profile.instagram_url,
                 facebook_url: state.profile.facebook_url,
                 website: state.profile.website_url,
               }));
+              if (!ok) return;
               void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
                 recordRegistrationSnapshotOnce({
                   whatsapp: state.profile.whatsapp,

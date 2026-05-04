@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, ArrowLeft, Check, Wifi,
+  Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, Check, Wifi,
   FileText, Calendar, Camera as CameraIcon, Globe, MapPin, Eye, EyeOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -223,21 +223,15 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
     generated: 'Avatar gerado',
   };
 
-  const handleBackTop = () => {
-    if (onBack) onBack();
-    else window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_avatar' } }));
-  };
-
   return (
     <motion.div {...wizardEnter} className={ws.container}>
       <button
         type="button"
-        onClick={handleBackTop}
-        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+        onClick={() => (onBack ? onBack() : window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_avatar' } })))}
+        className={ws.backBtn}
         aria-label="Voltar para a etapa anterior do cadastro"
-        data-testid="phase4-avatar-back"
       >
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+        Voltar
       </button>
       <header className={ws.headerWrap}>
         <div className={ws.chip}>
@@ -519,24 +513,18 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
     }
   };
 
-  const handleBack = () => {
-    window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_document' } }));
-  };
-
   return (
     <AnimatePresence mode="wait">
       {!verified ? (
         <motion.div key="doc" {...wizardEnter} className={ws.container}>
           <button
             type="button"
-            onClick={handleBack}
-            className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+            onClick={() => window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_document' } }))}
+            className={ws.backBtn}
             aria-label="Voltar para a etapa anterior do cadastro"
-            data-testid="phase4-doc-back"
           >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+            Voltar
           </button>
-
           <header className={ws.headerWrap}>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-emerald-500 text-white shadow-[0_0_24px_rgba(251,146,60,0.45)]">
               <ShieldCheck className="h-7 w-7" aria-hidden="true" />
@@ -707,19 +695,15 @@ interface ExtrasAProps {
 export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: ExtrasAProps) => {
   const focusBio = useFocusFieldFromReview('bio');
   const focusNeighborhood = useFocusFieldFromReview('neighborhood');
-  const handleBackTop = () => {
-    window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_a' } }));
-  };
   return (
     <motion.div {...wizardEnter} className={ws.container}>
       <button
         type="button"
-        onClick={handleBackTop}
-        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+        onClick={() => window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_a' } }))}
+        className={ws.backBtn}
         aria-label="Voltar para a etapa anterior do cadastro"
-        data-testid="phase4-extras-a-back"
       >
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+        Voltar
       </button>
       <header className={ws.headerWrap}>
         <h1 className={ws.title}>Quase lá — falta só ajustar seu perfil.</h1>
@@ -793,22 +777,15 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
   const focusFb = useFocusFieldFromReview('facebook_url');
   const focusSite = useFocusFieldFromReview('website_url' as any);
 
-  const handleBackTop = () => {
-    if (onBack) onBack();
-    else window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_b' } }));
-  };
-
   return (
     <motion.div {...wizardEnter} className={ws.container}>
       <button
         type="button"
-        onClick={handleBackTop}
-        disabled={saving}
-        className={`${ws.backBtn} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+        onClick={() => (onBack ? onBack() : window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_b' } })))}
+        className={ws.backBtn}
         aria-label="Voltar para a etapa anterior do cadastro"
-        data-testid="phase4-extras-b-back"
       >
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Voltar
+        Voltar
       </button>
       <header className={ws.headerWrap}>
         <h1 className={ws.title}>Suas redes (opcional)</h1>
