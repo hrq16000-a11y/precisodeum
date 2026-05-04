@@ -111,14 +111,27 @@ interface BetModeShellProps {
    * de progresso global (Consolidação Fase 1).
    */
   onPhaseChange?: (phase: BetPhase) => void;
+  /**
+   * Seed opcional vindo do WizardShell quando a triagem é remontada após
+   * voltar do V2. Evita depender do draft local (que é limpo no handoff).
+   */
+  seedState?: Partial<BetState>;
 }
 
-export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetModeShellProps = {}) {
+export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedState }: BetModeShellProps = {}) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = params.get('next') || '/dashboard';
   const { user, profile, refetchProfile } = useAuth();
-  const [state, dispatch] = useReducer(reducer, undefined as unknown as BetState, () => loadBetDraft());
+  const initialDraft = loadBetDraft();
+  const [state, dispatch] = useReducer(reducer, undefined as unknown as BetState, () => ({
+    ...initialDraft,
+    ...(seedState || {}),
+    rewards: {
+      ...initialDraft.rewards,
+      ...(seedState?.rewards || {}),
+    },
+  }));
 
   useSeoHead({ title: 'Cadastro express', description: 'Cadastro rápido para começar agora.', noindex: true });
 
@@ -137,6 +150,35 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange }: BetMo
   const draftOrigin = useRef<'remote' | 'localStorage' | 'none'>(
     (state.full_name || state.whatsapp || state.city) ? 'localStorage' : 'none'
   );
+  const seedHydratedRef = useRef(false);
+  useEffect(() => {
+    if (!seedState || seedHydratedRef.current) return;
+    const patchObj: Partial<BetState> = {};
+    (Object.keys(seedState) as Array<keyof BetState>).forEach((key) => {
+      const incoming = seedState[key];
+      if (incoming === undefined) return;
+      if (key === 'rewards' && incoming && typeof incoming === 'object') {
+        patchObj.rewards = {
+          ...state.rewards,
+          ...(incoming as BetState['rewards']),
+        };
+        return;
+      }
+      const current = state[key];
+      const isEmpty =
+        current === '' ||
+        current === null ||
+        current === undefined ||
+        (Array.isArray(current) && current.length === 0);
+      if (isEmpty) {
+        (patchObj as any)[key] = incoming;
+      }
+    });
+    if (Object.keys(patchObj).length > 0) {
+      dispatch({ type: 'PATCH', patch: patchObj });
+    }
+    seedHydratedRef.current = true;
+  }, [seedState, state]);
   useEffect(() => {
     if (!user?.id || hydratedFromRemote.current) return;
     hydratedFromRemote.current = true;
