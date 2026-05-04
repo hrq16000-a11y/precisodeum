@@ -64,7 +64,6 @@ import {
   REVIEW_PHASE_ORDER,
   REVIEW_TOTAL_STEPS,
   nextRenderableReviewPhase,
-  prevRenderableReviewPhase,
 } from './wizardReviewSteps';
 import { useReviewAnchor, resolveUnifiedPhaseLabel } from './useReviewAnchor';
 import {
@@ -457,11 +456,6 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   const handleMainPhaseChange = useCallback((v2Phase: string) => {
     dispatch({ type: 'GO_TO_PHASE', phase: mapMainPhaseToUnified(v2Phase) });
   }, []);
-
-  // Em revisão, Voltar pula automaticamente fases não-renderizáveis
-  // (main_action/kind/location/contact — expurgadas mas mantidas na régua
-  // X/19 para paridade com o Dashboard Assistant).
-  const prevReviewPhase = useCallback(prevRenderableReviewPhase, []);
 
   // Listener para retrocesso na régua unificada disparado pelo V2.
   // - Em modo revisão: retrocede na REVIEW_PHASE_ORDER (assistente).
