@@ -466,9 +466,30 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   //   e força um fallback canônico (volta para a fase imediatamente anterior
   //   na PROVIDER_WIZARD_PHASE_ORDER) — evita botão "morto".
   useEffect(() => {
-    const onPrevUnified = (e: Event) => {
+    const onPrevUnified = async (e: Event) => {
       const cur = stateRef.current.phase;
       const detail = (e as CustomEvent).detail || {};
+      // ── ANTI-AMNÉSIA: persiste o snapshot V2 (local + remoto) antes do
+      // dispatch. O reducer público linear não tem flush próprio; reusamos
+      // o flush do V2 (mesmo schema de payload) para cobrir todos os steps
+      // que vivem dentro do MainOrchestrator.
+      try {
+        const stState: any = stateRef.current;
+        const draftState = {
+          profile: stState.profile,
+          service: stState.service,
+          phase: stState.phase,
+          userRef: stState.userRef,
+          providerId: stState.providerId,
+          firstServiceId: stState.firstServiceId,
+        };
+        const { flushLocalDraft, flushRemoteDraft } = await import('./phases/v2/flushDraft');
+        flushLocalDraft(draftState as any);
+        if (!isReview) {
+          await flushRemoteDraft(draftState as any, user?.id).catch(() => {});
+        }
+      } catch { /* fail-soft */ }
+
       void trackOnboardingEvent({
         phase: cur as any,
         event: 'back',
@@ -497,9 +518,10 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         dispatch({ type: 'GO_TO_PHASE', phase: prev as any });
       }
     };
-    window.addEventListener('wizard:request-prev-unified', onPrevUnified as EventListener);
-    return () => window.removeEventListener('wizard:request-prev-unified', onPrevUnified as EventListener);
-  }, [isReview]);
+    const handler = (e: Event) => { void onPrevUnified(e); };
+    window.addEventListener('wizard:request-prev-unified', handler as EventListener);
+    return () => window.removeEventListener('wizard:request-prev-unified', handler as EventListener);
+  }, [isReview, user?.id]);
 
   // Pontos REAIS lidos de profiles.engagement_points (atualizados pelos triggers
   // de banco a cada ação concluída). Fora da triagem usamos o valor do banco;
