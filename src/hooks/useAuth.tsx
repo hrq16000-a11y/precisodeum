@@ -122,13 +122,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)}`;
           console.warn('[useAuth] providers query error', pvErr);
         }
-        const derivedAccountType =
-          (pvRows && pvRows.length > 0
-            ? (pvRows.find((row: any) => row?.account_type)?.account_type ?? pvRows[0]?.account_type ?? null)
-            : null) ?? null;
-        profileData = pData
+        let derivedAccountType: string | null = null;
+        if (Array.isArray(pvRows) && pvRows.length > 0) {
+          derivedAccountType = String(
+            pvRows.find((row: any) => row?.account_type)?.account_type ?? pvRows[0]?.account_type ?? '',
+          ).trim() || null;
+        }
+        profileData = pData && typeof pData === 'object'
           ? {
-              ...pData,
+              ...(pData as Record<string, unknown>),
               account_type: (pData as any)?.account_type ?? derivedAccountType,
             }
           : pData;
