@@ -707,6 +707,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         <TriageOrchestrator
           onInternalHandoff={handleTriageDone}
           onPhaseChange={handleTriagePhaseChange}
+          seedState={state.triage}
         />
       ) : stage === 'extras-services' ? (
         <BetCardShell>
