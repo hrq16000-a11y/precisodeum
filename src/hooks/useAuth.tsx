@@ -101,7 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const PROFILE_AUTH_COLUMNS =
         'id, full_name, avatar_url, profile_type, onboarding_completed, onboarding_step, ' +
         'city, state, celebration_muted, role, permissions, account_type_id, ' +
-        'level_id, engagement_points, primary_category_id, user_ref, created_at';
+        'level_id, engagement_points, user_ref, created_at';
       try {
         // Per-attempt timeout: em mobile com rede ruim, requests do Supabase
         // podem ficar penduradas indefinidamente. Promise.race garante que
@@ -123,15 +123,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.warn('[useAuth] providers query error', pvErr);
         }
         let derivedAccountType: string | null = null;
+        let derivedPrimaryCategoryId: string | null = null;
         if (Array.isArray(pvRows) && pvRows.length > 0) {
           derivedAccountType = String(
             pvRows.find((row: any) => row?.account_type)?.account_type ?? pvRows[0]?.account_type ?? '',
+          ).trim() || null;
+          derivedPrimaryCategoryId = String(
+            pvRows.find((row: any) => row?.category_id)?.category_id ?? pvRows[0]?.category_id ?? '',
           ).trim() || null;
         }
         profileData = pData && typeof pData === 'object'
           ? {
               ...(pData as Record<string, unknown>),
               account_type: (pData as any)?.account_type ?? derivedAccountType,
+              primary_category_id: (pData as any)?.primary_category_id ?? derivedPrimaryCategoryId,
             }
           : pData;
         providerRows = pvRows;
