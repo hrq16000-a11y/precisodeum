@@ -491,6 +491,14 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         return;
       }
     }
+    // Fluxo normal: phase2_service/main_service voltam para a triagem
+    // (triage_celebration). O OnboardingV2Shell trata phase2_service como
+    // noop no listener `wizard:request-back`, então precisamos resolver aqui
+    // — caso contrário o botão global "Voltar" fica morto nessa fase.
+    if ((state.phase as string) === 'phase2_service' || state.phase === 'main_service') {
+      dispatch({ type: 'GO_TO_PHASE', phase: 'triage_celebration' as any });
+      return;
+    }
     // Caso contrário, despacha o evento DOM tratado pelos orquestradores.
     window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: state.phase } }));
   }, [state.phase, isReview, prevReviewPhase]);
