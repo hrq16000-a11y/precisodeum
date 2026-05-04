@@ -31,7 +31,6 @@ import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { betDraftPayloadSchema, providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
 
-import PointsHud from './PointsHud';
 import PhaseIdentity from './PhaseIdentity';
 import PhaseWho from './PhaseWho';
 import PhaseClientCity from './PhaseClientCity';
@@ -71,28 +70,6 @@ function reducer(s: BetState, a: Action): BetState {
     default: return s;
   }
 }
-
-const PHASE_LABELS: Record<BetPhase, string> = {
-  identity: 'Identificação',
-  who: 'Quem é você',
-  client_city: 'Sua cidade',
-  pro_kind: 'Tipo de conta',
-  pro_document: 'Documento',
-  pro_location: 'Cidade base',
-  celebration: 'Conquista',
-  done: 'Concluído',
-};
-
-const PHASE_PROGRESS: Record<BetPhase, number> = {
-  identity: 0.15,
-  who: 0.35,
-  client_city: 0.85,
-  pro_kind: 0.55,
-  pro_document: 0.75,
-  pro_location: 0.9,
-  celebration: 1,
-  done: 1,
-};
 
 // IDs reais das contas em public.account_types
 const ACCOUNT_TYPE_ID_PF = '61f51480-d8c2-4c78-8f44-6a17e8b6b968'; // Profissional Autônomo
@@ -733,11 +710,6 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
-      <PointsHud
-        points={state.points}
-        phaseLabel={PHASE_LABELS[state.phase]}
-        progress={PHASE_PROGRESS[state.phase]}
-      />
       {state.phase === 'identity' && (
         <PhaseIdentity state={state} patch={patch} next={() => goto('who')} awardReward={awardReward} />
       )}
