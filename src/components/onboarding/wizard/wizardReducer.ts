@@ -143,6 +143,7 @@ export interface WizardState {
   service: OnboardingFirstServiceData;
   providerId: string | null;
   firstServiceId: string | null;
+  validationError: string | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -327,20 +328,108 @@ export const initialWizardState: WizardState = {
   },
   providerId: null,
   firstServiceId: null,
+  validationError: null,
 };
+
+const PROVIDER_INCOMPLETE_CITY_ERROR = 'PROVIDER_INCOMPLETE_CITY';
+
+function hasText(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function normalizeCity(value: unknown): string {
+  return hasText(value) ? value.trim() : '';
+}
+
+function normalizeState(value: unknown): string {
+  return hasText(value) ? value.trim().toUpperCase() : '';
+}
+
+function syncLocationState(state: WizardState): WizardState {
+  const profileCity = normalizeCity(state.profile.city);
+  const profileState = normalizeState(state.profile.state);
+  const triageCity = normalizeCity(state.triage.city);
+  const triageState = normalizeState(state.triage.state);
+
+  const city = profileCity || triageCity;
+  const uf = profileState || triageState;
+
+  return {
+    ...state,
+    triage: {
+      ...state.triage,
+      city: triageCity || city,
+      state: triageState || uf,
+    },
+    profile: {
+      ...state.profile,
+      city,
+      state: uf,
+    },
+  };
+}
 
 export function wizardReducer(state: WizardState, action: WizardAction): WizardState {
   switch (action.type) {
     case 'NEXT_PHASE':
-      return { ...state, phase: nextUnifiedPhase(state.phase) };
+      {
+        const syncedState = syncLocationState(state);
+
+        if (state.phase === 'triage_pro_location') {
+          const hasResolvedLocation = hasText(syncedState.profile.city) && hasText(syncedState.profile.state);
+          if (!hasResolvedLocation) {
+            return {
+              ...syncedState,
+              validationError: PROVIDER_INCOMPLETE_CITY_ERROR,
+            };
+          }
+        }
+
+        return {
+          ...syncedState,
+          phase: nextUnifiedPhase(state.phase),
+          validationError: null,
+        };
+      }
     case 'PREV_PHASE':
       return { ...state, phase: prevUnifiedPhase(state.phase) };
     case 'GO_TO_PHASE':
       return { ...state, phase: action.phase };
     case 'PATCH_TRIAGE':
-      return { ...state, triage: { ...state.triage, ...action.patch } };
+      {
+        const nextState = syncLocationState({
+          ...state,
+          triage: { ...state.triage, ...action.patch },
+        });
+
+        return {
+          ...nextState,
+          validationError:
+            hasText(nextState.profile.city) && hasText(nextState.profile.state)
+              ? null
+              : state.validationError,
+        };
+      }
     case 'PATCH_PROFILE':
-      return { ...state, profile: { ...state.profile, ...action.patch } };
+      {
+        const nextState = syncLocationState({
+          ...state,
+          profile: {
+            ...state.profile,
+            ...action.patch,
+            city: normalizeCity(action.patch.city) || normalizeCity(state.profile.city) || normalizeCity(state.triage.city),
+            state: normalizeState(action.patch.state) || normalizeState(state.profile.state) || normalizeState(state.triage.state),
+          },
+        });
+
+        return {
+          ...nextState,
+          validationError:
+            hasText(nextState.profile.city) && hasText(nextState.profile.state)
+              ? null
+              : state.validationError,
+        };
+      }
     case 'PATCH_SERVICE':
       return { ...state, service: { ...state.service, ...action.patch } };
     case 'SET_PROVIDER_ID':
@@ -348,13 +437,37 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
     case 'SET_FIRST_SERVICE_ID':
       return { ...state, firstServiceId: action.id };
     case 'HYDRATE':
-      return {
-        ...state,
-        ...action.state,
-        triage: { ...state.triage, ...(action.state.triage || {}) },
-        profile: { ...state.profile, ...(action.state.profile || {}) },
-        service: { ...state.service, ...(action.state.service || {}) },
-      };
+      {
+        const hydratedState = syncLocationState({
+          ...state,
+          ...action.state,
+          triage: { ...state.triage, ...(action.state.triage || {}) },
+          profile: {
+            ...state.profile,
+            ...(action.state.profile || {}),
+            city:
+              normalizeCity(action.state.profile?.city) ||
+              normalizeCity(state.profile.city) ||
+              normalizeCity(action.state.triage?.city) ||
+              normalizeCity(state.triage.city),
+            state:
+              normalizeState(action.state.profile?.state) ||
+              normalizeState(state.profile.state) ||
+              normalizeState(action.state.triage?.state) ||
+              normalizeState(state.triage.state),
+          },
+          service: { ...state.service, ...(action.state.service || {}) },
+          validationError: action.state.validationError ?? state.validationError,
+        });
+
+        return {
+          ...hydratedState,
+          validationError:
+            hasText(hydratedState.profile.city) && hasText(hydratedState.profile.state)
+              ? null
+              : hydratedState.validationError,
+        };
+      }
     default:
       return state;
   }
