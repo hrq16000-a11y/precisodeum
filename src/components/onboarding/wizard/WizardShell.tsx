@@ -578,37 +578,8 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
     <WizardModeContext.Provider value={{ mode: resolvedMode, isEditing: isReview }}>
     <div className="min-h-[100svh] text-[15px] leading-snug bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
       <EditModeSkipButton state={state} phase={state.phase} />
-      {/* CORREÇÃO 1 — Slot FIXO no topo direito para o botão "Pular".
-          Aparece APENAS nas fases opcionais (fotos, extras A/B, portfolio,
-          mais serviços). As fases internas continuam tendo seus próprios
-          botões "Pular por enquanto"; este aqui é um atalho global e
-          discreto que NÃO some no scroll (position: fixed + safe-area). */}
-      {OPTIONAL_PHASES.has(state.phase) && (
-        <div
-          className="fixed right-4 z-50"
-          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              void trackOnboardingEvent({
-                phase: state.phase as any,
-                event: 'skip',
-                meta: { variant: 'unified', source: 'global-skip-slot', reason: 'optional_phase' },
-              });
-              window.dispatchEvent(
-                new CustomEvent('wizard:request-skip', {
-                  detail: { phase: state.phase, source: 'global-skip-slot' },
-                }),
-              );
-            }}
-            className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring rounded"
-            aria-label="Pular esta etapa opcional"
-          >
-            Pular
-          </button>
-        </div>
-      )}
+      {/* Slot global "Pular" REMOVIDO por solicitação do usuário.
+          As fases internas mantêm seus próprios botões quando aplicável. */}
 
       <ExitIntentDialog
         phase={state.phase}
