@@ -267,12 +267,12 @@ export default function ExitIntentDialog({
               Salvar e continuar mais tarde
             </Button>
           )}
-          <Button asChild type="button" variant="outline" className="w-full gap-2">
-            <Link to="/ajuda/cadastro" onClick={() => setOpen(false)}>
+          <Link to="/ajuda/cadastro" onClick={() => setOpen(false)} className="w-full">
+            <Button type="button" variant="outline" className="w-full gap-2">
               <HelpCircle className="h-4 w-4" />
               Ver perguntas frequentes do cadastro
-            </Link>
-          </Button>
+            </Button>
+          </Link>
           <Button
             type="button"
             variant="ghost"
