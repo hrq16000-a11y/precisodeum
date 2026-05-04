@@ -720,9 +720,13 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
               Escolha por onde quer continuar:
             </p>
             <div className="mt-5 flex flex-col gap-2">
+              {/* CORREÇÃO 2 — InstallAppCard antes do CTA principal.
+                  O próprio componente retorna null quando já está em
+                  display-mode: standalone (PWA instalado). */}
+              <InstallAppCard source="wizard-unified-done" variant="inline" />
               <Button asChild className="w-full gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(251,146,60,0.7)] hover:opacity-95">
                 <Link to="/dashboard">
-                  <LayoutDashboard className="h-4 w-4" /> Conhecer o dashboard
+                  <LayoutDashboard className="h-4 w-4" /> Ir para o dashboard
                 </Link>
               </Button>
               <Button asChild variant="outline" className="w-full gap-2">
@@ -735,12 +739,22 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
                   <FolderOpen className="h-4 w-4" /> Abrir portfólio
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="w-full gap-2">
-                <Link to="/cadastro-inicial?mode=review&section=cadastro&next=/dashboard">
-                  <ArrowLeft className="h-4 w-4" /> Revisar cadastro do início
-                </Link>
+              {/* CORREÇÃO 3 — limpa firstServiceId antes de redirecionar
+                  para o modo revisão, garantindo que o serviço cadastrado
+                  não seja tratado como "novo" pelas fases. A flag
+                  ?mode=review faz EditModeSkipButton aparecer em todas as
+                  fases já completas. */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => {
+                  dispatch({ type: 'HYDRATE', state: { firstServiceId: null } });
+                  navigate('/cadastro-inicial?mode=review&section=cadastro&next=/dashboard');
+                }}
+              >
+                <ArrowLeft className="h-4 w-4" /> Revisar cadastro do início
               </Button>
-              <InstallAppCard source="wizard-unified-done" variant="inline" />
             </div>
           </BetCardShell>
         </div>
