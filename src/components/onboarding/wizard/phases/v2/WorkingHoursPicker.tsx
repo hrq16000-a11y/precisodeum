@@ -114,18 +114,18 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
         <Clock className="h-3.5 w-3.5" /> Horários de atendimento
       </span>
 
-      {/* Presets */}
-      <div className="flex flex-wrap gap-1.5">
-        {WORKING_HOURS_PRESETS.map((p) => {
+      {/* Presets — principais sempre visíveis; "outros horários" em accordion. */}
+      {(() => {
+        const PRIMARY_IDS = new Set(['commercial', 'commercial_sat', 'on_demand']);
+        const primary = WORKING_HOURS_PRESETS.filter((p) => PRIMARY_IDS.has(p.id));
+        const secondary = WORKING_HOURS_PRESETS.filter((p) => !PRIMARY_IDS.has(p.id));
+        const renderChip = (p: typeof WORKING_HOURS_PRESETS[number]) => {
           const active = activePreset === p.id && !customMode;
           return (
             <motion.button
               key={p.id}
               type="button"
-              onClick={() => {
-                onChange(applyPreset(p.id));
-                setCustomMode(false);
-              }}
+              onClick={() => { onChange(applyPreset(p.id)); setCustomMode(false); }}
               whileTap={{ scale: 0.95 }}
               className={`rounded-full border px-3 py-1.5 text-xs transition ${
                 active
@@ -138,8 +138,34 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
               {p.label}
             </motion.button>
           );
-        })}
-      </div>
+        };
+        return (
+          <>
+            <div className="flex flex-wrap gap-1.5">
+              {primary.map(renderChip)}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowOtherPresets((v) => !v)}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:underline"
+              aria-expanded={showOtherPresets}
+            >
+              {showOtherPresets ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              Outros horários ({secondary.length})
+            </button>
+            <motion.div
+              initial={false}
+              animate={{ height: showOtherPresets ? 'auto' : 0, opacity: showOtherPresets ? 1 : 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {secondary.map(renderChip)}
+              </div>
+            </motion.div>
+          </>
+        );
+      })()}
 
       {/* Toggle ajuste fino */}
       <button
