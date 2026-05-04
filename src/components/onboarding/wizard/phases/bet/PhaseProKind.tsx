@@ -26,15 +26,26 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
 
   function pick(kind: BetProKind) {
     patch({ pro_kind: kind });
+    const isPf = kind === 'pf';
     if (!state.rewards.pro_kind) {
       awardReward('pro_kind', BET_POINTS.pro_kind);
     }
     fieldWin();
+    toast.success(
+      isPf ? 'Perfil Autônomo selecionado' : 'Perfil Empresa selecionado',
+      {
+        description: isPf
+          ? 'Você vai concorrer ao Selo de Confiança.'
+          : 'Você vai concorrer ao Selo Empresa Verificada.',
+        icon: isPf ? <User className="h-4 w-4" /> : <Building2 className="h-4 w-4" />,
+        duration: 1800,
+      },
+    );
     if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
     transitionTimer.current = scheduleWizardTimeout(
       { phase: 'phase1_action', action: 'phase_pro_kind_next' },
       next,
-      250,
+      450,
     );
   }
   return (
