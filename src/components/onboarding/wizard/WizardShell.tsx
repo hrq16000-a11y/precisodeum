@@ -599,9 +599,8 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   return (
     <WizardModeContext.Provider value={{ mode: resolvedMode, isEditing: isReview }}>
     <div className="min-h-[100svh] text-[15px] leading-snug bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
-      <EditModeSkipButton state={state} phase={state.phase} />
-      {/* Slot global "Pular" REMOVIDO por solicitação do usuário.
-          As fases internas mantêm seus próprios botões quando aplicável. */}
+      {/* EditModeSkipButton e slot global "Pular" REMOVIDOS por solicitação do usuário.
+          Navegação Voltar é centralizada no WizardNav (sticky bottom). */}
 
       <ExitIntentDialog
         phase={state.phase}
