@@ -33,7 +33,6 @@ import Step21_PortfolioAlbums from '@/components/onboarding/wizard/phases/Step21
 import Step22_Review, { type ReviewSection as Step22Section } from '@/components/onboarding/wizard/phases/Step22_Review';
 import InstallAppCard from '@/components/onboarding/wizard/InstallAppCard';
 import { Button } from '@/components/ui/button';
-import PointsHud from '@/components/onboarding/wizard/phases/bet/PointsHud';
 import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
 import { useEngagementPointsValue } from '@/hooks/useEngagementPoints';
 import { useAuth } from '@/hooks/useAuth';
@@ -558,22 +557,11 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   // 1/19. O hook `useReviewAnchor` é a fonte ÚNICA dessa lógica:
   // ancora a UI na última fase renderável visitada, sem saltos visuais, e
   // emite telemetria `review_anchor_used` para auditoria de UX.
-  const { anchorPhase: reviewAnchorPhase, anchorIndex: reviewAnchorIndex, isAnchored: reviewIsAnchored } =
+  const { anchorPhase: reviewAnchorPhase, isAnchored: reviewIsAnchored } =
     useReviewAnchor(state.phase, isReview);
   // Persiste a última fase renderizável (sessionStorage) — sobrevive a
   // refresh e mudanças de rota, prevenindo saltos no contador X/19.
   useReviewPhasePersistence(state.phase, isReview);
-  const phaseIdx = isReview ? reviewAnchorIndex : unifiedPhaseIndex(state.phase);
-  const hudPoints = realPoints;
-  const hudTotal = isReview ? REVIEW_TOTAL_STEPS : UNIFIED_VISIBLE_PHASES;
-  const hudProgress = Math.min(1, (Math.min(phaseIdx + 1, hudTotal)) / hudTotal);
-  // Invariante: HUD nunca exibe label vazio. Fases desconhecidas caem no
-  // fallback "Etapa em revisão" via `resolveUnifiedPhaseLabel`.
-  const hudLabel = resolveUnifiedPhaseLabel(
-    UNIFIED_PHASE_LABELS,
-    isReview ? reviewAnchorPhase : state.phase,
-  );
-  const showGlobalHud = stage !== 'triage' && stage !== 'done';
   // Régua de progresso: em modo revisão usa REVIEW_PHASE_ORDER (19 fases —
   // mesma régua exibida no /dashboard/assistente). Fora de review, mantém
   // o comportamento legado (16 fases para o profissional).
@@ -685,9 +673,6 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         enabled={state.phase !== 'triage_celebration' && state.phase !== 'main_celebration' && state.phase !== 'done'}
       />
       <WizardProgressBar phase={isReview ? reviewAnchorPhase : state.phase} phaseOrder={progressOrder} totalOverride={isReview ? REVIEW_TOTAL_STEPS : undefined} anchored={isReview && reviewIsAnchored} />
-      {showGlobalHud && (
-        <PointsHud points={hudPoints} phaseLabel={hudLabel} progress={hudProgress} />
-      )}
       {/* Botão Voltar global removido das fases padrão — cada fase já tem o seu
           via WizardNav. Aqui só renderizamos em modo revisão (edit_profile)
           como atalho para o passo renderizável anterior. */}
@@ -775,7 +760,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
               {/* CORREÇÃO 2 — InstallAppCard antes do CTA principal.
                   O próprio componente retorna null quando já está em
                   display-mode: standalone (PWA instalado). */}
-              <InstallAppCard source="wizard-unified-done" variant="inline" />
+              <InstallAppCard source="wizard-unified-done" />
               <Button asChild className="w-full gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(251,146,60,0.7)] hover:opacity-95">
                 <Link to="/dashboard">
                   <LayoutDashboard className="h-4 w-4" /> Ir para o dashboard
@@ -788,24 +773,8 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
               </Button>
               <Button asChild variant="outline" className="w-full gap-2">
                 <Link to="/dashboard/portfolio">
-                  <FolderOpen className="h-4 w-4" /> Abrir portfólio
+                  <FolderOpen className="h-4 w-4" /> Criar Portfólio
                 </Link>
-              </Button>
-              {/* CORREÇÃO 3 — limpa firstServiceId antes de redirecionar
-                  para o modo revisão, garantindo que o serviço cadastrado
-                  não seja tratado como "novo" pelas fases. A flag
-                  ?mode=review faz EditModeSkipButton aparecer em todas as
-                  fases já completas. */}
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full gap-2"
-                onClick={() => {
-                  dispatch({ type: 'HYDRATE', state: { firstServiceId: null } });
-                  navigate('/cadastro-inicial?mode=review&section=cadastro&next=/dashboard');
-                }}
-              >
-                <ArrowLeft className="h-4 w-4" /> Revisar cadastro do início
               </Button>
             </div>
           </BetCardShell>
