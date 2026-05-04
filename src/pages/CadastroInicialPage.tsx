@@ -146,26 +146,21 @@ export default function CadastroInicialPage() {
   // o estado inicial (Auth ainda hidratando) de uma sessão de fato ausente.
   // Evita o flicker que expulsava o utilizador antes do token ser lido.
   const [authSettled, setAuthSettled] = useState(false);
-  // [FIX — Manual escape hatch] Após 5s de loading, exibimos um botão
-  // "Ir para login agora" para o usuário não ficar refém do skeleton em
-  // conexões lentas / Lock broken silencioso.
-  const [showManualLogin, setShowManualLogin] = useState(false);
+  // Failsafe: se o auth não resolver em até 6s, libera o `loginRedirect`
+  // declarativo (caso não haja sessão). O WizardShell já está em tela
+  // desde o primeiro frame, então isto NÃO bloqueia visualmente nada —
+  // apenas evita que um auth travado mantenha a rota indefinidamente
+  // sem decidir entre logado/anônimo.
   useEffect(() => {
     if (loading) {
       setAuthSettled(false);
-      setShowManualLogin(false);
-      // Botão manual aos 5s; failsafe automático encurtado para 6s.
-      const manualBtn = window.setTimeout(() => setShowManualLogin(true), 5000);
       const fail = window.setTimeout(() => setAuthSettled(true), 6000);
-      return () => {
-        window.clearTimeout(manualBtn);
-        window.clearTimeout(fail);
-      };
+      return () => window.clearTimeout(fail);
     }
-    // Settle quase imediato quando auth resolveu — reduz skeleton flicker.
     const t = window.setTimeout(() => setAuthSettled(true), 60);
     return () => window.clearTimeout(t);
   }, [loading]);
+
 
   // Decisão de redirect: PURA, sem side-effects. Se o utilizador está
   // realmente sem sessão (`authSettled && !user`), montamos a URL de login
@@ -412,49 +407,12 @@ export default function CadastroInicialPage() {
     return <Navigate to={loginRedirect} replace />;
   }
 
-  if (loading || !authSettled || !user) {
-    return (
-      <div
-        role="status"
-        aria-live="polite"
-        aria-busy="true"
-        aria-label="Carregando cadastro"
-        className="flex min-h-screen items-center justify-center bg-background"
-      >
-        <div className="w-full max-w-md space-y-3 px-4">
-          <div className="h-8 w-3/4 animate-pulse rounded-lg bg-muted" />
-          <div className="h-4 w-full animate-pulse rounded bg-muted" />
-          <div className="h-4 w-5/6 animate-pulse rounded bg-muted" />
-          {showManualLogin && (
-            <div
-              role="alert"
-              className="mt-4 rounded-lg border border-amber-300/60 bg-amber-50 p-4 text-center dark:border-amber-700/60 dark:bg-amber-950/40"
-              data-testid="cadastro-stuck-banner"
-            >
-              <p className="mb-3 text-sm font-medium text-amber-900 dark:text-amber-200">
-                A verificação está demorando mais do que o normal. Você pode continuar:
-              </p>
-              <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-                <button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
-                >
-                  Recarregar página
-                </button>
-                <a
-                  href={`/login?next=${encodeURIComponent(`${location.pathname}${location.search || ''}` || '/cadastro-inicial')}`}
-                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  Ir para login agora
-                </a>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // [FIX entrada instantânea] Removido skeleton bloqueante de auth.
+  // O WizardShell monta IMEDIATAMENTE no primeiro frame — as fases de
+  // preenchimento não dependem de user/profile. Quando o useAuth resolver
+  // (loading → false), o Shell hidrata via props/context naturalmente.
+  // Se o usuário não tiver sessão após `authSettled`, o `loginRedirect`
+  // acima já dispara <Navigate> declarativamente.
   // [FIX tela branca] Auth está OK mas o perfil não foi carregado/criado.
   // Em vez de renderizar o WizardShell com profile=null (que pode quebrar
   // silenciosamente), exibe fallback explícito com retry manual.
