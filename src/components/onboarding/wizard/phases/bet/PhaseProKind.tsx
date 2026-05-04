@@ -1,7 +1,8 @@
 /** Phase Pro Kind — PF (Autônomo) ou PJ (Empresa/MEI). */
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User, Building2, Sparkles } from 'lucide-react';
+import { User, Building2, Sparkles, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { fieldWin } from '@/lib/betDopamine';
 import { BET_POINTS, type BetProKind, type BetState } from './types';
 import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
