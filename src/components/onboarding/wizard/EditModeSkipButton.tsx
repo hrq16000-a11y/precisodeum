@@ -26,7 +26,13 @@ interface Props {
   phase: UnifiedPhase;
 }
 
-export default function EditModeSkipButton({ state, phase }: Props) {
+export default function EditModeSkipButton(_props: Props) {
+  // Removido por solicitação do usuário: o botão global "Pular esta etapa"
+  // não deve mais aparecer em nenhum lugar do Wizard/Assistente.
+  return null;
+
+  // eslint-disable-next-line @typescript-eslint/no-unreachable, no-unreachable
+  // @ts-expect-error keep legacy code below dormant
   const { mode, isEditing } = useWizardMode();
 
   const handleSkip = useCallback(() => {
