@@ -29,7 +29,7 @@ import { buildWorkingHoursSummary, formatStruct, legacyToStruct, validateStruct,
 import WorkingHoursPicker from './WorkingHoursPicker';
 import ServiceCityPicker from './ServiceCityPicker';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
-import { BackButton } from '@/components/onboarding/wizard/BackButton';
+// BackButton importado e nunca usado — removido (Voltar é global via WizardNav).
 
 interface CategoryRow { id: string; name: string; icon?: string | null }
 
