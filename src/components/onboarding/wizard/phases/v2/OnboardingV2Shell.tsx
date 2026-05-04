@@ -2243,8 +2243,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onContinue={async () => {
               track('submit');
+              let ok = true;
               if (!coreLocks.document) {
-                await persistPatch({ tax_id: state.profile.document });
+                ok = await persistPatch({ tax_id: state.profile.document });
+              }
+              if (!ok) {
+                return;
               }
               track('next');
               dispatch({ type: 'NEXT' });
@@ -2263,7 +2267,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onContinue={async () => {
               track('submit');
               if (state.profile.avatar_url) {
-                await persistPatch({ photo_url: state.profile.avatar_url });
+                const ok = await persistPatch({ photo_url: state.profile.avatar_url });
+                if (!ok) return;
                 await supabase.from('profiles')
                   .update({ avatar_url: state.profile.avatar_url })
                   .eq('id', user!.id);
@@ -2282,11 +2287,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
             onContinue={async () => {
               track('submit');
-              await persistPatch(nullifyEmpty({
+              const ok = await persistPatch(nullifyEmpty({
                 years_experience: state.profile.years_experience,
                 neighborhood: state.profile.neighborhood,
                 description: state.profile.bio,
               }));
+              if (!ok) return;
               track('next');
               dispatch({ type: 'NEXT' });
             }}
@@ -2328,11 +2334,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase4_extras_a' }); }}
             onFinish={async () => {
               track('submit');
-              await persistPatch(nullifyEmpty({
+              const ok = await persistPatch(nullifyEmpty({
                 instagram_url: state.profile.instagram_url,
                 facebook_url: state.profile.facebook_url,
                 website: state.profile.website_url,
               }));
+              if (!ok) return;
               void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
                 recordRegistrationSnapshotOnce({
                   whatsapp: state.profile.whatsapp,
