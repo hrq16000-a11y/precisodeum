@@ -732,7 +732,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   }, [state.phase, deferCompletionToParent]);
 
   useEffect(() => {
-    const goBack = () => {
+    const goBack = async () => {
+      // ── ANTI-AMNÉSIA: persiste o snapshot atual (local + remoto) ANTES
+      // de despachar a troca de fase. Garante que qualquer dado digitado
+      // ainda dentro do debounce do auto-save não se perca quando o
+      // componente da fase atual desmontar.
+      try {
+        flushLocalDraft(state);
+        if (!editMode) {
+          // Em editMode evitamos overwrite remoto parcial (mesma blindagem
+          // já aplicada no auto-save). Local é seguro.
+          const { flushRemoteDraft } = await import('./flushDraft');
+          await flushRemoteDraft(state, user?.id).catch(() => { /* fail-soft */ });
+        }
+      } catch { /* fail-soft */ }
+
       // ── MODO REVISÃO: navegação não-linear (Assistente é dono do Wizard) ─
       // 1) Tenta desempilhar fase REAL anterior visitada nesta sessão.
       // 2) Se a pilha esgota, delega ao WizardShell via evento global, que
@@ -784,9 +798,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           break;
       }
     };
-    window.addEventListener('wizard:request-back', goBack as EventListener);
-    return () => window.removeEventListener('wizard:request-back', goBack as EventListener);
-  }, [state.phase, editMode, navigate]);
+    const handler = (e: Event) => { void goBack(); };
+    window.addEventListener('wizard:request-back', handler as EventListener);
+    return () => window.removeEventListener('wizard:request-back', handler as EventListener);
+  }, [state, editMode, navigate, user?.id]);
 
   // Limpeza do histórico de revisão ao SAIR do modo edit_profile (ex.: usuário
   // volta para new_signup na mesma aba). Garante que pilha velha não vaze
