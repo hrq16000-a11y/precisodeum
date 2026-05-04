@@ -695,11 +695,16 @@ interface ExtrasAProps {
 export const Phase4ExtrasA = ({ data, onChange, onContinue, onSkip, saving }: ExtrasAProps) => {
   const focusBio = useFocusFieldFromReview('bio');
   const focusNeighborhood = useFocusFieldFromReview('neighborhood');
-  const handleBackTop = () => {
-    window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_a' } }));
-  };
   return (
     <motion.div {...wizardEnter} className={ws.container}>
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_a' } }))}
+        className={ws.backBtn}
+        aria-label="Voltar para a etapa anterior do cadastro"
+      >
+        Voltar
+      </button>
       <header className={ws.headerWrap}>
         <h1 className={ws.title}>Quase lá — falta só ajustar seu perfil.</h1>
         <p className={ws.subtitle}>Ajuda quem busca por você na sua região.</p>
@@ -772,13 +777,16 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
   const focusFb = useFocusFieldFromReview('facebook_url');
   const focusSite = useFocusFieldFromReview('website_url' as any);
 
-  const handleBackTop = () => {
-    if (onBack) onBack();
-    else window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_b' } }));
-  };
-
   return (
     <motion.div {...wizardEnter} className={ws.container}>
+      <button
+        type="button"
+        onClick={() => (onBack ? onBack() : window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_b' } })))}
+        className={ws.backBtn}
+        aria-label="Voltar para a etapa anterior do cadastro"
+      >
+        Voltar
+      </button>
       <header className={ws.headerWrap}>
         <h1 className={ws.title}>Suas redes (opcional)</h1>
         <p className={ws.subtitle}>Mostre seu trabalho onde já existe.</p>
