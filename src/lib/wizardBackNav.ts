@@ -14,6 +14,7 @@
  *  - Use SEMPRE `requestWizardBack({ phase, source })` no onBack das fases.
  */
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
+import { makeBackEventId } from '@/lib/wizardBackOrchestrator';
 
 export const WIZARD_BACK_EVENTS = {
   /** Evento principal: tratado pelo WizardShell (régua unificada / revisão). */
