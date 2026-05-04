@@ -84,7 +84,7 @@ export function WizardProgressBar({
 
   return (
     <div
-      className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-sm"
+      className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85"
       role="progressbar"
       aria-valuenow={Math.round(pct)}
       aria-valuemin={0}
@@ -94,57 +94,66 @@ export function WizardProgressBar({
       data-anchored={anchored || undefined}
       data-shimmer={shimmer || undefined}
     >
-      <div className="relative h-0.5 w-full overflow-hidden bg-muted sm:h-1">
-        <motion.div
-          className={
-            isMilestone
-              ? 'h-full bg-gradient-to-r from-bet-amber via-bet-orange to-bet-green shadow-[0_0_8px_hsl(var(--bet-amber)/0.55)]'
-              : 'h-full bg-gradient-to-r from-accent to-primary'
-          }
-          animate={{ width: `${pct}%` }}
-          transition={
-            prefersReducedMotion
-              ? { duration: 0 }
-              : { type: 'spring', stiffness: 120, damping: 22 }
-          }
-          style={{ willChange: 'width' }}
-        />
-        {shimmer && !prefersReducedMotion && (
-          <span
-            aria-hidden
-            data-testid="wizard-progress-shimmer"
-            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-bet-amber/35 to-transparent animate-wizard-shimmer"
-            style={{ willChange: 'transform' }}
-          />
-        )}
-      </div>
-      <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-1 text-[10px] text-muted-foreground sm:py-1.5 sm:text-[11px]">
-        {typeof points === 'number' && (
-          <span
-            className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-bet-amber/40 bg-gradient-to-br from-bet-amber-soft via-background to-bet-orange-soft px-3 py-2 font-bold text-foreground shadow-[0_0_24px_hsl(var(--bet-amber)/0.32)]"
-            aria-label={`${Math.max(0, Math.trunc(points))} pontos`}
-          >
-            <Trophy className="h-4 w-4 text-bet-amber" aria-hidden strokeWidth={1.9} />
-            <DopamineCounter
-              value={Math.max(0, Math.trunc(points))}
-              duration={700}
-              suffix=" pts"
-              celebrateOnComplete={false}
-              className="text-base font-extrabold tabular-nums text-foreground"
-            />
+      <div className="mx-auto max-w-md px-4 pb-3 pt-2 sm:pt-2.5">
+        <div className="flex items-center justify-between gap-3 text-[11px] sm:text-xs">
+          <span className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
+            {isMilestone && (
+              <Sparkles
+                className="h-3 w-3 text-bet-amber drop-shadow-[0_0_4px_hsl(var(--bet-amber)/0.6)]"
+                aria-hidden
+                strokeWidth={2}
+              />
+            )}
+            Etapa {stepNumber}/{total}
           </span>
-        )}
-        <span className="flex shrink-0 items-center gap-1.5 font-medium text-foreground">
-          {isMilestone && (
-            <Sparkles
-              className="h-3 w-3 text-bet-amber drop-shadow-[0_0_4px_hsl(var(--bet-amber)/0.6)]"
-              aria-hidden
-              strokeWidth={2}
-            />
+          <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+            <span className="truncate">{label}</span>
+            <span className="shrink-0 font-semibold text-foreground">{Math.round(pct)}%</span>
+          </div>
+        </div>
+        <div className="mt-2 flex items-center gap-3">
+          {typeof points === 'number' && (
+            <span
+              className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-bet-amber/40 bg-gradient-to-br from-bet-amber-soft via-background to-bet-orange-soft px-3 py-2 font-bold text-foreground shadow-[0_0_24px_hsl(var(--bet-amber)/0.32)]"
+              aria-label={`${Math.max(0, Math.trunc(points))} pontos`}
+            >
+              <Trophy className="h-4 w-4 text-bet-amber" aria-hidden strokeWidth={1.9} />
+              <DopamineCounter
+                value={Math.max(0, Math.trunc(points))}
+                duration={700}
+                suffix=" pts"
+                celebrateOnComplete={false}
+                className="text-base font-extrabold tabular-nums text-foreground"
+              />
+            </span>
           )}
-          Etapa {stepNumber}/{total}
-        </span>
-        <span className="min-w-0 flex-1 truncate pl-1 text-right">{label}</span>
+          <div className="relative flex-1 overflow-hidden rounded-full bg-muted/80">
+            <div className="relative h-3 w-full overflow-hidden rounded-full bg-muted/80 sm:h-3.5">
+              <motion.div
+                className={
+                  isMilestone
+                    ? 'h-full rounded-full bg-gradient-to-r from-bet-amber via-bet-orange to-bet-green shadow-[0_0_12px_hsl(var(--bet-amber)/0.55)]'
+                    : 'h-full rounded-full bg-gradient-to-r from-bet-amber via-bet-orange to-bet-green shadow-[0_0_10px_hsl(var(--bet-orange)/0.4)]'
+                }
+                animate={{ width: `${pct}%` }}
+                transition={
+                  prefersReducedMotion
+                    ? { duration: 0 }
+                    : { type: 'spring', stiffness: 120, damping: 22 }
+                }
+                style={{ willChange: 'width' }}
+              />
+              {shimmer && !prefersReducedMotion && (
+                <span
+                  aria-hidden
+                  data-testid="wizard-progress-shimmer"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-bet-amber/35 to-transparent animate-wizard-shimmer"
+                  style={{ willChange: 'transform' }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
