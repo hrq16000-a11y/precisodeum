@@ -33,6 +33,7 @@ import { logWizardError } from '@/lib/wizardErrorGuard';
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
 import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 import { setActiveWizardPhase, scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
+import { parseProviderIntegrityError, dispatchProviderIntegrityFocus } from '@/lib/providerIntegrityError';
 
 // Aviso única vez por sessão para evitar spam
 let _addressWarnedOnce = false;
@@ -80,6 +81,33 @@ function buildProviderSocialPatch(patch: Record<string, any>, currentProfile: { 
 
   nextPatch.social_links = socialLinks;
   return nextPatch;
+}
+
+function withProviderLocationFallback(
+  patch: Record<string, any>,
+  profile: {
+    city?: string;
+    state?: string;
+    neighborhood?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  },
+) {
+  const next = { ...patch };
+  if (!('city' in next) || typeof next.city !== 'string' || !next.city.trim()) {
+    next.city = profile.city || '';
+  }
+  if (!('state' in next) || typeof next.state !== 'string' || !next.state.trim()) {
+    next.state = profile.state || '';
+  }
+  if (!('neighborhood' in next) || typeof next.neighborhood !== 'string' || !next.neighborhood.trim()) {
+    next.neighborhood = profile.neighborhood || '';
+  }
+  if ((next.latitude == null || next.longitude == null) && profile.latitude != null && profile.longitude != null) {
+    next.latitude = profile.latitude;
+    next.longitude = profile.longitude;
+  }
+  return next;
 }
 import { useWizardDuplicateCheck } from '@/hooks/useWizardDuplicateCheck';
 import {
