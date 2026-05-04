@@ -431,24 +431,8 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         </p>
       </header>
 
-      {effectiveSource === 'ip' && !requestingGps && (
-        <div
-          role="status"
-          aria-live="polite"
-          data-testid="ip-fallback-notice"
-          className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[12px] leading-snug text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100"
-        >
-          <Info className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
-          <div className="flex-1 space-y-1">
-            <p className="font-bold">Localização aproximada pelo seu IP</p>
-            <p>
-              Não conseguimos detectar seu GPS — pode ser que o navegador tenha bloqueado a permissão.
-              Confira <strong>Cidade-base</strong> e <strong>Bairro</strong> abaixo. Se algo estiver errado,
-              toque em <em>"Usar GPS preciso"</em> ou edite manualmente.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Banner "Localização aproximada pelo seu IP" removido — UX direta:
+          confirmar/editar a cidade no campo abaixo, sem ruído de origem. */}
 
       {/* Card único: Cidade-base + status GPS compacto */}
       <div className="rounded-2xl border border-border bg-card p-3 shadow-card">
@@ -462,7 +446,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
                 aria-label={gpsAccuracy != null && gpsAccuracy <= 100 ? 'GPS preciso' : 'GPS aproximado'}
               />
             ) : (
-              <MapPin className="h-3.5 w-3.5" aria-label="Localização aproximada por IP" />
+              <MapPin className="h-3.5 w-3.5" aria-label="Localização" />
             )}
             Cidade-base
             {cityOk && (
@@ -477,7 +461,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
             data-testid="location-source-pill"
             className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground/80"
           >
-            Origem: {effectiveSource === 'gps' ? 'GPS' : effectiveSource === 'cep' ? 'CEP' : effectiveSource === 'manual' ? 'Manual' : effectiveSource === 'ip' ? 'IP (aproximada)' : 'Não definida'}
+            Origem: {effectiveSource === 'gps' ? 'GPS' : effectiveSource === 'cep' ? 'CEP' : effectiveSource === 'manual' ? 'Manual' : 'Não definida'}
           </span>
           {isHydratedFromDraft && (
             <span
