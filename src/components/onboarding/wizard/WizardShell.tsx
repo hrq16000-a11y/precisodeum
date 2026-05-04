@@ -666,7 +666,13 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         }}
         enabled={state.phase !== 'triage_celebration' && state.phase !== 'main_celebration' && state.phase !== 'done'}
       />
-      <WizardProgressBar phase={isReview ? reviewAnchorPhase : state.phase} phaseOrder={progressOrder} totalOverride={isReview ? REVIEW_TOTAL_STEPS : undefined} anchored={isReview && reviewIsAnchored} />
+      <WizardProgressBar
+        phase={isReview ? reviewAnchorPhase : state.phase}
+        phaseOrder={progressOrder}
+        totalOverride={isReview ? REVIEW_TOTAL_STEPS : undefined}
+        anchored={isReview && reviewIsAnchored}
+        points={stage === 'triage' ? state.triage.points : realPoints}
+      />
       {/* Botão Voltar global removido das fases padrão — cada fase já tem o seu
           via WizardNav. Aqui só renderizamos em modo revisão (edit_profile)
           como atalho para o passo renderizável anterior. */}
