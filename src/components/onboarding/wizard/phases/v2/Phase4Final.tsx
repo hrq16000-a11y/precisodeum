@@ -225,6 +225,14 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
 
   return (
     <motion.div {...wizardEnter} className={ws.container}>
+      <button
+        type="button"
+        onClick={() => (onBack ? onBack() : window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_avatar' } })))}
+        className={ws.backBtn}
+        aria-label="Voltar para a etapa anterior do cadastro"
+      >
+        Voltar
+      </button>
       <header className={ws.headerWrap}>
         <div className={ws.chip}>
           <CameraIcon className="h-3 w-3" /> Foto de perfil
@@ -509,6 +517,14 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
     <AnimatePresence mode="wait">
       {!verified ? (
         <motion.div key="doc" {...wizardEnter} className={ws.container}>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_document' } }))}
+            className={ws.backBtn}
+            aria-label="Voltar para a etapa anterior do cadastro"
+          >
+            Voltar
+          </button>
           <header className={ws.headerWrap}>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-emerald-500 text-white shadow-[0_0_24px_rgba(251,146,60,0.45)]">
               <ShieldCheck className="h-7 w-7" aria-hidden="true" />
