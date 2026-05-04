@@ -64,6 +64,7 @@ import {
   REVIEW_PHASE_ORDER,
   REVIEW_TOTAL_STEPS,
   nextRenderableReviewPhase,
+  prevRenderableReviewPhase,
 } from './wizardReviewSteps';
 import { useReviewAnchor, resolveUnifiedPhaseLabel } from './useReviewAnchor';
 import {
