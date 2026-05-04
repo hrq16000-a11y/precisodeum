@@ -231,8 +231,8 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
         )}
       </div>
 
-      {/* Instalar app — com destaque */}
-      <InstallAppCard source="wizard-phase3-celebration" />
+      {/* Instalar app — sempre visível (PC ou celular), mesmo se já instalado */}
+      <InstallAppCard source="wizard-phase3-celebration" alwaysShow />
 
       {/* Resumo simples */}
       <div className="rounded-xl border border-border bg-card p-3 text-sm space-y-1.5">
