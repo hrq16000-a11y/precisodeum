@@ -78,6 +78,19 @@ import type { BetState } from './phases/bet/types';
 
 type Stage = 'triage' | 'service-and-profile' | 'extras-services' | 'extras-portfolio' | 'done';
 
+/**
+ * Fases consideradas opcionais — exibem o botão "Pular" no slot fixo
+ * superior direito (Correção 1). Mantém paridade com os botões "Pular
+ * por enquanto" já presentes nas fases internas.
+ */
+const OPTIONAL_PHASES = new Set<UnifiedPhase>([
+  'main_photos',
+  'main_extras_a',
+  'main_extras_b',
+  'main_more_services',
+  'main_portfolio_albums',
+]);
+
 interface WizardShellProps {
   /**
    * Modo de operação do wizard.
