@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, ArrowLeft, Check, Wifi,
+  Loader2, ShieldCheck, Instagram, Facebook, ArrowRight, Check, Wifi,
   FileText, Calendar, Camera as CameraIcon, Globe, MapPin, Eye, EyeOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -221,11 +221,6 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
     upload: 'Foto da galeria',
     social: 'Foto da conta',
     generated: 'Avatar gerado',
-  };
-
-  const handleBackTop = () => {
-    if (onBack) onBack();
-    else window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_avatar' } }));
   };
 
   return (
@@ -508,10 +503,6 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
       // Sem documento: avança normalmente; o status ONLINE depende só do checkbox.
       onContinue();
     }
-  };
-
-  const handleBack = () => {
-    window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_document' } }));
   };
 
   return (
