@@ -213,7 +213,7 @@ export const Phase2Service = ({
       role="region"
       aria-labelledby="phase2-service-title"
     >
-      <BackButton onBack={onBack} />
+      {/* BackButton removido — Voltar global vem do WizardShell. */}
 
       <header className="space-y-2 text-center">
         <h1 id="phase2-service-title" className="font-display text-lg font-extrabold leading-tight text-foreground">
