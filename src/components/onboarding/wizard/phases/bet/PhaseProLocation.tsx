@@ -434,112 +434,181 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
       {/* Banner "Localização aproximada pelo seu IP" removido — UX direta:
           confirmar/editar a cidade no campo abaixo, sem ruído de origem. */}
 
-      {/* Card único: Cidade-base + status GPS compacto */}
-      <div className="rounded-2xl border border-border bg-card p-3 shadow-card">
-        <div className="mb-1.5 flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-            {requestingGps ? (
-              <LocateFixed className="h-3.5 w-3.5 animate-pulse text-orange-600" aria-label="Detectando GPS" />
-            ) : state.location_source === 'gps' ? (
-              <LocateFixed
-                className="h-3.5 w-3.5 text-emerald-600"
-                aria-label={gpsAccuracy != null && gpsAccuracy <= 100 ? 'GPS preciso' : 'GPS aproximado'}
-              />
-            ) : (
-              <MapPin className="h-3.5 w-3.5" aria-label="Localização" />
-            )}
-            Cidade-base
+      {/* Card único: Cidade-base + status GPS compacto — animação radar pulse */}
+      <motion.div
+        initial={{ opacity: 0, x: -16 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        whileHover={{ y: -2 }}
+        className="relative overflow-hidden rounded-3xl border-2 border-amber-300/70 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 p-5 sm:p-6 shadow-[0_10px_30px_-12px_rgba(251,146,60,0.45)] dark:border-amber-500/40 dark:from-amber-950/40 dark:via-orange-950/30 dark:to-amber-950/40"
+      >
+        {/* Radar pulse animado atrás do ícone — distintivo desta seção */}
+        <motion.span
+          aria-hidden
+          animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0.1, 0.4] }}
+          transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+          className="pointer-events-none absolute -left-8 -top-8 h-28 w-28 rounded-full bg-amber-300/50 blur-2xl dark:bg-amber-500/30"
+        />
+        <div className="relative">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <motion.span
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-[0_10px_24px_-10px_rgba(251,146,60,0.7)]"
+            >
+              {requestingGps ? (
+                <LocateFixed className="h-6 w-6 animate-pulse" aria-label="Detectando GPS" />
+              ) : state.location_source === 'gps' ? (
+                <LocateFixed className="h-6 w-6" aria-label="GPS" />
+              ) : (
+                <MapPin className="h-6 w-6" aria-label="Localização" />
+              )}
+            </motion.span>
+            <div className="flex flex-1 min-w-0 flex-col">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                Cidade-base
+              </span>
+              <span className="text-base sm:text-lg font-extrabold leading-tight text-foreground">
+                Onde está sua sede de atuação?
+              </span>
+            </div>
             {cityOk && (
-              <CheckCircle2
-                className="h-3.5 w-3.5 text-emerald-600"
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 360, damping: 14 }}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md"
                 aria-label="Cidade detectada com sucesso"
                 data-testid="city-ok-check"
-              />
+              >
+                <CheckCircle2 className="h-4 w-4" strokeWidth={3} />
+              </motion.span>
             )}
-          </span>
-          <span
-            data-testid="location-source-pill"
-            className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground/80"
-          >
-            Origem: {effectiveSource === 'gps' ? 'GPS' : effectiveSource === 'cep' ? 'CEP' : effectiveSource === 'manual' ? 'Manual' : 'Não definida'}
-          </span>
-          {isHydratedFromDraft && (
+          </div>
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
             <span
-              data-testid="location-prefilled-pill"
-              className="rounded-full bg-bet-green-soft text-bet-green-fg border border-bet-green-border px-2 py-0.5 text-[10px] font-bold inline-flex items-center gap-1"
+              data-testid="location-source-pill"
+              className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground/80"
             >
-              <CheckCircle2 className="h-3 w-3" /> Já preenchido — pode avançar
+              Origem: {effectiveSource === 'gps' ? 'GPS' : effectiveSource === 'cep' ? 'CEP' : effectiveSource === 'manual' ? 'Manual' : 'Não definida'}
             </span>
+            {isHydratedFromDraft && (
+              <span
+                data-testid="location-prefilled-pill"
+                className="rounded-full bg-bet-green-soft text-bet-green-fg border border-bet-green-border px-2 py-0.5 text-[10px] font-bold inline-flex items-center gap-1"
+              >
+                <CheckCircle2 className="h-3 w-3" /> Já preenchido — pode avançar
+              </span>
+            )}
+            {awarded && (
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                +{BET_POINTS.city} pts
+              </span>
+            )}
+          </div>
+          <div className={`rounded-lg transition ${cityOk ? 'ring-2 ring-emerald-300/60 shadow-[0_0_14px_rgba(16,185,129,0.35)]' : ''}`}>
+            <CityAutocomplete
+              value={{ city: state.city, state: state.state }}
+              onChange={handleCity}
+              placeholder="Digite sua cidade"
+              preferredUF={preferredUF}
+              statusText={
+                state.city
+                  ? sourceLabel
+                    ? `Detectada via ${sourceLabel}. Edite se estiver errado.`
+                    : undefined
+                  : preferredUF
+                  ? `Mostrando primeiro cidades de ${preferredUF}`
+                  : undefined
+              }
+            />
+          </div>
+
+          {baseCityIssues.length > 0 && (
+            <ul className="mt-2 space-y-0.5 text-[11px] text-orange-700 dark:text-orange-300">
+              {baseCityIssues.map((iss) => <li key={iss.code}>• {iss.message}</li>)}
+            </ul>
           )}
-          {awarded && (
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-              +{BET_POINTS.city} pts
-            </span>
+
+          {state.location_source !== 'gps' && (
+            <button
+              type="button"
+              onClick={handleUseGps}
+              disabled={requestingGps}
+              aria-label="Tentar localização por GPS"
+              className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-orange-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-orange-300"
+            >
+              <LocateFixed className={`h-3.5 w-3.5 ${requestingGps ? 'animate-pulse' : ''}`} />
+              {requestingGps ? 'Detectando…' : 'Usar GPS preciso'}
+            </button>
           )}
         </div>
-        <div className={`rounded-lg transition ${cityOk ? 'ring-2 ring-emerald-300/60 shadow-[0_0_14px_rgba(16,185,129,0.35)]' : ''}`}>
-          <CityAutocomplete
-            value={{ city: state.city, state: state.state }}
-            onChange={handleCity}
-            placeholder="Digite sua cidade"
-            preferredUF={preferredUF}
-            statusText={
-              state.city
-                ? sourceLabel
-                  ? `Detectada via ${sourceLabel}. Edite se estiver errado.`
-                  : undefined
-                : preferredUF
-                ? `Mostrando primeiro cidades de ${preferredUF}`
-                : undefined
-            }
+      </motion.div>
+
+      {/* Card Bairro — animação distinta: entrada pela direita + ícone com bounce */}
+      <motion.div
+        initial={{ opacity: 0, x: 16 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.45, ease: 'easeOut', delay: 0.08 }}
+        whileHover={{ y: -2 }}
+        className="relative overflow-hidden rounded-3xl border-2 border-emerald-300/70 bg-gradient-to-br from-emerald-50 via-amber-50 to-orange-50 p-5 sm:p-6 shadow-[0_10px_30px_-12px_rgba(16,185,129,0.45)] dark:border-emerald-500/40 dark:from-emerald-950/40 dark:via-amber-950/30 dark:to-orange-950/30"
+      >
+        <motion.span
+          aria-hidden
+          animate={{ y: [0, -6, 0], opacity: [0.3, 0.55, 0.3] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+          className="pointer-events-none absolute -right-8 -bottom-8 h-28 w-28 rounded-full bg-emerald-300/50 blur-2xl dark:bg-emerald-500/30"
+        />
+        <div className="relative">
+          <label htmlFor="neighborhood" className="mb-3 flex items-center gap-3">
+            <motion.span
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-amber-500 to-orange-500 text-white shadow-[0_10px_24px_-10px_rgba(16,185,129,0.7)]"
+            >
+              <Home className="h-6 w-6" />
+            </motion.span>
+            <div className="flex flex-1 min-w-0 flex-col">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                Bairro
+              </span>
+              <span className="text-base sm:text-lg font-extrabold leading-tight text-foreground">
+                Onde clientes vão te encontrar?
+              </span>
+            </div>
+            {neighborhoodOk && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 360, damping: 14 }}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md"
+                aria-hidden
+              >
+                <CheckCircle2 className="h-4 w-4" strokeWidth={3} />
+              </motion.span>
+            )}
+          </label>
+          <Input
+            id="neighborhood"
+            ref={neighborhoodInputRef}
+            value={state.neighborhood}
+            onChange={handleNeighborhood}
+            placeholder="Ex: Centro, Batel, Afonso Pena"
+            autoComplete="address-level3"
+            maxLength={80}
+            className={`h-12 text-base ${neighborhoodOk ? 'ring-2 ring-bet-green/60' : ''}`}
+          />
+          <CepSuggestionCard
+            city={state.city}
+            state={state.state}
+            neighborhood={state.neighborhood || ''}
+            currentValue={state.postal_code || null}
+            onApply={(cep) => applyCepSuggestion(cep)}
+            phase="pro_location"
+            userId={user?.id || null}
           />
         </div>
-
-        {baseCityIssues.length > 0 && (
-          <ul className="mt-2 space-y-0.5 text-[11px] text-orange-700 dark:text-orange-300">
-            {baseCityIssues.map((iss) => <li key={iss.code}>• {iss.message}</li>)}
-          </ul>
-        )}
-
-        {/* Link discreto para retentar GPS — sem ocupar espaço vertical extra. */}
-        {state.location_source !== 'gps' && (
-          <button
-            type="button"
-            onClick={handleUseGps}
-            disabled={requestingGps}
-            aria-label="Tentar localização por GPS"
-            className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-orange-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-orange-300"
-          >
-            <LocateFixed className={`h-3 w-3 ${requestingGps ? 'animate-pulse' : ''}`} />
-            {requestingGps ? 'Detectando…' : 'Usar GPS preciso'}
-          </button>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-3 shadow-card">
-        <label htmlFor="neighborhood" className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-          <Home className="h-3.5 w-3.5" /> Bairro
-        </label>
-        <Input
-          id="neighborhood"
-          ref={neighborhoodInputRef}
-          value={state.neighborhood}
-          onChange={handleNeighborhood}
-          placeholder="Ex: Centro, Batel, Afonso Pena"
-          autoComplete="address-level3"
-          maxLength={80}
-          className={neighborhoodOk ? 'ring-2 ring-bet-green/60' : ''}
-        />
-        <CepSuggestionCard
-          city={state.city}
-          state={state.state}
-          neighborhood={state.neighborhood || ''}
-          currentValue={state.postal_code || null}
-          onApply={(cep) => applyCepSuggestion(cep)}
-          phase="pro_location"
-          userId={user?.id || null}
-        />
-      </div>
+      </motion.div>
 
       {gpsImprecise && (
         <div className="flex items-start gap-2 rounded-xl border border-orange-200 bg-orange-50/70 p-3 text-xs text-orange-900 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-100">

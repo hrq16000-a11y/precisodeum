@@ -1,7 +1,8 @@
 /** Phase Pro Kind — PF (Autônomo) ou PJ (Empresa/MEI). */
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User, Building2, Sparkles } from 'lucide-react';
+import { User, Building2, Sparkles, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { fieldWin } from '@/lib/betDopamine';
 import { BET_POINTS, type BetProKind, type BetState } from './types';
 import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
@@ -25,15 +26,26 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
 
   function pick(kind: BetProKind) {
     patch({ pro_kind: kind });
+    const isPf = kind === 'pf';
     if (!state.rewards.pro_kind) {
       awardReward('pro_kind', BET_POINTS.pro_kind);
     }
     fieldWin();
+    toast.success(
+      isPf ? 'Perfil Autônomo selecionado' : 'Perfil Empresa selecionado',
+      {
+        description: isPf
+          ? 'Você vai concorrer ao Selo de Confiança.'
+          : 'Você vai concorrer ao Selo Empresa Verificada.',
+        icon: isPf ? <User className="h-4 w-4" /> : <Building2 className="h-4 w-4" />,
+        duration: 1800,
+      },
+    );
     if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
     transitionTimer.current = scheduleWizardTimeout(
       { phase: 'phase1_action', action: 'phase_pro_kind_next' },
       next,
-      250,
+      450,
     );
   }
   return (
@@ -77,6 +89,17 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
             aria-hidden
             className="pointer-events-none absolute -inset-x-10 -top-10 h-24 rotate-12 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 transition-all duration-700 group-hover:translate-x-[160%] group-hover:opacity-100 dark:via-white/10"
           />
+          {state.pro_kind === 'pf' && (
+            <motion.div
+              initial={{ scale: 0, rotate: -30 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 14 }}
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg"
+              aria-hidden
+            >
+              <Check className="h-5 w-5" strokeWidth={3} />
+            </motion.div>
+          )}
           <div className="flex items-center gap-4">
             <motion.div
               animate={{ y: [0, -4, 0] }}
@@ -117,6 +140,17 @@ export default function PhaseProKind({ state, patch, next, awardReward }: Props)
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             className="pointer-events-none absolute -left-6 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-orange-300/60 blur-2xl dark:bg-orange-500/30"
           />
+          {state.pro_kind === 'pj' && (
+            <motion.div
+              initial={{ scale: 0, rotate: 30 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 14 }}
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg"
+              aria-hidden
+            >
+              <Check className="h-5 w-5" strokeWidth={3} />
+            </motion.div>
+          )}
           <div className="relative flex items-center gap-4">
             <motion.div
               animate={{ scale: [1, 1.06, 1] }}
