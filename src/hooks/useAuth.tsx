@@ -113,14 +113,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error(`fetchProfile attempt ${attemptsUsed} timed out after ${PER_ATTEMPT_TIMEOUT_MS}ms`)), PER_ATTEMPT_TIMEOUT_MS),
         );
-        const [{ data: pData, error: pErr }, { data: pvRows, error: pvErr }] = await Promise.race([queryPromise, timeoutPromise]);
+        let [{ data: pData, error: pErr }, { data: pvRows, error: pvErr }] = await Promise.race([queryPromise, timeoutPromise]);
         if (pErr) {
-          lastErrorMessage = `profiles: ${pErr.message ?? String(pErr)}`;
-          console.warn('[useAuth] profiles query error', pErr);
+          lastErrorMessage = `profiles: ${pErr.message ?? String(pErr)} (code=${(pErr as any)?.code ?? 'n/a'})`;
+          console.warn('[useAuth] profiles query error', { code: (pErr as any)?.code, message: pErr.message, details: (pErr as any)?.details, hint: (pErr as any)?.hint });
+          // Schema drift fallback: se uma coluna referenciada em PROFILE_AUTH_COLUMNS
+          // não existe mais no banco (PGRST204 / 42703 / "column ... does not exist"),
+          // refaz a query com o select mínimo absoluto. Isso impede que o Wizard
+          // fique travado em skeleton só porque o schema mudou.
+          const code = String((pErr as any)?.code ?? '');
+          const msg = String(pErr.message ?? '');
+          if (code === '42703' || code === 'PGRST204' || /column .* does not exist/i.test(msg)) {
+            console.warn('[useAuth] schema drift detectado — refazendo profiles com select mínimo');
+            const fb = await supabase.from('profiles').select('id, full_name, avatar_url, onboarding_completed').eq('id', userId).maybeSingle();
+            pData = fb.data as any;
+            if (fb.error) {
+              lastErrorMessage = `profiles(min): ${fb.error.message}`;
+            } else {
+              pErr = null as any;
+            }
+          }
         }
         if (pvErr) {
-          lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)}`;
-          console.warn('[useAuth] providers query error', pvErr);
+          lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)} (code=${(pvErr as any)?.code ?? 'n/a'})`;
+          console.warn('[useAuth] providers query error', { code: (pvErr as any)?.code, message: pvErr.message });
         }
         let derivedAccountType: string | null = null;
         let derivedPrimaryCategoryId: string | null = null;
