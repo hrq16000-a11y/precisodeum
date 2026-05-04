@@ -628,8 +628,13 @@ const DashboardPage = () => {
   ];
 
   // Welcome banner contextual greeting
+  // 0h-4h59 = Boa madrugada · 5h-11h59 = Bom dia · 12h-17h59 = Boa tarde · 18h-23h59 = Boa noite
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+  const greeting =
+    hour < 5 ? 'Boa madrugada'
+    : hour < 12 ? 'Bom dia'
+    : hour < 18 ? 'Boa tarde'
+    : 'Boa noite';
   const pendingLeads = leadsCount;
 
   return (
