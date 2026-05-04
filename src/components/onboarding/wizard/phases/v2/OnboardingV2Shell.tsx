@@ -2374,24 +2374,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             <AutoSaveBadge signal={state.profile} />
           </div>
         )}
-        {pendingCoreFields.length < 5 && (
-          <div className="mb-4 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Já preenchido:</span>{' '}
-            {[
-              coreLocks.full_name ? 'nome' : null,
-              coreLocks.whatsapp ? 'WhatsApp' : null,
-              coreLocks.city ? 'cidade' : null,
-              coreLocks.state ? 'UF' : null,
-              coreLocks.document ? 'documento' : null,
-            ].filter(Boolean).join(' • ')}
-            {pendingCoreFields.length > 0 && (
-              <>
-                <span className="mx-1">—</span>
-                pendente: {pendingCoreFields.join(', ')}
-              </>
-            )}
-          </div>
-        )}
+{/* Faixa "Já preenchido" removida — vazava nomes técnicos (full_name, document)
+            ao usuário final. Os locks continuam ativos via `coreLocks`/`pendingCoreFields`
+            para a lógica interna, mas sem renderização. */}
         <AnimatePresence mode="wait">
           <motion.div
             key={state.phase}
