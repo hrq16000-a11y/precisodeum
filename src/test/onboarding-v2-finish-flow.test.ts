@@ -102,15 +102,15 @@ describe('Onboarding V2 — fluxo final', () => {
     expect(pageSrc).toContain("mode={reviewMode ? 'edit_profile' : 'new_signup'}");
   });
 
-  it('EditModeSkipButton existe e checa fase 100% completa antes de exibir', () => {
+  it('EditModeSkipButton está desativado (no-op) por solicitação do usuário', () => {
+    // O botão global "Pular esta etapa" foi removido em todo o Wizard/Assistente.
+    // O componente é mantido como no-op para preservar imports legados.
     const btnSrc = read('components/onboarding/wizard/EditModeSkipButton.tsx');
-    expect(btnSrc).toContain('isPhaseFullyCompleted');
-    expect(btnSrc).toContain("'wizard:request-skip'");
-    expect(btnSrc).toMatch(/if \(!isEditing\) return null/);
-    // OnboardingV2Shell escuta o evento e dispara NEXT
+    expect(btnSrc).toMatch(/return null/);
+    expect(btnSrc).toMatch(/DESATIVADO|no-op/i);
+    // OnboardingV2Shell ainda escuta o evento (caso futuras phases voltem a emitir).
     const v2Src = read('components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(v2Src).toContain("'wizard:request-skip'");
-    expect(v2Src).toMatch(/dispatch\(\{ type: 'NEXT' \}/);
   });
 
   it('rotas protegidas do onboarding não retornam para /cadastro-inicial após /onboarding-v2/sucesso', () => {

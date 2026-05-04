@@ -43,7 +43,7 @@ import { acquireWizardSessionLock, releaseWizardSessionLock } from '@/lib/wizard
 import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 import { WizardProgressBar } from './WizardProgressBar';
 import ExitIntentDialog from './ExitIntentDialog';
-import EditModeSkipButton from './EditModeSkipButton';
+// EditModeSkipButton removido — botão "Pular esta etapa" desativado globalmente.
 import { WizardModeContext, resolveWizardMode, type WizardMode } from './wizardMode';
 import { trackOnboardingEvent, setOnboardingIntent } from './phases/v2/telemetry';
 import {
@@ -466,9 +466,30 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   //   e força um fallback canônico (volta para a fase imediatamente anterior
   //   na PROVIDER_WIZARD_PHASE_ORDER) — evita botão "morto".
   useEffect(() => {
-    const onPrevUnified = (e: Event) => {
+    const onPrevUnified = async (e: Event) => {
       const cur = stateRef.current.phase;
       const detail = (e as CustomEvent).detail || {};
+      // ── ANTI-AMNÉSIA: persiste o snapshot V2 (local + remoto) antes do
+      // dispatch. O reducer público linear não tem flush próprio; reusamos
+      // o flush do V2 (mesmo schema de payload) para cobrir todos os steps
+      // que vivem dentro do MainOrchestrator.
+      try {
+        const stState: any = stateRef.current;
+        const draftState = {
+          profile: stState.profile,
+          service: stState.service,
+          phase: stState.phase,
+          userRef: stState.userRef,
+          providerId: stState.providerId,
+          firstServiceId: stState.firstServiceId,
+        };
+        const { flushLocalDraft, flushRemoteDraft } = await import('./phases/v2/flushDraft');
+        flushLocalDraft(draftState as any);
+        if (!isReview) {
+          await flushRemoteDraft(draftState as any, user?.id).catch(() => {});
+        }
+      } catch { /* fail-soft */ }
+
       void trackOnboardingEvent({
         phase: cur as any,
         event: 'back',
@@ -497,9 +518,10 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
         dispatch({ type: 'GO_TO_PHASE', phase: prev as any });
       }
     };
-    window.addEventListener('wizard:request-prev-unified', onPrevUnified as EventListener);
-    return () => window.removeEventListener('wizard:request-prev-unified', onPrevUnified as EventListener);
-  }, [isReview]);
+    const handler = (e: Event) => { void onPrevUnified(e); };
+    window.addEventListener('wizard:request-prev-unified', handler as EventListener);
+    return () => window.removeEventListener('wizard:request-prev-unified', handler as EventListener);
+  }, [isReview, user?.id]);
 
   // Pontos REAIS lidos de profiles.engagement_points (atualizados pelos triggers
   // de banco a cada ação concluída). Fora da triagem usamos o valor do banco;
@@ -577,9 +599,8 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   return (
     <WizardModeContext.Provider value={{ mode: resolvedMode, isEditing: isReview }}>
     <div className="min-h-[100svh] text-[15px] leading-snug bg-gradient-to-b from-background via-background to-amber-50/30 dark:to-amber-950/10">
-      <EditModeSkipButton state={state} phase={state.phase} />
-      {/* Slot global "Pular" REMOVIDO por solicitação do usuário.
-          As fases internas mantêm seus próprios botões quando aplicável. */}
+      {/* EditModeSkipButton e slot global "Pular" REMOVIDOS por solicitação do usuário.
+          Navegação Voltar é centralizada no WizardNav (sticky bottom). */}
 
       <ExitIntentDialog
         phase={state.phase}
