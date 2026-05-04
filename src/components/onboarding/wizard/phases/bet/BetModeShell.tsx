@@ -28,6 +28,7 @@ import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload, mapLocationSourceToGeoSource } from '@/lib/providerPayload';
 import { parseProviderIntegrityError, dispatchProviderIntegrityFocus } from '@/lib/providerIntegrityError';
 import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
+import { registerBackOwner, claimBackEvent } from '@/lib/wizardBackOrchestrator';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { betDraftPayloadSchema, providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
 
