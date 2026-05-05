@@ -90,10 +90,28 @@ describe('flushRemoteDraft — lock de idempotência', () => {
   });
 
   it('usuários diferentes não compartilham o lock', async () => {
+    // Captura todos os resolvers para usuários distintos (2 UPDATEs concorrentes).
+    const resolvers: ((v: any) => void)[] = [];
+    const origResolver = upsertResolver;
+    void origResolver;
+    const captureNext = () => new Promise<(v: any) => void>((res) => {
+      const id = setInterval(() => {
+        if (upsertResolver) {
+          const r = upsertResolver;
+          upsertResolver = null;
+          clearInterval(id);
+          res(r);
+        }
+      }, 5);
+    });
     const pA = flushRemoteDraft(sampleState, 'user-A');
+    const r1 = await captureNext();
+    resolvers.push(r1);
     const pB = flushRemoteDraft(sampleState, 'user-B');
+    const r2 = await captureNext();
+    resolvers.push(r2);
     expect(upsertCalls.length).toBe(2);
-    upsertResolver?.({ data: null, error: null });
+    resolvers.forEach((r) => r({ data: null, error: null }));
     await Promise.all([pA, pB]);
   });
 });
