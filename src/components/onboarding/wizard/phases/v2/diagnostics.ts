@@ -18,6 +18,7 @@
 export type WizardSupabaseSource =
   | 'flushRemoteDraft'
   | 'flushRemoteDraft.skipped'
+  | 'flushRemoteDraft.coalesced'
   | 'useRemoteDraft.debounced'
   | 'useRemoteDraft.skipped'
   | 'persistPatch';
