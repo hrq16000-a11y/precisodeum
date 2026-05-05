@@ -419,6 +419,37 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, user?.id, editMode]);
 
+  // ── Sentinela anti-amnésia em fases finais (auditoria 2026-05) ─────────
+  // Em fases finais (extras_b/avatar/document/extras_a) city/state DEVEM já
+  // estar preenchidos (vêm da triagem Bet). Se não estiverem, é regressão
+  // de estado: avisamos visualmente e logamos para diagnóstico. O fallback
+  // em `withProviderLocationFallback` cobre o write, mas o usuário precisa
+  // saber para revisar a etapa de localização.
+  const locationWarningShownRef = useRef(false);
+  useEffect(() => {
+    const finalPhases = ['phase4_document', 'phase4_avatar', 'phase4_extras_a', 'phase4_extras_b'];
+    if (!finalPhases.includes(state.phase)) {
+      locationWarningShownRef.current = false;
+      return;
+    }
+    const missing: string[] = [];
+    if (!(state.profile.city || '').trim()) missing.push('cidade');
+    if (!(state.profile.state || '').trim()) missing.push('estado');
+    if (missing.length === 0 || locationWarningShownRef.current) return;
+    locationWarningShownRef.current = true;
+    void trackEvent({
+      phase: state.phase,
+      event: 'error',
+      userId: user?.id,
+      meta: { reason: 'missing_location_in_final_phase', missing },
+    });
+    toast.warning('Falta a sua localização', {
+      description: `Sem ${missing.join(' e ')}, seu perfil não aparece nas buscas. Volte à etapa "Localização" para preencher.`,
+      duration: 8000,
+    });
+  }, [state.phase, state.profile.city, state.profile.state, user?.id, trackEvent]);
+
+
   // Flush ao desmontar / antes de fechar a aba
   useEffect(() => {
     const onBeforeUnload = () => {

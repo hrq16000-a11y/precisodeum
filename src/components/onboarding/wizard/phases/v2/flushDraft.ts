@@ -80,6 +80,35 @@ export function flushLocalDraft(state: OnboardingState) {
   } catch { /* quota cheia — ignora */ }
 }
 
+/**
+ * In-flight registry: coalesce chamadas concorrentes ao mesmo (userId, phase).
+ *
+ * Por que: em rede lenta, cliques rápidos no Voltar podiam disparar 2-3
+ * UPDATEs simultâneos no Supabase para o mesmo registro. Como o cliente
+ * envia um snapshot do `state` capturado na hora da chamada, a 2ª resposta
+ * podia chegar DEPOIS da 1ª e sobrescrever campos mais novos com payload
+ * antigo (race no `last-write-wins`).
+ *
+ * Solução: enquanto há um upsert in-flight para uma fase, retornamos a
+ * MESMA Promise em vez de iniciar outra. Após resolver, o dedupe de 2s
+ * (markRemoteDraftWritten) cobre os próximos cliques.
+ */
+const inFlightByUser = new Map<string, Promise<void>>();
+
+export function isFlushingRemoteDraft(userId?: string | null): boolean {
+  return inFlightByUser.has(userKey(userId));
+}
+
+/** Test-only: limpa locks in-flight entre testes. */
+export function __resetRemoteDraftInFlight(): void {
+  inFlightByUser.clear();
+}
+
+function emitFlushEvent(kind: 'start' | 'end') {
+  if (typeof window === 'undefined') return;
+  try { window.dispatchEvent(new CustomEvent(`onboarding:remote-flush:${kind}`)); } catch { /* noop */ }
+}
+
 export async function flushRemoteDraft(
   state: OnboardingState,
   userId: string | undefined,
@@ -97,26 +126,49 @@ export async function flushRemoteDraft(
     }
     return;
   }
-  try {
-    await supabase.from('onboarding_v2_drafts' as any).upsert({
-      user_id: userId,
-      payload: {
-        profile: state.profile,
-        service: state.service,
-        userRef: state.userRef,
-        providerId: state.providerId,
-        firstServiceId: state.firstServiceId,
-      },
-      phase: state.phase,
-    } as any, { onConflict: 'user_id' });
-    markRemoteDraftWritten(state.phase as any, userId);
+  // Idempotência: se já existe um flush in-flight para este usuário,
+  // aguardamos o mesmo (não disparamos um novo UPDATE concorrente).
+  const key = userKey(userId);
+  const inFlight = inFlightByUser.get(key);
+  if (inFlight) {
     if (typeof window !== 'undefined') {
       try {
         const { recordWizardSupabaseCall } = await import('./diagnostics');
-        recordWizardSupabaseCall('flushRemoteDraft', state.phase as any, userId);
+        recordWizardSupabaseCall('flushRemoteDraft.coalesced', state.phase as any, userId);
       } catch { /* fail-soft */ }
     }
-  } catch { /* fail-soft */ }
+    return inFlight;
+  }
+  emitFlushEvent('start');
+  const promise = (async () => {
+    try {
+      await supabase.from('onboarding_v2_drafts' as any).upsert({
+        user_id: userId,
+        payload: {
+          profile: state.profile,
+          service: state.service,
+          userRef: state.userRef,
+          providerId: state.providerId,
+          firstServiceId: state.firstServiceId,
+        },
+        phase: state.phase,
+      } as any, { onConflict: 'user_id' });
+      markRemoteDraftWritten(state.phase as any, userId);
+      if (typeof window !== 'undefined') {
+        try {
+          const { recordWizardSupabaseCall } = await import('./diagnostics');
+          recordWizardSupabaseCall('flushRemoteDraft', state.phase as any, userId);
+        } catch { /* fail-soft */ }
+      }
+    } catch { /* fail-soft */ }
+  })();
+  inFlightByUser.set(key, promise);
+  try {
+    await promise;
+  } finally {
+    inFlightByUser.delete(key);
+    emitFlushEvent('end');
+  }
 }
 
 /**
