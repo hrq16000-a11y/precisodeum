@@ -1203,16 +1203,12 @@ const DashboardServicesPage = () => {
                         href="/dashboard/suporte"
                         className="font-medium text-bet-amber-fg underline underline-offset-2"
                         onClick={() => {
-                          try {
-                            const ctx = {
-                              source: 'services_form_category_helper',
-                              services_count: services.length,
-                              attempted_categories: selectedCategoryIds.length,
-                              cap: Math.min(5, limits?.max_services ?? 5),
-                              ts: Date.now(),
-                            };
-                            sessionStorage.setItem('support_request_context', JSON.stringify(ctx));
-                          } catch { /* noop */ }
+                          saveSupportContext({
+                            source: 'services_form_category_helper',
+                            services_count: services.length,
+                            attempted_categories: selectedCategoryIds.length,
+                            cap: Math.min(5, limits?.max_services ?? 5),
+                          });
                         }}
                       >
                         Fale com o suporte
