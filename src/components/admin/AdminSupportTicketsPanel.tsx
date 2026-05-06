@@ -233,17 +233,18 @@ export default function AdminSupportTicketsPanel() {
               </SelectContent>
             </Select>
           </div>
-          {/* Filtros do snapshot do perfil + ordenação */}
+          {/* Filtros do snapshot do perfil + ordenação orgânica */}
           <div className="flex flex-wrap gap-2">
-            <Select value={planFilter} onValueChange={v => setPlanFilter(v as any)}>
-              <SelectTrigger className="h-8 w-[140px] text-[11px] gap-1" aria-label="Filtrar por plano">
-                <Star className="h-3 w-3" aria-hidden="true" />
+            <Select value={kindFilter} onValueChange={v => setKindFilter(v as any)}>
+              <SelectTrigger className="h-8 w-[170px] text-[11px] gap-1" aria-label="Filtrar por tipo de solicitante">
+                <UserCircle2 className="h-3 w-3" aria-hidden="true" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os planos</SelectItem>
-                <SelectItem value="paid">Pagos (prioritários)</SelectItem>
-                <SelectItem value="gratuito">Gratuito</SelectItem>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="sponsor">Patrocinadores</SelectItem>
+                <SelectItem value="provider_gold">Prestadores Ouro+</SelectItem>
+                <SelectItem value="provider_other">Demais prestadores</SelectItem>
               </SelectContent>
             </Select>
             <Select value={levelFilter} onValueChange={setLevelFilter}>
@@ -259,13 +260,13 @@ export default function AdminSupportTicketsPanel() {
               </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={v => setSortBy(v as any)}>
-              <SelectTrigger className="h-8 w-[150px] text-[11px] gap-1" aria-label="Ordenação">
+              <SelectTrigger className="h-8 w-[180px] text-[11px] gap-1" aria-label="Ordenação">
                 <ArrowDownUp className="h-3 w-3" aria-hidden="true" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="recent">Mais recentes</SelectItem>
-                <SelectItem value="plan_priority">Plano (pagos primeiro)</SelectItem>
+                <SelectItem value="organic_priority">Prioridade orgânica</SelectItem>
               </SelectContent>
             </Select>
           </div>
