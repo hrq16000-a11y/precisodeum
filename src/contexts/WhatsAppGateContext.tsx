@@ -80,6 +80,7 @@ export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const pendingRef = useRef<WhatsAppTarget | null>(null);
+  const [unlockTarget, setUnlockTarget] = useState<WhatsAppTarget | null>(null);
 
   // Load any pending intent stored before an OAuth redirect
   useEffect(() => {
