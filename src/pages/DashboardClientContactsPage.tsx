@@ -185,6 +185,8 @@ function Section({ title, icon, rows, loading, emptyText, showDate, providerDayC
               const p = row.provider;
               const waUrl = buildWaUrl(p);
               const profileUrl = p?.slug ? `/profissional/${p.slug}` : null;
+              const totalDays = providerDayCount?.get(row.provider_id) ?? 1;
+              const isRecurring = totalDays > 1;
               return (
                 <li key={row.id} className="py-3 flex items-center gap-3">
                   {p?.photo_url ? (
