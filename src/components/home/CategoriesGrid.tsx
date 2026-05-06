@@ -147,7 +147,7 @@ const CategoriesGrid = (_props: Props) => {
   const gridCls = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr';
 
   return (
-    <section className="py-8 md:py-12 min-h-[420px]">
+    <section className="py-8 md:py-12 min-h-[600px] md:min-h-[520px]">
       <div className="container">
         <div className="mb-6 text-center">
           <span className="inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent mb-2">
