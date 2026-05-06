@@ -47,7 +47,10 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
 
   if (requireAuth && !user) return null;
 
-  if (allowedTypes && profile) {
+  // If specific profile types are required, ensure profile is loaded and authorized
+  if (allowedTypes) {
+    if (!profile) return null; // Wait for profile if it's required for type check
+    
     const profileType = profile.profile_type || 'client';
     if (!allowedTypes.includes(profileType)) return null;
   }
