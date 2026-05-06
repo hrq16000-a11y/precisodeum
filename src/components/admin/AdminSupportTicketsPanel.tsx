@@ -189,12 +189,21 @@ export default function AdminSupportTicketsPanel() {
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium truncate">{t.user_full_name || 'Usuário'}</span>
                 <div className="flex gap-1 shrink-0">
+                  {t.context?.source && (
+                    <Badge variant="secondary" className="text-[9px]" title={`Origem: ${t.context.source}`}>
+                      {t.context.source === 'services_limit_reached' ? 'Limite svc'
+                        : t.context.source === 'services_faq_exception' ? 'FAQ svc'
+                        : t.context.source === 'services_form_category_helper' ? 'Form svc'
+                        : 'Ctx'}
+                    </Badge>
+                  )}
                   {t.blocked && <Badge variant="destructive" className="text-[9px]">Bloq</Badge>}
                   {t.status === 'open_admin' && <Badge variant="secondary" className="text-[9px]">3/3</Badge>}
                   {t.status === 'closed' && <Badge variant="outline" className="text-[9px]">Fechado</Badge>}
                   {t.unread_admin > 0 && <Badge className="text-[9px] h-4 min-w-4 px-1">{t.unread_admin}</Badge>}
                 </div>
               </div>
+              <p className="text-[10px] text-foreground/80 truncate font-medium">{t.subject || '—'}</p>
               <p className="text-[10px] text-muted-foreground truncate">{t.user_city || '—'}</p>
               <p className="text-[10px] text-muted-foreground truncate">{t.last_message_text || '...'}</p>
               {t.last_message_at && (
