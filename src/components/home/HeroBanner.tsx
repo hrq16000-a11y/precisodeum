@@ -103,7 +103,7 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
 
   return (
     <section className="relative overflow-hidden py-12 md:py-28">
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <motion.img
           key={bgImage}
           src={bgImage}
@@ -111,10 +111,10 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           fetchPriority="high"
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover object-center scale-105"
-          initial={{ opacity: 0, scale: 1.1 }}
-          animate={{ opacity: 1, scale: 1.05 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.5 }}
         />
       </AnimatePresence>
 
