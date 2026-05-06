@@ -18,6 +18,12 @@ import {
 } from '@/hooks/useSupportTicket';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  consumeSupportContext,
+  buildAutoSubject,
+  buildAutoMessage,
+  type SupportContext,
+} from '@/lib/supportContext';
 
 const DashboardSupportPage = () => {
   const qc = useQueryClient();
@@ -26,28 +32,16 @@ const DashboardSupportPage = () => {
   const send = useSendUserMessage();
   const { data: messages = [] } = useTicketMessages(ticket?.id);
   const [text, setText] = useState('');
+  const [pendingCtx, setPendingCtx] = useState<SupportContext | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Pré-preenche o composer quando o usuário chega via link contextual
-  // (ex.: FAQ "preciso de mais de 5 serviços"). Lê uma vez do sessionStorage
-  // e descarta — o contexto nunca é enviado sem o usuário confirmar.
+  // Pré-preenche o composer e guarda o contexto para gravar no banco
+  // junto com a abertura do ticket (campo support_tickets.context).
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem('support_request_context');
-      if (!raw) return;
-      sessionStorage.removeItem('support_request_context');
-      const ctx = JSON.parse(raw) as { source?: string; services_count?: number; cap?: number; attempted_categories?: number };
-      if (ctx?.source === 'services_form_category_helper' || ctx?.source === 'services_faq_exception') {
-        setText((prev) => prev || (
-          `Olá! Gostaria de solicitar liberação para cadastrar mais serviços.\n\n` +
-          `Contexto automático:\n` +
-          `- Serviços atuais: ${ctx.services_count ?? 0} de ${ctx.cap ?? 5}\n` +
-          (ctx.attempted_categories != null ? `- Categorias tentadas: ${ctx.attempted_categories}\n` : '') +
-          `- Origem: ${ctx.source}\n\n` +
-          `Posso explicar meu caso a seguir.`
-        ));
-      }
-    } catch { /* noop */ }
+    const ctx = consumeSupportContext();
+    if (!ctx) return;
+    setPendingCtx(ctx);
+    setText((prev) => prev || buildAutoMessage(ctx));
   }, []);
 
   // Realtime
@@ -81,7 +75,21 @@ const DashboardSupportPage = () => {
     if (!text.trim()) return;
     try {
       let t = ticket;
-      if (!t) t = await openTicket.mutateAsync('Suporte');
+      if (!t) {
+        const subject = buildAutoSubject(pendingCtx);
+        t = await openTicket.mutateAsync(subject);
+        // Persiste o contexto no banco (visível em /admin) — best-effort,
+        // não bloqueia o envio em caso de falha de rede/permissão.
+        if (pendingCtx && t?.id) {
+          try {
+            await (supabase
+              .from('support_tickets' as any)
+              .update({ context: pendingCtx } as any)
+              .eq('id', t.id) as any);
+          } catch { /* noop */ }
+        }
+        setPendingCtx(null);
+      }
       await send.mutateAsync({ ticketId: t!.id, content: text });
       setText('');
     } catch (e: any) {

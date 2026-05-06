@@ -28,6 +28,7 @@ type TicketRow = {
   unread_admin: number;
   blocked: boolean;
   updated_at: string;
+  context: Record<string, any> | null;
 };
 
 export default function AdminSupportTicketsPanel() {
@@ -188,12 +189,21 @@ export default function AdminSupportTicketsPanel() {
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium truncate">{t.user_full_name || 'Usuário'}</span>
                 <div className="flex gap-1 shrink-0">
+                  {t.context?.source && (
+                    <Badge variant="secondary" className="text-[9px]" title={`Origem: ${t.context.source}`}>
+                      {t.context.source === 'services_limit_reached' ? 'Limite svc'
+                        : t.context.source === 'services_faq_exception' ? 'FAQ svc'
+                        : t.context.source === 'services_form_category_helper' ? 'Form svc'
+                        : 'Ctx'}
+                    </Badge>
+                  )}
                   {t.blocked && <Badge variant="destructive" className="text-[9px]">Bloq</Badge>}
                   {t.status === 'open_admin' && <Badge variant="secondary" className="text-[9px]">3/3</Badge>}
                   {t.status === 'closed' && <Badge variant="outline" className="text-[9px]">Fechado</Badge>}
                   {t.unread_admin > 0 && <Badge className="text-[9px] h-4 min-w-4 px-1">{t.unread_admin}</Badge>}
                 </div>
               </div>
+              <p className="text-[10px] text-foreground/80 truncate font-medium">{t.subject || '—'}</p>
               <p className="text-[10px] text-muted-foreground truncate">{t.user_city || '—'}</p>
               <p className="text-[10px] text-muted-foreground truncate">{t.last_message_text || '...'}</p>
               {t.last_message_at && (
@@ -241,6 +251,16 @@ export default function AdminSupportTicketsPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 flex flex-col h-[60vh] min-h-[420px]">
+          {selected?.context && Object.keys(selected.context).length > 0 && (
+            <div className="border-b border-border bg-amber-500/5 px-3 py-2 text-[11px] leading-snug">
+              <p className="font-semibold text-amber-700 dark:text-amber-300 mb-0.5">Contexto da solicitação</p>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-muted-foreground">
+                {selected.context.source && <span><b>Origem:</b> {String(selected.context.source)}</span>}
+                {selected.context.services_count != null && <span><b>Serviços:</b> {selected.context.services_count}/{selected.context.cap ?? 5}</span>}
+                {selected.context.attempted_categories != null && <span><b>Cat. tentadas:</b> {selected.context.attempted_categories}</span>}
+              </div>
+            </div>
+          )}
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2">
             {!selectedId ? (
               <p className="text-sm text-muted-foreground text-center py-8">Selecione um ticket à esquerda</p>

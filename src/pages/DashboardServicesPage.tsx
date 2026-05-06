@@ -59,6 +59,7 @@ import { format } from 'date-fns';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { CITIES_INDEX, type CityEntry } from '@/lib/citiesIndex';
 import { normalize } from '@/lib/normalize';
+import { saveSupportContext } from '@/lib/supportContext';
 
 
 // Build flat city list once for autocomplete
@@ -706,7 +707,30 @@ const DashboardServicesPage = () => {
   return (
     <DashboardLayout>
       {!limitsLoading && limits && limits.can_create_services && remainingServices !== null && remainingServices === 0 && (
-        <div className="mb-4"><UpsellBanner /></div>
+        <div className="mb-4 space-y-2">
+          <UpsellBanner />
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5">
+            <p className="text-xs text-foreground">
+              <span className="font-medium">Limite de {Math.min(5, limits?.max_services ?? 5)} serviços atingido.</span>{' '}
+              Precisa cadastrar mais? Fale com o suporte e nosso time avalia caso a caso.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => {
+                saveSupportContext({
+                  source: 'services_limit_reached',
+                  services_count: services.length,
+                  cap: Math.min(5, limits?.max_services ?? 5),
+                });
+                navigate('/dashboard/suporte');
+              }}
+            >
+              Falar com suporte
+            </Button>
+          </div>
+        </div>
       )}
 
       <div className="flex items-center justify-between">
@@ -907,15 +931,11 @@ const DashboardServicesPage = () => {
                 href="/dashboard/suporte"
                 className="font-medium text-bet-amber-fg underline underline-offset-2"
                 onClick={() => {
-                  try {
-                    const ctx = {
-                      source: 'services_faq_exception',
-                      services_count: services.length,
-                      cap: Math.min(5, limits?.max_services ?? 5),
-                      ts: Date.now(),
-                    };
-                    sessionStorage.setItem('support_request_context', JSON.stringify(ctx));
-                  } catch { /* noop */ }
+                  saveSupportContext({
+                    source: 'services_faq_exception',
+                    services_count: services.length,
+                    cap: Math.min(5, limits?.max_services ?? 5),
+                  });
                 }}
               >suporte</a>{' '}contando o que você precisa cadastrar. Nosso time avalia caso a caso.
             </p>
@@ -1206,16 +1226,12 @@ const DashboardServicesPage = () => {
                         href="/dashboard/suporte"
                         className="font-medium text-bet-amber-fg underline underline-offset-2"
                         onClick={() => {
-                          try {
-                            const ctx = {
-                              source: 'services_form_category_helper',
-                              services_count: services.length,
-                              attempted_categories: selectedCategoryIds.length,
-                              cap: Math.min(5, limits?.max_services ?? 5),
-                              ts: Date.now(),
-                            };
-                            sessionStorage.setItem('support_request_context', JSON.stringify(ctx));
-                          } catch { /* noop */ }
+                          saveSupportContext({
+                            source: 'services_form_category_helper',
+                            services_count: services.length,
+                            attempted_categories: selectedCategoryIds.length,
+                            cap: Math.min(5, limits?.max_services ?? 5),
+                          });
                         }}
                       >
                         Fale com o suporte

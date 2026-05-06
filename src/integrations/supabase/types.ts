@@ -5513,7 +5513,7 @@ export type Database = {
         Row: {
           accepts_on_demand: boolean
           address: string
-          category_id: string | null
+          category_id: string
           created_at: string
           deleted_at: string | null
           description: string
@@ -5545,7 +5545,7 @@ export type Database = {
         Insert: {
           accepts_on_demand?: boolean
           address?: string
-          category_id?: string | null
+          category_id: string
           created_at?: string
           deleted_at?: string | null
           description?: string
@@ -5577,7 +5577,7 @@ export type Database = {
         Update: {
           accepts_on_demand?: boolean
           address?: string
-          category_id?: string | null
+          category_id?: string
           created_at?: string
           deleted_at?: string | null
           description?: string
@@ -6697,6 +6697,7 @@ export type Database = {
         Row: {
           blocked: boolean
           consecutive_user_msgs: number
+          context: Json
           created_at: string
           id: string
           last_message_at: string | null
@@ -6713,6 +6714,7 @@ export type Database = {
         Insert: {
           blocked?: boolean
           consecutive_user_msgs?: number
+          context?: Json
           created_at?: string
           id?: string
           last_message_at?: string | null
@@ -6729,6 +6731,7 @@ export type Database = {
         Update: {
           blocked?: boolean
           consecutive_user_msgs?: number
+          context?: Json
           created_at?: string
           id?: string
           last_message_at?: string | null
