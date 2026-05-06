@@ -54,7 +54,9 @@ const UnifiedHealthScore = ({ score, remaining }: Props) => {
           )}
         </div>
       </div>
-      <Progress value={pct} className="mt-4 h-2" />
+      <div className="mt-4 h-2" style={{ minHeight: 8 }}>
+        <Progress value={pct} className="h-2" />
+      </div>
     </section>
   );
 };

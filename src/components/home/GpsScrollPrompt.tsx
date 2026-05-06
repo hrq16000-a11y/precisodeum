@@ -69,10 +69,11 @@ const GpsScrollPrompt = () => {
       <AnimatePresence>
         {visible && !hasGps && !dismissed && (
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 24 }}
-            transition={{ duration: 0.25 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            style={{ minHeight: 132 }}
             className="fixed inset-x-3 bottom-20 z-40 mx-auto max-w-md rounded-2xl border border-primary/30 bg-background/95 p-4 shadow-lg backdrop-blur md:bottom-6"
             role="dialog"
             aria-label="Solicitar localização"
