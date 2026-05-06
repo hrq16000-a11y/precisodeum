@@ -156,9 +156,10 @@ interface SectionProps {
   loading: boolean;
   emptyText: string;
   showDate?: boolean;
+  providerDayCount?: Map<string, number>;
 }
 
-function Section({ title, icon, rows, loading, emptyText, showDate }: SectionProps) {
+function Section({ title, icon, rows, loading, emptyText, showDate, providerDayCount }: SectionProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
