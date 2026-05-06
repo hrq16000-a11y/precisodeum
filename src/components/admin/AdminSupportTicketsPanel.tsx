@@ -48,19 +48,21 @@ export default function AdminSupportTicketsPanel() {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open_user' | 'open_admin' | 'closed' | 'blocked'>('all');
-  const [planFilter, setPlanFilter] = useState<'all' | 'paid' | 'gratuito'>('all');
+  // Tipo do solicitante: substitui o antigo "planFilter" (que misturava prestador c/ pagamento).
+  const [kindFilter, setKindFilter] = useState<'all' | 'sponsor' | 'provider_gold' | 'provider_other'>('all');
   const [levelFilter, setLevelFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'recent' | 'plan_priority'>('recent');
+  // Ordenação orgânica: patrocinadores → prestadores Ouro+ → demais.
+  const [sortBy, setSortBy] = useState<'recent' | 'organic_priority'>('recent');
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reply, setReply] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Reset page on filter change
-  useEffect(() => { setPage(0); }, [search, statusFilter, planFilter, levelFilter, sortBy]);
+  useEffect(() => { setPage(0); }, [search, statusFilter, kindFilter, levelFilter, sortBy]);
 
   const { data: ticketsPage, isLoading } = useQuery({
-    queryKey: ['admin-support-tickets', search, statusFilter, planFilter, levelFilter, sortBy, page],
+    queryKey: ['admin-support-tickets', search, statusFilter, kindFilter, levelFilter, sortBy, page],
     queryFn: async () => {
       let q: any = (supabase.from('support_tickets' as any).select('*', { count: 'exact' }) as any);
       if (statusFilter === 'blocked') q = q.eq('blocked', true);
