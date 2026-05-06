@@ -423,6 +423,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 href={whatsappLink(provider.whatsapp, buildSmartMessage(displayName, provider.category, geoCity, geoState))}
                 target="_blank"
                 rel="noopener noreferrer"
+                data-wa-target-type="provider"
+                data-wa-target-id={provider.id}
+                data-wa-target-label={displayName}
                 onClick={() => trackWhatsAppClick(provider.id, provider.slug, trackingSource)}
                 className="inline-flex w-full min-w-0 items-center justify-center gap-1.5 truncate"
               >
