@@ -908,15 +908,11 @@ const DashboardServicesPage = () => {
                 href="/dashboard/suporte"
                 className="font-medium text-bet-amber-fg underline underline-offset-2"
                 onClick={() => {
-                  try {
-                    const ctx = {
-                      source: 'services_faq_exception',
-                      services_count: services.length,
-                      cap: Math.min(5, limits?.max_services ?? 5),
-                      ts: Date.now(),
-                    };
-                    sessionStorage.setItem('support_request_context', JSON.stringify(ctx));
-                  } catch { /* noop */ }
+                  saveSupportContext({
+                    source: 'services_faq_exception',
+                    services_count: services.length,
+                    cap: Math.min(5, limits?.max_services ?? 5),
+                  });
                 }}
               >suporte</a>{' '}contando o que você precisa cadastrar. Nosso time avalia caso a caso.
             </p>
