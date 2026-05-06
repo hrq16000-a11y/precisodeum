@@ -276,6 +276,12 @@ export default function AdminSupportTicketsPanel() {
                   {t.status === 'open_admin' && <Badge variant="secondary" className="text-[9px]">3/3</Badge>}
                   {t.status === 'closed' && <Badge variant="outline" className="text-[9px]">Fechado</Badge>}
                   {t.unread_admin > 0 && <Badge className="text-[9px] h-4 min-w-4 px-1">{t.unread_admin}</Badge>}
+                  {paid && (
+                    <Badge className="text-[9px] gap-0.5 bg-amber-500 text-white" aria-label={`Plano pago: ${plan}`}>
+                      <Star className="h-2.5 w-2.5" aria-hidden="true" />
+                      {plan}
+                    </Badge>
+                  )}
                 </div>
               </div>
               <p className="text-[10px] text-foreground/80 truncate font-medium">{t.subject || '—'}</p>
@@ -287,7 +293,8 @@ export default function AdminSupportTicketsPanel() {
                 </p>
               )}
             </button>
-          ))}
+            );
+          })}
         </CardContent>
         {totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-border p-2 text-xs">
