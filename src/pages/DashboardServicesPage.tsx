@@ -1141,14 +1141,16 @@ const DashboardServicesPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
+                    <label className="mb-1 block text-sm font-medium text-foreground">
+                      Categorias <span className="text-xs font-normal text-muted-foreground">(até 3)</span>
+                    </label>
                     <Suspense fallback={<SuspenseFallback />}>
                       <SmartCategoryPicker
                         categories={categories}
                         selectedIds={selectedCategoryIds}
                         onToggle={toggleCategory}
-                        maxSelections={1}
-                        placeholder="Escolha 1 categoria..."
+                        maxSelections={3}
+                        placeholder="Escolha uma ou mais categorias..."
                       />
                     </Suspense>
                   </div>
