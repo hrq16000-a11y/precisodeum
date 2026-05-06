@@ -17,6 +17,8 @@ import {
   AlertCircle,
   MapPin,
   Clock,
+  Sparkles,
+  Repeat2,
 } from 'lucide-react';
 
 type ContactRow = {
