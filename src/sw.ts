@@ -47,24 +47,29 @@ registerRoute(
 
 self.addEventListener('push', (event) => {
   if (!event.data) return;
-  const payload = event.data.json();
-  const title = payload.title || 'Atualizacao';
-  const options: any = {
-    body: payload.body,
-    icon: payload.icon || '/icons/icon-192.png',
-    badge: payload.badge || '/icons/icon-96.png',
-    data: payload.data || { url: payload.url || '/' },
-    actions: payload.actions || [
-      { action: 'open', title: 'Abrir' },
-      { action: 'dismiss', title: 'Fechar' },
-    ],
-    tag: payload.tag || 'pwa-notification',
-    renotify: payload.renotify ?? false,
-  };
-  if (payload.image) {
-    options.image = payload.image;
+  
+  try {
+    const payload = event.data.json();
+    const title = payload.title || 'Atualizacao';
+    const options: any = {
+      body: payload.body,
+      icon: payload.icon || '/icons/icon-192.png',
+      badge: payload.badge || '/icons/icon-96.png',
+      data: payload.data || { url: payload.url || '/' },
+      actions: payload.actions || [
+        { action: 'open', title: 'Abrir' },
+        { action: 'dismiss', title: 'Fechar' },
+      ],
+      tag: payload.tag || 'pwa-notification',
+      renotify: payload.renotify ?? false,
+    };
+    if (payload.image) {
+      options.image = payload.image;
+    }
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (error) {
+    console.error('Error parsing push payload:', error);
   }
-  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
