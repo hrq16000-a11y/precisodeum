@@ -311,6 +311,11 @@ const DashboardServicesPage = () => {
     }
     const errors: Record<string, string> = {};
     if (!form.service_name.trim()) errors.service_name = 'Título é obrigatório';
+    if (selectedCategoryIds.length === 0) {
+      errors.category = 'Selecione 1 categoria para este serviço';
+    } else if (selectedCategoryIds.length > 1) {
+      errors.category = 'Apenas 1 categoria por serviço. Para outra atividade, cadastre um novo serviço.';
+    }
     const cleanedArea = stripLegacyAreaPrefixes(form.service_area);
     if (!cleanedArea) {
       errors.service_area = 'Cidade é obrigatória';
