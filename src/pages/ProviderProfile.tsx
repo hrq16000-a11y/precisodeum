@@ -855,6 +855,10 @@ const ProviderProfile = () => {
       disposed = true;
       cancelScheduledVisibilityMeasure();
       if (emergencyTimer !== null) window.clearTimeout(emergencyTimer);
+      if (trailingScrollTimer !== null) {
+        window.clearTimeout(trailingScrollTimer);
+        trailingScrollTimer = null;
+      }
       observer?.disconnect();
       resizeObserver?.disconnect();
       if (useScrollFallback) window.removeEventListener('scroll', handleScrollFallback);
