@@ -208,7 +208,7 @@ const HeroBanner = () => {
           </h1>
         </div>
 
-        <div className="relative z-30 mt-4 w-full max-w-2xl md:mt-6 hero-search-wrapper">
+        <div className="relative z-30 mt-4 w-full max-w-2xl md:mt-6 hero-search-wrapper min-h-[64px]">
           <div className="animate-glow-ring rounded-full">
             {enhancedSearch ? (
               <Suspense fallback={<CriticalHeroSearch onUpgrade={() => setEnhancedSearch(true)} />}>
