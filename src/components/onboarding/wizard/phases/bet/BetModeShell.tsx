@@ -100,7 +100,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = params.get('next') || '/dashboard';
-  const { user, profile, refetchProfile } = useAuth();
+  const { user, profile, provider, refetchProfile } = useAuth();
   const initialDraft = loadBetDraft();
   const [state, dispatch] = useReducer(reducer, undefined as unknown as BetState, () => ({
     ...initialDraft,
