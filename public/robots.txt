@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /login
+Disallow: /cadastro
+Disallow: /dashboard/
+Disallow: /reset-password
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+Sitemap: https://precisodeum.com.br/sitemap.xml

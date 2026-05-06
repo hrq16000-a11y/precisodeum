@@ -1,0 +1,108 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import DashboardLayout from '@/components/DashboardLayout';
+import { Phone, MessageCircle, AlertTriangle } from 'lucide-react';
+import { whatsappLink } from '@/lib/whatsapp';
+import { useAuth } from '@/hooks/useAuth';
+import { useAccountLimits } from '@/hooks/useAccountLimits';
+import { supabase } from '@/integrations/supabase/client';
+
+const DashboardLeadsPage = () => {
+  const { user, provider, loading } = useAuth();
+  const { limits, canReceiveMoreLeads, remainingLeads, loading: limitsLoading } = useAccountLimits();
+  const navigate = useNavigate();
+  const [leads, setLeads] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!loading && !user) navigate('/login');
+  }, [loading, user, navigate]);
+
+  useEffect(() => {
+    if (!provider) return;
+    supabase.from('leads')
+      .select('*')
+      .eq('provider_id', provider.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setLeads(data); });
+  }, [provider]);
+
+  if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
+
+  // Block access if can_receive_leads is false
+  if (!limitsLoading && limits?.can_receive_leads === false) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <AlertTriangle className="h-12 w-12 text-destructive/60 mb-4" />
+          <h1 className="font-display text-xl font-bold text-foreground">Leads indisponível</h1>
+          <p className="mt-2 text-sm text-muted-foreground max-w-md">
+            Seu tipo de conta não permite receber leads. Atualize seu plano para ter acesso.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <h1 className="font-display text-2xl font-bold text-foreground">Leads Recebidos</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{leads.length} lead(s) recebido(s)</p>
+
+      {/* Limits banner */}
+      {!limitsLoading && limits && remainingLeads !== null && (
+        <div className={`mt-3 rounded-lg border p-3 text-sm ${!canReceiveMoreLeads ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-accent/20 bg-accent/5 text-foreground'}`}>
+          <div className="flex items-center gap-2">
+            {!canReceiveMoreLeads && <AlertTriangle className="h-4 w-4 shrink-0" />}
+            <span>
+              {!canReceiveMoreLeads
+                ? `Limite de ${limits.max_leads} lead(s) atingido. Atualize seu plano para receber mais.`
+                : `${remainingLeads} de ${limits.max_leads} lead(s) restante(s) no seu plano.`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 space-y-3">
+        {leads.length === 0 && (
+          <div className="rounded-xl border border-border bg-card p-12 text-center shadow-card">
+            <p className="text-foreground font-semibold">Nenhum lead recebido</p>
+            <p className="mt-1 text-sm text-muted-foreground">Quando clientes solicitarem orçamento, os leads aparecerão aqui.</p>
+          </div>
+        )}
+        {leads.map(lead => (
+          <div key={lead.id} className="rounded-xl border border-border bg-card p-4 shadow-card">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-semibold text-foreground">{lead.client_name}</p>
+                {lead.service_needed && <p className="text-xs text-accent font-medium">{lead.service_needed}</p>}
+                {lead.message && <p className="mt-1 text-xs text-muted-foreground">{lead.message}</p>}
+              </div>
+              <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                <p className="text-xs text-muted-foreground">{new Date(lead.created_at).toLocaleDateString('pt-BR')}</p>
+                <div className="flex items-center gap-2">
+                  <a href={`tel:${lead.phone}`} className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">
+                    <Phone className="h-3 w-3" /> {lead.phone}
+                  </a>
+                  <a
+                    href={whatsappLink(lead.phone, `Olá ${lead.client_name}, recebi sua solicitação${lead.service_needed ? ` sobre "${lead.service_needed}"` : ''}. Como posso ajudar?`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-full bg-[#25D366] p-1.5 text-white hover:bg-[#1da851] transition-colors"
+                    title="Responder pelo WhatsApp"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${lead.status === 'new' ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
+              {lead.status === 'new' ? 'Novo' : lead.status}
+            </span>
+          </div>
+        ))}
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default DashboardLeadsPage;
