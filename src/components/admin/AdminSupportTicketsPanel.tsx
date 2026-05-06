@@ -251,6 +251,16 @@ export default function AdminSupportTicketsPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 flex flex-col h-[60vh] min-h-[420px]">
+          {selected?.context && Object.keys(selected.context).length > 0 && (
+            <div className="border-b border-border bg-amber-500/5 px-3 py-2 text-[11px] leading-snug">
+              <p className="font-semibold text-amber-700 dark:text-amber-300 mb-0.5">Contexto da solicitação</p>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-muted-foreground">
+                {selected.context.source && <span><b>Origem:</b> {String(selected.context.source)}</span>}
+                {selected.context.services_count != null && <span><b>Serviços:</b> {selected.context.services_count}/{selected.context.cap ?? 5}</span>}
+                {selected.context.attempted_categories != null && <span><b>Cat. tentadas:</b> {selected.context.attempted_categories}</span>}
+              </div>
+            </div>
+          )}
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2">
             {!selectedId ? (
               <p className="text-sm text-muted-foreground text-center py-8">Selecione um ticket à esquerda</p>
