@@ -17,6 +17,8 @@ import {
   AlertCircle,
   MapPin,
   Clock,
+  Sparkles,
+  Repeat2,
 } from 'lucide-react';
 
 type ContactRow = {
@@ -77,6 +79,12 @@ const DashboardClientContactsPage = () => {
   });
 
   const todayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  // Build per-provider total day-count to mark "novo desbloqueio" vs "recorrente"
+  const providerDayCount = useMemo(() => {
+    const map = new Map<string, number>();
+    (data ?? []).forEach((r) => map.set(r.provider_id, (map.get(r.provider_id) ?? 0) + 1));
+    return map;
+  }, [data]);
   const today = (data ?? []).filter((r) => r.clicked_on_utc === todayKey);
   const older = (data ?? []).filter((r) => r.clicked_on_utc !== todayKey);
 
@@ -124,6 +132,7 @@ const DashboardClientContactsPage = () => {
           rows={today}
           loading={isLoading}
           emptyText="Voce ainda nao desbloqueou contatos hoje."
+          providerDayCount={providerDayCount}
         />
 
         <Section
@@ -133,6 +142,7 @@ const DashboardClientContactsPage = () => {
           loading={isLoading}
           emptyText="Sem contatos anteriores no historico."
           showDate
+          providerDayCount={providerDayCount}
         />
       </div>
     </DashboardLayout>
@@ -146,9 +156,10 @@ interface SectionProps {
   loading: boolean;
   emptyText: string;
   showDate?: boolean;
+  providerDayCount?: Map<string, number>;
 }
 
-function Section({ title, icon, rows, loading, emptyText, showDate }: SectionProps) {
+function Section({ title, icon, rows, loading, emptyText, showDate, providerDayCount }: SectionProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -174,6 +185,8 @@ function Section({ title, icon, rows, loading, emptyText, showDate }: SectionPro
               const p = row.provider;
               const waUrl = buildWaUrl(p);
               const profileUrl = p?.slug ? `/profissional/${p.slug}` : null;
+              const totalDays = providerDayCount?.get(row.provider_id) ?? 1;
+              const isRecurring = totalDays > 1;
               return (
                 <li key={row.id} className="py-3 flex items-center gap-3">
                   {p?.photo_url ? (
@@ -196,6 +209,19 @@ function Section({ title, icon, rows, loading, emptyText, showDate }: SectionPro
                         </Link>
                       ) : (
                         p?.business_name ?? 'Prestador'
+                      )}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {isRecurring ? (
+                        <Badge variant="outline" className="gap-1 text-[10px] py-0 h-5">
+                          <Repeat2 className="h-3 w-3" aria-hidden="true" />
+                          Recorrente ({totalDays}x)
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1 text-[10px] py-0 h-5">
+                          <Sparkles className="h-3 w-3" aria-hidden="true" />
+                          Novo desbloqueio
+                        </Badge>
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">

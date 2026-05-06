@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, Briefcase, Star, MessageSquare, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy, AlertTriangle, ChevronRight, Building2, ExternalLink, BarChart3, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, Star, MessageSquare, LogOut, Menu, X, Shield, Layout, Megaphone, Users2, Bell, Camera, LifeBuoy, AlertTriangle, ChevronRight, Building2, ExternalLink, BarChart3, ClipboardCheck, ListChecks } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -107,6 +107,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     // RH-only
     { label: 'Dados da Agência', icon: Building2, path: '/dashboard/agencia', show: isRH, badge: 0 },
     { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient && hasProfilePermission('jobs'), badge: 0 },
+    { label: 'Meus Contatos', icon: ListChecks, path: '/dashboard/cliente/contatos', show: isClient, badge: 0 },
     { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: hasProfilePermission('community'), badge: 0 },
     { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: hasProfilePermission('notifications'), badge: unreadCount },
     { label: 'Chat', icon: MessageSquare, path: '/dashboard/chat', show: !isClient, badge: 0 },
