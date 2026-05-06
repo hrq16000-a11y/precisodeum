@@ -186,37 +186,42 @@ const App = () => {
                 <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
                 <Route path="/dashboard/notificacoes" element={<DashboardNotificationsPage />} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
-                <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
-                <Route path="/admin/usuarios" element={<AdminUsersPage />} />
-                <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
-                <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
-                <Route path="/admin/cidades" element={<AdminCitiesPage />} />
-                <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
-                <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
-                <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
-                <Route path="/admin/faq" element={<AdminFaqPage />} />
-                <Route path="/admin/metatags" element={<AdminMetaTagsPage />} />
-                <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
-                <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
-                <Route path="/admin/vagas" element={<AdminJobsPage />} />
-                <Route path="/admin/blog" element={<AdminBlogPage />} />
-                <Route path="/admin/crm-patrocinadores" element={<AdminSponsorCrmPage />} />
-                <Route path="/admin/slots-anuncios" element={<AdminAdSlotsPage />} />
-                <Route path="/admin/auditoria" element={<AdminAuditLogPage />} />
-                <Route path="/admin/backup" element={<AdminBackupPage />} />
-                <Route path="/admin/lixeira" element={<AdminTrashPage />} />
-                <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
-                <Route path="/admin/pwa" element={<AdminPwaPage />} />
-                <Route path="/admin/planos-regras" element={<AdminTierRulesPage />} />
-                <Route path="/admin/midia" element={<AdminMediaPage />} />
-                <Route path="/admin/servicos" element={<AdminServicesPage />} />
-                <Route path="/admin/leads" element={<AdminLeadsPage />} />
-                <Route path="/admin/modulos" element={<AdminModulesPage />} />
-                <Route path="/admin/blocos" element={<AdminBlocksPage />} />
-                <Route path="/admin/paginas" element={<AdminInstitutionalPagesPage />} />
-                <Route path="/admin/menus" element={<AdminMenuPage />} />
+                
+                {/* Admin Routes — Protected at router level */}
+                <Route element={<ProtectedRoute allowedTypes={['admin']} />}>
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/admin/prestadores" element={<AdminProvidersPage />} />
+                  <Route path="/admin/avaliacoes" element={<AdminReviewsPage />} />
+                  <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+                  <Route path="/admin/categorias" element={<AdminCategoriesPage />} />
+                  <Route path="/admin/estatisticas" element={<AdminStatsPage />} />
+                  <Route path="/admin/cidades" element={<AdminCitiesPage />} />
+                  <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
+                  <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
+                  <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
+                  <Route path="/admin/faq" element={<AdminFaqPage />} />
+                  <Route path="/admin/metatags" element={<AdminMetaTagsPage />} />
+                  <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
+                  <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
+                  <Route path="/admin/vagas" element={<AdminJobsPage />} />
+                  <Route path="/admin/blog" element={<AdminBlogPage />} />
+                  <Route path="/admin/crm-patrocinadores" element={<AdminSponsorCrmPage />} />
+                  <Route path="/admin/slots-anuncios" element={<AdminAdSlotsPage />} />
+                  <Route path="/admin/auditoria" element={<AdminAuditLogPage />} />
+                  <Route path="/admin/backup" element={<AdminBackupPage />} />
+                  <Route path="/admin/lixeira" element={<AdminTrashPage />} />
+                  <Route path="/admin/hero-banners" element={<AdminHeroBannersPage />} />
+                  <Route path="/admin/pwa" element={<AdminPwaPage />} />
+                  <Route path="/admin/planos-regras" element={<AdminTierRulesPage />} />
+                  <Route path="/admin/midia" element={<AdminMediaPage />} />
+                  <Route path="/admin/servicos" element={<AdminServicesPage />} />
+                  <Route path="/admin/leads" element={<AdminLeadsPage />} />
+                  <Route path="/admin/modulos" element={<AdminModulesPage />} />
+                  <Route path="/admin/blocos" element={<AdminBlocksPage />} />
+                  <Route path="/admin/paginas" element={<AdminInstitutionalPagesPage />} />
+                  <Route path="/admin/menus" element={<AdminMenuPage />} />
+                </Route>
+
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/servico/:slug" element={<PopularServicePage />} />
