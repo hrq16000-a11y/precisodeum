@@ -683,6 +683,11 @@ const ProviderProfile = () => {
     let safeAreaBottom = 0;
     let lastShouldShow: boolean | null = null;
     let disposed = false;
+    // Throttle: limita medições por scroll a ~12fps (80ms) em devices lentos,
+    // mantendo trailing call para garantir o estado final correto.
+    const scrollThrottleMs = 80;
+    let lastScrollMeasureAt = 0;
+    let trailingScrollTimer: number | null = null;
     const minVisibleCtaPx = 8;
     const fallbackVisibilityHysteresisPx = 8;
     const visualViewport = window.visualViewport;
