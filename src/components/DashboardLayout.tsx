@@ -17,6 +17,7 @@ import { DashboardHealthCheck } from '@/components/dashboard/DashboardHealthChec
 import NotificationPermissionGate from '@/components/dashboard/NotificationPermissionGate';
 import { useDashboardSessionPing } from '@/hooks/useDashboardSessionPing';
 import ErrorGuard from '@/components/ErrorGuard';
+import { isDashboardNavItemActive } from '@/lib/dashboardNavMatch';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
