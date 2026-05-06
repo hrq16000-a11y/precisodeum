@@ -13,6 +13,8 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
   const [images, setImages] = useState<{ name: string; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
 
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
+
   const loadImages = async () => {
     const { data } = await supabase.storage.from('portfolio').list(`${userId}`, { limit: 20 });
     if (data) {
@@ -37,6 +39,10 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
 
     setUploading(true);
     for (const file of Array.from(files)) {
+      if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+        toast.error(`${file.name}: tipo de arquivo não permitido. Use JPG, PNG ou WebP.`);
+        continue;
+      }
       if (file.size > 5 * 1024 * 1024) {
         toast.error(`${file.name}: máximo 5MB`);
         continue;
