@@ -6655,6 +6655,47 @@ export type Database = {
           },
         ]
       }
+      support_context_snapshot_log: {
+        Row: {
+          account_level: string | null
+          created_at: string
+          current_plan: string | null
+          id: string
+          profile_slug: string | null
+          snapshot: Json
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          account_level?: string | null
+          created_at?: string
+          current_plan?: string | null
+          id?: string
+          profile_slug?: string | null
+          snapshot?: Json
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          account_level?: string | null
+          created_at?: string
+          current_plan?: string | null
+          id?: string
+          profile_slug?: string | null
+          snapshot?: Json
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_context_snapshot_log_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_ticket_messages: {
         Row: {
           content: string
