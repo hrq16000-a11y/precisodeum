@@ -1,13 +1,15 @@
 import { MessageCircle } from 'lucide-react';
 import { whatsappLink } from '@/lib/whatsapp';
 import { useLocation } from 'react-router-dom';
+import { useSettingValue } from '@/hooks/useSiteSettings';
 
 interface Props {
   jobTitle?: string;
 }
 
 const FloatingWhatsApp = ({ jobTitle }: Props) => {
-  const supportPhone = '5541997452053';
+  const settingsPhone = useSettingValue('whatsapp_support_phone');
+  const supportPhone = settingsPhone || '5541997452053';
   const message = jobTitle
     ? `Olá! Vi a vaga "${jobTitle}" no Preciso de um e gostaria de mais informações.`
     : 'Olá! Preciso de ajuda no Preciso de um.';
