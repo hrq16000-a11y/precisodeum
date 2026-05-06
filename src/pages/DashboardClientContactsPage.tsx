@@ -339,13 +339,18 @@ function Section({ title, icon, rows, loading, emptyText, showDate }: SectionPro
       </CardHeader>
       <CardContent>
         {loading ? (
-          <ul className="divide-y" aria-busy="true" aria-live="polite" data-testid="contacts-loading">
-            <ContactRowSkeleton />
-            <ContactRowSkeleton />
-            <ContactRowSkeleton />
-          </ul>
+          <>
+            <span className="sr-only" role="status" aria-live="polite">
+              Carregando seus contatos...
+            </span>
+            <ul className="divide-y" aria-busy="true" data-testid="contacts-loading">
+              <ContactRowSkeleton />
+              <ContactRowSkeleton />
+              <ContactRowSkeleton />
+            </ul>
+          </>
         ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{emptyText}</p>
+          <p className="text-sm text-muted-foreground" role="status" aria-live="polite">{emptyText}</p>
         ) : (
           <ul className="divide-y">
             {rows.map((row) => {
