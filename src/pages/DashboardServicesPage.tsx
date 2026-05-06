@@ -311,6 +311,11 @@ const DashboardServicesPage = () => {
     }
     const errors: Record<string, string> = {};
     if (!form.service_name.trim()) errors.service_name = 'Título é obrigatório';
+    if (selectedCategoryIds.length === 0) {
+      errors.category = 'Selecione 1 categoria para este serviço';
+    } else if (selectedCategoryIds.length > 1) {
+      errors.category = 'Apenas 1 categoria por serviço. Para outra atividade, cadastre um novo serviço.';
+    }
     const cleanedArea = stripLegacyAreaPrefixes(form.service_area);
     if (!cleanedArea) {
       errors.service_area = 'Cidade é obrigatória';
@@ -880,6 +885,44 @@ const DashboardServicesPage = () => {
         })()}
       </div>
 
+      {/* ─── FAQ enxuto: regra "1 categoria por serviço" + canal de exceção ─── */}
+      <details className="mt-4 rounded-lg border border-border bg-card/60 p-3 text-sm">
+        <summary className="cursor-pointer font-medium text-foreground">
+          Perguntas frequentes sobre serviços
+        </summary>
+        <div className="mt-2 space-y-3 text-xs leading-relaxed text-muted-foreground">
+          <div>
+            <p className="font-medium text-foreground">Por que cada serviço tem só 1 categoria?</p>
+            <p>Para sua oferta aparecer nas buscas certas. Misturar categorias confunde o cliente e baixa o ranking. Se você atende áreas diferentes (ex.: pintura e elétrica), cadastre 1 serviço para cada — assim cada anúncio vira referência na sua categoria.</p>
+          </div>
+          <div>
+            <p className="font-medium text-foreground">Quantos serviços posso cadastrar?</p>
+            <p>Até 5 serviços ativos por perfil. Cada serviço aceita 5 fotos, valor "a partir de", descrição livre e até 5 áreas/cidades de atendimento.</p>
+          </div>
+          <div>
+            <p className="font-medium text-foreground">Preciso de mais de 5 serviços. Como peço exceção?</p>
+            <p>
+              Abra um ticket no{' '}
+              <a
+                href="/dashboard/suporte"
+                className="font-medium text-bet-amber-fg underline underline-offset-2"
+                onClick={() => {
+                  try {
+                    const ctx = {
+                      source: 'services_faq_exception',
+                      services_count: services.length,
+                      cap: Math.min(5, limits?.max_services ?? 5),
+                      ts: Date.now(),
+                    };
+                    sessionStorage.setItem('support_request_context', JSON.stringify(ctx));
+                  } catch { /* noop */ }
+                }}
+              >suporte</a>{' '}contando o que você precisa cadastrar. Nosso time avalia caso a caso.
+            </p>
+          </div>
+        </div>
+      </details>
+
       {/* ─── New/Edit Sheet (lazy mount: árvore só existe quando showDialog=true) ─── */}
       {showDialog && (
       <Sheet open={showDialog} onOpenChange={(open) => { if (!open) { resetForm(); } setShowDialog(open); }}>
@@ -1153,9 +1196,30 @@ const DashboardServicesPage = () => {
                         placeholder="Escolha a categoria deste serviço..."
                       />
                     </Suspense>
+                    {formErrors.category && (
+                      <p className="mt-1 text-xs text-destructive" role="alert">{formErrors.category}</p>
+                    )}
                     <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
                       Cada serviço tem <span className="font-medium text-foreground">1 categoria</span>. Para oferecer outra atividade, cadastre um novo serviço.
-                      Precisa de mais de {5} serviços? Fale com o <a href="/dashboard/suporte" className="font-medium text-bet-amber-fg underline underline-offset-2">suporte</a> para liberar.
+                      Precisa de mais de 5 serviços?{' '}
+                      <a
+                        href="/dashboard/suporte"
+                        className="font-medium text-bet-amber-fg underline underline-offset-2"
+                        onClick={() => {
+                          try {
+                            const ctx = {
+                              source: 'services_form_category_helper',
+                              services_count: services.length,
+                              attempted_categories: selectedCategoryIds.length,
+                              cap: Math.min(5, limits?.max_services ?? 5),
+                              ts: Date.now(),
+                            };
+                            sessionStorage.setItem('support_request_context', JSON.stringify(ctx));
+                          } catch { /* noop */ }
+                        }}
+                      >
+                        Fale com o suporte
+                      </a>{' '}para liberar.
                     </p>
                   </div>
                 </div>
