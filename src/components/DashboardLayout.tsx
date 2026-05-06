@@ -219,7 +219,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-0.5 px-3 pb-4">
           {menuItems.map((item, i) => {
-            const active = location.pathname === item.path;
+            const normalizedPath = location.pathname.replace(/\/+$/, '');
+            const active =
+              normalizedPath === item.path ||
+              (item.path !== '/dashboard' && normalizedPath.startsWith(item.path + '/'));
             return (
               <motion.div
                 key={item.path}
