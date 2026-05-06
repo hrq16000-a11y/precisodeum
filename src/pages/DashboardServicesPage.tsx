@@ -59,6 +59,7 @@ import { format } from 'date-fns';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { CITIES_INDEX, type CityEntry } from '@/lib/citiesIndex';
 import { normalize } from '@/lib/normalize';
+import { saveSupportContext } from '@/lib/supportContext';
 
 
 // Build flat city list once for autocomplete
