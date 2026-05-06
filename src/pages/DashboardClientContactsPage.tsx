@@ -93,7 +93,7 @@ const DashboardClientContactsPage = () => {
 
   const offset = (page - 1) * PAGE_SIZE;
 
-  const { data, isLoading, isFetching, error } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['whatsapp-contacts-history', user?.id, search, sort, page],
     enabled: !!user,
     placeholderData: keepPreviousData,
@@ -190,13 +190,45 @@ const DashboardClientContactsPage = () => {
         </div>
 
         {error && (
-          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+          <div
+            className="flex flex-wrap items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+            role="alert"
+            data-testid="contacts-error"
+          >
             <AlertCircle className="h-4 w-4 mt-0.5" aria-hidden="true" />
-            <span>Nao foi possivel carregar seus contatos. Tente novamente em instantes.</span>
+            <span className="flex-1 min-w-[12rem]">
+              Nao foi possivel carregar seus contatos. Tente novamente em instantes.
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              data-testid="contacts-retry"
+            >
+              Tentar novamente
+            </Button>
           </div>
         )}
 
-        {sort === 'recent' ? (
+        {!isLoading && !error && total === 0 && !search ? (
+          <Card data-testid="contacts-empty">
+            <CardContent className="p-8 text-center space-y-3">
+              <div className="mx-auto h-12 w-12 rounded-full bg-muted grid place-items-center">
+                <MessageCircle className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium">Voce ainda nao desbloqueou nenhum contato</p>
+                <p className="text-sm text-muted-foreground">
+                  Quando voce abrir o WhatsApp de um prestador, ele aparecera aqui automaticamente.
+                </p>
+              </div>
+              <Button asChild size="sm">
+                <Link to="/buscar">Encontrar prestadores</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : sort === 'recent' ? (
           <>
             <Section
               title="Hoje"
