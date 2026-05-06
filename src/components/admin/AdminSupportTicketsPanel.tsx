@@ -8,15 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw, ExternalLink, BadgeCheck, Trophy, Sparkles, UserCircle2, Filter, Star, ArrowDownUp } from 'lucide-react';
+import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw, ExternalLink, Trophy, Sparkles, UserCircle2, Filter, ArrowDownUp, Megaphone } from 'lucide-react';
 
-const PAID_PLAN_KEYWORDS = ['pro', 'premium', 'plus', 'gold', 'vip', 'pago'];
-function isPaidPlan(plan?: string | null): boolean {
-  if (!plan) return false;
-  const p = plan.toLowerCase();
-  if (p === 'gratuito' || p === 'free') return false;
-  return PAID_PLAN_KEYWORDS.some(k => p.includes(k));
-}
+// Regra de negócio: prestadores são 100% gratuitos — priorização SOMENTE por nível Ouro+.
+// Patrocinadores são pagantes por definição (rótulo "Patrocinador" basta, sem badge "Pago").
+const GOLD_PLUS_LEVELS = new Set(['Ouro', 'Platina', 'Diamante', 'Mestre']);
+const isGoldPlusLevel = (lvl?: string | null) => !!lvl && GOLD_PLUS_LEVELS.has(lvl);
+type RequesterKind = 'sponsor' | 'provider' | 'client' | 'other';
+const getRequesterKind = (ctx: any): RequesterKind => {
+  const k = ctx?.profile_snapshot?.requester_kind;
+  if (k === 'sponsor' || k === 'provider' || k === 'client') return k;
+  return 'other';
+};
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
