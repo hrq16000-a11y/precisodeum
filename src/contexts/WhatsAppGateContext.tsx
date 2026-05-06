@@ -98,15 +98,23 @@ export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
     pendingRef.current = null;
     try { localStorage.removeItem(PENDING_KEY); } catch {/* ignore */}
     void recordLead({ id: user.id, email: user.email }, pending, true);
-    // Slight delay so any auth UI settles
-    setTimeout(() => openExternal(pending.url), 150);
     setOpen(false);
+    // Provider targets go through the daily-quota unlock dialog
+    if ((pending.targetType ?? 'provider') === 'provider' && pending.targetId) {
+      setTimeout(() => setUnlockTarget(pending), 150);
+    } else {
+      setTimeout(() => openExternal(pending.url), 150);
+    }
   }, [user]);
 
   const requestWhatsApp = useCallback((target: WhatsAppTarget) => {
     if (user) {
-      // Logged in: silent track + open immediately
+      // Logged in: provider → daily-quota dialog; sponsor/job/support → open immediately
       void recordLead({ id: user.id, email: user.email }, target, true);
+      if ((target.targetType ?? 'provider') === 'provider' && target.targetId) {
+        setUnlockTarget(target);
+        return;
+      }
       openExternal(target.url);
       return;
     }
