@@ -28,6 +28,7 @@ type TicketRow = {
   unread_admin: number;
   blocked: boolean;
   updated_at: string;
+  context: Record<string, any> | null;
 };
 
 export default function AdminSupportTicketsPanel() {
