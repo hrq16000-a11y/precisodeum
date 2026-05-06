@@ -146,11 +146,12 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
     }
   }
 
-  // 1b) Chaves institucionais — `business_name` e `legal_name` valem para
-  //     PF e PJ (apenas saneadas). As demais (endereço, segmento, CNPJ,
-  //     show_full_address) são removidas silenciosamente para PF.
+  // 1b) Chaves institucionais — `business_name`/`legal_name` valem para PF e
+  //     PJ. Endereço (street/number/complement/postal_code) também é coluna
+  //     real em `providers` p/ qualquer tipo — autônomos podem ter CEP base
+  //     sem expor logradouro publicamente. Apenas segmento/CNPJ/social_links/
+  //     show_full_address continuam exclusivos de PJ.
   const PJ_ONLY_KEYS = new Set<string>([
-    'street', 'street_number', 'complement', 'postal_code',
     'show_full_address', 'business_segment', 'cnpj', 'social_links',
   ]);
 
