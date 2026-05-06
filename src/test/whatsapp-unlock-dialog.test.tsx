@@ -43,10 +43,6 @@ beforeEach(() => {
   rpcMock.mockReset();
   toastMock.mockReset();
   openSpy.mockClear();
-  vi.useFakeTimers();
-});
-afterEach(() => {
-  vi.useRealTimers();
 });
 
 describe('WhatsAppUnlockDialog', () => {
