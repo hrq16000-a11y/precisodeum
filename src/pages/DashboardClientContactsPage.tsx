@@ -1,27 +1,22 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useWhatsappQuota } from '@/hooks/useWhatsappQuota';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
-  MessageCircle,
-  ExternalLink,
-  ListChecks,
-  ShieldCheck,
-  AlertCircle,
-  MapPin,
-  Clock,
-  Sparkles,
-  Repeat2,
-  Search,
-  X,
+  MessageCircle, ExternalLink, ListChecks, ShieldCheck, AlertCircle,
+  MapPin, Clock, Sparkles, Repeat2, Search, X, ArrowUpDown,
 } from 'lucide-react';
 
 type ContactRow = {
@@ -29,6 +24,8 @@ type ContactRow = {
   provider_id: string;
   clicked_at: string;
   clicked_on_utc: string;
+  is_today: boolean;
+  provider_total: number;
   provider: {
     id: string;
     business_name: string | null;
@@ -41,7 +38,13 @@ type ContactRow = {
   } | null;
 };
 
+type SortKey = 'recent' | 'recurring' | 'provider';
 const PAGE_SIZE = 20;
+const SORT_LABEL: Record<SortKey, string> = {
+  recent: 'Mais recentes',
+  recurring: 'Mais recorrentes',
+  provider: 'Por prestador (A-Z)',
+};
 
 function buildWaUrl(p: ContactRow['provider']): string | null {
   if (!p) return null;
@@ -60,56 +63,58 @@ function formatDate(d: string) {
   } catch { return d; }
 }
 
-function normalize(s: string): string {
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-}
-
 const DashboardClientContactsPage = () => {
   const { user } = useAuth();
   const quotaQ = useWhatsappQuota(true);
-  const [search, setSearch] = useState('');
-  const [olderVisible, setOlderVisible] = useState(PAGE_SIZE);
+  const [params, setParams] = useSearchParams();
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['whatsapp-contacts-history', user?.id],
+  const search = params.get('q') ?? '';
+  const sort = (params.get('sort') as SortKey) || 'recent';
+  const page = Math.max(1, Number(params.get('page')) || 1);
+
+  const [searchInput, setSearchInput] = useState(search);
+  const debounced = useDebounce(searchInput, 300);
+
+  // Sync debounced search to URL (reset page)
+  useEffect(() => {
+    if (debounced === search) return;
+    const next = new URLSearchParams(params);
+    if (debounced) next.set('q', debounced); else next.delete('q');
+    next.delete('page');
+    setParams(next, { replace: true });
+  }, [debounced]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const updateParam = (key: string, value: string | null) => {
+    const next = new URLSearchParams(params);
+    if (value && value !== '') next.set(key, value); else next.delete(key);
+    if (key !== 'page') next.delete('page');
+    setParams(next, { replace: true });
+  };
+
+  const offset = (page - 1) * PAGE_SIZE;
+
+  const { data, isLoading, isFetching, error } = useQuery({
+    queryKey: ['whatsapp-contacts-history', user?.id, search, sort, page],
     enabled: !!user,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('whatsapp_clicks_log')
-        .select(`
-          id, provider_id, clicked_at, clicked_on_utc,
-          provider:providers!whatsapp_clicks_log_provider_id_fkey (
-            id, business_name, slug, whatsapp, phone, photo_url, city, state
-          )
-        `)
-        .order('clicked_at', { ascending: false })
-        .limit(500);
+      const { data, error } = await supabase.rpc('list_whatsapp_contacts_history', {
+        _search: search || null,
+        _sort: sort,
+        _limit: PAGE_SIZE,
+        _offset: offset,
+      });
       if (error) throw error;
-      return (data ?? []) as unknown as ContactRow[];
+      return data as { total: number; rows: ContactRow[] };
     },
   });
 
-  const todayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const providerDayCount = useMemo(() => {
-    const map = new Map<string, number>();
-    (data ?? []).forEach((r) => map.set(r.provider_id, (map.get(r.provider_id) ?? 0) + 1));
-    return map;
-  }, [data]);
+  const rows = data?.rows ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const filtered = useMemo(() => {
-    const q = normalize(search);
-    if (!q) return data ?? [];
-    return (data ?? []).filter((r) => {
-      const name = normalize(r.provider?.business_name ?? '');
-      const city = normalize(r.provider?.city ?? '');
-      return name.includes(q) || city.includes(q);
-    });
-  }, [data, search]);
-
-  const today = filtered.filter((r) => r.clicked_on_utc === todayKey);
-  const older = filtered.filter((r) => r.clicked_on_utc !== todayKey);
-  const olderShown = older.slice(0, olderVisible);
-  const hasMoreOlder = older.length > olderVisible;
+  const todayRows = useMemo(() => rows.filter((r) => r.is_today), [rows]);
+  const olderRows = useMemo(() => rows.filter((r) => !r.is_today), [rows]);
 
   const quota = quotaQ.data;
   const limit = quota?.daily_limit ?? 3;
@@ -146,27 +151,42 @@ const DashboardClientContactsPage = () => {
           </Card>
         </div>
 
-        {/* Filtro por nome/cidade */}
-        <div className="relative max-w-md">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" aria-hidden="true" />
-          <Input
-            type="search"
-            placeholder="Buscar prestador por nome ou cidade"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setOlderVisible(PAGE_SIZE); }}
-            className="pl-9 pr-9"
-            aria-label="Buscar prestador no historico"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch('')}
-              aria-label="Limpar busca"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          )}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[16rem] max-w-md">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" aria-hidden="true" />
+            <Input
+              type="search"
+              placeholder="Buscar prestador por nome ou cidade"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-9 pr-9"
+              aria-label="Buscar prestador no historico"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => setSearchInput('')}
+                aria-label="Limpar busca"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <Select value={sort} onValueChange={(v) => updateParam('sort', v === 'recent' ? null : v)}>
+              <SelectTrigger className="w-[200px]" aria-label="Ordenar historico">
+                <SelectValue placeholder="Ordenar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">{SORT_LABEL.recent}</SelectItem>
+                <SelectItem value="recurring">{SORT_LABEL.recurring}</SelectItem>
+                <SelectItem value="provider">{SORT_LABEL.provider}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {error && (
@@ -176,38 +196,60 @@ const DashboardClientContactsPage = () => {
           </div>
         )}
 
-        <Section
-          title="Hoje"
-          icon={<Clock className="h-5 w-5 text-primary" aria-hidden="true" />}
-          rows={today}
-          loading={isLoading}
-          emptyText={search ? 'Nenhum prestador encontrado para a busca.' : 'Voce ainda nao desbloqueou contatos hoje.'}
-          providerDayCount={providerDayCount}
-        />
+        {sort === 'recent' ? (
+          <>
+            <Section
+              title="Hoje"
+              icon={<Clock className="h-5 w-5 text-primary" aria-hidden="true" />}
+              rows={todayRows}
+              loading={isLoading}
+              emptyText={search ? 'Nenhum prestador encontrado para a busca.' : 'Voce ainda nao desbloqueou contatos hoje.'}
+            />
+            <Section
+              title="Historico anterior"
+              icon={<ListChecks className="h-5 w-5 text-muted-foreground" aria-hidden="true" />}
+              rows={olderRows}
+              loading={isLoading}
+              emptyText={search ? 'Nenhum prestador encontrado para a busca.' : 'Sem contatos anteriores nesta pagina.'}
+              showDate
+            />
+          </>
+        ) : (
+          <Section
+            title={SORT_LABEL[sort]}
+            icon={<ListChecks className="h-5 w-5 text-primary" aria-hidden="true" />}
+            rows={rows}
+            loading={isLoading}
+            emptyText={search ? 'Nenhum prestador encontrado para a busca.' : 'Sem contatos no historico.'}
+            showDate
+          />
+        )}
 
-        <Section
-          title="Historico anterior"
-          icon={<ListChecks className="h-5 w-5 text-muted-foreground" aria-hidden="true" />}
-          rows={olderShown}
-          loading={isLoading}
-          emptyText={search ? 'Nenhum prestador encontrado para a busca.' : 'Sem contatos anteriores no historico.'}
-          showDate
-          providerDayCount={providerDayCount}
-          totalCount={older.length}
-          footer={
-            hasMoreOlder ? (
-              <div className="pt-3 flex justify-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setOlderVisible((v) => v + PAGE_SIZE)}
-                >
-                  Carregar mais ({older.length - olderVisible} restantes)
-                </Button>
-              </div>
-            ) : null
-          }
-        />
+        {/* Paginação */}
+        {!isLoading && total > 0 && (
+          <div className="flex items-center justify-between gap-3 flex-wrap text-sm">
+            <span className="text-muted-foreground">
+              Mostrando {Math.min(offset + 1, total)}-{Math.min(offset + rows.length, total)} de {total}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline" size="sm"
+                disabled={page <= 1 || isFetching}
+                onClick={() => updateParam('page', page - 1 <= 1 ? null : String(page - 1))}
+              >
+                Anterior
+              </Button>
+              <span className="px-2">Pagina {page} de {totalPages}</span>
+              <Button
+                variant="outline" size="sm"
+                disabled={page >= totalPages || isFetching}
+                onClick={() => updateParam('page', String(page + 1))}
+              >
+                Proxima
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
@@ -220,9 +262,6 @@ interface SectionProps {
   loading: boolean;
   emptyText: string;
   showDate?: boolean;
-  providerDayCount?: Map<string, number>;
-  totalCount?: number;
-  footer?: React.ReactNode;
 }
 
 function ContactRowSkeleton() {
@@ -238,15 +277,15 @@ function ContactRowSkeleton() {
   );
 }
 
-function Section({ title, icon, rows, loading, emptyText, showDate, providerDayCount, totalCount, footer }: SectionProps) {
+function Section({ title, icon, rows, loading, emptyText, showDate }: SectionProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           {icon}
           {title}
-          {!loading && (totalCount ?? rows.length) > 0 && (
-            <Badge variant="secondary" className="ml-1">{totalCount ?? rows.length}</Badge>
+          {!loading && rows.length > 0 && (
+            <Badge variant="secondary" className="ml-1">{rows.length}</Badge>
           )}
         </CardTitle>
       </CardHeader>
@@ -260,90 +299,87 @@ function Section({ title, icon, rows, loading, emptyText, showDate, providerDayC
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{emptyText}</p>
         ) : (
-          <>
-            <ul className="divide-y">
-              {rows.map((row) => {
-                const p = row.provider;
-                const waUrl = buildWaUrl(p);
-                const profileUrl = p?.slug ? `/profissional/${p.slug}` : null;
-                const totalDays = providerDayCount?.get(row.provider_id) ?? 1;
-                const isRecurring = totalDays > 1;
-                return (
-                  <li key={row.id} className="py-3 flex items-center gap-3">
-                    {p?.photo_url ? (
-                      <img
-                        src={p.photo_url}
-                        alt=""
-                        loading="lazy"
-                        className="h-10 w-10 rounded-full object-cover bg-muted shrink-0"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-muted shrink-0 grid place-items-center">
-                        <MessageCircle className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                      </div>
+          <ul className="divide-y">
+            {rows.map((row) => {
+              const p = row.provider;
+              const waUrl = buildWaUrl(p);
+              const profileUrl = p?.slug ? `/profissional/${p.slug}` : null;
+              const totalDays = row.provider_total ?? 1;
+              const isRecurring = totalDays > 1;
+              return (
+                <li key={row.id} className="py-3 flex items-center gap-3">
+                  {p?.photo_url ? (
+                    <img
+                      src={p.photo_url}
+                      alt=""
+                      loading="lazy"
+                      className="h-10 w-10 rounded-full object-cover bg-muted shrink-0"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-muted shrink-0 grid place-items-center">
+                      <MessageCircle className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">
+                      {profileUrl ? (
+                        <Link to={profileUrl} className="hover:underline">
+                          {p?.business_name ?? 'Prestador'}
+                        </Link>
+                      ) : (
+                        p?.business_name ?? 'Prestador'
+                      )}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {isRecurring ? (
+                        <Badge variant="outline" className="gap-1 text-[10px] py-0 h-5">
+                          <Repeat2 className="h-3 w-3" aria-hidden="true" />
+                          Recorrente ({totalDays}x)
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1 text-[10px] py-0 h-5">
+                          <Sparkles className="h-3 w-3" aria-hidden="true" />
+                          Novo desbloqueio
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                      {(p?.city || p?.state) && (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="h-3 w-3" aria-hidden="true" />
+                          {[p?.city, p?.state].filter(Boolean).join(' / ')}
+                        </span>
+                      )}
+                      {showDate && (
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3 w-3" aria-hidden="true" />
+                          {formatDate(row.clicked_at)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {profileUrl && (
+                      <Button asChild size="sm" variant="outline">
+                        <Link to={profileUrl}>
+                          <ExternalLink className="h-4 w-4 mr-1" aria-hidden="true" />
+                          Ver perfil
+                        </Link>
+                      </Button>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">
-                        {profileUrl ? (
-                          <Link to={profileUrl} className="hover:underline">
-                            {p?.business_name ?? 'Prestador'}
-                          </Link>
-                        ) : (
-                          p?.business_name ?? 'Prestador'
-                        )}
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        {isRecurring ? (
-                          <Badge variant="outline" className="gap-1 text-[10px] py-0 h-5">
-                            <Repeat2 className="h-3 w-3" aria-hidden="true" />
-                            Recorrente ({totalDays}x)
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="gap-1 text-[10px] py-0 h-5">
-                            <Sparkles className="h-3 w-3" aria-hidden="true" />
-                            Novo desbloqueio
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                        {(p?.city || p?.state) && (
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="h-3 w-3" aria-hidden="true" />
-                            {[p?.city, p?.state].filter(Boolean).join(' / ')}
-                          </span>
-                        )}
-                        {showDate && (
-                          <span className="inline-flex items-center gap-1">
-                            <Clock className="h-3 w-3" aria-hidden="true" />
-                            {formatDate(row.clicked_at)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {profileUrl && (
-                        <Button asChild size="sm" variant="outline">
-                          <Link to={profileUrl}>
-                            <ExternalLink className="h-4 w-4 mr-1" aria-hidden="true" />
-                            Ver perfil
-                          </Link>
-                        </Button>
-                      )}
-                      {waUrl && (
-                        <Button asChild size="sm">
-                          <a href={waUrl} data-wa-target-type="provider" data-wa-target-id={p?.id}>
-                            <MessageCircle className="h-4 w-4 mr-1" aria-hidden="true" />
-                            WhatsApp
-                          </a>
-                        </Button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-            {footer}
-          </>
+                    {waUrl && (
+                      <Button asChild size="sm">
+                        <a href={waUrl} data-wa-target-type="provider" data-wa-target-id={p?.id}>
+                          <MessageCircle className="h-4 w-4 mr-1" aria-hidden="true" />
+                          WhatsApp
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </CardContent>
     </Card>

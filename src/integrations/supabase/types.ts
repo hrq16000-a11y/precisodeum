@@ -9075,6 +9075,15 @@ export type Database = {
           type: string
         }[]
       }
+      list_whatsapp_contacts_history: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _sort?: string
+        }
+        Returns: Json
+      }
       log_provider_geo_issue: {
         Args: {
           _actor_user_id?: string
