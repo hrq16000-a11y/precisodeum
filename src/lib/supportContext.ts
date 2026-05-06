@@ -97,7 +97,7 @@ export async function enrichSupportContext(
 ): Promise<SupportContext> {
   if (!userId) return ctx;
   try {
-    const [{ data: prof }, { data: prov }] = await Promise.all([
+    const [{ data: prof }, { data: prov }, { data: sponsorLead }] = await Promise.all([
       supabase
         .from('profiles')
         .select('profile_type, commercial_plan, engagement_points, level_id')
@@ -106,6 +106,11 @@ export async function enrichSupportContext(
       supabase
         .from('providers')
         .select('slug, plan')
+        .eq('user_id', userId)
+        .maybeSingle() as any,
+      supabase
+        .from('sponsor_leads' as any)
+        .select('id, plan')
         .eq('user_id', userId)
         .maybeSingle() as any,
     ]);
@@ -120,13 +125,31 @@ export async function enrichSupportContext(
       levelName = lvl?.name ?? null;
     }
 
+    // Classifica o solicitante. Sponsor tem prioridade absoluta na detecção,
+    // pois `profiles.profile_type` pode estar genérico ('user').
+    let requester_kind: SupportRequesterKind = 'other';
+    if (sponsorLead?.id) requester_kind = 'sponsor';
+    else if (prov?.slug || prof?.profile_type === 'provider' || prof?.profile_type === 'agency')
+      requester_kind = 'provider';
+    else if (prof?.profile_type === 'client') requester_kind = 'client';
+
     const snapshot: SupportProfileSnapshot = {
       profile_slug: prov?.slug ?? null,
+      // Mantido para auditoria histórica; UI NÃO deve usar para prestadores.
       current_plan: prof?.commercial_plan ?? prov?.plan ?? null,
       account_level: levelName,
       engagement_points: prof?.engagement_points ?? null,
       profile_type: prof?.profile_type ?? null,
+      requester_kind,
     };
+
+    if (requester_kind === 'sponsor') {
+      snapshot.sponsor = {
+        sponsor_tier: sponsorLead?.plan ?? null,
+        sponsor_status: sponsorLead?.id ? 'active' : 'sem_assinatura',
+      };
+    }
+
     return { ...ctx, profile_snapshot: snapshot };
   } catch {
     return ctx;
