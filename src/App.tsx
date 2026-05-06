@@ -566,6 +566,7 @@ const App = () => {
                 <Route path="/dashboard/localizacao-guiada" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLocationGuidedPage /></ProtectedRoute>} />
                 <Route path="/dashboard/chat" element={<ProtectedRoute><DashboardChatPage /></ProtectedRoute>} />
                 <Route path="/dashboard/suporte" element={<ProtectedRoute><DashboardSupportPage /></ProtectedRoute>} />
+                <Route path="/dashboard/cliente/contatos" element={<ProtectedRoute><DashboardClientContactsPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminGuard><RouteErrorBoundary sectionName="AdminPage"><AdminPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/prestadores" element={<AdminGuard><RouteErrorBoundary sectionName="AdminProvidersPage"><AdminProvidersPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/bairro-default" element={<AdminGuard><RouteErrorBoundary sectionName="AdminDefaultNeighborhoodPage"><AdminDefaultNeighborhoodPage /></RouteErrorBoundary></AdminGuard>} />
