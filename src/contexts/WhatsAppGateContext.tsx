@@ -274,6 +274,14 @@ export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
           </p>
         </DialogContent>
       </Dialog>
+
+      <WhatsAppUnlockDialog
+        open={!!unlockTarget}
+        onOpenChange={(o) => { if (!o) setUnlockTarget(null); }}
+        providerId={unlockTarget?.targetId ?? null}
+        providerName={unlockTarget?.targetLabel ?? null}
+        whatsappUrl={unlockTarget?.url ?? null}
+      />
     </GateContext.Provider>
   );
 };
