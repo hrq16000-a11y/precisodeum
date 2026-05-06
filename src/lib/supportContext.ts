@@ -19,17 +19,41 @@ export type SupportContextSource =
   | 'services_faq_exception'
   | 'services_limit_reached';
 
+/**
+ * Tipo do solicitante (regra de negócio):
+ * - "sponsor"  → patrocinador (pagante por definição).
+ * - "provider" → prestador (100% gratuito; priorização SOMENTE por nível Ouro+).
+ * - "client"   → cliente final.
+ * - "other"    → fallback quando não foi possível classificar.
+ */
+export type SupportRequesterKind = 'sponsor' | 'provider' | 'client' | 'other';
+
+/** Extras isolados ao fluxo de patrocinador. Nunca preenchidos para prestadores. */
+export type SupportSponsorExtras = {
+  sponsor_tier?: string | null;       // basic | pro | premium | etc. (sponsor_plans.slug ou sponsor_leads.plan)
+  sponsor_status?: string | null;     // active | trialing | canceled | sem_assinatura
+};
+
 export type SupportProfileSnapshot = {
   /** Slug público do prestador (link do perfil), quando existir. */
   profile_slug?: string | null;
-  /** Plano comercial atual do usuário (ex.: "gratuito", "pro"). */
+  /**
+   * @deprecated NÃO usar para priorização visual de prestadores.
+   * Mantido apenas para auditoria histórica em support_context_snapshot_log.
+   * Prestadores são 100% gratuitos — priorização deve usar `account_level` (Ouro+).
+   * Para patrocinadores, usar `sponsor.sponsor_tier`.
+   */
   current_plan?: string | null;
   /** Nome do nível de gamificação (ex.: "Ouro", "Diamante"). */
   account_level?: string | null;
   /** Pontos de engajamento acumulados. */
   engagement_points?: number | null;
-  /** Tipo de perfil ("provider", "client", "rh", "agency"). */
+  /** Tipo de perfil bruto vindo de profiles.profile_type. */
   profile_type?: string | null;
+  /** Classificação canônica para roteamento/priorização do painel admin. */
+  requester_kind?: SupportRequesterKind;
+  /** Bloco isolado: só preenchido quando requester_kind === 'sponsor'. */
+  sponsor?: SupportSponsorExtras;
 };
 
 export type SupportContext = {
