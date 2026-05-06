@@ -100,7 +100,7 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = params.get('next') || '/dashboard';
-  const { user, profile, refetchProfile } = useAuth();
+  const { user, profile, provider, refetchProfile } = useAuth();
   const initialDraft = loadBetDraft();
   const [state, dispatch] = useReducer(reducer, undefined as unknown as BetState, () => ({
     ...initialDraft,
@@ -249,20 +249,26 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
     });
   }, [state.phase, state.intent, state.points, remoteReady, user?.id]);
 
-  // Pré-preenche com o que já existe (ex: nome do Google) + hidrata HUD com saldo real do banco.
+  // Pré-preenche com o que já existe (ex: nome do Google + CEP já salvo no
+  // provider) + hidrata HUD com saldo real do banco. Hidratação não-destrutiva:
+  // só preenche campos vazios localmente, preservando edição em andamento.
   useEffect(() => {
     if (!profile) return;
     const dbPoints = Number((profile as any).engagement_points ?? 0);
+    const provPostal = (provider as any)?.postal_code || '';
+    const provNeighborhood = (provider as any)?.neighborhood || '';
     dispatch({ type: 'PATCH', patch: {
       full_name: state.full_name || profile.full_name || '',
       whatsapp: state.whatsapp || (profile as any).whatsapp || '',
-      city: state.city || profile.city || '',
-      state: state.state || profile.state || '',
+      city: state.city || profile.city || (provider as any)?.city || '',
+      state: state.state || profile.state || (provider as any)?.state || '',
+      postal_code: state.postal_code || provPostal,
+      neighborhood: state.neighborhood || provNeighborhood,
       // Hidrata o contador uma única vez com o total acumulado real (apenas se ainda zero).
       points: state.points === 0 && dbPoints > 0 ? dbPoints : state.points,
     }});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id]);
+  }, [profile?.id, (provider as any)?.id]);
 
   // Listener do "Voltar" global emitido pelo WizardShell + suporte ao botão
   // "Voltar" do NAVEGADOR via history.pushState/popstate. Cada mudança de fase
