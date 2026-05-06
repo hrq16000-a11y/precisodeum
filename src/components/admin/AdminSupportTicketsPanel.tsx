@@ -8,7 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw, ExternalLink, BadgeCheck, Trophy, Sparkles, UserCircle2 } from 'lucide-react';
+import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw, ExternalLink, BadgeCheck, Trophy, Sparkles, UserCircle2, Filter, Star, ArrowDownUp } from 'lucide-react';
+
+const PAID_PLAN_KEYWORDS = ['pro', 'premium', 'plus', 'gold', 'vip', 'pago'];
+function isPaidPlan(plan?: string | null): boolean {
+  if (!plan) return false;
+  const p = plan.toLowerCase();
+  if (p === 'gratuito' || p === 'free') return false;
+  return PAID_PLAN_KEYWORDS.some(k => p.includes(k));
+}
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
