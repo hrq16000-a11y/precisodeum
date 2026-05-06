@@ -580,14 +580,15 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
           : {}),
         ...(state.neighborhood_source ? { neighborhood_source: state.neighborhood_source } : {}),
         description: '',
-        // PJ — endereço institucional (opcional). normalizeProviderPayload
-        // remove silenciosamente para PF e sanitiza para PJ.
+        // CEP base é coluna real em `providers` para qualquer tipo de conta —
+        // autônomos podem cadastrar o CEP sem expor logradouro. Só PJ envia
+        // logradouro/número/complemento + show_full_address (endereço público).
+        ...(state.postal_code ? { postal_code: state.postal_code } : {}),
         ...(isPj
           ? {
               street: state.street,
               street_number: state.street_number,
               complement: state.complement,
-              postal_code: state.postal_code,
               show_full_address: state.show_full_address === true,
             }
           : {}),
