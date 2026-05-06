@@ -93,7 +93,7 @@ const DashboardClientContactsPage = () => {
 
   const offset = (page - 1) * PAGE_SIZE;
 
-  const { data, isLoading, isFetching, error } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['whatsapp-contacts-history', user?.id, search, sort, page],
     enabled: !!user,
     placeholderData: keepPreviousData,
