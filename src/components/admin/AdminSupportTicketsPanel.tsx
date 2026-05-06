@@ -69,12 +69,16 @@ export default function AdminSupportTicketsPanel() {
       else if (statusFilter !== 'all') q = q.eq('status', statusFilter);
 
       // Filtros sobre o snapshot do perfil dentro de context (JSONB).
-      if (planFilter === 'gratuito') {
-        q = q.eq('context->profile_snapshot->>current_plan', 'gratuito');
-      } else if (planFilter === 'paid') {
+      // NUNCA filtramos prestadores por "plano" — eles são gratuitos.
+      if (kindFilter === 'sponsor') {
+        q = q.eq('context->profile_snapshot->>requester_kind', 'sponsor');
+      } else if (kindFilter === 'provider_gold') {
         q = q
-          .not('context->profile_snapshot->>current_plan', 'is', null)
-          .neq('context->profile_snapshot->>current_plan', 'gratuito');
+          .eq('context->profile_snapshot->>requester_kind', 'provider')
+          .in('context->profile_snapshot->>account_level', ['Ouro', 'Platina', 'Diamante', 'Mestre']);
+      } else if (kindFilter === 'provider_other') {
+        q = q.eq('context->profile_snapshot->>requester_kind', 'provider');
+        // exclusão Ouro+ feita client-side abaixo (Postgrest não tem NOT IN sobre JSONB)
       }
       if (levelFilter !== 'all') {
         q = q.eq('context->profile_snapshot->>account_level', levelFilter);
@@ -87,17 +91,34 @@ export default function AdminSupportTicketsPanel() {
           `user_full_name.ilike.%${safe}%,user_city.ilike.%${safe}%,subject.ilike.%${safe}%,last_message_text.ilike.%${safe}%`
         );
       }
-      // Ordenação: priorização por plano pago primeiro (gratuito < pagos).
-      // Postgres ordena NULLs por último por padrão; usamos current_plan asc
-      // como tiebreaker barato (gratuito vem antes alfabeticamente — invertemos com desc).
-      if (sortBy === 'plan_priority') {
-        q = q.order('context->profile_snapshot->>current_plan', { ascending: false, nullsFirst: false });
+      // Ordenação orgânica: patrocinador (sponsor) > prestador Ouro+ > demais.
+      // requester_kind ordenado desc → 'sponsor' > 'provider' > 'client' > null (alfabético reverso).
+      // O tier dentro de prestadores (Ouro+) é resolvido client-side abaixo.
+      if (sortBy === 'organic_priority') {
+        q = q.order('context->profile_snapshot->>requester_kind', { ascending: false, nullsFirst: false });
       }
       q = q.order('updated_at', { ascending: false })
            .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
       const { data, count, error } = await q;
       if (error) throw error;
-      return { rows: (data || []) as TicketRow[], total: count || 0 };
+      let rows = (data || []) as TicketRow[];
+      // Pós-filtro: "demais prestadores" = provider que NÃO é Ouro+.
+      if (kindFilter === 'provider_other') {
+        rows = rows.filter(r => !isGoldPlusLevel(r.context?.profile_snapshot?.account_level));
+      }
+      // Reordenação client-side para subir Ouro+ acima de demais prestadores
+      // dentro do bloco "provider" (Postgrest não consegue fazer isso via JSONB).
+      if (sortBy === 'organic_priority') {
+        const rank = (r: TicketRow) => {
+          const k = getRequesterKind(r.context);
+          if (k === 'sponsor') return 0;
+          if (k === 'provider' && isGoldPlusLevel(r.context?.profile_snapshot?.account_level)) return 1;
+          if (k === 'provider') return 2;
+          return 3;
+        };
+        rows = [...rows].sort((a, b) => rank(a) - rank(b));
+      }
+      return { rows, total: count || 0 };
     },
   });
 
