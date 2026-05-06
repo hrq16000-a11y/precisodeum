@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, MessageCircle, Mail } from 'lucide-react';
+import { WhatsAppUnlockDialog } from '@/components/WhatsAppUnlockDialog';
 
 type WhatsAppTarget = {
   url: string;
