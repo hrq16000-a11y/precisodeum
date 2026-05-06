@@ -79,6 +79,12 @@ const DashboardClientContactsPage = () => {
   });
 
   const todayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  // Build per-provider total day-count to mark "novo desbloqueio" vs "recorrente"
+  const providerDayCount = useMemo(() => {
+    const map = new Map<string, number>();
+    (data ?? []).forEach((r) => map.set(r.provider_id, (map.get(r.provider_id) ?? 0) + 1));
+    return map;
+  }, [data]);
   const today = (data ?? []).filter((r) => r.clicked_on_utc === todayKey);
   const older = (data ?? []).filter((r) => r.clicked_on_utc !== todayKey);
 
