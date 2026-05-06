@@ -20,10 +20,12 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   consumeSupportContext,
+  enrichSupportContext,
   buildAutoSubject,
   buildAutoMessage,
   type SupportContext,
 } from '@/lib/supportContext';
+import { useAuth } from '@/hooks/useAuth';
 
 const DashboardSupportPage = () => {
   const qc = useQueryClient();
