@@ -7482,6 +7482,73 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_clicks_log: {
+        Row: {
+          clicked_at: string
+          clicked_on_utc: string | null
+          id: string
+          provider_id: string
+          user_id: string
+        }
+        Insert: {
+          clicked_at?: string
+          clicked_on_utc?: string | null
+          id?: string
+          provider_id: string
+          user_id: string
+        }
+        Update: {
+          clicked_at?: string
+          clicked_on_utc?: string | null
+          id?: string
+          provider_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_clicks_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "featured_providers_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_clicks_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "whatsapp_clicks_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "whatsapp_clicks_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_clicks_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_clicks_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
+        ]
+      }
       whatsapp_templates: {
         Row: {
           content: string
@@ -8476,6 +8543,10 @@ export type Database = {
         Returns: number
       }
       calculate_user_level: { Args: { _user_id: string }; Returns: string }
+      check_and_log_whatsapp_click: {
+        Args: { p_provider_id: string }
+        Returns: Json
+      }
       check_rate_limit: {
         Args: {
           _action: string
@@ -8906,6 +8977,7 @@ export type Database = {
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
       get_weekly_summary: { Args: { _user_id: string }; Returns: Json }
+      get_whatsapp_clicks_today: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
