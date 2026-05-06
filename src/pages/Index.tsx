@@ -114,7 +114,7 @@ const FeaturedProvidersFallback = () => (
   </section>
 );
 
-const DeferredAboveFoldSection = ({ children }: { children: ReactNode }) => {
+const DeferredAboveFoldSection = ({ children, minHeight }: { children: ReactNode; minHeight?: number }) => {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -127,7 +127,9 @@ const DeferredAboveFoldSection = ({ children }: { children: ReactNode }) => {
     return () => globalThis.clearTimeout(id);
   }, []);
 
-  return ready ? <>{children}</> : null;
+  // Reserve space to avoid CLS as deferred content mounts
+  const style = minHeight ? { minHeight: `${minHeight}px` } : undefined;
+  return <div style={style}>{ready ? children : null}</div>;
 };
 
 const LazyViewportSection = ({ children }: { children: ReactNode }) => {
