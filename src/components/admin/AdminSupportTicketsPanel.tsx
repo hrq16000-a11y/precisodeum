@@ -8,7 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw, ExternalLink, BadgeCheck, Trophy, Sparkles, UserCircle2 } from 'lucide-react';
+import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw, ExternalLink, BadgeCheck, Trophy, Sparkles, UserCircle2, Filter, Star, ArrowDownUp } from 'lucide-react';
+
+const PAID_PLAN_KEYWORDS = ['pro', 'premium', 'plus', 'gold', 'vip', 'pago'];
+function isPaidPlan(plan?: string | null): boolean {
+  if (!plan) return false;
+  const p = plan.toLowerCase();
+  if (p === 'gratuito' || p === 'free') return false;
+  return PAID_PLAN_KEYWORDS.some(k => p.includes(k));
+}
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,20 +45,35 @@ export default function AdminSupportTicketsPanel() {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open_user' | 'open_admin' | 'closed' | 'blocked'>('all');
+  const [planFilter, setPlanFilter] = useState<'all' | 'paid' | 'gratuito'>('all');
+  const [levelFilter, setLevelFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'recent' | 'plan_priority'>('recent');
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reply, setReply] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Reset page on filter change
-  useEffect(() => { setPage(0); }, [search, statusFilter]);
+  useEffect(() => { setPage(0); }, [search, statusFilter, planFilter, levelFilter, sortBy]);
 
   const { data: ticketsPage, isLoading } = useQuery({
-    queryKey: ['admin-support-tickets', search, statusFilter, page],
+    queryKey: ['admin-support-tickets', search, statusFilter, planFilter, levelFilter, sortBy, page],
     queryFn: async () => {
       let q: any = (supabase.from('support_tickets' as any).select('*', { count: 'exact' }) as any);
       if (statusFilter === 'blocked') q = q.eq('blocked', true);
       else if (statusFilter !== 'all') q = q.eq('status', statusFilter);
+
+      // Filtros sobre o snapshot do perfil dentro de context (JSONB).
+      if (planFilter === 'gratuito') {
+        q = q.eq('context->profile_snapshot->>current_plan', 'gratuito');
+      } else if (planFilter === 'paid') {
+        q = q
+          .not('context->profile_snapshot->>current_plan', 'is', null)
+          .neq('context->profile_snapshot->>current_plan', 'gratuito');
+      }
+      if (levelFilter !== 'all') {
+        q = q.eq('context->profile_snapshot->>account_level', levelFilter);
+      }
 
       const term = search.trim();
       if (term) {
@@ -58,6 +81,12 @@ export default function AdminSupportTicketsPanel() {
         q = q.or(
           `user_full_name.ilike.%${safe}%,user_city.ilike.%${safe}%,subject.ilike.%${safe}%,last_message_text.ilike.%${safe}%`
         );
+      }
+      // Ordenação: priorização por plano pago primeiro (gratuito < pagos).
+      // Postgres ordena NULLs por último por padrão; usamos current_plan asc
+      // como tiebreaker barato (gratuito vem antes alfabeticamente — invertemos com desc).
+      if (sortBy === 'plan_priority') {
+        q = q.order('context->profile_snapshot->>current_plan', { ascending: false, nullsFirst: false });
       }
       q = q.order('updated_at', { ascending: false })
            .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
@@ -152,19 +181,23 @@ export default function AdminSupportTicketsPanel() {
       {/* List + filters */}
       <Card className="overflow-hidden">
         <CardHeader className="pb-2 space-y-2">
-          <CardTitle className="text-sm">Tickets ({total})</CardTitle>
+          <CardTitle className="text-sm flex items-center gap-1.5">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+            Tickets ({total})
+          </CardTitle>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
               <Input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar por nome, cidade, assunto…"
                 className="h-9 pl-7 text-sm"
+                aria-label="Buscar tickets"
               />
             </div>
             <Select value={statusFilter} onValueChange={v => setStatusFilter(v as any)}>
-              <SelectTrigger className="h-9 w-[130px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-[130px] text-xs" aria-label="Filtrar por status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="open_user">Aguardando admin</SelectItem>
@@ -174,17 +207,59 @@ export default function AdminSupportTicketsPanel() {
               </SelectContent>
             </Select>
           </div>
+          {/* Filtros do snapshot do perfil + ordenação */}
+          <div className="flex flex-wrap gap-2">
+            <Select value={planFilter} onValueChange={v => setPlanFilter(v as any)}>
+              <SelectTrigger className="h-8 w-[140px] text-[11px] gap-1" aria-label="Filtrar por plano">
+                <Star className="h-3 w-3" aria-hidden="true" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os planos</SelectItem>
+                <SelectItem value="paid">Pagos (prioritários)</SelectItem>
+                <SelectItem value="gratuito">Gratuito</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={levelFilter} onValueChange={setLevelFilter}>
+              <SelectTrigger className="h-8 w-[130px] text-[11px] gap-1" aria-label="Filtrar por nível">
+                <Trophy className="h-3 w-3" aria-hidden="true" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os níveis</SelectItem>
+                {['Iniciante','Entusiasta','Engajado','Ouro','Platina','Diamante','Mestre'].map(n => (
+                  <SelectItem key={n} value={n}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={v => setSortBy(v as any)}>
+              <SelectTrigger className="h-8 w-[150px] text-[11px] gap-1" aria-label="Ordenação">
+                <ArrowDownUp className="h-3 w-3" aria-hidden="true" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Mais recentes</SelectItem>
+                <SelectItem value="plan_priority">Plano (pagos primeiro)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="p-2 max-h-[60vh] overflow-y-auto space-y-1">
           {isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-label="Carregando" /></div>
           ) : tickets.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-6">Nenhum ticket</p>
-          ) : tickets.map(t => (
+          ) : tickets.map(t => {
+            const plan = t.context?.profile_snapshot?.current_plan as string | undefined;
+            const paid = isPaidPlan(plan);
+            return (
             <button
               key={t.id}
               onClick={() => setSelectedId(t.id)}
-              className={`w-full text-left rounded-lg p-2 transition-colors ${selectedId === t.id ? 'bg-primary/10' : 'hover:bg-muted'}`}
+              aria-label={`Ticket de ${t.user_full_name || 'usuário'}${paid ? ' (plano pago)' : ''}`}
+              className={`w-full text-left rounded-lg p-2 transition-colors border ${
+                selectedId === t.id ? 'bg-primary/10 border-primary/30' : 'hover:bg-muted border-transparent'
+              } ${paid ? 'border-l-4 border-l-amber-500/70 bg-amber-500/5' : ''}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium truncate">{t.user_full_name || 'Usuário'}</span>
@@ -201,6 +276,12 @@ export default function AdminSupportTicketsPanel() {
                   {t.status === 'open_admin' && <Badge variant="secondary" className="text-[9px]">3/3</Badge>}
                   {t.status === 'closed' && <Badge variant="outline" className="text-[9px]">Fechado</Badge>}
                   {t.unread_admin > 0 && <Badge className="text-[9px] h-4 min-w-4 px-1">{t.unread_admin}</Badge>}
+                  {paid && (
+                    <Badge className="text-[9px] gap-0.5 bg-amber-500 text-white" aria-label={`Plano pago: ${plan}`}>
+                      <Star className="h-2.5 w-2.5" aria-hidden="true" />
+                      {plan}
+                    </Badge>
+                  )}
                 </div>
               </div>
               <p className="text-[10px] text-foreground/80 truncate font-medium">{t.subject || '—'}</p>
@@ -212,7 +293,8 @@ export default function AdminSupportTicketsPanel() {
                 </p>
               )}
             </button>
-          ))}
+            );
+          })}
         </CardContent>
         {totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-border p-2 text-xs">

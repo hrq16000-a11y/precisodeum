@@ -88,6 +88,22 @@ const DashboardSupportPage = () => {
               .from('support_tickets' as any)
               .update({ context: pendingCtx } as any)
               .eq('id', t.id) as any);
+            // Log auditável do snapshot do perfil (best-effort).
+            const snap = pendingCtx.profile_snapshot;
+            if (snap && user?.id) {
+              try {
+                await (supabase
+                  .from('support_context_snapshot_log' as any)
+                  .insert({
+                    ticket_id: t.id,
+                    user_id: user.id,
+                    profile_slug: snap.profile_slug ?? null,
+                    current_plan: snap.current_plan ?? null,
+                    account_level: snap.account_level ?? null,
+                    snapshot: snap,
+                  } as any) as any);
+              } catch { /* noop */ }
+            }
           } catch { /* noop */ }
         }
         setPendingCtx(null);
