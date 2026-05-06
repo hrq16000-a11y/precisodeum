@@ -211,6 +211,19 @@ function Section({ title, icon, rows, loading, emptyText, showDate, providerDayC
                         p?.business_name ?? 'Prestador'
                       )}
                     </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {isRecurring ? (
+                        <Badge variant="outline" className="gap-1 text-[10px] py-0 h-5">
+                          <Repeat2 className="h-3 w-3" aria-hidden="true" />
+                          Recorrente ({totalDays}x)
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1 text-[10px] py-0 h-5">
+                          <Sparkles className="h-3 w-3" aria-hidden="true" />
+                          Novo desbloqueio
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
                       {(p?.city || p?.state) && (
                         <span className="inline-flex items-center gap-1">
