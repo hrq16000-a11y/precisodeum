@@ -190,9 +190,24 @@ const DashboardClientContactsPage = () => {
         </div>
 
         {error && (
-          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+          <div
+            className="flex flex-wrap items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+            role="alert"
+            data-testid="contacts-error"
+          >
             <AlertCircle className="h-4 w-4 mt-0.5" aria-hidden="true" />
-            <span>Nao foi possivel carregar seus contatos. Tente novamente em instantes.</span>
+            <span className="flex-1 min-w-[12rem]">
+              Nao foi possivel carregar seus contatos. Tente novamente em instantes.
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              data-testid="contacts-retry"
+            >
+              Tentar novamente
+            </Button>
           </div>
         )}
 
