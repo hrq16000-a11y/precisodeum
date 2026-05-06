@@ -49,11 +49,23 @@ export default function AdminSupportTicketsPanel() {
   useEffect(() => { setPage(0); }, [search, statusFilter, planFilter, levelFilter, sortBy]);
 
   const { data: ticketsPage, isLoading } = useQuery({
-    queryKey: ['admin-support-tickets', search, statusFilter, page],
+    queryKey: ['admin-support-tickets', search, statusFilter, planFilter, levelFilter, sortBy, page],
     queryFn: async () => {
       let q: any = (supabase.from('support_tickets' as any).select('*', { count: 'exact' }) as any);
       if (statusFilter === 'blocked') q = q.eq('blocked', true);
       else if (statusFilter !== 'all') q = q.eq('status', statusFilter);
+
+      // Filtros sobre o snapshot do perfil dentro de context (JSONB).
+      if (planFilter === 'gratuito') {
+        q = q.eq('context->profile_snapshot->>current_plan', 'gratuito');
+      } else if (planFilter === 'paid') {
+        q = q
+          .not('context->profile_snapshot->>current_plan', 'is', null)
+          .neq('context->profile_snapshot->>current_plan', 'gratuito');
+      }
+      if (levelFilter !== 'all') {
+        q = q.eq('context->profile_snapshot->>account_level', levelFilter);
+      }
 
       const term = search.trim();
       if (term) {
@@ -61,6 +73,12 @@ export default function AdminSupportTicketsPanel() {
         q = q.or(
           `user_full_name.ilike.%${safe}%,user_city.ilike.%${safe}%,subject.ilike.%${safe}%,last_message_text.ilike.%${safe}%`
         );
+      }
+      // Ordenação: priorização por plano pago primeiro (gratuito < pagos).
+      // Postgres ordena NULLs por último por padrão; usamos current_plan asc
+      // como tiebreaker barato (gratuito vem antes alfabeticamente — invertemos com desc).
+      if (sortBy === 'plan_priority') {
+        q = q.order('context->profile_snapshot->>current_plan', { ascending: false, nullsFirst: false });
       }
       q = q.order('updated_at', { ascending: false })
            .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
