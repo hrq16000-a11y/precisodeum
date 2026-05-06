@@ -1158,9 +1158,30 @@ const DashboardServicesPage = () => {
                         placeholder="Escolha a categoria deste serviço..."
                       />
                     </Suspense>
+                    {formErrors.category && (
+                      <p className="mt-1 text-xs text-destructive" role="alert">{formErrors.category}</p>
+                    )}
                     <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
                       Cada serviço tem <span className="font-medium text-foreground">1 categoria</span>. Para oferecer outra atividade, cadastre um novo serviço.
-                      Precisa de mais de {5} serviços? Fale com o <a href="/dashboard/suporte" className="font-medium text-bet-amber-fg underline underline-offset-2">suporte</a> para liberar.
+                      Precisa de mais de 5 serviços?{' '}
+                      <a
+                        href="/dashboard/suporte"
+                        className="font-medium text-bet-amber-fg underline underline-offset-2"
+                        onClick={() => {
+                          try {
+                            const ctx = {
+                              source: 'services_form_category_helper',
+                              services_count: services.length,
+                              attempted_categories: selectedCategoryIds.length,
+                              cap: Math.min(5, limits?.max_services ?? 5),
+                              ts: Date.now(),
+                            };
+                            sessionStorage.setItem('support_request_context', JSON.stringify(ctx));
+                          } catch { /* noop */ }
+                        }}
+                      >
+                        Fale com o suporte
+                      </a>{' '}para liberar.
                     </p>
                   </div>
                 </div>
