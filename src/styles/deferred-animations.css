@@ -28,10 +28,10 @@
   animation: entrance-sweep 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
 }
 
-/* ── Staggered reveal for hero children ── */
+/* ── Staggered reveal for hero children (opacity-only to avoid CLS) ── */
 @keyframes hero-child-rise {
-  0% { opacity: 0; transform: translateY(8px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 .hero-entrance > *:nth-child(1) { animation: hero-child-rise 0.4s ease-out 0.1s both; }
