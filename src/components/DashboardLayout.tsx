@@ -17,6 +17,7 @@ import { DashboardHealthCheck } from '@/components/dashboard/DashboardHealthChec
 import NotificationPermissionGate from '@/components/dashboard/NotificationPermissionGate';
 import { useDashboardSessionPing } from '@/hooks/useDashboardSessionPing';
 import ErrorGuard from '@/components/ErrorGuard';
+import { isDashboardNavItemActive } from '@/lib/dashboardNavMatch';
 
 const sidebarItemVariants = {
   hidden: { opacity: 0, x: -12 },
@@ -219,10 +220,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-0.5 px-3 pb-4">
           {menuItems.map((item, i) => {
-            const normalizedPath = location.pathname.replace(/\/+$/, '');
-            const active =
-              normalizedPath === item.path ||
-              (item.path !== '/dashboard' && normalizedPath.startsWith(item.path + '/'));
+            const active = isDashboardNavItemActive(location.pathname, item.path);
             return (
               <motion.div
                 key={item.path}
