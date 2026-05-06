@@ -28,6 +28,28 @@ const DashboardSupportPage = () => {
   const [text, setText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Pré-preenche o composer quando o usuário chega via link contextual
+  // (ex.: FAQ "preciso de mais de 5 serviços"). Lê uma vez do sessionStorage
+  // e descarta — o contexto nunca é enviado sem o usuário confirmar.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('support_request_context');
+      if (!raw) return;
+      sessionStorage.removeItem('support_request_context');
+      const ctx = JSON.parse(raw) as { source?: string; services_count?: number; cap?: number; attempted_categories?: number };
+      if (ctx?.source === 'services_form_category_helper' || ctx?.source === 'services_faq_exception') {
+        setText((prev) => prev || (
+          `Olá! Gostaria de solicitar liberação para cadastrar mais serviços.\n\n` +
+          `Contexto automático:\n` +
+          `- Serviços atuais: ${ctx.services_count ?? 0} de ${ctx.cap ?? 5}\n` +
+          (ctx.attempted_categories != null ? `- Categorias tentadas: ${ctx.attempted_categories}\n` : '') +
+          `- Origem: ${ctx.source}\n\n` +
+          `Posso explicar meu caso a seguir.`
+        ));
+      }
+    } catch { /* noop */ }
+  }, []);
+
   // Realtime
   useEffect(() => {
     if (!ticket?.id) return;
