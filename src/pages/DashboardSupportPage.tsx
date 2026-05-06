@@ -18,6 +18,12 @@ import {
 } from '@/hooks/useSupportTicket';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  consumeSupportContext,
+  buildAutoSubject,
+  buildAutoMessage,
+  type SupportContext,
+} from '@/lib/supportContext';
 
 const DashboardSupportPage = () => {
   const qc = useQueryClient();
