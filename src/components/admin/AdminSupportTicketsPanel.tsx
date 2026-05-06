@@ -402,10 +402,14 @@ export default function AdminSupportTicketsPanel() {
                       {selected.context.profile_snapshot.profile_type}
                     </Badge>
                   )}
-                  {selected.context.profile_snapshot.current_plan && (
-                    <Badge variant="secondary" className="text-[9px] gap-1">
-                      <BadgeCheck className="h-3 w-3" />
-                      {selected.context.profile_snapshot.current_plan}
+                  {/* Para patrocinadores, mostramos o tier (basic/pro/premium). Para prestadores
+                      NUNCA mostramos plano — eles são 100% gratuitos. */}
+                  {selected.context.profile_snapshot.requester_kind === 'sponsor' && (
+                    <Badge className="text-[9px] gap-1 bg-primary text-primary-foreground">
+                      <Megaphone className="h-3 w-3" aria-hidden="true" />
+                      {selected.context.profile_snapshot.sponsor?.sponsor_tier
+                        ? `Patrocinador ${selected.context.profile_snapshot.sponsor.sponsor_tier}`
+                        : 'Patrocinador'}
                     </Badge>
                   )}
                   {selected.context.profile_snapshot.account_level && (
