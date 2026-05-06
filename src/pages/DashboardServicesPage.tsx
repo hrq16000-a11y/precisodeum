@@ -1140,19 +1140,23 @@ const DashboardServicesPage = () => {
                       className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
                     />
                   </div>
-                  <div>
+                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">
-                      Categorias <span className="text-xs font-normal text-muted-foreground">(até 3)</span>
+                      Categoria <span className="text-xs font-normal text-muted-foreground">(1 por serviço)</span>
                     </label>
                     <Suspense fallback={<SuspenseFallback />}>
                       <SmartCategoryPicker
                         categories={categories}
                         selectedIds={selectedCategoryIds}
                         onToggle={toggleCategory}
-                        maxSelections={3}
-                        placeholder="Escolha uma ou mais categorias..."
+                        maxSelections={1}
+                        placeholder="Escolha a categoria deste serviço..."
                       />
                     </Suspense>
+                    <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                      Cada serviço tem <span className="font-medium text-foreground">1 categoria</span>. Para oferecer outra atividade, cadastre um novo serviço.
+                      Precisa de mais de {5} serviços? Fale com o <a href="/dashboard/suporte" className="font-medium text-bet-amber-fg underline underline-offset-2">suporte</a> para liberar.
+                    </p>
                   </div>
                 </div>
               </div>
