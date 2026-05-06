@@ -154,6 +154,7 @@ const AdminApprovalSettingsPage = lazy(() => import("./pages/AdminApprovalSettin
 const AdminOrphanProfilesPage = lazy(() => import("./pages/AdminOrphanProfilesPage"));
 const DashboardChatPage = lazy(() => import("./pages/DashboardChatPage"));
 const DashboardSupportPage = lazy(() => import("./pages/DashboardSupportPage"));
+const DashboardClientContactsPage = lazy(() => import("./pages/DashboardClientContactsPage"));
 const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
@@ -565,6 +566,7 @@ const App = () => {
                 <Route path="/dashboard/localizacao-guiada" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLocationGuidedPage /></ProtectedRoute>} />
                 <Route path="/dashboard/chat" element={<ProtectedRoute><DashboardChatPage /></ProtectedRoute>} />
                 <Route path="/dashboard/suporte" element={<ProtectedRoute><DashboardSupportPage /></ProtectedRoute>} />
+                <Route path="/dashboard/cliente/contatos" element={<ProtectedRoute><DashboardClientContactsPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminGuard><RouteErrorBoundary sectionName="AdminPage"><AdminPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/prestadores" element={<AdminGuard><RouteErrorBoundary sectionName="AdminProvidersPage"><AdminProvidersPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/bairro-default" element={<AdminGuard><RouteErrorBoundary sectionName="AdminDefaultNeighborhoodPage"><AdminDefaultNeighborhoodPage /></RouteErrorBoundary></AdminGuard>} />

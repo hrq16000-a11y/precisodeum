@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, MessageCircle, Mail } from 'lucide-react';
+import { WhatsAppUnlockDialog } from '@/components/WhatsAppUnlockDialog';
 
 type WhatsAppTarget = {
   url: string;
@@ -79,6 +80,7 @@ export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const pendingRef = useRef<WhatsAppTarget | null>(null);
+  const [unlockTarget, setUnlockTarget] = useState<WhatsAppTarget | null>(null);
 
   // Load any pending intent stored before an OAuth redirect
   useEffect(() => {
@@ -96,15 +98,23 @@ export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
     pendingRef.current = null;
     try { localStorage.removeItem(PENDING_KEY); } catch {/* ignore */}
     void recordLead({ id: user.id, email: user.email }, pending, true);
-    // Slight delay so any auth UI settles
-    setTimeout(() => openExternal(pending.url), 150);
     setOpen(false);
+    // Provider targets go through the daily-quota unlock dialog
+    if ((pending.targetType ?? 'provider') === 'provider' && pending.targetId) {
+      setTimeout(() => setUnlockTarget(pending), 150);
+    } else {
+      setTimeout(() => openExternal(pending.url), 150);
+    }
   }, [user]);
 
   const requestWhatsApp = useCallback((target: WhatsAppTarget) => {
     if (user) {
-      // Logged in: silent track + open immediately
+      // Logged in: provider → daily-quota dialog; sponsor/job/support → open immediately
       void recordLead({ id: user.id, email: user.email }, target, true);
+      if ((target.targetType ?? 'provider') === 'provider' && target.targetId) {
+        setUnlockTarget(target);
+        return;
+      }
       openExternal(target.url);
       return;
     }
@@ -264,6 +274,14 @@ export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
           </p>
         </DialogContent>
       </Dialog>
+
+      <WhatsAppUnlockDialog
+        open={!!unlockTarget}
+        onOpenChange={(o) => { if (!o) setUnlockTarget(null); }}
+        providerId={unlockTarget?.targetId ?? null}
+        providerName={unlockTarget?.targetLabel ?? null}
+        whatsappUrl={unlockTarget?.url ?? null}
+      />
     </GateContext.Provider>
   );
 };
