@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw, ExternalLink, BadgeCheck, Trophy, Sparkles, UserCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -252,13 +252,53 @@ export default function AdminSupportTicketsPanel() {
         </CardHeader>
         <CardContent className="p-0 flex flex-col h-[60vh] min-h-[420px]">
           {selected?.context && Object.keys(selected.context).length > 0 && (
-            <div className="border-b border-border bg-amber-500/5 px-3 py-2 text-[11px] leading-snug">
-              <p className="font-semibold text-amber-700 dark:text-amber-300 mb-0.5">Contexto da solicitação</p>
+            <div className="border-b border-border bg-amber-500/5 px-3 py-2 text-[11px] leading-snug space-y-1">
+              <p className="font-semibold text-amber-700 dark:text-amber-300">Contexto da solicitação</p>
               <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-muted-foreground">
                 {selected.context.source && <span><b>Origem:</b> {String(selected.context.source)}</span>}
                 {selected.context.services_count != null && <span><b>Serviços:</b> {selected.context.services_count}/{selected.context.cap ?? 5}</span>}
                 {selected.context.attempted_categories != null && <span><b>Cat. tentadas:</b> {selected.context.attempted_categories}</span>}
               </div>
+              {selected.context.profile_snapshot && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  {selected.context.profile_snapshot.profile_slug && (
+                    <a
+                      href={`/profissional/${selected.context.profile_snapshot.profile_slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-0.5 hover:bg-muted"
+                      title="Abrir perfil público"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      /{selected.context.profile_snapshot.profile_slug}
+                    </a>
+                  )}
+                  {selected.context.profile_snapshot.profile_type && (
+                    <Badge variant="outline" className="text-[9px] gap-1">
+                      <UserCircle2 className="h-3 w-3" />
+                      {selected.context.profile_snapshot.profile_type}
+                    </Badge>
+                  )}
+                  {selected.context.profile_snapshot.current_plan && (
+                    <Badge variant="secondary" className="text-[9px] gap-1">
+                      <BadgeCheck className="h-3 w-3" />
+                      {selected.context.profile_snapshot.current_plan}
+                    </Badge>
+                  )}
+                  {selected.context.profile_snapshot.account_level && (
+                    <Badge variant="secondary" className="text-[9px] gap-1">
+                      <Trophy className="h-3 w-3" />
+                      {selected.context.profile_snapshot.account_level}
+                    </Badge>
+                  )}
+                  {selected.context.profile_snapshot.engagement_points != null && (
+                    <Badge variant="outline" className="text-[9px] gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      {selected.context.profile_snapshot.engagement_points} pts
+                    </Badge>
+                  )}
+                </div>
+              )}
             </div>
           )}
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2">

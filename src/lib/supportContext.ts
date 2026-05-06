@@ -4,18 +4,33 @@
  * Fluxo:
  * 1. Páginas como /dashboard/servicos chamam `saveSupportContext({...})`
  *    quando o usuário clica em "Fale com suporte" (FAQ, helper ou limite).
- * 2. /dashboard/suporte lê esse contexto via `consumeSupportContext()`
- *    (consume = lê + remove) e o envia ao banco junto com o ticket
- *    (campo `support_tickets.context` em JSONB) + assunto automático.
+ * 2. /dashboard/suporte lê esse contexto via `consumeSupportContext()` e
+ *    chama `enrichSupportContext()` para anexar o snapshot do perfil
+ *    (slug, plano, nível) — gravado no banco em `support_tickets.context`.
  *
  * Mantemos sessionStorage como buffer entre páginas; a persistência final
  * é no banco para que o time admin enxergue sem depender do navegador.
  */
 
+import { supabase } from '@/integrations/supabase/client';
+
 export type SupportContextSource =
   | 'services_form_category_helper'
   | 'services_faq_exception'
   | 'services_limit_reached';
+
+export type SupportProfileSnapshot = {
+  /** Slug público do prestador (link do perfil), quando existir. */
+  profile_slug?: string | null;
+  /** Plano comercial atual do usuário (ex.: "gratuito", "pro"). */
+  current_plan?: string | null;
+  /** Nome do nível de gamificação (ex.: "Ouro", "Diamante"). */
+  account_level?: string | null;
+  /** Pontos de engajamento acumulados. */
+  engagement_points?: number | null;
+  /** Tipo de perfil ("provider", "client", "rh", "agency"). */
+  profile_type?: string | null;
+};
 
 export type SupportContext = {
   source: SupportContextSource;
@@ -23,6 +38,8 @@ export type SupportContext = {
   cap?: number;
   attempted_categories?: number;
   ts?: number;
+  /** Snapshot leve do perfil no momento da abertura do ticket. */
+  profile_snapshot?: SupportProfileSnapshot;
 };
 
 const KEY = 'support_request_context';
@@ -43,6 +60,52 @@ export function consumeSupportContext(): SupportContext | null {
     return JSON.parse(raw) as SupportContext;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Anexa um snapshot do perfil ao contexto. Best-effort: qualquer falha
+ * (rede/RLS) cai silenciosamente e devolve o contexto original.
+ */
+export async function enrichSupportContext(
+  ctx: SupportContext,
+  userId: string | null | undefined,
+): Promise<SupportContext> {
+  if (!userId) return ctx;
+  try {
+    const [{ data: prof }, { data: prov }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('profile_type, commercial_plan, engagement_points, level_id')
+        .eq('id', userId)
+        .maybeSingle() as any,
+      supabase
+        .from('providers')
+        .select('slug, plan')
+        .eq('user_id', userId)
+        .maybeSingle() as any,
+    ]);
+
+    let levelName: string | null = null;
+    if (prof?.level_id) {
+      const { data: lvl } = await (supabase
+        .from('gamification_levels')
+        .select('name')
+        .eq('id', prof.level_id)
+        .maybeSingle() as any);
+      levelName = lvl?.name ?? null;
+    }
+
+    const snapshot: SupportProfileSnapshot = {
+      profile_slug: prov?.slug ?? null,
+      current_plan: prof?.commercial_plan ?? prov?.plan ?? null,
+      account_level: levelName,
+      engagement_points: prof?.engagement_points ?? null,
+      profile_type: prof?.profile_type ?? null,
+    };
+    return { ...ctx, profile_snapshot: snapshot };
+  } catch {
+    return ctx;
   }
 }
 
