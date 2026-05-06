@@ -29,6 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const DashboardSupportPage = () => {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const { data: ticket, isLoading } = useMyTicket();
   const openTicket = useOpenOrCreateTicket();
   const send = useSendUserMessage();
@@ -37,14 +38,13 @@ const DashboardSupportPage = () => {
   const [pendingCtx, setPendingCtx] = useState<SupportContext | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Pré-preenche o composer e guarda o contexto para gravar no banco
-  // junto com a abertura do ticket (campo support_tickets.context).
+  // Pré-preenche o composer e enriquece o contexto com snapshot do perfil.
   useEffect(() => {
     const ctx = consumeSupportContext();
     if (!ctx) return;
-    setPendingCtx(ctx);
     setText((prev) => prev || buildAutoMessage(ctx));
-  }, []);
+    enrichSupportContext(ctx, user?.id).then(setPendingCtx);
+  }, [user?.id]);
 
   // Realtime
   useEffect(() => {
