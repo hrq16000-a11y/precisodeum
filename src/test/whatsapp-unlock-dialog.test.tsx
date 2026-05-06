@@ -108,7 +108,6 @@ describe('WhatsAppUnlockDialog', () => {
     await waitFor(() => expect(confirm).not.toBeDisabled());
     await act(async () => { fireEvent.click(confirm); });
     // delay interno (setTimeout 80ms) antes do open
-    await act(async () => { vi.advanceTimersByTime(120); });
 
     await waitFor(() => expect(openSpy).toHaveBeenCalledWith(
       'https://wa.me/5511999999999',
