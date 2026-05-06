@@ -132,6 +132,7 @@ const DashboardClientContactsPage = () => {
           rows={today}
           loading={isLoading}
           emptyText="Voce ainda nao desbloqueou contatos hoje."
+          providerDayCount={providerDayCount}
         />
 
         <Section
@@ -141,6 +142,7 @@ const DashboardClientContactsPage = () => {
           loading={isLoading}
           emptyText="Sem contatos anteriores no historico."
           showDate
+          providerDayCount={providerDayCount}
         />
       </div>
     </DashboardLayout>
