@@ -885,6 +885,44 @@ const DashboardServicesPage = () => {
         })()}
       </div>
 
+      {/* ─── FAQ enxuto: regra "1 categoria por serviço" + canal de exceção ─── */}
+      <details className="mt-4 rounded-lg border border-border bg-card/60 p-3 text-sm">
+        <summary className="cursor-pointer font-medium text-foreground">
+          Perguntas frequentes sobre serviços
+        </summary>
+        <div className="mt-2 space-y-3 text-xs leading-relaxed text-muted-foreground">
+          <div>
+            <p className="font-medium text-foreground">Por que cada serviço tem só 1 categoria?</p>
+            <p>Para sua oferta aparecer nas buscas certas. Misturar categorias confunde o cliente e baixa o ranking. Se você atende áreas diferentes (ex.: pintura e elétrica), cadastre 1 serviço para cada — assim cada anúncio vira referência na sua categoria.</p>
+          </div>
+          <div>
+            <p className="font-medium text-foreground">Quantos serviços posso cadastrar?</p>
+            <p>Até 5 serviços ativos por perfil. Cada serviço aceita 5 fotos, valor "a partir de", descrição livre e até 5 áreas/cidades de atendimento.</p>
+          </div>
+          <div>
+            <p className="font-medium text-foreground">Preciso de mais de 5 serviços. Como peço exceção?</p>
+            <p>
+              Abra um ticket no{' '}
+              <a
+                href="/dashboard/suporte"
+                className="font-medium text-bet-amber-fg underline underline-offset-2"
+                onClick={() => {
+                  try {
+                    const ctx = {
+                      source: 'services_faq_exception',
+                      services_count: services.length,
+                      cap: Math.min(5, limits?.max_services ?? 5),
+                      ts: Date.now(),
+                    };
+                    sessionStorage.setItem('support_request_context', JSON.stringify(ctx));
+                  } catch { /* noop */ }
+                }}
+              >suporte</a>{' '}contando o que você precisa cadastrar. Nosso time avalia caso a caso.
+            </p>
+          </div>
+        </div>
+      </details>
+
       {/* ─── New/Edit Sheet (lazy mount: árvore só existe quando showDialog=true) ─── */}
       {showDialog && (
       <Sheet open={showDialog} onOpenChange={(open) => { if (!open) { resetForm(); } setShowDialog(open); }}>
