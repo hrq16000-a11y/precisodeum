@@ -181,19 +181,23 @@ export default function AdminSupportTicketsPanel() {
       {/* List + filters */}
       <Card className="overflow-hidden">
         <CardHeader className="pb-2 space-y-2">
-          <CardTitle className="text-sm">Tickets ({total})</CardTitle>
+          <CardTitle className="text-sm flex items-center gap-1.5">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+            Tickets ({total})
+          </CardTitle>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
               <Input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar por nome, cidade, assunto…"
                 className="h-9 pl-7 text-sm"
+                aria-label="Buscar tickets"
               />
             </div>
             <Select value={statusFilter} onValueChange={v => setStatusFilter(v as any)}>
-              <SelectTrigger className="h-9 w-[130px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-[130px] text-xs" aria-label="Filtrar por status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="open_user">Aguardando admin</SelectItem>
@@ -203,17 +207,59 @@ export default function AdminSupportTicketsPanel() {
               </SelectContent>
             </Select>
           </div>
+          {/* Filtros do snapshot do perfil + ordenação */}
+          <div className="flex flex-wrap gap-2">
+            <Select value={planFilter} onValueChange={v => setPlanFilter(v as any)}>
+              <SelectTrigger className="h-8 w-[140px] text-[11px] gap-1" aria-label="Filtrar por plano">
+                <Star className="h-3 w-3" aria-hidden="true" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os planos</SelectItem>
+                <SelectItem value="paid">Pagos (prioritários)</SelectItem>
+                <SelectItem value="gratuito">Gratuito</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={levelFilter} onValueChange={setLevelFilter}>
+              <SelectTrigger className="h-8 w-[130px] text-[11px] gap-1" aria-label="Filtrar por nível">
+                <Trophy className="h-3 w-3" aria-hidden="true" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os níveis</SelectItem>
+                {['Iniciante','Entusiasta','Engajado','Ouro','Platina','Diamante','Mestre'].map(n => (
+                  <SelectItem key={n} value={n}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={v => setSortBy(v as any)}>
+              <SelectTrigger className="h-8 w-[150px] text-[11px] gap-1" aria-label="Ordenação">
+                <ArrowDownUp className="h-3 w-3" aria-hidden="true" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Mais recentes</SelectItem>
+                <SelectItem value="plan_priority">Plano (pagos primeiro)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="p-2 max-h-[60vh] overflow-y-auto space-y-1">
           {isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-label="Carregando" /></div>
           ) : tickets.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-6">Nenhum ticket</p>
-          ) : tickets.map(t => (
+          ) : tickets.map(t => {
+            const plan = t.context?.profile_snapshot?.current_plan as string | undefined;
+            const paid = isPaidPlan(plan);
+            return (
             <button
               key={t.id}
               onClick={() => setSelectedId(t.id)}
-              className={`w-full text-left rounded-lg p-2 transition-colors ${selectedId === t.id ? 'bg-primary/10' : 'hover:bg-muted'}`}
+              aria-label={`Ticket de ${t.user_full_name || 'usuário'}${paid ? ' (plano pago)' : ''}`}
+              className={`w-full text-left rounded-lg p-2 transition-colors border ${
+                selectedId === t.id ? 'bg-primary/10 border-primary/30' : 'hover:bg-muted border-transparent'
+              } ${paid ? 'border-l-4 border-l-amber-500/70 bg-amber-500/5' : ''}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium truncate">{t.user_full_name || 'Usuário'}</span>
