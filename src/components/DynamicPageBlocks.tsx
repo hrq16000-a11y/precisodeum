@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
 interface DynamicPageBlocksProps {
   pageSlug: string;
@@ -61,7 +62,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
           {block.title && <h2 className="text-2xl font-bold text-foreground mb-2">{block.title}</h2>}
           {block.subtitle && <p className="text-muted-foreground mb-4">{block.subtitle}</p>}
           {content.body && (
-            <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: content.body }} />
+            <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.body) }} />
           )}
         </section>
       );
@@ -100,7 +101,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
     case 'html':
       return (
         <section className="container mx-auto px-4">
-          <div dangerouslySetInnerHTML={{ __html: content.html || '' }} />
+          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.html || '') }} />
         </section>
       );
 

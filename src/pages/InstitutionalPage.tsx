@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
 const InstitutionalPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -66,7 +67,7 @@ const InstitutionalPage = () => {
         <h1 className="text-3xl font-bold text-foreground mb-6">{page.title}</h1>
         <div
           className="prose prose-sm max-w-none text-foreground"
-          dangerouslySetInnerHTML={{ __html: page.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.content) }}
         />
       </main>
       <Footer />
