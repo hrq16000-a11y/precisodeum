@@ -277,16 +277,24 @@ export default function AdminSupportTicketsPanel() {
           ) : tickets.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-6">Nenhum ticket</p>
           ) : tickets.map(t => {
-            const plan = t.context?.profile_snapshot?.current_plan as string | undefined;
-            const paid = isPaidPlan(plan);
+            const kind = getRequesterKind(t.context);
+            const level = t.context?.profile_snapshot?.account_level as string | undefined;
+            const isSponsor = kind === 'sponsor';
+            const isProviderGold = kind === 'provider' && isGoldPlusLevel(level);
+            const sponsorTier = t.context?.profile_snapshot?.sponsor?.sponsor_tier as string | undefined;
+            const highlight = isSponsor
+              ? 'border-l-4 border-l-primary bg-primary/5'
+              : isProviderGold
+                ? 'border-l-4 border-l-amber-500/70 bg-amber-500/5'
+                : '';
             return (
             <button
               key={t.id}
               onClick={() => setSelectedId(t.id)}
-              aria-label={`Ticket de ${t.user_full_name || 'usuário'}${paid ? ' (plano pago)' : ''}`}
+              aria-label={`Ticket de ${t.user_full_name || 'usuário'}${isSponsor ? ' (patrocinador)' : isProviderGold ? ` (prestador ${level})` : ''}`}
               className={`w-full text-left rounded-lg p-2 transition-colors border ${
                 selectedId === t.id ? 'bg-primary/10 border-primary/30' : 'hover:bg-muted border-transparent'
-              } ${paid ? 'border-l-4 border-l-amber-500/70 bg-amber-500/5' : ''}`}
+              } ${highlight}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium truncate">{t.user_full_name || 'Usuário'}</span>
@@ -303,10 +311,16 @@ export default function AdminSupportTicketsPanel() {
                   {t.status === 'open_admin' && <Badge variant="secondary" className="text-[9px]">3/3</Badge>}
                   {t.status === 'closed' && <Badge variant="outline" className="text-[9px]">Fechado</Badge>}
                   {t.unread_admin > 0 && <Badge className="text-[9px] h-4 min-w-4 px-1">{t.unread_admin}</Badge>}
-                  {paid && (
-                    <Badge className="text-[9px] gap-0.5 bg-amber-500 text-white" aria-label={`Plano pago: ${plan}`}>
-                      <Star className="h-2.5 w-2.5" aria-hidden="true" />
-                      {plan}
+                  {isSponsor && (
+                    <Badge className="text-[9px] gap-0.5 bg-primary text-primary-foreground" aria-label={`Patrocinador${sponsorTier ? ` ${sponsorTier}` : ''}`}>
+                      <Megaphone className="h-2.5 w-2.5" aria-hidden="true" />
+                      {sponsorTier ? `Patrocinador ${sponsorTier}` : 'Patrocinador'}
+                    </Badge>
+                  )}
+                  {isProviderGold && (
+                    <Badge className="text-[9px] gap-0.5 bg-amber-500 text-white" aria-label={`Prestador ${level}`}>
+                      <Trophy className="h-2.5 w-2.5" aria-hidden="true" />
+                      {level}
                     </Badge>
                   )}
                 </div>
