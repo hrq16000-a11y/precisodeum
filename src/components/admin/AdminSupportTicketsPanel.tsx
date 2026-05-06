@@ -37,13 +37,16 @@ export default function AdminSupportTicketsPanel() {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open_user' | 'open_admin' | 'closed' | 'blocked'>('all');
+  const [planFilter, setPlanFilter] = useState<'all' | 'paid' | 'gratuito'>('all');
+  const [levelFilter, setLevelFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'recent' | 'plan_priority'>('recent');
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reply, setReply] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Reset page on filter change
-  useEffect(() => { setPage(0); }, [search, statusFilter]);
+  useEffect(() => { setPage(0); }, [search, statusFilter, planFilter, levelFilter, sortBy]);
 
   const { data: ticketsPage, isLoading } = useQuery({
     queryKey: ['admin-support-tickets', search, statusFilter, page],
