@@ -211,7 +211,24 @@ const DashboardClientContactsPage = () => {
           </div>
         )}
 
-        {sort === 'recent' ? (
+        {!isLoading && !error && total === 0 && !search ? (
+          <Card data-testid="contacts-empty">
+            <CardContent className="p-8 text-center space-y-3">
+              <div className="mx-auto h-12 w-12 rounded-full bg-muted grid place-items-center">
+                <MessageCircle className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium">Voce ainda nao desbloqueou nenhum contato</p>
+                <p className="text-sm text-muted-foreground">
+                  Quando voce abrir o WhatsApp de um prestador, ele aparecera aqui automaticamente.
+                </p>
+              </div>
+              <Button asChild size="sm">
+                <Link to="/buscar">Encontrar prestadores</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : sort === 'recent' ? (
           <>
             <Section
               title="Hoje"
