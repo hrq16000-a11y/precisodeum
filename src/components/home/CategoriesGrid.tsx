@@ -175,7 +175,7 @@ const CategoriesGrid = (_props: Props) => {
           <>
             <div className={gridCls}>
               {visible.map((cat) => (
-                <div key={cat.id} className="animate-fade-in" style={{ animationFillMode: 'both' }}>
+                <div key={cat.id}>
                   <CategoryCard cat={cat} />
                 </div>
               ))}
