@@ -8,15 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw, ExternalLink, BadgeCheck, Trophy, Sparkles, UserCircle2, Filter, Star, ArrowDownUp } from 'lucide-react';
+import { Search, Loader2, Send, Trash2, Lock, Unlock, CheckCircle2, RotateCcw, ExternalLink, Trophy, Sparkles, UserCircle2, Filter, ArrowDownUp, Megaphone } from 'lucide-react';
 
-const PAID_PLAN_KEYWORDS = ['pro', 'premium', 'plus', 'gold', 'vip', 'pago'];
-function isPaidPlan(plan?: string | null): boolean {
-  if (!plan) return false;
-  const p = plan.toLowerCase();
-  if (p === 'gratuito' || p === 'free') return false;
-  return PAID_PLAN_KEYWORDS.some(k => p.includes(k));
-}
+// Regra de negócio: prestadores são 100% gratuitos — priorização SOMENTE por nível Ouro+.
+// Patrocinadores são pagantes por definição (rótulo "Patrocinador" basta, sem badge "Pago").
+const GOLD_PLUS_LEVELS = new Set(['Ouro', 'Platina', 'Diamante', 'Mestre']);
+const isGoldPlusLevel = (lvl?: string | null) => !!lvl && GOLD_PLUS_LEVELS.has(lvl);
+type RequesterKind = 'sponsor' | 'provider' | 'client' | 'other';
+const getRequesterKind = (ctx: any): RequesterKind => {
+  const k = ctx?.profile_snapshot?.requester_kind;
+  if (k === 'sponsor' || k === 'provider' || k === 'client') return k;
+  return 'other';
+};
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -45,31 +48,37 @@ export default function AdminSupportTicketsPanel() {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open_user' | 'open_admin' | 'closed' | 'blocked'>('all');
-  const [planFilter, setPlanFilter] = useState<'all' | 'paid' | 'gratuito'>('all');
+  // Tipo do solicitante: substitui o antigo "planFilter" (que misturava prestador c/ pagamento).
+  const [kindFilter, setKindFilter] = useState<'all' | 'sponsor' | 'provider_gold' | 'provider_other'>('all');
   const [levelFilter, setLevelFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'recent' | 'plan_priority'>('recent');
+  // Ordenação orgânica: patrocinadores → prestadores Ouro+ → demais.
+  const [sortBy, setSortBy] = useState<'recent' | 'organic_priority'>('recent');
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reply, setReply] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Reset page on filter change
-  useEffect(() => { setPage(0); }, [search, statusFilter, planFilter, levelFilter, sortBy]);
+  useEffect(() => { setPage(0); }, [search, statusFilter, kindFilter, levelFilter, sortBy]);
 
   const { data: ticketsPage, isLoading } = useQuery({
-    queryKey: ['admin-support-tickets', search, statusFilter, planFilter, levelFilter, sortBy, page],
+    queryKey: ['admin-support-tickets', search, statusFilter, kindFilter, levelFilter, sortBy, page],
     queryFn: async () => {
       let q: any = (supabase.from('support_tickets' as any).select('*', { count: 'exact' }) as any);
       if (statusFilter === 'blocked') q = q.eq('blocked', true);
       else if (statusFilter !== 'all') q = q.eq('status', statusFilter);
 
       // Filtros sobre o snapshot do perfil dentro de context (JSONB).
-      if (planFilter === 'gratuito') {
-        q = q.eq('context->profile_snapshot->>current_plan', 'gratuito');
-      } else if (planFilter === 'paid') {
+      // NUNCA filtramos prestadores por "plano" — eles são gratuitos.
+      if (kindFilter === 'sponsor') {
+        q = q.eq('context->profile_snapshot->>requester_kind', 'sponsor');
+      } else if (kindFilter === 'provider_gold') {
         q = q
-          .not('context->profile_snapshot->>current_plan', 'is', null)
-          .neq('context->profile_snapshot->>current_plan', 'gratuito');
+          .eq('context->profile_snapshot->>requester_kind', 'provider')
+          .in('context->profile_snapshot->>account_level', ['Ouro', 'Platina', 'Diamante', 'Mestre']);
+      } else if (kindFilter === 'provider_other') {
+        q = q.eq('context->profile_snapshot->>requester_kind', 'provider');
+        // exclusão Ouro+ feita client-side abaixo (Postgrest não tem NOT IN sobre JSONB)
       }
       if (levelFilter !== 'all') {
         q = q.eq('context->profile_snapshot->>account_level', levelFilter);
@@ -82,17 +91,34 @@ export default function AdminSupportTicketsPanel() {
           `user_full_name.ilike.%${safe}%,user_city.ilike.%${safe}%,subject.ilike.%${safe}%,last_message_text.ilike.%${safe}%`
         );
       }
-      // Ordenação: priorização por plano pago primeiro (gratuito < pagos).
-      // Postgres ordena NULLs por último por padrão; usamos current_plan asc
-      // como tiebreaker barato (gratuito vem antes alfabeticamente — invertemos com desc).
-      if (sortBy === 'plan_priority') {
-        q = q.order('context->profile_snapshot->>current_plan', { ascending: false, nullsFirst: false });
+      // Ordenação orgânica: patrocinador (sponsor) > prestador Ouro+ > demais.
+      // requester_kind ordenado desc → 'sponsor' > 'provider' > 'client' > null (alfabético reverso).
+      // O tier dentro de prestadores (Ouro+) é resolvido client-side abaixo.
+      if (sortBy === 'organic_priority') {
+        q = q.order('context->profile_snapshot->>requester_kind', { ascending: false, nullsFirst: false });
       }
       q = q.order('updated_at', { ascending: false })
            .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
       const { data, count, error } = await q;
       if (error) throw error;
-      return { rows: (data || []) as TicketRow[], total: count || 0 };
+      let rows = (data || []) as TicketRow[];
+      // Pós-filtro: "demais prestadores" = provider que NÃO é Ouro+.
+      if (kindFilter === 'provider_other') {
+        rows = rows.filter(r => !isGoldPlusLevel(r.context?.profile_snapshot?.account_level));
+      }
+      // Reordenação client-side para subir Ouro+ acima de demais prestadores
+      // dentro do bloco "provider" (Postgrest não consegue fazer isso via JSONB).
+      if (sortBy === 'organic_priority') {
+        const rank = (r: TicketRow) => {
+          const k = getRequesterKind(r.context);
+          if (k === 'sponsor') return 0;
+          if (k === 'provider' && isGoldPlusLevel(r.context?.profile_snapshot?.account_level)) return 1;
+          if (k === 'provider') return 2;
+          return 3;
+        };
+        rows = [...rows].sort((a, b) => rank(a) - rank(b));
+      }
+      return { rows, total: count || 0 };
     },
   });
 
@@ -207,17 +233,18 @@ export default function AdminSupportTicketsPanel() {
               </SelectContent>
             </Select>
           </div>
-          {/* Filtros do snapshot do perfil + ordenação */}
+          {/* Filtros do snapshot do perfil + ordenação orgânica */}
           <div className="flex flex-wrap gap-2">
-            <Select value={planFilter} onValueChange={v => setPlanFilter(v as any)}>
-              <SelectTrigger className="h-8 w-[140px] text-[11px] gap-1" aria-label="Filtrar por plano">
-                <Star className="h-3 w-3" aria-hidden="true" />
+            <Select value={kindFilter} onValueChange={v => setKindFilter(v as any)}>
+              <SelectTrigger className="h-8 w-[170px] text-[11px] gap-1" aria-label="Filtrar por tipo de solicitante">
+                <UserCircle2 className="h-3 w-3" aria-hidden="true" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os planos</SelectItem>
-                <SelectItem value="paid">Pagos (prioritários)</SelectItem>
-                <SelectItem value="gratuito">Gratuito</SelectItem>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="sponsor">Patrocinadores</SelectItem>
+                <SelectItem value="provider_gold">Prestadores Ouro+</SelectItem>
+                <SelectItem value="provider_other">Demais prestadores</SelectItem>
               </SelectContent>
             </Select>
             <Select value={levelFilter} onValueChange={setLevelFilter}>
@@ -233,13 +260,13 @@ export default function AdminSupportTicketsPanel() {
               </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={v => setSortBy(v as any)}>
-              <SelectTrigger className="h-8 w-[150px] text-[11px] gap-1" aria-label="Ordenação">
+              <SelectTrigger className="h-8 w-[180px] text-[11px] gap-1" aria-label="Ordenação">
                 <ArrowDownUp className="h-3 w-3" aria-hidden="true" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="recent">Mais recentes</SelectItem>
-                <SelectItem value="plan_priority">Plano (pagos primeiro)</SelectItem>
+                <SelectItem value="organic_priority">Prioridade orgânica</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -250,16 +277,24 @@ export default function AdminSupportTicketsPanel() {
           ) : tickets.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-6">Nenhum ticket</p>
           ) : tickets.map(t => {
-            const plan = t.context?.profile_snapshot?.current_plan as string | undefined;
-            const paid = isPaidPlan(plan);
+            const kind = getRequesterKind(t.context);
+            const level = t.context?.profile_snapshot?.account_level as string | undefined;
+            const isSponsor = kind === 'sponsor';
+            const isProviderGold = kind === 'provider' && isGoldPlusLevel(level);
+            const sponsorTier = t.context?.profile_snapshot?.sponsor?.sponsor_tier as string | undefined;
+            const highlight = isSponsor
+              ? 'border-l-4 border-l-primary bg-primary/5'
+              : isProviderGold
+                ? 'border-l-4 border-l-amber-500/70 bg-amber-500/5'
+                : '';
             return (
             <button
               key={t.id}
               onClick={() => setSelectedId(t.id)}
-              aria-label={`Ticket de ${t.user_full_name || 'usuário'}${paid ? ' (plano pago)' : ''}`}
+              aria-label={`Ticket de ${t.user_full_name || 'usuário'}${isSponsor ? ' (patrocinador)' : isProviderGold ? ` (prestador ${level})` : ''}`}
               className={`w-full text-left rounded-lg p-2 transition-colors border ${
                 selectedId === t.id ? 'bg-primary/10 border-primary/30' : 'hover:bg-muted border-transparent'
-              } ${paid ? 'border-l-4 border-l-amber-500/70 bg-amber-500/5' : ''}`}
+              } ${highlight}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium truncate">{t.user_full_name || 'Usuário'}</span>
@@ -276,10 +311,16 @@ export default function AdminSupportTicketsPanel() {
                   {t.status === 'open_admin' && <Badge variant="secondary" className="text-[9px]">3/3</Badge>}
                   {t.status === 'closed' && <Badge variant="outline" className="text-[9px]">Fechado</Badge>}
                   {t.unread_admin > 0 && <Badge className="text-[9px] h-4 min-w-4 px-1">{t.unread_admin}</Badge>}
-                  {paid && (
-                    <Badge className="text-[9px] gap-0.5 bg-amber-500 text-white" aria-label={`Plano pago: ${plan}`}>
-                      <Star className="h-2.5 w-2.5" aria-hidden="true" />
-                      {plan}
+                  {isSponsor && (
+                    <Badge className="text-[9px] gap-0.5 bg-primary text-primary-foreground" aria-label={`Patrocinador${sponsorTier ? ` ${sponsorTier}` : ''}`}>
+                      <Megaphone className="h-2.5 w-2.5" aria-hidden="true" />
+                      {sponsorTier ? `Patrocinador ${sponsorTier}` : 'Patrocinador'}
+                    </Badge>
+                  )}
+                  {isProviderGold && (
+                    <Badge className="text-[9px] gap-0.5 bg-amber-500 text-white" aria-label={`Prestador ${level}`}>
+                      <Trophy className="h-2.5 w-2.5" aria-hidden="true" />
+                      {level}
                     </Badge>
                   )}
                 </div>
@@ -361,10 +402,14 @@ export default function AdminSupportTicketsPanel() {
                       {selected.context.profile_snapshot.profile_type}
                     </Badge>
                   )}
-                  {selected.context.profile_snapshot.current_plan && (
-                    <Badge variant="secondary" className="text-[9px] gap-1">
-                      <BadgeCheck className="h-3 w-3" />
-                      {selected.context.profile_snapshot.current_plan}
+                  {/* Para patrocinadores, mostramos o tier (basic/pro/premium). Para prestadores
+                      NUNCA mostramos plano — eles são 100% gratuitos. */}
+                  {selected.context.profile_snapshot.requester_kind === 'sponsor' && (
+                    <Badge className="text-[9px] gap-1 bg-primary text-primary-foreground">
+                      <Megaphone className="h-3 w-3" aria-hidden="true" />
+                      {selected.context.profile_snapshot.sponsor?.sponsor_tier
+                        ? `Patrocinador ${selected.context.profile_snapshot.sponsor.sponsor_tier}`
+                        : 'Patrocinador'}
                     </Badge>
                   )}
                   {selected.context.profile_snapshot.account_level && (

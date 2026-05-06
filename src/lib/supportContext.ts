@@ -19,17 +19,41 @@ export type SupportContextSource =
   | 'services_faq_exception'
   | 'services_limit_reached';
 
+/**
+ * Tipo do solicitante (regra de negócio):
+ * - "sponsor"  → patrocinador (pagante por definição).
+ * - "provider" → prestador (100% gratuito; priorização SOMENTE por nível Ouro+).
+ * - "client"   → cliente final.
+ * - "other"    → fallback quando não foi possível classificar.
+ */
+export type SupportRequesterKind = 'sponsor' | 'provider' | 'client' | 'other';
+
+/** Extras isolados ao fluxo de patrocinador. Nunca preenchidos para prestadores. */
+export type SupportSponsorExtras = {
+  sponsor_tier?: string | null;       // basic | pro | premium | etc. (sponsor_plans.slug ou sponsor_leads.plan)
+  sponsor_status?: string | null;     // active | trialing | canceled | sem_assinatura
+};
+
 export type SupportProfileSnapshot = {
   /** Slug público do prestador (link do perfil), quando existir. */
   profile_slug?: string | null;
-  /** Plano comercial atual do usuário (ex.: "gratuito", "pro"). */
+  /**
+   * @deprecated NÃO usar para priorização visual de prestadores.
+   * Mantido apenas para auditoria histórica em support_context_snapshot_log.
+   * Prestadores são 100% gratuitos — priorização deve usar `account_level` (Ouro+).
+   * Para patrocinadores, usar `sponsor.sponsor_tier`.
+   */
   current_plan?: string | null;
   /** Nome do nível de gamificação (ex.: "Ouro", "Diamante"). */
   account_level?: string | null;
   /** Pontos de engajamento acumulados. */
   engagement_points?: number | null;
-  /** Tipo de perfil ("provider", "client", "rh", "agency"). */
+  /** Tipo de perfil bruto vindo de profiles.profile_type. */
   profile_type?: string | null;
+  /** Classificação canônica para roteamento/priorização do painel admin. */
+  requester_kind?: SupportRequesterKind;
+  /** Bloco isolado: só preenchido quando requester_kind === 'sponsor'. */
+  sponsor?: SupportSponsorExtras;
 };
 
 export type SupportContext = {
@@ -73,7 +97,7 @@ export async function enrichSupportContext(
 ): Promise<SupportContext> {
   if (!userId) return ctx;
   try {
-    const [{ data: prof }, { data: prov }] = await Promise.all([
+    const [{ data: prof }, { data: prov }, { data: sponsorLead }] = await Promise.all([
       supabase
         .from('profiles')
         .select('profile_type, commercial_plan, engagement_points, level_id')
@@ -82,6 +106,11 @@ export async function enrichSupportContext(
       supabase
         .from('providers')
         .select('slug, plan')
+        .eq('user_id', userId)
+        .maybeSingle() as any,
+      supabase
+        .from('sponsor_leads' as any)
+        .select('id, plan')
         .eq('user_id', userId)
         .maybeSingle() as any,
     ]);
@@ -96,13 +125,31 @@ export async function enrichSupportContext(
       levelName = lvl?.name ?? null;
     }
 
+    // Classifica o solicitante. Sponsor tem prioridade absoluta na detecção,
+    // pois `profiles.profile_type` pode estar genérico ('user').
+    let requester_kind: SupportRequesterKind = 'other';
+    if (sponsorLead?.id) requester_kind = 'sponsor';
+    else if (prov?.slug || prof?.profile_type === 'provider' || prof?.profile_type === 'agency')
+      requester_kind = 'provider';
+    else if (prof?.profile_type === 'client') requester_kind = 'client';
+
     const snapshot: SupportProfileSnapshot = {
       profile_slug: prov?.slug ?? null,
+      // Mantido para auditoria histórica; UI NÃO deve usar para prestadores.
       current_plan: prof?.commercial_plan ?? prov?.plan ?? null,
       account_level: levelName,
       engagement_points: prof?.engagement_points ?? null,
       profile_type: prof?.profile_type ?? null,
+      requester_kind,
     };
+
+    if (requester_kind === 'sponsor') {
+      snapshot.sponsor = {
+        sponsor_tier: sponsorLead?.plan ?? null,
+        sponsor_status: sponsorLead?.id ? 'active' : 'sem_assinatura',
+      };
+    }
+
     return { ...ctx, profile_snapshot: snapshot };
   } catch {
     return ctx;
