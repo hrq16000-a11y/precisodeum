@@ -154,6 +154,7 @@ const AdminApprovalSettingsPage = lazy(() => import("./pages/AdminApprovalSettin
 const AdminOrphanProfilesPage = lazy(() => import("./pages/AdminOrphanProfilesPage"));
 const DashboardChatPage = lazy(() => import("./pages/DashboardChatPage"));
 const DashboardSupportPage = lazy(() => import("./pages/DashboardSupportPage"));
+const DashboardClientContactsPage = lazy(() => import("./pages/DashboardClientContactsPage"));
 const InstitutionalPage = lazy(() => import("./pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("./pages/PopularServicePage"));
 const SeoPage = lazy(() => import("./pages/SeoPage"));
