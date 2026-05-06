@@ -219,7 +219,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
         <nav className="flex-1 overflow-y-auto overscroll-contain mt-2 space-y-0.5 px-3 pb-4">
           {menuItems.map((item, i) => {
-            const active = location.pathname === item.path;
+            const normalizedPath = location.pathname.replace(/\/+$/, '');
+            const active =
+              normalizedPath === item.path ||
+              (item.path !== '/dashboard' && normalizedPath.startsWith(item.path + '/'));
             return (
               <motion.div
                 key={item.path}
@@ -231,7 +234,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 <Link
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
+                  aria-current={active ? 'page' : undefined}
+                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm ring-1 ring-accent/30' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
                 >
                   {active && (
                     <motion.div
