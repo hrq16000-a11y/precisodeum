@@ -60,9 +60,11 @@ const DashboardPwaInstallNudge = () => {
     <>
       <AnimatePresence>
         <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          style={{ minHeight: 168 }}
           className="fixed bottom-5 right-5 z-40 w-[calc(100vw-2rem)] max-w-xs overflow-hidden rounded-xl border border-primary/30 bg-background/95 p-4 shadow-lg backdrop-blur"
           role="region"
           aria-label="Instalar aplicativo"
