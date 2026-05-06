@@ -107,6 +107,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     // RH-only
     { label: 'Dados da Agência', icon: Building2, path: '/dashboard/agencia', show: isRH, badge: 0 },
     { label: 'Minhas Vagas', icon: Megaphone, path: '/dashboard/vagas', show: !isClient && hasProfilePermission('jobs'), badge: 0 },
+    { label: 'Meus Contatos', icon: ListChecks, path: '/dashboard/cliente/contatos', show: isClient, badge: 0 },
     { label: 'Comunidade', icon: Users2, path: '/dashboard/comunidade', show: hasProfilePermission('community'), badge: 0 },
     { label: 'Notificações', icon: Bell, path: '/dashboard/notificacoes', show: hasProfilePermission('notifications'), badge: unreadCount },
     { label: 'Chat', icon: MessageSquare, path: '/dashboard/chat', show: !isClient, badge: 0 },
