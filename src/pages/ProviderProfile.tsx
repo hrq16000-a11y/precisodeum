@@ -814,8 +814,26 @@ const ProviderProfile = () => {
     };
     const handleObserverVisibility = () => scheduleVisibilityMeasure('observer');
     const handleResizeObserverVisibility = () => scheduleVisibilityMeasure('resize');
-    const handleScrollFallback = () => scheduleVisibilityMeasure('scroll');
-    const handleVisualViewportScroll = () => scheduleVisibilityMeasure('scroll');
+    const scheduleScrollMeasure = () => {
+      if (disposed) return;
+      const now = performance.now();
+      const elapsed = now - lastScrollMeasureAt;
+      if (elapsed >= scrollThrottleMs) {
+        lastScrollMeasureAt = now;
+        scheduleVisibilityMeasure('scroll');
+        return;
+      }
+      // Trailing: garante uma medição final quando o scroll para.
+      if (trailingScrollTimer !== null) return;
+      trailingScrollTimer = window.setTimeout(() => {
+        trailingScrollTimer = null;
+        if (disposed) return;
+        lastScrollMeasureAt = performance.now();
+        scheduleVisibilityMeasure('scroll');
+      }, scrollThrottleMs - elapsed);
+    };
+    const handleScrollFallback = scheduleScrollMeasure;
+    const handleVisualViewportScroll = scheduleScrollMeasure;
 
     const observer = supportsIntersectionObserver ? new IntersectionObserver(
       handleObserverVisibility,
