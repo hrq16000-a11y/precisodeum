@@ -97,15 +97,31 @@ const DashboardClientContactsPage = () => {
     queryKey: ['whatsapp-contacts-history', user?.id, search, sort, page],
     enabled: !!user,
     placeholderData: keepPreviousData,
+    // Cache de 30s + reuso de 2min: chamadas com mesma combinação (q,sort,page)
+    // dentro dessa janela são servidas do cache do React Query, sem ir ao banco.
+    staleTime: 30_000,
+    gcTime: 120_000,
     queryFn: async () => {
+      const t0 = performance.now();
       const { data, error } = await supabase.rpc('list_whatsapp_contacts_history', {
         _search: search || null,
         _sort: sort,
         _limit: PAGE_SIZE,
         _offset: offset,
       });
+      const elapsed = Math.round(performance.now() - t0);
       if (error) throw error;
-      return data as { total: number; rows: ContactRow[] };
+      const payload = data as { total: number; rows: ContactRow[]; _perf_ms?: number };
+      // Telemetria client-side: avisa no console quando ficar lento (>1s round-trip).
+      if (elapsed > 1000) {
+        // eslint-disable-next-line no-console
+        console.warn('[contacts-history] slow RPC', {
+          elapsed_ms: elapsed,
+          server_ms: payload?._perf_ms,
+          sort, page, q_len: search.length, total: payload?.total,
+        });
+      }
+      return payload;
     },
   });
 
@@ -323,13 +339,18 @@ function Section({ title, icon, rows, loading, emptyText, showDate }: SectionPro
       </CardHeader>
       <CardContent>
         {loading ? (
-          <ul className="divide-y" aria-busy="true" aria-live="polite" data-testid="contacts-loading">
-            <ContactRowSkeleton />
-            <ContactRowSkeleton />
-            <ContactRowSkeleton />
-          </ul>
+          <>
+            <span className="sr-only" role="status" aria-live="polite">
+              Carregando seus contatos...
+            </span>
+            <ul className="divide-y" aria-busy="true" data-testid="contacts-loading">
+              <ContactRowSkeleton />
+              <ContactRowSkeleton />
+              <ContactRowSkeleton />
+            </ul>
+          </>
         ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{emptyText}</p>
+          <p className="text-sm text-muted-foreground" role="status" aria-live="polite">{emptyText}</p>
         ) : (
           <ul className="divide-y">
             {rows.map((row) => {
