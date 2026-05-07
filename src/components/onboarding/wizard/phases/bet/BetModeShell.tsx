@@ -591,14 +591,24 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
         // usuário (PF ou PJ) preenche o endereço opcional, enviamos
         // logradouro/número/complemento + show_full_address (endereço público).
         ...(state.postal_code ? { postal_code: state.postal_code } : {}),
-        ...((state.street && state.street.trim().length > 0) || isPj
+        // show_full_address só faz sentido quando há endereço preenchido —
+        // para PF e PJ. Sem logradouro, força false (não exibe nada além de
+        // bairro/cidade no perfil público).
+        ...((state.street && state.street.trim().length > 0)
           ? {
               street: state.street,
               street_number: state.street_number,
               complement: state.complement,
               show_full_address: state.show_full_address === true,
             }
-          : {}),
+          : isPj
+            ? {
+                street: state.street,
+                street_number: state.street_number,
+                complement: state.complement,
+                show_full_address: false,
+              }
+            : {}),
       });
 
       // Validação Zod ANTES de bater no banco — falha cedo e clara.

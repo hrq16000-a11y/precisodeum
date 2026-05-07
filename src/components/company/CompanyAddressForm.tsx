@@ -71,6 +71,8 @@ interface Props {
   autoFillStatus?: 'idle' | 'loading' | 'success' | 'error';
   /** Mensagem de erro a exibir quando autoFillStatus === 'error'. */
   autoFillError?: string;
+  /** Tipo de conta — ajusta microcopy do toggle "Exibir endereço completo". */
+  accountKind?: 'pf' | 'pj';
 }
 
 /** Máscara visível 00000-000 a partir de até 8 dígitos. */
@@ -98,6 +100,7 @@ export default function CompanyAddressForm({
   onAutoFill,
   autoFillStatus = 'idle',
   autoFillError,
+  accountKind,
 }: Props) {
   const hasContent = Boolean(
     value.street || value.street_number || value.postal_code || value.complement,
@@ -478,8 +481,9 @@ export default function CompanyAddressForm({
         <span>
           <span className="font-semibold">Exibir endereço completo no perfil público.</span>{' '}
           <span className="text-muted-foreground">
-            Se desativado, mostramos apenas “Ponto de atendimento físico em{' '}
-            {cityPreview?.neighborhood || 'seu bairro'}, {cityPreview?.city || 'sua cidade'}”.
+            {accountKind === 'pf'
+              ? <>Marque se quer “aparecer online” com rua e número (ex.: estúdio, consultório). Desmarcado, mostramos só “Atende em {cityPreview?.neighborhood || 'seu bairro'}, {cityPreview?.city || 'sua cidade'}” — sua residência fica privada.</>
+              : <>Se desativado, mostramos apenas “Ponto de atendimento físico em {cityPreview?.neighborhood || 'seu bairro'}, {cityPreview?.city || 'sua cidade'}”.</>}
           </span>
         </span>
       </label>

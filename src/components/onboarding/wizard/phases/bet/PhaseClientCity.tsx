@@ -26,6 +26,7 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
   const preferredUF = state.state || geo.state || '';
   const userEditedRef = useRef(false);
   const gpsTriggeredRef = useRef(false);
+  const [autoFilledHint, setAutoFilledHint] = useState<{ city?: boolean; neighborhood?: boolean }>({});
 
   // Solicita GPS uma vez no mount (silencioso se negado — IP cobre).
   useEffect(() => {
@@ -45,13 +46,17 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
     if (userEditedRef.current) return;
     if (!geo.city && !geo.state && !geo.neighborhood) return;
     const patchObj: Partial<BetState> = {};
-    if ((!state.city || !state.city.trim()) && geo.city) patchObj.city = geo.city;
+    const filled: { city?: boolean; neighborhood?: boolean } = {};
+    if ((!state.city || !state.city.trim()) && geo.city) { patchObj.city = geo.city; filled.city = true; }
     if ((!state.state || state.state.trim().length !== 2) && geo.state) patchObj.state = geo.state;
     if (!(state.neighborhood && state.neighborhood.trim())) {
       const clean = sanitizeNeighborhood(geo.neighborhood, geo.city || state.city);
-      if (clean) patchObj.neighborhood = clean;
+      if (clean) { patchObj.neighborhood = clean; filled.neighborhood = true; }
     }
-    if (Object.keys(patchObj).length > 0) patch(patchObj);
+    if (Object.keys(patchObj).length > 0) {
+      patch(patchObj);
+      setAutoFilledHint((prev) => ({ ...prev, ...filled }));
+    }
   }, [geo.city, geo.state, geo.neighborhood, state.city, state.state, state.neighborhood, patch]);
 
   function handleCity(next: { city: string; state: string }) {
@@ -113,6 +118,23 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
             statusText={preferredUF ? `Mostrando primeiro cidades de ${preferredUF}` : undefined}
           />
         </div>
+        {(autoFilledHint.city || autoFilledHint.neighborhood) && !userEditedRef.current && (
+          <p
+            data-testid="autofill-hint"
+            className="mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
+            <Zap className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" aria-hidden="true" />
+            <span>
+              {autoFilledHint.city && autoFilledHint.neighborhood
+                ? 'Sugerimos sua cidade e bairro automaticamente — confirme ou edite quando quiser.'
+                : autoFilledHint.city
+                  ? 'Sugerimos sua cidade automaticamente — confirme ou edite quando quiser.'
+                  : 'Sugerimos seu bairro automaticamente — confirme ou edite quando quiser.'}
+            </span>
+          </p>
+        )}
       </div>
 
       {/* Bairro opcional — refina a busca por proximidade. */}

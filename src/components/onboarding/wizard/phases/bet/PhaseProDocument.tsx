@@ -189,6 +189,7 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
             ("aparecer online") ou apenas com bairro/cidade. Não é obrigatório. */}
         <CompanyAddressForm
           collapsible
+          accountKind={isPf ? 'pf' : 'pj'}
           revealLabel={
             isPf
               ? 'Atende em endereço fixo (estúdio, consultório, residência)? Adicionar endereço (Opcional)'
