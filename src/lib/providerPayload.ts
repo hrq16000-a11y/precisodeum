@@ -149,10 +149,12 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
   // 1b) Chaves institucionais — `business_name`/`legal_name` valem para PF e
   //     PJ. Endereço (street/number/complement/postal_code) também é coluna
   //     real em `providers` p/ qualquer tipo — autônomos podem ter CEP base
-  //     sem expor logradouro publicamente. Apenas segmento/CNPJ/social_links/
-  //     show_full_address continuam exclusivos de PJ.
+  //     sem expor logradouro publicamente. `show_full_address` também vale
+  //     para PF (autônomos com estúdio/consultório/residência podem optar
+  //     por exibir o endereço completo, igual à PJ).
+  //     Apenas segmento/CNPJ/social_links continuam exclusivos de PJ.
   const PJ_ONLY_KEYS = new Set<string>([
-    'show_full_address', 'business_segment', 'cnpj', 'social_links',
+    'business_segment', 'cnpj', 'social_links',
   ]);
 
   if (!isCompany) {
@@ -161,8 +163,12 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
         stripped.push(key);
         delete out[key];
       } else if (key in out && PROVIDER_PJ_STRING_KEYS.has(key)) {
-        // PF mantém business_name/legal_name, apenas saneia.
+        // PF mantém business_name/legal_name + endereço, apenas saneia.
         out[key] = safeOptionalString(out[key]);
+      } else if (key === 'show_full_address' && key in out) {
+        // PF: normaliza para boolean e força false se não há logradouro.
+        const hasStreet = typeof out.street === 'string' && out.street.trim().length > 0;
+        out[key] = hasStreet && out[key] === true;
       }
     }
   } else {
@@ -173,7 +179,8 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
       if (PROVIDER_PJ_STRING_KEYS.has(key)) {
         out[key] = safeOptionalString(out[key]);
       } else if (key === 'show_full_address') {
-        out[key] = out[key] === true;
+        const hasStreet = typeof out.street === 'string' && out.street.trim().length > 0;
+        out[key] = hasStreet && out[key] === true;
       } else if (key === 'social_links') {
         const v = out[key];
         if (v == null) { out[key] = null; }
