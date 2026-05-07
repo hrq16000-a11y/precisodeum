@@ -184,31 +184,34 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
           </label>
         )}
 
-        {!isPf && (
-          // PJ: bloco "Adicionar endereço" — Opcional. Permanece colapsado até
-          // o usuário clicar no revelador. Não impõe required em nenhum campo
-          // (validado pelo teste wizard-pj-optional-address).
-          <CompanyAddressForm
-            collapsible
-            revealLabel="Possui ponto de atendimento físico (loja, oficina, salão)? Adicionar endereço (Opcional)"
-            cityPreview={{ city: state.city, neighborhood: state.neighborhood }}
-            onAutoFill={handleAutoFill}
-            autoFillStatus={autoFillStatus}
-            autoFillError={autoFillError}
-            value={{
-              street: state.street,
-              street_number: state.street_number,
-              complement: state.complement,
-              postal_code: state.postal_code,
-              show_full_address: state.show_full_address,
-              street_suggested: state.street_suggested,
-              street_suggested_cep: state.street_suggested_cep,
-              street_confirmed: state.street_confirmed,
-              cep_history: state.cep_history,
-            }}
-            onChange={(p: Partial<CompanyAddressValue>) => patch(p as Partial<BetState>)}
-          />
-        )}
+        {/* Bloco "Adicionar endereço" — Opcional, disponível para PF e PJ.
+            Permite escolher aparecer publicamente com endereço completo
+            ("aparecer online") ou apenas com bairro/cidade. Não é obrigatório. */}
+        <CompanyAddressForm
+          collapsible
+          revealLabel={
+            isPf
+              ? 'Atende em endereço fixo (estúdio, consultório, residência)? Adicionar endereço (Opcional)'
+              : 'Possui ponto de atendimento físico (loja, oficina, salão)? Adicionar endereço (Opcional)'
+          }
+          cityPreview={{ city: state.city, neighborhood: state.neighborhood }}
+          onAutoFill={handleAutoFill}
+          autoFillStatus={autoFillStatus}
+          autoFillError={autoFillError}
+          value={{
+            street: state.street,
+            street_number: state.street_number,
+            complement: state.complement,
+            postal_code: state.postal_code,
+            show_full_address: state.show_full_address,
+            street_suggested: state.street_suggested,
+            street_suggested_cep: state.street_suggested_cep,
+            street_confirmed: state.street_confirmed,
+            cep_history: state.cep_history,
+          }}
+          onChange={(p: Partial<CompanyAddressValue>) => patch(p as Partial<BetState>)}
+        />
+
 
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           {sealEarned
