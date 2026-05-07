@@ -46,7 +46,9 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(state.gps_accuracy_m ?? null);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
-  const autoFilledRef = useRef(false);
+  // Marca quando o usuário editou manualmente — quando true, não sobrescrevemos
+  // mais via geo (GPS/IP). Antes da edição, qualquer dado novo da geo enriquece.
+  const userEditedRef = useRef(false);
   const cepLookupRef = useRef<string>('');
   // Auto-trigger do GPS uma única vez por montagem da fase. Se o usuário já
   // tem GPS no state, ou se o navegador não suporta geolocation, não faz nada.
