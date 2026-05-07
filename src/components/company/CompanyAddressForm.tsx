@@ -481,8 +481,9 @@ export default function CompanyAddressForm({
         <span>
           <span className="font-semibold">Exibir endereço completo no perfil público.</span>{' '}
           <span className="text-muted-foreground">
-            Se desativado, mostramos apenas “Ponto de atendimento físico em{' '}
-            {cityPreview?.neighborhood || 'seu bairro'}, {cityPreview?.city || 'sua cidade'}”.
+            {accountKind === 'pf'
+              ? <>Marque se quer “aparecer online” com rua e número (ex.: estúdio, consultório). Desmarcado, mostramos só “Atende em {cityPreview?.neighborhood || 'seu bairro'}, {cityPreview?.city || 'sua cidade'}” — sua residência fica privada.</>
+              : <>Se desativado, mostramos apenas “Ponto de atendimento físico em {cityPreview?.neighborhood || 'seu bairro'}, {cityPreview?.city || 'sua cidade'}”.</>}
           </span>
         </span>
       </label>
