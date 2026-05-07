@@ -587,10 +587,11 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
         ...(state.neighborhood_source ? { neighborhood_source: state.neighborhood_source } : {}),
         description: '',
         // CEP base é coluna real em `providers` para qualquer tipo de conta —
-        // autônomos podem cadastrar o CEP sem expor logradouro. Só PJ envia
+        // autônomos podem cadastrar o CEP sem expor logradouro. Quando o
+        // usuário (PF ou PJ) preenche o endereço opcional, enviamos
         // logradouro/número/complemento + show_full_address (endereço público).
         ...(state.postal_code ? { postal_code: state.postal_code } : {}),
-        ...(isPj
+        ...((state.street && state.street.trim().length > 0) || isPj
           ? {
               street: state.street,
               street_number: state.street_number,
