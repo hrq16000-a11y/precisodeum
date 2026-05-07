@@ -106,7 +106,7 @@ describe('Wizard CPF — endereço opcional + show_full_address', () => {
     expect(out.complement).toBe('Sala 2');
   });
 
-  it('normalizeProviderPayload (PF) remove show_full_address (chave PJ-only)', () => {
+  it('normalizeProviderPayload (PF) força show_full_address=false quando não há logradouro', () => {
     const out = normalizeProviderPayload({
       user_id: 'u1',
       city: 'Curitiba',
@@ -118,6 +118,22 @@ describe('Wizard CPF — endereço opcional + show_full_address', () => {
       legal_name: 'Fulano',
       show_full_address: true,
     } as any) as any;
-    expect(out.show_full_address).toBeUndefined();
+    expect(out.show_full_address).toBe(false);
+  });
+
+  it('normalizeProviderPayload (PF) preserva show_full_address=true quando há logradouro', () => {
+    const out = normalizeProviderPayload({
+      user_id: 'u1',
+      city: 'Curitiba',
+      state: 'PR',
+      whatsapp: '41999998888',
+      account_type: 'autonomous',
+      cpf: '12345678901',
+      business_name: 'Fulano',
+      legal_name: 'Fulano',
+      street: 'Rua das Flores',
+      show_full_address: true,
+    } as any) as any;
+    expect(out.show_full_address).toBe(true);
   });
 });
