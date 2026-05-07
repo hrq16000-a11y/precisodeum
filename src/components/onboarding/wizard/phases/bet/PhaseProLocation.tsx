@@ -256,7 +256,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
       const result = await geo.requestPreciseLocation({ force: true });
       const latency_ms = timer.stop();
       if (result.ok && result.city && result.state) {
-        autoFilledRef.current = true;
+        // GPS é fonte autoritativa: preenche/atualiza diretamente.
         const cleanNeighborhood = sanitizeNeighborhood(result.neighborhood, result.city);
         const currentNeighborhood = (state.neighborhood || '').trim();
         const acc = result.accuracyMeters ?? null;
