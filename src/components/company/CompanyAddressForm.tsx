@@ -100,6 +100,7 @@ export default function CompanyAddressForm({
   onAutoFill,
   autoFillStatus = 'idle',
   autoFillError,
+  accountKind,
 }: Props) {
   const hasContent = Boolean(
     value.street || value.street_number || value.postal_code || value.complement,
