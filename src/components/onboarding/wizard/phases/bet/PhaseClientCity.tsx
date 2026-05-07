@@ -118,6 +118,23 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
             statusText={preferredUF ? `Mostrando primeiro cidades de ${preferredUF}` : undefined}
           />
         </div>
+        {(autoFilledHint.city || autoFilledHint.neighborhood) && !userEditedRef.current && (
+          <p
+            data-testid="autofill-hint"
+            className="mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
+            <Zap className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" aria-hidden="true" />
+            <span>
+              {autoFilledHint.city && autoFilledHint.neighborhood
+                ? 'Sugerimos sua cidade e bairro automaticamente — confirme ou edite quando quiser.'
+                : autoFilledHint.city
+                  ? 'Sugerimos sua cidade automaticamente — confirme ou edite quando quiser.'
+                  : 'Sugerimos seu bairro automaticamente — confirme ou edite quando quiser.'}
+            </span>
+          </p>
+        )}
       </div>
 
       {/* Bairro opcional — refina a busca por proximidade. */}
