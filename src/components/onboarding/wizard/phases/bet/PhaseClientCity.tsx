@@ -1,5 +1,7 @@
-/** Phase Client City — fast-pass: cidade + bairro (opcional) e cadastro liberado. */
-import { useState } from 'react';
+/** Phase Client City — fast-pass: cidade + bairro (opcional) e cadastro liberado.
+ *  Sugestão orgânica: tenta GPS no mount; independente disso, qualquer dado
+ *  vindo de IP/cache preenche cidade/UF/bairro vazios — usuário só confirma. */
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, MapPin, Zap, Home } from 'lucide-react';
 import CityAutocomplete from '@/components/CityAutocomplete';
@@ -7,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { fieldWin } from '@/lib/betDopamine';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { sanitizeNeighborhood } from '@/lib/geoReverseGeocode';
 import { BET_POINTS, type BetState } from './types';
 import type { BetRewardKey } from './betRewards';
 
@@ -21,9 +24,39 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
   const [submitting, setSubmitting] = useState(false);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
+  const userEditedRef = useRef(false);
+  const gpsTriggeredRef = useRef(false);
+
+  // Solicita GPS uma vez no mount (silencioso se negado — IP cobre).
+  useEffect(() => {
+    if (gpsTriggeredRef.current) return;
+    gpsTriggeredRef.current = true;
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) return;
+    const id = window.setTimeout(() => {
+      void geo.requestPreciseLocation({ force: true }).catch(() => undefined);
+    }, 50);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-fill progressivo: enquanto não houver edição manual, preenche
+  // qualquer campo vazio com o que a geo (cache/IP/GPS) já trouxer.
+  useEffect(() => {
+    if (userEditedRef.current) return;
+    if (!geo.city && !geo.state && !geo.neighborhood) return;
+    const patchObj: Partial<BetState> = {};
+    if ((!state.city || !state.city.trim()) && geo.city) patchObj.city = geo.city;
+    if ((!state.state || state.state.trim().length !== 2) && geo.state) patchObj.state = geo.state;
+    if (!(state.neighborhood && state.neighborhood.trim())) {
+      const clean = sanitizeNeighborhood(geo.neighborhood, geo.city || state.city);
+      if (clean) patchObj.neighborhood = clean;
+    }
+    if (Object.keys(patchObj).length > 0) patch(patchObj);
+  }, [geo.city, geo.state, geo.neighborhood, state.city, state.state, state.neighborhood, patch]);
 
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
+    userEditedRef.current = true;
     patch({ city, state: uf });
     if (city && uf && !state.rewards.city) {
       awardReward('city', BET_POINTS.city);
@@ -91,7 +124,7 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
         <Input
           id="client-neighborhood"
           value={state.neighborhood}
-          onChange={(e) => patch({ neighborhood: e.target.value })}
+          onChange={(e) => { userEditedRef.current = true; patch({ neighborhood: e.target.value }); }}
           placeholder="Ex: Centro, Vila Nova"
           autoComplete="address-level3"
           maxLength={80}

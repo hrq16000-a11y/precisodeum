@@ -46,7 +46,9 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(state.gps_accuracy_m ?? null);
   const geo = useGeoCity();
   const preferredUF = state.state || geo.state || '';
-  const autoFilledRef = useRef(false);
+  // Marca quando o usuário editou manualmente — quando true, não sobrescrevemos
+  // mais via geo (GPS/IP). Antes da edição, qualquer dado novo da geo enriquece.
+  const userEditedRef = useRef(false);
   const cepLookupRef = useRef<string>('');
   // Auto-trigger do GPS uma única vez por montagem da fase. Se o usuário já
   // tem GPS no state, ou se o navegador não suporta geolocation, não faz nada.
@@ -81,45 +83,55 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     };
   }, []);
 
-  // Auto-sugestão (não-destrutiva): pré-preenche cidade/UF se vazios.
-  // Bairro só auto-preenche se vier sanitizado (≠ cidade, não-regional).
+  // Auto-sugestão progressiva e não-destrutiva: enquanto o usuário não editar
+  // manualmente, qualquer novidade da geo (cache → IP → GPS) preenche apenas
+  // os campos que ainda estão vazios. Cidade e bairro são sugeridos de toda
+  // forma, mesmo sem GPS — basta termos algo via IP/cache.
   useEffect(() => {
-    if (autoFilledRef.current) return;
-    if (state.city && state.city.trim().length > 0) return;
-    if (geo.city && geo.state) {
-      autoFilledRef.current = true;
-      const cleanNeighborhood = sanitizeNeighborhood(geo.neighborhood, geo.city);
-      const willFillNeighborhood = !(state.neighborhood && state.neighborhood.trim()) && !!cleanNeighborhood;
-      const nbSource = willFillNeighborhood
-        ? (geo.neighborhoodSource && geo.neighborhoodSource !== 'none'
+    if (userEditedRef.current) return;
+    const cityEmpty = !state.city || !state.city.trim();
+    const stateEmpty = !state.state || state.state.trim().length !== 2;
+    const nbEmpty = !(state.neighborhood && state.neighborhood.trim());
+
+    // Nada a sugerir se a geo ainda não trouxe nada.
+    if (!geo.city && !geo.state && !geo.neighborhood) return;
+
+    const patchObj: Partial<BetState> = {};
+    if (cityEmpty && geo.city) patchObj.city = geo.city;
+    if (stateEmpty && geo.state) patchObj.state = geo.state;
+
+    if (nbEmpty) {
+      const cleanNeighborhood = sanitizeNeighborhood(geo.neighborhood, geo.city || state.city);
+      if (cleanNeighborhood) {
+        patchObj.neighborhood = cleanNeighborhood;
+        patchObj.neighborhood_source =
+          (geo.neighborhoodSource && geo.neighborhoodSource !== 'none'
             ? (geo.neighborhoodSource as BetState['neighborhood_source'])
-            : null)
-        : (state.neighborhood_source ?? null);
-      patch({
-        city: geo.city,
-        state: geo.state,
-        location_source: state.location_source ?? (geo.source === 'gps' ? 'gps' : 'ip'),
-        ...(geo.latitude != null && geo.longitude != null
-          ? { latitude: geo.latitude, longitude: geo.longitude }
-          : {}),
-        ...(willFillNeighborhood
-          ? { neighborhood: cleanNeighborhood as string, neighborhood_source: nbSource }
-          : {}),
-      });
-      // Log estruturado de persistência (auditoria local).
-      // eslint-disable-next-line no-console
-      console.info('[loc-persist] auto-fill', {
-        city: geo.city,
-        state: geo.state,
-        neighborhood: willFillNeighborhood ? cleanNeighborhood : state.neighborhood,
-        neighborhood_source: willFillNeighborhood ? nbSource : state.neighborhood_source,
-        location_source: state.location_source ?? (geo.source === 'gps' ? 'gps' : 'ip'),
-        gps_accuracy_m: state.gps_accuracy_m,
-        precise: geo.source === 'gps',
-        trigger: 'useEffect/passive',
-      });
+            : null);
+      }
     }
-  }, [geo.city, geo.state, geo.neighborhood, geo.neighborhoodSource, geo.latitude, geo.longitude, geo.source, state.city, state.neighborhood, state.neighborhood_source, state.location_source, state.gps_accuracy_m, patch]);
+
+    // location_source só é definido quando ainda não há fonte registrada.
+    if (!state.location_source && (patchObj.city || patchObj.neighborhood)) {
+      patchObj.location_source = geo.source === 'gps' ? 'gps' : 'ip';
+    }
+
+    if (geo.latitude != null && geo.longitude != null && state.latitude == null && state.longitude == null) {
+      patchObj.latitude = geo.latitude;
+      patchObj.longitude = geo.longitude;
+    }
+
+    if (Object.keys(patchObj).length > 0) {
+      patch(patchObj);
+      // eslint-disable-next-line no-console
+      console.info('[loc-persist] auto-fill (progressive)', { ...patchObj, geo_source: geo.source });
+    }
+  }, [
+    geo.city, geo.state, geo.neighborhood, geo.neighborhoodSource,
+    geo.latitude, geo.longitude, geo.source,
+    state.city, state.state, state.neighborhood, state.location_source, state.latitude, state.longitude,
+    patch,
+  ]);
 
   function awardCityOnce() {
     if (state.rewards.city) return;
@@ -157,8 +169,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
 
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
-    autoFilledRef.current = true;
-    // Edição manual invalida lat/lng/ibge antigos da cidade anterior.
+    userEditedRef.current = true;
     const cityChanged = city !== state.city || uf !== state.state;
     patch({
       city,
@@ -245,7 +256,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
       const result = await geo.requestPreciseLocation({ force: true });
       const latency_ms = timer.stop();
       if (result.ok && result.city && result.state) {
-        autoFilledRef.current = true;
+        // GPS é fonte autoritativa: preenche/atualiza diretamente.
         const cleanNeighborhood = sanitizeNeighborhood(result.neighborhood, result.city);
         const currentNeighborhood = (state.neighborhood || '').trim();
         const acc = result.accuracyMeters ?? null;
