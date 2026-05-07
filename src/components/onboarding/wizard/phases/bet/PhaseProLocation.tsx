@@ -169,8 +169,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
 
   function handleCity(next: { city: string; state: string }) {
     const { city, state: uf } = next;
-    autoFilledRef.current = true;
-    // Edição manual invalida lat/lng/ibge antigos da cidade anterior.
+    userEditedRef.current = true;
     const cityChanged = city !== state.city || uf !== state.state;
     patch({
       city,
