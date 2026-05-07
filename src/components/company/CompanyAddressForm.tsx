@@ -71,6 +71,8 @@ interface Props {
   autoFillStatus?: 'idle' | 'loading' | 'success' | 'error';
   /** Mensagem de erro a exibir quando autoFillStatus === 'error'. */
   autoFillError?: string;
+  /** Tipo de conta — ajusta microcopy do toggle "Exibir endereço completo". */
+  accountKind?: 'pf' | 'pj';
 }
 
 /** Máscara visível 00000-000 a partir de até 8 dígitos. */
