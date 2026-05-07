@@ -124,7 +124,7 @@ export default function PhaseClientCity({ state, patch, finish, awardReward }: P
         <Input
           id="client-neighborhood"
           value={state.neighborhood}
-          onChange={(e) => patch({ neighborhood: e.target.value })}
+          onChange={(e) => { userEditedRef.current = true; patch({ neighborhood: e.target.value }); }}
           placeholder="Ex: Centro, Vila Nova"
           autoComplete="address-level3"
           maxLength={80}
