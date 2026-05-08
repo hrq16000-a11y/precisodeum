@@ -121,6 +121,21 @@ const HeroBanner = () => {
     };
   }, [enhancedSearch]);
 
+  // Frase atual do rotator — guardada em ref para a CTA registrar analytics
+  // sem causar re-render a cada troca (HOLD_MS = 2.6s).
+  const phraseRef = useRef<HeroPhraseInfo | null>(null);
+  const handlePhraseChange = useCallback((info: HeroPhraseInfo) => {
+    phraseRef.current = info;
+    import('@/lib/tracking').then(({ trackEvent }) => {
+      trackEvent({
+        event: 'hero_phrase_shown',
+        slug: info.slug,
+        source: 'hero_rotator',
+        extra: { phrase_prefix: info.prefix, phrase_label: info.label },
+      });
+    }).catch(() => { /* silent */ });
+  }, []);
+
   return (
     <section
       className="relative overflow-visible py-6 sm:py-8 md:overflow-hidden md:py-20"
