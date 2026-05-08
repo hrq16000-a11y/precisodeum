@@ -16,7 +16,7 @@ import { handleImageError, getOptimizedUrl } from '@/lib/imageResolver';
 import { responsiveImageSrcSet } from '@/lib/imageOptimizer';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
-import { motion } from 'framer-motion';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
 import { OnlineBadge } from '@/components/OnlineBadge';
