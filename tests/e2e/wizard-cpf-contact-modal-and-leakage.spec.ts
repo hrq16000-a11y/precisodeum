@@ -68,6 +68,19 @@ test.describe('Perfil público PF — contato e privacidade (E2E)', () => {
       // Fallback amplo: a copy padrão sempre cita "Preciso de Um".
       expect(decoded).toMatch(/Preciso de [Uu]m|perfil/i);
     }
+
+    // Encoding completo: caracteres pt-BR e pontuação devem estar percent-encoded.
+    // "Olá" → "Ol%C3%A1"; "ção" → "%C3%A7%C3%A3o"; "?" → "%3F".
+    const hasAccented = /Ol[áÁ]|ção|í|ã|õ|é/i.test(decoded);
+    if (hasAccented) {
+      expect(rawText).toMatch(/%C3%[A-F0-9]{2}/i); // pelo menos 1 byte UTF-8 encoded
+    }
+    // Não pode haver caracteres não-ASCII crus na URL.
+    expect(/[^\x00-\x7F]/.test(rawText)).toBe(false);
+    // "&" e "?" dentro do text não podem aparecer crus (quebrariam a query).
+    // Permitimos: %26 (&) e %3F (?). Se houver "&" cru sobrando, falha.
+    const afterText = rawText.split('&')[0];
+    expect(afterText).toBe(rawText); // text= é o último param ou único
   });
 
   test('Modal "Solicitar contato": abre, submit cria lead, fecha e restaura foco', async ({ page }) => {
