@@ -141,13 +141,8 @@ const HeroBanner = () => {
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
         <div className="w-full max-w-full px-2">
           <h1
-            className="font-display font-black text-primary-foreground max-w-full text-[clamp(0.95rem,4.1vw,3.25rem)] leading-[1.1] sm:leading-[1.08] tracking-[-0.015em]"
-            style={{
-              textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)',
-              // Fallback fluido baseado em viewport para sempre caber em uma linha
-              // mesmo nas frases mais longas ("Preciso de uma técnico em informática").
-              fontSize: 'min(clamp(0.95rem, 4.1vw, 3.25rem), 6.5cqi)',
-            }}
+            className="font-display font-black text-primary-foreground max-w-full text-[clamp(0.95rem,4vw,3.25rem)] leading-[1.1] sm:leading-[1.08] tracking-[-0.015em]"
+            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)' }}
           >
             <RotatingServiceText onServiceChange={handleServiceChange} />
           </h1>
