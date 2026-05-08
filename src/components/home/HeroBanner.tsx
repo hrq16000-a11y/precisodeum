@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
@@ -12,7 +12,6 @@ import { Icon } from '@/components/ui/Icon';
 
 const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
 
-const FALLBACK_PREFIXES = ['Encontre o melhor', 'Preciso de'];
 
 const CriticalHeroSearch = ({ onUpgrade }: { onUpgrade: () => void }) => {
   const [query, setQuery] = useState('');
@@ -50,61 +49,10 @@ const CriticalHeroSearch = ({ onUpgrade }: { onUpgrade: () => void }) => {
   );
 };
 
-const HeroPrefixRotator = ({ prefixes, active }: { prefixes: string[]; active: boolean }) => {
-  const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<'visible' | 'glitch' | 'hidden'>('visible');
-  const startedAt = useRef(0);
+// HeroPrefixRotator foi removido — a alternância de prefixos agora vive
+// dentro de RotatingServiceText, encadeada com o nome do serviço para
+// formar frases com nexo ("Preciso de um pintor" → "Encontre um pintor!").
 
-  useEffect(() => {
-    if (!active || prefixes.length <= 1) return;
-    let frame = 0;
-    let stage: 'visible' | 'glitch' | 'hidden' = 'visible';
-    startedAt.current = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = now - startedAt.current;
-      if (elapsed >= 5350) {
-        startedAt.current = now;
-        stage = 'visible';
-        setPhase('visible');
-      } else if (elapsed >= 5200 && stage !== 'glitch') {
-        stage = 'glitch';
-        setPhase('glitch');
-      } else if (elapsed >= 5100 && stage !== 'hidden') {
-        stage = 'hidden';
-        setPhase('hidden');
-        setIndex(prev => (prev + 1) % prefixes.length);
-      } else if (elapsed >= 5000 && stage !== 'glitch') {
-        stage = 'glitch';
-        setPhase('glitch');
-      }
-      frame = requestAnimationFrame(tick);
-    };
-
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [active, prefixes.length]);
-
-  return (
-    <span className="relative inline-block overflow-hidden">
-      <span
-        className={`inline-block transition-all duration-150 ${
-          phase === 'visible' ? 'opacity-100 translate-y-0' :
-          phase === 'glitch' ? 'opacity-80 hero-glitch-flash' :
-          'opacity-0 translate-y-1'
-        }`}
-      >
-        {prefixes[index] || prefixes[0]}
-      </span>
-      {phase === 'glitch' && (
-        <>
-          <span className="pointer-events-none absolute inset-0 hero-scanline" />
-          <span className="pointer-events-none absolute inset-0 hero-glitch-line" />
-        </>
-      )}
-    </span>
-  );
-};
 
 const HeroBanner = () => {
   const [displayedImage, setDisplayedImage] = useState(CATEGORY_IMAGES.instalacoes);
@@ -114,17 +62,11 @@ const HeroBanner = () => {
   const { city: geoCity } = useGeoCity();
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
 
-  const prefixesRaw = useSettingValue('hero_prefixes');
   const ctaPrimaryLinkText = useSettingValue('hero_cta_primary_link_text');
   const ctaPrimaryLink = useSettingValue('hero_cta_primary_link');
   const ctaSecondaryText = useSettingValue('hero_cta_secondary_text');
   const ctaSecondaryLink = useSettingValue('hero_cta_secondary_link');
 
-  const prefixes = useMemo(() => {
-    if (!prefixesRaw) return FALLBACK_PREFIXES;
-    const parsed = prefixesRaw.split(',').map(s => s.trim()).filter(Boolean);
-    return parsed.length > 0 ? parsed : FALLBACK_PREFIXES;
-  }, [prefixesRaw]);
 
   const handleServiceChange = useCallback((service: string) => {
     if (!heroImageLoaded) return;
@@ -199,11 +141,9 @@ const HeroBanner = () => {
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
         <div className="w-full max-w-full px-4">
           <h1
-            className="font-display font-black tracking-tight text-primary-foreground max-w-full whitespace-nowrap overflow-hidden text-ellipsis text-[clamp(1.25rem,5.4vw,3.75rem)] leading-[1.1]"
+            className="font-display font-black tracking-tight text-primary-foreground max-w-full text-balance break-words text-[clamp(1.5rem,6.2vw,3.75rem)] leading-[1.12]"
             style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)' }}
           >
-            <HeroPrefixRotator prefixes={prefixes} active={heroImageLoaded} />
-            {' '}
             <RotatingServiceText onServiceChange={handleServiceChange} />
           </h1>
         </div>
