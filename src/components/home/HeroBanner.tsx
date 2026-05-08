@@ -141,7 +141,7 @@ const HeroBanner = () => {
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
         <div className="w-full max-w-full px-4">
           <h1
-            className="font-display font-black tracking-tight text-primary-foreground max-w-full text-balance text-[clamp(1.9rem,5.9vw,3.75rem)] leading-[1.05] sm:leading-[1.08]"
+            className="font-display font-black tracking-tight text-primary-foreground max-w-full text-balance text-[clamp(1.1rem,4.4vw,3.25rem)] leading-[1.1] sm:leading-[1.08]"
             style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)' }}
           >
             <RotatingServiceText onServiceChange={handleServiceChange} />
