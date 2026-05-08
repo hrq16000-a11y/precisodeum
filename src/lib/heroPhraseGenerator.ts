@@ -220,7 +220,7 @@ export function pickNextOrder(
 ): { order: HeroCategory[]; nextHistory: string[] } {
   const {
     historySize = DEFAULT_HISTORY_SIZE,
-    random = Math.random,
+    random = defaultRandom(),
     storage = undefined,
     seedHistory,
   } = options;
