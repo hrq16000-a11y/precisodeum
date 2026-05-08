@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
+import { avatarLarge, portfolioThumb, portfolioFull, coverImage, optimizedImageUrl, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench, Info, UserRound } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
@@ -651,11 +651,15 @@ const ProviderProfile = () => {
   useEffect(() => {
     const url = pageSettings.cover_image_url;
     if (!url || typeof document === 'undefined') return;
-    const optimized = coverImage(url);
+    const small = optimizedImageUrl(url, { width: 480, height: 270, quality: 70, resize: 'cover' });
+    const mid = coverImage(url);
+    const large = optimizedImageUrl(url, { width: 1600, height: 900, quality: 75, resize: 'cover' });
     const link = document.createElement('link');
     link.rel = 'preload';
     link.as = 'image';
-    link.href = optimized;
+    link.href = mid;
+    link.setAttribute('imagesrcset', `${small} 480w, ${mid} 800w, ${large} 1600w`);
+    link.setAttribute('imagesizes', '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px');
     link.setAttribute('fetchpriority', 'high');
     document.head.appendChild(link);
     return () => {
@@ -1566,14 +1570,13 @@ const ProviderProfile = () => {
           (CLS = 0). bg-muted serve de placeholder; o `motion.img` preenche
           com object-cover. width/height intrínsecos batem com o transform. */}
       {pageSettings.cover_image_url && (
-        <motion.div
-          className="relative w-full aspect-[16/5] overflow-hidden bg-muted"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
-        >
+        <div className="relative w-full aspect-[16/5] overflow-hidden bg-muted">
+          {/* LCP image — sem motion wrapper (transform atrasa paint mobile),
+              srcSet/sizes para 1x mobile / 2x desktop sem dupla request. */}
           <img
             src={coverImage(pageSettings.cover_image_url)}
+            srcSet={`${optimizedImageUrl(pageSettings.cover_image_url, { width: 480, height: 270, quality: 70, resize: 'cover' })} 480w, ${coverImage(pageSettings.cover_image_url)} 800w, ${optimizedImageUrl(pageSettings.cover_image_url, { width: 1600, height: 900, quality: 75, resize: 'cover' })} 1600w`}
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px"
             alt="Capa"
             width={1600}
             height={500}
@@ -1588,7 +1591,7 @@ const ProviderProfile = () => {
             {pageSettings.headline && <h2 className="font-display text-xl sm:text-3xl font-bold drop-shadow-lg">{pageSettings.headline}</h2>}
             {pageSettings.tagline && <p className="mt-1 text-sm sm:text-lg opacity-90 drop-shadow">{pageSettings.tagline}</p>}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {!pageSettings.cover_image_url && (pageSettings.headline || pageSettings.tagline) && (
