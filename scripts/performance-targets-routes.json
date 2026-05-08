@@ -1,0 +1,34 @@
+{
+  "/": {
+    "lcpMaxMs": 2800,
+    "inpMaxMs": 250,
+    "clsMax": 0.1,
+    "tbtMaxMs": 250,
+    "ttfbMaxMs": 800,
+    "mobileScoreMin": 75
+  },
+  "/buscar": {
+    "lcpMaxMs": 3200,
+    "inpMaxMs": 300,
+    "clsMax": 0.1,
+    "tbtMaxMs": 350,
+    "ttfbMaxMs": 800,
+    "mobileScoreMin": 70
+  },
+  "/categoria/:slug": {
+    "lcpMaxMs": 3000,
+    "inpMaxMs": 250,
+    "clsMax": 0.1,
+    "tbtMaxMs": 300,
+    "ttfbMaxMs": 800,
+    "mobileScoreMin": 72
+  },
+  "/profissional/:slug": {
+    "lcpMaxMs": 3200,
+    "inpMaxMs": 300,
+    "clsMax": 0.1,
+    "tbtMaxMs": 350,
+    "ttfbMaxMs": 800,
+    "mobileScoreMin": 70
+  }
+}
