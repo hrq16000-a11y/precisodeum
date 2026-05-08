@@ -68,6 +68,19 @@ test.describe('Perfil público PF — contato e privacidade (E2E)', () => {
       // Fallback amplo: a copy padrão sempre cita "Preciso de Um".
       expect(decoded).toMatch(/Preciso de [Uu]m|perfil/i);
     }
+
+    // Encoding completo: caracteres pt-BR e pontuação devem estar percent-encoded.
+    // "Olá" → "Ol%C3%A1"; "ção" → "%C3%A7%C3%A3o"; "?" → "%3F".
+    const hasAccented = /Ol[áÁ]|ção|í|ã|õ|é/i.test(decoded);
+    if (hasAccented) {
+      expect(rawText).toMatch(/%C3%[A-F0-9]{2}/i); // pelo menos 1 byte UTF-8 encoded
+    }
+    // Não pode haver caracteres não-ASCII crus na URL.
+    expect(/[^\x00-\x7F]/.test(rawText)).toBe(false);
+    // "&" e "?" dentro do text não podem aparecer crus (quebrariam a query).
+    // Permitimos: %26 (&) e %3F (?). Se houver "&" cru sobrando, falha.
+    const afterText = rawText.split('&')[0];
+    expect(afterText).toBe(rawText); // text= é o último param ou único
   });
 
   test('Modal "Solicitar contato": abre, submit cria lead, fecha e restaura foco', async ({ page }) => {
@@ -98,6 +111,14 @@ test.describe('Perfil público PF — contato e privacidade (E2E)', () => {
     if (await waInput.count()) await waInput.fill('41997452053');
     if (await msgInput.count()) await msgInput.fill('Olá, gostaria de um orçamento para o serviço.');
 
+    // Captura provider_id e categoria da página para validar payload.
+    const providerId = await page
+      .locator('[data-provider-id]').first()
+      .getAttribute('data-provider-id').catch(() => null);
+    const category = (await page
+      .locator('[data-testid="provider-category"]').first()
+      .innerText().catch(() => '')).trim();
+
     // Espia chamadas de rede: aceita REST (/rest/v1/leads) ou RPC.
     const leadCallPromise = page
       .waitForRequest(
@@ -115,9 +136,18 @@ test.describe('Perfil público PF — contato e privacidade (E2E)', () => {
       await submit.click();
       const req = await leadCallPromise;
       if (req) {
-        // Confirma payload contém ao menos um identificador esperado.
-        const body = (req.postData() || '').toLowerCase();
-        expect(body).toMatch(/teste e2e|41997452053|gostaria/);
+        const raw = req.postData() || '';
+        const flat = raw.toLowerCase();
+        // Mensagem exata
+        expect(flat).toContain('gostaria de um orçamento');
+        // WhatsApp canonicalizado (com ou sem 55)
+        expect(flat).toMatch(/41997452053|5541997452053/);
+        // Nome exato
+        expect(flat).toContain('teste e2e contato');
+        // provider_id presente (campo varia: provider_id / professional_id / target_id)
+        if (providerId) expect(flat).toContain(providerId.toLowerCase());
+        // Categoria/serviço presente
+        if (category) expect(flat).toContain(category.toLowerCase().slice(0, 8));
       }
     }
 
