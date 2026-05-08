@@ -136,6 +136,14 @@ const RotatingServiceText = ({ onServiceChange, onPhraseChange }: Props) => {
   const [serviceIdx, setServiceIdx] = useState(0);
   const [prefixIdx, setPrefixIdx] = useState<0 | 1>(0);
 
+  // Frase anterior mantida no DOM brevemente para crossfade (fade-out suave).
+  const [prevPhrase, setPrevPhrase] = useState<{
+    key: string;
+    prefix: string;
+    service: string;
+    isCallout: boolean;
+  } | null>(null);
+
   useEffect(() => {
     const { order, nextHistory } = pickNextOrder(categories);
     if (order.length === 0) return;
@@ -145,9 +153,6 @@ const RotatingServiceText = ({ onServiceChange, onPhraseChange }: Props) => {
     setPrefixIdx(0);
   }, [categories]);
 
-  // Notifica pai e marca slug como "recém-mostrado" a cada troca real
-  // de categoria — assim, mesmo que o usuário recarregue antes do
-  // ciclo terminar, o cooldown reflete tudo que ele já viu.
   useEffect(() => {
     const current = orderRef.current[serviceIdx];
     if (!current) return;
@@ -155,8 +160,6 @@ const RotatingServiceText = ({ onServiceChange, onPhraseChange }: Props) => {
     markShown(current.slug);
   }, [serviceIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Notifica a cada troca de frase (categoria OU prefixo) — usado p/
-  // associar cliques na CTA à frase visível.
   useEffect(() => {
     const current = orderRef.current[serviceIdx];
     if (!current) return;
@@ -169,6 +172,17 @@ const RotatingServiceText = ({ onServiceChange, onPhraseChange }: Props) => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      // captura frase atual para fade-out antes de trocar
+      const cur = orderRef.current[serviceIdx];
+      if (cur) {
+        const ph = buildPhrase(cur, prefixIdx === 0 ? 'need' : 'find');
+        setPrevPhrase({
+          key: `${serviceIdx}-${prefixIdx}`,
+          prefix: ph.prefix,
+          service: ph.service,
+          isCallout: ph.isCallout,
+        });
+      }
       setPrefixIdx((p) => {
         if (p === 0) return 1;
         setServiceIdx((idx) => {
@@ -188,6 +202,13 @@ const RotatingServiceText = ({ onServiceChange, onPhraseChange }: Props) => {
     return () => clearTimeout(timer);
   }, [serviceIdx, prefixIdx, categories]);
 
+  // Limpa frase anterior depois do fade-out terminar
+  useEffect(() => {
+    if (!prevPhrase) return;
+    const t = setTimeout(() => setPrevPhrase(null), FADE_OUT_MS + 80);
+    return () => clearTimeout(t);
+  }, [prevPhrase]);
+
   const current = orderRef.current[serviceIdx];
   if (!current) return null;
 
@@ -200,26 +221,40 @@ const RotatingServiceText = ({ onServiceChange, onPhraseChange }: Props) => {
       data-current-slug={current.slug}
       data-current-prefix={phrase.prefixKind}
       data-current-article={phrase.category.article}
-      className="inline-flex flex-nowrap items-baseline justify-center gap-x-[0.35em] w-full max-w-full whitespace-nowrap"
+      className="relative inline-grid place-items-center w-full max-w-full whitespace-nowrap"
       aria-live="polite"
     >
       <span
-        key={`prefix-${animKey}`}
-        className="animate-hero-prefix text-primary-foreground"
+        key={`cur-${animKey}`}
+        style={{ gridArea: '1 / 1' }}
+        className="animate-hero-fade-in inline-flex flex-nowrap items-baseline justify-center gap-x-[0.35em] whitespace-nowrap"
       >
-        {phrase.prefix}
+        <span className="animate-hero-prefix text-primary-foreground">{phrase.prefix}</span>
+        {' '}
+        <span className="animate-hero-service text-secondary">
+          {phrase.service}
+          {phrase.isCallout ? '!' : ''}
+        </span>
       </span>
-      <span
-        key={`service-${animKey}`}
-        className="animate-hero-service text-secondary"
-      >
-        {phrase.service}
-        {phrase.isCallout ? '!' : ''}
-      </span>
+      {prevPhrase && (
+        <span
+          key={`prev-${prevPhrase.key}`}
+          style={{ gridArea: '1 / 1' }}
+          aria-hidden="true"
+          className="animate-hero-fade-out inline-flex flex-nowrap items-baseline justify-center gap-x-[0.35em] whitespace-nowrap pointer-events-none"
+        >
+          <span className="text-primary-foreground">{prevPhrase.prefix}</span>
+          {' '}
+          <span className="text-secondary">
+            {prevPhrase.service}
+            {prevPhrase.isCallout ? '!' : ''}
+          </span>
+        </span>
+      )}
     </span>
   );
 };
 
 export default RotatingServiceText;
 
-export { FADE_MS, HOLD_MS, HERO_CATEGORY_POOL };
+export { FADE_MS, FADE_OUT_MS, FADE_IN_MS, HOLD_MS, HERO_CATEGORY_POOL };
