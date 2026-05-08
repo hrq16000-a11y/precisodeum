@@ -1,5 +1,4 @@
 import { Star, Quote } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface Review {
   id: string;
@@ -13,18 +12,17 @@ interface TestimonialsCarouselProps {
   reviews: Review[];
 }
 
+/**
+ * CSS-only para evitar custo de framer-motion em rotas de listagem/perfil
+ * (gargalo de INP identificado no lighthouse-summary). Animação é puramente
+ * decorativa; usamos `animate-fade-in` global do Tailwind config.
+ */
 const TestimonialsCarousel = ({ reviews }: TestimonialsCarouselProps) => {
   const withComments = reviews.filter(r => r.comment?.trim()).slice(0, 3);
   if (withComments.length === 0) return null;
 
   return (
-    <motion.div
-      className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card"
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.5 }}
-    >
+    <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card animate-fade-in">
       <div className="flex items-center gap-2 mb-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
           <Quote className="h-4 w-4 text-accent" />
@@ -34,13 +32,10 @@ const TestimonialsCarousel = ({ reviews }: TestimonialsCarouselProps) => {
 
       <div className="grid gap-3 sm:grid-cols-3">
         {withComments.map((r, i) => (
-          <motion.div
+          <div
             key={r.id}
-            className="rounded-lg border border-border/60 bg-muted/30 p-4 relative"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.1, duration: 0.4 }}
+            className="rounded-lg border border-border/60 bg-muted/30 p-4 relative animate-fade-in"
+            style={{ animationDelay: `${i * 80}ms` }}
           >
             <Quote className="absolute top-3 right-3 h-5 w-5 text-accent/10" />
             <div className="flex items-center gap-0.5 mb-2">
@@ -52,10 +47,10 @@ const TestimonialsCarousel = ({ reviews }: TestimonialsCarouselProps) => {
             <p className="mt-2 text-xs font-medium text-muted-foreground">
               — {r.profiles?.full_name || 'Cliente'}
             </p>
-          </motion.div>
+          </div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 };
 
