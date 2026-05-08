@@ -1036,11 +1036,15 @@ const ProviderProfile = () => {
       priceRange: '$$',
       address: {
         '@type': 'PostalAddress',
-        ...(provider.neighborhood ? { addressLocality: provider.neighborhood } : {}),
         addressLocality: provider.city,
         addressRegion: safeUF(provider.state) || provider.state,
         addressCountry: 'BR',
-        ...(provider.neighborhood ? { streetAddress: provider.neighborhood } : {}),
+        // streetAddress real só quando o profissional optou por exibir endereço
+        // completo (PF/PJ com show_full_address=true) e existe rua + número.
+        ...((provider as any).show_full_address && (provider as any).street && (provider as any).street_number
+          ? { streetAddress: `${(provider as any).street}, ${(provider as any).street_number}` }
+          : {}),
+        ...(provider.neighborhood ? { addressLocality: provider.city, addressArea: provider.neighborhood } : {}),
       },
       ...(provider.latitude && provider.longitude
         ? {
