@@ -63,10 +63,55 @@ test.describe('Perfil público PF — show_full_address (E2E)', () => {
       expect(leakedStreet).toBe(false);
     }
 
-    // Botões de contato devem existir (WhatsApp ou "Solicitar contato").
-    const contactCta = page
-      .getByRole('button', { name: /WhatsApp|Solicitar contato|Falar agora|Conversar/i })
-      .or(page.getByRole('link', { name: /WhatsApp|Solicitar contato/i }));
-    await expect(contactCta.first()).toBeVisible();
+    // ===== Botões de contato — asserts de href/ação =====
+    //
+    // 1) Link de WhatsApp: deve apontar para wa.me/{55DDDNUMBER} ou whatsapp://send?phone=…
+    //    com um text= codificado (mensagem). FloatingWhatsApp é ignorado (data-wa-skip).
+    const waLink = page
+      .locator('a[href^="https://wa.me/"], a[href^="whatsapp://send"]')
+      .filter({ hasNot: page.locator('[data-wa-skip="true"]') })
+      .first();
+
+    const hasWa = await waLink.count();
+    if (hasWa > 0) {
+      await expect(waLink).toBeVisible();
+      const href = (await waLink.getAttribute('href')) || '';
+      // Canonical: 55 + DDD (2) + número (8 ou 9) = 12 ou 13 dígitos.
+      expect(href).toMatch(/^(https:\/\/wa\.me\/|whatsapp:\/\/send\?phone=)55\d{10,11}/);
+      // Mensagem deve estar URL-encoded.
+      expect(href).toContain('text=');
+      expect(decodeURIComponent(href.split('text=')[1] || '')).toMatch(/Preciso de [Uu]m|perfil|conversar/i);
+      // Link externo seguro.
+      expect(await waLink.getAttribute('target')).toBe('_blank');
+      expect(await waLink.getAttribute('rel') || '').toMatch(/noopener/);
+    }
+
+    // 2) Link tel: (se exposto) deve usar formato canônico tel:55DDDNUMBER.
+    const telLink = page.locator('a[href^="tel:"]').first();
+    if (await telLink.count()) {
+      const tel = (await telLink.getAttribute('href')) || '';
+      expect(tel).toMatch(/^tel:\+?55?\d{10,13}$/);
+    }
+
+    // 3) Botão "Solicitar contato" (fallback quando não há WhatsApp público) —
+    //    deve ser clicável e abrir um modal/dialog (role=dialog) ou navegar.
+    const solicitar = page
+      .getByRole('button', { name: /Solicitar contato|Falar agora|Conversar/i })
+      .first();
+
+    if (await solicitar.count()) {
+      await expect(solicitar).toBeEnabled();
+      await solicitar.click();
+      // Espera por modal OU mudança de URL (qualquer ação observável).
+      const dialog = page.getByRole('dialog');
+      const opened = await Promise.race([
+        dialog.waitFor({ state: 'visible', timeout: 3000 }).then(() => true).catch(() => false),
+        page.waitForURL(/contato|whatsapp|lead/i, { timeout: 3000 }).then(() => true).catch(() => false),
+      ]);
+      expect(opened).toBe(true);
+    } else {
+      // Se não há "Solicitar contato", o WhatsApp deve estar presente — caso contrário falha.
+      expect(hasWa).toBeGreaterThan(0);
+    }
   });
 });
