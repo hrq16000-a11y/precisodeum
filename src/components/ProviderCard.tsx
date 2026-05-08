@@ -357,17 +357,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
             )}
             {/* Hiper-local: matador para conversão quando o profissional está a <5km */}
             {trustedDistanceKm != null && trustedDistanceKm < 5 && !isFallback && !suspiciousDistance && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
-              >
+              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 animate-fade-in">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-70" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 </span>
                 Atende agora no seu bairro
-              </motion.div>
+              </div>
             )}
             {provider._distanceAudit?.source === 'city-center' && (
               <div className="mt-1.5 text-[11px] text-muted-foreground">
