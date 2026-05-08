@@ -26,6 +26,8 @@
     "audit:launch-day": "npm run test:perf:fast && npm run test:wizard:audit && npm run test:seo:fast",
     "check:performance": "node scripts/validate-srcsets.mjs && node scripts/performance-budget.mjs && node scripts/bundle-analyzer.mjs && node scripts/performance-regression.mjs",
     "lighthouse:ci": "node scripts/lighthouse-ci.mjs",
+    "perf:calibrate": "node scripts/calibrate-perf-thresholds.mjs",
+    "perf:calibrate:dry": "node scripts/calibrate-perf-thresholds.mjs --dry-run",
     "ci:performance": "npm run lint && npm run test && npm run validate:json-ld && npm run build && npm run check:performance && npm run lighthouse:ci && node scripts/lighthouse-summary.mjs && node scripts/performance-regression.mjs",
     "health:ui": "node scripts/health-check-ui.mjs",
     "lint": "eslint .",
