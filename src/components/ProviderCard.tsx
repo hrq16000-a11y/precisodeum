@@ -436,7 +436,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
         </div>
         <p className="mt-1 sm:mt-1.5 text-center text-[10px] text-muted-foreground">Negociação direta e transparente</p>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
