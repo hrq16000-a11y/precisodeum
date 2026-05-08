@@ -290,14 +290,14 @@
 @keyframes hero-prefix-reveal {
   0% {
     opacity: 0;
-    filter: blur(10px);
-    letter-spacing: 0.12em;
-    transform: translateY(6px);
+    filter: blur(8px);
+    letter-spacing: 0.10em;
+    transform: translateY(4px);
   }
-  55% {
+  60% {
     opacity: 1;
     filter: blur(0);
-    letter-spacing: 0.01em;
+    letter-spacing: 0.005em;
   }
   100% {
     opacity: 1;
@@ -311,20 +311,17 @@
   0% {
     opacity: 0;
     filter: blur(6px);
-    transform: scale(0.7) translateY(10px);
+    transform: scale(0.85) translateY(6px);
   }
-  35% {
+  45% {
     opacity: 1;
     filter: blur(0);
   }
-  60% {
-    transform: scale(1.12) translateY(-3px);
+  70% {
+    transform: scale(1.06) translateY(-2px);
     text-shadow:
       0 2px 8px rgba(0, 0, 0, 0.45),
-      0 0 28px hsl(var(--secondary) / 0.65);
-  }
-  82% {
-    transform: scale(0.97) translateY(0);
+      0 0 22px hsl(var(--secondary) / 0.55);
   }
   100% {
     opacity: 1;
@@ -336,22 +333,64 @@
   }
 }
 
+@keyframes hero-fade-in-soft {
+  0% {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-fade-out-soft {
+  0% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(-2px) scale(0.985);
+  }
+}
+
 .animate-hero-prefix {
   animation: hero-prefix-reveal 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: opacity, transform, filter;
 }
 
 .animate-hero-service {
-  /* Stagger: começa após o prefix estar ~70% visível, criando uma cascata premium */
   animation: hero-service-pop 880ms cubic-bezier(0.34, 1.56, 0.64, 1) 380ms both;
   display: inline-block;
   transform-origin: left center;
   will-change: opacity, transform, filter;
 }
 
+.animate-hero-fade-in {
+  animation: hero-fade-in-soft 900ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+  will-change: opacity, filter, transform;
+}
+
+.animate-hero-fade-out {
+  animation: hero-fade-out-soft 700ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  will-change: opacity, filter, transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-hero-prefix,
-  .animate-hero-service {
+  .animate-hero-service,
+  .animate-hero-fade-in,
+  .animate-hero-fade-out {
     animation: none !important;
   }
 }
