@@ -239,6 +239,8 @@ export default {
         "online-pulse": "online-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "online-breath": "online-breath 2.4s ease-in-out infinite",
         "wizard-shimmer": "wizard-shimmer 240ms ease-out 1",
+        "pulse-soft": "pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "wiggle-rotate": "wiggle-rotate 2s ease-in-out infinite",
       },
     },
   },
