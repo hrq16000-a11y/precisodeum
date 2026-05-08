@@ -50,61 +50,10 @@ const CriticalHeroSearch = ({ onUpgrade }: { onUpgrade: () => void }) => {
   );
 };
 
-const HeroPrefixRotator = ({ prefixes, active }: { prefixes: string[]; active: boolean }) => {
-  const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<'visible' | 'glitch' | 'hidden'>('visible');
-  const startedAt = useRef(0);
+// HeroPrefixRotator foi removido — a alternância de prefixos agora vive
+// dentro de RotatingServiceText, encadeada com o nome do serviço para
+// formar frases com nexo ("Preciso de um pintor" → "Encontre um pintor!").
 
-  useEffect(() => {
-    if (!active || prefixes.length <= 1) return;
-    let frame = 0;
-    let stage: 'visible' | 'glitch' | 'hidden' = 'visible';
-    startedAt.current = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = now - startedAt.current;
-      if (elapsed >= 5350) {
-        startedAt.current = now;
-        stage = 'visible';
-        setPhase('visible');
-      } else if (elapsed >= 5200 && stage !== 'glitch') {
-        stage = 'glitch';
-        setPhase('glitch');
-      } else if (elapsed >= 5100 && stage !== 'hidden') {
-        stage = 'hidden';
-        setPhase('hidden');
-        setIndex(prev => (prev + 1) % prefixes.length);
-      } else if (elapsed >= 5000 && stage !== 'glitch') {
-        stage = 'glitch';
-        setPhase('glitch');
-      }
-      frame = requestAnimationFrame(tick);
-    };
-
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [active, prefixes.length]);
-
-  return (
-    <span className="relative inline-block overflow-hidden">
-      <span
-        className={`inline-block transition-all duration-150 ${
-          phase === 'visible' ? 'opacity-100 translate-y-0' :
-          phase === 'glitch' ? 'opacity-80 hero-glitch-flash' :
-          'opacity-0 translate-y-1'
-        }`}
-      >
-        {prefixes[index] || prefixes[0]}
-      </span>
-      {phase === 'glitch' && (
-        <>
-          <span className="pointer-events-none absolute inset-0 hero-scanline" />
-          <span className="pointer-events-none absolute inset-0 hero-glitch-line" />
-        </>
-      )}
-    </span>
-  );
-};
 
 const HeroBanner = () => {
   const [displayedImage, setDisplayedImage] = useState(CATEGORY_IMAGES.instalacoes);
