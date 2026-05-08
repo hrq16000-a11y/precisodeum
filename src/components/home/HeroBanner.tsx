@@ -197,13 +197,13 @@ const HeroBanner = () => {
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/40 via-black/15 to-transparent" />
 
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
-        <div className="w-full max-w-full overflow-hidden px-4">
+        <div className="w-full max-w-full px-4">
           <h1
-            className="font-display text-2xl font-black tracking-tight text-primary-foreground sm:text-3xl md:text-5xl lg:text-6xl max-w-full overflow-hidden"
+            className="font-display font-black tracking-tight text-primary-foreground max-w-full whitespace-nowrap overflow-hidden text-ellipsis text-[clamp(1.25rem,5.4vw,3.75rem)] leading-[1.1]"
             style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)' }}
           >
             <HeroPrefixRotator prefixes={prefixes} active={heroImageLoaded} />
-            <br />
+            {' '}
             <RotatingServiceText onServiceChange={handleServiceChange} />
           </h1>
         </div>

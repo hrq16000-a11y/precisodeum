@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -46,26 +46,44 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
   });
 
   const serviceList = dbServices && dbServices.length > 0 ? dbServices : FALLBACK_SERVICES;
-  const shuffled = useMemo(() => shuffle(serviceList), [serviceList]);
+  // Re-shuffle on every mount (varia a cada visita) e mantém em ref para
+  // poder re-embaralhar ao fim do ciclo sem disparar re-render.
+  const orderRef = useRef<string[]>([]);
+  if (orderRef.current.length === 0) orderRef.current = shuffle(serviceList);
 
+  const [, force] = useState(0);
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<'in' | 'out'>('in');
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Notify parent whenever the displayed service changes
   useEffect(() => {
-    if (index > 0 && shuffled.length > 0) {
-      onServiceChange?.(shuffled[index]);
+    if (index > 0 && orderRef.current.length > 0) {
+      onServiceChange?.(orderRef.current[index]);
     }
-  }, [index, shuffled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rotate = useCallback(() => {
     setPhase('out');
     timerRef.current = setTimeout(() => {
-      setIndex((prev) => (prev + 1) % shuffled.length);
+      setIndex((prev) => {
+        const next = prev + 1;
+        if (next >= orderRef.current.length) {
+          // Reembaralha sem repetir a última palavra logo de cara.
+          const last = orderRef.current[orderRef.current.length - 1];
+          let reshuffled = shuffle(serviceList);
+          if (reshuffled[0] === last && reshuffled.length > 1) {
+            [reshuffled[0], reshuffled[1]] = [reshuffled[1], reshuffled[0]];
+          }
+          orderRef.current = reshuffled;
+          force((n) => n + 1);
+          return 0;
+        }
+        return next;
+      });
       setPhase('in');
     }, 400);
-  }, [shuffled]);
+  }, [serviceList]);
 
   useEffect(() => {
     const id = setInterval(rotate, 4000);
@@ -82,14 +100,14 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
         style={{ minHeight: '1.2em' }}
       >
         <span
-          className="text-secondary inline-block sm:whitespace-nowrap transition-all duration-500 ease-in-out break-words"
+          className="text-secondary inline-block whitespace-nowrap transition-all duration-500 ease-in-out"
           style={{
             opacity: phase === 'in' ? 1 : 0,
             transform: phase === 'in' ? 'translateY(0)' : 'translateY(-20px)',
             textShadow: '0 2px 10px rgba(0,0,0,0.65), 0 1px 3px rgba(0,0,0,0.5), 0 0 18px rgba(0,0,0,0.35)',
           }}
         >
-          {shuffled[index]}
+          {orderRef.current[index] ?? ''}
         </span>
         <span
           className="absolute -bottom-1 left-0 h-1 rounded-full bg-secondary/60 transition-[width] duration-500 ease-out"
