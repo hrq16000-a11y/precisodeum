@@ -139,10 +139,15 @@ const HeroBanner = () => {
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/40 via-black/15 to-transparent" />
 
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
-        <div className="w-full max-w-full px-4">
+        <div className="w-full max-w-full px-2">
           <h1
-            className="font-display font-black tracking-tight text-primary-foreground max-w-full text-balance text-[clamp(1.1rem,4.4vw,3.25rem)] leading-[1.1] sm:leading-[1.08]"
-            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)' }}
+            className="font-display font-black text-primary-foreground max-w-full text-[clamp(0.95rem,4.1vw,3.25rem)] leading-[1.1] sm:leading-[1.08] tracking-[-0.015em]"
+            style={{
+              textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)',
+              // Fallback fluido baseado em viewport para sempre caber em uma linha
+              // mesmo nas frases mais longas ("Preciso de uma técnico em informática").
+              fontSize: 'min(clamp(0.95rem, 4.1vw, 3.25rem), 6.5cqi)',
+            }}
           >
             <RotatingServiceText onServiceChange={handleServiceChange} />
           </h1>
