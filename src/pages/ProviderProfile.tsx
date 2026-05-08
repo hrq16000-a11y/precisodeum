@@ -1566,14 +1566,13 @@ const ProviderProfile = () => {
           (CLS = 0). bg-muted serve de placeholder; o `motion.img` preenche
           com object-cover. width/height intrínsecos batem com o transform. */}
       {pageSettings.cover_image_url && (
-        <motion.div
-          className="relative w-full aspect-[16/5] overflow-hidden bg-muted"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
-        >
+        <div className="relative w-full aspect-[16/5] overflow-hidden bg-muted">
+          {/* LCP image — sem motion wrapper (transform atrasa paint mobile),
+              srcSet/sizes para 1x mobile / 2x desktop sem dupla request. */}
           <img
             src={coverImage(pageSettings.cover_image_url)}
+            srcSet={`${optimizedImageUrl(pageSettings.cover_image_url, { width: 480, height: 270, quality: 70, resize: 'cover' })} 480w, ${coverImage(pageSettings.cover_image_url)} 800w, ${optimizedImageUrl(pageSettings.cover_image_url, { width: 1600, height: 900, quality: 75, resize: 'cover' })} 1600w`}
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px"
             alt="Capa"
             width={1600}
             height={500}
@@ -1588,7 +1587,7 @@ const ProviderProfile = () => {
             {pageSettings.headline && <h2 className="font-display text-xl sm:text-3xl font-bold drop-shadow-lg">{pageSettings.headline}</h2>}
             {pageSettings.tagline && <p className="mt-1 text-sm sm:text-lg opacity-90 drop-shadow">{pageSettings.tagline}</p>}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {!pageSettings.cover_image_url && (pageSettings.headline || pageSettings.tagline) && (
