@@ -3,31 +3,51 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * HeroRotator — duplo encadeado, suave e elegante.
+ * HeroRotator — frases com nexo e animação sutil.
  *
- * Cada ciclo mostra a MESMA palavra de serviço com dois prefixos em
- * sequência, criando narrativa: "Preciso de um pintor" → "Encontre um pintor!".
- * Depois sorteia o próximo serviço (sem repetir até o ciclo terminar).
+ * Cada ciclo mostra a MESMA categoria com dois prefixos em sequência,
+ * preservando sentido: "Preciso de um pintor" → "Encontre um pintor!".
+ * Os termos vêm de categorias compatíveis com esse formato gramatical.
  *
- * - Sem glitch/scanline. Apenas fade + slide curto (CSS, GPU friendly).
- * - Quebra em duas linhas em telas pequenas (text-balance + break-words).
- * - Notifica o pai a cada troca de serviço para sincronizar background.
+ * - Sem glitch. Apenas fade + slide curto (CSS, GPU friendly).
+ * - Mobile: quebra elegante em duas linhas; desktop: frase corrida.
+ * - Notifica o pai a cada troca de termo para sincronizar background.
  */
 
-const FALLBACK_SERVICES = [
-  'eletricista', 'encanador', 'pedreiro', 'pintor', 'gesseiro',
-  'marido de aluguel', 'instalador de ar-condicionado', 'jardineiro',
-  'marceneiro', 'serralheiro', 'azulejista', 'desentupidor',
-  'chaveiro', 'vidraceiro', 'carpinteiro', 'mecânico', 'personal trainer',
-  'fotógrafo', 'designer gráfico', 'professor particular', 'cuidador de idosos',
-  'veterinário', 'nutricionista', 'contador', 'advogado', 'arquiteto',
-  'engenheiro civil', 'técnico em celular', 'montador de móveis',
-  'tapeceiro', 'dedetizador', 'piscineiro', 'eletricista automotivo',
-  'soldador', 'técnico em informática', 'profissional de beleza',
-  'motorista particular', 'profissional de limpeza',
+type HeroCategory = {
+  slug: string;
+  label: string;
+  article: 'um' | 'uma';
+};
+
+const HERO_CATEGORY_POOL: HeroCategory[] = [
+  { slug: 'eletricista', label: 'eletricista', article: 'um' },
+  { slug: 'encanador', label: 'encanador', article: 'um' },
+  { slug: 'pintor', label: 'pintor', article: 'um' },
+  { slug: 'pedreiro', label: 'pedreiro', article: 'um' },
+  { slug: 'carpinteiro', label: 'carpinteiro', article: 'um' },
+  { slug: 'gesseiro', label: 'gesseiro', article: 'um' },
+  { slug: 'azulejista', label: 'azulejista', article: 'um' },
+  { slug: 'marceneiro', label: 'marceneiro', article: 'um' },
+  { slug: 'serralheiro', label: 'serralheiro', article: 'um' },
+  { slug: 'chaveiro', label: 'chaveiro', article: 'um' },
+  { slug: 'jardineiro', label: 'jardineiro', article: 'um' },
+  { slug: 'cabeleireiro', label: 'cabeleireiro', article: 'um' },
+  { slug: 'barbeiro', label: 'barbeiro', article: 'um' },
+  { slug: 'babá', label: 'babá', article: 'uma' },
+  { slug: 'baba', label: 'babá', article: 'uma' },
+  { slug: 'cuidador-de-idosos', label: 'cuidador de idosos', article: 'um' },
+  { slug: 'designer-grafico', label: 'designer gráfico', article: 'um' },
+  { slug: 'fotografo', label: 'fotógrafo', article: 'um' },
+  { slug: 'advogado', label: 'advogado', article: 'um' },
+  { slug: 'contador', label: 'contador', article: 'um' },
+  { slug: 'arquiteto', label: 'arquiteto', article: 'um' },
+  { slug: 'mecanico', label: 'mecânico', article: 'um' },
+  { slug: 'técnico-em-informática', label: 'técnico em informática', article: 'um' },
+  { slug: 'tecnico-em-informatica', label: 'técnico em informática', article: 'um' },
 ];
 
-const PREFIX_PAIR = ['Preciso de um', 'Encontre um'] as const;
+const HERO_CATEGORY_BY_SLUG = new Map(HERO_CATEGORY_POOL.map((item) => [item.slug, item]));
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -38,6 +58,14 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+function shuffleCategories(categories: HeroCategory[], avoidSlug?: string) {
+  const shuffled = shuffle(categories);
+  if (avoidSlug && shuffled.length > 1 && shuffled[0]?.slug === avoidSlug) {
+    [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+  }
+  return shuffled;
+}
+
 interface Props {
   onServiceChange?: (service: string) => void;
 }
@@ -46,32 +74,45 @@ const HOLD_MS = 2600; // tempo de leitura por frase
 const FADE_MS = 420;  // duração do crossfade
 
 const RotatingServiceText = ({ onServiceChange }: Props) => {
-  const { data: dbServices } = useQuery({
-    queryKey: ['rotating-service-names'],
+  const { data: dbCategories } = useQuery({
+    queryKey: ['hero-rotating-categories'],
     queryFn: async () => {
       const { data } = await supabase
-        .from('popular_services')
-        .select('name')
-        .eq('active', true)
-        .order('display_order');
-      return (data || []).map((s: any) => String(s.name).toLowerCase());
+        .from('categories')
+        .select('slug')
+        .in('slug', HERO_CATEGORY_POOL.map((item) => item.slug))
+        .is('deleted_at', null);
+
+      const mapped = (data || [])
+        .map((item: { slug: string | null }) => (item.slug ? HERO_CATEGORY_BY_SLUG.get(item.slug) : null))
+        .filter((item): item is HeroCategory => Boolean(item));
+
+      const deduped = mapped.filter((item, index, arr) => arr.findIndex((entry) => entry.label === item.label) === index);
+      return deduped;
     },
     staleTime: 1000 * 60 * 10,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 
-  const services = dbServices && dbServices.length > 0 ? dbServices : FALLBACK_SERVICES;
+  const categories = dbCategories && dbCategories.length > 0 ? dbCategories : HERO_CATEGORY_POOL;
 
-  const orderRef = useRef<string[]>([]);
-  if (orderRef.current.length === 0) orderRef.current = shuffle(services);
+  const orderRef = useRef<HeroCategory[]>(shuffleCategories(categories));
 
   const [serviceIdx, setServiceIdx] = useState(0);
-  const [prefixIdx, setPrefixIdx] = useState(0); // 0 = "Preciso de um", 1 = "Encontre um"
+  const [prefixIdx, setPrefixIdx] = useState(0);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    onServiceChange?.(orderRef.current[serviceIdx]);
+    const currentSlug = orderRef.current[serviceIdx]?.slug;
+    orderRef.current = shuffleCategories(categories, currentSlug);
+    setServiceIdx(0);
+    setPrefixIdx(0);
+    setVisible(true);
+  }, [categories]);
+
+  useEffect(() => {
+    onServiceChange?.(orderRef.current[serviceIdx]?.label ?? 'eletricista');
   }, [serviceIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -81,16 +122,11 @@ const RotatingServiceText = ({ onServiceChange }: Props) => {
       fadeTimer = setTimeout(() => {
         setPrefixIdx((p) => {
           if (p === 0) return 1;
-          // Trocou para o próximo serviço — sorteia novamente se acabou.
           setServiceIdx((idx) => {
             const next = idx + 1;
             if (next >= orderRef.current.length) {
-              const last = orderRef.current[orderRef.current.length - 1];
-              let reshuffled = shuffle(services);
-              if (reshuffled[0] === last && reshuffled.length > 1) {
-                [reshuffled[0], reshuffled[1]] = [reshuffled[1], reshuffled[0]];
-              }
-              orderRef.current = reshuffled;
+              const last = orderRef.current[orderRef.current.length - 1]?.slug;
+              orderRef.current = shuffleCategories(categories, last);
               return 0;
             }
             return next;
@@ -105,15 +141,16 @@ const RotatingServiceText = ({ onServiceChange }: Props) => {
       clearTimeout(holdTimer);
       clearTimeout(fadeTimer!);
     };
-  }, [serviceIdx, prefixIdx, services]);
+  }, [serviceIdx, prefixIdx, categories]);
 
-  const prefix = PREFIX_PAIR[prefixIdx];
-  const service = orderRef.current[serviceIdx] ?? '';
+  const current = orderRef.current[serviceIdx] ?? HERO_CATEGORY_POOL[0];
+  const prefix = prefixIdx === 0 ? `Preciso de ${current.article}` : `Encontre ${current.article}`;
+  const service = current.label;
   const isCallout = prefixIdx === 1;
 
   return (
     <span
-      className="inline-block w-full max-w-full text-balance"
+      className="inline-block w-full max-w-full"
       aria-live="polite"
     >
       <span
@@ -124,17 +161,13 @@ const RotatingServiceText = ({ onServiceChange }: Props) => {
           transform: visible ? 'translateY(0)' : 'translateY(-6px)',
         }}
       >
-        <span className="text-primary-foreground">{prefix}</span>{' '}
-        <span className="text-secondary">
+        <span className="block text-primary-foreground sm:inline">{prefix}</span>
+        <span className="block text-secondary sm:ml-3 sm:inline">
           {service}
           {isCallout ? '!' : ''}
         </span>
       </span>
 
-      {/* SEO — todas as combinações relevantes em uma string compacta */}
-      <span className="sr-only">
-        {services.slice(0, 12).map((s) => `Preciso de um ${s}. Encontre um ${s}.`).join(' ')}
-      </span>
     </span>
   );
 };
