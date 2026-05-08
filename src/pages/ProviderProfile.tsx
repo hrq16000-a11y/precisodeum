@@ -1036,11 +1036,15 @@ const ProviderProfile = () => {
       priceRange: '$$',
       address: {
         '@type': 'PostalAddress',
-        ...(provider.neighborhood ? { addressLocality: provider.neighborhood } : {}),
         addressLocality: provider.city,
         addressRegion: safeUF(provider.state) || provider.state,
         addressCountry: 'BR',
-        ...(provider.neighborhood ? { streetAddress: provider.neighborhood } : {}),
+        // streetAddress real só quando o profissional optou por exibir endereço
+        // completo (PF/PJ com show_full_address=true) e existe rua + número.
+        ...((provider as any).show_full_address && (provider as any).street && (provider as any).street_number
+          ? { streetAddress: `${(provider as any).street}, ${(provider as any).street_number}` }
+          : {}),
+        ...(provider.neighborhood ? { addressLocality: provider.city, addressArea: provider.neighborhood } : {}),
       },
       ...(provider.latitude && provider.longitude
         ? {
@@ -1568,7 +1572,7 @@ const ProviderProfile = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
         >
-          <motion.img
+          <img
             src={coverImage(pageSettings.cover_image_url)}
             alt="Capa"
             width={1600}
@@ -1578,9 +1582,6 @@ const ProviderProfile = () => {
             fetchPriority="high"
             decoding="async"
             onError={handleImageError}
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 container pb-6 text-white">
@@ -1597,8 +1598,10 @@ const ProviderProfile = () => {
         </div>
       )}
 
-      {/* Breadcrumb */}
-      <nav className="container py-3 text-sm text-muted-foreground">
+      {/* Breadcrumb — quando temos categoria + cidade, o link da cidade aponta
+          para a rota canônica rica (categoria×cidade), distribuindo autoridade
+          interna para a página com mais contexto SEO. */}
+      <nav className="container py-3 text-sm text-muted-foreground" aria-label="Breadcrumb">
         <Link to="/" className="hover:text-foreground transition-colors">Início</Link>
         {categorySlug && (
           <>
@@ -1609,7 +1612,12 @@ const ProviderProfile = () => {
         {provider.city && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/cidade/${citySlug}`} className="hover:text-foreground transition-colors">{provider.city}</Link>
+            <Link
+              to={categorySlug && citySlug ? `/categoria/${categorySlug}/em/${citySlug}` : `/cidade/${citySlug}`}
+              className="hover:text-foreground transition-colors"
+            >
+              {provider.city}
+            </Link>
           </>
         )}
         <ChevronRight className="mx-1 inline h-3 w-3" />

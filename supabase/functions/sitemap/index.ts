@@ -120,12 +120,13 @@ ${entries.join('\n')}
       const norm = desc.toLowerCase();
       return !forbiddenTerms.some(t => t && norm.includes(t));
     };
+    // Cobertura ampliada: aceitar service_area declarada OU fallback para
+    // provider.city (provider aprovado e com cidade válida já é sinal suficiente
+    // de elegibilidade para o par categoria×cidade aparecer no sitemap).
     const { data: eligibleServices } = await supabase
       .from('services')
       .select('id, provider_id, description, service_area, category_id, providers!inner(id, slug, city, status, updated_at, postal_code)')
       .is('deleted_at', null)
-      .not('service_area', 'is', null)
-      .neq('service_area', '')
       .eq('providers.status', 'approved')
       .range(0, 19999);
     for (const s of (eligibleServices || []) as any[]) {
@@ -133,7 +134,10 @@ ${entries.join('\n')}
       if (!s.providers?.slug) continue;
       const pCity = (s.providers.city || '').trim().toLowerCase();
       const sArea = String(s.service_area || '').trim().toLowerCase();
-      if (!pCity || !sArea || pCity !== sArea) continue;
+      if (!pCity) continue;
+      // Se service_area declarada, exige bater com cidade-base (anti-spam).
+      // Sem service_area, usa provider.city (cobertura mais ampla).
+      if (sArea && sArea !== pCity) continue;
       eligible.push(s as EligibleSvc);
       eligibleProviderSlugs.add(s.providers.slug);
       eligibleCityNames.add(pCity);
