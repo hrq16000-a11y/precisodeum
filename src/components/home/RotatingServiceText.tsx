@@ -168,12 +168,6 @@ const RotatingServiceText = ({ onServiceChange }: Props) => {
         </span>
       </span>
 
-      <span className="sr-only">
-        {categories
-          .slice(0, 12)
-          .map((item) => `Preciso de ${item.article} ${item.label}. Encontre ${item.article} ${item.label}.`)
-          .join(' ')}
-      </span>
     </span>
   );
 };
