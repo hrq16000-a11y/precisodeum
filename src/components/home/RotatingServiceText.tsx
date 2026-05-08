@@ -101,14 +101,12 @@ const RotatingServiceText = ({ onServiceChange }: Props) => {
 
   const [serviceIdx, setServiceIdx] = useState(0);
   const [prefixIdx, setPrefixIdx] = useState(0);
-  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const currentSlug = orderRef.current[serviceIdx]?.slug;
     orderRef.current = shuffleCategories(categories, currentSlug);
     setServiceIdx(0);
     setPrefixIdx(0);
-    setVisible(true);
   }, [categories]);
 
   useEffect(() => {
@@ -116,31 +114,23 @@ const RotatingServiceText = ({ onServiceChange }: Props) => {
   }, [serviceIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    let fadeTimer: ReturnType<typeof setTimeout>;
-    const holdTimer = setTimeout(() => {
-      setVisible(false);
-      fadeTimer = setTimeout(() => {
-        setPrefixIdx((p) => {
-          if (p === 0) return 1;
-          setServiceIdx((idx) => {
-            const next = idx + 1;
-            if (next >= orderRef.current.length) {
-              const last = orderRef.current[orderRef.current.length - 1]?.slug;
-              orderRef.current = shuffleCategories(categories, last);
-              return 0;
-            }
-            return next;
-          });
-          return 0;
+    const timer = setTimeout(() => {
+      setPrefixIdx((p) => {
+        if (p === 0) return 1;
+        setServiceIdx((idx) => {
+          const next = idx + 1;
+          if (next >= orderRef.current.length) {
+            const last = orderRef.current[orderRef.current.length - 1]?.slug;
+            orderRef.current = shuffleCategories(categories, last);
+            return 0;
+          }
+          return next;
         });
-        setVisible(true);
-      }, FADE_MS);
+        return 0;
+      });
     }, HOLD_MS);
 
-    return () => {
-      clearTimeout(holdTimer);
-      clearTimeout(fadeTimer!);
-    };
+    return () => clearTimeout(timer);
   }, [serviceIdx, prefixIdx, categories]);
 
   const current = orderRef.current[serviceIdx] ?? HERO_CATEGORY_POOL[0];
