@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
