@@ -13,13 +13,40 @@ import { Icon } from '@/components/ui/Icon';
 const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
 
 
-const CriticalHeroSearch = ({ onUpgrade }: { onUpgrade: () => void }) => {
+type HeroPhraseInfo = { slug: string; label: string; prefix: 'need' | 'find' };
+
+const CriticalHeroSearch = ({
+  onUpgrade,
+  phraseRef,
+}: {
+  onUpgrade: () => void;
+  phraseRef?: React.MutableRefObject<HeroPhraseInfo | null>;
+}) => {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
+
+  const trackCtaClick = (action: 'submit' | 'focus') => {
+    const info = phraseRef?.current;
+    if (!info) return;
+    // Lazy import para não inflar o bundle crítico do hero
+    import('@/lib/tracking').then(({ trackEvent }) => {
+      trackEvent({
+        event: 'hero_cta_click',
+        slug: info.slug,
+        source: 'hero_search',
+        extra: {
+          phrase_prefix: info.prefix,
+          phrase_label: info.label,
+          action,
+        },
+      });
+    }).catch(() => { /* silent */ });
+  };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     const value = query.trim();
+    trackCtaClick('submit');
     if (!value) {
       onUpgrade();
       return;
@@ -32,7 +59,7 @@ const CriticalHeroSearch = ({ onUpgrade }: { onUpgrade: () => void }) => {
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        onFocus={onUpgrade}
+        onFocus={() => { onUpgrade(); trackCtaClick('focus'); }}
         placeholder="O que você precisa?"
         className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 outline-none"
         autoComplete="off"
