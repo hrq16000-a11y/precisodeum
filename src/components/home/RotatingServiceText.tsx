@@ -93,8 +93,10 @@ interface Props {
   onPhraseChange?: (info: { slug: string; label: string; prefix: 'need' | 'find' }) => void;
 }
 
-const HOLD_MS = 2600;
-const FADE_MS = 420;
+const HOLD_MS = 3200;
+const FADE_OUT_MS = 700;
+const FADE_IN_MS = 900;
+const FADE_MS = FADE_OUT_MS + FADE_IN_MS;
 
 const RotatingServiceText = ({ onServiceChange, onPhraseChange }: Props) => {
   const { data: dbCategories } = useQuery({
