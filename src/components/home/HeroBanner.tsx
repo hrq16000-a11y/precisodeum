@@ -62,17 +62,11 @@ const HeroBanner = () => {
   const { city: geoCity } = useGeoCity();
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
 
-  const prefixesRaw = useSettingValue('hero_prefixes');
   const ctaPrimaryLinkText = useSettingValue('hero_cta_primary_link_text');
   const ctaPrimaryLink = useSettingValue('hero_cta_primary_link');
   const ctaSecondaryText = useSettingValue('hero_cta_secondary_text');
   const ctaSecondaryLink = useSettingValue('hero_cta_secondary_link');
 
-  const prefixes = useMemo(() => {
-    if (!prefixesRaw) return FALLBACK_PREFIXES;
-    const parsed = prefixesRaw.split(',').map(s => s.trim()).filter(Boolean);
-    return parsed.length > 0 ? parsed : FALLBACK_PREFIXES;
-  }, [prefixesRaw]);
 
   const handleServiceChange = useCallback((service: string) => {
     if (!heroImageLoaded) return;
