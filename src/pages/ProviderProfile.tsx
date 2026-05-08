@@ -651,11 +651,15 @@ const ProviderProfile = () => {
   useEffect(() => {
     const url = pageSettings.cover_image_url;
     if (!url || typeof document === 'undefined') return;
-    const optimized = coverImage(url);
+    const small = optimizedImageUrl(url, { width: 480, height: 270, quality: 70, resize: 'cover' });
+    const mid = coverImage(url);
+    const large = optimizedImageUrl(url, { width: 1600, height: 900, quality: 75, resize: 'cover' });
     const link = document.createElement('link');
     link.rel = 'preload';
     link.as = 'image';
-    link.href = optimized;
+    link.href = mid;
+    link.setAttribute('imagesrcset', `${small} 480w, ${mid} 800w, ${large} 1600w`);
+    link.setAttribute('imagesizes', '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px');
     link.setAttribute('fetchpriority', 'high');
     document.head.appendChild(link);
     return () => {
