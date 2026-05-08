@@ -1568,7 +1568,7 @@ const ProviderProfile = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
         >
-          <motion.img
+          <img
             src={coverImage(pageSettings.cover_image_url)}
             alt="Capa"
             width={1600}
@@ -1578,9 +1578,6 @@ const ProviderProfile = () => {
             fetchPriority="high"
             decoding="async"
             onError={handleImageError}
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 container pb-6 text-white">
