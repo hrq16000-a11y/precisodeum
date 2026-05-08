@@ -148,26 +148,27 @@ const RotatingServiceText = ({ onServiceChange }: Props) => {
   const service = current.label;
   const isCallout = prefixIdx === 1;
 
+  // Key muda a cada troca → reinicia animação CSS de cada palavra.
+  const animKey = `${serviceIdx}-${prefixIdx}`;
+
   return (
     <span
-      className="inline-block w-full max-w-full"
+      className="inline-flex flex-nowrap items-baseline justify-center gap-x-[0.35em] w-full max-w-full whitespace-nowrap"
       aria-live="polite"
     >
       <span
-        className="inline-block transition-all ease-out will-change-[opacity,transform]"
-        style={{
-          transitionDuration: `${FADE_MS}ms`,
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(-6px)',
-        }}
+        key={`prefix-${animKey}`}
+        className="animate-hero-prefix text-primary-foreground"
       >
-        <span className="block text-primary-foreground sm:inline">{prefix}</span>
-        <span className="block text-secondary sm:ml-3 sm:inline">
-          {service}
-          {isCallout ? '!' : ''}
-        </span>
+        {prefix}
       </span>
-
+      <span
+        key={`service-${animKey}`}
+        className="animate-hero-service text-secondary"
+      >
+        {service}
+        {isCallout ? '!' : ''}
+      </span>
     </span>
   );
 };
