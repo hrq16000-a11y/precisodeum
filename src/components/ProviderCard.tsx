@@ -272,9 +272,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                   </span>
                 </h3>
                 {engTier.showCrown && (
-                  <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}>
+                  <span className="inline-block animate-wiggle-rotate" style={{ animationDelay: '4s' }}>
                     <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />
-                  </motion.div>
+                  </span>
                 )}
                 {engTier.tier === 'ouro' && (provider.activitySignal || isOnline) && (
                   <span
