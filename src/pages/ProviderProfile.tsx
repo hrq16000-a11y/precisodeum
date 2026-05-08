@@ -1594,8 +1594,10 @@ const ProviderProfile = () => {
         </div>
       )}
 
-      {/* Breadcrumb */}
-      <nav className="container py-3 text-sm text-muted-foreground">
+      {/* Breadcrumb — quando temos categoria + cidade, o link da cidade aponta
+          para a rota canônica rica (categoria×cidade), distribuindo autoridade
+          interna para a página com mais contexto SEO. */}
+      <nav className="container py-3 text-sm text-muted-foreground" aria-label="Breadcrumb">
         <Link to="/" className="hover:text-foreground transition-colors">Início</Link>
         {categorySlug && (
           <>
@@ -1606,7 +1608,12 @@ const ProviderProfile = () => {
         {provider.city && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/cidade/${citySlug}`} className="hover:text-foreground transition-colors">{provider.city}</Link>
+            <Link
+              to={categorySlug && citySlug ? `/categoria/${categorySlug}/em/${citySlug}` : `/cidade/${citySlug}`}
+              className="hover:text-foreground transition-colors"
+            >
+              {provider.city}
+            </Link>
           </>
         )}
         <ChevronRight className="mx-1 inline h-3 w-3" />
