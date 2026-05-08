@@ -135,9 +135,33 @@ export function buildPhrase(category: HeroCategoryInput, kind: PrefixKind): Hero
 export const RECENT_HISTORY_KEY = 'hero_recent_categories_v1';
 export const DEFAULT_HISTORY_SIZE = 8;
 
+/** Detecta SSR/ambiente sem window de forma segura. */
+const IS_BROWSER = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+
+/**
+ * Random determinístico (mulberry32). Usado no SSR para que o primeiro
+ * render seja idempotente entre servidor e cliente, evitando hydration
+ * mismatch. No cliente, recai em Math.random.
+ */
+export function makeSeededRandom(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Random padrão: SSR-safe (semente fixa) no servidor; aleatório no browser. */
+export function defaultRandom(): () => number {
+  return IS_BROWSER ? Math.random : makeSeededRandom(0xC0FFEE);
+}
+
 function readHistory(storage?: Storage | null): string[] {
   try {
-    const s = storage ?? (typeof window !== 'undefined' ? window.localStorage : null);
+    const s = storage ?? (IS_BROWSER ? window.localStorage : null);
     if (!s) return [];
     const raw = s.getItem(RECENT_HISTORY_KEY);
     if (!raw) return [];
@@ -150,12 +174,24 @@ function readHistory(storage?: Storage | null): string[] {
 
 function writeHistory(slugs: string[], storage?: Storage | null) {
   try {
-    const s = storage ?? (typeof window !== 'undefined' ? window.localStorage : null);
+    const s = storage ?? (IS_BROWSER ? window.localStorage : null);
     if (!s) return;
     s.setItem(RECENT_HISTORY_KEY, JSON.stringify(slugs));
   } catch {
     /* noop */
   }
+}
+
+/**
+ * Marca um slug como "recém-mostrado", fazendo prepend na janela de
+ * cooldown. Idempotente — pode ser chamado a cada troca de frase no
+ * RotatingServiceText sem inflar o histórico.
+ */
+export function markShown(slug: string, storage?: Storage | null, historySize = DEFAULT_HISTORY_SIZE) {
+  if (!slug) return;
+  const current = readHistory(storage);
+  const next = [slug, ...current.filter((s) => s !== slug)].slice(0, historySize);
+  writeHistory(next, storage);
 }
 
 export interface PickOptions {
@@ -184,7 +220,7 @@ export function pickNextOrder(
 ): { order: HeroCategory[]; nextHistory: string[] } {
   const {
     historySize = DEFAULT_HISTORY_SIZE,
-    random = Math.random,
+    random = defaultRandom(),
     storage = undefined,
     seedHistory,
   } = options;

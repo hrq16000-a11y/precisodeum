@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
@@ -13,13 +13,40 @@ import { Icon } from '@/components/ui/Icon';
 const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
 
 
-const CriticalHeroSearch = ({ onUpgrade }: { onUpgrade: () => void }) => {
+type HeroPhraseInfo = { slug: string; label: string; prefix: 'need' | 'find' };
+
+const CriticalHeroSearch = ({
+  onUpgrade,
+  phraseRef,
+}: {
+  onUpgrade: () => void;
+  phraseRef?: React.MutableRefObject<HeroPhraseInfo | null>;
+}) => {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
+
+  const trackCtaClick = (action: 'submit' | 'focus') => {
+    const info = phraseRef?.current;
+    if (!info) return;
+    // Lazy import para não inflar o bundle crítico do hero
+    import('@/lib/tracking').then(({ trackEvent }) => {
+      trackEvent({
+        event: 'hero_cta_click',
+        slug: info.slug,
+        source: 'hero_search',
+        extra: {
+          phrase_prefix: info.prefix,
+          phrase_label: info.label,
+          action,
+        },
+      });
+    }).catch(() => { /* silent */ });
+  };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     const value = query.trim();
+    trackCtaClick('submit');
     if (!value) {
       onUpgrade();
       return;
@@ -32,7 +59,7 @@ const CriticalHeroSearch = ({ onUpgrade }: { onUpgrade: () => void }) => {
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        onFocus={onUpgrade}
+        onFocus={() => { onUpgrade(); trackCtaClick('focus'); }}
         placeholder="O que você precisa?"
         className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 outline-none"
         autoComplete="off"
@@ -94,6 +121,21 @@ const HeroBanner = () => {
     };
   }, [enhancedSearch]);
 
+  // Frase atual do rotator — guardada em ref para a CTA registrar analytics
+  // sem causar re-render a cada troca (HOLD_MS = 2.6s).
+  const phraseRef = useRef<HeroPhraseInfo | null>(null);
+  const handlePhraseChange = useCallback((info: HeroPhraseInfo) => {
+    phraseRef.current = info;
+    import('@/lib/tracking').then(({ trackEvent }) => {
+      trackEvent({
+        event: 'hero_phrase_shown',
+        slug: info.slug,
+        source: 'hero_rotator',
+        extra: { phrase_prefix: info.prefix, phrase_label: info.label },
+      });
+    }).catch(() => { /* silent */ });
+  }, []);
+
   return (
     <section
       className="relative overflow-visible py-6 sm:py-8 md:overflow-hidden md:py-20"
@@ -144,18 +186,21 @@ const HeroBanner = () => {
             className="font-display font-black text-primary-foreground max-w-full text-[clamp(0.95rem,4vw,3.25rem)] leading-[1.1] sm:leading-[1.08] tracking-[-0.015em]"
             style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)' }}
           >
-            <RotatingServiceText onServiceChange={handleServiceChange} />
+            <RotatingServiceText
+              onServiceChange={handleServiceChange}
+              onPhraseChange={handlePhraseChange}
+            />
           </h1>
         </div>
 
         <div className="relative z-30 mt-4 w-full max-w-2xl md:mt-6 hero-search-wrapper min-h-[64px]">
           <div className="animate-glow-ring rounded-full">
             {enhancedSearch ? (
-              <Suspense fallback={<CriticalHeroSearch onUpgrade={() => setEnhancedSearch(true)} />}>
+              <Suspense fallback={<CriticalHeroSearch onUpgrade={() => setEnhancedSearch(true)} phraseRef={phraseRef} />}>
                 <SearchBar />
               </Suspense>
             ) : (
-              <CriticalHeroSearch onUpgrade={() => setEnhancedSearch(true)} />
+              <CriticalHeroSearch onUpgrade={() => setEnhancedSearch(true)} phraseRef={phraseRef} />
             )}
           </div>
           <div className="mt-3 flex min-h-[2.5rem] flex-col items-center justify-center gap-2 text-xs text-primary-foreground/70 sm:min-h-[1.25rem] sm:flex-row sm:gap-3">

@@ -13,7 +13,8 @@ type TrackEvent = 'card_view' | 'click_whatsapp' | 'click_profile' | 'click_bann
   | 'geo_fallback_text_only' | 'geo_failed_resolution'
   | 'geo_failed' | 'geo_fallback_used' | 'geo_source_changed'
   | 'sil_intent_detected' | 'sil_route_selected' | 'sil_geo_used'
-  | 'sil_fallback_triggered' | 'sil_final_score';
+  | 'sil_fallback_triggered' | 'sil_final_score'
+  | 'hero_phrase_shown' | 'hero_cta_click';
 
 interface TrackPayload {
   event: TrackEvent;
