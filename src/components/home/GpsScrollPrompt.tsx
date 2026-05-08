@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Navigation, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const DISMISS_KEY = 'gps_scroll_prompt_dismissed_v1';
 
@@ -66,51 +65,45 @@ const GpsScrollPrompt = () => {
   return (
     <>
       <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
-      <AnimatePresence>
-        {visible && !hasGps && !dismissed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            style={{ minHeight: 132 }}
-            className="fixed inset-x-3 bottom-20 z-40 mx-auto max-w-md rounded-2xl border border-primary/30 bg-background/95 p-4 shadow-lg backdrop-blur md:bottom-6"
-            role="dialog"
-            aria-label="Solicitar localização"
+      {visible && !hasGps && !dismissed && (
+        <div
+          style={{ minHeight: 132 }}
+          className="fixed inset-x-3 bottom-20 z-40 mx-auto max-w-md rounded-2xl border border-primary/30 bg-background/95 p-4 shadow-lg backdrop-blur md:bottom-6 animate-in fade-in duration-200"
+          role="dialog"
+          aria-label="Solicitar localização"
+        >
+          <button
+            type="button"
+            onClick={handleDismiss}
+            className="absolute right-2 top-2 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Fechar"
           >
-            <button
-              type="button"
-              onClick={handleDismiss}
-              className="absolute right-2 top-2 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Fechar"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <div className="flex items-start gap-3 pr-6">
-              <div className="rounded-full bg-primary/10 p-2 text-primary">
-                <Navigation className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-foreground">
-                  Quer ver profissionais perto de você?
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Ative o GPS para ordenarmos os resultados pela distância real.
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <Button size="sm" className="gap-1.5" onClick={handleAllow}>
-                    <Navigation className="h-3.5 w-3.5" />
-                    Ativar GPS
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={handleDismiss}>
-                    Agora não
-                  </Button>
-                </div>
+            <X className="h-4 w-4" />
+          </button>
+          <div className="flex items-start gap-3 pr-6">
+            <div className="rounded-full bg-primary/10 p-2 text-primary">
+              <Navigation className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-foreground">
+                Quer ver profissionais perto de você?
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Ative o GPS para ordenarmos os resultados pela distância real.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" className="gap-1.5" onClick={handleAllow}>
+                  <Navigation className="h-3.5 w-3.5" />
+                  Ativar GPS
+                </Button>
+                <Button size="sm" variant="ghost" onClick={handleDismiss}>
+                  Agora não
+                </Button>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </>
   );
 };
