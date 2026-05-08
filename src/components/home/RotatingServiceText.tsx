@@ -1,20 +1,33 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-// Fallback list used only while DB data loads
+/**
+ * HeroRotator — duplo encadeado, suave e elegante.
+ *
+ * Cada ciclo mostra a MESMA palavra de serviço com dois prefixos em
+ * sequência, criando narrativa: "Preciso de um pintor" → "Encontre um pintor!".
+ * Depois sorteia o próximo serviço (sem repetir até o ciclo terminar).
+ *
+ * - Sem glitch/scanline. Apenas fade + slide curto (CSS, GPU friendly).
+ * - Quebra em duas linhas em telas pequenas (text-balance + break-words).
+ * - Notifica o pai a cada troca de serviço para sincronizar background.
+ */
+
 const FALLBACK_SERVICES = [
-  'eletricista', 'encanador', 'pedreiro', 'pintor',
+  'eletricista', 'encanador', 'pedreiro', 'pintor', 'gesseiro',
   'marido de aluguel', 'instalador de ar-condicionado', 'jardineiro',
-  'marceneiro', 'serralheiro', 'gesseiro', 'azulejista', 'desentupidor',
+  'marceneiro', 'serralheiro', 'azulejista', 'desentupidor',
   'chaveiro', 'vidraceiro', 'carpinteiro', 'mecânico', 'personal trainer',
   'fotógrafo', 'designer gráfico', 'professor particular', 'cuidador de idosos',
-  'veterinário', 'nutricionista', 'contador',
-  'advogado', 'arquiteto', 'engenheiro civil', 'técnico em celular',
-  'montador de móveis', 'tapeceiro', 'dedetizador', 'piscineiro',
-  'eletricista automotivo', 'soldador', 'técnico em informática',
-  'profissional de beleza', 'motorista particular', 'profissional de limpeza',
+  'veterinário', 'nutricionista', 'contador', 'advogado', 'arquiteto',
+  'engenheiro civil', 'técnico em celular', 'montador de móveis',
+  'tapeceiro', 'dedetizador', 'piscineiro', 'eletricista automotivo',
+  'soldador', 'técnico em informática', 'profissional de beleza',
+  'motorista particular', 'profissional de limpeza',
 ];
+
+const PREFIX_PAIR = ['Preciso de um', 'Encontre um'] as const;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -25,11 +38,14 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-interface RotatingServiceTextProps {
+interface Props {
   onServiceChange?: (service: string) => void;
 }
 
-const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
+const HOLD_MS = 2600; // tempo de leitura por frase
+const FADE_MS = 420;  // duração do crossfade
+
+const RotatingServiceText = ({ onServiceChange }: Props) => {
   const { data: dbServices } = useQuery({
     queryKey: ['rotating-service-names'],
     queryFn: async () => {
@@ -38,91 +54,88 @@ const RotatingServiceText = ({ onServiceChange }: RotatingServiceTextProps) => {
         .select('name')
         .eq('active', true)
         .order('display_order');
-      return (data || []).map((s: any) => s.name.toLowerCase());
+      return (data || []).map((s: any) => String(s.name).toLowerCase());
     },
     staleTime: 1000 * 60 * 10,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 
-  const serviceList = dbServices && dbServices.length > 0 ? dbServices : FALLBACK_SERVICES;
-  // Re-shuffle on every mount (varia a cada visita) e mantém em ref para
-  // poder re-embaralhar ao fim do ciclo sem disparar re-render.
+  const services = dbServices && dbServices.length > 0 ? dbServices : FALLBACK_SERVICES;
+
   const orderRef = useRef<string[]>([]);
-  if (orderRef.current.length === 0) orderRef.current = shuffle(serviceList);
+  if (orderRef.current.length === 0) orderRef.current = shuffle(services);
 
-  const [, force] = useState(0);
-  const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<'in' | 'out'>('in');
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [serviceIdx, setServiceIdx] = useState(0);
+  const [prefixIdx, setPrefixIdx] = useState(0); // 0 = "Preciso de um", 1 = "Encontre um"
+  const [visible, setVisible] = useState(true);
 
-  // Notify parent whenever the displayed service changes
   useEffect(() => {
-    if (index > 0 && orderRef.current.length > 0) {
-      onServiceChange?.(orderRef.current[index]);
-    }
-  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
+    onServiceChange?.(orderRef.current[serviceIdx]);
+  }, [serviceIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const rotate = useCallback(() => {
-    setPhase('out');
-    timerRef.current = setTimeout(() => {
-      setIndex((prev) => {
-        const next = prev + 1;
-        if (next >= orderRef.current.length) {
-          // Reembaralha sem repetir a última palavra logo de cara.
-          const last = orderRef.current[orderRef.current.length - 1];
-          let reshuffled = shuffle(serviceList);
-          if (reshuffled[0] === last && reshuffled.length > 1) {
-            [reshuffled[0], reshuffled[1]] = [reshuffled[1], reshuffled[0]];
-          }
-          orderRef.current = reshuffled;
-          force((n) => n + 1);
+  useEffect(() => {
+    let fadeTimer: ReturnType<typeof setTimeout>;
+    const holdTimer = setTimeout(() => {
+      setVisible(false);
+      fadeTimer = setTimeout(() => {
+        setPrefixIdx((p) => {
+          if (p === 0) return 1;
+          // Trocou para o próximo serviço — sorteia novamente se acabou.
+          setServiceIdx((idx) => {
+            const next = idx + 1;
+            if (next >= orderRef.current.length) {
+              const last = orderRef.current[orderRef.current.length - 1];
+              let reshuffled = shuffle(services);
+              if (reshuffled[0] === last && reshuffled.length > 1) {
+                [reshuffled[0], reshuffled[1]] = [reshuffled[1], reshuffled[0]];
+              }
+              orderRef.current = reshuffled;
+              return 0;
+            }
+            return next;
+          });
           return 0;
-        }
-        return next;
-      });
-      setPhase('in');
-    }, 400);
-  }, [serviceList]);
+        });
+        setVisible(true);
+      }, FADE_MS);
+    }, HOLD_MS);
 
-  useEffect(() => {
-    const id = setInterval(rotate, 4000);
     return () => {
-      clearInterval(id);
-      if (timerRef.current) clearTimeout(timerRef.current);
+      clearTimeout(holdTimer);
+      clearTimeout(fadeTimer!);
     };
-  }, [rotate]);
+  }, [serviceIdx, prefixIdx, services]);
+
+  const prefix = PREFIX_PAIR[prefixIdx];
+  const service = orderRef.current[serviceIdx] ?? '';
+  const isCallout = prefixIdx === 1;
 
   return (
-    <>
+    <span
+      className="inline-block w-full max-w-full text-balance"
+      aria-live="polite"
+    >
       <span
-        className="relative inline-block w-full max-w-full min-w-0 text-left align-bottom"
-        style={{ minHeight: '1.2em' }}
+        className="inline-block transition-all ease-out will-change-[opacity,transform]"
+        style={{
+          transitionDuration: `${FADE_MS}ms`,
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(-6px)',
+        }}
       >
-        <span
-          className="text-secondary inline-block whitespace-nowrap transition-all duration-500 ease-in-out"
-          style={{
-            opacity: phase === 'in' ? 1 : 0,
-            transform: phase === 'in' ? 'translateY(0)' : 'translateY(-20px)',
-            textShadow: '0 2px 10px rgba(0,0,0,0.65), 0 1px 3px rgba(0,0,0,0.5), 0 0 18px rgba(0,0,0,0.35)',
-          }}
-        >
-          {orderRef.current[index] ?? ''}
+        <span className="text-primary-foreground">{prefix}</span>{' '}
+        <span className="text-secondary">
+          {service}
+          {isCallout ? '!' : ''}
         </span>
-        <span
-          className="absolute -bottom-1 left-0 h-1 rounded-full bg-secondary/60 transition-[width] duration-500 ease-out"
-          style={{
-            width: phase === 'in' ? '100%' : '0%',
-            transitionDelay: phase === 'in' ? '200ms' : '0ms',
-          }}
-        />
       </span>
 
-      {/* Hidden SEO block — single string to reduce DOM nodes */}
-      <span className="sr-only" aria-hidden="false">
-        {serviceList.join(', ')}
+      {/* SEO — todas as combinações relevantes em uma string compacta */}
+      <span className="sr-only">
+        {services.slice(0, 12).map((s) => `Preciso de um ${s}. Encontre um ${s}.`).join(' ')}
       </span>
-    </>
+    </span>
   );
 };
 
