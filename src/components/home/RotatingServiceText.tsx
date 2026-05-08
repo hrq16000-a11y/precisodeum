@@ -101,14 +101,12 @@ const RotatingServiceText = ({ onServiceChange }: Props) => {
 
   const [serviceIdx, setServiceIdx] = useState(0);
   const [prefixIdx, setPrefixIdx] = useState(0);
-  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const currentSlug = orderRef.current[serviceIdx]?.slug;
     orderRef.current = shuffleCategories(categories, currentSlug);
     setServiceIdx(0);
     setPrefixIdx(0);
-    setVisible(true);
   }, [categories]);
 
   useEffect(() => {
@@ -116,31 +114,23 @@ const RotatingServiceText = ({ onServiceChange }: Props) => {
   }, [serviceIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    let fadeTimer: ReturnType<typeof setTimeout>;
-    const holdTimer = setTimeout(() => {
-      setVisible(false);
-      fadeTimer = setTimeout(() => {
-        setPrefixIdx((p) => {
-          if (p === 0) return 1;
-          setServiceIdx((idx) => {
-            const next = idx + 1;
-            if (next >= orderRef.current.length) {
-              const last = orderRef.current[orderRef.current.length - 1]?.slug;
-              orderRef.current = shuffleCategories(categories, last);
-              return 0;
-            }
-            return next;
-          });
-          return 0;
+    const timer = setTimeout(() => {
+      setPrefixIdx((p) => {
+        if (p === 0) return 1;
+        setServiceIdx((idx) => {
+          const next = idx + 1;
+          if (next >= orderRef.current.length) {
+            const last = orderRef.current[orderRef.current.length - 1]?.slug;
+            orderRef.current = shuffleCategories(categories, last);
+            return 0;
+          }
+          return next;
         });
-        setVisible(true);
-      }, FADE_MS);
+        return 0;
+      });
     }, HOLD_MS);
 
-    return () => {
-      clearTimeout(holdTimer);
-      clearTimeout(fadeTimer!);
-    };
+    return () => clearTimeout(timer);
   }, [serviceIdx, prefixIdx, categories]);
 
   const current = orderRef.current[serviceIdx] ?? HERO_CATEGORY_POOL[0];
@@ -148,26 +138,27 @@ const RotatingServiceText = ({ onServiceChange }: Props) => {
   const service = current.label;
   const isCallout = prefixIdx === 1;
 
+  // Key muda a cada troca → reinicia animação CSS de cada palavra.
+  const animKey = `${serviceIdx}-${prefixIdx}`;
+
   return (
     <span
-      className="inline-block w-full max-w-full"
+      className="inline-flex flex-nowrap items-baseline justify-center gap-x-[0.35em] w-full max-w-full whitespace-nowrap"
       aria-live="polite"
     >
       <span
-        className="inline-block transition-all ease-out will-change-[opacity,transform]"
-        style={{
-          transitionDuration: `${FADE_MS}ms`,
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(-6px)',
-        }}
+        key={`prefix-${animKey}`}
+        className="animate-hero-prefix text-primary-foreground"
       >
-        <span className="block text-primary-foreground sm:inline">{prefix}</span>
-        <span className="block text-secondary sm:ml-3 sm:inline">
-          {service}
-          {isCallout ? '!' : ''}
-        </span>
+        {prefix}
       </span>
-
+      <span
+        key={`service-${animKey}`}
+        className="animate-hero-service text-secondary"
+      >
+        {service}
+        {isCallout ? '!' : ''}
+      </span>
     </span>
   );
 };
