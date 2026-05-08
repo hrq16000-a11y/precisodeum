@@ -223,14 +223,10 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const hiddenCount = badges.length - visibleBadges.length;
 
   return (
-    <motion.div
+    <div
       ref={impressionRef}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-30px' }}
-      transition={{ duration: 0.45, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
-      whileHover={{ y: -4 }}
-      className={`group relative flex h-full min-h-[248px] min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-shadow duration-300 hover:shadow-card-hover ${engTier.borderClass}`}
+      className={`group relative flex h-full min-h-[248px] min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover animate-fade-in ${engTier.borderClass}`}
+      style={{ animationDelay: `${Math.min(index * 60, 480)}ms`, animationFillMode: 'both' }}
       {...handlers}
     >
       {/* Hover gradient glow */}
