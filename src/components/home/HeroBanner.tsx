@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
@@ -12,7 +12,6 @@ import { Icon } from '@/components/ui/Icon';
 
 const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
 
-const FALLBACK_PREFIXES = ['Encontre o melhor', 'Preciso de'];
 
 const CriticalHeroSearch = ({ onUpgrade }: { onUpgrade: () => void }) => {
   const [query, setQuery] = useState('');
