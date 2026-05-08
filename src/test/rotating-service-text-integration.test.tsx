@@ -94,7 +94,10 @@ describe('RotatingServiceText · integração', () => {
     renderRotator();
     const el = screen.getByTestId('hero-rotating-text');
     expect(el.className).toMatch(/whitespace-nowrap/);
-    expect(el.className).toMatch(/flex-nowrap/);
+    // O wrapper externo usa grid (para crossfade); a frase ativa interna mantém flex-nowrap.
+    const inner = el.querySelector('.animate-hero-fade-in') as HTMLElement | null;
+    expect(inner).toBeTruthy();
+    expect(inner!.className).toMatch(/flex-nowrap/);
   });
 });
 
