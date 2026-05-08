@@ -176,28 +176,24 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const trialBoostActive = !!provider.trialBoostUntil && new Date(provider.trialBoostUntil).getTime() > Date.now();
   if (trialBoostActive) {
     badges.push(
-      <motion.span
+      <span
         key="trial-boost"
-        animate={{ scale: [1, 1.06, 1] }}
-        transition={{ duration: 2.4, repeat: Infinity }}
-        className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent to-primary px-2 py-0.5 text-[11px] font-bold text-white shadow-sm"
+        className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent to-primary px-2 py-0.5 text-[11px] font-bold text-white shadow-sm animate-pulse-soft"
       >
         <Rocket className="h-3 w-3" /> Novo em Destaque
-      </motion.span>
+      </span>
     );
   }
   // Frescor de atividade (Lote 4) — prioridade: Trabalhando Agora > Disponível agora > Ativo Hoje > Resposta rápida
   const fastByChat = provider.avgResponseMinutes != null && provider.avgResponseMinutes > 0 && provider.avgResponseMinutes < 30;
   if (workingNow) {
     badges.push(
-      <motion.span
+      <span
         key="working-now"
-        animate={{ scale: [1, 1.06, 1] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 animate-pulse-soft"
       >
         <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500 animate-pulse" /> Trabalhando agora
-      </motion.span>
+      </span>
     );
   } else if (isOnline) {
     badges.push(<OnlineBadge key="fast-online" userId={provider.userId} showFreshness />);
