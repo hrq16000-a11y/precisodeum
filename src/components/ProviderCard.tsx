@@ -16,7 +16,7 @@ import { handleImageError, getOptimizedUrl } from '@/lib/imageResolver';
 import { responsiveImageSrcSet } from '@/lib/imageOptimizer';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
-import { motion } from 'framer-motion';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
 import { OnlineBadge } from '@/components/OnlineBadge';
@@ -148,14 +148,12 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
 
   if (!suspiciousDistance && trustedDistanceKm != null && trustedDistanceKm < 2) {
     badges.push(
-      <motion.span
+      <span
         key="super-perto"
-        animate={{ scale: [1, 1.08, 1] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 px-2 py-0.5 text-[11px] font-bold text-accent border border-accent/30"
+        className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 px-2 py-0.5 text-[11px] font-bold text-accent border border-accent/30 animate-pulse-soft"
       >
         Super Perto!
-      </motion.span>
+      </span>
     );
   }
   // Nota: o destaque "Atende agora no seu bairro" (<5km) é renderizado abaixo no header,
@@ -178,28 +176,24 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const trialBoostActive = !!provider.trialBoostUntil && new Date(provider.trialBoostUntil).getTime() > Date.now();
   if (trialBoostActive) {
     badges.push(
-      <motion.span
+      <span
         key="trial-boost"
-        animate={{ scale: [1, 1.06, 1] }}
-        transition={{ duration: 2.4, repeat: Infinity }}
-        className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent to-primary px-2 py-0.5 text-[11px] font-bold text-white shadow-sm"
+        className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent to-primary px-2 py-0.5 text-[11px] font-bold text-white shadow-sm animate-pulse-soft"
       >
         <Rocket className="h-3 w-3" /> Novo em Destaque
-      </motion.span>
+      </span>
     );
   }
   // Frescor de atividade (Lote 4) — prioridade: Trabalhando Agora > Disponível agora > Ativo Hoje > Resposta rápida
   const fastByChat = provider.avgResponseMinutes != null && provider.avgResponseMinutes > 0 && provider.avgResponseMinutes < 30;
   if (workingNow) {
     badges.push(
-      <motion.span
+      <span
         key="working-now"
-        animate={{ scale: [1, 1.06, 1] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 animate-pulse-soft"
       >
         <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500 animate-pulse" /> Trabalhando agora
-      </motion.span>
+      </span>
     );
   } else if (isOnline) {
     badges.push(<OnlineBadge key="fast-online" userId={provider.userId} showFreshness />);
@@ -229,14 +223,10 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const hiddenCount = badges.length - visibleBadges.length;
 
   return (
-    <motion.div
+    <div
       ref={impressionRef}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-30px' }}
-      transition={{ duration: 0.45, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
-      whileHover={{ y: -4 }}
-      className={`group relative flex h-full min-h-[248px] min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-shadow duration-300 hover:shadow-card-hover ${engTier.borderClass}`}
+      className={`group relative flex h-full min-h-[248px] min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover animate-fade-in ${engTier.borderClass}`}
+      style={{ animationDelay: `${Math.min(index * 60, 480)}ms`, animationFillMode: 'both' }}
       {...handlers}
     >
       {/* Hover gradient glow */}
@@ -282,9 +272,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                   </span>
                 </h3>
                 {engTier.showCrown && (
-                  <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}>
+                  <span className="inline-block animate-wiggle-rotate" style={{ animationDelay: '4s' }}>
                     <Crown className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-label="Destaque" />
-                  </motion.div>
+                  </span>
                 )}
                 {engTier.tier === 'ouro' && (provider.activitySignal || isOnline) && (
                   <span
@@ -367,17 +357,13 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
             )}
             {/* Hiper-local: matador para conversão quando o profissional está a <5km */}
             {trustedDistanceKm != null && trustedDistanceKm < 5 && !isFallback && !suspiciousDistance && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
-              >
+              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 animate-fade-in">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-70" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 </span>
                 Atende agora no seu bairro
-              </motion.div>
+              </div>
             )}
             {provider._distanceAudit?.source === 'city-center' && (
               <div className="mt-1.5 text-[11px] text-muted-foreground">
@@ -450,7 +436,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
         </div>
         <p className="mt-1 sm:mt-1.5 text-center text-[10px] text-muted-foreground">Negociação direta e transparente</p>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

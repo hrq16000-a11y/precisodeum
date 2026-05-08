@@ -214,6 +214,15 @@ export default {
           "0%, 100%": { transform: "scale(1)", opacity: "1" },
           "50%": { transform: "scale(1.12)", opacity: "0.92" },
         },
+        "pulse-soft": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.06)" },
+        },
+        "wiggle-rotate": {
+          "0%, 100%": { transform: "rotate(0deg)" },
+          "25%": { transform: "rotate(12deg)" },
+          "75%": { transform: "rotate(-12deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -230,6 +239,8 @@ export default {
         "online-pulse": "online-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "online-breath": "online-breath 2.4s ease-in-out infinite",
         "wizard-shimmer": "wizard-shimmer 240ms ease-out 1",
+        "pulse-soft": "pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "wiggle-rotate": "wiggle-rotate 2s ease-in-out infinite",
       },
     },
   },
