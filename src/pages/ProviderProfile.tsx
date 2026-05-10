@@ -892,6 +892,11 @@ const ProviderProfile = () => {
         window.clearTimeout(trailingScrollTimer);
         trailingScrollTimer = null;
       }
+      if (commitTimer !== null) {
+        window.clearTimeout(commitTimer);
+        commitTimer = null;
+      }
+      pendingShouldShow = null;
       observer?.disconnect();
       resizeObserver?.disconnect();
       if (useScrollFallback) window.removeEventListener('scroll', handleScrollFallback);
