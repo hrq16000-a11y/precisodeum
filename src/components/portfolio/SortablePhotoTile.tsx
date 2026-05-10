@@ -52,6 +52,8 @@ export function SortablePhotoTile({
       style={style}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
+      data-testid="portfolio-photo-tile"
+      data-photo-id={id}
       className={`group relative aspect-square overflow-hidden rounded-lg border bg-muted ${
         isDragging ? 'border-accent shadow-lg ring-2 ring-accent/40' : 'border-border'
       }`}
