@@ -92,6 +92,47 @@ const DashboardPortfolioPage = () => {
   const [captionValue, setCaptionValue] = useState('');
   const [captionSaving, setCaptionSaving] = useState(false);
 
+  // ── Drag-and-drop ──
+  const [reordering, setReordering] = useState(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const persistPhotoOrder = async (orderedIds: string[]) => {
+    if (!orderedIds.length) return;
+    setReordering(true);
+    try {
+      // Atualiza display_order em paralelo. As linhas pertencem ao mesmo
+      // álbum; RLS já garante que só o dono possa atualizar.
+      await Promise.all(
+        orderedIds.map((photoId, idx) =>
+          supabase
+            .from('portfolio_photos')
+            .update({ display_order: idx } as any)
+            .eq('id', photoId),
+        ),
+      );
+      trackAction('portfolio_photos_reordered', `Reordenou ${orderedIds.length} fotos`);
+    } catch (err: any) {
+      toast.error('Não consegui salvar a nova ordem. Recarregue e tente de novo.');
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = photos.findIndex((p) => p.id === active.id);
+    const newIdx = photos.findIndex((p) => p.id === over.id);
+    if (oldIdx < 0 || newIdx < 0) return;
+    const next = arrayMove(photos, oldIdx, newIdx);
+    setPhotos(next); // optimistic
+    void persistPhotoOrder(next.map((p) => p.id));
+  };
+
   const loadAlbums = async () => {
     if (!provider) {
       setLoading(false);
