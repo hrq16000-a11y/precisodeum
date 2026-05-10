@@ -2223,14 +2223,34 @@ const ProviderProfile = () => {
         {effectiveWhatsApp && showStickyContact && (
           <motion.div
             key="sticky-mobile-whatsapp"
-            role="navigation"
+            role="region"
             aria-label="Ação rápida de contato"
+            aria-live="polite"
+            aria-atomic="true"
+            data-testid="sticky-action-bar"
             className="fixed inset-x-0 border-t border-border bg-card/95 p-3 md:hidden shadow-lg backdrop-blur-lg transform-gpu will-change-transform"
             style={{ zIndex: 999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)' }}
             initial={{ y: '100%', opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', stiffness: 360, damping: 34, mass: 0.8 }}
+            onAnimationComplete={() => {
+              // Preserve keyboard focus when the bar appears: only auto-focus
+              // the CTA if the user previously focused the in-view CTA that
+              // just scrolled off-screen (avoids stealing focus from inputs).
+              if (typeof document === 'undefined') return;
+              const active = document.activeElement as HTMLElement | null;
+              if (!active || active === document.body) return;
+              const wasOffscreenCta = active.matches?.('[data-cta="whatsapp-inline"]');
+              if (!wasOffscreenCta) return;
+              const rect = active.getBoundingClientRect();
+              const offscreen = rect.bottom < 0 || rect.top > window.innerHeight;
+              if (!offscreen) return;
+              const target = document.querySelector<HTMLButtonElement>(
+                '[data-testid="sticky-action-bar"] button',
+              );
+              target?.focus({ preventScroll: true });
+            }}
           >
             <span id="sticky-whatsapp-description" className="sr-only">
               Abre uma conversa no WhatsApp com este profissional sem alterar sua posição na página.
