@@ -86,6 +86,8 @@ export function SortablePhotoTile({
       <button
         type="button"
         aria-label="Arrastar para reordenar"
+        data-testid="portfolio-drag-handle"
+        data-photo-id={id}
         className={`absolute left-1.5 bottom-1.5 flex h-9 w-9 cursor-grab touch-none items-center justify-center rounded-full bg-background/85 text-foreground shadow-md backdrop-blur-sm transition-opacity active:cursor-grabbing ${
           showHint ? 'opacity-100 ring-2 ring-accent/50 animate-pulse' : 'opacity-80 group-hover:opacity-100'
         }`}
