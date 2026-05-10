@@ -692,6 +692,13 @@ const ProviderProfile = () => {
     const scrollThrottleMs = 80;
     let lastScrollMeasureAt = 0;
     let trailingScrollTimer: number | null = null;
+    // Hysteresis 50ms: após detectar mudança de visibilidade, esperamos um
+    // pequeno janela de confirmação antes de comitar o estado, evitando flicker
+    // em iOS/scroll instável (rubber-band, address-bar collapse). Se uma nova
+    // medição reverter o estado dentro da janela, cancelamos o commit.
+    const stateCommitDelayMs = 50;
+    let pendingShouldShow: boolean | null = null;
+    let commitTimer: number | null = null;
     const minVisibleCtaPx = 8;
     const fallbackVisibilityHysteresisPx = 8;
     const visualViewport = window.visualViewport;
@@ -761,8 +768,30 @@ const ProviderProfile = () => {
         : minVisibleCtaPx;
       const shouldShow = !(visibleHeight > visibilityThreshold && visibleWidth > visibilityThreshold);
       if (shouldShow !== lastShouldShow) {
-        lastShouldShow = shouldShow;
-        setShowStickyContact(shouldShow);
+        // Se já há um commit pendente para o MESMO estado novo, mantém.
+        // Se o novo estado é o atual confirmado, cancela commit pendente
+        // (caso típico de flicker: leaves → re-enters viewport em <50ms).
+        if (pendingShouldShow !== null && pendingShouldShow !== shouldShow) {
+          if (commitTimer !== null) {
+            window.clearTimeout(commitTimer);
+            commitTimer = null;
+          }
+          pendingShouldShow = null;
+        }
+        if (commitTimer !== null) return;
+        pendingShouldShow = shouldShow;
+        commitTimer = window.setTimeout(() => {
+          commitTimer = null;
+          pendingShouldShow = null;
+          if (disposed) return;
+          lastShouldShow = shouldShow;
+          setShowStickyContact(shouldShow);
+        }, stateCommitDelayMs);
+      } else if (commitTimer !== null && pendingShouldShow !== shouldShow) {
+        // Estado voltou ao valor já comitado antes do timer disparar → cancela.
+        window.clearTimeout(commitTimer);
+        commitTimer = null;
+        pendingShouldShow = null;
       }
       if (debugVisibilityMetrics) {
         const now = performance.now();
@@ -863,6 +892,11 @@ const ProviderProfile = () => {
         window.clearTimeout(trailingScrollTimer);
         trailingScrollTimer = null;
       }
+      if (commitTimer !== null) {
+        window.clearTimeout(commitTimer);
+        commitTimer = null;
+      }
+      pendingShouldShow = null;
       observer?.disconnect();
       resizeObserver?.disconnect();
       if (useScrollFallback) window.removeEventListener('scroll', handleScrollFallback);
