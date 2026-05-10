@@ -549,7 +549,7 @@ const DashboardPortfolioPage = () => {
                   onDragEnd={handleDragEnd}
                 >
                   <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" data-testid="portfolio-photo-grid">
                       {photos.map((photo, idx) => (
                         <SortablePhotoTile
                           key={photo.id}

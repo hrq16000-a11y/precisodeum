@@ -52,6 +52,8 @@ export function SortablePhotoTile({
       style={style}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
+      data-testid="portfolio-photo-tile"
+      data-photo-id={id}
       className={`group relative aspect-square overflow-hidden rounded-lg border bg-muted ${
         isDragging ? 'border-accent shadow-lg ring-2 ring-accent/40' : 'border-border'
       }`}
@@ -84,6 +86,8 @@ export function SortablePhotoTile({
       <button
         type="button"
         aria-label="Arrastar para reordenar"
+        data-testid="portfolio-drag-handle"
+        data-photo-id={id}
         className={`absolute left-1.5 bottom-1.5 flex h-9 w-9 cursor-grab touch-none items-center justify-center rounded-full bg-background/85 text-foreground shadow-md backdrop-blur-sm transition-opacity active:cursor-grabbing ${
           showHint ? 'opacity-100 ring-2 ring-accent/50 animate-pulse' : 'opacity-80 group-hover:opacity-100'
         }`}
