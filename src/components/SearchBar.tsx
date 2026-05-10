@@ -446,6 +446,9 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
         </div>
       </form>
       {searchError && <p className="mt-2 text-center text-xs text-destructive">{searchError}</p>}
+      {detectedLocationChip && (
+        <div className="mt-2 flex justify-center">{detectedLocationChip}</div>
+      )}
       {suggestionsDropdown}
     </div>
   );
