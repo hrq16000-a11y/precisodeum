@@ -223,6 +223,43 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
 
   const hasQuery = query.trim().length > 0;
 
+  // Chip de localização detectada — prioriza bairro (CEP/GPS), depois cidade.
+  // Mostra a fonte ("via CEP", "via GPS", "via IP") para transparência total.
+  const detectedLocationLabel = useMemo(() => {
+    if (!geoCity) return null;
+    const parts: string[] = [];
+    if (neighborhood) parts.push(neighborhood);
+    parts.push(geoState ? `${geoCity} — ${geoState}` : geoCity);
+    return parts.join(', ');
+  }, [neighborhood, geoCity, geoState]);
+
+  const detectedLocationSource = useMemo(() => {
+    if (neighborhoodSource === 'cep') return 'CEP';
+    if (neighborhoodSource === 'bigdatacloud' || neighborhoodSource === 'nominatim') return 'GPS';
+    if (neighborhoodSource === 'manual') return null;
+    if (hasGps) return 'GPS';
+    return 'IP';
+  }, [neighborhoodSource, hasGps]);
+
+  const detectedLocationChip = detectedLocationLabel ? (
+    <div
+      className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-medium text-foreground shadow-sm"
+      role="status"
+      aria-live="polite"
+      data-testid="search-detected-location"
+    >
+      <MapPin className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+      <span className="truncate">
+        Buscando perto de <strong className="font-semibold">{detectedLocationLabel}</strong>
+      </span>
+      {detectedLocationSource && (
+        <span className="shrink-0 rounded-full bg-background/80 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+          via {detectedLocationSource}
+        </span>
+      )}
+    </div>
+  ) : null;
+
   const suggestionsDropdown = isOpen && filteredSuggestions.length > 0 ? (
     <div
       className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-[50vh] overflow-y-auto overscroll-contain rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl isolate touch-pan-y animate-scale-in"
