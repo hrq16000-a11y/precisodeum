@@ -227,29 +227,52 @@ ${entries.join('\n')}
   }
 
   if (type === 'seo') {
-    // Apenas combinações categoria × cidade com pelo menos 1 serviço elegível.
-    // Emite a rota canônica `/categoria/:slug/em/:cidade-slug` consumida por
-    // CategoryCityPage. A página é noindex automático quando 0 resultados,
-    // então só listamos pares com elegibilidade comprovada (gate forte).
+    // Combinações categoria × cidade. Duas fontes de elegibilidade:
+    //   1) Match primário: provider.city é a cidade do par (já em `eligible`).
+    //   2) Match secundário: service_area declarada referencia outra cidade
+    //      conhecida (cobre região metropolitana sem afrouxar quality gates,
+    //      pois o serviço já passou no filtro de descrição limpa).
     const [{ data: cats }, { data: cities }] = await Promise.all([
       supabase.from('categories').select('id, slug').is('deleted_at', null),
       supabase.from('cities').select('slug, name'),
     ]);
-    // Indexa elegibilidade por (category_id, city normalizada)
-    const eligiblePairs = new Set<string>();
-    for (const s of eligible) {
-      const cityNorm = (s.providers.city || '').trim().toLowerCase();
-      if (s.category_id && cityNorm) eligiblePairs.add(`${s.category_id}::${cityNorm}`);
+
+    // Indexa cidades conhecidas por nome normalizado para lookup do service_area.
+    const citySlugByName = new Map<string, string>();
+    for (const c of cities || []) {
+      const norm = String(c.name || c.slug || '').trim().toLowerCase();
+      if (norm) citySlugByName.set(norm, c.slug);
     }
+    const splitAreaTokens = (raw: string): string[] => {
+      // service_area pode vir como "Cidade A, Cidade B" ou "Cidade A | Cidade B".
+      return raw
+        .split(/[,;|/]/)
+        .map((t) => t.trim().toLowerCase())
+        .filter((t) => t.length >= 3);
+    };
+
+    const eligiblePairs = new Set<string>(); // `${categoryId}::${cityNameNorm}`
+    for (const s of eligible) {
+      if (!s.category_id) continue;
+      const baseCity = (s.providers.city || '').trim().toLowerCase();
+      if (baseCity) eligiblePairs.add(`${s.category_id}::${baseCity}`);
+      // Expansão via service_area (apenas tokens que batem com cidade conhecida).
+      const area = String(s.service_area || '').trim();
+      if (area) {
+        for (const token of splitAreaTokens(area)) {
+          if (token === baseCity) continue;
+          if (citySlugByName.has(token)) {
+            eligiblePairs.add(`${s.category_id}::${token}`);
+          }
+        }
+      }
+    }
+
     for (const cat of cats || []) {
       for (const city of cities || []) {
         const cityNorm = String(city.name || city.slug || '').trim().toLowerCase();
         if (!eligiblePairs.has(`${cat.id}::${cityNorm}`)) continue;
-        // Rota canônica rica (CategoryCityPage)
         urls += entry(siteUrl, `/categoria/${cat.slug}/em/${city.slug}`, today, 'weekly', '0.65');
-        // /buscar com filtros pré-aplicados — variante navegável e indexável.
-        // Mesmo conteúdo, intent diferente (busca livre por categoria+cidade).
-        // Prioridade ligeiramente menor para não competir com o canonical rico.
         const cityName = encodeURIComponent(String(city.name || city.slug));
         urls += entry(
           siteUrl,

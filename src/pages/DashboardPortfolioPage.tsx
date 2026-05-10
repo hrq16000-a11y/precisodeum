@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, Loader2, ArrowLeft, ImagePlus, Pencil, AlertTriangle, Camera, Info, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Loader2, ArrowLeft, ImagePlus, Pencil, AlertTriangle, Camera, Info, Image as ImageIcon, GripVertical } from 'lucide-react';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,23 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
+import { SortablePhotoTile } from '@/components/portfolio/SortablePhotoTile';
 
 // Defaults — overridden by site_settings (`portfolio_max_albums`, `portfolio_max_photos_per_album`)
 const DEFAULT_MAX_ALBUMS = 4;
@@ -74,6 +91,47 @@ const DashboardPortfolioPage = () => {
   const [captionPhoto, setCaptionPhoto] = useState<Photo | null>(null);
   const [captionValue, setCaptionValue] = useState('');
   const [captionSaving, setCaptionSaving] = useState(false);
+
+  // ── Drag-and-drop ──
+  const [reordering, setReordering] = useState(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const persistPhotoOrder = async (orderedIds: string[]) => {
+    if (!orderedIds.length) return;
+    setReordering(true);
+    try {
+      // Atualiza display_order em paralelo. As linhas pertencem ao mesmo
+      // álbum; RLS já garante que só o dono possa atualizar.
+      await Promise.all(
+        orderedIds.map((photoId, idx) =>
+          supabase
+            .from('portfolio_photos')
+            .update({ display_order: idx } as any)
+            .eq('id', photoId),
+        ),
+      );
+      trackAction('portfolio_photos_reordered', `Reordenou ${orderedIds.length} fotos`);
+    } catch (err: any) {
+      toast.error('Não consegui salvar a nova ordem. Recarregue e tente de novo.');
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = photos.findIndex((p) => p.id === active.id);
+    const newIdx = photos.findIndex((p) => p.id === over.id);
+    if (oldIdx < 0 || newIdx < 0) return;
+    const next = arrayMove(photos, oldIdx, newIdx);
+    setPhotos(next); // optimistic
+    void persistPhotoOrder(next.map((p) => p.id));
+  };
 
   const loadAlbums = async () => {
     if (!provider) {
@@ -475,65 +533,62 @@ const DashboardPortfolioPage = () => {
                 </label>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {photos.map(photo => (
-                  <motion.div
-                    key={photo.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted cursor-pointer"
-                    onClick={() => handleOpenCaption(photo)}
-                  >
-                    <LazyImage src={photo.image_url} alt={photo.original_name || 'Trabalho do portfólio'} width={400} height={400} sizesPreset="gallery-thumb" surface="portfolio-grid" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-
-                    {/* Hover overlay com legenda */}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/80 via-foreground/40 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <p className="text-[11px] font-medium text-background line-clamp-2 leading-tight">
-                        {photo.original_name?.trim() ? photo.original_name : 'Toque para adicionar legenda'}
-                      </p>
-                    </div>
-
-                    {/* Botão excluir */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeletePhoto(photo); }}
-                      aria-label="Excluir foto"
-                      className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-
-                    {/* Indicador de legenda existente */}
-                    {photo.original_name?.trim() && (
-                      <span className="absolute left-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/80 text-foreground backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Pencil className="h-3 w-3" />
-                      </span>
-                    )}
-                  </motion.div>
-                ))}
-                {photos.length > 0 && photos.length < MAX_PHOTOS_PER_ALBUM && (
-                  <label className="block aspect-square cursor-pointer">
-                    <div className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 p-4 text-center transition-colors hover:bg-muted/35">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm">
-                        <Plus className="h-4 w-4 text-primary" />
-                      </div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        Foto {photos.length + 1}
-                      </p>
-                      <p className="max-w-[200px] text-[11px] leading-snug text-muted-foreground">
-                        Adicione a próxima foto para continuar preenchendo seu álbum.
-                      </p>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={handleUploadPhotos}
-                      disabled={uploading}
-                    />
-                  </label>
+              <>
+                {photos.length > 1 && (
+                  <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+                    <GripVertical className="h-3.5 w-3.5 text-primary" />
+                    <span>
+                      Arraste pela alça para reordenar — a primeira foto vira a capa do álbum.
+                      {reordering && <span className="ml-1 italic">salvando…</span>}
+                    </span>
+                  </div>
                 )}
-              </div>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {photos.map((photo, idx) => (
+                        <SortablePhotoTile
+                          key={photo.id}
+                          id={photo.id}
+                          imageUrl={photo.image_url}
+                          caption={photo.original_name || ''}
+                          hasCaption={!!photo.original_name?.trim()}
+                          onOpenCaption={() => handleOpenCaption(photo)}
+                          onDelete={() => handleDeletePhoto(photo)}
+                          showHint={photos.length > 1 && idx === 0}
+                        />
+                      ))}
+                      {photos.length > 0 && photos.length < MAX_PHOTOS_PER_ALBUM && (
+                        <label className="block aspect-square cursor-pointer">
+                          <div className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 p-4 text-center transition-colors hover:bg-muted/35">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm">
+                              <Plus className="h-4 w-4 text-primary" />
+                            </div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                              Foto {photos.length + 1}
+                            </p>
+                            <p className="max-w-[200px] text-[11px] leading-snug text-muted-foreground">
+                              Adicione a próxima foto para continuar preenchendo seu álbum.
+                            </p>
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={handleUploadPhotos}
+                            disabled={uploading}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </>
             )}
           </div>
         </div>
