@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, Loader2, ArrowLeft, ImagePlus, Pencil, AlertTriangle, Camera, Info, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Loader2, ArrowLeft, ImagePlus, Pencil, AlertTriangle, Camera, Info, Image as ImageIcon, GripVertical } from 'lucide-react';
 import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,23 @@ import { useSettingValue } from '@/hooks/useSiteSettings';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import LockedSlotCard from '@/components/dashboard/LockedSlotCard';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
+import { SortablePhotoTile } from '@/components/portfolio/SortablePhotoTile';
 
 // Defaults — overridden by site_settings (`portfolio_max_albums`, `portfolio_max_photos_per_album`)
 const DEFAULT_MAX_ALBUMS = 4;
