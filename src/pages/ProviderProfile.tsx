@@ -692,6 +692,13 @@ const ProviderProfile = () => {
     const scrollThrottleMs = 80;
     let lastScrollMeasureAt = 0;
     let trailingScrollTimer: number | null = null;
+    // Hysteresis 50ms: após detectar mudança de visibilidade, esperamos um
+    // pequeno janela de confirmação antes de comitar o estado, evitando flicker
+    // em iOS/scroll instável (rubber-band, address-bar collapse). Se uma nova
+    // medição reverter o estado dentro da janela, cancelamos o commit.
+    const stateCommitDelayMs = 50;
+    let pendingShouldShow: boolean | null = null;
+    let commitTimer: number | null = null;
     const minVisibleCtaPx = 8;
     const fallbackVisibilityHysteresisPx = 8;
     const visualViewport = window.visualViewport;
