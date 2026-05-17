@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSeoHead } from '@/hooks/useSeoHead';
 import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';

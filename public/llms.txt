@@ -4,56 +4,50 @@
 
 ## Sobre o site
 - Nome: Preciso de um
-- URL: https://precisodeum.com.br
+- URL: https://www.precisodeum.com.br
 - Idioma: Português (Brasil)
 - Tipo: Marketplace de serviços profissionais
 - Região: Brasil
 
-## Estrutura de conteúdo
+## Pages
+- [Início](/): Página inicial com busca, categorias e profissionais em destaque.
+- [Buscar profissionais](/buscar): Busca avançada por categoria, cidade, CEP e palavra-chave.
+- [Categorias](/categorias): Lista completa de categorias de serviço disponíveis.
+- [Cidades atendidas](/cidades): Lista de todas as cidades com profissionais cadastrados.
+- [Especialidades](/especialidades): Diretório de especialidades com dicas de especialista.
+- [Profissionais](/profissionais): Lista de profissionais ativos no marketplace.
+- [Vagas](/vagas): Vagas e pedidos de serviço abertos no Brasil.
+- [Cursos gratuitos](/cursos): Capacitação gratuita para profissionais autônomos.
+- [Blog](/blog): Artigos, dicas e novidades sobre serviços profissionais.
+- [Sobre](/sobre): Missão, valores e história do Preciso de um.
+- [Patrocinadores](/patrocinadores): Planos para empresas anunciarem na plataforma.
+- [Central de ajuda](/ajuda): Suporte, perguntas frequentes e contato.
+- [FAQ](/faq): Perguntas frequentes sobre uso, cadastro e cobrança.
+- [Como funciona](/como-funciona): Visão geral de como contratar e ser contratado.
+- [Cadastro](/cadastro-inicial): Início do cadastro de profissional ou cliente.
+- [Login](/login): Acesso à conta.
 
-### Páginas principais
-- /                     → Página inicial com busca, categorias e profissionais em destaque
-- /buscar               → Busca avançada de profissionais por categoria, cidade e palavra-chave
-- /categorias           → Lista de todas as categorias de serviço disponíveis
-- /cidades              → Lista de todas as cidades atendidas
-- /servicos             → Lista de serviços oferecidos na plataforma
-- /vagas                → Vagas de emprego e oportunidades de trabalho
-- /blog                 → Blog com dicas, tutoriais e novidades
-- /faq                  → Perguntas frequentes
+## Dynamic content
+- [Categoria](/categoria/eletricista): Profissionais filtrados por categoria (ex.: eletricista).
+- [Categoria em cidade](/categoria/eletricista/em/sao-paulo): Páginas programáticas categoria+cidade.
+- [Cidade](/cidade/sao-paulo): Profissionais filtrados por cidade.
+- [Perfil profissional](/profissional/exemplo): Página pública de um profissional.
+- [Artigo do blog](/blog/exemplo): Artigo individual do blog.
 
-### Páginas de conteúdo dinâmico
-- /categoria/{slug}         → Profissionais filtrados por categoria (ex: /categoria/eletricista)
-- /cidade/{slug}            → Profissionais filtrados por cidade (ex: /cidade/sao-paulo)
-- /profissional/{slug}      → Perfil completo de um profissional
-- /servico/{id}             → Detalhes de um serviço específico
-- /blog/{slug}              → Artigo individual do blog
-- /vagas/{slug}             → Detalhes de uma vaga de emprego
-- /{categoria}-{cidade}     → Páginas programáticas de SEO (ex: /eletricista-sao-paulo)
-
-### Páginas institucionais
-- /sobre                → Sobre a plataforma
-- /privacidade           → Política de privacidade
-- /termos                → Termos de uso
-- /cookies               → Política de cookies
-- /p/{slug}              → Páginas institucionais dinâmicas
+## Optional
+- [Política de privacidade](/privacidade): Tratamento de dados e LGPD.
+- [Termos de uso](/termos): Termos e condições da plataforma.
+- [Política de cookies](/cookies): Uso de cookies e consentimento.
 
 ## Como funciona
-1. O usuário busca um profissional por categoria ou cidade
-2. Visualiza perfis com avaliações, portfólio e informações de contato
-3. Entra em contato diretamente via WhatsApp ou telefone
-4. Após o serviço, pode avaliar o profissional
-
-## Dados disponíveis
-- Categorias de serviço com ícones e descrições
-- Profissionais com perfil completo, avaliações e portfólio
-- Cidades e bairros atendidos
-- Blog com artigos sobre serviços e dicas
-- Vagas de emprego no setor de serviços
-- FAQs e depoimentos de clientes
+1. O usuário busca um profissional por categoria, cidade ou CEP.
+2. Visualiza perfis com avaliações, portfólio e informações de contato.
+3. Entra em contato diretamente via WhatsApp ou telefone.
+4. Após o serviço, pode avaliar o profissional.
 
 ## Sitemap
-https://precisodeum.com.br/sitemap.xml
+https://www.precisodeum.com.br/sitemap.xml
 
 ## Contato
-- Site: https://precisodeum.com.br
+- Site: https://www.precisodeum.com.br
 - WhatsApp: disponível no site

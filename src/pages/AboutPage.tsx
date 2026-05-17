@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useSeoHead } from '@/hooks/useSeoHead';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import {
