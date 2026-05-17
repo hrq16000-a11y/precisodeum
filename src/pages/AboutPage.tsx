@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useSeoHead } from '@/hooks/useSeoHead';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import {
@@ -295,6 +296,12 @@ const TimelineSection = () => {
 };
 
 const AboutPage = () => {
+  useSeoHead({
+    title: 'Sobre — Preciso de um',
+    description: 'Conheça a missão do Preciso de um: conectar pessoas a profissionais qualificados no Brasil, com transparência, gratuidade e contato direto via WhatsApp.',
+    canonical: 'https://www.precisodeum.com.br/sobre',
+    ogType: 'website',
+  });
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 120]);

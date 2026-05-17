@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSeoHead } from '@/hooks/useSeoHead';
 import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -464,6 +465,12 @@ function ComparisonCell({ value }: { value: boolean | string }) {
 }
 
 export default function SponsorLandingPage() {
+  useSeoHead({
+    title: 'Patrocinadores — Anuncie no Preciso de um',
+    description: 'Planos de patrocínio para empresas alcançarem milhares de clientes no Brasil. Destaque sua marca em categorias e cidades estratégicas com métricas em tempo real.',
+    canonical: 'https://www.precisodeum.com.br/patrocinadores',
+    ogType: 'website',
+  });
   const [contractAccepted, setContractAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
