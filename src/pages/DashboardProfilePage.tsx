@@ -557,8 +557,21 @@ const DashboardProfilePage = () => {
               <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className={labelCls}>Nome completo *</label>
-                    <input name="full_name" value={form.full_name} onChange={handleChange} className={inputCls} />
+                    <label className={labelCls} htmlFor="profile-full-name">Nome completo *</label>
+                    <input
+                      id="profile-full-name"
+                      name="full_name"
+                      value={form.full_name}
+                      onChange={(e) => { handleChange(e); if (nameError) setNameError(null); }}
+                      className={inputCls}
+                      aria-invalid={!!nameError}
+                      aria-describedby={nameError ? 'profile-full-name-error' : undefined}
+                    />
+                    {nameError && (
+                      <p id="profile-full-name-error" data-testid="profile-full-name-error" className="mt-1 text-xs text-destructive">
+                        {nameError}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className={labelCls}>Telefone fixo (opcional)</label>
@@ -567,7 +580,20 @@ const DashboardProfilePage = () => {
                   </div>
                   <div>
                     <label className={labelCls}>WhatsApp</label>
-                    <PhoneMaskedInput ref={whatsappInputRef} name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange} className={inputCls} />
+                    <PhoneMaskedInput
+                      ref={whatsappInputRef}
+                      name="whatsapp"
+                      value={form.whatsapp}
+                      onChange={(e) => { handlePhoneChange(e); if (whatsappError) setWhatsappError(null); }}
+                      className={inputCls}
+                      aria-invalid={!!whatsappError}
+                      aria-describedby={whatsappError ? 'profile-whatsapp-error' : undefined}
+                    />
+                    {whatsappError && (
+                      <p id="profile-whatsapp-error" data-testid="profile-whatsapp-error" className="mt-1 text-xs text-destructive">
+                        {whatsappError}
+                      </p>
+                    )}
                     {!form.whatsapp && form.phone && (
                       <button type="button" onClick={() => setForm(prev => ({ ...prev, whatsapp: prev.phone }))} className="mt-1 text-xs text-accent hover:underline">
                         Copiar do telefone
