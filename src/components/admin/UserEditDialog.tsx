@@ -56,6 +56,8 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
     staff_role: user?.staff_role || 'none',
   });
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [levels, setLevels] = useState<any[]>([]);
   const [profileTypeOptions, setProfileTypeOptions] = useState<any[]>([]);
 
