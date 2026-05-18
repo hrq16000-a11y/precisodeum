@@ -488,7 +488,13 @@ const DashboardProfilePage = () => {
     setAvatarUrl(socialUrl);
     (async () => {
       try {
-        await supabase.from('profiles').update({ avatar_url: socialUrl }).eq('id', user.id);
+        // Fase 1.6.4 — Canonical avatar write boundary (one-shot social sync).
+        await setUserAvatar({
+          userId: user.id,
+          url: socialUrl,
+          source: 'social_avatar_oneshot',
+          silent: true,
+        });
         refetchProfile?.();
       } catch (err) {
         console.warn('[profile] failed to persist social avatar', err);
