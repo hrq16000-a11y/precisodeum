@@ -500,9 +500,23 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
     // providers.status='active' é UX-driven aqui e permanece intencional.
     // TODO (médio prazo 1.6.7): mover para RPC `set_provider_online_atomic`.
     if (goOnline && userId) {
+      // FASE 1.6.3 — tracker observável (sem alterar UX: fail-soft preservado).
       try {
-        await supabase.from('providers').update({ status: 'active' } as any).eq('user_id', userId);
-      } catch { /* fail-soft */ }
+        const { createSyncTracker, logSyncFailure } = await import('@/lib/multiWriteSync');
+        const sync = createSyncTracker();
+        const { error } = await supabase.from('providers').update({ status: 'active' } as any).eq('user_id', userId);
+        if (error) {
+          sync.mark('status', false);
+          await logSyncFailure({
+            action: 'phase4_sync_failed',
+            source: 'phase4_go_online',
+            snapshot: sync.snapshot(),
+            errorCode: (error as any).code || 'provider_status_update_failed',
+          });
+        } else {
+          sync.mark('status', true);
+        }
+      } catch { /* fail-soft — não bloqueia o "Ficar online" */ }
     }
     if (valid) {
       setVerified(true);
