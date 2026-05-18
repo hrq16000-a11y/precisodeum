@@ -83,7 +83,8 @@ type SyncFailureAction =
   | 'bet_onboarding_sync_failed'
   | 'profile_type_switch_sync_failed'
   | 'persist_first_service_sync_failed'
-  | 'phase4_sync_failed';
+  | 'phase4_sync_failed'
+  | 'onboarding_progress_sync_failed';
 
 export interface LogSyncFailureOpts {
   action: SyncFailureAction;
