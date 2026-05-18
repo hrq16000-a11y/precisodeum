@@ -15,9 +15,26 @@
  *  - tamanho total <= 254
  */
 
-const TLD_RE = /^[a-z]{2,6}$/;
+// ccTLDs com 2 letras passam direto (br, us, uk, ...). Para TLDs maiores,
+// usamos uma allowlist conservadora dos gTLDs/sTLDs mais usados no Brasil.
+// Isso bloqueia typos comuns como ".comc", ".comm", ".con", ".cmo".
+const KNOWN_LONG_TLDS = new Set([
+  'com', 'net', 'org', 'edu', 'gov', 'mil', 'int',
+  'info', 'biz', 'name', 'pro', 'mobi', 'tel', 'asia', 'jobs',
+  'app', 'dev', 'tech', 'site', 'online', 'store', 'shop', 'blog', 'cloud',
+  'live', 'news', 'media', 'art', 'design', 'studio', 'agency',
+  'club', 'fun', 'life', 'world', 'today', 'global', 'group', 'company',
+  'email', 'page', 'wiki', 'xyz', 'top', 'link', 'eco', 'ong',
+]);
 const LABEL_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const LOCAL_RE = /^[a-z0-9._%+\-]+$/;
+
+function isValidTld(tld: string): boolean {
+  if (!/^[a-z]+$/.test(tld)) return false;
+  if (tld.length === 2) return true; // ccTLD
+  if (tld.length < 2 || tld.length > 12) return false;
+  return KNOWN_LONG_TLDS.has(tld);
+}
 
 export function normalizeEmail(raw: string): string {
   return (raw || '').trim().toLowerCase();
