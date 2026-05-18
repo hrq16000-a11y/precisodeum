@@ -26,6 +26,7 @@ import { logAuditAction } from '@/hooks/useAuditLog';
 import { handleImageError } from '@/lib/imageResolver';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { sanitizePhone, formatPhoneDisplay } from '@/lib/whatsapp';
+import { resolveWhatsapp } from '@/lib/profileResolvers';
 
 interface UserDetailSheetProps {
   user: any | null;
