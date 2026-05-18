@@ -31,6 +31,7 @@ import { safeWizardSave, logWizardError } from '@/lib/wizardErrorGuard';
 import { registerBackOwner, claimBackEvent } from '@/lib/wizardBackOrchestrator';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { betDraftPayloadSchema, providerWritePayloadSchema, safeParse } from '@/lib/wizardSchemas';
+import { buildBetFinalizeOperation, logOperationBuildFailure } from '@/lib/operations';
 
 import PhaseIdentity from './PhaseIdentity';
 import PhaseWho from './PhaseWho';
