@@ -93,6 +93,13 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const [userIsAdmin, setUserIsAdmin] = useState(false);
   const [userIsModerator, setUserIsModerator] = useState(false);
   const [userIsSponsor, setUserIsSponsor] = useState(false);
+
+  // FASE 1.6.2 — inline validation errors
+  const [profileNameError, setProfileNameError] = useState<string | null>(null);
+  const [profileWhatsappError, setProfileWhatsappError] = useState<string | null>(null);
+  const [profilePhoneError, setProfilePhoneError] = useState<string | null>(null);
+  const [providerWhatsappError, setProviderWhatsappError] = useState<string | null>(null);
+  const [providerPhoneError, setProviderPhoneError] = useState<string | null>(null);
   const [sponsors, setSponsors] = useState<any[]>([]);
   const [selectedSponsorId, setSelectedSponsorId] = useState('');
   const [permLoading, setPermLoading] = useState(false);
