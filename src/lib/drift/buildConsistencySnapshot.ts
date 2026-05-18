@@ -21,6 +21,8 @@ import {
   getFlowDriftProfile,
 } from './driftRegistry';
 import { DRIFT_CATALOG, type DriftType } from './driftTypes';
+import { classifyFlowRegistration } from './writeClassification';
+import { isQuarantinedFlow } from './quarantineRegistry';
 import {
   driftSeverityToConsistency,
   maxConsistencySeverity,
@@ -199,6 +201,18 @@ export function buildConsistencySnapshot(
   const riskSeverity = maxConsistencySeverity(risks.map((r) => r.severity));
   const severity = maxConsistencySeverity([driftSeverity, riskSeverity]);
 
+  // Fase 1.7.3 — write-path classification + quarantine + atomic migration hint.
+  const cls = classifyFlowRegistration(reg);
+  const isQuarantined = !!isQuarantinedFlow(reg.flow);
+  const requiresAtomicMigration =
+    reg.steps.length > 1 && reg.supportsAtomic && reg.readiness !== 'READY';
+  // Impacto (heurística simples): READY contribui +1, PARTIAL +0.5, BLOCKED 0;
+  // UNSAFE penaliza -1. Normalizado para 0–100 escala individual.
+  const baseImpact =
+    reg.readiness === 'READY' ? 100 : reg.readiness === 'PARTIAL' ? 50 : 0;
+  const penalty = cls.classification === 'UNSAFE' ? 50 : cls.classification === 'LEGACY' ? 20 : 0;
+  const architectureScoreImpact = Math.max(0, baseImpact - penalty);
+
   return {
     flow: reg.flow,
     readiness: reg.readiness,
@@ -218,6 +232,11 @@ export function buildConsistencySnapshot(
     driftPotential,
     risks,
     severity,
+    classification: cls.classification,
+    architectureScoreImpact,
+    isQuarantined,
+    requiresAtomicMigration,
+    legacyReason: cls.classification === 'LEGACY' ? cls.reason : undefined,
   };
 }
 
