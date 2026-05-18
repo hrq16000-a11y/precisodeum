@@ -491,6 +491,17 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
   /** Cliente fast-pass: salva, libera o gate e redireciona DIRETO ao destino — sem tela extra. */
   async function finishClient() {
     if (!user) { toast.error('Faça login antes de continuar'); return; }
+    // FASE 1.6.8 — pre-atomic operation boundary.
+    const op = buildBetFinalizeOperation({
+      userId: user.id, intent: 'client',
+      fullName: state.full_name, whatsappDigits: (state.whatsapp || '').replace(/\D/g, ''),
+      city: state.city || '', state: state.state || '',
+    });
+    if (!op.ok) {
+      await logOperationBuildFailure('bet_finish_client', op as any);
+      toast.error('Verifique os campos obrigatórios antes de continuar.');
+      return;
+    }
     try {
       const result = await finalizeOnboarding({
         userId: user.id,
