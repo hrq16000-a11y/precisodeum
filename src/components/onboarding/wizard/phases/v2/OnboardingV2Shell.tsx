@@ -1689,6 +1689,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       });
       if (!finalizeResult.ok) {
         const finalizeErr: any = finalizeResult.error;
+        // FASE 1.6.3 — service+provider OK mas finalize falhou. Audit explícito
+        // para detectar onboarding em estado intermediário (não-concluído).
+        // CRÍTICO: NÃO marcamos onboarding como concluído nem mostramos sucesso falso.
+        sync.setFailed('profile');
+        await logSyncFailure({
+          action: 'persist_first_service_sync_failed',
+          source: 'persist_first_service.finalize',
+          snapshot: sync.snapshot(),
+          errorCode: (finalizeErr as any)?.code || 'finalize_failed',
+        });
         logWizardError({
           phase: state.phase,
           userId: user?.id,
