@@ -251,9 +251,27 @@ const DashboardProfilePage = () => {
 
   const handleSave = async () => {
     if (!user) return;
-    if (!form.full_name.trim()) { toast.error('Nome completo é obrigatório'); return; }
+    setNameError(null);
+    setWhatsappError(null);
+    if (!form.full_name.trim()) {
+      setNameError('Nome completo é obrigatório');
+      toast.error('Nome completo é obrigatório');
+      return;
+    }
     if (shouldEnforceFullName(form.full_name, profile?.full_name) && !isValidFullName(form.full_name)) {
+      setNameError(FULL_NAME_INVALID_MESSAGE);
       toast.error(FULL_NAME_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'name_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          target_user_id: user.id,
+          length: form.full_name.trim().length,
+          parts: form.full_name.trim().split(/\s+/).filter(Boolean).length,
+          source: 'dashboard_profile_page',
+        },
+      }).catch(() => undefined);
       return;
     }
     // Telefone fixo é opcional — só valida se preenchido (WhatsApp já cobre contato)
@@ -261,6 +279,12 @@ const DashboardProfilePage = () => {
     if (phoneDigits.length > 0 && phoneDigits.length < 10) { toast.error('Telefone deve ter 10 ou 11 dígitos (ou deixe vazio)'); return; }
     if (!form.city.trim() || !form.state.trim()) { toast.error('Selecione sua cidade na lista'); return; }
     if (!form.category_id && !form.category_custom) { toast.error('Selecione uma categoria ou digite "Outro"'); return; }
+    // Fase 1.3: enforce de WhatsApp canônico apenas se mudou
+    if (form.whatsapp.trim() && shouldEnforcePhone(form.whatsapp, profile?.whatsapp) && !isValidPhoneBR(form.whatsapp)) {
+      setWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      return;
+    }
     const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
     if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) { toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)'); return; }
     const finalPhone = toCanonical(form.phone) ?? '';
