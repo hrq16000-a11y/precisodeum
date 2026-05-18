@@ -2354,11 +2354,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onContinue={async () => {
               track('submit');
               if (state.profile.avatar_url) {
-                const ok = await persistPatch({ photo_url: state.profile.avatar_url });
-                if (!ok) return;
-                await supabase.from('profiles')
-                  .update({ avatar_url: state.profile.avatar_url })
-                  .eq('id', user!.id);
+                // Fase 1.6.4 — Canonical avatar write boundary.
+                const { setUserAvatar } = await import('@/lib/avatarSync');
+                const res = await setUserAvatar({
+                  userId: user!.id,
+                  url: state.profile.avatar_url,
+                  source: 'onboarding_v2_shell',
+                });
+                if (!res.ok) return;
               }
               track('next');
               dispatch({ type: 'NEXT' });

@@ -191,7 +191,9 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
       });
       if (result.data.error) throw new Error(result.data.error);
       const publicUrl = result.data.url;
-      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
+      // Fase 1.6.4 — Canonical avatar write boundary.
+      const { setUserAvatar } = await import('@/lib/avatarSync');
+      await setUserAvatar({ userId, url: publicUrl, source: 'onboarding_phase4_avatar' });
       onChange({ avatar_url: publicUrl, avatar_source: source });
       toast.success(source === 'camera' ? 'Foto capturada e otimizada!' : 'Foto enviada!');
     } catch (err: any) {

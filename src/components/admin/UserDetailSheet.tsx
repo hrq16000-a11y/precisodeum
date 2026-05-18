@@ -438,7 +438,14 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       const { error } = await supabase.storage.from('avatars').upload(path, compressed, { upsert: true });
       if (error) throw error;
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
-      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
+      // Fase 1.6.4 — Canonical avatar write boundary (admin override).
+      const { setUserAvatar } = await import('@/lib/avatarSync');
+      const res = await setUserAvatar({ userId: user.id, url: publicUrl, source: 'admin_user_detail_sheet' });
+      if (!res.ok) {
+        // partial-sync toast already shown by helper
+        setAvatarUploading(false);
+        return;
+      }
       setCurrentAvatar(publicUrl);
       toast.success('Avatar atualizado!');
       onRefresh?.();

@@ -12,6 +12,7 @@ import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import AvatarUpload from '@/components/AvatarUpload';
 import { getInitials, getSocialAvatarUrl } from '@/lib/avatarUtils';
+import { setUserAvatar } from '@/lib/avatarSync';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
@@ -488,7 +489,13 @@ const DashboardProfilePage = () => {
     setAvatarUrl(socialUrl);
     (async () => {
       try {
-        await supabase.from('profiles').update({ avatar_url: socialUrl }).eq('id', user.id);
+        // Fase 1.6.4 — Canonical avatar write boundary (one-shot social sync).
+        await setUserAvatar({
+          userId: user.id,
+          url: socialUrl,
+          source: 'social_avatar_oneshot',
+          silent: true,
+        });
         refetchProfile?.();
       } catch (err) {
         console.warn('[profile] failed to persist social avatar', err);

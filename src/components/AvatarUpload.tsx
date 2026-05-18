@@ -8,6 +8,7 @@ import { upsertMedia, resolveIdentity } from '@/lib/mediaUtils';
 import { generateBlurDataUrl } from '@/lib/compressImage';
 import { classifyUploadError, userMessageFor } from '@/lib/uploadErrors';
 import { uploadWithFallback } from '@/lib/uploadWithFallback';
+import { setUserAvatar } from '@/lib/avatarSync';
 import { validateImageFile } from '@/lib/imageValidation';
 import { useLocalThumbnail } from '@/hooks/useLocalThumbnail';
 import {
@@ -110,7 +111,8 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
         if (result.data.error) throw new Error(result.data.error);
         const publicUrl = result.data.url;
 
-        await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
+        // Fase 1.6.4 — Canonical avatar write boundary.
+        await setUserAvatar({ userId, url: publicUrl, source: 'avatar_upload_component' });
         const { userRef, providerId } = await resolveIdentity(userId);
         if (userRef) {
           const blurDataUrl = await generateBlurDataUrl(raw);
