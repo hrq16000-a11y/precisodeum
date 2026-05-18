@@ -47,6 +47,8 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
   });
   const [categories, setCategories] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
 
   // City autocomplete
   const [citySearch, setCitySearch] = useState(
