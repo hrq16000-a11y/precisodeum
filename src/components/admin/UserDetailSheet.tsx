@@ -27,6 +27,18 @@ import { handleImageError } from '@/lib/imageResolver';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { sanitizePhone, formatPhoneDisplay } from '@/lib/whatsapp';
 import { resolveWhatsapp } from '@/lib/profileResolvers';
+import {
+  isValidFullName,
+  shouldEnforceFullName,
+  normalizeFullName,
+  FULL_NAME_INVALID_MESSAGE,
+} from '@/lib/validation/fullNameValidation';
+import {
+  normalizePhoneBR,
+  isValidPhoneBR,
+  shouldEnforcePhone,
+  PHONE_INVALID_MESSAGE,
+} from '@/lib/validation/phoneNormalization';
 
 interface UserDetailSheetProps {
   user: any | null;
@@ -81,6 +93,13 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const [userIsAdmin, setUserIsAdmin] = useState(false);
   const [userIsModerator, setUserIsModerator] = useState(false);
   const [userIsSponsor, setUserIsSponsor] = useState(false);
+
+  // FASE 1.6.2 — inline validation errors
+  const [profileNameError, setProfileNameError] = useState<string | null>(null);
+  const [profileWhatsappError, setProfileWhatsappError] = useState<string | null>(null);
+  const [profilePhoneError, setProfilePhoneError] = useState<string | null>(null);
+  const [providerWhatsappError, setProviderWhatsappError] = useState<string | null>(null);
+  const [providerPhoneError, setProviderPhoneError] = useState<string | null>(null);
   const [sponsors, setSponsors] = useState<any[]>([]);
   const [selectedSponsorId, setSelectedSponsorId] = useState('');
   const [permLoading, setPermLoading] = useState(false);
@@ -442,13 +461,87 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     onRefresh?.();
   };
 
-  // === Save Profile ===
+  // === Save Profile === (FASE 1.6.2 — hardening admin)
   const saveProfile = async () => {
     if (!user) return;
+    setProfileNameError(null);
+    setProfileWhatsappError(null);
+    setProfilePhoneError(null);
+
+    const previousName = user.full_name || fullProfile?.full_name || '';
+    const previousWhatsapp = user.whatsapp || fullProfile?.whatsapp || '';
+    const previousPhone = user.phone || fullProfile?.phone || '';
+
+    // Nome: só valida quando mudou (preserva legado)
+    if (shouldEnforceFullName(profileForm.full_name, previousName) && !isValidFullName(profileForm.full_name)) {
+      setProfileNameError(FULL_NAME_INVALID_MESSAGE);
+      toast.error(FULL_NAME_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          field: 'full_name',
+          source: 'admin_user_detail_sheet',
+          target_user_id: user.id,
+          reason: 'invalid_full_name',
+          length: (profileForm.full_name || '').trim().length,
+        },
+      }).catch(() => undefined);
+      return;
+    }
+
+    // WhatsApp: só valida quando mudou
+    const rawWhatsapp = profileForm.whatsapp || '';
+    if (rawWhatsapp.trim() && shouldEnforcePhone(rawWhatsapp, previousWhatsapp) && !isValidPhoneBR(rawWhatsapp)) {
+      setProfileWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          field: 'whatsapp',
+          source: 'admin_user_detail_sheet',
+          target_user_id: user.id,
+          reason: 'invalid_phone',
+        },
+      }).catch(() => undefined);
+      return;
+    }
+
+    const rawPhone = profileForm.phone || '';
+    if (rawPhone.trim() && shouldEnforcePhone(rawPhone, previousPhone) && !isValidPhoneBR(rawPhone)) {
+      setProfilePhoneError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          field: 'phone',
+          source: 'admin_user_detail_sheet',
+          target_user_id: user.id,
+          reason: 'invalid_phone',
+        },
+      }).catch(() => undefined);
+      return;
+    }
+
+    const sanitizedWhatsapp = rawWhatsapp.trim()
+      ? (normalizePhoneBR(rawWhatsapp) || sanitizePhone(rawWhatsapp))
+      : '';
+    const sanitizedPhone = rawPhone.trim()
+      ? (normalizePhoneBR(rawPhone) || sanitizePhone(rawPhone))
+      : '';
+    const normalizedName = shouldEnforceFullName(profileForm.full_name, previousName)
+      ? normalizeFullName(profileForm.full_name)
+      : (profileForm.full_name || '');
+
     const { error } = await supabase.from('profiles').update({
-      full_name: profileForm.full_name,
-      phone: profileForm.phone,
-      whatsapp: sanitizePhone(profileForm.whatsapp || ''),
+      full_name: normalizedName,
+      phone: sanitizedPhone,
+      whatsapp: sanitizedWhatsapp,
       profile_type: profileForm.profile_type,
       role: profileForm.profile_type,
       status: profileForm.status,
@@ -463,13 +556,60 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     onRefresh?.();
   };
 
-  // === Save Provider ===
+  // === Save Provider === (FASE 1.6.2 — hardening admin, PJ permissivo)
   const saveProvider = async () => {
     if (!provider) return;
+    setProviderWhatsappError(null);
+    setProviderPhoneError(null);
+
+    const previousWhatsapp = provider.whatsapp || '';
+    const previousPhone = provider.phone || '';
+    const rawWhatsapp = providerForm.whatsapp || '';
+    const rawPhone = providerForm.phone || '';
+
+    if (rawWhatsapp.trim() && shouldEnforcePhone(rawWhatsapp, previousWhatsapp) && !isValidPhoneBR(rawWhatsapp)) {
+      setProviderWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'provider',
+        resource_id: provider.id,
+        details: {
+          field: 'whatsapp',
+          source: 'admin_user_detail_sheet_provider',
+          target_user_id: user?.id,
+          reason: 'invalid_phone',
+        },
+      }).catch(() => undefined);
+      return;
+    }
+    if (rawPhone.trim() && shouldEnforcePhone(rawPhone, previousPhone) && !isValidPhoneBR(rawPhone)) {
+      setProviderPhoneError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'provider',
+        resource_id: provider.id,
+        details: {
+          field: 'phone',
+          source: 'admin_user_detail_sheet_provider',
+          target_user_id: user?.id,
+          reason: 'invalid_phone',
+        },
+      }).catch(() => undefined);
+      return;
+    }
+
+    // PJ: business_name permissivo (sem regra PF). Apenas trim.
+    const businessName = typeof providerForm.business_name === 'string'
+      ? providerForm.business_name.trim()
+      : providerForm.business_name;
+
     const { error } = await supabase.from('providers').update({
       ...providerForm,
-      whatsapp: sanitizePhone(providerForm.whatsapp || ''),
-      phone: sanitizePhone(providerForm.phone || ''),
+      business_name: businessName,
+      whatsapp: rawWhatsapp.trim() ? (normalizePhoneBR(rawWhatsapp) || sanitizePhone(rawWhatsapp)) : '',
+      phone: rawPhone.trim() ? (normalizePhoneBR(rawPhone) || sanitizePhone(rawPhone)) : '',
     }).eq('id', provider.id);
     if (error) { toast.error('Erro: ' + error.message); return; }
     toast.success('Dados profissionais salvos!');
@@ -807,8 +947,20 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 {editing ? (
                   <div className="space-y-3">
                     <div>
-                      <Label className="text-xs">Nome completo</Label>
-                      <Input value={profileForm.full_name} onChange={e => setProfileForm({ ...profileForm, full_name: e.target.value })} className="h-8 text-sm" />
+                      <Label className="text-xs" htmlFor="admin-user-full-name">Nome completo</Label>
+                      <Input
+                        id="admin-user-full-name"
+                        value={profileForm.full_name}
+                        onChange={e => { setProfileForm({ ...profileForm, full_name: e.target.value }); if (profileNameError) setProfileNameError(null); }}
+                        className="h-8 text-sm"
+                        aria-invalid={!!profileNameError}
+                        aria-describedby={profileNameError ? 'admin-user-full-name-error' : undefined}
+                      />
+                      {profileNameError && (
+                        <p id="admin-user-full-name-error" data-testid="admin-user-full-name-error" className="mt-1 text-xs text-destructive">
+                          {profileNameError}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label className="text-xs">E-mail</Label>
@@ -816,15 +968,40 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <Label className="text-xs">Telefone</Label>
-                        <PhoneMaskedInput name="phone" value={profileForm.phone || ''} onChange={handlePhoneChange}
-                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                        <Label className="text-xs" htmlFor="admin-user-phone">Telefone</Label>
+                        <PhoneMaskedInput
+                          name="phone"
+                          id="admin-user-phone"
+                          value={profileForm.phone || ''}
+                          onChange={(name, val) => { handlePhoneChange(name, val); if (profilePhoneError) setProfilePhoneError(null); }}
+                          aria-invalid={!!profilePhoneError}
+                          aria-describedby={profilePhoneError ? 'admin-user-phone-error' : undefined}
+                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        {profilePhoneError && (
+                          <p id="admin-user-phone-error" data-testid="admin-user-phone-error" className="mt-1 text-[10px] text-destructive">
+                            {profilePhoneError}
+                          </p>
+                        )}
                       </div>
                       <div>
-                        <Label className="text-xs">WhatsApp</Label>
-                        <PhoneMaskedInput name="whatsapp" value={profileForm.whatsapp || ''} onChange={handlePhoneChange}
-                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-                        <p className="text-[9px] text-muted-foreground mt-0.5">Auto-preenchido do Telefone</p>
+                        <Label className="text-xs" htmlFor="admin-user-whatsapp">WhatsApp</Label>
+                        <PhoneMaskedInput
+                          name="whatsapp"
+                          id="admin-user-whatsapp"
+                          value={profileForm.whatsapp || ''}
+                          onChange={(name, val) => { handlePhoneChange(name, val); if (profileWhatsappError) setProfileWhatsappError(null); }}
+                          aria-invalid={!!profileWhatsappError}
+                          aria-describedby={profileWhatsappError ? 'admin-user-whatsapp-error' : undefined}
+                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        {profileWhatsappError ? (
+                          <p id="admin-user-whatsapp-error" data-testid="admin-user-whatsapp-error" className="mt-1 text-[10px] text-destructive">
+                            {profileWhatsappError}
+                          </p>
+                        ) : (
+                          <p className="text-[9px] text-muted-foreground mt-0.5">Auto-preenchido do Telefone</p>
+                        )}
                       </div>
                     </div>
                     <div>
@@ -921,8 +1098,36 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     {editing ? (
                       <div className="space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div><Label className="text-xs">Telefone Comercial</Label><PhoneMaskedInput name="phone" value={providerForm.phone || ''} onChange={handleProviderPhoneChange} className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
-                          <div><Label className="text-xs">WhatsApp Comercial</Label><PhoneMaskedInput name="whatsapp" value={providerForm.whatsapp || ''} onChange={handleProviderPhoneChange} className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
+                          <div>
+                            <Label className="text-xs" htmlFor="admin-provider-phone">Telefone Comercial</Label>
+                            <PhoneMaskedInput
+                              name="phone"
+                              id="admin-provider-phone"
+                              value={providerForm.phone || ''}
+                              onChange={(n, v) => { handleProviderPhoneChange(n, v); if (providerPhoneError) setProviderPhoneError(null); }}
+                              aria-invalid={!!providerPhoneError}
+                              aria-describedby={providerPhoneError ? 'admin-provider-phone-error' : undefined}
+                              className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            />
+                            {providerPhoneError && (
+                              <p id="admin-provider-phone-error" data-testid="admin-provider-phone-error" className="mt-1 text-[10px] text-destructive">{providerPhoneError}</p>
+                            )}
+                          </div>
+                          <div>
+                            <Label className="text-xs" htmlFor="admin-provider-whatsapp">WhatsApp Comercial</Label>
+                            <PhoneMaskedInput
+                              name="whatsapp"
+                              id="admin-provider-whatsapp"
+                              value={providerForm.whatsapp || ''}
+                              onChange={(n, v) => { handleProviderPhoneChange(n, v); if (providerWhatsappError) setProviderWhatsappError(null); }}
+                              aria-invalid={!!providerWhatsappError}
+                              aria-describedby={providerWhatsappError ? 'admin-provider-whatsapp-error' : undefined}
+                              className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            />
+                            {providerWhatsappError && (
+                              <p id="admin-provider-whatsapp-error" data-testid="admin-provider-whatsapp-error" className="mt-1 text-[10px] text-destructive">{providerWhatsappError}</p>
+                            )}
+                          </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div><Label className="text-xs">Website</Label><Input value={providerForm.website} onChange={e => setProviderForm({ ...providerForm, website: e.target.value })} className="h-8 text-sm" placeholder="https://..." /></div>
