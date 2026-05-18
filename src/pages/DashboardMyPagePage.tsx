@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube, Palette, Eye, Type, Layout, Link2, Sparkles } from 'lucide-react';
 import ThemePreview from '@/components/dashboard/ThemePreview';
+import { setOnboardingProgress } from '@/lib/onboardingProgressSync';
 
 const THEMES = [
   {
@@ -147,13 +148,15 @@ const DashboardMyPagePage = () => {
       // página" como concluído na esteira de onboarding (a maioria dos usuários
       // só ajusta cor/tema e sai sem clicar em Salvar — antes disso o passo
       // ficava preso e nunca progredia).
+      // Canonical onboarding_progress write boundary (Fase 1.6.5).
       try {
         const current = ((provider as any)?.onboarding_progress as Record<string, unknown>) || {};
         if (!current.page_customized) {
-          await supabase
-            .from('providers')
-            .update({ onboarding_progress: { ...current, page_customized: true } })
-            .eq('id', provider.id);
+          await setOnboardingProgress(
+            provider.id,
+            { page_customized: true },
+            { source: 'my_page_auto_visit', currentProgress: current },
+          );
         }
       } catch (e) {
         console.warn('[MyPage] auto-mark page_customized falhou:', e);
@@ -196,14 +199,16 @@ const DashboardMyPagePage = () => {
       toast.error('Erro ao salvar configurações');
     } else {
       toast.success('Configurações salvas!');
-      // Marca o passo "Personalize sua página" como concluído na esteira de onboarding
+      // Marca o passo "Personalize sua página" como concluído na esteira de onboarding.
+      // Canonical onboarding_progress write boundary (Fase 1.6.5).
       try {
         const current = ((provider as any)?.onboarding_progress as Record<string, any>) || {};
         if (!current.page_customized) {
-          await supabase
-            .from('providers')
-            .update({ onboarding_progress: { ...current, page_customized: true } })
-            .eq('id', provider.id);
+          await setOnboardingProgress(
+            provider.id,
+            { page_customized: true },
+            { source: 'my_page_save', currentProgress: current },
+          );
         }
       } catch (e) {
         console.warn('[MyPage] Falha ao marcar page_customized:', e);

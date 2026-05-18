@@ -88,6 +88,7 @@ import UnifiedHealthScore from '@/components/dashboard/UnifiedHealthScore';
 import QuickActionsHero from '@/components/dashboard/QuickActionsHero';
 import ImpactSection from '@/components/dashboard/ImpactSection';
 import { resolveEffectiveProfileType } from '@/lib/onboardingAccess';
+import { setOnboardingProgress } from '@/lib/onboardingProgressSync';
 import {
   startDashboardTimers,
   reportFirstRender,
@@ -296,7 +297,8 @@ const DashboardPage = () => {
     };
   }, []);
 
-  // Persist onboarding progress when steps complete (debounced, no loops)
+  // Persist onboarding progress when steps complete (debounced, no loops).
+  // Canonical onboarding_progress write boundary — ver src/lib/onboardingProgressSync.ts.
   useEffect(() => {
     if (!provider?.id) return;
     const current = (provider?.onboarding_progress as Record<string, boolean>) || {};
@@ -309,9 +311,10 @@ const DashboardPage = () => {
 
     if (Object.keys(updates).length === 0) return;
 
-    void supabase.from('providers').update({
-      onboarding_progress: { ...current, ...updates },
-    }).eq('id', provider.id);
+    void setOnboardingProgress(provider.id, updates, {
+      source: 'dashboard_page_step_complete',
+      currentProgress: current,
+    });
   }, [provider?.id, profileDone, servicesDone, portfolioDone]);
 
   if (loading) return <DashboardLayout><DashboardSkeleton /></DashboardLayout>;
@@ -547,14 +550,16 @@ const DashboardPage = () => {
   const markProgress = async (key: string) => {
     if (!provider?.id) return;
     if (onboardingProgress[key]) return;
-    try {
-      await supabase
-        .from('providers')
-        .update({ onboarding_progress: { ...onboardingProgress, [key]: true } })
-        .eq('id', provider.id);
+    // Canonical onboarding_progress write boundary (Fase 1.6.5).
+    const result = await setOnboardingProgress(
+      provider.id,
+      { [key]: true },
+      { source: `dashboard_mark_progress:${key}`, currentProgress: onboardingProgress },
+    );
+    if (result.ok && !result.noop) {
       await refetchProfile();
-    } catch (e) {
-      console.warn('[markProgress]', key, e);
+    } else if (!result.ok) {
+      console.warn('[markProgress]', key, result.errorCode);
     }
   };
 
