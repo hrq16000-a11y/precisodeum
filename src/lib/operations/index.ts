@@ -9,3 +9,6 @@ export * from './buildPersistFirstServiceOperation';
 export * from './buildBetFinalizeOperation';
 export * from './buildProfileTypeSwitchOperation';
 export * from './executeOperation';
+export * from './liveExecutionGate';
+export * from './operationRegistry';
+export * from './detectUnsafeWrites';
