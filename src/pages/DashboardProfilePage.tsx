@@ -528,8 +528,9 @@ const DashboardProfilePage = () => {
                     <input name="full_name" value={form.full_name} onChange={handleChange} className={inputCls} />
                   </div>
                   <div>
-                    <label className={labelCls}>Telefone *</label>
+                    <label className={labelCls}>Telefone fixo (opcional)</label>
                     <PhoneMaskedInput name="phone" value={form.phone} onChange={handlePhoneChange} className={inputCls} />
+                    <p className="mt-1 text-[11px] text-muted-foreground">Seu WhatsApp já é suficiente para receber contatos.</p>
                   </div>
                   <div>
                     <label className={labelCls}>WhatsApp</label>
