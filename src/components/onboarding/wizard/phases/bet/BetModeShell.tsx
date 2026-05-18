@@ -531,6 +531,20 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
   /** Profissional: salva profile + provider mínimo, depois empurra para V2 (1º serviço). */
   async function finishPro() {
     if (!user) { toast.error('Faça login antes de continuar'); return; }
+    // FASE 1.6.8 — pre-atomic operation boundary.
+    const docDigitsForOp = (state.document || '').replace(/\D/g, '');
+    const opPro = buildBetFinalizeOperation({
+      userId: user.id, intent: 'pro',
+      proKind: state.pro_kind as any,
+      fullName: state.full_name, whatsappDigits: (state.whatsapp || '').replace(/\D/g, ''),
+      city: state.city || '', state: state.state || '',
+      documentDigits: docDigitsForOp,
+    });
+    if (!opPro.ok) {
+      await logOperationBuildFailure('bet_finish_pro', opPro as any, { pro_kind: state.pro_kind || null });
+      toast.error('Verifique os campos obrigatórios antes de continuar.');
+      return;
+    }
     // FASE 1.6.3 — tracker multi-write (profiles + providers).
     // Lazy-import para não criar dependência cíclica na inicialização.
     const { createSyncTracker, logSyncFailure, showPartialSyncError } =
