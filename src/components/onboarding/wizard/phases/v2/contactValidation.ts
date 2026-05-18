@@ -1,6 +1,10 @@
+import { normalizePhoneBR } from '@/lib/validation/phoneNormalization';
+
 export function normalizeOnboardingPhone(value: unknown): string {
-  const digits = typeof value === 'string' ? value.replace(/\D/g, '') : '';
-  return digits.replace(/^55(?=\d{10,11}$)/, '');
+  // Fase 1.3: delega à fonte única para sanitização. Mantém o contrato
+  // antigo do wizard (retorna apenas DDD+número, sem prefixo 55).
+  const canonical = normalizePhoneBR(value);
+  return canonical ? canonical.replace(/^55/, '') : '';
 }
 
 import { isValidFullName } from '@/lib/validation/fullNameValidation';

@@ -17,6 +17,8 @@ import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { isValidFullName, shouldEnforceFullName, FULL_NAME_INVALID_MESSAGE } from '@/lib/validation/fullNameValidation';
+import { isValidPhoneBR, shouldEnforcePhone, PHONE_INVALID_MESSAGE } from '@/lib/validation/phoneNormalization';
+import { logAuditAction } from '@/hooks/useAuditLog';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import { generateProviderSlug } from '@/lib/slugify';
 import { invalidateProviderProfileCache } from '@/pages/ProviderProfile';
@@ -37,6 +39,8 @@ const DashboardProfilePage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('pessoal');
   const whatsappInputRef = useRef<HTMLInputElement | null>(null);
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
@@ -247,9 +251,27 @@ const DashboardProfilePage = () => {
 
   const handleSave = async () => {
     if (!user) return;
-    if (!form.full_name.trim()) { toast.error('Nome completo é obrigatório'); return; }
+    setNameError(null);
+    setWhatsappError(null);
+    if (!form.full_name.trim()) {
+      setNameError('Nome completo é obrigatório');
+      toast.error('Nome completo é obrigatório');
+      return;
+    }
     if (shouldEnforceFullName(form.full_name, profile?.full_name) && !isValidFullName(form.full_name)) {
+      setNameError(FULL_NAME_INVALID_MESSAGE);
       toast.error(FULL_NAME_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'name_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          target_user_id: user.id,
+          length: form.full_name.trim().length,
+          parts: form.full_name.trim().split(/\s+/).filter(Boolean).length,
+          source: 'dashboard_profile_page',
+        },
+      }).catch(() => undefined);
       return;
     }
     // Telefone fixo é opcional — só valida se preenchido (WhatsApp já cobre contato)
@@ -257,6 +279,12 @@ const DashboardProfilePage = () => {
     if (phoneDigits.length > 0 && phoneDigits.length < 10) { toast.error('Telefone deve ter 10 ou 11 dígitos (ou deixe vazio)'); return; }
     if (!form.city.trim() || !form.state.trim()) { toast.error('Selecione sua cidade na lista'); return; }
     if (!form.category_id && !form.category_custom) { toast.error('Selecione uma categoria ou digite "Outro"'); return; }
+    // Fase 1.3: enforce de WhatsApp canônico apenas se mudou
+    if (form.whatsapp.trim() && shouldEnforcePhone(form.whatsapp, profile?.whatsapp) && !isValidPhoneBR(form.whatsapp)) {
+      setWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      return;
+    }
     const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
     if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) { toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)'); return; }
     const finalPhone = toCanonical(form.phone) ?? '';
@@ -529,8 +557,21 @@ const DashboardProfilePage = () => {
               <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className={labelCls}>Nome completo *</label>
-                    <input name="full_name" value={form.full_name} onChange={handleChange} className={inputCls} />
+                    <label className={labelCls} htmlFor="profile-full-name">Nome completo *</label>
+                    <input
+                      id="profile-full-name"
+                      name="full_name"
+                      value={form.full_name}
+                      onChange={(e) => { handleChange(e); if (nameError) setNameError(null); }}
+                      className={inputCls}
+                      aria-invalid={!!nameError}
+                      aria-describedby={nameError ? 'profile-full-name-error' : undefined}
+                    />
+                    {nameError && (
+                      <p id="profile-full-name-error" data-testid="profile-full-name-error" className="mt-1 text-xs text-destructive">
+                        {nameError}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className={labelCls}>Telefone fixo (opcional)</label>
@@ -539,7 +580,18 @@ const DashboardProfilePage = () => {
                   </div>
                   <div>
                     <label className={labelCls}>WhatsApp</label>
-                    <PhoneMaskedInput ref={whatsappInputRef} name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange} className={inputCls} />
+                    <PhoneMaskedInput
+                      ref={whatsappInputRef}
+                      name="whatsapp"
+                      value={form.whatsapp}
+                      onChange={(n, v) => { handlePhoneChange(n, v); if (whatsappError) setWhatsappError(null); }}
+                      className={inputCls}
+                    />
+                    {whatsappError && (
+                      <p id="profile-whatsapp-error" data-testid="profile-whatsapp-error" className="mt-1 text-xs text-destructive">
+                        {whatsappError}
+                      </p>
+                    )}
                     {!form.whatsapp && form.phone && (
                       <button type="button" onClick={() => setForm(prev => ({ ...prev, whatsapp: prev.phone }))} className="mt-1 text-xs text-accent hover:underline">
                         Copiar do telefone

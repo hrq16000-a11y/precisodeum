@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { useAuth } from '@/hooks/useAuth';
 import { isValidFullName, shouldEnforceFullName, FULL_NAME_INVALID_MESSAGE } from '@/lib/validation/fullNameValidation';
+import { normalizePhoneBR, isValidPhoneBR, shouldEnforcePhone, PHONE_INVALID_MESSAGE } from '@/lib/validation/phoneNormalization';
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Ativo' },
@@ -55,6 +56,8 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
     staff_role: user?.staff_role || 'none',
   });
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [levels, setLevels] = useState<any[]>([]);
   const [profileTypeOptions, setProfileTypeOptions] = useState<any[]>([]);
 
@@ -95,13 +98,39 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
 
   const handleSave = async () => {
     if (!user) return;
+    setNameError(null);
+    setWhatsappError(null);
+
+    // Fase 1.2: nome só valida quando mudou (preserva legado).
     if (shouldEnforceFullName(form.full_name, user.full_name) && !isValidFullName(form.full_name)) {
+      setNameError(FULL_NAME_INVALID_MESSAGE);
       toast.error(FULL_NAME_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'name_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          target_user_id: user.id,
+          // sem vazar conteúdo: só sinais não-sensíveis
+          length: (form.full_name || '').trim().length,
+          parts: (form.full_name || '').trim().split(/\s+/).filter(Boolean).length,
+          source: 'admin_user_edit_dialog',
+        },
+      }).catch(() => undefined);
       return;
     }
-    setSaving(true);
 
-    const sanitizedWhatsapp = (form.whatsapp || '').replace(/\D/g, '');
+    // Fase 1.3: whatsapp só valida quando mudou e canonicaliza saída.
+    const rawWhatsapp = form.whatsapp || '';
+    const previousWhatsapp = user.whatsapp || '';
+    if (rawWhatsapp.trim() && shouldEnforcePhone(rawWhatsapp, previousWhatsapp) && !isValidPhoneBR(rawWhatsapp)) {
+      setWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      return;
+    }
+    const sanitizedWhatsapp = rawWhatsapp.trim()
+      ? (normalizePhoneBR(rawWhatsapp) || rawWhatsapp.replace(/\D/g, ''))
+      : '';
     const updateData: any = {
       full_name: form.full_name,
       phone: form.phone,
@@ -161,8 +190,19 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label>Nome completo</Label>
-            <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} />
+            <Label htmlFor="user-edit-full-name">Nome completo</Label>
+            <Input
+              id="user-edit-full-name"
+              value={form.full_name}
+              onChange={e => { setForm(f => ({ ...f, full_name: e.target.value })); if (nameError) setNameError(null); }}
+              aria-invalid={!!nameError}
+              aria-describedby={nameError ? 'user-edit-full-name-error' : undefined}
+            />
+            {nameError && (
+              <p id="user-edit-full-name-error" data-testid="user-edit-full-name-error" className="mt-1 text-xs text-destructive">
+                {nameError}
+              </p>
+            )}
           </div>
           <div>
             <Label>E-mail</Label>
@@ -175,8 +215,20 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
               <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
             </div>
             <div>
-              <Label>WhatsApp</Label>
-              <Input value={form.whatsapp} onChange={e => setForm(f => ({ ...f, whatsapp: e.target.value }))} placeholder="DDD + número" />
+              <Label htmlFor="user-edit-whatsapp">WhatsApp</Label>
+              <Input
+                id="user-edit-whatsapp"
+                value={form.whatsapp}
+                onChange={e => { setForm(f => ({ ...f, whatsapp: e.target.value })); if (whatsappError) setWhatsappError(null); }}
+                placeholder="DDD + número"
+                aria-invalid={!!whatsappError}
+                aria-describedby={whatsappError ? 'user-edit-whatsapp-error' : undefined}
+              />
+              {whatsappError && (
+                <p id="user-edit-whatsapp-error" data-testid="user-edit-whatsapp-error" className="mt-1 text-xs text-destructive">
+                  {whatsappError}
+                </p>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
