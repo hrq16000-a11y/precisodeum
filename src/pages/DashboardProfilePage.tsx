@@ -248,6 +248,10 @@ const DashboardProfilePage = () => {
   const handleSave = async () => {
     if (!user) return;
     if (!form.full_name.trim()) { toast.error('Nome completo é obrigatório'); return; }
+    if (shouldEnforceFullName(form.full_name, profile?.full_name) && !isValidFullName(form.full_name)) {
+      toast.error(FULL_NAME_INVALID_MESSAGE);
+      return;
+    }
     // Telefone fixo é opcional — só valida se preenchido (WhatsApp já cobre contato)
     const phoneDigits = form.phone.replace(/\D/g, '');
     if (phoneDigits.length > 0 && phoneDigits.length < 10) { toast.error('Telefone deve ter 10 ou 11 dígitos (ou deixe vazio)'); return; }
