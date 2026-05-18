@@ -173,6 +173,7 @@ import {
 import { buildWorkingHoursSummary } from './workingHours';
 import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
 import { TERMS_VERSION, readVelocityMps, readAccuracyMeters } from '@/lib/wizardSnapshotInputs';
+import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/lib/operations';
 
 function slugify(input: string): string {
   return (input || '')
