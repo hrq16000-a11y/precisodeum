@@ -4,6 +4,7 @@ import { User, Briefcase, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { createSyncTracker, logSyncFailure, showPartialSyncError } from '@/lib/multiWriteSync';
 
 const TYPES = [
   { value: 'client', label: 'Cliente', icon: User, color: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
@@ -20,28 +21,67 @@ const ProfileTypeSwitcher = () => {
   const handleSwitch = async (newType: string) => {
     if (!user || newType === currentType || switching) return;
     setSwitching(true);
+    // FASE 1.6.3 — tracker multi-write (profile_type → providers row).
+    const sync = createSyncTracker();
+    let errorCode: string | null = null;
     try {
       const { error } = await supabase
         .from('profiles')
         .update({ profile_type: newType, role: newType } as any)
         .eq('id', user.id);
-      if (error) throw error;
+      if (error) {
+        errorCode = (error as any).code || 'profile_type_update_failed';
+        sync.mark('profile_type', false);
+        throw error;
+      }
+      sync.mark('profile_type', true);
 
       // If switching to provider, ensure provider record exists
       if (newType === 'provider') {
-        const { data: existing } = await supabase
-          .from('providers')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1);
-        if (!existing || existing.length === 0) {
-          const name = profile?.full_name || user.email?.split('@')[0] || 'profissional';
-          const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-          await supabase.from('providers').insert({
-            user_id: user.id,
-            slug,
-            status: 'pending',
+        try {
+          const { data: existing } = await supabase
+            .from('providers')
+            .select('id')
+            .eq('user_id', user.id)
+            .limit(1);
+          if (!existing || existing.length === 0) {
+            const name = profile?.full_name || user.email?.split('@')[0] || 'profissional';
+            const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            const { error: insErr } = await supabase.from('providers').insert({
+              user_id: user.id,
+              slug,
+              status: 'pending',
+            });
+            if (insErr) {
+              errorCode = (insErr as any).code || 'provider_insert_failed';
+              sync.mark('provider', false);
+              // FASE 1.6.3 — partial fail: profile_type já mudou mas provider não foi criado.
+              await logSyncFailure({
+                action: 'profile_type_switch_sync_failed',
+                source: 'profile_type_switcher',
+                snapshot: sync.snapshot(),
+                errorCode,
+                extra: { target_type: newType },
+              });
+              showPartialSyncError(() => { void handleSwitch(newType); });
+              await refetchProfile();
+              return;
+            }
+          }
+          sync.mark('provider', true);
+        } catch (innerErr) {
+          errorCode = (innerErr as any)?.code || 'provider_lookup_failed';
+          sync.mark('provider', false);
+          await logSyncFailure({
+            action: 'profile_type_switch_sync_failed',
+            source: 'profile_type_switcher',
+            snapshot: sync.snapshot(),
+            errorCode,
+            extra: { target_type: newType },
           });
+          showPartialSyncError(() => { void handleSwitch(newType); });
+          await refetchProfile();
+          return;
         }
       }
 
@@ -58,7 +98,16 @@ const ProfileTypeSwitcher = () => {
         navigate('/dashboard/servicos', { replace: true });
       }
     } catch {
-      toast.error('Erro ao alterar tipo de conta');
+      if (sync.failedStep) {
+        await logSyncFailure({
+          action: 'profile_type_switch_sync_failed',
+          source: 'profile_type_switcher',
+          snapshot: sync.snapshot(),
+          errorCode,
+          extra: { target_type: newType },
+        });
+      }
+      showPartialSyncError(() => { void handleSwitch(newType); });
     } finally {
       setSwitching(false);
     }

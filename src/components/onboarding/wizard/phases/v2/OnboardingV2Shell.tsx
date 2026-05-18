@@ -1283,6 +1283,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       return false;
     }
     setSaving(true);
+    // FASE 1.6.3 — tracker multi-write: providers.update + services create + finalize.
+    // NÃO altera fluxo: apenas observa e impede sucesso falso se finalize falhar.
+    const { createSyncTracker, logSyncFailure } = await import('@/lib/multiWriteSync');
+    const sync = createSyncTracker();
     try {
       const s = state.service;
       const p = state.profile;
@@ -1586,7 +1590,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       if (workingHoursSummary) updates.working_hours = workingHoursSummary;
       if (s.working_hours_struct) updates.working_hours_struct = s.working_hours_struct;
       if (s.starting_price_brl != null) updates.starting_price = s.starting_price_brl;
-      await supabase.from('providers').update(updates).eq('id', workingProviderId);
+      {
+        const { error: provUpdErr } = await supabase.from('providers').update(updates).eq('id', workingProviderId);
+        if (provUpdErr) {
+          sync.mark('provider', false);
+          await logSyncFailure({
+            action: 'persist_first_service_sync_failed',
+            source: 'persist_first_service.provider_update',
+            snapshot: sync.snapshot(),
+            errorCode: (provUpdErr as any).code || 'provider_update_failed',
+          });
+        } else {
+          sync.mark('provider', true);
+          if (resolvedServiceId) sync.mark('service', true);
+        }
+      }
 
       // ── READ-BACK INVARIANTE (fail-loud, auto-heal) ────────────────────────
       // Confirma no banco que:
@@ -1671,6 +1689,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       });
       if (!finalizeResult.ok) {
         const finalizeErr: any = finalizeResult.error;
+        // FASE 1.6.3 — service+provider OK mas finalize falhou. Audit explícito
+        // para detectar onboarding em estado intermediário (não-concluído).
+        // CRÍTICO: NÃO marcamos onboarding como concluído nem mostramos sucesso falso.
+        sync.setFailed('profile');
+        await logSyncFailure({
+          action: 'persist_first_service_sync_failed',
+          source: 'persist_first_service.finalize',
+          snapshot: sync.snapshot(),
+          errorCode: (finalizeErr as any)?.code || 'finalize_failed',
+        });
         logWizardError({
           phase: state.phase,
           userId: user?.id,

@@ -519,6 +519,11 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
   /** Profissional: salva profile + provider mínimo, depois empurra para V2 (1º serviço). */
   async function finishPro() {
     if (!user) { toast.error('Faça login antes de continuar'); return; }
+    // FASE 1.6.3 — tracker multi-write (profiles + providers).
+    // Lazy-import para não criar dependência cíclica na inicialização.
+    const { createSyncTracker, logSyncFailure, showPartialSyncError } =
+      await import('@/lib/multiWriteSync');
+    const sync = createSyncTracker();
     try {
       const isPj = state.pro_kind === 'pj';
       const docDigits = (state.document || '').replace(/\D/g, '');
@@ -547,7 +552,18 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
         .from('profiles')
         .update(profilePatch)
         .eq('id', user.id);
-      if (pErr) throw pErr;
+      if (pErr) {
+        sync.mark('profile', false);
+        await logSyncFailure({
+          action: 'bet_onboarding_sync_failed',
+          source: 'bet_finish_pro',
+          snapshot: sync.snapshot(),
+          errorCode: (pErr as any).code || 'profile_update_failed',
+          extra: { isPj },
+        });
+        throw pErr;
+      }
+      sync.mark('profile', true);
 
       // ---- providers: documento na coluna certa + business_name (PF e PJ) + neighborhood ----
       // FRONT-END SYNC: business_name é preenchido AGORA com o nome do usuário
@@ -682,7 +698,20 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
           return true;
         },
       });
-      if (!upsertResult.ok) return;
+      if (!upsertResult.ok) {
+        // FASE 1.6.3 — profile salvou mas provider falhou. Audit + sem sucesso.
+        sync.mark('provider', false);
+        await logSyncFailure({
+          action: 'bet_onboarding_sync_failed',
+          source: 'bet_finish_pro',
+          snapshot: sync.snapshot(),
+          errorCode: 'provider_upsert_failed',
+          extra: { isPj },
+        });
+        showPartialSyncError(() => { void finishPro(); });
+        return;
+      }
+      sync.mark('provider', true);
 
       clearBetDraft();
       if (user?.id) await clearRemoteBetDraft(user.id);
