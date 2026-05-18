@@ -199,14 +199,16 @@ const DashboardMyPagePage = () => {
       toast.error('Erro ao salvar configurações');
     } else {
       toast.success('Configurações salvas!');
-      // Marca o passo "Personalize sua página" como concluído na esteira de onboarding
+      // Marca o passo "Personalize sua página" como concluído na esteira de onboarding.
+      // Canonical onboarding_progress write boundary (Fase 1.6.5).
       try {
         const current = ((provider as any)?.onboarding_progress as Record<string, any>) || {};
         if (!current.page_customized) {
-          await supabase
-            .from('providers')
-            .update({ onboarding_progress: { ...current, page_customized: true } })
-            .eq('id', provider.id);
+          await setOnboardingProgress(
+            provider.id,
+            { page_customized: true },
+            { source: 'my_page_save', currentProgress: current },
+          );
         }
       } catch (e) {
         console.warn('[MyPage] Falha ao marcar page_customized:', e);
