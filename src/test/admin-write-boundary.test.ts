@@ -15,7 +15,7 @@ const eqMock = vi.fn(() => Promise.resolve({ error: null }));
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn(() => ({
-      update: (..._args: any[]) => ({ eq: (...e: any[]) => eqMock(...e) }),
+      update: (..._args: any[]) => ({ eq: (...e: any[]) => (eqMock as any)(...e) }),
     })),
     auth: { getUser: vi.fn(() => Promise.resolve({ data: { user: { id: 'admin-1' } } })) },
   },
