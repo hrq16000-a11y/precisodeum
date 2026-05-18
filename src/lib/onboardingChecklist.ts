@@ -13,6 +13,7 @@
  *   4. Descrição ≥ 30 caracteres
  *   5. Pelo menos 1 serviço cadastrado
  *   6. Pelo menos 1 álbum de portfólio
+ */
 
 import { hasAnyContact, resolveAvatar } from '@/lib/profileResolvers';
 
