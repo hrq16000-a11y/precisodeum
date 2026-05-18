@@ -1284,6 +1284,24 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       return false;
     }
     setSaving(true);
+    // FASE 1.6.8 — pre-atomic operation boundary.
+    {
+      const op = buildPersistFirstServiceOperation({
+        userId: user.id,
+        providerId: workingProviderId,
+        categoryId: state.service.category_ids[0] || null,
+        fullName: state.profile.full_name || '',
+        whatsappDigits: (state.profile.whatsapp || '').replace(/\D/g, ''),
+        city: state.profile.city || '',
+        state: state.profile.state || '',
+      });
+      if (!op.ok) {
+        await logOperationBuildFailure('onboarding_v2_persist_first_service', op as any);
+        setSaving(false);
+        toast.error('Complete os campos obrigatórios para publicar o serviço.');
+        return false;
+      }
+    }
     // FASE 1.6.3 — tracker multi-write: providers.update + services create + finalize.
     // NÃO altera fluxo: apenas observa e impede sucesso falso se finalize falhar.
     const { createSyncTracker, logSyncFailure } = await import('@/lib/multiWriteSync');
