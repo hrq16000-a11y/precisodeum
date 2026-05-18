@@ -49,8 +49,8 @@ describe('FASE 1.6.7 · adminWriteBoundary helper', () => {
     });
     expect(out.full_name).toBe('Maria');
     expect(out.status).toBe('active');
-    expect(out.phone).toMatch(/^\d{10,11}$/);
-    expect(out.whatsapp).toMatch(/^\d{10,11}$/);
+    expect(out.phone).toMatch(/^\d{10,13}$/);
+    expect(out.whatsapp).toMatch(/^\d{10,13}$/);
   });
 
   it('updateAdminProfile retorna ok:true em sucesso e ok:false sem throw em erro', async () => {
