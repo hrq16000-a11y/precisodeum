@@ -16,6 +16,7 @@ import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
+import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import { generateProviderSlug } from '@/lib/slugify';
 import { invalidateProviderProfileCache } from '@/pages/ProviderProfile';
 import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
@@ -246,8 +247,9 @@ const DashboardProfilePage = () => {
   const handleSave = async () => {
     if (!user) return;
     if (!form.full_name.trim()) { toast.error('Nome completo é obrigatório'); return; }
+    // Telefone fixo é opcional — só valida se preenchido (WhatsApp já cobre contato)
     const phoneDigits = form.phone.replace(/\D/g, '');
-    if (phoneDigits.length < 10) { toast.error('Telefone deve ter pelo menos 10 dígitos'); return; }
+    if (phoneDigits.length > 0 && phoneDigits.length < 10) { toast.error('Telefone deve ter 10 ou 11 dígitos (ou deixe vazio)'); return; }
     if (!form.city.trim() || !form.state.trim()) { toast.error('Selecione sua cidade na lista'); return; }
     if (!form.category_id && !form.category_custom) { toast.error('Selecione uma categoria ou digite "Outro"'); return; }
     const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
@@ -412,20 +414,24 @@ const DashboardProfilePage = () => {
     })();
   }, [user, profile, avatarUrl, refetchProfile]);
 
-  // Profile completeness
+  // Profile completeness — usa a ÚNICA fonte da verdade (mesma engine do
+  // Dashboard/ProfileCompleteness/FirstLeadChecklist/OnboardingGate).
+  // Regra oficial: contato = whatsapp OU phone (NÃO ambos).
   const completeness = useMemo(() => {
-    const fields = [
-      !!form.full_name.trim(),
-      !!form.phone.trim(),
-      !!avatarUrl,
-      !!form.city.trim(),
-      !!(form.category_id || form.category_custom),
-      !!form.description.trim(),
-      !!form.whatsapp.trim(),
-      !!form.business_name?.trim(),
-    ];
-    return Math.round((fields.filter(Boolean).length / fields.length) * 100);
-  }, [form, avatarUrl]);
+    const items = buildOnboardingChecklist({
+      profile: { ...profile, avatar_url: avatarUrl || profile?.avatar_url },
+      provider: provider ? {
+        ...provider,
+        whatsapp: form.whatsapp || provider.whatsapp,
+        phone: form.phone || (provider as any).phone,
+        city: form.city || provider.city,
+        state: form.state || provider.state,
+        description: form.description || provider.description,
+        photo_url: avatarUrl || (provider as any).photo_url,
+      } : undefined,
+    });
+    return checklistStats(items).pct;
+  }, [profile, provider, form, avatarUrl]);
 
   const displayName = form.full_name || 'Usuário';
 
@@ -522,8 +528,9 @@ const DashboardProfilePage = () => {
                     <input name="full_name" value={form.full_name} onChange={handleChange} className={inputCls} />
                   </div>
                   <div>
-                    <label className={labelCls}>Telefone *</label>
+                    <label className={labelCls}>Telefone fixo (opcional)</label>
                     <PhoneMaskedInput name="phone" value={form.phone} onChange={handlePhoneChange} className={inputCls} />
+                    <p className="mt-1 text-[11px] text-muted-foreground">Seu WhatsApp já é suficiente para receber contatos.</p>
                   </div>
                   <div>
                     <label className={labelCls}>WhatsApp</label>
