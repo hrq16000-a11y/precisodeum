@@ -115,6 +115,35 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
 
   const handleSave = async () => {
     if (!form.city || !form.state) { toast.error('Selecione uma cidade válida'); return; }
+    setPhoneError(null);
+    setWhatsappError(null);
+
+    // FASE 1.6.2 — só valida quando mudou (preserva legado)
+    const prevPhone = provider.phone || '';
+    const prevWhatsapp = provider.whatsapp || '';
+    if (form.phone && shouldEnforcePhone(form.phone, prevPhone) && !isValidPhoneBR(form.phone)) {
+      setPhoneError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'provider',
+        resource_id: provider.id,
+        details: { field: 'phone', source: 'admin_provider_edit_dialog', target_user_id: provider.user_id, reason: 'invalid_phone' },
+      }).catch(() => undefined);
+      return;
+    }
+    if (form.whatsapp && shouldEnforcePhone(form.whatsapp, prevWhatsapp) && !isValidPhoneBR(form.whatsapp)) {
+      setWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'provider',
+        resource_id: provider.id,
+        details: { field: 'whatsapp', source: 'admin_provider_edit_dialog', target_user_id: provider.user_id, reason: 'invalid_phone' },
+      }).catch(() => undefined);
+      return;
+    }
+
     setSaving(true);
 
     // Geocoding invisível ao salvar (se algo mudou ou se faltam coords)
@@ -133,14 +162,17 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
       }
     }
 
+    // PJ: business_name permissivo (sem regra PF de nome completo). Apenas trim.
+    const businessName = typeof form.business_name === 'string' ? form.business_name.trim() : form.business_name;
+
     const { error } = await supabase.from('providers').update({
-      business_name: form.business_name || null,
+      business_name: businessName || null,
       city: form.city,
       state: form.state,
       neighborhood: form.neighborhood,
       cnpj: form.cnpj || null,
-      phone: sanitizePhone(form.phone),
-      whatsapp: sanitizePhone(form.whatsapp),
+      phone: form.phone ? (normalizePhoneBR(form.phone) || sanitizePhone(form.phone)) : '',
+      whatsapp: form.whatsapp ? (normalizePhoneBR(form.whatsapp) || sanitizePhone(form.whatsapp)) : '',
       description: form.description,
       category_id: form.category_id || null,
       website: form.website || null,
