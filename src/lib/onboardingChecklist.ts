@@ -13,7 +13,8 @@
  *   4. Descrição ≥ 30 caracteres
  *   5. Pelo menos 1 serviço cadastrado
  *   6. Pelo menos 1 álbum de portfólio
- */
+
+import { hasAnyContact, resolveAvatar } from '@/lib/profileResolvers';
 
 export interface ChecklistItem {
   key: 'photo' | 'contact' | 'location' | 'description' | 'service' | 'portfolio';
@@ -35,8 +36,9 @@ interface CompletenessInput {
 export const buildOnboardingChecklist = (input: CompletenessInput): ChecklistItem[] => {
   const { profile, provider, servicesCount, portfolioAlbumsCount } = input;
 
-  const hasPhoto = !!(provider?.photo_url || profile?.avatar_url);
-  const hasContact = !!(profile?.whatsapp || profile?.phone || provider?.whatsapp || provider?.phone);
+  // Leitura via resolver central (read consolidation layer — Fase 1.5).
+  const hasPhoto = !!resolveAvatar(provider, profile);
+  const hasContact = hasAnyContact(provider, profile);
   const hasLocation = !!(provider?.city && provider.city !== 'Não informada' && provider?.state);
   const hasDescription = !!(provider?.description && provider.description.length >= 30);
   const services = typeof servicesCount === 'number' ? servicesCount : (provider?.services_count ?? 0);
