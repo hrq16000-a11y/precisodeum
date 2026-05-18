@@ -698,7 +698,20 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
           return true;
         },
       });
-      if (!upsertResult.ok) return;
+      if (!upsertResult.ok) {
+        // FASE 1.6.3 — profile salvou mas provider falhou. Audit + sem sucesso.
+        sync.mark('provider', false);
+        await logSyncFailure({
+          action: 'bet_onboarding_sync_failed',
+          source: 'bet_finish_pro',
+          snapshot: sync.snapshot(),
+          errorCode: 'provider_upsert_failed',
+          extra: { isPj },
+        });
+        showPartialSyncError(() => { void finishPro(); });
+        return;
+      }
+      sync.mark('provider', true);
 
       clearBetDraft();
       if (user?.id) await clearRemoteBetDraft(user.id);
