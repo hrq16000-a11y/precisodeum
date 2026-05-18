@@ -947,8 +947,20 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 {editing ? (
                   <div className="space-y-3">
                     <div>
-                      <Label className="text-xs">Nome completo</Label>
-                      <Input value={profileForm.full_name} onChange={e => setProfileForm({ ...profileForm, full_name: e.target.value })} className="h-8 text-sm" />
+                      <Label className="text-xs" htmlFor="admin-user-full-name">Nome completo</Label>
+                      <Input
+                        id="admin-user-full-name"
+                        value={profileForm.full_name}
+                        onChange={e => { setProfileForm({ ...profileForm, full_name: e.target.value }); if (profileNameError) setProfileNameError(null); }}
+                        className="h-8 text-sm"
+                        aria-invalid={!!profileNameError}
+                        aria-describedby={profileNameError ? 'admin-user-full-name-error' : undefined}
+                      />
+                      {profileNameError && (
+                        <p id="admin-user-full-name-error" data-testid="admin-user-full-name-error" className="mt-1 text-xs text-destructive">
+                          {profileNameError}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label className="text-xs">E-mail</Label>
@@ -956,15 +968,40 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <Label className="text-xs">Telefone</Label>
-                        <PhoneMaskedInput name="phone" value={profileForm.phone || ''} onChange={handlePhoneChange}
-                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                        <Label className="text-xs" htmlFor="admin-user-phone">Telefone</Label>
+                        <PhoneMaskedInput
+                          name="phone"
+                          id="admin-user-phone"
+                          value={profileForm.phone || ''}
+                          onChange={(name, val) => { handlePhoneChange(name, val); if (profilePhoneError) setProfilePhoneError(null); }}
+                          aria-invalid={!!profilePhoneError}
+                          aria-describedby={profilePhoneError ? 'admin-user-phone-error' : undefined}
+                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        {profilePhoneError && (
+                          <p id="admin-user-phone-error" data-testid="admin-user-phone-error" className="mt-1 text-[10px] text-destructive">
+                            {profilePhoneError}
+                          </p>
+                        )}
                       </div>
                       <div>
-                        <Label className="text-xs">WhatsApp</Label>
-                        <PhoneMaskedInput name="whatsapp" value={profileForm.whatsapp || ''} onChange={handlePhoneChange}
-                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-                        <p className="text-[9px] text-muted-foreground mt-0.5">Auto-preenchido do Telefone</p>
+                        <Label className="text-xs" htmlFor="admin-user-whatsapp">WhatsApp</Label>
+                        <PhoneMaskedInput
+                          name="whatsapp"
+                          id="admin-user-whatsapp"
+                          value={profileForm.whatsapp || ''}
+                          onChange={(name, val) => { handlePhoneChange(name, val); if (profileWhatsappError) setProfileWhatsappError(null); }}
+                          aria-invalid={!!profileWhatsappError}
+                          aria-describedby={profileWhatsappError ? 'admin-user-whatsapp-error' : undefined}
+                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        {profileWhatsappError ? (
+                          <p id="admin-user-whatsapp-error" data-testid="admin-user-whatsapp-error" className="mt-1 text-[10px] text-destructive">
+                            {profileWhatsappError}
+                          </p>
+                        ) : (
+                          <p className="text-[9px] text-muted-foreground mt-0.5">Auto-preenchido do Telefone</p>
+                        )}
                       </div>
                     </div>
                     <div>
