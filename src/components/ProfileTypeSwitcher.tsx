@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { createSyncTracker, logSyncFailure, showPartialSyncError } from '@/lib/multiWriteSync';
+import { buildProfileTypeSwitchOperation, logOperationBuildFailure } from '@/lib/operations';
 
 const TYPES = [
   { value: 'client', label: 'Cliente', icon: User, color: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
@@ -20,6 +21,15 @@ const ProfileTypeSwitcher = () => {
 
   const handleSwitch = async (newType: string) => {
     if (!user || newType === currentType || switching) return;
+    // FASE 1.6.8 — pre-atomic operation boundary (não executa nada; só valida).
+    const op = buildProfileTypeSwitchOperation({
+      userId: user.id, currentType, targetType: newType,
+    });
+    if (!op.ok) {
+      await logOperationBuildFailure('profile_type_switcher', op as any, { target_type: newType });
+      // noop_same_type já é tratado acima; outros códigos são raros aqui.
+      return;
+    }
     setSwitching(true);
     // FASE 1.6.3 — tracker multi-write (profile_type → providers row).
     // FASE 1.6.6 — ownership: ao virar provider, providers.phone/whatsapp

@@ -20,6 +20,7 @@ import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { isValidFullName, shouldEnforceFullName, FULL_NAME_INVALID_MESSAGE } from '@/lib/validation/fullNameValidation';
 import { isValidPhoneBR, shouldEnforcePhone, PHONE_INVALID_MESSAGE } from '@/lib/validation/phoneNormalization';
 import { maybeLogContactOwnershipConflict } from '@/lib/contactOwnership';
+import { buildDashboardProfileOperation, logOperationBuildFailure } from '@/lib/operations';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import { generateProviderSlug } from '@/lib/slugify';
@@ -296,6 +297,26 @@ const DashboardProfilePage = () => {
     const cpfDigits = form.cpf.replace(/\D/g, '');
     if (cpfDigits && cpfDigits.length !== 11) { toast.error('CPF deve ter 11 dígitos'); return; }
 
+    // FASE 1.6.8 — pre-atomic operation boundary.
+    {
+      const op = buildDashboardProfileOperation({
+        userId: user.id,
+        profileType: (profile as any)?.profile_type,
+        fullName: form.full_name,
+        whatsapp: form.whatsapp,
+        phone: form.phone,
+        city: form.city,
+        state: form.state,
+        hasCategory: !!(form.category_id || form.category_custom),
+        accountKind: form.account_kind,
+        cpfDigits, cnpjDigits,
+      });
+      if (!op.ok) {
+        await logOperationBuildFailure('dashboard_profile_page', op as any);
+        // Já houve toast/erros de validação acima; só registra observabilidade.
+        return;
+      }
+    }
     setSaving(true);
     let { latitude, longitude } = form;
     if (form.city && (latitude == null || longitude == null)) {
