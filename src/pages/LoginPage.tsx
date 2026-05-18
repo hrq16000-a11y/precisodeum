@@ -12,6 +12,7 @@ import { useSeoHead } from '@/hooks/useSeoHead';
 import { resolvePostLoginRoute } from '@/lib/onboardingAccess';
 import PasswordInput from '@/components/auth/PasswordInput';
 import { getDeviceFingerprint } from '@/lib/deviceFingerprint';
+import { isValidEmail, EMAIL_INVALID_MESSAGE } from '@/lib/validation/emailValidation';
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
@@ -103,8 +104,8 @@ const LoginPage = () => {
       return;
     }
     // Validação local antes de bater no servidor — evita mensagens genéricas
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setEmailError('Digite um e-mail válido.');
+    if (!isValidEmail(trimmedEmail)) {
+      setEmailError(EMAIL_INVALID_MESSAGE);
       return;
     }
     if (password.length < 6) {

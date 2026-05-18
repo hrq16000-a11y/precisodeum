@@ -40,7 +40,7 @@ const ForgotPasswordPage = () => {
   const validate = (raw: string): string | null => {
     const v = raw.trim();
     if (!v) return 'Digite seu e-mail.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Formato de e-mail inválido.';
+    if (!isValidEmail(v)) return EMAIL_INVALID_MESSAGE;
     return null;
   };
 
