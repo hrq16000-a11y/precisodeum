@@ -12,6 +12,12 @@ import { geocodeAddress } from '@/lib/geocodeAddress';
 import { Search, Loader2, MapPin } from 'lucide-react';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { sanitizePhone } from '@/lib/whatsapp';
+import {
+  normalizePhoneBR,
+  isValidPhoneBR,
+  shouldEnforcePhone,
+  PHONE_INVALID_MESSAGE,
+} from '@/lib/validation/phoneNormalization';
 import CategoryCombobox from '@/components/admin/CategoryCombobox';
 import UFSelect from '@/components/admin/UFSelect';
 import { formatCityState } from '@/lib/locationFormat';
