@@ -414,20 +414,24 @@ const DashboardProfilePage = () => {
     })();
   }, [user, profile, avatarUrl, refetchProfile]);
 
-  // Profile completeness
+  // Profile completeness — usa a ÚNICA fonte da verdade (mesma engine do
+  // Dashboard/ProfileCompleteness/FirstLeadChecklist/OnboardingGate).
+  // Regra oficial: contato = whatsapp OU phone (NÃO ambos).
   const completeness = useMemo(() => {
-    const fields = [
-      !!form.full_name.trim(),
-      !!form.phone.trim(),
-      !!avatarUrl,
-      !!form.city.trim(),
-      !!(form.category_id || form.category_custom),
-      !!form.description.trim(),
-      !!form.whatsapp.trim(),
-      !!form.business_name?.trim(),
-    ];
-    return Math.round((fields.filter(Boolean).length / fields.length) * 100);
-  }, [form, avatarUrl]);
+    const items = buildOnboardingChecklist({
+      profile: { ...profile, avatar_url: avatarUrl || profile?.avatar_url },
+      provider: provider ? {
+        ...provider,
+        whatsapp: form.whatsapp || provider.whatsapp,
+        phone: form.phone || (provider as any).phone,
+        city: form.city || provider.city,
+        state: form.state || provider.state,
+        description: form.description || provider.description,
+        photo_url: avatarUrl || (provider as any).photo_url,
+      } : undefined,
+    });
+    return checklistStats(items).pct;
+  }, [profile, provider, form, avatarUrl]);
 
   const displayName = form.full_name || 'Usuário';
 
