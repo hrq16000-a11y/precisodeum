@@ -10,6 +10,7 @@ import {
   subscribeCooldown,
   formatCooldown,
 } from '@/lib/forgotPasswordCooldown';
+import { isValidEmail, EMAIL_INVALID_MESSAGE } from '@/lib/validation/emailValidation';
 
 type Status = 'idle' | 'sending' | 'sent' | 'cooldown' | 'not_found' | 'error';
 
