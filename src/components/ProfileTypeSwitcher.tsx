@@ -21,6 +21,15 @@ const ProfileTypeSwitcher = () => {
 
   const handleSwitch = async (newType: string) => {
     if (!user || newType === currentType || switching) return;
+    // FASE 1.6.8 — pre-atomic operation boundary (não executa nada; só valida).
+    const op = buildProfileTypeSwitchOperation({
+      userId: user.id, currentType, targetType: newType,
+    });
+    if (!op.ok) {
+      await logOperationBuildFailure('profile_type_switcher', op, { target_type: newType });
+      // noop_same_type já é tratado acima; outros códigos são raros aqui.
+      return;
+    }
     setSwitching(true);
     // FASE 1.6.3 — tracker multi-write (profile_type → providers row).
     // FASE 1.6.6 — ownership: ao virar provider, providers.phone/whatsapp
