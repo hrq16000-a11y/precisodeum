@@ -7,6 +7,9 @@ interface PhoneMaskedInputProps {
   onChange: (name: string, rawValue: string) => void;
   placeholder?: string;
   className?: string;
+  id?: string;
+  'aria-invalid'?: boolean;
+  'aria-describedby'?: string;
 }
 
 /**
@@ -15,7 +18,7 @@ interface PhoneMaskedInputProps {
  * Supports ref forwarding for programmatic focus (used by deep-link CTAs).
  */
 const PhoneMaskedInput = forwardRef<HTMLInputElement, PhoneMaskedInputProps>(
-  ({ name, value, onChange, placeholder, className }, ref) => {
+  ({ name, value, onChange, placeholder, className, id, ...aria }, ref) => {
     const [display, setDisplay] = useState(() => formatPhoneDisplay(value));
 
     useEffect(() => {
@@ -32,12 +35,15 @@ const PhoneMaskedInput = forwardRef<HTMLInputElement, PhoneMaskedInputProps>(
     return (
       <input
         ref={ref}
+        id={id}
         type="tel"
         name={name}
         value={display}
         onChange={handleChange}
         placeholder={placeholder || '(41) 99745-2053'}
         className={className}
+        aria-invalid={(aria as any)['aria-invalid']}
+        aria-describedby={(aria as any)['aria-describedby']}
       />
     );
   }
