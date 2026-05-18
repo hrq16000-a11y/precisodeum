@@ -353,16 +353,22 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     fetchTags(user.id);
   };
 
-  // === Moderation ===
+  // === Moderation === — Canonical admin write boundary (Fase 1.6.7).
   const suspendUser = async () => {
     if (!user || !suspendReason.trim()) { toast.error('Informe o motivo'); return; }
     setSuspendLoading(true);
-    const { error } = await supabase.from('profiles').update({
-      status: 'suspended', suspended_at: new Date().toISOString(),
-      suspended_reason: suspendReason.trim(),
-      suspended_by: (await supabase.auth.getUser()).data.user?.id,
-    } as any).eq('id', user.id);
-    if (error) toast.error('Erro: ' + error.message);
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: user.id,
+      source: 'admin_user_detail_sheet:suspend',
+      skipNormalize: true,
+      patch: {
+        status: 'suspended', suspended_at: new Date().toISOString(),
+        suspended_reason: suspendReason.trim(),
+        suspended_by: (await supabase.auth.getUser()).data.user?.id,
+      },
+    });
+    if (!res.ok) toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar'));
     else {
       await logAuditAction({ action: 'suspend', resource_type: 'user', resource_id: user.id, details: { reason: suspendReason } });
       await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Suspensa', message: `Motivo: ${suspendReason}`, type: 'system' });
@@ -376,12 +382,18 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const banUser = async () => {
     if (!user) return;
     setSuspendLoading(true);
-    const { error } = await supabase.from('profiles').update({
-      status: 'banned', suspended_at: new Date().toISOString(),
-      suspended_reason: suspendReason.trim() || 'Banido pelo administrador',
-      suspended_by: (await supabase.auth.getUser()).data.user?.id,
-    } as any).eq('id', user.id);
-    if (error) toast.error('Erro: ' + error.message);
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: user.id,
+      source: 'admin_user_detail_sheet:ban',
+      skipNormalize: true,
+      patch: {
+        status: 'banned', suspended_at: new Date().toISOString(),
+        suspended_reason: suspendReason.trim() || 'Banido pelo administrador',
+        suspended_by: (await supabase.auth.getUser()).data.user?.id,
+      },
+    });
+    if (!res.ok) toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar'));
     else {
       await logAuditAction({ action: 'ban', resource_type: 'user', resource_id: user.id, details: { reason: suspendReason || 'Banido' } });
       await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Banida', message: 'Sua conta foi banida permanentemente.', type: 'system' });
@@ -394,10 +406,14 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const reactivateUser = async () => {
     if (!user) return;
     setSuspendLoading(true);
-    const { error } = await supabase.from('profiles').update({
-      status: 'active', suspended_at: null, suspended_reason: '', suspended_by: null,
-    } as any).eq('id', user.id);
-    if (error) toast.error('Erro: ' + error.message);
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: user.id,
+      source: 'admin_user_detail_sheet:reactivate',
+      skipNormalize: true,
+      patch: { status: 'active', suspended_at: null, suspended_reason: '', suspended_by: null },
+    });
+    if (!res.ok) toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar'));
     else {
       await logAuditAction({ action: 'reactivate', resource_type: 'user', resource_id: user.id });
       await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Reativada', message: 'Sua conta foi reativada.', type: 'system' });
