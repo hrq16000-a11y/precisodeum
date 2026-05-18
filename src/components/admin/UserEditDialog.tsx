@@ -190,8 +190,19 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label>Nome completo</Label>
-            <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} />
+            <Label htmlFor="user-edit-full-name">Nome completo</Label>
+            <Input
+              id="user-edit-full-name"
+              value={form.full_name}
+              onChange={e => { setForm(f => ({ ...f, full_name: e.target.value })); if (nameError) setNameError(null); }}
+              aria-invalid={!!nameError}
+              aria-describedby={nameError ? 'user-edit-full-name-error' : undefined}
+            />
+            {nameError && (
+              <p id="user-edit-full-name-error" data-testid="user-edit-full-name-error" className="mt-1 text-xs text-destructive">
+                {nameError}
+              </p>
+            )}
           </div>
           <div>
             <Label>E-mail</Label>
@@ -204,8 +215,20 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
               <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
             </div>
             <div>
-              <Label>WhatsApp</Label>
-              <Input value={form.whatsapp} onChange={e => setForm(f => ({ ...f, whatsapp: e.target.value }))} placeholder="DDD + número" />
+              <Label htmlFor="user-edit-whatsapp">WhatsApp</Label>
+              <Input
+                id="user-edit-whatsapp"
+                value={form.whatsapp}
+                onChange={e => { setForm(f => ({ ...f, whatsapp: e.target.value })); if (whatsappError) setWhatsappError(null); }}
+                placeholder="DDD + número"
+                aria-invalid={!!whatsappError}
+                aria-describedby={whatsappError ? 'user-edit-whatsapp-error' : undefined}
+              />
+              {whatsappError && (
+                <p id="user-edit-whatsapp-error" data-testid="user-edit-whatsapp-error" className="mt-1 text-xs text-destructive">
+                  {whatsappError}
+                </p>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
