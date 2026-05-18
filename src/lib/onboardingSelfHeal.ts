@@ -75,9 +75,9 @@ export async function runOnboardingSelfHeal({
       if (!existingService?.id) return false;
 
       // ── FASE 1.6.1 — DELEGAÇÃO AO ENTRYPOINT CANÔNICO ──────────────────
-      // Antes desta blindagem, fazíamos `profiles.update({ onboarding_step:5,
-      // onboarding_completed:true })` diretamente AQUI, contornando o
-      // `finalize_onboarding_atomic` RPC. Isso criava um caminho paralelo de
+      // Antes desta blindagem, escrevíamos os flags onboarding_step e
+      // onboarding_completed diretamente em profiles aqui, contornando o
+      // RPC finalize_onboarding_atomic. Isso criava um caminho paralelo de
       // finalização sem auditoria, sem limpeza de drafts e sem release de
       // session lock — exatamente o tipo de divergência que o audit 1.6
       // sinalizou como risco crítico.
