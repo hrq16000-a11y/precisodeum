@@ -26,7 +26,7 @@ const ProfileTypeSwitcher = () => {
       userId: user.id, currentType, targetType: newType,
     });
     if (!op.ok) {
-      await logOperationBuildFailure('profile_type_switcher', op, { target_type: newType });
+      await logOperationBuildFailure('profile_type_switcher', op as any, { target_type: newType });
       // noop_same_type já é tratado acima; outros códigos são raros aqui.
       return;
     }
