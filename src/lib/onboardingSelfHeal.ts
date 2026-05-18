@@ -74,21 +74,45 @@ export async function runOnboardingSelfHeal({
 
       if (!existingService?.id) return false;
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ onboarding_step: 5, onboarding_completed: true })
-        .eq('id', userId);
+      // ── FASE 1.6.1 — DELEGAÇÃO AO ENTRYPOINT CANÔNICO ──────────────────
+      // Antes desta blindagem, fazíamos `profiles.update({ onboarding_step:5,
+      // onboarding_completed:true })` diretamente AQUI, contornando o
+      // `finalize_onboarding_atomic` RPC. Isso criava um caminho paralelo de
+      // finalização sem auditoria, sem limpeza de drafts e sem release de
+      // session lock — exatamente o tipo de divergência que o audit 1.6
+      // sinalizou como risco crítico.
+      //
+      // Agora delegamos 100% ao `finalizeOnboarding()`, que:
+      //  1) libera o session lock,
+      //  2) marca grace window,
+      //  3) limpa drafts locais e remotos (no-op para legados),
+      //  4) executa a RPC atômica server-side com profile_type validado.
+      //
+      // NÃO escrever flags canônicas (onboarding_completed/onboarding_step)
+      // fora deste entrypoint.
+      const result = await finalizeOnboarding({
+        userId,
+        extraProfilePatch: { profile_type: 'provider' },
+        clearDrafts: true,
+      });
 
-      if (error) {
-        // fail-soft: não marca como healed para permitir retry em outra aba
-        // se o erro for transitório.
-        // eslint-disable-next-line no-console
-        console.warn('[onboardingSelfHeal] update failed (fail-soft)', error);
+      if (!result.ok) {
+        console.warn('[onboardingSelfHeal] finalizeOnboarding failed (fail-soft)', result.error);
         return false;
       }
 
-      HEALED_USERS.add(userId);
-      return true;
+      // Observabilidade: marca a remoção do bypass para que dashboards
+      // possam confirmar a queda dos finalizes paralelos. Sem PII.
+      void trackOnboardingEvent({
+        phase: 'done' as any,
+        event: 'submit',
+        userId,
+        meta: {
+          action: 'finalize_via_self_heal',
+          delegated_to: 'finalize_onboarding_atomic',
+          source: 'onboardingSelfHeal',
+        },
+      });
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn('[onboardingSelfHeal] threw (fail-soft)', err);
