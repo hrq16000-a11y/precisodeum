@@ -10,6 +10,7 @@ import {
   subscribeCooldown,
   formatCooldown,
 } from '@/lib/forgotPasswordCooldown';
+import { isValidEmail, EMAIL_INVALID_MESSAGE } from '@/lib/validation/emailValidation';
 
 type Status = 'idle' | 'sending' | 'sent' | 'cooldown' | 'not_found' | 'error';
 
@@ -40,7 +41,7 @@ const ForgotPasswordPage = () => {
   const validate = (raw: string): string | null => {
     const v = raw.trim();
     if (!v) return 'Digite seu e-mail.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Formato de e-mail inválido.';
+    if (!isValidEmail(v)) return EMAIL_INVALID_MESSAGE;
     return null;
   };
 

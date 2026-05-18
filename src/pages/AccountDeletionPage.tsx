@@ -10,6 +10,7 @@ import { useSeoHead, SITE_BASE_URL } from "@/hooks/useSeoHead";
 import { toast } from "sonner";
 import { toastAssertiveError } from "@/lib/a11yToast";
 import { CheckCircle2, AlertCircle, ShieldCheck, Mail, Trash2 } from "lucide-react";
+import { isValidEmail, EMAIL_INVALID_MESSAGE } from "@/lib/validation/emailValidation";
 
 const APP_NAME = "Preciso de Um";
 const DEVELOPER_NAME = "Preciso de Um Tecnologia";
@@ -35,8 +36,8 @@ const AccountDeletionPage = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setErrorMsg("Digite um e-mail válido.");
+    if (!isValidEmail(email)) {
+      setErrorMsg(EMAIL_INVALID_MESSAGE);
       return;
     }
     if (!confirmed) {
