@@ -272,7 +272,8 @@ const DashboardPage = () => {
 
   // profileDone: exige descrição, cidade E whatsapp (canal principal de contato).
   // Sem whatsapp, lead não chega — então não é "perfil completo".
-  const hasWhatsapp = !!(profile?.whatsapp || provider?.whatsapp || profile?.phone || provider?.phone);
+  // Leitura via resolver central (read consolidation layer — Fase 1.5).
+  const hasWhatsapp = hasAnyContact(provider, profile);
   const profileDone = !!provider?.description && !!provider?.city && hasWhatsapp;
   const servicesDone = servicesCount !== null && servicesCount > 0;
   const portfolioDone = portfolioCount > 0;
