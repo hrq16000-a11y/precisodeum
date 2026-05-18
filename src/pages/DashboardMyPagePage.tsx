@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube, Palette, Eye, Type, Layout, Link2, Sparkles } from 'lucide-react';
 import ThemePreview from '@/components/dashboard/ThemePreview';
+import { setOnboardingProgress } from '@/lib/onboardingProgressSync';
 
 const THEMES = [
   {
