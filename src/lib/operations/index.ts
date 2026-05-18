@@ -8,3 +8,4 @@ export * from './buildDashboardProfileOperation';
 export * from './buildPersistFirstServiceOperation';
 export * from './buildBetFinalizeOperation';
 export * from './buildProfileTypeSwitchOperation';
+export * from './executeOperation';
