@@ -1,6 +1,9 @@
+import { normalizePhoneBR } from '@/lib/validation/phoneNormalization';
+
 export function normalizeOnboardingPhone(value: unknown): string {
-  const digits = typeof value === 'string' ? value.replace(/\D/g, '') : '';
-  return digits.replace(/^55(?=\d{10,11}$)/, '');
+  // Fase 1.3: delega à fonte única. Mantém o contrato anterior (string vazia
+  // se inválido) e o formato canônico 55DDDNUMBER usado pelo wizard V2.
+  return normalizePhoneBR(value);
 }
 
 import { isValidFullName } from '@/lib/validation/fullNameValidation';
