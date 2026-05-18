@@ -113,6 +113,9 @@ export async function runOnboardingSelfHeal({
           source: 'onboardingSelfHeal',
         },
       });
+
+      HEALED_USERS.add(userId);
+      return true;
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn('[onboardingSelfHeal] threw (fail-soft)', err);
