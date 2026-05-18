@@ -26,6 +26,7 @@ import { logAuditAction } from '@/hooks/useAuditLog';
 import { handleImageError } from '@/lib/imageResolver';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { sanitizePhone, formatPhoneDisplay } from '@/lib/whatsapp';
+import { resolveWhatsapp } from '@/lib/profileResolvers';
 
 interface UserDetailSheetProps {
   user: any | null;
@@ -753,13 +754,18 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
 
           {/* Quick links */}
           <div className="flex flex-wrap gap-2 mt-3">
-            {(effectiveUser.whatsapp || provider?.whatsapp) && (
-              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
-                <a href={`https://wa.me/${sanitizePhone(effectiveUser.whatsapp || provider?.whatsapp || '')}`} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-3 w-3" /> WhatsApp
-                </a>
-              </Button>
-            )}
+            {(() => {
+              // Leitura via resolver central (read consolidation layer — Fase 1.5).
+              const wa = resolveWhatsapp(provider, effectiveUser);
+              if (!wa) return null;
+              return (
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
+                  <a href={`https://wa.me/${sanitizePhone(wa)}`} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-3 w-3" /> WhatsApp
+                  </a>
+                </Button>
+              );
+            })()}
             {provider?.slug && (
               <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
                 <a href={`/profissional/${provider.slug}`} target="_blank" rel="noopener noreferrer">
