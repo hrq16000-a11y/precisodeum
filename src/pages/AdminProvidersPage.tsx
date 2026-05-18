@@ -219,9 +219,16 @@ const AdminProvidersPage = () => {
     onComplete: fetchProviders,
   });
 
+  // Canonical admin write boundary (Fase 1.6.7) — single-provider status.
   const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from('providers').update({ status }).eq('id', id);
-    if (error) { toast.error(error.message); return; }
+    const { updateAdminProvider } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProvider({
+      providerId: id,
+      source: 'admin_providers_page:update_status',
+      skipNormalize: true,
+      patch: { status },
+    });
+    if (!res.ok) { toast.error(res.error?.message || 'Falha ao salvar'); return; }
     toast.success(status === 'approved' ? 'Prestador aprovado!' : status === 'rejected' ? 'Prestador rejeitado' : 'Status atualizado');
     await logAuditAction({ action: status === 'approved' ? 'approve' : 'reject', resource_type: 'provider', resource_id: id });
     fetchProviders();
