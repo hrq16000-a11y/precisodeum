@@ -11,12 +11,13 @@
  * Fail-soft: nunca lança; em caso de erro, deixa o estado como está (o gate
  * vai apenas redirecionar para o wizard, e o usuário concluir manualmente).
  */
-import { supabase } from '@/integrations/supabase/client';
 import {
   fetchExistingFirstService,
   findExistingProvider,
 } from '@/components/onboarding/wizard/phases/v2/findExistingRecords';
 import { isWizardSessionLockActive } from '@/lib/wizardSessionLock';
+import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
+import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 
 const HEALED_USERS = new Set<string>();
 const IN_FLIGHT = new Map<string, Promise<boolean>>();
@@ -73,18 +74,45 @@ export async function runOnboardingSelfHeal({
 
       if (!existingService?.id) return false;
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ onboarding_step: 5, onboarding_completed: true })
-        .eq('id', userId);
+      // ── FASE 1.6.1 — DELEGAÇÃO AO ENTRYPOINT CANÔNICO ──────────────────
+      // Antes desta blindagem, escrevíamos os flags onboarding_step e
+      // onboarding_completed diretamente em profiles aqui, contornando o
+      // RPC finalize_onboarding_atomic. Isso criava um caminho paralelo de
+      // finalização sem auditoria, sem limpeza de drafts e sem release de
+      // session lock — exatamente o tipo de divergência que o audit 1.6
+      // sinalizou como risco crítico.
+      //
+      // Agora delegamos 100% ao `finalizeOnboarding()`, que:
+      //  1) libera o session lock,
+      //  2) marca grace window,
+      //  3) limpa drafts locais e remotos (no-op para legados),
+      //  4) executa a RPC atômica server-side com profile_type validado.
+      //
+      // NÃO escrever flags canônicas (onboarding_completed/onboarding_step)
+      // fora deste entrypoint.
+      const result = await finalizeOnboarding({
+        userId,
+        extraProfilePatch: { profile_type: 'provider' },
+        clearDrafts: true,
+      });
 
-      if (error) {
-        // fail-soft: não marca como healed para permitir retry em outra aba
-        // se o erro for transitório.
-        // eslint-disable-next-line no-console
-        console.warn('[onboardingSelfHeal] update failed (fail-soft)', error);
+      if (!result.ok) {
+        console.warn('[onboardingSelfHeal] finalizeOnboarding failed (fail-soft)', result.error);
         return false;
       }
+
+      // Observabilidade: marca a remoção do bypass para que dashboards
+      // possam confirmar a queda dos finalizes paralelos. Sem PII.
+      void trackOnboardingEvent({
+        phase: 'done' as any,
+        event: 'submit',
+        userId,
+        meta: {
+          action: 'finalize_via_self_heal',
+          delegated_to: 'finalize_onboarding_atomic',
+          source: 'onboardingSelfHeal',
+        },
+      });
 
       HEALED_USERS.add(userId);
       return true;
