@@ -353,16 +353,22 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     fetchTags(user.id);
   };
 
-  // === Moderation ===
+  // === Moderation === — Canonical admin write boundary (Fase 1.6.7).
   const suspendUser = async () => {
     if (!user || !suspendReason.trim()) { toast.error('Informe o motivo'); return; }
     setSuspendLoading(true);
-    const { error } = await supabase.from('profiles').update({
-      status: 'suspended', suspended_at: new Date().toISOString(),
-      suspended_reason: suspendReason.trim(),
-      suspended_by: (await supabase.auth.getUser()).data.user?.id,
-    } as any).eq('id', user.id);
-    if (error) toast.error('Erro: ' + error.message);
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: user.id,
+      source: 'admin_user_detail_sheet:suspend',
+      skipNormalize: true,
+      patch: {
+        status: 'suspended', suspended_at: new Date().toISOString(),
+        suspended_reason: suspendReason.trim(),
+        suspended_by: (await supabase.auth.getUser()).data.user?.id,
+      },
+    });
+    if (!res.ok) toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar'));
     else {
       await logAuditAction({ action: 'suspend', resource_type: 'user', resource_id: user.id, details: { reason: suspendReason } });
       await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Suspensa', message: `Motivo: ${suspendReason}`, type: 'system' });
@@ -376,12 +382,18 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const banUser = async () => {
     if (!user) return;
     setSuspendLoading(true);
-    const { error } = await supabase.from('profiles').update({
-      status: 'banned', suspended_at: new Date().toISOString(),
-      suspended_reason: suspendReason.trim() || 'Banido pelo administrador',
-      suspended_by: (await supabase.auth.getUser()).data.user?.id,
-    } as any).eq('id', user.id);
-    if (error) toast.error('Erro: ' + error.message);
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: user.id,
+      source: 'admin_user_detail_sheet:ban',
+      skipNormalize: true,
+      patch: {
+        status: 'banned', suspended_at: new Date().toISOString(),
+        suspended_reason: suspendReason.trim() || 'Banido pelo administrador',
+        suspended_by: (await supabase.auth.getUser()).data.user?.id,
+      },
+    });
+    if (!res.ok) toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar'));
     else {
       await logAuditAction({ action: 'ban', resource_type: 'user', resource_id: user.id, details: { reason: suspendReason || 'Banido' } });
       await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Banida', message: 'Sua conta foi banida permanentemente.', type: 'system' });
@@ -394,10 +406,14 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
   const reactivateUser = async () => {
     if (!user) return;
     setSuspendLoading(true);
-    const { error } = await supabase.from('profiles').update({
-      status: 'active', suspended_at: null, suspended_reason: '', suspended_by: null,
-    } as any).eq('id', user.id);
-    if (error) toast.error('Erro: ' + error.message);
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: user.id,
+      source: 'admin_user_detail_sheet:reactivate',
+      skipNormalize: true,
+      patch: { status: 'active', suspended_at: null, suspended_reason: '', suspended_by: null },
+    });
+    if (!res.ok) toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar'));
     else {
       await logAuditAction({ action: 'reactivate', resource_type: 'user', resource_id: user.id });
       await supabase.from('notifications').insert({ user_id: user.id, title: 'Conta Reativada', message: 'Sua conta foi reativada.', type: 'system' });
@@ -453,7 +469,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     setAvatarUploading(false);
   };
 
-  // === Inline header status change ===
+  // === Inline header status change === — Canonical boundary (Fase 1.6.7).
   const updateField = async (field: string, value: any) => {
     if (!user) return;
     const updateData: any = { [field]: value };
@@ -461,8 +477,13 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     if (field === 'profile_type') {
       updateData.role = value;
     }
-    const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id);
-    if (error) { toast.error('Erro: ' + error.message); return; }
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: user.id,
+      source: 'admin_user_detail_sheet:inline',
+      patch: updateData,
+    });
+    if (!res.ok) { toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar')); return; }
     await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { [field]: value } } });
     toast.success('Atualizado!');
     onRefresh?.();
@@ -545,18 +566,25 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       ? normalizeFullName(profileForm.full_name)
       : (profileForm.full_name || '');
 
-    const { error } = await supabase.from('profiles').update({
-      full_name: normalizedName,
-      phone: sanitizedPhone,
-      whatsapp: sanitizedWhatsapp,
-      profile_type: profileForm.profile_type,
-      role: profileForm.profile_type,
-      status: profileForm.status,
-      level_id: profileForm.level_id || null,
-      account_type_id: profileForm.account_type_id || null,
-      department: profileForm.department || '',
-    }).eq('id', user.id);
-    if (error) { toast.error('Erro: ' + error.message); return; }
+    // Canonical admin write boundary (Fase 1.6.7).
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: user.id,
+      source: 'admin_user_detail_sheet:save_profile',
+      skipNormalize: true, // já normalizamos acima
+      patch: {
+        full_name: normalizedName,
+        phone: sanitizedPhone,
+        whatsapp: sanitizedWhatsapp,
+        profile_type: profileForm.profile_type,
+        role: profileForm.profile_type,
+        status: profileForm.status,
+        level_id: profileForm.level_id || null,
+        account_type_id: profileForm.account_type_id || null,
+        department: profileForm.department || '',
+      },
+    });
+    if (!res.ok) { toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar')); return; }
     await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: profileForm } });
     toast.success('Perfil salvo!');
     setEditing(false);
@@ -612,13 +640,20 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       ? providerForm.business_name.trim()
       : providerForm.business_name;
 
-    const { error } = await supabase.from('providers').update({
-      ...providerForm,
-      business_name: businessName,
-      whatsapp: rawWhatsapp.trim() ? (normalizePhoneBR(rawWhatsapp) || sanitizePhone(rawWhatsapp)) : '',
-      phone: rawPhone.trim() ? (normalizePhoneBR(rawPhone) || sanitizePhone(rawPhone)) : '',
-    }).eq('id', provider.id);
-    if (error) { toast.error('Erro: ' + error.message); return; }
+    // Canonical admin write boundary (Fase 1.6.7).
+    const { updateAdminProvider } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProvider({
+      providerId: provider.id,
+      source: 'admin_user_detail_sheet:save_provider',
+      skipNormalize: true, // já normalizamos via sanitizePhone fallback
+      patch: {
+        ...providerForm,
+        business_name: businessName,
+        whatsapp: rawWhatsapp.trim() ? (normalizePhoneBR(rawWhatsapp) || sanitizePhone(rawWhatsapp)) : '',
+        phone: rawPhone.trim() ? (normalizePhoneBR(rawPhone) || sanitizePhone(rawPhone)) : '',
+      },
+    });
+    if (!res.ok) { toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar')); return; }
     toast.success('Dados profissionais salvos!');
     setEditing(false);
     onRefresh?.();

@@ -165,24 +165,31 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
     // PJ: business_name permissivo (sem regra PF de nome completo). Apenas trim.
     const businessName = typeof form.business_name === 'string' ? form.business_name.trim() : form.business_name;
 
-    const { error } = await supabase.from('providers').update({
-      business_name: businessName || null,
-      city: form.city,
-      state: form.state,
-      neighborhood: form.neighborhood,
-      cnpj: form.cnpj || null,
-      phone: form.phone ? (normalizePhoneBR(form.phone) || sanitizePhone(form.phone)) : '',
-      whatsapp: form.whatsapp ? (normalizePhoneBR(form.whatsapp) || sanitizePhone(form.whatsapp)) : '',
-      description: form.description,
-      category_id: form.category_id || null,
-      website: form.website || null,
-      working_hours: form.working_hours || null,
-      years_experience: Number(form.years_experience) || 0,
-      latitude: lat,
-      longitude: lon,
-    }).eq('id', provider.id);
+    // Canonical admin write boundary (Fase 1.6.7).
+    const { updateAdminProvider } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProvider({
+      providerId: provider.id,
+      source: 'admin_provider_edit_dialog:save',
+      skipNormalize: true, // já normalizamos abaixo
+      patch: {
+        business_name: businessName || null,
+        city: form.city,
+        state: form.state,
+        neighborhood: form.neighborhood,
+        cnpj: form.cnpj || null,
+        phone: form.phone ? (normalizePhoneBR(form.phone) || sanitizePhone(form.phone)) : '',
+        whatsapp: form.whatsapp ? (normalizePhoneBR(form.whatsapp) || sanitizePhone(form.whatsapp)) : '',
+        description: form.description,
+        category_id: form.category_id || null,
+        website: form.website || null,
+        working_hours: form.working_hours || null,
+        years_experience: Number(form.years_experience) || 0,
+        latitude: lat,
+        longitude: lon,
+      },
+    });
 
-    if (error) toast.error('Erro: ' + error.message);
+    if (!res.ok) toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar'));
     else {
       await logAuditAction({ action: 'update', resource_type: 'provider', resource_id: provider.id });
       toast.success('Prestador atualizado!');

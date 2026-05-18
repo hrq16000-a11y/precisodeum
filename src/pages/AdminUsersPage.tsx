@@ -571,11 +571,18 @@ const AdminUsersPage = () => {
     }
   };
 
+  // Canonical admin write boundary (Fase 1.6.7) — single-user paths.
   const handleBlock = async (p: any) => {
     const prevStatus = p.status || 'active';
     const newStatus = prevStatus === 'active' ? 'inactive' : 'active';
-    const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', p.id);
-    if (error) toast.error('Erro: ' + error.message);
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: p.id,
+      source: 'admin_users_page:block_toggle',
+      skipNormalize: true,
+      patch: { status: newStatus },
+    });
+    if (!res.ok) toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar'));
     else {
       await logAuditAction({
         action: newStatus === 'inactive' ? 'block' : 'unblock', resource_type: 'user', resource_id: p.id,
@@ -588,8 +595,14 @@ const AdminUsersPage = () => {
 
   const handleDelete = async () => {
     if (!deleteUser) return;
-    const { error } = await supabase.from('profiles').update({ status: 'inactive' }).eq('id', deleteUser.id);
-    if (error) toast.error('Erro: ' + error.message);
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: deleteUser.id,
+      source: 'admin_users_page:soft_delete',
+      skipNormalize: true,
+      patch: { status: 'inactive' },
+    });
+    if (!res.ok) toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar'));
     else {
       await logAuditAction({ action: 'soft_delete', resource_type: 'user', resource_id: deleteUser.id, details: { target_user_id: deleteUser.id } });
       toast.success('Usuário desativado!');
