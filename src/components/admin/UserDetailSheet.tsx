@@ -566,18 +566,25 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       ? normalizeFullName(profileForm.full_name)
       : (profileForm.full_name || '');
 
-    const { error } = await supabase.from('profiles').update({
-      full_name: normalizedName,
-      phone: sanitizedPhone,
-      whatsapp: sanitizedWhatsapp,
-      profile_type: profileForm.profile_type,
-      role: profileForm.profile_type,
-      status: profileForm.status,
-      level_id: profileForm.level_id || null,
-      account_type_id: profileForm.account_type_id || null,
-      department: profileForm.department || '',
-    }).eq('id', user.id);
-    if (error) { toast.error('Erro: ' + error.message); return; }
+    // Canonical admin write boundary (Fase 1.6.7).
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: user.id,
+      source: 'admin_user_detail_sheet:save_profile',
+      skipNormalize: true, // já normalizamos acima
+      patch: {
+        full_name: normalizedName,
+        phone: sanitizedPhone,
+        whatsapp: sanitizedWhatsapp,
+        profile_type: profileForm.profile_type,
+        role: profileForm.profile_type,
+        status: profileForm.status,
+        level_id: profileForm.level_id || null,
+        account_type_id: profileForm.account_type_id || null,
+        department: profileForm.department || '',
+      },
+    });
+    if (!res.ok) { toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar')); return; }
     await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: profileForm } });
     toast.success('Perfil salvo!');
     setEditing(false);
