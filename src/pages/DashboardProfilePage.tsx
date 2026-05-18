@@ -584,10 +584,8 @@ const DashboardProfilePage = () => {
                       ref={whatsappInputRef}
                       name="whatsapp"
                       value={form.whatsapp}
-                      onChange={(e) => { handlePhoneChange(e); if (whatsappError) setWhatsappError(null); }}
+                      onChange={(n, v) => { handlePhoneChange(n, v); if (whatsappError) setWhatsappError(null); }}
                       className={inputCls}
-                      aria-invalid={!!whatsappError}
-                      aria-describedby={whatsappError ? 'profile-whatsapp-error' : undefined}
                     />
                     {whatsappError && (
                       <p id="profile-whatsapp-error" data-testid="profile-whatsapp-error" className="mt-1 text-xs text-destructive">
