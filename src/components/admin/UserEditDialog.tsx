@@ -95,6 +95,10 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
 
   const handleSave = async () => {
     if (!user) return;
+    if (shouldEnforceFullName(form.full_name, user.full_name) && !isValidFullName(form.full_name)) {
+      toast.error(FULL_NAME_INVALID_MESSAGE);
+      return;
+    }
     setSaving(true);
 
     const sanitizedWhatsapp = (form.whatsapp || '').replace(/\D/g, '');
