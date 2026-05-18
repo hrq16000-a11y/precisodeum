@@ -69,6 +69,16 @@ export interface ConsistencyFlowState {
   driftPotential: DriftType[];
   risks: ConsistencyRisk[];
   severity: ConsistencyRiskLevel;
+  /** Fase 1.7.3 — classificação estrutural do write path. */
+  classification?: 'SAFE' | 'GUARDED' | 'LEGACY' | 'UNSAFE' | 'UNKNOWN';
+  /** Fase 1.7.3 — impacto deste flow no architecture score (0–100). */
+  architectureScoreImpact?: number;
+  /** Fase 1.7.3 — está na quarentena oficial? */
+  isQuarantined?: boolean;
+  /** Fase 1.7.3 — exige migração para RPC atômica. */
+  requiresAtomicMigration?: boolean;
+  /** Fase 1.7.3 — razão caso classification === 'LEGACY'. */
+  legacyReason?: string;
 }
 
 export interface ConsistencyRisk {
