@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { createSyncTracker, logSyncFailure, showPartialSyncError } from '@/lib/multiWriteSync';
+import { buildProfileTypeSwitchOperation, logOperationBuildFailure } from '@/lib/operations';
 
 const TYPES = [
   { value: 'client', label: 'Cliente', icon: User, color: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
