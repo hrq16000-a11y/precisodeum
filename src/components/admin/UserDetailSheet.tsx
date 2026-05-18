@@ -469,7 +469,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     setAvatarUploading(false);
   };
 
-  // === Inline header status change ===
+  // === Inline header status change === — Canonical boundary (Fase 1.6.7).
   const updateField = async (field: string, value: any) => {
     if (!user) return;
     const updateData: any = { [field]: value };
@@ -477,8 +477,13 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     if (field === 'profile_type') {
       updateData.role = value;
     }
-    const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id);
-    if (error) { toast.error('Erro: ' + error.message); return; }
+    const { updateAdminProfile } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProfile({
+      userId: user.id,
+      source: 'admin_user_detail_sheet:inline',
+      patch: updateData,
+    });
+    if (!res.ok) { toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar')); return; }
     await logAuditAction({ action: 'update', resource_type: 'user', resource_id: user.id, details: { changes: { [field]: value } } });
     toast.success('Atualizado!');
     onRefresh?.();
