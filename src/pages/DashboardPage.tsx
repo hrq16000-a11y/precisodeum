@@ -296,7 +296,8 @@ const DashboardPage = () => {
     };
   }, []);
 
-  // Persist onboarding progress when steps complete (debounced, no loops)
+  // Persist onboarding progress when steps complete (debounced, no loops).
+  // Canonical onboarding_progress write boundary — ver src/lib/onboardingProgressSync.ts.
   useEffect(() => {
     if (!provider?.id) return;
     const current = (provider?.onboarding_progress as Record<string, boolean>) || {};
@@ -309,9 +310,10 @@ const DashboardPage = () => {
 
     if (Object.keys(updates).length === 0) return;
 
-    void supabase.from('providers').update({
-      onboarding_progress: { ...current, ...updates },
-    }).eq('id', provider.id);
+    void setOnboardingProgress(provider.id, updates, {
+      source: 'dashboard_page_step_complete',
+      currentProgress: current,
+    });
   }, [provider?.id, profileDone, servicesDone, portfolioDone]);
 
   if (loading) return <DashboardLayout><DashboardSkeleton /></DashboardLayout>;
