@@ -1283,6 +1283,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       return false;
     }
     setSaving(true);
+    // FASE 1.6.3 — tracker multi-write: providers.update + services create + finalize.
+    // NÃO altera fluxo: apenas observa e impede sucesso falso se finalize falhar.
+    const { createSyncTracker, logSyncFailure } = await import('@/lib/multiWriteSync');
+    const sync = createSyncTracker();
     try {
       const s = state.service;
       const p = state.profile;
