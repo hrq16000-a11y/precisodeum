@@ -85,10 +85,18 @@ export function calculateGuaranteeLevel(flow: FlowId): FlowGuarantees | null {
     ? 'VERIFIED'
     : 'PARTIAL';
 
+  // Rollback visibility:
+  //  - explicit client-side rollback ⇒ STRONG
+  //  - single-step write ⇒ VERIFIED (nothing to roll back)
+  //  - READY multi-step atomic ⇒ STRONG (atomic boundary IS the rollback contract)
+  //  - PARTIAL/LEGACY multi-step atomic ⇒ PARTIAL (atomic migration pending)
+  //  - multi-step non-atomic ⇒ NONE
   const rollback_visibility: GuaranteeLevel = reg.supportsRollback
     ? 'STRONG'
     : reg.steps.length === 1
     ? 'VERIFIED'
+    : reg.supportsAtomic && reg.readiness === 'READY'
+    ? 'STRONG'
     : reg.supportsAtomic
     ? 'PARTIAL'
     : 'NONE';
