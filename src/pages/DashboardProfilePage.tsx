@@ -300,123 +300,172 @@ const DashboardProfilePage = () => {
       try { const coords = await geocodeCity(form.city, form.state); latitude = coords.latitude; longitude = coords.longitude; } catch {}
     }
 
+    // Fase 1.4 — hardening leve de consistência profiles+providers.
+    // Rastreamos cada etapa para que:
+    //   a) toast de sucesso só apareça se TUDO salvar;
+    //   b) falhas parciais sejam logadas em audit (sem dados sensíveis);
+    //   c) a mensagem ao usuário seja sempre amigável (sem stack/SQL).
+    // Quando migrarmos para uma RPC transacional real, basta substituir o
+    // bloco entre os marcadores [SYNC-BEGIN]/[SYNC-END].
+    let profileUpdated = false;
+    let providerUpdated = false;
+    let failedStep: 'profile' | 'provider' | null = null;
+    let failureMessage: string | null = null;
+    let failureErrorRaw: string | null = null;
+
     try {
       trackAction('profile_save_start', 'Salvando dados do perfil');
+
+      // [SYNC-BEGIN]
       const { error: profileError } = await supabase.from('profiles').update({
         full_name: form.full_name, phone: form.phone, email: user.email || '',
       }).eq('id', user.id);
       if (profileError) {
-        await showSaveError({ actionContext: 'Salvar perfil pessoal', componentName: 'DashboardProfilePage', errorMessage: profileError.message, retryFn: handleSave });
-        setSaving(false); return;
-      }
-
-      const isAutonomo = form.account_kind === 'autonomo';
-      const finalCnpj = isAutonomo ? null : (cnpjDigits || null);
-      const finalCpf = isAutonomo ? (cpfDigits || null) : null;
-      const finalBusinessName = isAutonomo ? null : (form.business_name || null);
-
-      // Fonte única de normalização (src/lib/providerPayload.ts) — compartilhada
-      // com SmartOnboardingWizard. Garante que colunas NOT NULL DEFAULT ''
-      // (description/city/state/phone/whatsapp) nunca recebam null/undefined,
-      // evitando erro 23502. Cobertura: src/test/provider-payload-normalization.test.ts.
-      const providerPayload = normalizeProviderPayload({
-        business_name: finalBusinessName,
-        description: form.description ?? '',
-        city: form.city ?? '',
-        state: form.state ?? '',
-        neighborhood: form.neighborhood || null,
-        whatsapp: finalWhatsapp ?? '',
-        phone: finalPhone ?? '',
-        website: form.website || null,
-        years_experience: form.years_experience,
-        working_hours: form.working_hours || null,
-        category_id: form.category_id || null,
-        category_custom: form.category_custom || null,
-        cnpj: finalCnpj, cpf: finalCpf,
-        birth_date: form.birth_date || null,
-        ibge_code: form.ibge_code || null,
-        latitude, longitude,
-      });
-
-      // Slug regen: se nome ou cidade mudaram em relação ao provider salvo,
-      // gera um novo slug e tenta persistir; em caso de colisão única, anexa
-      // sufixo curto. Mantém o slug atual em caso de qualquer falha.
-      const ensureUniqueSlug = async (base: string, ignoreId?: string): Promise<string> => {
-        const tryOne = async (candidate: string) => {
-          let q = supabase.from('providers').select('id', { head: true, count: 'exact' }).eq('slug', candidate);
-          if (ignoreId) q = q.neq('id', ignoreId);
-          const { count } = await q;
-          return (count ?? 0) === 0;
-        };
-        if (await tryOne(base)) return base;
-        for (let i = 0; i < 5; i++) {
-          const suffix = Math.random().toString(36).slice(2, 6);
-          const cand = `${base}-${suffix}`;
-          if (await tryOne(cand)) return cand;
-        }
-        return base; // fallback — trigger sanitize_provider_slug pode ajustar
-      };
-
-      // Slugs a invalidar no cache do perfil público após o save (antigo + novo).
-      const slugsToInvalidate = new Set<string>();
-
-      if (provider) {
-        const nameChanged = (provider as any).business_name !== finalBusinessName ||
-          (profile?.full_name || '') !== form.full_name;
-        const cityChanged = (provider as any).city !== form.city;
-        const updatePayload: any = { ...providerPayload };
-        const previousSlug = (provider as any).slug as string | null;
-        if (previousSlug) slugsToInvalidate.add(previousSlug);
-        if (nameChanged || cityChanged) {
-          const newSlug = generateProviderSlug(form.full_name, form.city);
-          if (newSlug && newSlug !== previousSlug) {
-            updatePayload.slug = await ensureUniqueSlug(newSlug, (provider as any).id);
-            slugsToInvalidate.add(updatePayload.slug);
-          }
-        }
-        const { error } = await supabase.from('providers').update(updatePayload).eq('id', provider.id);
-        if (error) {
-          await showSaveError({ actionContext: 'Salvar dados profissionais', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
-          setSaving(false); return;
-        }
+        failedStep = 'profile';
+        failureMessage = 'Não foi possível salvar todas as informações. Tente novamente.';
+        failureErrorRaw = profileError.message;
       } else {
-        const { data: existing } = await supabase.from('providers').select('id, slug').eq('user_id', user.id).limit(1);
-        if (existing && existing.length > 0) {
-          const updatePayload: any = normalizeProviderPayload({ ...providerPayload, phone: finalPhone ?? '' });
-          if (existing[0].slug) slugsToInvalidate.add(existing[0].slug);
-          const newSlug = generateProviderSlug(form.full_name, form.city);
-          if (newSlug && newSlug !== existing[0].slug) {
-            updatePayload.slug = await ensureUniqueSlug(newSlug, existing[0].id);
-            slugsToInvalidate.add(updatePayload.slug);
+        profileUpdated = true;
+
+        const isAutonomo = form.account_kind === 'autonomo';
+        const finalCnpj = isAutonomo ? null : (cnpjDigits || null);
+        const finalCpf = isAutonomo ? (cpfDigits || null) : null;
+        const finalBusinessName = isAutonomo ? null : (form.business_name || null);
+
+        const providerPayload = normalizeProviderPayload({
+          business_name: finalBusinessName,
+          description: form.description ?? '',
+          city: form.city ?? '',
+          state: form.state ?? '',
+          neighborhood: form.neighborhood || null,
+          whatsapp: finalWhatsapp ?? '',
+          phone: finalPhone ?? '',
+          website: form.website || null,
+          years_experience: form.years_experience,
+          working_hours: form.working_hours || null,
+          category_id: form.category_id || null,
+          category_custom: form.category_custom || null,
+          cnpj: finalCnpj, cpf: finalCpf,
+          birth_date: form.birth_date || null,
+          ibge_code: form.ibge_code || null,
+          latitude, longitude,
+        });
+
+        const ensureUniqueSlug = async (base: string, ignoreId?: string): Promise<string> => {
+          const tryOne = async (candidate: string) => {
+            let q = supabase.from('providers').select('id', { head: true, count: 'exact' }).eq('slug', candidate);
+            if (ignoreId) q = q.neq('id', ignoreId);
+            const { count } = await q;
+            return (count ?? 0) === 0;
+          };
+          if (await tryOne(base)) return base;
+          for (let i = 0; i < 5; i++) {
+            const suffix = Math.random().toString(36).slice(2, 6);
+            const cand = `${base}-${suffix}`;
+            if (await tryOne(cand)) return cand;
           }
-          const { error } = await supabase.from('providers').update(updatePayload).eq('id', existing[0].id);
-          if (error) {
-            await showSaveError({ actionContext: 'Atualizar provedor existente', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
-            setSaving(false); return;
+          return base;
+        };
+
+        const slugsToInvalidate = new Set<string>();
+        let providerSaveError: { message: string } | null = null;
+
+        if (provider) {
+          const nameChanged = (provider as any).business_name !== finalBusinessName ||
+            (profile?.full_name || '') !== form.full_name;
+          const cityChanged = (provider as any).city !== form.city;
+          const updatePayload: any = { ...providerPayload };
+          const previousSlug = (provider as any).slug as string | null;
+          if (previousSlug) slugsToInvalidate.add(previousSlug);
+          if (nameChanged || cityChanged) {
+            const newSlug = generateProviderSlug(form.full_name, form.city);
+            if (newSlug && newSlug !== previousSlug) {
+              updatePayload.slug = await ensureUniqueSlug(newSlug, (provider as any).id);
+              slugsToInvalidate.add(updatePayload.slug);
+            }
           }
+          const { error } = await supabase.from('providers').update(updatePayload).eq('id', provider.id);
+          if (error) providerSaveError = error;
         } else {
-          const baseSlug = generateProviderSlug(form.full_name, form.city);
-          const slug = await ensureUniqueSlug(baseSlug);
-          slugsToInvalidate.add(slug);
-          const insertPayload = normalizeProviderPayload({ ...providerPayload, user_id: user.id, phone: finalPhone ?? '', slug, status: 'pending' });
-          const { error } = await supabase.from('providers').insert(insertPayload as any);
-          if (error) {
-            await showSaveError({ actionContext: 'Criar perfil profissional', componentName: 'DashboardProfilePage', errorMessage: error.message, retryFn: handleSave });
-            setSaving(false); return;
+          const { data: existing } = await supabase.from('providers').select('id, slug').eq('user_id', user.id).limit(1);
+          if (existing && existing.length > 0) {
+            const updatePayload: any = normalizeProviderPayload({ ...providerPayload, phone: finalPhone ?? '' });
+            if (existing[0].slug) slugsToInvalidate.add(existing[0].slug);
+            const newSlug = generateProviderSlug(form.full_name, form.city);
+            if (newSlug && newSlug !== existing[0].slug) {
+              updatePayload.slug = await ensureUniqueSlug(newSlug, existing[0].id);
+              slugsToInvalidate.add(updatePayload.slug);
+            }
+            const { error } = await supabase.from('providers').update(updatePayload).eq('id', existing[0].id);
+            if (error) providerSaveError = error;
+          } else {
+            const baseSlug = generateProviderSlug(form.full_name, form.city);
+            const slug = await ensureUniqueSlug(baseSlug);
+            slugsToInvalidate.add(slug);
+            const insertPayload = normalizeProviderPayload({ ...providerPayload, user_id: user.id, phone: finalPhone ?? '', slug, status: 'pending' });
+            const { error } = await supabase.from('providers').insert(insertPayload as any);
+            if (error) providerSaveError = error;
           }
         }
+
+        if (providerSaveError) {
+          failedStep = 'provider';
+          failureMessage = 'Não foi possível salvar todas as informações. Tente novamente.';
+          failureErrorRaw = providerSaveError.message;
+        } else {
+          providerUpdated = true;
+          slugsToInvalidate.forEach((s) => invalidateProviderProfileCache(s));
+        }
       }
-      // Invalida cache em memória do ProviderProfile para que /profissional/{slug}
-      // reflita imediatamente as alterações sem precisar de F5.
-      slugsToInvalidate.forEach((s) => invalidateProviderProfileCache(s));
+      // [SYNC-END]
+
+      if (failedStep) {
+        // Log de auditoria sem dados sensíveis para futura observabilidade.
+        logAuditAction({
+          action: 'profile_provider_sync_failed',
+          resource_type: 'user',
+          resource_id: user.id,
+          details: {
+            profile_updated: profileUpdated,
+            provider_updated: providerUpdated,
+            failed_step: failedStep,
+            source: 'dashboard_profile_page',
+          },
+        }).catch(() => undefined);
+        await showSaveError({
+          actionContext: failedStep === 'profile' ? 'Salvar perfil pessoal' : 'Salvar dados profissionais',
+          componentName: 'DashboardProfilePage',
+          errorMessage: failureMessage || 'Não foi possível salvar todas as informações. Tente novamente.',
+          retryFn: handleSave,
+        });
+        // mensagem técnica fica apenas no errorReporter (já enviado por showSaveError)
+        void failureErrorRaw;
+        return; // sem toast de sucesso, sem refetch otimista
+      }
+
       await refetchProfile();
       trackAction('profile_save_success', 'Perfil salvo com sucesso');
       toast.success('Perfil salvo com sucesso!');
     } catch (err: any) {
+      // Falha inesperada: também conta como sync incompleta se profile foi salvo.
+      if (profileUpdated && !providerUpdated) {
+        logAuditAction({
+          action: 'profile_provider_sync_failed',
+          resource_type: 'user',
+          resource_id: user.id,
+          details: {
+            profile_updated: true,
+            provider_updated: false,
+            failed_step: 'provider',
+            source: 'dashboard_profile_page',
+            unexpected: true,
+          },
+        }).catch(() => undefined);
+      }
       await showSaveError({
         actionContext: 'Salvar perfil (erro inesperado)',
         componentName: 'DashboardProfilePage',
-        errorMessage: err.message || 'Erro desconhecido',
+        errorMessage: 'Não foi possível salvar todas as informações. Tente novamente.',
         errorStack: err.stack,
         retryFn: handleSave,
       });
