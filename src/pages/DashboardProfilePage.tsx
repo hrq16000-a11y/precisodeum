@@ -39,6 +39,8 @@ const DashboardProfilePage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('pessoal');
   const whatsappInputRef = useRef<HTMLInputElement | null>(null);
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
