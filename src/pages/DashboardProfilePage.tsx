@@ -12,6 +12,7 @@ import { trackAction } from '@/lib/errorReporter';
 import { showSaveError } from '@/components/SaveErrorToast';
 import AvatarUpload from '@/components/AvatarUpload';
 import { getInitials, getSocialAvatarUrl } from '@/lib/avatarUtils';
+import { setUserAvatar } from '@/lib/avatarSync';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
