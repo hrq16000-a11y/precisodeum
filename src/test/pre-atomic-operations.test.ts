@@ -96,20 +96,20 @@ describe('Fase 1.6.8 — pre-atomic operation builders', () => {
       city: '', state: '', hasCategory: false,
     });
     expect(f1.ok).toBe(false);
-    if (!f1.ok) expect(f1.code).toBe('missing_user_id');
+    if (f1.ok === false) expect(f1.code).toBe('missing_user_id');
 
     const f2 = buildPersistFirstServiceOperation({
       userId: 'u1', providerId: null, categoryId: 'c1',
       fullName: 'M', whatsappDigits: '11999999999', city: 'SP', state: 'SP',
     });
     expect(f2.ok).toBe(false);
-    if (!f2.ok) expect(f2.code).toBe('missing_provider_id');
+    if (f2.ok === false) expect(f2.code).toBe('missing_provider_id');
 
     const f3 = buildProfileTypeSwitchOperation({
       userId: 'u1', currentType: 'client', targetType: 'client',
     });
     expect(f3.ok).toBe(false);
-    if (!f3.ok) expect(f3.code).toBe('noop_same_type');
+    if (f3.ok === false) expect(f3.code).toBe('noop_same_type');
   });
 
   it('B) logOperationBuildFailure emite audit sem PII', async () => {
@@ -118,7 +118,7 @@ describe('Fase 1.6.8 — pre-atomic operation builders', () => {
       city: '', state: '', hasCategory: false,
     });
     expect(fail.ok).toBe(false);
-    if (!fail.ok) {
+    if (fail.ok === false) {
       await logOperationBuildFailure('test_source', fail, { extra_signal: true });
     }
     expect(logAuditAction).toHaveBeenCalledTimes(1);
@@ -126,7 +126,6 @@ describe('Fase 1.6.8 — pre-atomic operation builders', () => {
     expect(call.action).toBe('operation_build_failed');
     expect(call.resource_type).toBe('pre_atomic_operation');
     const details = JSON.stringify(call.details);
-    // PII guard — não vaza nome/whatsapp/cidade
     expect(details).not.toContain('Maria');
     expect(details).not.toContain('11999999999');
     expect(call.details.source).toBe('test_source');
