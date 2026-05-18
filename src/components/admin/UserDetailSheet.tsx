@@ -27,6 +27,18 @@ import { handleImageError } from '@/lib/imageResolver';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import { sanitizePhone, formatPhoneDisplay } from '@/lib/whatsapp';
 import { resolveWhatsapp } from '@/lib/profileResolvers';
+import {
+  isValidFullName,
+  shouldEnforceFullName,
+  normalizeFullName,
+  FULL_NAME_INVALID_MESSAGE,
+} from '@/lib/validation/fullNameValidation';
+import {
+  normalizePhoneBR,
+  isValidPhoneBR,
+  shouldEnforcePhone,
+  PHONE_INVALID_MESSAGE,
+} from '@/lib/validation/phoneNormalization';
 
 interface UserDetailSheetProps {
   user: any | null;
