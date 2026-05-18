@@ -1590,7 +1590,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       if (workingHoursSummary) updates.working_hours = workingHoursSummary;
       if (s.working_hours_struct) updates.working_hours_struct = s.working_hours_struct;
       if (s.starting_price_brl != null) updates.starting_price = s.starting_price_brl;
-      await supabase.from('providers').update(updates).eq('id', workingProviderId);
+      {
+        const { error: provUpdErr } = await supabase.from('providers').update(updates).eq('id', workingProviderId);
+        if (provUpdErr) {
+          sync.mark('provider', false);
+          await logSyncFailure({
+            action: 'persist_first_service_sync_failed',
+            source: 'persist_first_service.provider_update',
+            snapshot: sync.snapshot(),
+            errorCode: (provUpdErr as any).code || 'provider_update_failed',
+          });
+        } else {
+          sync.mark('provider', true);
+          if (resolvedServiceId) sync.mark('service', true);
+        }
+      }
 
       // ── READ-BACK INVARIANTE (fail-loud, auto-heal) ────────────────────────
       // Confirma no banco que:
