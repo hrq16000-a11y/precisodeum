@@ -461,13 +461,87 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     onRefresh?.();
   };
 
-  // === Save Profile ===
+  // === Save Profile === (FASE 1.6.2 — hardening admin)
   const saveProfile = async () => {
     if (!user) return;
+    setProfileNameError(null);
+    setProfileWhatsappError(null);
+    setProfilePhoneError(null);
+
+    const previousName = user.full_name || fullProfile?.full_name || '';
+    const previousWhatsapp = user.whatsapp || fullProfile?.whatsapp || '';
+    const previousPhone = user.phone || fullProfile?.phone || '';
+
+    // Nome: só valida quando mudou (preserva legado)
+    if (shouldEnforceFullName(profileForm.full_name, previousName) && !isValidFullName(profileForm.full_name)) {
+      setProfileNameError(FULL_NAME_INVALID_MESSAGE);
+      toast.error(FULL_NAME_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          field: 'full_name',
+          source: 'admin_user_detail_sheet',
+          target_user_id: user.id,
+          reason: 'invalid_full_name',
+          length: (profileForm.full_name || '').trim().length,
+        },
+      }).catch(() => undefined);
+      return;
+    }
+
+    // WhatsApp: só valida quando mudou
+    const rawWhatsapp = profileForm.whatsapp || '';
+    if (rawWhatsapp.trim() && shouldEnforcePhone(rawWhatsapp, previousWhatsapp) && !isValidPhoneBR(rawWhatsapp)) {
+      setProfileWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          field: 'whatsapp',
+          source: 'admin_user_detail_sheet',
+          target_user_id: user.id,
+          reason: 'invalid_phone',
+        },
+      }).catch(() => undefined);
+      return;
+    }
+
+    const rawPhone = profileForm.phone || '';
+    if (rawPhone.trim() && shouldEnforcePhone(rawPhone, previousPhone) && !isValidPhoneBR(rawPhone)) {
+      setProfilePhoneError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          field: 'phone',
+          source: 'admin_user_detail_sheet',
+          target_user_id: user.id,
+          reason: 'invalid_phone',
+        },
+      }).catch(() => undefined);
+      return;
+    }
+
+    const sanitizedWhatsapp = rawWhatsapp.trim()
+      ? (normalizePhoneBR(rawWhatsapp) || sanitizePhone(rawWhatsapp))
+      : '';
+    const sanitizedPhone = rawPhone.trim()
+      ? (normalizePhoneBR(rawPhone) || sanitizePhone(rawPhone))
+      : '';
+    const normalizedName = shouldEnforceFullName(profileForm.full_name, previousName)
+      ? normalizeFullName(profileForm.full_name)
+      : (profileForm.full_name || '');
+
     const { error } = await supabase.from('profiles').update({
-      full_name: profileForm.full_name,
-      phone: profileForm.phone,
-      whatsapp: sanitizePhone(profileForm.whatsapp || ''),
+      full_name: normalizedName,
+      phone: sanitizedPhone,
+      whatsapp: sanitizedWhatsapp,
       profile_type: profileForm.profile_type,
       role: profileForm.profile_type,
       status: profileForm.status,
@@ -482,13 +556,60 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     onRefresh?.();
   };
 
-  // === Save Provider ===
+  // === Save Provider === (FASE 1.6.2 — hardening admin, PJ permissivo)
   const saveProvider = async () => {
     if (!provider) return;
+    setProviderWhatsappError(null);
+    setProviderPhoneError(null);
+
+    const previousWhatsapp = provider.whatsapp || '';
+    const previousPhone = provider.phone || '';
+    const rawWhatsapp = providerForm.whatsapp || '';
+    const rawPhone = providerForm.phone || '';
+
+    if (rawWhatsapp.trim() && shouldEnforcePhone(rawWhatsapp, previousWhatsapp) && !isValidPhoneBR(rawWhatsapp)) {
+      setProviderWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'provider',
+        resource_id: provider.id,
+        details: {
+          field: 'whatsapp',
+          source: 'admin_user_detail_sheet_provider',
+          target_user_id: user?.id,
+          reason: 'invalid_phone',
+        },
+      }).catch(() => undefined);
+      return;
+    }
+    if (rawPhone.trim() && shouldEnforcePhone(rawPhone, previousPhone) && !isValidPhoneBR(rawPhone)) {
+      setProviderPhoneError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'provider',
+        resource_id: provider.id,
+        details: {
+          field: 'phone',
+          source: 'admin_user_detail_sheet_provider',
+          target_user_id: user?.id,
+          reason: 'invalid_phone',
+        },
+      }).catch(() => undefined);
+      return;
+    }
+
+    // PJ: business_name permissivo (sem regra PF). Apenas trim.
+    const businessName = typeof providerForm.business_name === 'string'
+      ? providerForm.business_name.trim()
+      : providerForm.business_name;
+
     const { error } = await supabase.from('providers').update({
       ...providerForm,
-      whatsapp: sanitizePhone(providerForm.whatsapp || ''),
-      phone: sanitizePhone(providerForm.phone || ''),
+      business_name: businessName,
+      whatsapp: rawWhatsapp.trim() ? (normalizePhoneBR(rawWhatsapp) || sanitizePhone(rawWhatsapp)) : '',
+      phone: rawPhone.trim() ? (normalizePhoneBR(rawPhone) || sanitizePhone(rawPhone)) : '',
     }).eq('id', provider.id);
     if (error) { toast.error('Erro: ' + error.message); return; }
     toast.success('Dados profissionais salvos!');
