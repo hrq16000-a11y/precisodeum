@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { useAuth } from '@/hooks/useAuth';
 import { isValidFullName, shouldEnforceFullName, FULL_NAME_INVALID_MESSAGE } from '@/lib/validation/fullNameValidation';
+import { normalizePhoneBR, isValidPhoneBR, shouldEnforcePhone, PHONE_INVALID_MESSAGE } from '@/lib/validation/phoneNormalization';
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Ativo' },
