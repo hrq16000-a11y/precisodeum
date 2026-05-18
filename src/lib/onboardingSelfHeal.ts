@@ -11,12 +11,13 @@
  * Fail-soft: nunca lança; em caso de erro, deixa o estado como está (o gate
  * vai apenas redirecionar para o wizard, e o usuário concluir manualmente).
  */
-import { supabase } from '@/integrations/supabase/client';
 import {
   fetchExistingFirstService,
   findExistingProvider,
 } from '@/components/onboarding/wizard/phases/v2/findExistingRecords';
 import { isWizardSessionLockActive } from '@/lib/wizardSessionLock';
+import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
+import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 
 const HEALED_USERS = new Set<string>();
 const IN_FLIGHT = new Map<string, Promise<boolean>>();
