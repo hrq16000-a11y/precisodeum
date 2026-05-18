@@ -19,6 +19,7 @@ import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { isValidFullName, shouldEnforceFullName, FULL_NAME_INVALID_MESSAGE } from '@/lib/validation/fullNameValidation';
 import { isValidPhoneBR, shouldEnforcePhone, PHONE_INVALID_MESSAGE } from '@/lib/validation/phoneNormalization';
+import { maybeLogContactOwnershipConflict } from '@/lib/contactOwnership';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import { generateProviderSlug } from '@/lib/slugify';
@@ -308,6 +309,29 @@ const DashboardProfilePage = () => {
     //   c) a mensagem ao usuário seja sempre amigável (sem stack/SQL).
     // Quando migrarmos para uma RPC transacional real, basta substituir o
     // bloco entre os marcadores [SYNC-BEGIN]/[SYNC-END].
+    //
+    // Fase 1.6.6 — ownership semântico (não mutante):
+    //   Provider accounts own provider contact fields (providers.phone/whatsapp).
+    //   Profile contact fields remain compatibility mirrors.
+    //   Detectamos divergência ANTES do save e emitimos audit
+    //   `contact_ownership_conflict` (sem PII) para preparar consolidação futura.
+    try {
+      const ownerType = (profile as any)?.profile_type;
+      await maybeLogContactOwnershipConflict({
+        source: 'dashboard_profile_page',
+        profileType: ownerType,
+        field: 'whatsapp',
+        profileValue: (profile as any)?.whatsapp,
+        providerValue: (provider as any)?.whatsapp,
+      });
+      await maybeLogContactOwnershipConflict({
+        source: 'dashboard_profile_page',
+        profileType: ownerType,
+        field: 'phone',
+        profileValue: (profile as any)?.phone,
+        providerValue: (provider as any)?.phone,
+      });
+    } catch { /* fail-soft */ }
     let profileUpdated = false;
     let providerUpdated = false;
     let failedStep: 'profile' | 'provider' | null = null;

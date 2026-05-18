@@ -12,6 +12,14 @@
  *  - Inputs are loose-typed records to accept the many shapes already in use
  *    (profile from `public_profiles`, provider from `providers`, sometimes
  *    nested under `svc.provider`, etc.).
+ *
+ * Fase 1.6.6 alignment — ownership semantics:
+ *  - For provider accounts, `providers.{phone,whatsapp}` is the canonical
+ *    owner; `profiles.{phone,whatsapp}` is a compatibility mirror.
+ *  - For client accounts, `profiles.{phone,whatsapp}` is canonical.
+ *  - The priority chains below already reflect this (provider-first for
+ *    contact). Do NOT change these chains here — write policy lives in
+ *    `@/lib/contactOwnership`.
  */
 
 export type LooseRecord = Record<string, any> | null | undefined;
