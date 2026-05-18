@@ -258,23 +258,36 @@ const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label>Telefone</Label>
+              <Label htmlFor="provider-edit-phone">Telefone</Label>
               <PhoneMaskedInput
                 name="phone"
+                id="provider-edit-phone"
                 value={form.phone}
-                onChange={handlePhoneChange}
+                onChange={(n, v) => { handlePhoneChange(n, v); if (phoneError) setPhoneError(null); }}
+                aria-invalid={!!phoneError}
+                aria-describedby={phoneError ? 'provider-edit-phone-error' : undefined}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
               />
+              {phoneError && (
+                <p id="provider-edit-phone-error" data-testid="provider-edit-phone-error" className="mt-1 text-xs text-destructive">{phoneError}</p>
+              )}
             </div>
             <div>
-              <Label>WhatsApp</Label>
+              <Label htmlFor="provider-edit-whatsapp">WhatsApp</Label>
               <PhoneMaskedInput
                 name="whatsapp"
+                id="provider-edit-whatsapp"
                 value={form.whatsapp}
-                onChange={handlePhoneChange}
+                onChange={(n, v) => { handlePhoneChange(n, v); if (whatsappError) setWhatsappError(null); }}
+                aria-invalid={!!whatsappError}
+                aria-describedby={whatsappError ? 'provider-edit-whatsapp-error' : undefined}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
               />
-              <p className="text-[10px] text-muted-foreground mt-1">Auto-preenchido do Telefone se vazio</p>
+              {whatsappError ? (
+                <p id="provider-edit-whatsapp-error" data-testid="provider-edit-whatsapp-error" className="mt-1 text-xs text-destructive">{whatsappError}</p>
+              ) : (
+                <p className="text-[10px] text-muted-foreground mt-1">Auto-preenchido do Telefone se vazio</p>
+              )}
             </div>
           </div>
 
