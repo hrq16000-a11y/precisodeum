@@ -98,13 +98,39 @@ const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
 
   const handleSave = async () => {
     if (!user) return;
+    setNameError(null);
+    setWhatsappError(null);
+
+    // Fase 1.2: nome só valida quando mudou (preserva legado).
     if (shouldEnforceFullName(form.full_name, user.full_name) && !isValidFullName(form.full_name)) {
+      setNameError(FULL_NAME_INVALID_MESSAGE);
       toast.error(FULL_NAME_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'name_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          target_user_id: user.id,
+          // sem vazar conteúdo: só sinais não-sensíveis
+          length: (form.full_name || '').trim().length,
+          parts: (form.full_name || '').trim().split(/\s+/).filter(Boolean).length,
+          source: 'admin_user_edit_dialog',
+        },
+      }).catch(() => undefined);
       return;
     }
-    setSaving(true);
 
-    const sanitizedWhatsapp = (form.whatsapp || '').replace(/\D/g, '');
+    // Fase 1.3: whatsapp só valida quando mudou e canonicaliza saída.
+    const rawWhatsapp = form.whatsapp || '';
+    const previousWhatsapp = user.whatsapp || '';
+    if (rawWhatsapp.trim() && shouldEnforcePhone(rawWhatsapp, previousWhatsapp) && !isValidPhoneBR(rawWhatsapp)) {
+      setWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      return;
+    }
+    const sanitizedWhatsapp = rawWhatsapp.trim()
+      ? (normalizePhoneBR(rawWhatsapp) || rawWhatsapp.replace(/\D/g, ''))
+      : '';
     const updateData: any = {
       full_name: form.full_name,
       phone: form.phone,
