@@ -640,13 +640,20 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
       ? providerForm.business_name.trim()
       : providerForm.business_name;
 
-    const { error } = await supabase.from('providers').update({
-      ...providerForm,
-      business_name: businessName,
-      whatsapp: rawWhatsapp.trim() ? (normalizePhoneBR(rawWhatsapp) || sanitizePhone(rawWhatsapp)) : '',
-      phone: rawPhone.trim() ? (normalizePhoneBR(rawPhone) || sanitizePhone(rawPhone)) : '',
-    }).eq('id', provider.id);
-    if (error) { toast.error('Erro: ' + error.message); return; }
+    // Canonical admin write boundary (Fase 1.6.7).
+    const { updateAdminProvider } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProvider({
+      providerId: provider.id,
+      source: 'admin_user_detail_sheet:save_provider',
+      skipNormalize: true, // já normalizamos via sanitizePhone fallback
+      patch: {
+        ...providerForm,
+        business_name: businessName,
+        whatsapp: rawWhatsapp.trim() ? (normalizePhoneBR(rawWhatsapp) || sanitizePhone(rawWhatsapp)) : '',
+        phone: rawPhone.trim() ? (normalizePhoneBR(rawPhone) || sanitizePhone(rawPhone)) : '',
+      },
+    });
+    if (!res.ok) { toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar')); return; }
     toast.success('Dados profissionais salvos!');
     setEditing(false);
     onRefresh?.();
