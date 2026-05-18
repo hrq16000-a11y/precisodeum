@@ -16,6 +16,7 @@ import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
+import { isValidFullName, shouldEnforceFullName, FULL_NAME_INVALID_MESSAGE } from '@/lib/validation/fullNameValidation';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import { generateProviderSlug } from '@/lib/slugify';
 import { invalidateProviderProfileCache } from '@/pages/ProviderProfile';
@@ -247,6 +248,10 @@ const DashboardProfilePage = () => {
   const handleSave = async () => {
     if (!user) return;
     if (!form.full_name.trim()) { toast.error('Nome completo é obrigatório'); return; }
+    if (shouldEnforceFullName(form.full_name, profile?.full_name) && !isValidFullName(form.full_name)) {
+      toast.error(FULL_NAME_INVALID_MESSAGE);
+      return;
+    }
     // Telefone fixo é opcional — só valida se preenchido (WhatsApp já cobre contato)
     const phoneDigits = form.phone.replace(/\D/g, '');
     if (phoneDigits.length > 0 && phoneDigits.length < 10) { toast.error('Telefone deve ter 10 ou 11 dígitos (ou deixe vazio)'); return; }

@@ -3,11 +3,10 @@ export function normalizeOnboardingPhone(value: unknown): string {
   return digits.replace(/^55(?=\d{10,11}$)/, '');
 }
 
+import { isValidFullName } from '@/lib/validation/fullNameValidation';
+
 export function isOnboardingFullNameValid(value: unknown): boolean {
-  const trimmed = typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
-  if (trimmed.length < 4) return false;
-  const parts = trimmed.split(' ').filter(Boolean);
-  return parts.length >= 2;
+  return isValidFullName(value);
 }
 
 export function isOnboardingWhatsappValid(value: unknown): boolean {
