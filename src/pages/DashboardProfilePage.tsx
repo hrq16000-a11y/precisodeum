@@ -17,6 +17,8 @@ import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { isValidFullName, shouldEnforceFullName, FULL_NAME_INVALID_MESSAGE } from '@/lib/validation/fullNameValidation';
+import { isValidPhoneBR, shouldEnforcePhone, PHONE_INVALID_MESSAGE, normalizePhoneBR } from '@/lib/validation/phoneNormalization';
+import { logAuditAction } from '@/hooks/useAuditLog';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import { generateProviderSlug } from '@/lib/slugify';
 import { invalidateProviderProfileCache } from '@/pages/ProviderProfile';
