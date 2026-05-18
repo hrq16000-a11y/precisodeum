@@ -88,6 +88,7 @@ import UnifiedHealthScore from '@/components/dashboard/UnifiedHealthScore';
 import QuickActionsHero from '@/components/dashboard/QuickActionsHero';
 import ImpactSection from '@/components/dashboard/ImpactSection';
 import { resolveEffectiveProfileType } from '@/lib/onboardingAccess';
+import { setOnboardingProgress } from '@/lib/onboardingProgressSync';
 import {
   startDashboardTimers,
   reportFirstRender,
