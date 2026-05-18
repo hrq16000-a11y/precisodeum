@@ -1098,8 +1098,36 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                     {editing ? (
                       <div className="space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div><Label className="text-xs">Telefone Comercial</Label><PhoneMaskedInput name="phone" value={providerForm.phone || ''} onChange={handleProviderPhoneChange} className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
-                          <div><Label className="text-xs">WhatsApp Comercial</Label><PhoneMaskedInput name="whatsapp" value={providerForm.whatsapp || ''} onChange={handleProviderPhoneChange} className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
+                          <div>
+                            <Label className="text-xs" htmlFor="admin-provider-phone">Telefone Comercial</Label>
+                            <PhoneMaskedInput
+                              name="phone"
+                              id="admin-provider-phone"
+                              value={providerForm.phone || ''}
+                              onChange={(n, v) => { handleProviderPhoneChange(n, v); if (providerPhoneError) setProviderPhoneError(null); }}
+                              aria-invalid={!!providerPhoneError}
+                              aria-describedby={providerPhoneError ? 'admin-provider-phone-error' : undefined}
+                              className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            />
+                            {providerPhoneError && (
+                              <p id="admin-provider-phone-error" data-testid="admin-provider-phone-error" className="mt-1 text-[10px] text-destructive">{providerPhoneError}</p>
+                            )}
+                          </div>
+                          <div>
+                            <Label className="text-xs" htmlFor="admin-provider-whatsapp">WhatsApp Comercial</Label>
+                            <PhoneMaskedInput
+                              name="whatsapp"
+                              id="admin-provider-whatsapp"
+                              value={providerForm.whatsapp || ''}
+                              onChange={(n, v) => { handleProviderPhoneChange(n, v); if (providerWhatsappError) setProviderWhatsappError(null); }}
+                              aria-invalid={!!providerWhatsappError}
+                              aria-describedby={providerWhatsappError ? 'admin-provider-whatsapp-error' : undefined}
+                              className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            />
+                            {providerWhatsappError && (
+                              <p id="admin-provider-whatsapp-error" data-testid="admin-provider-whatsapp-error" className="mt-1 text-[10px] text-destructive">{providerWhatsappError}</p>
+                            )}
+                          </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div><Label className="text-xs">Website</Label><Input value={providerForm.website} onChange={e => setProviderForm({ ...providerForm, website: e.target.value })} className="h-8 text-sm" placeholder="https://..." /></div>
