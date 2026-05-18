@@ -550,14 +550,16 @@ const DashboardPage = () => {
   const markProgress = async (key: string) => {
     if (!provider?.id) return;
     if (onboardingProgress[key]) return;
-    try {
-      await supabase
-        .from('providers')
-        .update({ onboarding_progress: { ...onboardingProgress, [key]: true } })
-        .eq('id', provider.id);
+    // Canonical onboarding_progress write boundary (Fase 1.6.5).
+    const result = await setOnboardingProgress(
+      provider.id,
+      { [key]: true },
+      { source: `dashboard_mark_progress:${key}`, currentProgress: onboardingProgress },
+    );
+    if (result.ok && !result.noop) {
       await refetchProfile();
-    } catch (e) {
-      console.warn('[markProgress]', key, e);
+    } else if (!result.ok) {
+      console.warn('[markProgress]', key, result.errorCode);
     }
   };
 
