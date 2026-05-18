@@ -129,7 +129,7 @@ export async function setOnboardingProgress(
     const errorCode = e?.code || e?.name || 'unknown';
     options.tracker?.setFailed('provider');
     await logSyncFailure({
-      action: 'phase4_sync_failed', // reaproveita ação existente do registry
+      action: 'onboarding_progress_sync_failed',
       source: options.source,
       snapshot: {
         profile_updated: false,
