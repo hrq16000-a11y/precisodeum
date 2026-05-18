@@ -192,15 +192,31 @@ const AdminPage = () => {
     toast.success('Vaga rejeitada');
   };
 
+  // LEGACY (Fase 1.6.7): este AdminPage permanece para compat. As mutações
+  // são delegadas à canonical admin write boundary, não removidas ainda.
   const handleApproveProvider = async (id: string) => {
-    await supabase.from('providers').update({ status: 'approved' }).eq('id', id);
+    const { updateAdminProvider } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProvider({
+      providerId: id,
+      source: 'admin_page_legacy:approve_provider',
+      skipNormalize: true,
+      patch: { status: 'approved' },
+    });
+    if (!res.ok) { toast.error(res.error?.message || 'Falha ao salvar'); return; }
     setPendingProvidersList(prev => prev.filter(p => p.id !== id));
     setStats(prev => ({ ...prev, pendingProviders: prev.pendingProviders - 1 }));
     toast.success('Prestador aprovado');
   };
 
   const handleRejectProvider = async (id: string) => {
-    await supabase.from('providers').update({ status: 'rejected' }).eq('id', id);
+    const { updateAdminProvider } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProvider({
+      providerId: id,
+      source: 'admin_page_legacy:reject_provider',
+      skipNormalize: true,
+      patch: { status: 'rejected' },
+    });
+    if (!res.ok) { toast.error(res.error?.message || 'Falha ao salvar'); return; }
     setPendingProvidersList(prev => prev.filter(p => p.id !== id));
     setStats(prev => ({ ...prev, pendingProviders: prev.pendingProviders - 1 }));
     toast.success('Prestador rejeitado');
