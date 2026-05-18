@@ -22,6 +22,10 @@ const ProfileTypeSwitcher = () => {
     if (!user || newType === currentType || switching) return;
     setSwitching(true);
     // FASE 1.6.3 — tracker multi-write (profile_type → providers row).
+    // FASE 1.6.6 — ownership: ao virar provider, providers.phone/whatsapp
+    // passa a ser dono canônico; profiles permanece mirror de compat.
+    // Esta troca NÃO escreve campos de contato — apenas garante linha
+    // providers existente. Writes de contato seguem em DashboardProfilePage.
     const sync = createSyncTracker();
     let errorCode: string | null = null;
     try {
