@@ -247,8 +247,9 @@ const DashboardProfilePage = () => {
   const handleSave = async () => {
     if (!user) return;
     if (!form.full_name.trim()) { toast.error('Nome completo é obrigatório'); return; }
+    // Telefone fixo é opcional — só valida se preenchido (WhatsApp já cobre contato)
     const phoneDigits = form.phone.replace(/\D/g, '');
-    if (phoneDigits.length < 10) { toast.error('Telefone deve ter pelo menos 10 dígitos'); return; }
+    if (phoneDigits.length > 0 && phoneDigits.length < 10) { toast.error('Telefone deve ter 10 ou 11 dígitos (ou deixe vazio)'); return; }
     if (!form.city.trim() || !form.state.trim()) { toast.error('Selecione sua cidade na lista'); return; }
     if (!form.category_id && !form.category_custom) { toast.error('Selecione uma categoria ou digite "Outro"'); return; }
     const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
