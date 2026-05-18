@@ -493,6 +493,12 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
 
   const handleSubmit = async () => {
     // Ficar ONLINE não depende mais do CPF/CNPJ — é uma opção independente.
+    // FASE 1.6.1 — NÃO É BYPASS DO FINALIZE: este UPDATE reflete a escolha
+    // explícita do usuário no checkbox "Ficar ONLINE agora". O entrypoint
+    // canônico `finalize_onboarding_atomic` só governa
+    // profiles.onboarding_completed/onboarding_step/profile_type; o flag
+    // providers.status='active' é UX-driven aqui e permanece intencional.
+    // TODO (médio prazo 1.6.7): mover para RPC `set_provider_online_atomic`.
     if (goOnline && userId) {
       try {
         await supabase.from('providers').update({ status: 'active' } as any).eq('user_id', userId);
