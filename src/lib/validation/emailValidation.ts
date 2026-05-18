@@ -65,7 +65,7 @@ export function isValidEmail(raw: string): boolean {
   }
 
   const tld = labels[labels.length - 1];
-  if (!TLD_RE.test(tld)) return false;
+  if (!isValidTld(tld)) return false;
 
   return true;
 }
