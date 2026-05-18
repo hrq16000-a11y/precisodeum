@@ -17,7 +17,8 @@
 
 import { logAuditAction } from '@/hooks/useAuditLog';
 
-export type ExecutionMode = 'dry-run' | 'live';
+import type { ExecutionMode } from './executeOperation';
+export type { ExecutionMode };
 
 const ENV_FLAG_KEY = 'VITE_OPERATIONS_LIVE';
 const RUNTIME_FLAG_KEY = '__OPERATIONS_LIVE_OPT_IN__';
