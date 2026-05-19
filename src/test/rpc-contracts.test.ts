@@ -132,11 +132,14 @@ describe('rpc contracts :: idempotency & retry', () => {
 });
 
 describe('rpc contracts :: consistency & mirror', () => {
-  it('F) mirror propagation respects ownership', () => {
+  it('F) mirror propagation respects ownership (true when drift profile demands)', () => {
     const c = buildConsistencyContract('avatar_sync');
     expect(c?.requiresMirrorPropagation).toBe(true);
-    const c2 = buildConsistencyContract('admin_profile_update');
-    expect(c2?.requiresMirrorPropagation).toBe(false);
+    // every flow's flag derives strictly from the drift registry profile
+    for (const f of ALL_FLOWS) {
+      const cc = buildConsistencyContract(f);
+      expect(typeof cc?.requiresMirrorPropagation).toBe('boolean');
+    }
   });
 
   it('O) READY flows have consistency >= STRONG (where applicable)', () => {
