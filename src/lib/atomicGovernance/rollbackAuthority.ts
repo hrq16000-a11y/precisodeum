@@ -49,6 +49,8 @@ export function determineRollbackAuthority(
   if (risk.risk === 'MEDIUM') return 'release_manager';
   if (risk.mirrorDependency) return 'release_manager';
   return 'platform_admin';
+}
+
 
 export function buildApprovalRequirement(
   flow: FlowId,
