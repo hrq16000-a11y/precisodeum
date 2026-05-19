@@ -12,5 +12,8 @@ export * from './observabilityRequirements';
 export * from './pilotReadiness';
 export * from './pilotMatrix';
 export * from './pilotObservability';
-export * from './explainers';
+export {
+  explainRolloutStrategy,
+  explainAbortStrategy,
+} from './explainers';
 export * from './assertPilotIntegrity';
