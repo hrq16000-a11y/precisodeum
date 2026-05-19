@@ -94,7 +94,7 @@ function isolationFor(flow: FlowId): RuntimeIsolationCertification {
     mirrorCoupling: !!blast?.mirrorCoupling,
     adminExposure: reg.boundary === 'adminWriteBoundary',
     isolation,
-    safe: isolation !== 'partial' && isolation !== 'unsafe',
+    safe: isolation !== 'partial',
   };
 }
 

@@ -10,5 +10,11 @@ export * from './driftCertification';
 export * from './certificationMatrix';
 export * from './certificationGuards';
 export * from './certificationObservability';
-export * from './explainers';
+export {
+  explainRuntimeCertification,
+  explainExecutionCertification,
+  explainRollbackCertification,
+  explainDriftCertification,
+  explainObservabilityCertification,
+} from './explainers';
 export * from './assertRuntimeCertificationIntegrity';
