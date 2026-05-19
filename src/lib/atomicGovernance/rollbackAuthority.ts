@@ -46,9 +46,9 @@ export function determineRollbackAuthority(
   if (!risk) return 'governance_board';
   if (risk.critical) return 'incident_commander';
   if (risk.risk === 'HIGH') return 'release_manager';
+  if (risk.risk === 'MEDIUM') return 'release_manager';
   if (risk.mirrorDependency) return 'release_manager';
   return 'platform_admin';
-}
 
 export function buildApprovalRequirement(
   flow: FlowId,
