@@ -10,4 +10,6 @@ export function calculateTopologicalContinuity(nodes: readonly ManifoldNode[]): 
   if (nodes.length > 0 && nodes.every((n) => Math.abs(n.tension) >= 8)) cls = 'COLLAPSED';
   else if (fractured) cls = 'FRACTURED';
   else if (breaks > nodes.length) cls = 'DISCONTINUOUS';
-  else if (breaks > 0) cls = 'WEAKLY_CONT
+  else if (breaks > 0) cls = 'WEAKLY_CONTINUOUS';
+  return Object.freeze({ class: cls, strength, fractured, breaks });
+}
