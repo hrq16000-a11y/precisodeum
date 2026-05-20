@@ -35,3 +35,13 @@ export interface MetaComponent {
   readonly signature: string;
 }
 
+export interface RuntimeMetaTransformation {
+  readonly components: readonly MetaComponent[];
+  readonly class: MetaClass;
+  readonly score: number;
+  readonly collapsed: boolean;
+  readonly signature: string;
+}
+export interface RuntimeMetaComposition { readonly class: MetaCompositionClass; readonly associativity: number; readonly broken: boolean; readonly failed: boolean; }
+export interface RuntimeMetaIdentity { readonly class: MetaIdentityClass; readonly preservation: number; readonly violations: number; readonly broken: boolean; }
+export interface RuntimeMetaNormalization { readonly class: MetaNormalizationClass; readonly stability: number; readonly idempotent: boolean; readonly divergent: boolean; }
