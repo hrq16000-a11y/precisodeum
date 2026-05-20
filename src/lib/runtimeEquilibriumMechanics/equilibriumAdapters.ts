@@ -80,5 +80,12 @@ export function adaptAllEquilibriumInputs(snapshots: readonly PriorLayerSnapshot
 }
 
 export function buildDefaultEquilibriumInputs(): readonly EquilibriumNode[] {
-  return Object.freeze(CANONICAL_EQUILIBRIUM_LAYERS.map((layer) => adapt({ layer })));
+  const layers = CANONICAL_EQUILIBRIUM_LAYERS;
+  // ring topology: each node references next layer's default id to keep topology connected and contained.
+  return Object.freeze(
+    layers.map((layer, i) => {
+      const next = layers[(i + 1) % layers.length];
+      return adapt({ layer, neighbors: Object.freeze([`${next}:0`]) });
+    }),
+  );
 }
