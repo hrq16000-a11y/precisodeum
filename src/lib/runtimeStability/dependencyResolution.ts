@@ -43,7 +43,7 @@ export function resolveReplayDependencies(
 export function detectUnresolvedDependency(
   nodes: readonly RuntimeDependencyNode[],
 ): number {
-  return nodes.filter((n) => !n.resolved).length;
+  return nodes.filter((n) => !n.resolved && !n.hidden).length;
 }
 
 export function detectHiddenDependency(

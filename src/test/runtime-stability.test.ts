@@ -283,7 +283,7 @@ describe('Fase 1.8.4 — Runtime Stability', () => {
   it('S) convergence divergent', () => {
     const r = buildDependencyResolution({
       flow: FLOW,
-      nodes: makeNodes({ owners: 1, unresolved: 2 }),
+      nodes: makeNodes({ owners: 0, unresolved: 2 }),
       edges: [],
     });
     expect(classifyConvergenceMode({ resolution: r, delayMs: 0 })).toBe('divergent');
