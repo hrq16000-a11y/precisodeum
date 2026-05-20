@@ -54,7 +54,7 @@ function buildTopology(
   const recursive = cycles > 0;
   // fragmentation: any node unreachable from node[0]
   let fragmented = false;
-  if (space.nodes.length > 0) {
+  if (space.nodes.length > 1 && edges > 0) {
     const reachable = new Set<string>();
     const stack = [space.nodes[0].id];
     while (stack.length) {
