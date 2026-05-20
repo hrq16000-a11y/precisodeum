@@ -1,0 +1,51 @@
+export * from './tensorTypes';
+export * from './stabilityGeometry';
+export * from './equilibriumTensor';
+export * from './propagationCurvature';
+export * from './instabilityDensity';
+export * from './containmentField';
+export * from './topologyDeformation';
+export * from './convergenceGradient';
+export * from './runtimeSingularities';
+export * from './collapseGeometry';
+export * from './tensorCertification';
+export * from './aggregation';
+export * from './tensorAdapters';
+export * from './tensorObservability';
+export * from './tensorExplainers';
+export * from './tensorGuards';
+export * from './assertTensorIntegrity';
+
+import { buildStabilityGeometry } from './stabilityGeometry';
+import { buildEquilibriumTensor } from './equilibriumTensor';
+import { calculatePropagationCurvature } from './propagationCurvature';
+import { calculateInstabilityDensity } from './instabilityDensity';
+import { buildContainmentField } from './containmentField';
+import { buildTopologyDeformation } from './topologyDeformation';
+import { calculateConvergenceGradient } from './convergenceGradient';
+import { detectRuntimeSingularity } from './runtimeSingularities';
+import { buildCollapseGeometry } from './collapseGeometry';
+import { certifyTensorStability, assertTensorSafety } from './tensorCertification';
+import type { RuntimeTensorEnvelope, TensorNode, TensorStabilityClass } from './tensorTypes';
+
+export function buildTensorEnvelope(id: string, nodes: readonly TensorNode[]): RuntimeTensorEnvelope {
+  const geometry = buildStabilityGeometry(nodes);
+  const tensor = buildEquilibriumTensor(geometry.nodes);
+  const curvature = calculatePropagationCurvature(geometry.nodes);
+  const density = calculateInstabilityDensity(geometry.nodes);
+  const containment = buildContainmentField(geometry.nodes);
+  const topology = buildTopologyDeformation(geometry.nodes);
+  const gradient = calculateConvergenceGradient(geometry.nodes);
+  const singularity = detectRuntimeSingularity(geometry.nodes);
+  const collapse = buildCollapseGeometry(geometry, topology);
+  let classification: TensorStabilityClass = 'STABLE';
+  if (singularity.terminal || singularity.class === 'RECURSIVE') classification = 'SINGULAR';
+  else if (topology.collapsing || topology.fractured) classification = 'FRACTURED';
+  else if (curvature.class === 'UNBOUNDED' || curvature.class === 'RECURSIVE' || density.level === 'CRITICAL') classification = 'STRESSED';
+  else if (curvature.class === 'AMPLIFIED' || density.level === 'HIGH' || tensor.unstable) classification = 'CURVED';
+  const certification = certifyTensorStability({ nodes: geometry.nodes, classification, curvature, density, topology, singularity });
+  const risks = assertTensorSafety(certification);
+  const score = (geometry.balance + containment.strength + curvature.containment + (1 - density.score)) / 4;
+  const stable = classification === 'STABLE' && certification.safe;
+  return Object.freeze({ id, geometry, tensor, curvature, density, containment, topology, gradient, singularity, collapse, classification, certification, risks, score, stable });
+}
