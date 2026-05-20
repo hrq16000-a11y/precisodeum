@@ -188,12 +188,17 @@ export function reconstructFailurePropagation(
   for (const t of flowTraces) {
     const failed = t.steps.filter((s) => s.status === 'failed');
     if (failed.length > 0) isolated = false;
+    if (t.orphanRisk || t.mirrorDependent) isolated = false;
     for (const f of failed) {
       affected.add(f.step);
       if (f.failure?.cascaded) {
         cascading = true;
         cascadeDepth = Math.max(cascadeDepth, t.steps.filter((s) => s.status === 'aborted' || s.status === 'skipped').length);
       }
+    }
+    if (t.orphanRisk) {
+      cascading = true;
+      for (const s of t.steps) if (s.mirror) affected.add(s.step);
     }
     // recursive: same step depends on itself (transitively in this trace)
     for (const s of t.steps) {
