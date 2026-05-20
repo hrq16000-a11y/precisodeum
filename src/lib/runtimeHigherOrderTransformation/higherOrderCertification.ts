@@ -46,4 +46,15 @@ export function certifyHigherOrderStability(i: CertifyHigherOrderInput): HigherO
   if (i.stability.collapsed) reasons.push('stability_collapsed');
   if (i.naturality.broken) reasons.push('naturality_broken');
   if (i.functoriality.failed) reasons.push('functoriality_failed');
-  if (i.lifting.unliftable) re
+  if (i.lifting.unliftable) reasons.push('lifting_unliftable');
+  const safe = reasons.length === 0;
+  const blocked = unsafe.length > 0 || i.transformation.collapsed || i.topology.collapsed || i.stability.collapsed || i.functoriality.failed || i.lifting.unliftable;
+  const rank: 'OK' | 'WARN' | 'BLOCKED' = blocked ? 'BLOCKED' : safe ? 'OK' : 'WARN';
+  return Object.freeze({ safe, confidence, rank, reasons: Object.freeze(reasons) });
+}
+
+export function assertHigherOrderSafety(c: HigherOrderCertification): readonly HigherOrderRisk[] {
+  if (c.safe) return Object.freeze([]);
+  const sev = c.rank === 'BLOCKED' ? 'critical' : 'error';
+  return Object.freeze(c.reasons.map((r) => Object.freeze({ code: 'HIGHER_ORDER_UNSAFE', severity: sev as 'critical' | 'error', description: r })));
+}
