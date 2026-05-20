@@ -1,0 +1,16 @@
+{
+  "version": "1.9.14",
+  "stage": "STAGE_0_READ_ONLY",
+  "description": "Sponsor mesh skeleton. Structural only. No billing, no charges, no live execution.",
+  "internals": {
+    "liveExecutionEnabled": false,
+    "retryEnabled": false,
+    "backgroundEnabled": false,
+    "realUsersAllowed": false,
+    "billingEnabled": false,
+    "chargesEnabled": false
+  },
+  "nodes": [],
+  "edges": [],
+  "slots": []
+}
