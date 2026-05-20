@@ -22,7 +22,7 @@ export function computeStabilitySignals(
     const first = vals[0];
     if (variance === 0) convergence = 'CONVERGED';
     else if (variance < 0.05) convergence = 'STABLE';
-    else if (Math.abs(last - first) > 10 * Math.sqrt(variance)) convergence = 'DIVERGENT';
+    else if (Math.abs(last - first) > 2 * Math.sqrt(variance)) convergence = 'DIVERGENT';
     else convergence = 'OSCILLATING';
     return {
       id: s.id,
