@@ -79,7 +79,7 @@ function normalizeCampaigns(snapshot: SponsorContractSnapshot, ctx: SponsorConsu
       ((c as unknown as { categories: ReadonlyArray<string> }).categories).includes(ca),
     );
   }
-  return campaigns as SponsorAPIResponseBody['campaigns'];
+  return campaigns as unknown as SponsorAPIResponseBody['campaigns'];
 }
 
 export function normalizeContractToResponseBody(
