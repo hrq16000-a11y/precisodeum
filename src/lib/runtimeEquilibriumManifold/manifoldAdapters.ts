@@ -3,7 +3,7 @@ export interface PriorLayerSnapshot { readonly id?: string; readonly layer: stri
 function adapt(s: PriorLayerSnapshot): ManifoldNode {
   const id = s.id ?? `${s.layer}:0`;
   const stage = s.stage ?? 'STAGE_0_READ_ONLY';
-  const position = s.position ?? 0; const tension = s.tension ?? 0; const elasticity = s.elasticity ?? 1;
+  const position = s.position ?? 0; const tension = s.tension ?? 0; const elasticity = s.elasticity ?? 0;
   const neighbors = Object.freeze([...(s.neighbors ?? [])].sort());
   return Object.freeze({ id, layer: s.layer, stage, liveExecutionEnabled: s.liveExecutionEnabled ?? false, retryEnabled: s.retryEnabled ?? false, backgroundEnabled: s.backgroundEnabled ?? false, realUsersAllowed: s.realUsersAllowed ?? false, position, tension, elasticity, neighbors, signature: `${id}:${s.layer}:${stage}:${position}:${tension}:${elasticity}:${neighbors.join(',')}` });
 }
