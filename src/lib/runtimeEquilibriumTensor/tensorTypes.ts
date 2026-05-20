@@ -108,4 +108,8 @@ export interface RuntimeTensorEnvelope {
   readonly containment: RuntimeContainmentField;
   readonly topology: RuntimeTopologyGeometry;
   readonly gradient: RuntimeConvergenceGradient;
-  readonly singularity: RuntimeSingularityEnvelope
+  readonly singularity: RuntimeSingularityEnvelope;
+  readonly collapse: RuntimeCollapseGeometry;
+  readonly classification: TensorStabilityClass;
+  readonly certification: TensorCertification;
+  readonly risks:
