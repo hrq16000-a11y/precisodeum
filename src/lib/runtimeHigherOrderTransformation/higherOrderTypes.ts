@@ -40,4 +40,50 @@ export interface RuntimeHigherOrderTransformation {
 export interface RuntimeHigherOrderComposition { readonly class: CompositionClass; readonly associativity: number; readonly broken: boolean; readonly failed: boolean; }
 export interface RuntimeHigherOrderIdentity { readonly class: IdentityClass; readonly preservation: number; readonly violations: number; readonly broken: boolean; }
 export interface RuntimeHigherOrderNormalization { readonly class: NormalizationClass; readonly stability: number; readonly idempotent: boolean; readonly divergent: boolean; }
-export interface RuntimeHigherOrderDeterminism { readonly class: DeterminismClass; readonly score: number; readonly degraded: boolean; }
+export interface RuntimeHigherOrderDeterminism { readonly class: DeterminismClass; readonly score: number; readonly degraded: boolean; }export interface RuntimeHigherOrderEquivalence { readonly class: EquivalenceClass; readonly strength: number; readonly regressed: boolean; readonly fractured: boolean; }
+export interface RuntimeHigherOrderReduction { readonly class: ReductionClass; readonly idempotent: boolean; readonly score: number; }
+export interface RuntimeHigherOrderTopology { readonly class: TopologyClass; readonly connectivity: number; readonly unstable: boolean; readonly collapsed: boolean; }
+export interface RuntimeHigherOrderStability { readonly class: StabilityClass; readonly score: number; readonly unstable: boolean; readonly collapsed: boolean; }
+export interface RuntimeHigherOrderNaturality { readonly class: NaturalityClass; readonly score: number; readonly violations: number; readonly broken: boolean; }
+export interface RuntimeHigherOrderFunctoriality { readonly class: FunctorialityClass; readonly score: number; readonly failed: boolean; }
+export interface RuntimeTransformationLifting { readonly class: LiftingClass; readonly score: number; readonly unliftable: boolean; }
+
+export interface HigherOrderRisk { readonly code: string; readonly severity: HigherOrderSeverity; readonly description: string; }
+export interface HigherOrderCertification { readonly safe: boolean; readonly confidence: number; readonly rank: 'OK' | 'WARN' | 'BLOCKED'; readonly reasons: readonly string[]; }
+
+export interface RuntimeHigherOrderEnvelope {
+  readonly id: string;
+  readonly transformation: RuntimeHigherOrderTransformation;
+  readonly composition: RuntimeHigherOrderComposition;
+  readonly identity: RuntimeHigherOrderIdentity;
+  readonly normalization: RuntimeHigherOrderNormalization;
+  readonly determinism: RuntimeHigherOrderDeterminism;
+  readonly equivalence: RuntimeHigherOrderEquivalence;
+  readonly reduction: RuntimeHigherOrderReduction;
+  readonly topology: RuntimeHigherOrderTopology;
+  readonly stability: RuntimeHigherOrderStability;
+  readonly naturality: RuntimeHigherOrderNaturality;
+  readonly functoriality: RuntimeHigherOrderFunctoriality;
+  readonly lifting: RuntimeTransformationLifting;
+  readonly certification: HigherOrderCertification;
+  readonly risks: readonly HigherOrderRisk[];
+  readonly score: number;
+  readonly stable: boolean;
+}
+
+export interface RuntimeHigherOrderAggregate {
+  readonly envelopes: readonly RuntimeHigherOrderEnvelope[];
+  readonly score: number;
+  readonly confidence: number;
+  readonly worstSeverity: HigherOrderSeverity;
+  readonly worstHigherOrder: HigherOrderClass;
+  readonly worstComposition: CompositionClass;
+  readonly worstIdentity: IdentityClass;
+  readonly worstDeterminism: DeterminismClass;
+  readonly worstTopology: TopologyClass;
+  readonly worstNaturality: NaturalityClass;
+  readonly worstFunctoriality: FunctorialityClass;
+  readonly worstLifting: LiftingClass;
+  readonly stable: boolean;
+  readonly risks: readonly HigherOrderRisk[];
+}
