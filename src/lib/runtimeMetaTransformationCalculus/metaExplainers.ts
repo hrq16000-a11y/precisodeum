@@ -79,7 +79,7 @@ export function explainMetaStability(stab: RuntimeMetaStability): MetaExplanatio
   );
 }
 
-export function explainMetaCertification(cert: MetaCertification | RuntimeMetaCertification): MetaExplanation {
+export function explainMetaCertification(cert: MetaCertification): MetaExplanation {
   return make(
     'certification',
     `rank=${cert.rank} safe=${cert.safe} confidence=${fmt(cert.confidence)} reasons=${cert.reasons.length}`,
