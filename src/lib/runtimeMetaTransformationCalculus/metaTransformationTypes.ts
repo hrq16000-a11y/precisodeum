@@ -16,3 +16,22 @@ export type MetaLiftingClass = 'LIFTED' | 'WEAK' | 'PARTIAL' | 'UNLIFTABLE';
 export type MetaFixedPointClass = 'FIXED' | 'CONVERGENT' | 'OSCILLATING' | 'DIVERGENT';
 export type MetaSeverity = 'info' | 'warn' | 'error' | 'critical';
 
+export interface MetaComponent {
+  readonly id: string;
+  readonly layer: string;
+  readonly stage: string;
+  readonly liveExecutionEnabled: boolean;
+  readonly retryEnabled: boolean;
+  readonly backgroundEnabled: boolean;
+  readonly realUsersAllowed: boolean;
+  readonly naturality: number;
+  readonly functoriality: number;
+  readonly identity: number;
+  readonly determinism: number;
+  readonly stability: number;
+  readonly lift: number;
+  readonly fixedPoint: number;
+  readonly morphisms: readonly string[];
+  readonly signature: string;
+}
+
