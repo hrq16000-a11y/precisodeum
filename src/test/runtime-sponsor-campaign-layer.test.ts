@@ -55,9 +55,9 @@ function buildDecisionContext(): SponsorDecisionContext {
   const mesh = buildSponsorMeshSnapshot(NODES, SLOTS, [], POLICY);
   const fairness = computeFairnessLedger(mesh.nodes, mesh.exposures, POLICY);
   const saturation = computeSaturationMap(mesh.nodes, mesh.exposures, POLICY);
-  const geo = computeGeoMesh(mesh.nodes, []);
-  const allocations = allocateAll(mesh.nodes, mesh.slots, fairness, saturation, POLICY);
-  const attribution = buildAttributionTraces(mesh.nodes, mesh.edges, allocations);
+  const geo = computeGeoMesh(mesh.nodes, mesh.exposures, []);
+  const allocations = allocateAll(mesh.slots, mesh.nodes, mesh.exposures, [], fairness, saturation, POLICY);
+  const attribution = buildAttributionTraces(mesh.exposures, mesh.edges);
   return {
     nodes: mesh.nodes,
     slots: mesh.slots,
