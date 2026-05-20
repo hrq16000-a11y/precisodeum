@@ -1,7 +1,7 @@
 /**
  * Phase 1.9.17 — Sponsor Temporal Evolution Engine · Model.
  * READ-ONLY / DETERMINISTIC / IMMUTABLE.
- * Time is a pure integer dimension of input. NO Date.now, NO timers.
+ * Time is a pure integer dimension of input. NO real-clock, NO timers.
  */
 
 export type SponsorTemporalStage = 'STAGE_0_READ_ONLY';
