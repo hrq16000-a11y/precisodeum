@@ -7,8 +7,8 @@ export type EquivalenceClass = 'EQUIVALENT' | 'WEAK' | 'REGRESSED' | 'FRACTURED'
 export type ReductionClass = 'IDEMPOTENT' | 'STABLE' | 'UNSTABLE';
 export type TopologyClass = 'STABLE' | 'WEAK' | 'UNSTABLE' | 'COLLAPSED';
 export type StabilityClass = 'STABLE' | 'WEAK' | 'UNSTABLE' | 'COLLAPSED';
-export type NaturalitySeverity = 'info' | 'warn' | 'error' | 'critical';
 export type DiagramClass = 'COMMUTATIVE' | 'WEAK' | 'PARTIAL' | 'BROKEN';
+export type NaturalitySeverity = 'info' | 'warn' | 'error' | 'critical';
 
 export interface NaturalComponent {
   readonly id: string;
@@ -29,7 +29,4 @@ export interface NaturalComponent {
 
 export interface RuntimeNaturalTransformation { readonly components: readonly NaturalComponent[]; readonly class: NaturalClass; readonly naturality: number; readonly collapsed: boolean; readonly signature: string; }
 export interface RuntimeNaturalComposition { readonly class: CompositionClass; readonly associativity: number; readonly broken: boolean; readonly failed: boolean; }
-export interface RuntimeNaturalIdentity { readonly class: IdentityClass; readonly preservation: number; readonly violations: number; readonly broken: boolean; }
-export interface RuntimeNaturalNormalization { readonly class: NormalizationClass; readonly stability: number; readonly idempotent: boolean; readonly divergent: boolean; }
-export interface RuntimeNaturalDeterminism { readonly class: DeterminismClass; readonly score: number; readonly degraded: boolean; }
-export interface Runtim
+export interface RuntimeNatur
