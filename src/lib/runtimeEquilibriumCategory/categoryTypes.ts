@@ -20,80 +20,17 @@ export interface CategoryObject {
   readonly signature: string;
 }
 
-export interface RuntimeStabilityCategory {
-  readonly objects: readonly CategoryObject[];
-  readonly classification: CategoryStabilityClass;
-  readonly balance: number;
-  readonly collapsed: boolean;
-  readonly signature: string;
-}
-
-export interface RuntimeFunctorEnvelope {
-  readonly class: FunctorClass;
-  readonly preservation: number;
-  readonly recursive: boolean;
-  readonly degenerate: boolean;
-}
-
-export interface RuntimeTransformationGraph {
-  readonly class: TransformationClass;
-  readonly consistency: number;
-  readonly broken: boolean;
-  readonly nonNatural: boolean;
-}
-
-export interface RuntimePropagationMorphisms {
-  readonly propagation: MorphismsPropagation;
-  readonly length: number;
-  readonly containment: number;
-  readonly recursive: boolean;
-  readonly infinite: boolean;
-}
-
-export interface RuntimeCoherenceEnvelope {
-  readonly class: CoherenceClass;
-  readonly balance: number;
-  readonly inconsistent: boolean;
-  readonly collapsing: boolean;
-}
-
-export interface RuntimeEquivalenceRelation {
-  readonly strength: number;
-  readonly fractured: boolean;
-  readonly recursive: boolean;
-}
-
-export interface RuntimeIdentityEnvelope {
-  readonly preservation: number;
-  readonly violations: number;
-  readonly normalized: boolean;
-}
-
-export interface RuntimeCompositionEnvelope {
-  readonly equilibrium: number;
-  readonly unstable: boolean;
-  readonly fractured: boolean;
-}
-
-export interface RuntimeFunctorialCollapse {
-  readonly collapsing: boolean;
-  readonly recursive: boolean;
-  readonly irrecoverable: boolean;
-  readonly containment: number;
-}
-
-export interface CategoryRisk {
-  readonly code: string;
-  readonly severity: CategorySeverity;
-  readonly description: string;
-}
-
-export interface CategoryCertification {
-  readonly safe: boolean;
-  readonly confidence: number;
-  readonly rank: 'OK' | 'WARN' | 'BLOCKED';
-  readonly reasons: readonly string[];
-}
+export interface RuntimeStabilityCategory { readonly objects: readonly CategoryObject[]; readonly classification: CategoryStabilityClass; readonly balance: number; readonly collapsed: boolean; readonly signature: string; }
+export interface RuntimeFunctorEnvelope { readonly class: FunctorClass; readonly preservation: number; readonly recursive: boolean; readonly degenerate: boolean; }
+export interface RuntimeTransformationGraph { readonly class: TransformationClass; readonly consistency: number; readonly broken: boolean; readonly nonNatural: boolean; }
+export interface RuntimePropagationMorphisms { readonly propagation: MorphismsPropagation; readonly length: number; readonly containment: number; readonly recursive: boolean; readonly infinite: boolean; }
+export interface RuntimeCoherenceEnvelope { readonly class: CoherenceClass; readonly balance: number; readonly inconsistent: boolean; readonly collapsing: boolean; }
+export interface RuntimeEquivalenceRelation { readonly strength: number; readonly fractured: boolean; readonly recursive: boolean; }
+export interface RuntimeIdentityEnvelope { readonly preservation: number; readonly violations: number; readonly normalized: boolean; }
+export interface RuntimeCompositionEnvelope { readonly equilibrium: number; readonly unstable: boolean; readonly fractured: boolean; }
+export interface RuntimeFunctorialCollapse { readonly collapsing: boolean; readonly recursive: boolean; readonly irrecoverable: boolean; readonly containment: number; }
+export interface CategoryRisk { readonly code: string; readonly severity: CategorySeverity; readonly description: string; }
+export interface CategoryCertification { readonly safe: boolean; readonly confidence: number; readonly rank: 'OK' | 'WARN' | 'BLOCKED'; readonly reasons: readonly string[]; }
 
 export interface RuntimeCategoryEnvelope {
   readonly id: string;
@@ -123,4 +60,5 @@ export interface RuntimeCategoryAggregate {
   readonly worstMorphisms: MorphismsPropagation;
   readonly worstCoherence: CoherenceClass;
   readonly stable: boolean;
-  readon
+  readonly risks: readonly CategoryRisk[];
+}
