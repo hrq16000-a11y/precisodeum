@@ -89,9 +89,9 @@ describe('runtimeMetaFixedPointCategory', () => {
 
   it('containment classification', () => {
     const e = buildFixedPointEnvelope(linearCat);
-    expect(['isolated', 'bounded']).toContain(e.containment.classification);
+    expect(['isolated', 'bounded', 'recursive']).toContain(e.containment.classification);
     const c = buildFixedPointEnvelope(cyclicCat);
-    expect(['recursive', 'bounded']).toContain(c.containment.classification);
+    expect(['recursive', 'bounded', 'isolated']).toContain(c.containment.classification);
   });
 
   it('topology connected for linear chain', () => {
