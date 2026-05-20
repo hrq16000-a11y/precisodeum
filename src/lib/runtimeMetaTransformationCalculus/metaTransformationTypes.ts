@@ -12,4 +12,3 @@ export type MetaTopologyClass = 'STABLE' | 'WEAK' | 'UNSTABLE' | 'COLLAPSED';
 export type MetaStabilityClass = 'STABLE' | 'WEAK' | 'UNSTABLE' | 'COLLAPSED';
 export type MetaNaturalityClass = 'NATURAL' | 'WEAK' | 'PARTIAL' | 'BROKEN';
 export type MetaFunctorialityClass = 'FUNCTORIAL' | 'WEAK' | 'PARTIAL' | 'FAILED';
-export type MetaLiftingClass = 'LIFTED' | 'WEAK' | 'P
