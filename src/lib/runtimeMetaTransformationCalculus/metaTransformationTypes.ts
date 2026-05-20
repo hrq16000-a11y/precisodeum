@@ -52,5 +52,3 @@ export interface RuntimeMetaFunctoriality { readonly class: FunctorialityClass; 
 export interface RuntimeMetaLifting { readonly class: LiftingClass; readonly score: number; readonly unliftable: boolean; }
 export interface RuntimeMetaFixedPoint { readonly class: FixedPointClass; readonly score: number; readonly divergent: boolean; }
 
-export interface MetaRisk { readonly code: string; readonly severity: MetaSeverity; readonly description: string; }
-export interface MetaCertification { readonly safe: boolean; readonly confidence: number; readonly rank: 'O
