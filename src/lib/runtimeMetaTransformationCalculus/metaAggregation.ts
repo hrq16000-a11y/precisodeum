@@ -87,9 +87,9 @@ function buildEnvelope(t: RuntimeMetaTransformation): RuntimeMetaEnvelope {
   const fixedScore = avgComponent(normalized, 'fixedPoint');
   const determinismScore = avgComponent(normalized, 'determinism');
 
-  const naturalityClass = classifyScalar(naturalityScore, false) as MetaNaturalityClass extends infer R ? R : never;
-  const functorialityClass = classifyScalar(functorialityScore, false);
-  const liftingClass = classifyScalar(liftScore, false);
+  const naturalityClass: 'OK' | 'WEAK' | 'PARTIAL' | 'BROKEN' = classifyScalar(naturalityScore, false);
+  const functorialityClass: 'OK' | 'WEAK' | 'PARTIAL' | 'BROKEN' = classifyScalar(functorialityScore, false);
+  const liftingClass: 'OK' | 'WEAK' | 'PARTIAL' | 'BROKEN' = classifyScalar(liftScore, false);
 
   const envelope: RuntimeMetaEnvelope = {
     id: normalized.signature,
