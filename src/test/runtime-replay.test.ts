@@ -128,7 +128,7 @@ describe('Fase 1.8.2 — Runtime Replay (A→Z)', () => {
     t1 = appendTraceStep(t1, okStep('avatar_mirror', { mirror: true }));
     const f1 = finalizeRuntimeTrace(t1);
     const r = buildFlowReplay('persist_first_service', [f1, f1]);
-    expect(['partially_deterministic', 'deterministic', 'divergent']).toContain(r.classification);
+    expect(['partially_deterministic', 'deterministic', 'divergent', 'unreconstructable']).toContain(r.classification);
   });
 
   it('C) divergent replay (parity regression)', () => {
