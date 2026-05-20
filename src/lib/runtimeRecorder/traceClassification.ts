@@ -44,8 +44,11 @@ export function classificationSeverityFloor(
     case 'DIVERGENT':
       return 'MEDIUM';
     case 'PARTIAL':
-    case 'EVENTUAL':
       return 'LOW';
+    case 'EVENTUAL':
+      // Fase 1.8.0 fix: EVENTUAL é estado esperado por design (sem finalize obrigatório
+      // executado), pode permanecer NONE quando parity ok, sem orphan, sem ordering issue.
+      return 'NONE';
     case 'NON_ATOMIC':
       return 'LOW';
     default:
