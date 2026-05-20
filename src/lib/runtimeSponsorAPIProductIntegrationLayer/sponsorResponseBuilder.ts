@@ -60,7 +60,7 @@ function normalizeSlots(
   // Pagination — applied AFTER deterministic ordering (the contract is already sorted).
   const offset = ctx.offset || 0;
   const limit = ctx.limit ?? slots.length;
-  return slots.slice(offset, offset + limit) as SponsorAPIResponseBody['slots'];
+  return slots.slice(offset, offset + limit) as unknown as SponsorAPIResponseBody['slots'];
 }
 
 function normalizeCampaigns(snapshot: SponsorContractSnapshot, ctx: SponsorConsumerContext) {
