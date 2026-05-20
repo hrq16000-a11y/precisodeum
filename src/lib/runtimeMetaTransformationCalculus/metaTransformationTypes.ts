@@ -12,33 +12,3 @@ export type FunctorialityClass = 'FUNCTORIAL' | 'WEAK' | 'PARTIAL' | 'FAILED';
 export type LiftingClass = 'LIFTED' | 'WEAK' | 'PARTIAL' | 'UNLIFTABLE';
 export type FixedPointClass = 'FIXED' | 'WEAK' | 'UNSTABLE' | 'DIVERGENT';
 export type MetaSeverity = 'info' | 'warn' | 'error' | 'critical';
-
-export interface MetaComponent {
-  readonly id: string;
-  readonly layer: string;
-  readonly stage: string;
-  readonly liveExecutionEnabled: boolean;
-  readonly retryEnabled: boolean;
-  readonly backgroundEnabled: boolean;
-  readonly realUsersAllowed: boolean;
-  readonly naturality: number;
-  readonly functoriality: number;
-  readonly identity: number;
-  readonly determinism: number;
-  readonly stability: number;
-  readonly lift: number;
-  readonly fixedPoint: number;
-  readonly morphisms: readonly string[];
-  readonly signature: string;
-}
-
-export interface RuntimeMetaTransformation {
-  readonly components: readonly MetaComponent[];
-  readonly class: MetaClass;
-  readonly score: number;
-  readonly collapsed: boolean;
-  readonly signature: string;
-}
-export interface RuntimeMetaComposition { readonly class: CompositionClass; readonly associativity: number; readonly broken: boolean; readonly failed: boolean; }
-export interface RuntimeMetaIdentity { readonly class: IdentityClass; readonly preservation: number; readonly violations: number; readonly broken: boolean; }
-export interface RuntimeMetaNormalization { readonly class: NormalizationClass; readonly stability: number; readonly id
