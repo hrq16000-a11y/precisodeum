@@ -10,4 +10,6 @@ export type MetaEquivalenceClass = 'EQUIVALENT' | 'WEAK' | 'REGRESSED' | 'FRACTU
 export type MetaReductionClass = 'IDEMPOTENT' | 'STABLE' | 'UNSTABLE';
 export type MetaTopologyClass = 'STABLE' | 'WEAK' | 'UNSTABLE' | 'COLLAPSED';
 export type MetaStabilityClass = 'STABLE' | 'WEAK' | 'UNSTABLE' | 'COLLAPSED';
-export type MetaNaturalityClass = 'NATURAL' | '
+export type MetaNaturalityClass = 'NATURAL' | 'WEAK' | 'PARTIAL' | 'BROKEN';
+export type MetaFunctorialityClass = 'FUNCTORIAL' | 'WEAK' | 'PARTIAL' | 'FAILED';
+export type MetaLiftingClass = 'LIFTED' | 'WEAK' | 'P
