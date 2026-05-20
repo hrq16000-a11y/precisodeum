@@ -41,4 +41,5 @@ export interface RuntimeMetaTransformation {
 }
 export interface RuntimeMetaComposition { readonly class: CompositionClass; readonly associativity: number; readonly broken: boolean; readonly failed: boolean; }
 export interface RuntimeMetaIdentity { readonly class: IdentityClass; readonly preservation: number; readonly violations: number; readonly broken: boolean; }
-export interface RuntimeMetaNormalization { readonly class: NormalizationClass; readon
+export interface RuntimeMetaNormalization { readonly class: NormalizationClass; readonly stability: number; readonly idempotent: boolean; readonly divergent: boolean; }
+export interface RuntimeMetaDeterminism { readonly class: DeterminismClass; readonly score: number; readonly degraded: boolean; }
