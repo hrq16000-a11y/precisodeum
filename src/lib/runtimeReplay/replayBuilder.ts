@@ -393,7 +393,7 @@ export function classifyReplayDeterminism(
   const outcomeStable = cons.stable;
 
   const lineage = buildReplayLineage(flow, flowTraces);
-  if (lineage.class === 'broken' || lineage.class === 'orphaned') {
+  if (lineage.class === 'broken' || lineage.class === 'orphaned' || lineage.class === 'mirror_only') {
     return {
       flow,
       classification: 'unreconstructable',
