@@ -47,11 +47,13 @@ export function buildMeshTopology(layers: readonly LayerSnapshot[]): MeshTopolog
   const recursive = recursiveLayers.length > 0;
   const collapsed = layers.some((l) => l.topology === 'collapsed');
 
+  const allLayersStable = layers.every((l) => l.topology === 'stable');
+
   let state: MeshTopologyState;
   if (collapsed) state = 'collapsed';
   else if (cycles.length > 0) state = 'circular';
   else if (recursive) state = 'recursive';
-  else if (overlaps.length > SHARED_BOUNDARIES.length * 0.6) state = 'overlapping';
+  else if (!allLayersStable && overlaps.length > SHARED_BOUNDARIES.length * 0.6) state = 'overlapping';
   else state = 'stable';
 
   return { state, overlaps, cycles, recursive, collapsed };
