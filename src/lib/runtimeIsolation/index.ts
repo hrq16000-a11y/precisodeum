@@ -4,6 +4,7 @@
 
 export * from './isolationTypes';
 export * from './boundaryIsolation';
+export * from './envelopeBuilder';
 export * from './propagationIsolation';
 export * from './topologyIsolation';
 export * from './certificationIsolation';
