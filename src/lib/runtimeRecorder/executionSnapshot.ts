@@ -3,6 +3,7 @@
  */
 
 import { calculateBlastRadius } from '@/lib/atomicSimulation/blastRadius';
+import type { BlastRadiusLevel } from '@/lib/atomicSimulation/simulationTypes';
 import { finalizeRuntimeTrace } from './traceRecorder';
 import type {
   RuntimeExecutionSnapshot,
@@ -13,7 +14,8 @@ export function buildExecutionSnapshot(
   trace: RuntimeWriteTrace,
 ): RuntimeExecutionSnapshot {
   const finalized = finalizeRuntimeTrace(trace);
-  const blast = calculateBlastRadius(finalized.flow);
+  const blastReport = calculateBlastRadius(finalized.flow);
+  const blast: BlastRadiusLevel = blastReport?.level ?? 'LOW';
   const observedWrites =
     finalized.mode === 'shadow' || finalized.mode === 'observe_only'
       ? 0
