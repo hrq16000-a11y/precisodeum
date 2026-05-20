@@ -163,10 +163,11 @@ export function classifyTraceConsistency(
   const failed = trace.steps.filter((s) => s.status === 'failed');
   const ok = trace.steps.filter((s) => s.status === 'ok');
   const aborted = trace.steps.filter((s) => s.status === 'aborted');
+  // Fase 1.8.0 fix: mirror sem owner válido é orphan mesmo se todos os steps forem 'ok'.
+  if (detectTraceMirrorDependency(trace)) return 'orphaned';
   if (failed.length === 0 && aborted.length === 0 && ok.length === trace.steps.length) {
     return 'consistent';
   }
-  if (detectTraceMirrorDependency(trace)) return 'orphaned';
   if (failed.length > 0 && ok.length === 0) return 'inconsistent';
   if (failed.length > 0 || aborted.length > 0) return 'partial';
   return 'unknown';
