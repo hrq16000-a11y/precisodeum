@@ -47,8 +47,12 @@ export function compareTemporalConsistency(
   const inconsistentIncrease = b.inconsistentRatio - a.inconsistentRatio;
   const orderingIncrease = b.orderingViolationRatio - a.orderingViolationRatio;
   const orderingRegression = orderingIncrease > 0.1;
+  const consistencyDrop = a.consistentRatio - b.consistentRatio;
   const parityRegression =
-    orphanIncrease > 0.05 || inconsistentIncrease > 0.05 || b.criticalCount > a.criticalCount;
+    orphanIncrease > 0.05 ||
+    inconsistentIncrease > 0.05 ||
+    b.criticalCount > a.criticalCount ||
+    consistencyDrop > 0.2;
   let cls: TemporalConsistencyClass = 'stable';
   if (b.consistentRatio < a.consistentRatio - 0.2) cls = 'severe_regression';
   else if (parityRegression || orderingRegression) cls = 'degrading';
