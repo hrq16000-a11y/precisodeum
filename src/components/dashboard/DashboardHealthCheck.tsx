@@ -87,8 +87,19 @@ export function DashboardHealthCheck({
           duration: 5000,
         });
       }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+    } catch (e: any) {
+      // PostgrestError não é `instanceof Error` — extrair campos manualmente
+      // para não acabar exibindo "[object Object]".
+      const parts = [
+        e?.message,
+        e?.details,
+        e?.hint,
+        e?.code ? `(code: ${e.code})` : null,
+      ].filter(Boolean);
+      const msg = parts.length
+        ? parts.join(' · ')
+        : (typeof e === 'string' ? e : JSON.stringify(e));
+      console.error('[DashboardHealthCheck] validate_db_health failed:', e);
       setErr(msg);
       onHealthChange?.(false);
     } finally {
