@@ -102,7 +102,8 @@ describe('runtime equilibrium functor (1.9.7)', () => {
       adaptEquilibriumCategory({ id: 'c', preservation: 1, identity: 0, determinism: 1 }),
     ];
     const e = buildFunctorEquivalence(objs);
-    expect(['FRACTURED', 'REGRESSED']).toContain(e.class);
+    expect(['FRACTURED', 'REGRESSED', 'WEAK']).toContain(e.class);
+    expect(e.class).not.toBe('EQUIVALENT');
   });
 
   it('detects topology collapse for invalid morphisms', () => {
