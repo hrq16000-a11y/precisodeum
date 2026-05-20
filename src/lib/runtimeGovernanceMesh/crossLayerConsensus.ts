@@ -59,7 +59,7 @@ export function detectConsensusGap(
     // Minority buckets are gaps
     const sorted = keys.sort((a, b) => buckets[b].length - buckets[a].length);
     for (let i = 1; i < sorted.length; i++) {
-      gaps.push({ dimension: `${dim}:${sorted[i]}`, layers: buckets[sorted[i]] });
+      gaps.push({ dimension: `${dim}:${sorted[i]}`, layers: [...buckets[sorted[i]]] });
     }
   }
   return gaps;
