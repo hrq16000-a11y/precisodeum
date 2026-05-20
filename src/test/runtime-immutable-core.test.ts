@@ -69,8 +69,11 @@ function safeBoundary(): ImmutableBoundary {
 
 function sealWith(violations: number, compromised = false): ImmutableSeal {
   const vs = Array.from({ length: violations }, (_, i) => ({
-    flow: FLOW, layer: 'enforcement' as const, type: 'runtime_mutation' as const,
-    severity: (compromised ? 'CRITICAL' : 'HIGH') as const, detail: `v${i}`,
+    flow: FLOW,
+    layer: 'enforcement' as const,
+    type: 'runtime_mutation' as const,
+    severity: (compromised ? 'CRITICAL' : 'HIGH') as 'CRITICAL' | 'HIGH',
+    detail: `v${i}`,
   }));
   const boundaries = compromised
     ? [buildBoundary({ flow: FLOW, layer: 'enforcement', liveExecutionEnabled: true })]
