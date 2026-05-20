@@ -105,23 +105,4 @@ export interface RuntimeTensorEnvelope {
   readonly tensor: RuntimeEquilibriumTensor;
   readonly curvature: RuntimeCurvatureEnvelope;
   readonly density: RuntimeInstabilityDensityEnvelope;
-  readonly containment: RuntimeContainmentField;
-  readonly topology: RuntimeTopologyGeometry;
-  readonly gradient: RuntimeConvergenceGradient;
-  readonly singularity: RuntimeSingularityEnvelope;
-  readonly collapse: RuntimeCollapseGeometry;
-  readonly classification: TensorStabilityClass;
-  readonly certification: TensorCertification;
-  readonly risks: readonly TensorRisk[];
-  readonly score: number;
-  readonly stable: boolean;
-}
-
-export interface RuntimeTensorAggregate {
-  readonly envelopes: readonly RuntimeTensorEnvelope[];
-  readonly score: number;
-  readonly confidence: number;
-  readonly worstSeverity: TensorSeverity;
-  readonly worstCurvature: CurvatureClass;
-  readonly worstDensity: InstabilityDensity;
-  readonly worstD
+  read
