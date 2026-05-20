@@ -42,7 +42,9 @@ export function detectCrossLayerDivergence(
 export function detectTopologyFragmentation(
   space: ConvergenceSpace,
 ): boolean {
-  if (space.nodes.length === 0) return false;
+  if (space.nodes.length <= 1) return false;
+  const totalEdges = space.nodes.reduce((a, n) => a + n.successors.length, 0);
+  if (totalEdges === 0) return false; // independent terminal nodes: not fragmented
   const ids = new Set(space.nodes.map((n) => n.id));
   const reachable = new Set<string>();
   const stack = [space.nodes[0].id];
