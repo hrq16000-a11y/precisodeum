@@ -2,12 +2,11 @@
 // Pure, deterministic explanation strings. No timestamps, locale, randomness, or IO.
 
 import type {
-  RuntimeMetaCertification,
+  MetaCertification,
   RuntimeMetaStability,
   RuntimeMetaTopology,
   RuntimeMetaTransformation,
 } from './metaTransformationTypes';
-import type { MetaCertification } from './metaTransformationTypes';
 import type { MetaDeterminismReport } from './metaDeterminism';
 import type { MetaEquivalenceReport } from './metaEquivalence';
 
