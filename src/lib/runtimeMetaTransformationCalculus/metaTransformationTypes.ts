@@ -50,3 +50,10 @@ export interface RuntimeMetaEquivalence { readonly class: MetaEquivalenceClass; 
 export interface RuntimeMetaReduction { readonly class: MetaReductionClass; readonly idempotent: boolean; readonly score: number; }
 export interface RuntimeMetaTopology { readonly class: MetaTopologyClass; readonly connectivity: number; readonly unstable: boolean; readonly collapsed: boolean; }
 export interface RuntimeMetaStability { readonly class: MetaStabilityClass; readonly score: number; readonly unstable: boolean; readonly collapsed: boolean; }
+export interface RuntimeMetaNaturality { readonly class: MetaNaturalityClass; readonly score: number; readonly violations: number; readonly broken: boolean; }
+export interface RuntimeMetaFunctoriality { readonly class: MetaFunctorialityClass; readonly score: number; readonly failed: boolean; }
+export interface RuntimeMetaLifting { readonly class: MetaLiftingClass; readonly score: number; readonly unliftable: boolean; }
+export interface RuntimeMetaFixedPoint { readonly class: MetaFixedPointClass; readonly score: number; readonly converged: boolean; readonly divergent: boolean; }
+export interface MetaRisk { readonly code: string; readonly severity: MetaSeverity; readonly description: string; }
+export interface MetaCertification { readonly safe: boolean; readonly confidence: number; readonly rank: 'OK' | 'WARN' | 'BLOCKED'; readonly reasons: readonly string[]; }
+
