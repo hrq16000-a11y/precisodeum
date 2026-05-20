@@ -29,4 +29,5 @@ export interface NaturalComponent {
 
 export interface RuntimeNaturalTransformation { readonly components: readonly NaturalComponent[]; readonly class: NaturalClass; readonly naturality: number; readonly collapsed: boolean; readonly signature: string; }
 export interface RuntimeNaturalComposition { readonly class: CompositionClass; readonly associativity: number; readonly broken: boolean; readonly failed: boolean; }
-export interface RuntimeNatur
+export interface RuntimeNaturalIdentity { readonly class: IdentityClass; readonly preservation: number; readonly violations: number; readonly broken: boolean; }
+export interface RuntimeNaturalNormalization { readonly class: NormalizationClass; readonly stability: number; readonly idempotent: boolean; readonly diverg
