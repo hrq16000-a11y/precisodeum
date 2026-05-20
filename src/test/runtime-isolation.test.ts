@@ -62,7 +62,7 @@ import type {
 import type { FlowId } from '@/lib/operations/operationRegistry';
 
 const FLOW: FlowId = 'dashboard_profile_save';
-const FLOW2: FlowId = 'onboarding_v2_save';
+const FLOW2: FlowId = 'persist_first_service';
 
 function fullyIsolatedBoundaries(): readonly IsolationBoundary[] {
   return [
