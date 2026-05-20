@@ -57,3 +57,24 @@ export interface RuntimeMetaFixedPoint { readonly class: MetaFixedPointClass; re
 export interface MetaRisk { readonly code: string; readonly severity: MetaSeverity; readonly description: string; }
 export interface MetaCertification { readonly safe: boolean; readonly confidence: number; readonly rank: 'OK' | 'WARN' | 'BLOCKED'; readonly reasons: readonly string[]; }
 
+export interface RuntimeMetaEnvelope {
+  readonly id: string;
+  readonly transformation: RuntimeMetaTransformation;
+  readonly composition: RuntimeMetaComposition;
+  readonly identity: RuntimeMetaIdentity;
+  readonly normalization: RuntimeMetaNormalization;
+  readonly determinism: RuntimeMetaDeterminism;
+  readonly equivalence: RuntimeMetaEquivalence;
+  readonly reduction: RuntimeMetaReduction;
+  readonly topology: RuntimeMetaTopology;
+  readonly stability: RuntimeMetaStability;
+  readonly naturality: RuntimeMetaNaturality;
+  readonly functoriality: RuntimeMetaFunctoriality;
+  readonly lifting: RuntimeMetaLifting;
+  readonly fixedPoint: RuntimeMetaFixedPoint;
+  readonly certification: MetaCertification;
+  readonly risks: readonly MetaRisk[];
+  readonly score: number;
+  readonly stable: boolean;
+}
+
