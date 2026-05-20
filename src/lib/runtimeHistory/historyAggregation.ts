@@ -46,7 +46,7 @@ export function summarizeHistoryParity(
 ): RuntimeParityTrend {
   const gaps = traces
     .filter((t) => t.flow === window.flow)
-    .map((t) => calculateRuntimeParityGap(t));
+    .map((t) => calculateRuntimeParityGap(t).gap);
   const avg = gaps.length ? gaps.reduce((s, n) => s + n, 0) / gaps.length : 0;
   const max = gaps.length ? Math.max(...gaps) : 0;
   return {
