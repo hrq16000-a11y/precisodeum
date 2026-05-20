@@ -45,3 +45,8 @@ export interface RuntimeMetaTransformation {
 export interface RuntimeMetaComposition { readonly class: MetaCompositionClass; readonly associativity: number; readonly broken: boolean; readonly failed: boolean; }
 export interface RuntimeMetaIdentity { readonly class: MetaIdentityClass; readonly preservation: number; readonly violations: number; readonly broken: boolean; }
 export interface RuntimeMetaNormalization { readonly class: MetaNormalizationClass; readonly stability: number; readonly idempotent: boolean; readonly divergent: boolean; }
+export interface RuntimeMetaDeterminism { readonly class: MetaDeterminismClass; readonly score: number; readonly degraded: boolean; }
+export interface RuntimeMetaEquivalence { readonly class: MetaEquivalenceClass; readonly strength: number; readonly regressed: boolean; readonly fractured: boolean; }
+export interface RuntimeMetaReduction { readonly class: MetaReductionClass; readonly idempotent: boolean; readonly score: number; }
+export interface RuntimeMetaTopology { readonly class: MetaTopologyClass; readonly connectivity: number; readonly unstable: boolean; readonly collapsed: boolean; }
+export interface RuntimeMetaStability { readonly class: MetaStabilityClass; readonly score: number; readonly unstable: boolean; readonly collapsed: boolean; }
