@@ -78,3 +78,20 @@ export interface RuntimeMetaEnvelope {
   readonly stable: boolean;
 }
 
+export interface RuntimeMetaAggregate {
+  readonly envelopes: readonly RuntimeMetaEnvelope[];
+  readonly score: number;
+  readonly confidence: number;
+  readonly worstSeverity: MetaSeverity;
+  readonly worstMeta: MetaClass;
+  readonly worstComposition: MetaCompositionClass;
+  readonly worstIdentity: MetaIdentityClass;
+  readonly worstDeterminism: MetaDeterminismClass;
+  readonly worstTopology: MetaTopologyClass;
+  readonly worstNaturality: MetaNaturalityClass;
+  readonly worstFunctoriality: MetaFunctorialityClass;
+  readonly worstLifting: MetaLiftingClass;
+  readonly worstFixedPoint: MetaFixedPointClass;
+  readonly stable: boolean;
+  readonly risks: readonly MetaRisk[];
+}
