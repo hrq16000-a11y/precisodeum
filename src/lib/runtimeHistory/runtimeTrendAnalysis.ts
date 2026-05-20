@@ -27,7 +27,13 @@ export function detectEscalatingFailures(window: RuntimeHistoryWindow): boolean 
   let streak = 0;
   let maxStreak = 0;
   for (const e of window.entries) {
-    if (e.consistency === 'inconsistent' || e.consistency === 'orphaned' || e.classification === 'CRITICAL') {
+    const isFailure =
+      e.consistency === 'inconsistent' ||
+      e.consistency === 'orphaned' ||
+      e.consistency === 'partial' ||
+      e.classification === 'CRITICAL' ||
+      SEV[e.severity] >= SEV.HIGH;
+    if (isFailure) {
       streak++;
       maxStreak = Math.max(maxStreak, streak);
     } else {
