@@ -19,7 +19,7 @@ export interface SponsorTopologyLayerInput {
 }
 
 export interface SponsorTopologyNode {
-  readonly id: string; // `${layer}`
+  readonly id: SponsorTopologyLayerId;
   readonly layer: SponsorTopologyLayerId;
   readonly phase: string;
   readonly plane: SponsorTopologyPlane;
