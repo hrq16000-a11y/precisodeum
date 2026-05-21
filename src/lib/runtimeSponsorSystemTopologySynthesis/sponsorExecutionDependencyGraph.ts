@@ -61,7 +61,9 @@ export function resolveExecutionDependencies(
   const remaining = new Set<SponsorTopologyLayerId>(indeg.keys());
 
   while (remaining.size > 0) {
-    const ready = [...remaining].filter((k) => (indeg.get(k) ?? 0) === 0).sort();
+    const ready: SponsorTopologyLayerId[] = [...remaining]
+      .filter((k) => (indeg.get(k) ?? 0) === 0)
+      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
     if (ready.length === 0) {
       // No cycles expected in canonical topology; fail-closed.
       throw new Error('[sponsor-topology] cycle detected in execution dependency graph');
@@ -79,8 +81,12 @@ export function resolveExecutionDependencies(
     .slice()
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .map((n) => {
-      const deps = [...(dependsOn.get(n.id) ?? new Set())].sort();
-      const obs = [...(observedBy.get(n.id) ?? new Set())].sort();
+      const deps: SponsorTopologyLayerId[] = [...(dependsOn.get(n.id) ?? new Set())].sort(
+        (a, b) => (a < b ? -1 : a > b ? 1 : 0),
+      );
+      const obs: SponsorTopologyLayerId[] = [...(observedBy.get(n.id) ?? new Set())].sort(
+        (a, b) => (a < b ? -1 : a > b ? 1 : 0),
+      );
       const nodeSignature = signObject({ id: n.id, dependsOn: deps, observedBy: obs });
       return Object.freeze({
         id: n.id,
