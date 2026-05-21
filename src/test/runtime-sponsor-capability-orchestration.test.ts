@@ -56,7 +56,7 @@ describe('Phase 1.9.24 · Sponsor Capability Orchestration', () => {
 
   it('counts entitlement statuses deterministically', () => {
     const { matrix } = runCapabilityOrchestrationLayer(sampleInputs);
-    expect(matrix.enabledCount).toBe(4);
+    expect(matrix.enabledCount).toBe(5);
     expect(matrix.shadowCount).toBe(1);
     expect(matrix.disabledCount).toBe(1);
     const total = matrix.enabledCount + matrix.shadowCount + matrix.disabledCount;
