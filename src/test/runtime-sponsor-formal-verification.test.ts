@@ -144,9 +144,10 @@ describe('Sponsor Formal Verification Plane (Phase 1.9.28)', () => {
 
   it('detects envelope drift via assertVerificationDeterminism', () => {
     const a = runFormalVerificationPlane(fullInputs);
+    // Drift the structural shape: drop a layer entirely → per-layer invariant flips to violated.
     const b = runFormalVerificationPlane(
       fullInputs.map((i) =>
-        i.layer === 'mesh' ? { layer: i.layer, signature: 'sig-mesh-altered' } : i,
+        i.layer === 'mesh' ? { layer: i.layer, signature: '' } : i,
       ),
     );
     expect(() => assertVerificationDeterminism(a.envelope, b.envelope)).toThrow(
