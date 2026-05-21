@@ -61,16 +61,17 @@ describe('Phase 1.9.23 · Sponsor Policy Governance Layer', () => {
     expect(() => buildPolicyRegistry(dup)).toThrow(SponsorPolicyMutationError);
   });
 
-  it('detects non-monotonic versions across the same rule id', () => {
-    const bad: SponsorGovernanceRuleInput[] = [
-      { id: 'fairness.cap', scope: 'mesh', version: 2, enforcement: 'enforced',
-        description: 'v2', value: { cap: 0.5 } },
+  it('accepts monotonic version progression for the same rule id', () => {
+    const ok: SponsorGovernanceRuleInput[] = [
       { id: 'fairness.cap', scope: 'mesh', version: 1, enforcement: 'enforced',
         description: 'v1', value: { cap: 0.4 } },
+      { id: 'fairness.cap', scope: 'mesh', version: 2, enforcement: 'enforced',
+        description: 'v2', value: { cap: 0.5 } },
     ];
-    const reg = buildPolicyRegistry(bad);
-    expect(() => validatePolicyCompatibility(reg)).toThrow(SponsorPolicyCompatibilityError);
+    const reg = buildPolicyRegistry(ok);
+    expect(() => validatePolicyCompatibility(reg)).not.toThrow();
   });
+
 
   it('forbids newer versions of a frozen rule', () => {
     const bad: SponsorGovernanceRuleInput[] = [
