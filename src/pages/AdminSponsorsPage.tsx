@@ -1332,6 +1332,11 @@ const AdminSponsorsPage = () => {
           <TabsContent value="consistency" className="space-y-4">
             <SponsorConsistencyPanel />
           </TabsContent>
+
+          {/* ═══ HEALTH TAB ═══ */}
+          <TabsContent value="health" className="space-y-4">
+            <SponsorHealthPanel />
+          </TabsContent>
         </Tabs>
 
       </div>
