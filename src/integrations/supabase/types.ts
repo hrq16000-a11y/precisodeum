@@ -8996,6 +8996,34 @@ export type Database = {
         }[]
       }
       get_sponsor_docs_status: { Args: { _lead_id: string }; Returns: Json }
+      get_sponsor_inventory_forecast: {
+        Args: { _days?: number }
+        Returns: {
+          active_sponsors: number
+          avg_new_per_day: number
+          category: string
+          city: string
+          ending_soon: number
+          forecast: string
+          max_capacity: number
+          projected_active: number
+          projected_occupancy_rate: number
+          slot_slug: string
+        }[]
+      }
+      get_sponsor_inventory_status: {
+        Args: never
+        Returns: {
+          active_sponsors: number
+          available_slots: number
+          category: string
+          city: string
+          max_capacity: number
+          occupancy_rate: number
+          slot_slug: string
+          status: string
+        }[]
+      }
       get_sponsor_performance: {
         Args: { _from?: string; _sponsor_id?: string; _to?: string }
         Returns: {
@@ -9450,6 +9478,10 @@ export type Database = {
       resolve_identity_suggestion: {
         Args: { _action: string; _suggestion_id: string }
         Returns: Json
+      }
+      resolve_sponsor_slot_capacity: {
+        Args: { _category: string; _city: string; _position: string }
+        Returns: number
       }
       restore_dashboard_widget: {
         Args: { _widget: string }

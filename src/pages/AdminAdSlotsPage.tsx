@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SponsorPerformancePanel from '@/components/sponsors/SponsorPerformancePanel';
 import SponsorPacingPanel from '@/components/sponsors/SponsorPacingPanel';
+import SponsorInventoryPanel from '@/components/sponsors/SponsorInventoryPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -593,6 +594,7 @@ const AdminAdSlotsPage = () => {
             <TabsTrigger value="metrics">📊 Métricas</TabsTrigger>
             <TabsTrigger value="performance">⚡ Performance</TabsTrigger>
             <TabsTrigger value="pacing">🚦 Pacing</TabsTrigger>
+            <TabsTrigger value="inventory">📦 Inventário</TabsTrigger>
           </TabsList>
 
           {/* ====== VISIBILITY MAP TAB ====== */}
@@ -957,6 +959,11 @@ const AdminAdSlotsPage = () => {
           {/* ====== PACING TAB (Fase 1.2 Sponsor Delivery & Pacing) ====== */}
           <TabsContent value="pacing" className="space-y-4">
             <SponsorPacingPanel />
+          </TabsContent>
+
+          {/* ====== INVENTORY TAB (Fase 1.3 Sponsor Inventory & Forecast) ====== */}
+          <TabsContent value="inventory" className="space-y-4">
+            <SponsorInventoryPanel />
           </TabsContent>
         </Tabs>
       </div>
