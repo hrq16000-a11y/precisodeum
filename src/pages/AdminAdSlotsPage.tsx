@@ -960,6 +960,11 @@ const AdminAdSlotsPage = () => {
           <TabsContent value="pacing" className="space-y-4">
             <SponsorPacingPanel />
           </TabsContent>
+
+          {/* ====== INVENTORY TAB (Fase 1.3 Sponsor Inventory & Forecast) ====== */}
+          <TabsContent value="inventory" className="space-y-4">
+            <SponsorInventoryPanel />
+          </TabsContent>
         </Tabs>
       </div>
 
