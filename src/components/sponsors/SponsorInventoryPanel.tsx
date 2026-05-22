@@ -180,7 +180,7 @@ export default function SponsorInventoryPanel() {
           <Card>
             <CardHeader><CardTitle className="text-base">Ocupação por slot</CardTitle></CardHeader>
             <CardContent>
-              {inventory.length === 0 ? (
+              {filteredInventory.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Sem patrocinadores ativos no momento.</p>
               ) : (
                 <Table>
@@ -196,7 +196,7 @@ export default function SponsorInventoryPanel() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {inventory.map((r, i) => (
+                    {filteredInventory.map((r, i) => (
                       <TableRow key={`${r.slot_slug}-${r.city}-${r.category}-${i}`}>
                         <TableCell className="font-mono text-xs">{r.slot_slug}</TableCell>
                         <TableCell className="text-sm">{formatScope(r.city, r.category)}</TableCell>
@@ -223,7 +223,7 @@ export default function SponsorInventoryPanel() {
               </p>
             </CardHeader>
             <CardContent>
-              {forecast.length === 0 ? (
+              {filteredForecast.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Sem dados suficientes para projeção.</p>
               ) : (
                 <Table>
@@ -241,7 +241,7 @@ export default function SponsorInventoryPanel() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {forecast.map((r, i) => (
+                    {filteredForecast.map((r, i) => (
                       <TableRow key={`${r.slot_slug}-${r.city}-${r.category}-${i}`}>
                         <TableCell className="font-mono text-xs">{r.slot_slug}</TableCell>
                         <TableCell className="text-sm">{formatScope(r.city, r.category)}</TableCell>
