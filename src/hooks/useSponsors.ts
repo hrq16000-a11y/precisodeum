@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getPositionConfig } from '@/config/sponsorPositions';
+import { isSponsorDeliverable, resolveSponsorHealthStatus, logBlockedSponsor } from '@/lib/sponsorDeliveryGuard';
 
 export interface SponsorFull {
   id: string;
@@ -96,8 +97,23 @@ export function useSponsorsBySlot(
 
       const { data } = await q;
 
-      let results = ((data || []) as unknown as SponsorFull[])
-        .filter(s => s.status === 'active')
+      const all = ((data || []) as unknown as SponsorFull[]);
+
+      // FASE 1.8 — Delivery Health Gate (fail-closed).
+      // Bloqueia expired / incomplete / inconsistent / blocked / unknown.
+      // Permite healthy + warning. Reaproveita campos já carregados.
+      let results = all.filter((s) => {
+        const deliverable = isSponsorDeliverable(s as any);
+        if (!deliverable) {
+          logBlockedSponsor(position, s as any, resolveSponsorHealthStatus(s as any));
+        }
+        return deliverable;
+      });
+
+      // Mantém checagens legadas (status, datas legadas, requiresImage)
+      // como defesa adicional — qualquer divergência reforça o gate.
+      results = results
+        .filter((s) => s.status === 'active')
         .filter(isDateValid);
 
       if (config.requiresImage) {
@@ -111,6 +127,9 @@ export function useSponsorsBySlot(
 
   const trackImpression = useCallback((id: string) => {
     if (impressionSet.current.has(id)) return;
+    // FASE 1.8 — Bloqueia impressão de sponsor não-entregável.
+    const sponsor = (query.data || []).find((s) => s.id === id);
+    if (!sponsor || !isSponsorDeliverable(sponsor as any)) return;
     impressionSet.current.add(id);
     supabase.rpc('track_sponsor_metric', {
       _sponsor_id: id,
@@ -118,16 +137,19 @@ export function useSponsorsBySlot(
       _event_type: 'impression',
       _page_path: getPagePath(),
     } as any).then(() => {});
-  }, [position]);
+  }, [position, query.data]);
 
   const trackClick = useCallback((id: string) => {
+    // FASE 1.8 — Bloqueia click em sponsor não-entregável.
+    const sponsor = (query.data || []).find((s) => s.id === id);
+    if (!sponsor || !isSponsorDeliverable(sponsor as any)) return;
     supabase.rpc('track_sponsor_metric', {
       _sponsor_id: id,
       _slot_slug: position,
       _event_type: 'click',
       _page_path: getPagePath(),
     } as any).then(() => {});
-  }, [position]);
+  }, [position, query.data]);
 
   return {
     ...query,

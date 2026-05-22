@@ -60,17 +60,21 @@ function useSlotSponsors(slotSlug: string, category?: string, city?: string, sta
       const sponsorIds = validAssignments.map(a => a.sponsor_id);
       const { data: sponsors } = await supabase
         .from('sponsors')
-        .select('id, title, image_url, link_url, tier, status')
+        .select('id, title, image_url, logo_url, link_url, tier, status, active, sponsor_type, linked_city_slug, linked_category_slug, campaign_end, end_date, pacing_status')
         .in('id', sponsorIds)
         .eq('active', true)
         .eq('status', 'active');
 
       if (!sponsors) return [];
 
-      // Filter by date validity
+      // FASE 1.8 — Delivery Health Gate (fail-closed).
+      const { isSponsorDeliverable } = await import('@/lib/sponsorDeliveryGuard');
+      const eligible = (sponsors as any[]).filter((s) => isSponsorDeliverable(s));
+
+      // Filter by date validity (legado)
       const priorityMap = new Map(validAssignments.map(a => [a.sponsor_id, a.priority || 0]));
-      
-      return (sponsors as any[])
+
+      return eligible
         .map(s => ({ ...s, priority: priorityMap.get(s.id) || 0 }))
         .sort((a, b) => b.priority - a.priority)
         .slice(0, (slot as any).max_ads) as SlotSponsor[];
