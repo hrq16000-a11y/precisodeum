@@ -127,6 +127,9 @@ export function useSponsorsBySlot(
 
   const trackImpression = useCallback((id: string) => {
     if (impressionSet.current.has(id)) return;
+    // FASE 1.8 — Bloqueia impressão de sponsor não-entregável.
+    const sponsor = (query.data || []).find((s) => s.id === id);
+    if (!sponsor || !isSponsorDeliverable(sponsor as any)) return;
     impressionSet.current.add(id);
     supabase.rpc('track_sponsor_metric', {
       _sponsor_id: id,
@@ -134,16 +137,19 @@ export function useSponsorsBySlot(
       _event_type: 'impression',
       _page_path: getPagePath(),
     } as any).then(() => {});
-  }, [position]);
+  }, [position, query.data]);
 
   const trackClick = useCallback((id: string) => {
+    // FASE 1.8 — Bloqueia click em sponsor não-entregável.
+    const sponsor = (query.data || []).find((s) => s.id === id);
+    if (!sponsor || !isSponsorDeliverable(sponsor as any)) return;
     supabase.rpc('track_sponsor_metric', {
       _sponsor_id: id,
       _slot_slug: position,
       _event_type: 'click',
       _page_path: getPagePath(),
     } as any).then(() => {});
-  }, [position]);
+  }, [position, query.data]);
 
   return {
     ...query,
