@@ -93,16 +93,63 @@ export default function SponsorInventoryPanel() {
     return () => { mounted = false; };
   }, []);
 
+  const [filterCity, setFilterCity] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterSlot, setFilterSlot] = useState('');
+
+  const citySlug = filterCity.trim() ? normalizeSlug(filterCity) : '';
+  const categorySlug = filterCategory.trim() ? normalizeSlug(filterCategory) : '';
+  const slotQ = filterSlot.trim().toLowerCase();
+
+  const matches = (row: { slot_slug: string; city: string; category: string }) =>
+    (!slotQ || row.slot_slug === slotQ) &&
+    (!citySlug || row.city === citySlug) &&
+    (!categorySlug || row.category === categorySlug);
+
+  const filteredInventory = useMemo(() => inventory.filter(matches), [inventory, slotQ, citySlug, categorySlug]);
+  const filteredForecast = useMemo(() => forecast.filter(matches), [forecast, slotQ, citySlug, categorySlug]);
+
   if (loading) return <Skeleton className="h-64 w-full" />;
   if (error) return <Card><CardContent className="p-6 text-destructive">{error}</CardContent></Card>;
 
-  const saturated = inventory.filter(r => r.status === 'saturated').length;
-  const moderate = inventory.filter(r => r.status === 'moderate').length;
-  const available = inventory.filter(r => r.status === 'available').length;
-  const willSaturate = forecast.filter(r => r.forecast === 'will_saturate').length;
+  const saturated = filteredInventory.filter(r => r.status === 'saturated').length;
+  const moderate = filteredInventory.filter(r => r.status === 'moderate').length;
+  const available = filteredInventory.filter(r => r.status === 'available').length;
+  const willSaturate = filteredForecast.filter(r => r.forecast === 'will_saturate').length;
+  const hasFilter = !!(citySlug || categorySlug || slotQ);
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+          <Input
+            placeholder="Cidade (ex: Curitiba)"
+            value={filterCity}
+            onChange={e => setFilterCity(e.target.value)}
+            aria-label="Filtrar por cidade"
+          />
+          <Input
+            placeholder="Categoria (ex: eletricista)"
+            value={filterCategory}
+            onChange={e => setFilterCategory(e.target.value)}
+            aria-label="Filtrar por categoria"
+          />
+          <Input
+            placeholder="Slot (ex: banner, card)"
+            value={filterSlot}
+            onChange={e => setFilterSlot(e.target.value)}
+            aria-label="Filtrar por slot"
+          />
+          <Button
+            variant="outline"
+            disabled={!hasFilter}
+            onClick={() => { setFilterCity(''); setFilterCategory(''); setFilterSlot(''); }}
+          >
+            <X className="h-4 w-4 mr-1" />Limpar
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-600" />Disponíveis</CardTitle></CardHeader>
@@ -121,6 +168,7 @@ export default function SponsorInventoryPanel() {
           <CardContent className="text-2xl font-bold">{willSaturate}</CardContent>
         </Card>
       </div>
+
 
       <Tabs defaultValue="current">
         <TabsList>
