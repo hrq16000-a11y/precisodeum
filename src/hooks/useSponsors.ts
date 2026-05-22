@@ -97,8 +97,23 @@ export function useSponsorsBySlot(
 
       const { data } = await q;
 
-      let results = ((data || []) as unknown as SponsorFull[])
-        .filter(s => s.status === 'active')
+      const all = ((data || []) as unknown as SponsorFull[]);
+
+      // FASE 1.8 — Delivery Health Gate (fail-closed).
+      // Bloqueia expired / incomplete / inconsistent / blocked / unknown.
+      // Permite healthy + warning. Reaproveita campos já carregados.
+      let results = all.filter((s) => {
+        const deliverable = isSponsorDeliverable(s as any);
+        if (!deliverable) {
+          logBlockedSponsor(position, s as any, resolveSponsorHealthStatus(s as any));
+        }
+        return deliverable;
+      });
+
+      // Mantém checagens legadas (status, datas legadas, requiresImage)
+      // como defesa adicional — qualquer divergência reforça o gate.
+      results = results
+        .filter((s) => s.status === 'active')
         .filter(isDateValid);
 
       if (config.requiresImage) {
