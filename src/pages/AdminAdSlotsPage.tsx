@@ -6,6 +6,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SponsorPerformancePanel from '@/components/sponsors/SponsorPerformancePanel';
+import SponsorPacingPanel from '@/components/sponsors/SponsorPacingPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
