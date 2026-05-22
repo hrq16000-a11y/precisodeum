@@ -41,6 +41,7 @@ import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
 import SponsorScopePicker from '@/components/admin/SponsorScopePicker';
 import SponsorConsistencyPanel from '@/components/sponsors/SponsorConsistencyPanel';
+import SponsorHealthPanel from '@/components/sponsors/SponsorHealthPanel';
 const PAGE_SIZE = 20;
 
 /* ─── Visual position map — from central config ─── */
@@ -782,6 +783,7 @@ const AdminSponsorsPage = () => {
             <TabsTrigger value="contracts">📄 Contratos</TabsTrigger>
             <TabsTrigger value="notes">📝 Notas</TabsTrigger>
             <TabsTrigger value="consistency">🧹 Consistência</TabsTrigger>
+            <TabsTrigger value="health">🩺 Health</TabsTrigger>
           </TabsList>
 
 
@@ -1329,6 +1331,11 @@ const AdminSponsorsPage = () => {
           {/* ═══ CONSISTENCY TAB ═══ */}
           <TabsContent value="consistency" className="space-y-4">
             <SponsorConsistencyPanel />
+          </TabsContent>
+
+          {/* ═══ HEALTH TAB ═══ */}
+          <TabsContent value="health" className="space-y-4">
+            <SponsorHealthPanel />
           </TabsContent>
         </Tabs>
 

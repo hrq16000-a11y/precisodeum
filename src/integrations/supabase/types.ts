@@ -8008,6 +8008,14 @@ export type Database = {
       _is_blank_text: { Args: { v: string }; Returns: boolean }
       _strip_accents: { Args: { t: string }; Returns: string }
       _sync_in_progress: { Args: never; Returns: boolean }
+      activate_sponsor_with_gate: {
+        Args: {
+          _override?: boolean
+          _override_reason?: string
+          _sponsor_id: string
+        }
+        Returns: Json
+      }
       add_portfolio_photo_atomic: {
         Args: {
           _album_id: string
@@ -8561,6 +8569,7 @@ export type Database = {
           total_rows: number
         }[]
       }
+      auto_degrade_expired_sponsors: { Args: never; Returns: Json }
       award_engagement_points: {
         Args: { _action_key: string; _metadata?: Json; _user_id: string }
         Returns: number
@@ -9029,6 +9038,22 @@ export type Database = {
         }[]
       }
       get_sponsor_docs_status: { Args: { _lead_id: string }; Returns: Json }
+      get_sponsor_health_status: {
+        Args: { _sponsor_id?: string }
+        Returns: {
+          blockers: string[]
+          current_status: string
+          expires_in_days: number
+          has_asset: boolean
+          health_status: string
+          is_active: boolean
+          pacing_status: string
+          scope_consistent: boolean
+          sponsor_id: string
+          title: string
+          warnings: string[]
+        }[]
+      }
       get_sponsor_inventory_forecast: {
         Args: { _days?: number }
         Returns: {
