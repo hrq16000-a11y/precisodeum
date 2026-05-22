@@ -6,6 +6,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SponsorPerformancePanel from '@/components/sponsors/SponsorPerformancePanel';
+import SponsorPacingPanel from '@/components/sponsors/SponsorPacingPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -591,6 +592,7 @@ const AdminAdSlotsPage = () => {
             <TabsTrigger value="limits">🔒 Limites</TabsTrigger>
             <TabsTrigger value="metrics">📊 Métricas</TabsTrigger>
             <TabsTrigger value="performance">⚡ Performance</TabsTrigger>
+            <TabsTrigger value="pacing">🚦 Pacing</TabsTrigger>
           </TabsList>
 
           {/* ====== VISIBILITY MAP TAB ====== */}
@@ -950,6 +952,11 @@ const AdminAdSlotsPage = () => {
           {/* ====== PERFORMANCE TAB (Fase 1.1 Sponsor Tracking) ====== */}
           <TabsContent value="performance" className="space-y-4">
             <SponsorPerformancePanel days={30} />
+          </TabsContent>
+
+          {/* ====== PACING TAB (Fase 1.2 Sponsor Delivery & Pacing) ====== */}
+          <TabsContent value="pacing" className="space-y-4">
+            <SponsorPacingPanel />
           </TabsContent>
         </Tabs>
       </div>

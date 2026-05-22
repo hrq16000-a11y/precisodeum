@@ -6389,6 +6389,7 @@ export type Database = {
           id: string
           image_url: string | null
           impressions: number
+          last_delivery_check_at: string | null
           last_viewed_status: string | null
           link_url: string | null
           linked_category: string | null
@@ -6397,6 +6398,7 @@ export type Database = {
           max_height: number
           max_width: number
           needs_compensation: boolean
+          pacing_status: string
           phone: string | null
           plan: string
           plan_tier: string
@@ -6439,6 +6441,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           impressions?: number
+          last_delivery_check_at?: string | null
           last_viewed_status?: string | null
           link_url?: string | null
           linked_category?: string | null
@@ -6447,6 +6450,7 @@ export type Database = {
           max_height?: number
           max_width?: number
           needs_compensation?: boolean
+          pacing_status?: string
           phone?: string | null
           plan?: string
           plan_tier?: string
@@ -6489,6 +6493,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           impressions?: number
+          last_delivery_check_at?: string | null
           last_viewed_status?: string | null
           link_url?: string | null
           linked_category?: string | null
@@ -6497,6 +6502,7 @@ export type Database = {
           max_height?: number
           max_width?: number
           needs_compensation?: boolean
+          pacing_status?: string
           phone?: string | null
           plan?: string
           plan_tier?: string
@@ -8970,6 +8976,25 @@ export type Database = {
           user_ref: string
         }[]
       }
+      get_sponsor_delivery_status: {
+        Args: { _only_active?: boolean }
+        Returns: {
+          active_slots: number
+          company_name: string
+          ctr: number
+          days_remaining: number
+          delivered_today: number
+          delivered_total: number
+          guaranteed_impressions: number
+          last_delivery_check_at: string
+          pacing_percentage: number
+          pacing_status: string
+          plan: string
+          sponsor_id: string
+          target_today: number
+          title: string
+        }[]
+      }
       get_sponsor_docs_status: { Args: { _lead_id: string }; Returns: Json }
       get_sponsor_performance: {
         Args: { _from?: string; _sponsor_id?: string; _to?: string }
@@ -9361,6 +9386,14 @@ export type Database = {
       record_registration_snapshot: {
         Args: { _payload: Json }
         Returns: string
+      }
+      refresh_all_sponsor_pacing: {
+        Args: never
+        Returns: {
+          critical_count: number
+          updated_count: number
+          warning_count: number
+        }[]
       }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
       register_click_lead: {
