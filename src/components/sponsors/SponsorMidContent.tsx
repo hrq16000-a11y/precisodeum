@@ -3,6 +3,7 @@ import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
 import { getPositionConfig } from '@/config/sponsorPositions';
 import SponsorPremiumCard from './SponsorPremiumCard';
+import SponsorImpressionWrapper from './SponsorImpressionWrapper';
 
 interface Props {
   className?: string;
@@ -18,11 +19,8 @@ const SponsorMidContent = ({ className = '' }: Props) => {
   );
 
   useEffect(() => {
-    sponsors.forEach((s) => {
-      trackImpression(s.id);
-      recordImpression(s.id);
-    });
-  }, [sponsors, trackImpression]);
+    sponsors.forEach((s) => recordImpression(s.id));
+  }, [sponsors]);
 
   if (sponsors.length === 0) return null;
 
@@ -30,7 +28,9 @@ const SponsorMidContent = ({ className = '' }: Props) => {
     <div className={`py-3 ${className}`}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {sponsors.map((s) => (
-          <SponsorPremiumCard key={s.id} sponsor={s} compact onClickTrack={trackClick} />
+          <SponsorImpressionWrapper key={s.id} sponsorId={s.id} slot="mid-content" trackImpression={trackImpression}>
+            <SponsorPremiumCard sponsor={s} compact onClickTrack={trackClick} />
+          </SponsorImpressionWrapper>
         ))}
       </div>
     </div>
