@@ -41,6 +41,7 @@ import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
 import SponsorScopePicker from '@/components/admin/SponsorScopePicker';
 import SponsorConsistencyPanel from '@/components/sponsors/SponsorConsistencyPanel';
+import SponsorHealthPanel from '@/components/sponsors/SponsorHealthPanel';
 const PAGE_SIZE = 20;
 
 /* ─── Visual position map — from central config ─── */
