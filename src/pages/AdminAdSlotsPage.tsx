@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SponsorPerformancePanel from '@/components/sponsors/SponsorPerformancePanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -589,6 +590,7 @@ const AdminAdSlotsPage = () => {
             <TabsTrigger value="slots">⚙️ Slots & Atribuições</TabsTrigger>
             <TabsTrigger value="limits">🔒 Limites</TabsTrigger>
             <TabsTrigger value="metrics">📊 Métricas</TabsTrigger>
+            <TabsTrigger value="performance">⚡ Performance</TabsTrigger>
           </TabsList>
 
           {/* ====== VISIBILITY MAP TAB ====== */}
@@ -943,6 +945,11 @@ const AdminAdSlotsPage = () => {
                 </TableBody>
               </Table>
             </div>
+          </TabsContent>
+
+          {/* ====== PERFORMANCE TAB (Fase 1.1 Sponsor Tracking) ====== */}
+          <TabsContent value="performance" className="space-y-4">
+            <SponsorPerformancePanel days={30} />
           </TabsContent>
         </Tabs>
       </div>

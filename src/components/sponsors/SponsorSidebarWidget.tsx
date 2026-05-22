@@ -3,6 +3,7 @@ import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
 import { getPositionConfig } from '@/config/sponsorPositions';
 import SponsorPremiumCard from './SponsorPremiumCard';
+import SponsorImpressionWrapper from './SponsorImpressionWrapper';
 
 interface Props {
   className?: string;
@@ -18,11 +19,8 @@ const SponsorSidebarWidget = ({ className = '' }: Props) => {
   );
 
   useEffect(() => {
-    sponsors.forEach(s => {
-      trackImpression(s.id);
-      recordImpression(s.id);
-    });
-  }, [sponsors, trackImpression]);
+    sponsors.forEach((s) => recordImpression(s.id));
+  }, [sponsors]);
 
   if (sponsors.length === 0) return null;
 
@@ -30,7 +28,9 @@ const SponsorSidebarWidget = ({ className = '' }: Props) => {
     <div className={`sticky top-24 space-y-3 ${className}`}>
       <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">Patrocinadores</span>
       {sponsors.map((s) => (
-        <SponsorPremiumCard key={s.id} sponsor={s} compact onClickTrack={trackClick} />
+        <SponsorImpressionWrapper key={s.id} sponsorId={s.id} slot="sidebar" trackImpression={trackImpression}>
+          <SponsorPremiumCard sponsor={s} compact onClickTrack={trackClick} />
+        </SponsorImpressionWrapper>
       ))}
     </div>
   );
