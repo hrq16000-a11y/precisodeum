@@ -1541,8 +1541,14 @@ const AdminSponsorsPage = () => {
                 </Select>
               </div>
             </div>
-            {form.sponsor_type === 'city' && <div><Label>Cidade</Label><Input value={form.linked_city} onChange={e => setForm({ ...form, linked_city: e.target.value })} /></div>}
-            {form.sponsor_type === 'category' && <div><Label>Categoria (slug)</Label><Input value={form.linked_category} onChange={e => setForm({ ...form, linked_category: e.target.value })} /></div>}
+            <SponsorScopePicker
+              sponsorType={form.sponsor_type}
+              linkedCity={form.linked_city}
+              linkedCategory={form.linked_category}
+              sponsorId={editingId}
+              onChange={(patch) => setForm({ ...form, ...patch })}
+            />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>CNPJ</Label><Input value={form.cnpj} onChange={e => setForm({ ...form, cnpj: e.target.value })} placeholder="00.000.000/0000-00" /></div>
               <div><Label>E-mail Comercial</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="comercial@empresa.com" /></div>
