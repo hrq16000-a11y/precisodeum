@@ -39,6 +39,7 @@ import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
+import SponsorScopePicker from '@/components/admin/SponsorScopePicker';
 const PAGE_SIZE = 20;
 
 /* ─── Visual position map — from central config ─── */
