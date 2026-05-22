@@ -1,11 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, CheckCircle2, TrendingUp, X } from 'lucide-react';
+
+// Helper local de normalização — espelha public.normalize_slug do banco
+const normalizeSlug = (v: string) =>
+  v
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-+|-+$)/g, '');
 
 // Fase 1.3 — Painel de inventário e forecast simples (admin-only)
 
@@ -82,16 +93,63 @@ export default function SponsorInventoryPanel() {
     return () => { mounted = false; };
   }, []);
 
+  const [filterCity, setFilterCity] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterSlot, setFilterSlot] = useState('');
+
+  const citySlug = filterCity.trim() ? normalizeSlug(filterCity) : '';
+  const categorySlug = filterCategory.trim() ? normalizeSlug(filterCategory) : '';
+  const slotQ = filterSlot.trim().toLowerCase();
+
+  const matches = (row: { slot_slug: string; city: string; category: string }) =>
+    (!slotQ || row.slot_slug === slotQ) &&
+    (!citySlug || row.city === citySlug) &&
+    (!categorySlug || row.category === categorySlug);
+
+  const filteredInventory = useMemo(() => inventory.filter(matches), [inventory, slotQ, citySlug, categorySlug]);
+  const filteredForecast = useMemo(() => forecast.filter(matches), [forecast, slotQ, citySlug, categorySlug]);
+
   if (loading) return <Skeleton className="h-64 w-full" />;
   if (error) return <Card><CardContent className="p-6 text-destructive">{error}</CardContent></Card>;
 
-  const saturated = inventory.filter(r => r.status === 'saturated').length;
-  const moderate = inventory.filter(r => r.status === 'moderate').length;
-  const available = inventory.filter(r => r.status === 'available').length;
-  const willSaturate = forecast.filter(r => r.forecast === 'will_saturate').length;
+  const saturated = filteredInventory.filter(r => r.status === 'saturated').length;
+  const moderate = filteredInventory.filter(r => r.status === 'moderate').length;
+  const available = filteredInventory.filter(r => r.status === 'available').length;
+  const willSaturate = filteredForecast.filter(r => r.forecast === 'will_saturate').length;
+  const hasFilter = !!(citySlug || categorySlug || slotQ);
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+          <Input
+            placeholder="Cidade (ex: Curitiba)"
+            value={filterCity}
+            onChange={e => setFilterCity(e.target.value)}
+            aria-label="Filtrar por cidade"
+          />
+          <Input
+            placeholder="Categoria (ex: eletricista)"
+            value={filterCategory}
+            onChange={e => setFilterCategory(e.target.value)}
+            aria-label="Filtrar por categoria"
+          />
+          <Input
+            placeholder="Slot (ex: banner, card)"
+            value={filterSlot}
+            onChange={e => setFilterSlot(e.target.value)}
+            aria-label="Filtrar por slot"
+          />
+          <Button
+            variant="outline"
+            disabled={!hasFilter}
+            onClick={() => { setFilterCity(''); setFilterCategory(''); setFilterSlot(''); }}
+          >
+            <X className="h-4 w-4 mr-1" />Limpar
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-600" />Disponíveis</CardTitle></CardHeader>
@@ -111,6 +169,7 @@ export default function SponsorInventoryPanel() {
         </Card>
       </div>
 
+
       <Tabs defaultValue="current">
         <TabsList>
           <TabsTrigger value="current">Ocupação atual</TabsTrigger>
@@ -121,7 +180,7 @@ export default function SponsorInventoryPanel() {
           <Card>
             <CardHeader><CardTitle className="text-base">Ocupação por slot</CardTitle></CardHeader>
             <CardContent>
-              {inventory.length === 0 ? (
+              {filteredInventory.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Sem patrocinadores ativos no momento.</p>
               ) : (
                 <Table>
@@ -137,7 +196,7 @@ export default function SponsorInventoryPanel() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {inventory.map((r, i) => (
+                    {filteredInventory.map((r, i) => (
                       <TableRow key={`${r.slot_slug}-${r.city}-${r.category}-${i}`}>
                         <TableCell className="font-mono text-xs">{r.slot_slug}</TableCell>
                         <TableCell className="text-sm">{formatScope(r.city, r.category)}</TableCell>
@@ -164,7 +223,7 @@ export default function SponsorInventoryPanel() {
               </p>
             </CardHeader>
             <CardContent>
-              {forecast.length === 0 ? (
+              {filteredForecast.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Sem dados suficientes para projeção.</p>
               ) : (
                 <Table>
@@ -182,7 +241,7 @@ export default function SponsorInventoryPanel() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {forecast.map((r, i) => (
+                    {filteredForecast.map((r, i) => (
                       <TableRow key={`${r.slot_slug}-${r.city}-${r.category}-${i}`}>
                         <TableCell className="font-mono text-xs">{r.slot_slug}</TableCell>
                         <TableCell className="text-sm">{formatScope(r.city, r.category)}</TableCell>

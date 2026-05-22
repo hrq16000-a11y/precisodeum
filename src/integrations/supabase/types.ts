@@ -6393,7 +6393,9 @@ export type Database = {
           last_viewed_status: string | null
           link_url: string | null
           linked_category: string | null
+          linked_category_slug: string | null
           linked_city: string | null
+          linked_city_slug: string | null
           logo_url: string | null
           max_height: number
           max_width: number
@@ -6445,7 +6447,9 @@ export type Database = {
           last_viewed_status?: string | null
           link_url?: string | null
           linked_category?: string | null
+          linked_category_slug?: string | null
           linked_city?: string | null
+          linked_city_slug?: string | null
           logo_url?: string | null
           max_height?: number
           max_width?: number
@@ -6497,7 +6501,9 @@ export type Database = {
           last_viewed_status?: string | null
           link_url?: string | null
           linked_category?: string | null
+          linked_category_slug?: string | null
           linked_city?: string | null
+          linked_city_slug?: string | null
           logo_url?: string | null
           max_height?: number
           max_width?: number
@@ -9325,6 +9331,7 @@ export type Database = {
         }[]
       }
       normalize_service_area_text: { Args: { _raw: string }; Returns: string }
+      normalize_slug: { Args: { _input: string }; Returns: string }
       normalize_uf: { Args: { _input: string }; Returns: string }
       notify_admins_geo_alert: {
         Args: {
@@ -9520,6 +9527,19 @@ export type Database = {
           priority: number
           state: string
           state_uf: string
+        }[]
+      }
+      search_sponsor_inventory: {
+        Args: { _category?: string; _city?: string; _slot?: string }
+        Returns: {
+          active_sponsors: number
+          available_slots: number
+          category: string
+          city: string
+          max_capacity: number
+          occupancy_rate: number
+          slot_slug: string
+          status: string
         }[]
       }
       search_user_notifications: {
