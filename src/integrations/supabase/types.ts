@@ -8971,6 +8971,16 @@ export type Database = {
         }[]
       }
       get_sponsor_docs_status: { Args: { _lead_id: string }; Returns: Json }
+      get_sponsor_performance: {
+        Args: { _from?: string; _sponsor_id?: string; _to?: string }
+        Returns: {
+          clicks: number
+          ctr: number
+          impressions: number
+          slot_slug: string
+          sponsor_id: string
+        }[]
+      }
       get_sponsor_usage: { Args: { _sponsor_id: string }; Returns: Json }
       get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
       get_user_maturity_tier: { Args: { _user_id?: string }; Returns: Json }
