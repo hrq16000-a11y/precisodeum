@@ -780,7 +780,9 @@ const AdminSponsorsPage = () => {
             <TabsTrigger value="campaigns">📢 Campanhas</TabsTrigger>
             <TabsTrigger value="contracts">📄 Contratos</TabsTrigger>
             <TabsTrigger value="notes">📝 Notas</TabsTrigger>
+            <TabsTrigger value="consistency">🧹 Consistência</TabsTrigger>
           </TabsList>
+
 
           {/* ═══ SPONSORS TAB ═══ */}
           <TabsContent value="sponsors" className="space-y-4">
