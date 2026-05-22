@@ -4,6 +4,7 @@ import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
 import { getPositionConfig } from '@/config/sponsorPositions';
 import SponsorPremiumCard from './SponsorPremiumCard';
+import SponsorImpressionWrapper from './SponsorImpressionWrapper';
 
 interface Props {
   className?: string;
@@ -18,12 +19,10 @@ const SponsorTopBanner = ({ className = '' }: Props) => {
     [rawSponsors, config.maxItems],
   );
 
+  // Lib local de ranking ainda registra impressão para ordenação (não é tracking real).
   useEffect(() => {
-    sponsors.forEach((s) => {
-      trackImpression(s.id);
-      recordImpression(s.id);
-    });
-  }, [sponsors, trackImpression]);
+    sponsors.forEach((s) => recordImpression(s.id));
+  }, [sponsors]);
 
   if (sponsors.length === 0) return null;
 
@@ -36,14 +35,15 @@ const SponsorTopBanner = ({ className = '' }: Props) => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {sponsors.map((s, i) => (
-            <motion.div
-              key={s.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.4, ease: "easeOut" as const }}
-            >
-              <SponsorPremiumCard sponsor={s} compact={sponsors.length > 1} onClickTrack={trackClick} />
-            </motion.div>
+            <SponsorImpressionWrapper key={s.id} sponsorId={s.id} slot="featured" trackImpression={trackImpression}>
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.4, ease: "easeOut" as const }}
+              >
+                <SponsorPremiumCard sponsor={s} compact={sponsors.length > 1} onClickTrack={trackClick} />
+              </motion.div>
+            </SponsorImpressionWrapper>
           ))}
         </div>
       </div>
