@@ -8486,6 +8486,14 @@ export type Database = {
           }
       admin_system_health: { Args: { _limit?: number }; Returns: Json }
       admin_system_health_full: { Args: never; Returns: Json }
+      apply_sponsor_scope_fix: {
+        Args: {
+          _new_category?: string
+          _new_city?: string
+          _sponsor_id: string
+        }
+        Returns: Json
+      }
       archive_stale_incomplete_providers: {
         Args: never
         Returns: {
@@ -8499,6 +8507,25 @@ export type Database = {
           cidade_sem_bairro: number
           cidade_sem_geosource: number
           total_3d: number
+        }[]
+      }
+      audit_sponsor_scope_consistency: {
+        Args: never
+        Returns: {
+          auto_fixable: boolean
+          confidence: string
+          issue_type: string
+          linked_category: string
+          linked_category_slug: string
+          linked_city: string
+          linked_city_slug: string
+          sponsor_id: string
+          sponsor_name: string
+          sponsor_type: string
+          suggested_category: string
+          suggested_category_slug: string
+          suggested_city: string
+          suggested_city_slug: string
         }[]
       }
       audit_user_ref_full: {

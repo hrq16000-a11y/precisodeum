@@ -40,6 +40,7 @@ import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
 import SponsorScopePicker from '@/components/admin/SponsorScopePicker';
+import SponsorConsistencyPanel from '@/components/sponsors/SponsorConsistencyPanel';
 const PAGE_SIZE = 20;
 
 /* ─── Visual position map — from central config ─── */
@@ -780,7 +781,9 @@ const AdminSponsorsPage = () => {
             <TabsTrigger value="campaigns">📢 Campanhas</TabsTrigger>
             <TabsTrigger value="contracts">📄 Contratos</TabsTrigger>
             <TabsTrigger value="notes">📝 Notas</TabsTrigger>
+            <TabsTrigger value="consistency">🧹 Consistência</TabsTrigger>
           </TabsList>
+
 
           {/* ═══ SPONSORS TAB ═══ */}
           <TabsContent value="sponsors" className="space-y-4">
@@ -1322,7 +1325,13 @@ const AdminSponsorsPage = () => {
               )}
             </div>
           </TabsContent>
+
+          {/* ═══ CONSISTENCY TAB ═══ */}
+          <TabsContent value="consistency" className="space-y-4">
+            <SponsorConsistencyPanel />
+          </TabsContent>
         </Tabs>
+
       </div>
 
       {/* ═══ SPONSOR DETAIL SHEET ═══ */}
