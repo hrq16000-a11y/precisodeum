@@ -592,6 +592,7 @@ const AdminAdSlotsPage = () => {
             <TabsTrigger value="limits">🔒 Limites</TabsTrigger>
             <TabsTrigger value="metrics">📊 Métricas</TabsTrigger>
             <TabsTrigger value="performance">⚡ Performance</TabsTrigger>
+            <TabsTrigger value="pacing">🚦 Pacing</TabsTrigger>
           </TabsList>
 
           {/* ====== VISIBILITY MAP TAB ====== */}
