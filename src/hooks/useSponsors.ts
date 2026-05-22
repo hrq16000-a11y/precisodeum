@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getPositionConfig } from '@/config/sponsorPositions';
+import { isSponsorDeliverable, resolveSponsorHealthStatus, logBlockedSponsor } from '@/lib/sponsorDeliveryGuard';
 
 export interface SponsorFull {
   id: string;
