@@ -1324,7 +1324,13 @@ const AdminSponsorsPage = () => {
               )}
             </div>
           </TabsContent>
+
+          {/* ═══ CONSISTENCY TAB ═══ */}
+          <TabsContent value="consistency" className="space-y-4">
+            <SponsorConsistencyPanel />
+          </TabsContent>
         </Tabs>
+
       </div>
 
       {/* ═══ SPONSOR DETAIL SHEET ═══ */}
