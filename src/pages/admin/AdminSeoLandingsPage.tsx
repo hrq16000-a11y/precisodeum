@@ -95,10 +95,8 @@ export default function AdminSeoLandingsPage() {
 
   return (
     <div className="container mx-auto max-w-6xl p-6 space-y-6">
-      <Helmet>
-        <title>SEO Landings · Admin</title>
-        <meta name="robots" content="noindex, nofollow" />
-      </Helmet>
+
+
 
       <header className="flex items-center justify-between">
         <div>
