@@ -59,6 +59,14 @@ const CityDetailPage = () => {
   const stateName = STATE_NAMES[estado?.toLowerCase() || ''] || uf;
   const [page, setPage] = useState(1);
 
+  // FASE 2.1 — telemetria de visualização da landing estado+cidade.
+  useEffect(() => {
+    if (!cidade) return;
+    void import('@/lib/publicFunnelTelemetry').then(({ trackCityView }) =>
+      trackCityView({ city: cidade, source: 'city_detail_page' })
+    );
+  }, [cidade]);
+
   // Fetch city + providers
   const { data, isLoading } = useQuery({
     queryKey: ['city-detail', estado, cidade],
