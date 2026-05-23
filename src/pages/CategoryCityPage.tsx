@@ -18,7 +18,7 @@
  * `useCategoryProviders` + filtragem cliente-side por cidade. Todo o ranking
  * vem do hook (mesmo do CategoryPage).
  */
-import { useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, MapPin, Search, Users } from 'lucide-react';
@@ -34,6 +34,13 @@ import { useCategoryProviders } from '@/hooks/useProviders';
 import { isKnownCity } from '@/lib/citiesIndex';
 import { normalize } from '@/lib/normalize';
 import { buildCanonicalUrl } from '@/lib/canonicalUrl';
+import { sanitizeSlug } from '@/lib/slugify';
+import { importWithRetry } from '@/lib/lazyWithRetry';
+
+// Fase 2.9 — runtime SEO enhancement (lazy, fora do critical path).
+const SeoEnhancementSection = lazy(() =>
+  importWithRetry(() => import('@/components/seo/SeoEnhancementSection')),
+);
 
 function humanizeSlug(slug: string | undefined): string {
   if (!slug) return '';
