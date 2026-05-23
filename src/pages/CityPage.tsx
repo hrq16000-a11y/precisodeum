@@ -51,6 +51,14 @@ const CityPage = () => {
     requestPreciseLocation();
   }, [requestPreciseLocation]);
 
+  // FASE 2.1 — telemetria de visualização da landing de cidade.
+  useEffect(() => {
+    if (!slug) return;
+    void import('@/lib/publicFunnelTelemetry').then(({ trackCityView }) =>
+      trackCityView({ city: slug, source: 'city_page' })
+    );
+  }, [slug]);
+
   const { data, isLoading } = useQuery({
     queryKey: ['city-page', slug],
     queryFn: async () => {

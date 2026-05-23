@@ -8991,6 +8991,7 @@ export type Database = {
         Args: { _provider_id: string }
         Returns: Json
       }
+      get_public_funnel_telemetry: { Args: { _days?: number }; Returns: Json }
       get_review_short_link: { Args: { _provider_id: string }; Returns: Json }
       get_rss_import_headers: { Args: never; Returns: Json }
       get_search_demand_stats: {
@@ -9473,6 +9474,19 @@ export type Database = {
           _user_agent?: string
         }
         Returns: string
+      }
+      record_public_funnel_event: {
+        Args: {
+          _action: string
+          _category?: string
+          _city?: string
+          _pathname?: string
+          _resource_id?: string
+          _result_count?: number
+          _source?: string
+          _term?: string
+        }
+        Returns: undefined
       }
       record_registration_snapshot: {
         Args: { _payload: Json }

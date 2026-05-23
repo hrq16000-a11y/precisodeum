@@ -18,7 +18,7 @@
  * `useCategoryProviders` + filtragem cliente-side por cidade. Todo o ranking
  * vem do hook (mesmo do CategoryPage).
  */
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, MapPin, Search, Users } from 'lucide-react';
@@ -49,6 +49,14 @@ export default function CategoryCityPage() {
   const { data: payload, isLoading } = useCategoryProviders(slug || '');
   const category = payload?.category;
   const allProviders = (payload?.providers || []) as any[];
+
+  // FASE 2.1 — telemetria de visualização da landing categoria+cidade.
+  useEffect(() => {
+    if (!slug || !cidade) return;
+    void import('@/lib/publicFunnelTelemetry').then(({ trackCategoryView }) =>
+      trackCategoryView({ category: slug, city: cidade, source: 'category_city_page' })
+    );
+  }, [slug, cidade]);
 
   const cityHuman = humanizeSlug(cidade);
   const categoryHuman = category?.name || humanizeSlug(slug);

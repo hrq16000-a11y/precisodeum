@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapPin, Search, ArrowLeft, Users, Sparkles, Star, ArrowRight, Building2, Phone } from 'lucide-react';
@@ -58,6 +58,14 @@ const CityDetailPage = () => {
   const uf = (estado || '').toUpperCase();
   const stateName = STATE_NAMES[estado?.toLowerCase() || ''] || uf;
   const [page, setPage] = useState(1);
+
+  // FASE 2.1 — telemetria de visualização da landing estado+cidade.
+  useEffect(() => {
+    if (!cidade) return;
+    void import('@/lib/publicFunnelTelemetry').then(({ trackCityView }) =>
+      trackCityView({ city: cidade, source: 'city_detail_page' })
+    );
+  }, [cidade]);
 
   // Fetch city + providers
   const { data, isLoading } = useQuery({
