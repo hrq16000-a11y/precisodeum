@@ -699,6 +699,7 @@ const App = () => {
                 {/* Sponsor Panel — CRM Module (protected B2B access) */}
                 <Route path="/sponsor-panel" element={<SponsorProtectedRoute><SponsorDashboardPage /></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/banners" element={<SponsorProtectedRoute><SponsorFeatureGate feature="banners"><SponsorBannersPage /></SponsorFeatureGate></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/editar" element={<SponsorProtectedRoute><RouteErrorBoundary sectionName="SponsorSelfServicePage"><SponsorSelfServicePage /></RouteErrorBoundary></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/campanhas" element={<SponsorProtectedRoute><SponsorFeatureGate feature="campanhas"><SponsorCampaignsPage /></SponsorFeatureGate></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/metricas" element={<SponsorProtectedRoute><SponsorFeatureGate feature="metricas"><SponsorMetricsPage /></SponsorFeatureGate></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/contratos" element={<SponsorProtectedRoute><SponsorContractsPage /></SponsorProtectedRoute>} />
