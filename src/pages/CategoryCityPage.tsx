@@ -50,6 +50,14 @@ export default function CategoryCityPage() {
   const category = payload?.category;
   const allProviders = (payload?.providers || []) as any[];
 
+  // FASE 2.1 — telemetria de visualização da landing categoria+cidade.
+  useEffect(() => {
+    if (!slug || !cidade) return;
+    void import('@/lib/publicFunnelTelemetry').then(({ trackCategoryView }) =>
+      trackCategoryView({ category: slug, city: cidade, source: 'category_city_page' })
+    );
+  }, [slug, cidade]);
+
   const cityHuman = humanizeSlug(cidade);
   const categoryHuman = category?.name || humanizeSlug(slug);
   const cityKnown = useMemo(() => (cidade ? isKnownCity(cityHuman) : false), [cidade, cityHuman]);
