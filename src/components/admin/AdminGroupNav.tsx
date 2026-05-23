@@ -87,6 +87,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Funil Público', icon: 'BarChart3', path: '/admin/funil-publico' },
       { label: 'Conversão (Profissionais)', icon: 'Sparkles', path: '/admin/provider-conversion' },
       { label: 'SEO Landings', icon: 'Globe', path: '/admin/seo-landings' },
+      { label: 'SEO Runtime (LCP/CTR)', icon: 'Activity', path: '/admin/seo-runtime' },
       { label: 'Solicitações Sponsor', icon: 'BarChart3', path: '/admin/sponsor-change-requests' },
       { label: 'Faturamento Sponsor', icon: 'Receipt', path: '/admin/sponsor-billing' },
     ],
