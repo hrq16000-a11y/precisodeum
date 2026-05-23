@@ -109,9 +109,11 @@ export default function AdminPublicFunnelPage() {
           <Kpi icon={MessageCircle} label="Contatos WhatsApp" value={data?.whatsapp_clicks ?? 0} tone="text-emerald-600 dark:text-emerald-400" />
           <Kpi icon={Phone} label="Contatos Telefone" value={data?.phone_clicks ?? 0} />
           <Kpi icon={Target} label="Leads" value={data?.leads ?? 0} tone="text-primary" />
+          <Kpi icon={Target} label="Lead submits (funil)" value={data?.lead_submits ?? 0} />
           <Kpi icon={Activity} label="Cliques Sponsors" value={data?.sponsor_clicks ?? 0} />
           <Kpi icon={TrendingUp} label="CTR Busca→Perfil" value={`${data?.ctr_search_to_view ?? 0}%`} tone="text-emerald-600 dark:text-emerald-400" />
           <Kpi icon={TrendingUp} label="CTR Perfil→Contato" value={`${data?.ctr_view_to_contact ?? 0}%`} tone="text-emerald-600 dark:text-emerald-400" />
+          <Kpi icon={TrendingUp} label="CTR Perfil→Lead" value={`${data?.ctr_view_to_lead ?? 0}%`} tone="text-emerald-600 dark:text-emerald-400" />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
