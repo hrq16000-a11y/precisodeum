@@ -18,7 +18,7 @@
  * `useCategoryProviders` + filtragem cliente-side por cidade. Todo o ranking
  * vem do hook (mesmo do CategoryPage).
  */
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, MapPin, Search, Users } from 'lucide-react';
