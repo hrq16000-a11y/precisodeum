@@ -42,6 +42,7 @@ import PaginationControls from '@/components/PaginationControls';
 import SponsorScopePicker from '@/components/admin/SponsorScopePicker';
 import SponsorConsistencyPanel from '@/components/sponsors/SponsorConsistencyPanel';
 import SponsorHealthPanel from '@/components/sponsors/SponsorHealthPanel';
+import SponsorDeliveryTelemetryPanel from '@/components/sponsors/SponsorDeliveryTelemetryPanel';
 const PAGE_SIZE = 20;
 
 /* ─── Visual position map — from central config ─── */
