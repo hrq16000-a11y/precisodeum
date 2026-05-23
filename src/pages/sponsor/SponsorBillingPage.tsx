@@ -18,6 +18,7 @@ import {
 } from '@/lib/sponsorBilling';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import SponsorInvoicesCard from '@/components/sponsors/SponsorInvoicesCard';
 
 const SponsorBillingPage = () => {
   const { sponsor, loading: authLoading } = useSponsorAuth();
@@ -189,10 +190,13 @@ const SponsorBillingPage = () => {
             )}
           </CardContent>
         </Card>
+
+        <SponsorInvoicesCard sponsorId={sponsor?.id} />
       </div>
     </SponsorLayout>
   );
 };
+
 
 function Field({ label, value }: { label: string; value: string }) {
   return (

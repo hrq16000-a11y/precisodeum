@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { STATUS_LABEL, type BillingCycleRow, type BillingCycleStatus } from '@/lib/sponsorBilling';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import AdminRecentInvoicesCard from '@/components/sponsors/AdminRecentInvoicesCard';
 
 type Row = BillingCycleRow & {
   sponsors?: { id: string; title: string; company_name: string | null } | null;
@@ -265,7 +266,10 @@ const AdminSponsorBillingPage = () => {
             )}
           </CardContent>
         </Card>
+
+        <AdminRecentInvoicesCard />
       </div>
+
 
       {/* Pay dialog */}
       <Dialog open={!!paying} onOpenChange={(o) => !o && setPaying(null)}>

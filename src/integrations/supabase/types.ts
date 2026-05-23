@@ -5690,6 +5690,8 @@ export type Database = {
           admin_note: string | null
           amount: number | null
           auto_renew: boolean
+          base_amount: number | null
+          breakdown: Json
           created_at: string
           created_by: string | null
           cycle_end: string
@@ -5699,6 +5701,8 @@ export type Database = {
           invoice_reference: string | null
           paid_at: string | null
           payment_method: string | null
+          performance_amount: number
+          performance_leads: number
           renewal_requested: boolean
           renewal_requested_at: string | null
           sponsor_id: string
@@ -5710,6 +5714,8 @@ export type Database = {
           admin_note?: string | null
           amount?: number | null
           auto_renew?: boolean
+          base_amount?: number | null
+          breakdown?: Json
           created_at?: string
           created_by?: string | null
           cycle_end: string
@@ -5719,6 +5725,8 @@ export type Database = {
           invoice_reference?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          performance_amount?: number
+          performance_leads?: number
           renewal_requested?: boolean
           renewal_requested_at?: string | null
           sponsor_id: string
@@ -5730,6 +5738,8 @@ export type Database = {
           admin_note?: string | null
           amount?: number | null
           auto_renew?: boolean
+          base_amount?: number | null
+          breakdown?: Json
           created_at?: string
           created_by?: string | null
           cycle_end?: string
@@ -5739,6 +5749,8 @@ export type Database = {
           invoice_reference?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          performance_amount?: number
+          performance_leads?: number
           renewal_requested?: boolean
           renewal_requested_at?: string | null
           sponsor_id?: string
@@ -6009,6 +6021,88 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "sponsor_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsor_invoices: {
+        Row: {
+          billing_cycle_id: string | null
+          change_request_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          due_at: string | null
+          id: string
+          invoice_number: number
+          issued_at: string
+          items: Json
+          notes: string | null
+          paid_at: string | null
+          pdf_url: string | null
+          sponsor_id: string
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle_id?: string | null
+          change_request_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_at?: string | null
+          id?: string
+          invoice_number?: number
+          issued_at?: string
+          items?: Json
+          notes?: string | null
+          paid_at?: string | null
+          pdf_url?: string | null
+          sponsor_id: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle_id?: string | null
+          change_request_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_at?: string | null
+          id?: string
+          invoice_number?: number
+          issued_at?: string
+          items?: Json
+          notes?: string | null
+          paid_at?: string | null
+          pdf_url?: string | null
+          sponsor_id?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_invoices_billing_cycle_id_fkey"
+            columns: ["billing_cycle_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_billing_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_invoices_change_request_id_fkey"
+            columns: ["change_request_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_change_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_invoices_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
         ]
@@ -6293,14 +6387,21 @@ export type Database = {
       sponsor_plans: {
         Row: {
           active: boolean | null
+          budget_limit: number | null
           created_at: string
           description: string | null
           display_order: number | null
+          duration_days: number
           features: Json | null
           id: string
+          included_categories: Json
+          included_cities: Json
           max_impressions: number | null
           max_slots: number | null
+          max_slots_per_category: number
+          max_slots_per_city: number
           name: string
+          performance_rate_per_lead: number
           price_monthly: number | null
           price_yearly: number | null
           slug: string
@@ -6308,14 +6409,21 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          budget_limit?: number | null
           created_at?: string
           description?: string | null
           display_order?: number | null
+          duration_days?: number
           features?: Json | null
           id?: string
+          included_categories?: Json
+          included_cities?: Json
           max_impressions?: number | null
           max_slots?: number | null
+          max_slots_per_category?: number
+          max_slots_per_city?: number
           name: string
+          performance_rate_per_lead?: number
           price_monthly?: number | null
           price_yearly?: number | null
           slug: string
@@ -6323,14 +6431,21 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          budget_limit?: number | null
           created_at?: string
           description?: string | null
           display_order?: number | null
+          duration_days?: number
           features?: Json | null
           id?: string
+          included_categories?: Json
+          included_cities?: Json
           max_impressions?: number | null
           max_slots?: number | null
+          max_slots_per_category?: number
+          max_slots_per_city?: number
           name?: string
+          performance_rate_per_lead?: number
           price_monthly?: number | null
           price_yearly?: number | null
           slug?: string
@@ -8305,6 +8420,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_generate_invoice_for_change_request: {
+        Args: { _amount?: number; _note?: string; _request_id: string }
+        Returns: string
+      }
       admin_get_level_distribution: {
         Args: never
         Returns: {
@@ -8792,6 +8911,10 @@ export type Database = {
       complete_mission: { Args: { _key: string; _value: Json }; Returns: Json }
       complete_onboarding_checklist: { Args: never; Returns: Json }
       complete_referral: { Args: { _referred_id: string }; Returns: boolean }
+      compute_sponsor_cycle_amount: {
+        Args: { _cycle_id: string }
+        Returns: Json
+      }
       count_unread_notifications: { Args: never; Returns: number }
       create_album_atomic: {
         Args: { _description?: string; _name: string }
@@ -8878,6 +9001,10 @@ export type Database = {
       }
       format_city_state: {
         Args: { _city: string; _state: string }
+        Returns: string
+      }
+      generate_invoice_for_cycle: {
+        Args: { _cycle_id: string }
         Returns: string
       }
       generate_referral_code: { Args: never; Returns: string }
@@ -9383,6 +9510,34 @@ export type Database = {
           status: string
         }[]
       }
+      list_sponsor_invoices: {
+        Args: { _limit?: number; _sponsor_id: string }
+        Returns: {
+          billing_cycle_id: string | null
+          change_request_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          due_at: string | null
+          id: string
+          invoice_number: number
+          issued_at: string
+          items: Json
+          notes: string | null
+          paid_at: string | null
+          pdf_url: string | null
+          sponsor_id: string
+          status: string
+          total_amount: number
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sponsor_invoices"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       list_user_notification_types: {
         Args: never
         Returns: {
@@ -9579,12 +9734,31 @@ export type Database = {
       normalize_service_area_text: { Args: { _raw: string }; Returns: string }
       normalize_slug: { Args: { _input: string }; Returns: string }
       normalize_uf: { Args: { _input: string }; Returns: string }
+      notify_admins_about_sponsor: {
+        Args: {
+          _link?: string
+          _message: string
+          _sponsor_id: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
       notify_admins_geo_alert: {
         Args: {
           _link?: string
           _message: string
           _title: string
           _type?: string
+        }
+        Returns: undefined
+      }
+      notify_sponsor_contacts: {
+        Args: {
+          _message: string
+          _sponsor_id: string
+          _title: string
+          _type: string
         }
         Returns: undefined
       }
