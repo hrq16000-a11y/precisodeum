@@ -616,6 +616,10 @@ const ProviderProfile = () => {
     if (!provider?.id) return;
     // Track a profile_view (debounced via sessionStorage in the helper)
     trackProfileView(provider.id);
+    // Fase 2.2 — também emite no funil público canônico (public_funnel)
+    void import('@/lib/publicFunnelTelemetry').then(({ trackProfileView: tpv }) =>
+      tpv({ providerId: provider.id, category, city: provider.city, source: getLeadSource() }),
+    );
     const channel = supabase
       .channel(`profile-realtime-${provider.id}`)
       .on('postgres_changes', {
@@ -1229,6 +1233,15 @@ const ProviderProfile = () => {
     }
     setLeadSent(true);
     toast.success('Solicitação enviada com sucesso!');
+    // Fase 2.2 — fecha o funil perfil→lead com evento canônico no public_funnel.
+    void import('@/lib/publicFunnelTelemetry').then(({ trackLeadSubmit }) =>
+      trackLeadSubmit({
+        providerId: provider.id,
+        category,
+        city: leadForm.city || provider.city,
+        source: getLeadSource(),
+      }),
+    );
   });
 
   const openPortfolioLightbox = (index: number) => {

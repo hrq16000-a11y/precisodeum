@@ -392,8 +392,18 @@ export default function CompanyProfile() {
   useJsonLd(jsonLd, `company-${company?.id || slug}`);
 
   useEffect(() => {
-    if (company) trackProfileClick(company.id, company.slug, 'company-profile');
-  }, [company]);
+    if (!company) return;
+    trackProfileClick(company.id, company.slug, 'company-profile');
+    // Fase 2.2 — funil canônico: emite profile_view no public_funnel.
+    void import('@/lib/publicFunnelTelemetry').then(({ trackProfileView }) =>
+      trackProfileView({
+        providerId: company.id,
+        category: companyCategory || null,
+        city: company.city,
+        source: 'company-profile',
+      }),
+    );
+  }, [company, companyCategory]);
 
   useEffect(() => {
     const param = (slug || '').trim();
@@ -457,6 +467,15 @@ export default function CompanyProfile() {
 
     setLeadSent(true);
     toast.success('Solicitação enviada com sucesso!');
+    // Fase 2.2 — fecha o funil perfil→lead.
+    void import('@/lib/publicFunnelTelemetry').then(({ trackLeadSubmit }) =>
+      trackLeadSubmit({
+        providerId: company.id,
+        category: companyCategory || null,
+        city: leadForm.city || company.city,
+        source: 'company-profile',
+      }),
+    );
   });
 
   if (isLoading) {
