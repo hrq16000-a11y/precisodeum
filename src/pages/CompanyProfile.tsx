@@ -892,6 +892,40 @@ export default function CompanyProfile() {
           </DialogContent>
         </Dialog>
       </main>
+
+      {/* Fase 2.9 — SEO runtime enhancement leve (FAQ + links contextuais). */}
+      {company && (
+        <Suspense fallback={null}>
+          <SeoEnhancementSection
+            indexation={{
+              type: 'category',
+              path: `/empresa/${company.slug || company.id}`,
+              slug: company.slug || company.id,
+              providersCount: 1,
+            }}
+            content={{
+              categoryName: companyCategory,
+              cityName: company.city || undefined,
+              providersCount: 1,
+            }}
+            faq={{
+              categoryName: companyCategory,
+              cityName: company.city || undefined,
+            }}
+            links={{
+              citySlug: company.city ? sanitizeSlug(company.city) : undefined,
+              categorySlug: companyCategory ? sanitizeSlug(companyCategory) : undefined,
+              relatedCities: company.city
+                ? [{ name: company.city, slug: sanitizeSlug(company.city) }]
+                : undefined,
+              relatedCategories: companyCategory
+                ? [{ name: companyCategory, slug: sanitizeSlug(companyCategory) }]
+                : undefined,
+            }}
+          />
+        </Suspense>
+      )}
+
       <Footer />
     </>
   );
