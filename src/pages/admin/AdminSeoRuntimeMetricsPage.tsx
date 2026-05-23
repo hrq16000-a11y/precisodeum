@@ -70,7 +70,7 @@ export default function AdminSeoRuntimeMetricsPage() {
 
       const lcpByRoute = new Map<string, number[]>();
       const clsByRoute = new Map<string, number[]>();
-      for (const r of (vitalsRes.data || []) as Array<{
+      for (const r of ((vitalsRes.data || []) as unknown) as Array<{
         route: string;
         metric: string;
         value: number;
