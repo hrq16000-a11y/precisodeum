@@ -26,8 +26,8 @@ export const MAX_LINKS_PER_BLOCK = 8;
 export const MAX_BLOCKS = 3;
 /** Cap global de links em todos os blocos somados (Fase 2.8). */
 export const MAX_TOTAL_LINKS = 24;
-/** Profundidade máxima permitida em paths internos. */
-export const MAX_LINK_DEPTH = 3;
+/** Profundidade máxima permitida em paths internos (segmentos). */
+export const MAX_LINK_DEPTH = 4;
 
 interface BuildRelatedInput {
   currentPath: string;

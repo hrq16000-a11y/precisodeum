@@ -101,15 +101,13 @@ describe('buildRelatedLinks · limites e segurança', () => {
     expect(labels[0]).toBe('Alta');
   });
 
-  it('respeita MAX_LINK_DEPTH (descartando paths fundos)', () => {
-    // Construímos links válidos; depth 3 (`/a/b/c`) é o máximo aceito.
+  it('respeita MAX_LINK_DEPTH (depth 4 ok, descarta acima)', () => {
     const blocks = buildRelatedLinks({
       currentPath: '/x',
       categorySlug: 'eletricista',
-      relatedCities: [{ name: 'OK', slug: 'curitiba' }], // gera /categoria/eletricista/em/curitiba (depth 4) → DESCARTA
+      relatedCities: [{ name: 'Curitiba', slug: 'curitiba' }],
     });
-    // Profundidade 4 ultrapassa MAX_LINK_DEPTH (3), então o bloco não é gerado.
-    expect(blocks.length).toBe(0);
+    expect(blocks[0]?.links[0]?.href).toBe('/categoria/eletricista/em/curitiba');
   });
 
   it('blocos com 0 links não aparecem', () => {
