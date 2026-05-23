@@ -265,6 +265,47 @@ export default function CategoryCityPage() {
         )}
       </main>
 
+      {/* Fase 2.9 — adoção runtime SEO (content depth + FAQ + internal links) */}
+      {valid && providers.length > 0 && (
+        <Suspense fallback={null}>
+          <SeoEnhancementSection
+            indexation={{
+              type: 'category_city',
+              path: `/categoria/${slug}/em/${cidade}`,
+              slug,
+              categorySlug: slug,
+              citySlug: cidade,
+              providersCount: providers.length,
+            }}
+            content={{
+              categoryName: categoryHuman,
+              cityName: cityHuman,
+              providersCount: providers.length,
+            }}
+            faq={{
+              categoryName: categoryHuman,
+              cityName: cityHuman,
+            }}
+            links={{
+              categorySlug: slug,
+              citySlug: cidade,
+              relatedNeighborhoods: Array.from(
+                new Map(
+                  providers
+                    .map((p: any) => p?.neighborhood)
+                    .filter((n: any) => typeof n === 'string' && n.trim())
+                    .map((n: string) => [normalize(n), { name: n, slug: sanitizeSlug(n) }]),
+                ).values(),
+              ).slice(0, 8),
+              highConversionProviders: providers.slice(0, 6).map((p: any) => ({
+                name: p.business_name || p.full_name || categoryHuman,
+                slug: p.slug || p.id,
+              })),
+            }}
+          />
+        </Suspense>
+      )}
+
       <Footer />
     </div>
   );
