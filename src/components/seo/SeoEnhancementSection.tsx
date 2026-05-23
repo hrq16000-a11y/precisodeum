@@ -32,7 +32,11 @@ import {
   shouldIndex,
   type IndexationInput,
 } from '@/lib/seo/seoIndexationGuard';
-import type { LocalCategoryFaqInput } from '@/components/seo/SeoFaqBlock';
+import {
+  buildLocalCategoryFaq,
+  type LocalCategoryFaqInput,
+  type SeoFaqItem,
+} from '@/components/seo/SeoFaqBlock';
 
 const SeoFaqBlock = lazy(() =>
   import('@/components/seo/SeoFaqBlock').then((m) => ({ default: m.SeoFaqBlock })),
@@ -65,7 +69,6 @@ interface SeoEnhancementSectionProps {
     trendingSearches?: Array<{ label: string; slug: string; signals?: LinkSignals }>;
     thinPaths?: Set<string>;
   };
-  /** id-âncora opcional para sumário/scroll. */
   anchorId?: string;
 }
 
@@ -88,20 +91,9 @@ export default function SeoEnhancementSection({
     [verdict.index, content],
   );
 
-  // FAQ usa o helper canônico — buildLocalCategoryFaq vive dentro do SeoFaqBlock
-  // module. Carregamos o helper síncrono via dynamic require? Não: usamos a
-  // import lazy do componente; aqui só passamos os parâmetros, o componente
-  // chama buildLocalCategoryFaq internamente quando renderiza. Para manter o
-  // contrato simples e a memoização dos counts (DEV telemetry), pré-calculamos
-  // os items via fallback estável.
-  const faqItems = useMemo(() => {
-    if (!verdict.index || !faq) return [];
-    if (!eligibility.eligible) return [];
-    // Lazy require sem dependência runtime extra: reaproveita o módulo já
-    // carregado quando o Suspense resolver. Para a contagem DEV, simulamos a
-    // saída do helper a partir do input (mesma cardinalidade).
-    const base = 5 + (faq.cityName ? 1 : 0) + 1; // ver buildLocalCategoryFaq
-    return Array.from({ length: Math.min(8, base) });
+  const faqItems: SeoFaqItem[] = useMemo(() => {
+    if (!verdict.index || !faq || !eligibility.eligible) return [];
+    return buildLocalCategoryFaq({ ...faq, eligible: true });
   }, [verdict.index, faq, eligibility.eligible]);
 
   const linkBlocks = useMemo(() => {
@@ -120,7 +112,7 @@ export default function SeoEnhancementSection({
     });
   }, [verdict.index, links, indexation.path]);
 
-  // DEV telemetry — não roda em produção.
+  // DEV telemetry — em produção é tree-shaken.
   const mountedAt = useRef<number>(
     typeof performance !== 'undefined' ? performance.now() : 0,
   );
@@ -133,7 +125,9 @@ export default function SeoEnhancementSection({
       0,
     );
     const linksCount = linkBlocks.reduce((n, b) => n + b.links.length, 0);
-    const bucket = ((window as unknown) as { __SEO_RUNTIME_DEBUG?: Record<string, unknown> });
+    const bucket = window as unknown as {
+      __SEO_RUNTIME_DEBUG?: Record<string, unknown>;
+    };
     bucket.__SEO_RUNTIME_DEBUG = {
       ...(bucket.__SEO_RUNTIME_DEBUG || {}),
       [indexation.path]: {
@@ -149,9 +143,13 @@ export default function SeoEnhancementSection({
     };
   }, [contentBlocks, faqItems, linkBlocks, verdict, eligibility.eligible, indexation.path]);
 
-  // Fail-closed: nada para renderizar.
+  // Fail-closed.
   if (!verdict.index) return null;
-  if (contentBlocks.length === 0 && faqItems.length === 0 && linkBlocks.length === 0) {
+  if (
+    contentBlocks.length === 0 &&
+    faqItems.length === 0 &&
+    linkBlocks.length === 0
+  ) {
     return null;
   }
 
@@ -178,9 +176,11 @@ export default function SeoEnhancementSection({
         </div>
       )}
 
-      {faq && eligibility.eligible && (
+      {faqItems.length >= 2 && (
         <Suspense fallback={null}>
-          <SeoFaqBlockLoader faq={faq} />
+          <div className="mx-auto max-w-3xl">
+            <SeoFaqBlock items={faqItems} eligible={true} />
+          </div>
         </Suspense>
       )}
 
@@ -191,19 +191,4 @@ export default function SeoEnhancementSection({
       )}
     </section>
   );
-}
-
-/** Wrapper para chamar buildLocalCategoryFaq dentro do chunk lazy do FAQ. */
-function SeoFaqBlockLoader({
-  faq,
-}: {
-  faq: Omit<LocalCategoryFaqInput, 'eligible'>;
-}) {
-  // Import síncrono dentro do chunk já carregado pelo Suspense:
-  // o componente SeoFaqBlock está no mesmo módulo do helper.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mod = require('@/components/seo/SeoFaqBlock') as typeof import('@/components/seo/SeoFaqBlock');
-  const items = mod.buildLocalCategoryFaq({ ...faq, eligible: true });
-  if (items.length < 2) return null;
-  return <mod.SeoFaqBlock items={items} eligible={true} />;
 }
