@@ -18,6 +18,7 @@ import {
 } from '@/lib/sponsorBilling';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import SponsorInvoicesCard from '@/components/sponsors/SponsorInvoicesCard';
 
 const SponsorBillingPage = () => {
   const { sponsor, loading: authLoading } = useSponsorAuth();
