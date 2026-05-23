@@ -601,6 +601,7 @@ const App = () => {
                 <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
                 <Route path="/admin/funil-publico" element={<AdminGuard><RouteErrorBoundary sectionName="AdminPublicFunnelPage"><AdminPublicFunnelPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/sponsor-change-requests" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSponsorChangeRequestsPage"><AdminSponsorChangeRequestsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/sponsor-billing" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSponsorBillingPage"><AdminSponsorBillingPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/patrocinadores/aprovacoes" element={<AdminSponsorApprovalsPage />} />
                 <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
                 <Route path="/admin/faq" element={<AdminFaqPage />} />
