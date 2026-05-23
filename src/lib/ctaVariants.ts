@@ -50,25 +50,13 @@ export function getLeadCtaLabel(variant: LeadVariantKey, fallback?: string): str
 }
 
 /**
- * Registra clique em CTA (variante) — fire-and-forget.
- * Reusa o canal canônico do funil público via audit_log.
+ * Constrói tag de origem para anexar à telemetria existente
+ * (campo `source` de trackLeadSubmit/trackContactClick), permitindo
+ * comparar CTR por variante via `audit_log.details->>source`.
+ *
+ * Reusa o canal canônico do funil público — sem nova tabela, sem novo RPC.
  */
-export function recordCtaClick(params: {
-  cta: 'whatsapp' | 'lead' | 'phone';
-  variant: string;
-  providerId?: string | null;
-  pathname?: string | null;
-}) {
-  if (typeof window === 'undefined') return;
-  void supabase.rpc('record_audit_event' as any, {
-    _action: 'cta_click',
-    _resource_type: 'cta_variant',
-    _resource_id: `${params.cta}:${params.variant}`,
-    _details: {
-      cta: params.cta,
-      variant: params.variant,
-      provider_id: params.providerId || null,
-      pathname: params.pathname || (typeof window !== 'undefined' ? window.location.pathname : null),
-    },
-  } as any).then(() => {}, () => {});
+export function ctaSourceTag(cta: 'whatsapp' | 'lead' | 'phone', variant: string): string {
+  const safe = String(variant || '').replace(/[^a-z0-9_]/gi, '').slice(0, 40) || 'default';
+  return `cta:${cta}:${safe}`;
 }
