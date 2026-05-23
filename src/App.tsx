@@ -101,6 +101,7 @@ const AdminSponsorBillingPage = lazy(() => import("./pages/AdminSponsorBillingPa
 const AdminProviderConversionPage = lazy(() => import("./pages/AdminProviderConversionPage"));
 const AdminSeoLandingsPage = lazy(() => import("./pages/admin/AdminSeoLandingsPage"));
 const AdminSeoRuntimeMetricsPage = lazy(() => import("./pages/admin/AdminSeoRuntimeMetricsPage"));
+const AdminPublicFunnelHealthPage = lazy(() => import("./pages/admin/AdminPublicFunnelHealthPage"));
 const SponsorSelfServicePage = lazy(() => import("./pages/sponsor/SponsorSelfServicePage"));
 const SponsorBillingPage = lazy(() => import("./pages/sponsor/SponsorBillingPage"));
 const AdminSponsorApprovalsPage = lazy(() => import("./pages/AdminSponsorApprovalsPage"));
