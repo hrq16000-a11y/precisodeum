@@ -17,7 +17,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export type PublicFunnelAction = 'public_search' | 'category_view' | 'city_view';
+export type PublicFunnelAction =
+  | 'public_search'
+  | 'category_view'
+  | 'city_view'
+  | 'profile_view'
+  | 'lead_submit';
 
 interface BaseEvent {
   source?: string;
