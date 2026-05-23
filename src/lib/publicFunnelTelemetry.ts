@@ -23,7 +23,19 @@ export type PublicFunnelAction =
   | 'category_view'
   | 'city_view'
   | 'profile_view'
-  | 'lead_submit';
+  | 'lead_submit'
+  | 'internal_link_click';
+
+export type InternalLinkAnchorType =
+  | 'related_category'
+  | 'related_city'
+  | 'nearby_city'
+  | 'neighborhood'
+  | 'provider'
+  | 'trending'
+  | 'urgency'
+  | 'faq'
+  | 'other';
 
 interface BaseEvent {
   source?: string;
@@ -178,6 +190,39 @@ export function trackProfileView(ev: ProfileViewEvent): void {
     _resource_id: providerId,
     _source: ev.source || null,
     _pathname: path,
+  });
+}
+
+interface InternalLinkClickEvent {
+  sourcePath?: string;
+  targetPath: string;
+  anchorType: InternalLinkAnchorType;
+  positionIndex: number;
+  category?: string | null;
+  city?: string | null;
+}
+
+/**
+ * Registra clique em link interno renderizado pelos blocos SEO
+ * (SeoRelatedLinks). Fire-and-forget, sem await, sem bloquear navegação.
+ * Dedup client-side 10min por (source→target). Apenas links SEO — não
+ * instrumentar navbar/footer/menu global.
+ */
+export function trackInternalLinkClick(ev: InternalLinkClickEvent): void {
+  if (typeof window === 'undefined') return;
+  const target = ev.targetPath?.trim();
+  if (!target) return;
+  const source = getPath(ev.sourcePath);
+  const anchor = ev.anchorType || 'other';
+  const pos = Math.max(0, Math.floor(ev.positionIndex ?? 0));
+  const key = `il|${source}|${target}|${anchor}`;
+  if (!shouldSend(key)) return;
+  fire('internal_link_click', {
+    _category: ev.category?.toLowerCase() || null,
+    _city: ev.city?.toLowerCase() || null,
+    _resource_id: target,
+    _source: `${anchor}:${pos}`,
+    _pathname: source,
   });
 }
 

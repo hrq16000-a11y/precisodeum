@@ -186,7 +186,11 @@ export default function SeoEnhancementSection({
 
       {linkBlocks.length > 0 && (
         <Suspense fallback={null}>
-          <SeoRelatedLinks blocks={linkBlocks} />
+          <SeoRelatedLinks
+            blocks={linkBlocks}
+            category={links?.categorySlug ?? null}
+            city={links?.citySlug ?? null}
+          />
         </Suspense>
       )}
     </section>

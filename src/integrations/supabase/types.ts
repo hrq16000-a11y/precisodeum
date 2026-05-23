@@ -9299,6 +9299,7 @@ export type Database = {
         Args: { _provider_id: string }
         Returns: Json
       }
+      get_public_funnel_health: { Args: { _days?: number }; Returns: Json }
       get_public_funnel_telemetry: { Args: { _days?: number }; Returns: Json }
       get_review_short_link: { Args: { _provider_id: string }; Returns: Json }
       get_rss_import_headers: { Args: never; Returns: Json }

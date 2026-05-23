@@ -101,6 +101,7 @@ const AdminSponsorBillingPage = lazy(() => import("./pages/AdminSponsorBillingPa
 const AdminProviderConversionPage = lazy(() => import("./pages/AdminProviderConversionPage"));
 const AdminSeoLandingsPage = lazy(() => import("./pages/admin/AdminSeoLandingsPage"));
 const AdminSeoRuntimeMetricsPage = lazy(() => import("./pages/admin/AdminSeoRuntimeMetricsPage"));
+const AdminPublicFunnelHealthPage = lazy(() => import("./pages/admin/AdminPublicFunnelHealthPage"));
 const SponsorSelfServicePage = lazy(() => import("./pages/sponsor/SponsorSelfServicePage"));
 const SponsorBillingPage = lazy(() => import("./pages/sponsor/SponsorBillingPage"));
 const AdminSponsorApprovalsPage = lazy(() => import("./pages/AdminSponsorApprovalsPage"));
@@ -608,6 +609,7 @@ const App = () => {
                 <Route path="/admin/provider-conversion" element={<AdminGuard><RouteErrorBoundary sectionName="AdminProviderConversionPage"><AdminProviderConversionPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/seo-landings" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSeoLandingsPage"><AdminSeoLandingsPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/seo-runtime" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSeoRuntimeMetricsPage"><AdminSeoRuntimeMetricsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/funil-health" element={<AdminGuard><RouteErrorBoundary sectionName="AdminPublicFunnelHealthPage"><AdminPublicFunnelHealthPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/patrocinadores/aprovacoes" element={<AdminSponsorApprovalsPage />} />
                 <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
                 <Route path="/admin/faq" element={<AdminFaqPage />} />
