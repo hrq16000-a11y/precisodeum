@@ -609,6 +609,7 @@ const App = () => {
                 <Route path="/admin/provider-conversion" element={<AdminGuard><RouteErrorBoundary sectionName="AdminProviderConversionPage"><AdminProviderConversionPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/seo-landings" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSeoLandingsPage"><AdminSeoLandingsPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/seo-runtime" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSeoRuntimeMetricsPage"><AdminSeoRuntimeMetricsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/funil-health" element={<AdminGuard><RouteErrorBoundary sectionName="AdminPublicFunnelHealthPage"><AdminPublicFunnelHealthPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/patrocinadores/aprovacoes" element={<AdminSponsorApprovalsPage />} />
                 <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
                 <Route path="/admin/faq" element={<AdminFaqPage />} />
