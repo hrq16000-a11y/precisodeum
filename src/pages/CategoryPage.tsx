@@ -36,6 +36,9 @@ const SponsorLeaderBanner = lazy(() => importWithRetry(() => import('@/component
 const SponsorTopBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorTopBanner')));
 const SponsorMidContent = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorMidContent')));
 const SponsorFooterCTA = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorFooterCTA')));
+const SeoEnhancementSection = lazy(() => importWithRetry(() => import('@/components/seo/SeoEnhancementSection')));
+
+import { slugify } from '@/lib/slugify';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -525,6 +528,57 @@ const CategoryPage = () => {
         state={geoState}
         providersCount={totalDisplay}
       />
+
+      {/* Fase 2.9 — adoção runtime SEO (content depth + FAQ + internal links) */}
+      <Suspense fallback={null}>
+        <SeoEnhancementSection
+          indexation={{
+            type: 'category',
+            path: `/categoria/${slug || ''}`,
+            slug,
+            categorySlug: slug,
+            providersCount: seoEligibleProviders.length,
+          }}
+          content={{
+            categoryName: category.name,
+            cityName: geoCity || undefined,
+            providersCount: seoEligibleProviders.length,
+          }}
+          faq={{
+            categoryName: category.name,
+            cityName: geoCity || undefined,
+          }}
+          links={{
+            categorySlug: slug,
+            relatedCities: Array.from(
+              new Map(
+                [...localProviders, ...nearbyProviders]
+                  .filter((p) => p.city)
+                  .map((p) => [normalize(p.city!), { name: p.city!, slug: slugify(p.city!) }]),
+              ).values(),
+            ).slice(0, 12),
+            nearbyCities: Array.from(
+              new Map(
+                nearbyProviders
+                  .filter((p) => p.city)
+                  .map((p) => [
+                    normalize(p.city!),
+                    {
+                      name: p.city!,
+                      slug: slugify(p.city!),
+                      distanceKm: (p as any)?._dist,
+                    },
+                  ]),
+              ).values(),
+            ).slice(0, 8),
+            highConversionProviders: filteredForSeo.slice(0, 6).map((p: any) => ({
+              name: p.businessName || p.name || 'Profissional',
+              slug: p.slug,
+            })),
+          }}
+        />
+      </Suspense>
+
       <Suspense fallback={null}><SponsorFooterCTA category={slug} /></Suspense>
       <Footer />
     </div>

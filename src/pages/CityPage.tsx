@@ -24,6 +24,7 @@ import { formatCityState } from '@/lib/locationFormat';
 const SponsorLeaderBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorLeaderBanner')));
 const SponsorTopBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorTopBanner')));
 const SponsorFooterCTA = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorFooterCTA')));
+const SeoEnhancementSection = lazy(() => importWithRetry(() => import('@/components/seo/SeoEnhancementSection')));
 
 const ITEMS_PER_PAGE = 12;
 
@@ -380,6 +381,37 @@ const CityPage = () => {
           reviewCount: p.reviewCount,
         }))}
       />
+
+      {/* Fase 2.9 — adoção runtime SEO (content depth + FAQ + internal links) */}
+      <Suspense fallback={null}>
+        <SeoEnhancementSection
+          indexation={{
+            type: 'city',
+            path: `/cidade/${city!.slug}`,
+            slug: city!.slug,
+            citySlug: city!.slug,
+            providersCount: providers.length,
+          }}
+          content={{
+            cityName: city!.name,
+            citySlug: city!.slug,
+            providersCount: providers.length,
+          }}
+          faq={{ categoryName: 'profissionais', cityName: city!.name }}
+          links={{
+            citySlug: city!.slug,
+            relatedCategories: allCategories.slice(0, 12).map((c: any) => ({
+              name: c.name,
+              slug: c.slug,
+            })),
+            highConversionProviders: providers.slice(0, 6).map((p: any) => ({
+              name: p.businessName || p.name,
+              slug: p.slug,
+            })),
+          }}
+        />
+      </Suspense>
+
 
       <Suspense fallback={null}><SponsorFooterCTA city={city!.name} /></Suspense>
 
