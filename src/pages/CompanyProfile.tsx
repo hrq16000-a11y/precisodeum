@@ -467,6 +467,15 @@ export default function CompanyProfile() {
 
     setLeadSent(true);
     toast.success('Solicitação enviada com sucesso!');
+    // Fase 2.2 — fecha o funil perfil→lead.
+    void import('@/lib/publicFunnelTelemetry').then(({ trackLeadSubmit }) =>
+      trackLeadSubmit({
+        providerId: company.id,
+        category: companyCategory || null,
+        city: leadForm.city || company.city,
+        source: 'company-profile',
+      }),
+    );
   });
 
   if (isLoading) {
