@@ -23,12 +23,15 @@ interface Telemetry {
   searches_today: number;
   zero_result_searches: number;
   profile_views: number;
+  profile_views_funnel?: number;
   whatsapp_clicks: number;
   phone_clicks: number;
   leads: number;
+  lead_submits?: number;
   sponsor_clicks: number;
   ctr_search_to_view: number;
   ctr_view_to_contact: number;
+  ctr_view_to_lead?: number;
   top_terms: { term: string; count: number }[];
   zero_result_terms: { term: string; count: number }[];
   top_categories: { category: string; count: number }[];
