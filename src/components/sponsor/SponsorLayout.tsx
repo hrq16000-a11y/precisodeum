@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings, Shield, Globe, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings, Shield, Globe, CreditCard, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import Logo from '@/components/Logo';
 const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPermissionKey; requiresActivePlan?: boolean }[] = [
   { label: 'Visão Geral', icon: LayoutDashboard, path: '/sponsor-panel' },
   { label: 'Personalizar Página', icon: Globe, path: '/sponsor-panel/pagina', requiresActivePlan: true },
+  { label: 'Editar campanha', icon: Pencil, path: '/sponsor-panel/editar' },
   { label: 'Meus Banners', icon: Image, path: '/sponsor-panel/banners', permKey: 'banners', requiresActivePlan: true },
   { label: 'Campanhas', icon: Megaphone, path: '/sponsor-panel/campanhas', permKey: 'campanhas', requiresActivePlan: true },
   { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas', permKey: 'metricas', requiresActivePlan: true },

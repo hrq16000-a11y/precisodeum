@@ -96,6 +96,8 @@ const AdminCitiesPage = lazy(() => import("./pages/AdminCitiesPage"));
 const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
 const AdminSponsorsPage = lazy(() => import("./pages/AdminSponsorsPage"));
 const AdminPublicFunnelPage = lazy(() => import("./pages/AdminPublicFunnelPage"));
+const AdminSponsorChangeRequestsPage = lazy(() => import("./pages/AdminSponsorChangeRequestsPage"));
+const SponsorSelfServicePage = lazy(() => import("./pages/sponsor/SponsorSelfServicePage"));
 const AdminSponsorApprovalsPage = lazy(() => import("./pages/AdminSponsorApprovalsPage"));
 const AdminPopularServicesPage = lazy(() => import("./pages/AdminPopularServicesPage"));
 const AdminFaqPage = lazy(() => import("./pages/AdminFaqPage"));
@@ -596,6 +598,7 @@ const App = () => {
                 <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
                 <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
                 <Route path="/admin/funil-publico" element={<AdminGuard><RouteErrorBoundary sectionName="AdminPublicFunnelPage"><AdminPublicFunnelPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/sponsor-change-requests" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSponsorChangeRequestsPage"><AdminSponsorChangeRequestsPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/patrocinadores/aprovacoes" element={<AdminSponsorApprovalsPage />} />
                 <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
                 <Route path="/admin/faq" element={<AdminFaqPage />} />
@@ -697,6 +700,7 @@ const App = () => {
                 {/* Sponsor Panel — CRM Module (protected B2B access) */}
                 <Route path="/sponsor-panel" element={<SponsorProtectedRoute><SponsorDashboardPage /></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/banners" element={<SponsorProtectedRoute><SponsorFeatureGate feature="banners"><SponsorBannersPage /></SponsorFeatureGate></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/editar" element={<SponsorProtectedRoute><RouteErrorBoundary sectionName="SponsorSelfServicePage"><SponsorSelfServicePage /></RouteErrorBoundary></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/campanhas" element={<SponsorProtectedRoute><SponsorFeatureGate feature="campanhas"><SponsorCampaignsPage /></SponsorFeatureGate></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/metricas" element={<SponsorProtectedRoute><SponsorFeatureGate feature="metricas"><SponsorMetricsPage /></SponsorFeatureGate></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/contratos" element={<SponsorProtectedRoute><SponsorContractsPage /></SponsorProtectedRoute>} />
