@@ -5732,6 +5732,59 @@ export type Database = {
           },
         ]
       }
+      sponsor_change_requests: {
+        Row: {
+          admin_comment: string | null
+          changes: Json
+          created_at: string
+          current_snapshot: Json
+          id: string
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sponsor_id: string
+          status: string
+          storage_paths: string[]
+          updated_at: string
+        }
+        Insert: {
+          admin_comment?: string | null
+          changes?: Json
+          created_at?: string
+          current_snapshot?: Json
+          id?: string
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sponsor_id: string
+          status?: string
+          storage_paths?: string[]
+          updated_at?: string
+        }
+        Update: {
+          admin_comment?: string | null
+          changes?: Json
+          created_at?: string
+          current_snapshot?: Json
+          id?: string
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sponsor_id?: string
+          status?: string
+          storage_paths?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_change_requests_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsor_contacts: {
         Row: {
           company_name: string
@@ -8429,6 +8482,10 @@ export type Database = {
         Returns: Json
       }
       admin_review_anchor_audit: { Args: { _days?: number }; Returns: Json }
+      admin_review_sponsor_change_request: {
+        Args: { _comment?: string; _decision: string; _id: string }
+        Returns: undefined
+      }
       admin_review_sponsor_docs: {
         Args: { _decision: string; _lead_id: string; _reason?: string }
         Returns: Json
@@ -9690,9 +9747,17 @@ export type Database = {
         Args: { _sponsor_id: string }
         Returns: boolean
       }
+      sponsor_cancel_change_request: {
+        Args: { _id: string }
+        Returns: undefined
+      }
       sponsor_has_active_plan: {
         Args: { _sponsor_id: string }
         Returns: boolean
+      }
+      sponsor_submit_change_request: {
+        Args: { _changes: Json; _sponsor_id: string; _storage_paths?: string[] }
+        Returns: string
       }
       suggest_nearby_cities: {
         Args: {
