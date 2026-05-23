@@ -291,6 +291,23 @@ const SearchPage = () => {
   const nearestCity = nearestFiltered?.city;
   const totalDisplay = filteredLocal.length + filteredNearby.length + (showOutOfState ? filteredOutOfState.length : 0);
 
+  // FASE 2.1 — Public funnel telemetry (busca + result_count para zero-result insights).
+  // Dedup 10 min em sessionStorage por (term, category, city, path); RPC re-dedupa server-side.
+  useEffect(() => {
+    if (isLoading) return;
+    if (!selectedCategory && !query) return;
+    void import('@/lib/publicFunnelTelemetry').then(({ trackPublicSearch }) =>
+      trackPublicSearch({
+        term: query || null,
+        category: selectedCategory || null,
+        city: effectiveCity || null,
+        resultCount: totalDisplay,
+        source: 'search_page',
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, selectedCategory, query, effectiveCity, totalDisplay]);
+
   const activeFilterCount = countActiveFilters({
     selectedCategory,
     selectedNeighborhood,
