@@ -1048,15 +1048,29 @@ const ProviderProfile = () => {
     return extractSpecialties(parts, 6);
   }, [provider, category, services]);
 
-  const breadcrumbLd = useMemo(() => provider ? ({
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
+  const breadcrumbLd = useMemo(() => {
+    if (!provider) return null;
+    const cSlug = provider.city
+      ? provider.city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')
+      : '';
+    const items: any[] = [
       { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
-      ...(categorySlug ? [{ '@type': 'ListItem', position: 2, name: category, item: `${SITE_BASE_URL}/categoria/${categorySlug}` }] : []),
-      { '@type': 'ListItem', position: categorySlug ? 3 : 2, name },
-    ],
-  }) : null, [provider, name, category, categorySlug]);
+    ];
+    let pos = 2;
+    if (categorySlug) {
+      items.push({ '@type': 'ListItem', position: pos++, name: category, item: `${SITE_BASE_URL}/categoria/${categorySlug}` });
+    }
+    if (provider.city && cSlug) {
+      const cityUrl = categorySlug
+        ? `${SITE_BASE_URL}/categoria/${categorySlug}/em/${cSlug}`
+        : `${SITE_BASE_URL}/cidade/${cSlug}`;
+      items.push({ '@type': 'ListItem', position: pos++, name: provider.city, item: cityUrl });
+    }
+    items.push({ '@type': 'ListItem', position: pos, name });
+    return { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items };
+  }, [provider, name, category, categorySlug]);
+
+
 
   const localBusinessLd = useMemo(() => {
     if (!provider) return null;
