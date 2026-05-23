@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, MapPin, MessageCircle, Globe, Instagram, Facebook, ExternalLink, Star, Send, ChevronRight, Image as ImageIcon, Briefcase, CheckCircle2 } from 'lucide-react';
@@ -21,6 +21,12 @@ import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow
 import { toast } from 'sonner';
 import { formatCityState } from '@/lib/locationFormat';
 import { sanitizeSlug } from '@/lib/slugify';
+import { importWithRetry } from '@/lib/lazyWithRetry';
+
+// Fase 2.9 — runtime SEO enhancement leve (lazy, fora do critical path).
+const SeoEnhancementSection = lazy(() =>
+  importWithRetry(() => import('@/components/seo/SeoEnhancementSection')),
+);
 
 /**
  * CompanyProfile — página institucional para perfis PJ (/empresa/:slug).
@@ -886,6 +892,40 @@ export default function CompanyProfile() {
           </DialogContent>
         </Dialog>
       </main>
+
+      {/* Fase 2.9 — SEO runtime enhancement leve (FAQ + links contextuais). */}
+      {company && (
+        <Suspense fallback={null}>
+          <SeoEnhancementSection
+            indexation={{
+              type: 'category',
+              path: `/empresa/${company.slug || company.id}`,
+              slug: company.slug || company.id,
+              providersCount: 1,
+            }}
+            content={{
+              categoryName: companyCategory,
+              cityName: company.city || undefined,
+              providersCount: 1,
+            }}
+            faq={{
+              categoryName: companyCategory,
+              cityName: company.city || undefined,
+            }}
+            links={{
+              citySlug: company.city ? sanitizeSlug(company.city) : undefined,
+              categorySlug: companyCategory ? sanitizeSlug(companyCategory) : undefined,
+              relatedCities: company.city
+                ? [{ name: company.city, slug: sanitizeSlug(company.city) }]
+                : undefined,
+              relatedCategories: companyCategory
+                ? [{ name: companyCategory, slug: sanitizeSlug(companyCategory) }]
+                : undefined,
+            }}
+          />
+        </Suspense>
+      )}
+
       <Footer />
     </>
   );
