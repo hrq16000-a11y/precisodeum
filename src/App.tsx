@@ -96,6 +96,8 @@ const AdminCitiesPage = lazy(() => import("./pages/AdminCitiesPage"));
 const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
 const AdminSponsorsPage = lazy(() => import("./pages/AdminSponsorsPage"));
 const AdminPublicFunnelPage = lazy(() => import("./pages/AdminPublicFunnelPage"));
+const AdminSponsorChangeRequestsPage = lazy(() => import("./pages/AdminSponsorChangeRequestsPage"));
+const SponsorSelfServicePage = lazy(() => import("./pages/sponsor/SponsorSelfServicePage"));
 const AdminSponsorApprovalsPage = lazy(() => import("./pages/AdminSponsorApprovalsPage"));
 const AdminPopularServicesPage = lazy(() => import("./pages/AdminPopularServicesPage"));
 const AdminFaqPage = lazy(() => import("./pages/AdminFaqPage"));
