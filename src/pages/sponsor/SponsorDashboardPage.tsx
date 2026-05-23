@@ -19,6 +19,7 @@ import { SponsorImage } from '@/components/SponsorImage';
 import SponsorApprovalCelebration from '@/components/sponsor/SponsorApprovalCelebration';
 import SponsorOnboardingChecklist from '@/components/sponsor/SponsorOnboardingChecklist';
 import SponsorRoiPanel from '@/components/sponsors/SponsorRoiPanel';
+import SponsorBillingCard from '@/components/sponsors/SponsorBillingCard';
 import { motion } from 'framer-motion';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -370,6 +371,13 @@ const SponsorDashboardPage = () => {
         {sponsor?.id && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
             <SponsorRoiPanel sponsorId={sponsor.id} days={30} />
+          </motion.div>
+        )}
+
+        {/* Fase 2.5 — Card resumido de cobrança/renovação */}
+        {sponsor?.id && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <SponsorBillingCard sponsorId={sponsor.id} />
           </motion.div>
         )}
 
