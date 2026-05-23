@@ -84,6 +84,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Boosts', icon: 'Sparkles', path: '/admin/boosts' },
       { label: 'Slots Anúncios', icon: 'LayoutGrid', path: '/admin/slots-anuncios' },
       { label: 'Estatísticas', icon: 'BarChart3', path: '/admin/estatisticas' },
+      { label: 'Funil Público', icon: 'BarChart3', path: '/admin/funil-publico' },
     ],
   },
   {

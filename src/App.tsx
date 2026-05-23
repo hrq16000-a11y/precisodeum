@@ -95,6 +95,7 @@ const AdminStatsPage = lazy(() => import("./pages/AdminStatsPage"));
 const AdminCitiesPage = lazy(() => import("./pages/AdminCitiesPage"));
 const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
 const AdminSponsorsPage = lazy(() => import("./pages/AdminSponsorsPage"));
+const AdminPublicFunnelPage = lazy(() => import("./pages/AdminPublicFunnelPage"));
 const AdminSponsorApprovalsPage = lazy(() => import("./pages/AdminSponsorApprovalsPage"));
 const AdminPopularServicesPage = lazy(() => import("./pages/AdminPopularServicesPage"));
 const AdminFaqPage = lazy(() => import("./pages/AdminFaqPage"));
@@ -594,6 +595,7 @@ const App = () => {
                 <Route path="/admin/cidades" element={<AdminCitiesPage />} />
                 <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
                 <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
+                <Route path="/admin/funil-publico" element={<AdminGuard><RouteErrorBoundary sectionName="AdminPublicFunnelPage"><AdminPublicFunnelPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/patrocinadores/aprovacoes" element={<AdminSponsorApprovalsPage />} />
                 <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
                 <Route path="/admin/faq" element={<AdminFaqPage />} />
