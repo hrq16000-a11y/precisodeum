@@ -38,7 +38,7 @@ const SponsorMidContent = lazy(() => importWithRetry(() => import('@/components/
 const SponsorFooterCTA = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorFooterCTA')));
 const SeoEnhancementSection = lazy(() => importWithRetry(() => import('@/components/seo/SeoEnhancementSection')));
 
-import { slugify } from '@/lib/normalize';
+import { slugify } from '@/lib/slugify';
 
 const ITEMS_PER_PAGE = 12;
 
