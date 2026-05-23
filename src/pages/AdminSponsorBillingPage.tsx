@@ -265,7 +265,10 @@ const AdminSponsorBillingPage = () => {
             )}
           </CardContent>
         </Card>
+
+        <AdminRecentInvoicesCard />
       </div>
+
 
       {/* Pay dialog */}
       <Dialog open={!!paying} onOpenChange={(o) => !o && setPaying(null)}>
