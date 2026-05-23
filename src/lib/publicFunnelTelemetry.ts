@@ -140,3 +140,59 @@ export function trackCityView(ev: CityViewEvent): void {
     _pathname: path,
   });
 }
+
+interface ProfileViewEvent extends BaseEvent {
+  providerId: string;
+  category?: string | null;
+  city?: string | null;
+}
+
+interface LeadSubmitEvent extends BaseEvent {
+  providerId: string;
+  category?: string | null;
+  city?: string | null;
+}
+
+/**
+ * Registra visualização de perfil/empresa (fechamento do funil busca→perfil).
+ * Dedupado por sessão para evitar inflar contagem em refresh/back-forward.
+ */
+export function trackProfileView(ev: ProfileViewEvent): void {
+  if (typeof window === 'undefined') return;
+  const providerId = ev.providerId?.trim();
+  if (!providerId) return;
+  const category = ev.category?.toLowerCase() || null;
+  const city = ev.city?.toLowerCase() || null;
+  const path = getPath(ev.pathname);
+  const key = `pv|${providerId}|${path}`;
+  if (!shouldSend(key)) return;
+  fire('profile_view', {
+    _category: category,
+    _city: city,
+    _resource_id: providerId,
+    _source: ev.source || null,
+    _pathname: path,
+  });
+}
+
+/**
+ * Registra envio confirmado de lead (fechamento perfil→lead).
+ * Server-side, fire-and-forget, sem PII.
+ */
+export function trackLeadSubmit(ev: LeadSubmitEvent): void {
+  if (typeof window === 'undefined') return;
+  const providerId = ev.providerId?.trim();
+  if (!providerId) return;
+  const category = ev.category?.toLowerCase() || null;
+  const city = ev.city?.toLowerCase() || null;
+  const path = getPath(ev.pathname);
+  const key = `ls|${providerId}|${path}`;
+  if (!shouldSend(key)) return;
+  fire('lead_submit', {
+    _category: category,
+    _city: city,
+    _resource_id: providerId,
+    _source: ev.source || null,
+    _pathname: path,
+  });
+}
