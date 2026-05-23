@@ -62,6 +62,14 @@ const CategoryPage = () => {
     requestPreciseLocation();
   }, [requestPreciseLocation]);
 
+  // FASE 2.1 — telemetria de visualização da landing de categoria.
+  useEffect(() => {
+    if (!slug) return;
+    void import('@/lib/publicFunnelTelemetry').then(({ trackCategoryView }) =>
+      trackCategoryView({ category: slug, source: 'category_page' })
+    );
+  }, [slug]);
+
   const category = data?.category;
   const allProviders = data?.providers || [];
 
