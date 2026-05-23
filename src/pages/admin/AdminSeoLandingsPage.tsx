@@ -6,7 +6,7 @@
  * CTR. Sinaliza thin/healthy/sponsored com base no SEO Route Registry.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { useSeoHead } from '@/hooks/useSeoHead';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +33,8 @@ export default function AdminSeoLandingsPage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
 
+  useSeoHead({ title: 'SEO Landings · Admin', description: 'Telemetria de landings SEO.', noindex: true });
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -40,7 +42,7 @@ export default function AdminSeoLandingsPage() {
       const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('audit_log')
-        .select('action, metadata, created_at')
+        .select('action, details, created_at')
         .eq('resource_type', 'public_funnel')
         .gte('created_at', since)
         .limit(5000);
@@ -53,8 +55,8 @@ export default function AdminSeoLandingsPage() {
       }
 
       const acc = new Map<string, { views: number; leads: number }>();
-      for (const r of data as Array<{ action: string; metadata: any }>) {
-        const path: string | undefined = r.metadata?.path;
+      for (const r of data as Array<{ action: string; details: any }>) {
+        const path: string | undefined = r.details?.path;
         if (!path || typeof path !== 'string') continue;
         const norm = path.split('?')[0];
         const t = inferType(norm);
