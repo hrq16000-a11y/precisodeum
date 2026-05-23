@@ -17,6 +17,7 @@ const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPe
   { label: 'Contratos', icon: FileText, path: '/sponsor-panel/contratos', permKey: 'contratos' },
   { label: 'Notificações', icon: Bell, path: '/sponsor-panel/notificacoes', permKey: 'notificacoes' },
   { label: 'Assinatura e Pagamentos', icon: CreditCard, path: '/sponsor-panel/assinatura' },
+  { label: 'Faturamento', icon: Receipt, path: '/sponsor-panel/faturamento' },
   { label: 'Meus Dados', icon: Settings, path: '/sponsor-panel/dados', permKey: 'dados' },
 ];
 
