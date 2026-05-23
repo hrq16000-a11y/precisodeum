@@ -40,6 +40,7 @@ import { importWithRetry } from '@/lib/lazyWithRetry';
 const ImageLightbox = lazy(() => importWithRetry(() => import('@/components/ImageLightbox')));
 const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 const SponsorAdSlot = lazy(() => importWithRetry(() => import('@/components/ads/SponsorAdSlot')));
+const SeoEnhancementSection = lazy(() => importWithRetry(() => import('@/components/seo/SeoEnhancementSection')));
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
