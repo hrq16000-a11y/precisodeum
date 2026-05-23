@@ -1050,6 +1050,9 @@ const ProviderProfile = () => {
 
   const breadcrumbLd = useMemo(() => {
     if (!provider) return null;
+    const cSlug = provider.city
+      ? provider.city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')
+      : '';
     const items: any[] = [
       { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
     ];
@@ -1057,15 +1060,16 @@ const ProviderProfile = () => {
     if (categorySlug) {
       items.push({ '@type': 'ListItem', position: pos++, name: category, item: `${SITE_BASE_URL}/categoria/${categorySlug}` });
     }
-    if (provider.city && citySlug) {
+    if (provider.city && cSlug) {
       const cityUrl = categorySlug
-        ? `${SITE_BASE_URL}/categoria/${categorySlug}/em/${citySlug}`
-        : `${SITE_BASE_URL}/cidade/${citySlug}`;
+        ? `${SITE_BASE_URL}/categoria/${categorySlug}/em/${cSlug}`
+        : `${SITE_BASE_URL}/cidade/${cSlug}`;
       items.push({ '@type': 'ListItem', position: pos++, name: provider.city, item: cityUrl });
     }
     items.push({ '@type': 'ListItem', position: pos, name });
     return { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items };
-  }, [provider, name, category, categorySlug, citySlug]);
+  }, [provider, name, category, categorySlug]);
+
 
 
   const localBusinessLd = useMemo(() => {
