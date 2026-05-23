@@ -85,6 +85,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Slots Anúncios', icon: 'LayoutGrid', path: '/admin/slots-anuncios' },
       { label: 'Estatísticas', icon: 'BarChart3', path: '/admin/estatisticas' },
       { label: 'Funil Público', icon: 'BarChart3', path: '/admin/funil-publico' },
+      { label: 'Conversão (Profissionais)', icon: 'Sparkles', path: '/admin/provider-conversion' },
       { label: 'Solicitações Sponsor', icon: 'BarChart3', path: '/admin/sponsor-change-requests' },
       { label: 'Faturamento Sponsor', icon: 'Receipt', path: '/admin/sponsor-billing' },
     ],
