@@ -1233,6 +1233,15 @@ const ProviderProfile = () => {
     }
     setLeadSent(true);
     toast.success('Solicitação enviada com sucesso!');
+    // Fase 2.2 — fecha o funil perfil→lead com evento canônico no public_funnel.
+    void import('@/lib/publicFunnelTelemetry').then(({ trackLeadSubmit }) =>
+      trackLeadSubmit({
+        providerId: provider.id,
+        category,
+        city: leadForm.city || provider.city,
+        source: getLeadSource(),
+      }),
+    );
   });
 
   const openPortfolioLightbox = (index: number) => {
