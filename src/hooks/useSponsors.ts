@@ -105,7 +105,9 @@ export function useSponsorsBySlot(
       let results = all.filter((s) => {
         const deliverable = isSponsorDeliverable(s as any);
         if (!deliverable) {
-          logBlockedSponsor(position, s as any, resolveSponsorHealthStatus(s as any));
+          const reason = resolveSponsorHealthStatus(s as any);
+          logBlockedSponsor(position, s as any, reason);
+          reportBlockedSponsor(position, s as any, reason);
         }
         return deliverable;
       });
