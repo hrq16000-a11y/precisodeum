@@ -23,7 +23,19 @@ export type PublicFunnelAction =
   | 'category_view'
   | 'city_view'
   | 'profile_view'
-  | 'lead_submit';
+  | 'lead_submit'
+  | 'internal_link_click';
+
+export type InternalLinkAnchorType =
+  | 'related_category'
+  | 'related_city'
+  | 'nearby_city'
+  | 'neighborhood'
+  | 'provider'
+  | 'trending'
+  | 'urgency'
+  | 'faq'
+  | 'other';
 
 interface BaseEvent {
   source?: string;
