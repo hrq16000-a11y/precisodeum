@@ -1963,7 +1963,7 @@ const ProviderProfile = () => {
                     size="lg"
                     className="gap-2 w-full sm:w-auto bg-[#25D366] text-white hover:bg-[#1ebe5a] shadow-lg hover:shadow-xl transition-all"
                     onClick={() => {
-                      if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'principal');
+                      if (provider) trackContactClick(provider.id, 'whatsapp', `${window.location.pathname}?${ctaSourceTag('whatsapp', whatsappVariant)}`, undefined, 'principal');
                       requestWhatsApp({
                        url: whatsappLink(effectiveWhatsApp, `Olá ${name}! Vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.`),
                         targetType: 'provider',
@@ -1973,7 +1973,7 @@ const ProviderProfile = () => {
                       });
                     }}
                   >
-                    <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
+                    <MessageCircle className="h-5 w-5" /> {whatsappCtaLabel}
                   </Button>
                 </motion.div>
               )}
