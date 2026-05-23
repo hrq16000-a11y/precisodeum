@@ -68,8 +68,14 @@ function useSlotSponsors(slotSlug: string, category?: string, city?: string, sta
       if (!sponsors) return [];
 
       // FASE 1.8 — Delivery Health Gate (fail-closed).
-      const { isSponsorDeliverable } = await import('@/lib/sponsorDeliveryGuard');
-      const eligible = (sponsors as any[]).filter((s) => isSponsorDeliverable(s));
+      // FASE 1.9 — Telemetria fire-and-forget de bloqueios.
+      const { isSponsorDeliverable, resolveSponsorHealthStatus, reportBlockedSponsor } =
+        await import('@/lib/sponsorDeliveryGuard');
+      const eligible = (sponsors as any[]).filter((s) => {
+        const ok = isSponsorDeliverable(s);
+        if (!ok) reportBlockedSponsor(slotSlug, s, resolveSponsorHealthStatus(s));
+        return ok;
+      });
 
       // Filter by date validity (legado)
       const priorityMap = new Map(validAssignments.map(a => [a.sponsor_id, a.priority || 0]));

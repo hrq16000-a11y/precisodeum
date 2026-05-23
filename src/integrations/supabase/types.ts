@@ -9037,6 +9037,10 @@ export type Database = {
           title: string
         }[]
       }
+      get_sponsor_delivery_telemetry: {
+        Args: { _days?: number }
+        Returns: Json
+      }
       get_sponsor_docs_status: { Args: { _lead_id: string }; Returns: Json }
       get_sponsor_health_status: {
         Args: { _sponsor_id?: string }
@@ -9473,6 +9477,15 @@ export type Database = {
       record_registration_snapshot: {
         Args: { _payload: Json }
         Returns: string
+      }
+      record_sponsor_delivery_block: {
+        Args: {
+          _pathname?: string
+          _reason: string
+          _slot: string
+          _sponsor_id: string
+        }
+        Returns: undefined
       }
       refresh_all_sponsor_pacing: {
         Args: never

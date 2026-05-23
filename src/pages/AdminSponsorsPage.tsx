@@ -42,6 +42,7 @@ import PaginationControls from '@/components/PaginationControls';
 import SponsorScopePicker from '@/components/admin/SponsorScopePicker';
 import SponsorConsistencyPanel from '@/components/sponsors/SponsorConsistencyPanel';
 import SponsorHealthPanel from '@/components/sponsors/SponsorHealthPanel';
+import SponsorDeliveryTelemetryPanel from '@/components/sponsors/SponsorDeliveryTelemetryPanel';
 const PAGE_SIZE = 20;
 
 /* ─── Visual position map — from central config ─── */
@@ -784,6 +785,7 @@ const AdminSponsorsPage = () => {
             <TabsTrigger value="notes">📝 Notas</TabsTrigger>
             <TabsTrigger value="consistency">🧹 Consistência</TabsTrigger>
             <TabsTrigger value="health">🩺 Health</TabsTrigger>
+            <TabsTrigger value="telemetry">📡 Telemetria</TabsTrigger>
           </TabsList>
 
 
@@ -1336,6 +1338,10 @@ const AdminSponsorsPage = () => {
           {/* ═══ HEALTH TAB ═══ */}
           <TabsContent value="health" className="space-y-4">
             <SponsorHealthPanel />
+          </TabsContent>
+
+          <TabsContent value="telemetry" className="space-y-4">
+            <SponsorDeliveryTelemetryPanel />
           </TabsContent>
         </Tabs>
 
