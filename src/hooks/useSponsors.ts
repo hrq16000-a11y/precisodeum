@@ -146,6 +146,8 @@ export function useSponsorsBySlot(
     // FASE 1.8 — Bloqueia click em sponsor não-entregável.
     const sponsor = (query.data || []).find((s) => s.id === id);
     if (!sponsor || !isSponsorDeliverable(sponsor as any)) return;
+    // FASE 2.3 — registra atribuição leve para o funil (TTL 30 min).
+    recordSponsorClick(id, position);
     supabase.rpc('track_sponsor_metric', {
       _sponsor_id: id,
       _slot_slug: position,
