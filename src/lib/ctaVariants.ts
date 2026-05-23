@@ -9,7 +9,7 @@
  * para anexar a variante ao funil público (audit_log).
  */
 
-import { supabase } from '@/integrations/supabase/client';
+
 
 export const WHATSAPP_VARIANTS = {
   falar_no_whatsapp: 'Falar no WhatsApp',
