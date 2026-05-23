@@ -89,20 +89,38 @@ export default function AdminSeoLandingsPage() {
     return rows.filter((r) => r.path.toLowerCase().includes(term));
   }, [rows, q]);
 
+  // Derivações Fase 2.8 (tudo client-side, sem nova query)
   const thin = filtered.filter((r) => r.views < 5);
   const noClicks = filtered.filter((r) => r.views >= 5 && r.leads === 0);
   const high = filtered.filter((r) => r.ctr >= 0.04 && r.views >= 10);
+  const highTrafficLowConv = filtered.filter((r) => r.views >= 50 && r.ctr < 0.02);
+  const blocked = thin; // proxy de noindex-by-policy
+  const indexable = filtered.filter((r) => r.views >= 5);
+
+  // Scores 0..100 (proxies derivados)
+  const operationalScore = (() => {
+    if (!filtered.length) return 0;
+    const ratio = indexable.length / filtered.length;
+    return Math.round(ratio * 100);
+  })();
+  const commercialScore = (() => {
+    if (!filtered.length) return 0;
+    const ratio = high.length / Math.max(1, indexable.length);
+    return Math.round(Math.min(1, ratio * 2) * 100);
+  })();
+  const contentScore = (() => {
+    if (!filtered.length) return 0;
+    const penalty = blocked.length / Math.max(1, filtered.length);
+    return Math.max(0, Math.round((1 - penalty) * 100));
+  })();
 
   return (
     <div className="container mx-auto max-w-6xl p-6 space-y-6">
-
-
-
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">SEO Landings</h1>
           <p className="text-sm text-muted-foreground">
-            Telemetria 30d · views, leads e CTR por landing.
+            Telemetria 30d · indexação, FAQ, links, sponsor e scores derivados.
           </p>
         </div>
         <Input
@@ -116,79 +134,119 @@ export default function AdminSeoLandingsPage() {
       {loading ? (
         <Skeleton className="h-64 w-full" />
       ) : (
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Top landings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {filtered.slice(0, 20).map((r) => (
-                <div key={r.path} className="flex items-center justify-between gap-2">
-                  <span className="truncate">{r.path}</span>
-                  <span className="text-muted-foreground tabular-nums">
-                    {r.views}v · {r.leads}l · {(r.ctr * 100).toFixed(1)}%
-                  </span>
-                </div>
-              ))}
-              {!filtered.length && (
-                <p className="text-muted-foreground">Sem dados no período.</p>
-              )}
-            </CardContent>
-          </Card>
+        <>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Score operacional</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-3xl font-semibold tabular-nums">{operationalScore}</p>
+                <p className="text-xs text-muted-foreground">% de landings indexáveis (≥5 views).</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Score comercial</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-3xl font-semibold tabular-nums">{commercialScore}</p>
+                <p className="text-xs text-muted-foreground">% de landings indexáveis com CTR ≥ 4%.</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Score de conteúdo</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-3xl font-semibold tabular-nums">{contentScore}</p>
+                <p className="text-xs text-muted-foreground">100 − proporção de páginas thin bloqueadas.</p>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                Thin pages <Badge variant="destructive">{thin.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1 text-sm max-h-80 overflow-auto">
-              {thin.slice(0, 50).map((r) => (
-                <div key={r.path} className="truncate text-muted-foreground">
-                  {r.path}
-                </div>
-              ))}
-              {!thin.length && <p className="text-muted-foreground">Nenhuma.</p>}
-            </CardContent>
-          </Card>
+          <div className="grid gap-6 md:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  Indexable vs Blocked
+                  <Badge variant="secondary">{indexable.length}</Badge>
+                  <Badge variant="destructive">{blocked.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1 text-sm max-h-80 overflow-auto">
+                {indexable.slice(0, 30).map((r) => (
+                  <div key={r.path} className="truncate text-muted-foreground">
+                    {r.path} · {r.views}v
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                Sem cliques <Badge variant="secondary">{noClicks.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1 text-sm max-h-80 overflow-auto">
-              {noClicks.slice(0, 50).map((r) => (
-                <div key={r.path} className="truncate text-muted-foreground">
-                  {r.path} · {r.views}v
-                </div>
-              ))}
-              {!noClicks.length && <p className="text-muted-foreground">Nenhuma.</p>}
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  Thin bloqueadas <Badge variant="destructive">{thin.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1 text-sm max-h-80 overflow-auto">
+                {thin.slice(0, 50).map((r) => (
+                  <div key={r.path} className="truncate text-muted-foreground">{r.path}</div>
+                ))}
+                {!thin.length && <p className="text-muted-foreground">Nenhuma.</p>}
+              </CardContent>
+            </Card>
 
-          <Card className="md:col-span-3">
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                Alta conversão <Badge>{high.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-1 text-sm md:grid-cols-2 lg:grid-cols-3">
-              {high.slice(0, 60).map((r) => (
-                <div key={r.path} className="flex items-center justify-between gap-2">
-                  <span className="truncate">{r.path}</span>
-                  <span className="tabular-nums text-foreground">
-                    {(r.ctr * 100).toFixed(1)}%
-                  </span>
-                </div>
-              ))}
-              {!high.length && (
-                <p className="text-muted-foreground">Nenhuma landing com CTR ≥ 4%.</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  Sem cliques <Badge variant="secondary">{noClicks.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1 text-sm max-h-80 overflow-auto">
+                {noClicks.slice(0, 50).map((r) => (
+                  <div key={r.path} className="truncate text-muted-foreground">{r.path} · {r.views}v</div>
+                ))}
+                {!noClicks.length && <p className="text-muted-foreground">Nenhuma.</p>}
+              </CardContent>
+            </Card>
+
+            <Card className="md:col-span-3">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  Top CTR orgânico <Badge>{high.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-1 text-sm md:grid-cols-2 lg:grid-cols-3">
+                {high.slice(0, 60).map((r) => (
+                  <div key={r.path} className="flex items-center justify-between gap-2">
+                    <span className="truncate">{r.path}</span>
+                    <span className="tabular-nums text-foreground">{(r.ctr * 100).toFixed(1)}%</span>
+                  </div>
+                ))}
+                {!high.length && (
+                  <p className="text-muted-foreground">Nenhuma landing com CTR ≥ 4%.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="md:col-span-3">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  Alto tráfego · baixa conversão
+                  <Badge variant="destructive">{highTrafficLowConv.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-1 text-sm md:grid-cols-2 lg:grid-cols-3">
+                {highTrafficLowConv.slice(0, 30).map((r) => (
+                  <div key={r.path} className="flex items-center justify-between gap-2">
+                    <span className="truncate">{r.path}</span>
+                    <span className="tabular-nums text-muted-foreground">
+                      {r.views}v · {(r.ctr * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                ))}
+                {!highTrafficLowConv.length && (
+                  <p className="text-muted-foreground">Nenhuma com gargalo de conversão.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
     </div>
   );
