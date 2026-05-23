@@ -21,6 +21,12 @@ import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow
 import { toast } from 'sonner';
 import { formatCityState } from '@/lib/locationFormat';
 import { sanitizeSlug } from '@/lib/slugify';
+import { importWithRetry } from '@/lib/lazyWithRetry';
+
+// Fase 2.9 — runtime SEO enhancement leve (lazy, fora do critical path).
+const SeoEnhancementSection = lazy(() =>
+  importWithRetry(() => import('@/components/seo/SeoEnhancementSection')),
+);
 
 /**
  * CompanyProfile — página institucional para perfis PJ (/empresa/:slug).
