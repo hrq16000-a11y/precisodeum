@@ -237,22 +237,7 @@ const SearchPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, query, effectiveCity, geoState]);
 
-  // FASE 2.1 — Public funnel telemetry (busca executada + result_count para zero-result insights).
-  // Dedup 10 min em sessionStorage por (term, category, city, path).
-  useEffect(() => {
-    if (isLoading) return;
-    if (!selectedCategory && !query) return;
-    void import('@/lib/publicFunnelTelemetry').then(({ trackPublicSearch }) =>
-      trackPublicSearch({
-        term: query || null,
-        category: selectedCategory || null,
-        city: effectiveCity || null,
-        resultCount: totalDisplay,
-        source: 'search_page',
-      })
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, selectedCategory, query, effectiveCity, totalDisplay]);
+  // FASE 2.1 — Public funnel telemetry (movido para depois de totalDisplay; ver effect abaixo).
 
   const localProviders = grouped?.local || [];
   const nearbyProviders = grouped?.nearby || [];
