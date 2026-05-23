@@ -61,6 +61,7 @@ import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
 import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
+import { resolveWhatsappVariant, getWhatsappCtaLabel, ctaSourceTag } from '@/lib/ctaVariants';
 
 /** Fire-and-forget contact click tracker */
 const getLeadSource = () => {
@@ -1321,6 +1322,11 @@ const ProviderProfile = () => {
   const tc = THEME_CLASSES[pageSettings.theme] || THEME_CLASSES.default;
   const { requestWhatsApp } = useWhatsAppGate();
 
+  // FASE 2.6 — Variante CTA WhatsApp controlada por site_settings (admin).
+  const whatsappVariantRaw = useSettingValue('cta_whatsapp_variant');
+  const whatsappVariant = resolveWhatsappVariant(whatsappVariantRaw);
+  const whatsappCtaLabel = getWhatsappCtaLabel(whatsappVariant, pageSettings.cta_whatsapp_text);
+
   // ── Section renderers ──
 
   const renderAbout = () => (
@@ -1957,7 +1963,7 @@ const ProviderProfile = () => {
                     size="lg"
                     className="gap-2 w-full sm:w-auto bg-[#25D366] text-white hover:bg-[#1ebe5a] shadow-lg hover:shadow-xl transition-all"
                     onClick={() => {
-                      if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'principal');
+                      if (provider) trackContactClick(provider.id, 'whatsapp', `${window.location.pathname}?${ctaSourceTag('whatsapp', whatsappVariant)}`, undefined, 'principal');
                       requestWhatsApp({
                        url: whatsappLink(effectiveWhatsApp, `Olá ${name}! Vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.`),
                         targetType: 'provider',
@@ -1967,7 +1973,7 @@ const ProviderProfile = () => {
                       });
                     }}
                   >
-                    <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
+                    <MessageCircle className="h-5 w-5" /> {whatsappCtaLabel}
                   </Button>
                 </motion.div>
               )}

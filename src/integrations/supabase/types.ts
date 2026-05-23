@@ -8516,6 +8516,21 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_provider_conversion_insights: {
+        Args: { _days?: number; _limit?: number }
+        Returns: {
+          bucket: string
+          business_name: string
+          category_slug: string
+          city: string
+          contacts: number
+          ctr: number
+          lead_rate: number
+          lead_submits: number
+          profile_views: number
+          provider_id: string
+        }[]
+      }
       admin_providers_same_ip: {
         Args: { _min_count?: number }
         Returns: {
@@ -9093,6 +9108,18 @@ export type Database = {
       get_provider_clicks_24h: {
         Args: { _provider_id: string }
         Returns: number
+      }
+      get_provider_conversion_stats: {
+        Args: { _days?: number; _provider_ids: string[] }
+        Returns: {
+          ctr_view_to_contact: number
+          lead_rate: number
+          lead_submits: number
+          phone_clicks: number
+          profile_views: number
+          provider_id: string
+          whatsapp_clicks: number
+        }[]
       }
       get_provider_daily_post: {
         Args: { _provider_id: string }
