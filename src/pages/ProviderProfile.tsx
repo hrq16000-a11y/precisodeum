@@ -1322,6 +1322,11 @@ const ProviderProfile = () => {
   const tc = THEME_CLASSES[pageSettings.theme] || THEME_CLASSES.default;
   const { requestWhatsApp } = useWhatsAppGate();
 
+  // FASE 2.6 — Variante CTA WhatsApp controlada por site_settings (admin).
+  const whatsappVariantRaw = useSettingValue('cta_whatsapp_variant');
+  const whatsappVariant = resolveWhatsappVariant(whatsappVariantRaw);
+  const whatsappCtaLabel = getWhatsappCtaLabel(whatsappVariant, pageSettings.cta_whatsapp_text);
+
   // ── Section renderers ──
 
   const renderAbout = () => (
