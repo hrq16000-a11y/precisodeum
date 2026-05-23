@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, MapPin, MessageCircle, Globe, Instagram, Facebook, ExternalLink, Star, Send, ChevronRight, Image as ImageIcon, Briefcase, CheckCircle2 } from 'lucide-react';
