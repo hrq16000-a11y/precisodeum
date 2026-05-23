@@ -24,6 +24,7 @@ import { formatCityState } from '@/lib/locationFormat';
 const SponsorLeaderBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorLeaderBanner')));
 const SponsorTopBanner = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorTopBanner')));
 const SponsorFooterCTA = lazy(() => importWithRetry(() => import('@/components/sponsors/SponsorFooterCTA')));
+const SeoEnhancementSection = lazy(() => importWithRetry(() => import('@/components/seo/SeoEnhancementSection')));
 
 const ITEMS_PER_PAGE = 12;
 
