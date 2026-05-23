@@ -9838,34 +9838,20 @@ export type Database = {
         }
         Returns: string
       }
-      record_public_funnel_event:
-        | {
-            Args: {
-              _action: string
-              _category?: string
-              _city?: string
-              _pathname?: string
-              _resource_id?: string
-              _result_count?: number
-              _source?: string
-              _term?: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              _action: string
-              _category?: string
-              _city?: string
-              _pathname?: string
-              _resource_id?: string
-              _result_count?: number
-              _source?: string
-              _sponsor_ref?: string
-              _term?: string
-            }
-            Returns: undefined
-          }
+      record_public_funnel_event: {
+        Args: {
+          _action: string
+          _category?: string
+          _city?: string
+          _pathname?: string
+          _resource_id?: string
+          _result_count?: number
+          _source?: string
+          _sponsor_ref?: string
+          _term?: string
+        }
+        Returns: undefined
+      }
       record_registration_snapshot: {
         Args: { _payload: Json }
         Returns: string
