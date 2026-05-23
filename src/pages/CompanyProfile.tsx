@@ -392,8 +392,18 @@ export default function CompanyProfile() {
   useJsonLd(jsonLd, `company-${company?.id || slug}`);
 
   useEffect(() => {
-    if (company) trackProfileClick(company.id, company.slug, 'company-profile');
-  }, [company]);
+    if (!company) return;
+    trackProfileClick(company.id, company.slug, 'company-profile');
+    // Fase 2.2 — funil canônico: emite profile_view no public_funnel.
+    void import('@/lib/publicFunnelTelemetry').then(({ trackProfileView }) =>
+      trackProfileView({
+        providerId: company.id,
+        category: companyCategory || null,
+        city: company.city,
+        source: 'company-profile',
+      }),
+    );
+  }, [company, companyCategory]);
 
   useEffect(() => {
     const param = (slug || '').trim();
