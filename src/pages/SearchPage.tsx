@@ -31,6 +31,8 @@ import { isInsideCorridor, type RouteCorridor } from '@/components/RouteSearchMo
 const RouteSearchModal = lazy(() => import('@/components/RouteSearchModal'));
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { applySearchFilters, countActiveFilters, DEFAULT_SCORE_WEIGHTS, type SearchScoreWeights } from '@/lib/searchFilters';
+import { useProviderConversionScores } from '@/hooks/useProviderConversionScores';
+import { BUCKET_MULTIPLIER, applyDiversityCap } from '@/lib/conversionSignals';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const ProvidersMap = lazy(() => import('@/components/ProvidersMap'));
