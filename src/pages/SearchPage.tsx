@@ -283,9 +283,39 @@ const SearchPage = () => {
     selectedState ? list.filter(p => safeUF(p.state) === selectedState) : list,
   [selectedState]);
 
-  const filteredLocal = useMemo(() => stateFilterFn(applyClientFilters(localProviders)), [applyClientFilters, localProviders, stateFilterFn]);
+  const filteredLocalRaw = useMemo(() => stateFilterFn(applyClientFilters(localProviders)), [applyClientFilters, localProviders, stateFilterFn]);
   const filteredNearby = useMemo(() => stateFilterFn(applyClientFilters(nearbyProviders)), [applyClientFilters, nearbyProviders, stateFilterFn]);
   const filteredOutOfState = useMemo(() => stateFilterFn(applyClientFilters(outOfStateProviders)), [applyClientFilters, outOfStateProviders, stateFilterFn]);
+
+  // FASE 2.6 — Conversion boost leve + diversidade.
+  // Aplica apenas quando `conversion_boost_enabled=true` em site_settings e
+  // a ordenação é 'relevance'/'best' (não sobrepõe escolhas explícitas do usuário).
+  const conversionBoostEnabled = useFeatureEnabled('conversion_boost_enabled');
+  const reorderableSort = sortBy === 'relevance' || sortBy === 'best';
+  const conversionIds = useMemo(
+    () => filteredLocalRaw.slice(0, 80).map((p) => p.id).filter(Boolean),
+    [filteredLocalRaw],
+  );
+  const { data: conversionMap } = useProviderConversionScores(
+    conversionBoostEnabled && reorderableSort ? conversionIds : [],
+    30,
+  );
+  const filteredLocal = useMemo(() => {
+    if (!conversionBoostEnabled || !reorderableSort || !conversionMap) {
+      return applyDiversityCap(filteredLocalRaw, 2);
+    }
+    // Reorder leve: score base = posição reversa (1..N), multiplicado pelo bucket.
+    const N = filteredLocalRaw.length;
+    const scored = filteredLocalRaw.map((p, idx) => {
+      const bucket = conversionMap[p.id]?.bucket || 'unknown';
+      const mult = BUCKET_MULTIPLIER[bucket];
+      // base preserva ordem original como ancora primária; mult só desempata vizinhos.
+      const base = (N - idx);
+      return { p, score: base * mult, idx };
+    });
+    scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
+    return applyDiversityCap(scored.map((s) => s.p), 2);
+  }, [filteredLocalRaw, conversionMap, conversionBoostEnabled, reorderableSort]);
 
   const fullyFiltered = [...filteredLocal, ...filteredNearby, ...filteredOutOfState];
   const nearestFiltered = filteredLocal.length > 0 ? filteredLocal[0] : (filteredNearby.length > 0 ? filteredNearby[0] : undefined);
