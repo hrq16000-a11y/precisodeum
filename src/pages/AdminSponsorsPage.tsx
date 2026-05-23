@@ -785,6 +785,7 @@ const AdminSponsorsPage = () => {
             <TabsTrigger value="notes">📝 Notas</TabsTrigger>
             <TabsTrigger value="consistency">🧹 Consistência</TabsTrigger>
             <TabsTrigger value="health">🩺 Health</TabsTrigger>
+            <TabsTrigger value="telemetry">📡 Telemetria</TabsTrigger>
           </TabsList>
 
 
