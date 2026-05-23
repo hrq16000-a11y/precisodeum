@@ -2398,7 +2398,48 @@ const ProviderProfile = () => {
         </div>
       </div>
 
+      {/* Fase 2.9 — SEO runtime enhancement (links contextuais + FAQ leve) */}
+      {provider && (
+        <Suspense fallback={null}>
+          <SeoEnhancementSection
+            indexation={{
+              type: 'category',
+              path: `/profissional/${slug || provider.slug || provider.id}`,
+              slug: provider.slug || provider.id,
+              providersCount: 1,
+            }}
+            content={{
+              categoryName: category,
+              cityName: provider.city || undefined,
+              providersCount: 1,
+              hasSponsor: !!provider.featured,
+            }}
+            faq={{
+              categoryName: category || 'profissional',
+              cityName: provider.city || undefined,
+            }}
+            links={{
+              citySlug: provider.city ? sanitizeSlug(provider.city) : undefined,
+              categorySlug: categorySlug || undefined,
+              relatedCategories: categorySlug && provider.city
+                ? [{ name: category, slug: categorySlug }]
+                : undefined,
+              relatedCities: provider.city && categorySlug
+                ? [{ name: provider.city, slug: sanitizeSlug(provider.city) }]
+                : undefined,
+              highConversionProviders: (relatedProviders || [])
+                .slice(0, 6)
+                .map((r: any) => ({
+                  name: r.business_name || r.profiles?.full_name || 'Profissional',
+                  slug: r.slug || r.id,
+                })),
+            }}
+          />
+        </Suspense>
+      )}
+
       <Footer />
+
       <Suspense fallback={null}>
         <ImageLightbox
           images={lightboxImages}
