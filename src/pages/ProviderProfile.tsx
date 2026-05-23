@@ -61,6 +61,7 @@ import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
 import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
 import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
+import { resolveWhatsappVariant, getWhatsappCtaLabel, ctaSourceTag } from '@/lib/ctaVariants';
 
 /** Fire-and-forget contact click tracker */
 const getLeadSource = () => {
