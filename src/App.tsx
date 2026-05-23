@@ -97,7 +97,9 @@ const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
 const AdminSponsorsPage = lazy(() => import("./pages/AdminSponsorsPage"));
 const AdminPublicFunnelPage = lazy(() => import("./pages/AdminPublicFunnelPage"));
 const AdminSponsorChangeRequestsPage = lazy(() => import("./pages/AdminSponsorChangeRequestsPage"));
+const AdminSponsorBillingPage = lazy(() => import("./pages/AdminSponsorBillingPage"));
 const SponsorSelfServicePage = lazy(() => import("./pages/sponsor/SponsorSelfServicePage"));
+const SponsorBillingPage = lazy(() => import("./pages/sponsor/SponsorBillingPage"));
 const AdminSponsorApprovalsPage = lazy(() => import("./pages/AdminSponsorApprovalsPage"));
 const AdminPopularServicesPage = lazy(() => import("./pages/AdminPopularServicesPage"));
 const AdminFaqPage = lazy(() => import("./pages/AdminFaqPage"));
@@ -599,6 +601,7 @@ const App = () => {
                 <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
                 <Route path="/admin/funil-publico" element={<AdminGuard><RouteErrorBoundary sectionName="AdminPublicFunnelPage"><AdminPublicFunnelPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/sponsor-change-requests" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSponsorChangeRequestsPage"><AdminSponsorChangeRequestsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/sponsor-billing" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSponsorBillingPage"><AdminSponsorBillingPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/patrocinadores/aprovacoes" element={<AdminSponsorApprovalsPage />} />
                 <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
                 <Route path="/admin/faq" element={<AdminFaqPage />} />
@@ -708,6 +711,7 @@ const App = () => {
                 <Route path="/sponsor-panel/dados" element={<SponsorProtectedRoute><SponsorDataPage /></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/pagina" element={<SponsorProtectedRoute><SponsorFeatureGate><SponsorPublicProfilePage /></SponsorFeatureGate></SponsorProtectedRoute>} />
                 <Route path="/sponsor-panel/assinatura" element={<SponsorProtectedRoute><SponsorSubscriptionPage /></SponsorProtectedRoute>} />
+                <Route path="/sponsor-panel/faturamento" element={<SponsorProtectedRoute><RouteErrorBoundary sectionName="SponsorBillingPage"><SponsorBillingPage /></RouteErrorBoundary></SponsorProtectedRoute>} />
                 <Route path="/p/:slug" element={<InstitutionalPage />} />
                 <Route path="/error/404" element={<ErrorPage code={404} />} />
                 <Route path="/error/500" element={<ErrorPage code={500} />} />

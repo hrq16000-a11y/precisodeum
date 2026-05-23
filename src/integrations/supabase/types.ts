@@ -5685,6 +5685,84 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsor_billing_cycles: {
+        Row: {
+          admin_note: string | null
+          amount: number | null
+          auto_renew: boolean
+          created_at: string
+          created_by: string | null
+          cycle_end: string
+          cycle_start: string
+          grace_until: string | null
+          id: string
+          invoice_reference: string | null
+          paid_at: string | null
+          payment_method: string | null
+          renewal_requested: boolean
+          renewal_requested_at: string | null
+          sponsor_id: string
+          status: string
+          subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount?: number | null
+          auto_renew?: boolean
+          created_at?: string
+          created_by?: string | null
+          cycle_end: string
+          cycle_start?: string
+          grace_until?: string | null
+          id?: string
+          invoice_reference?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          renewal_requested?: boolean
+          renewal_requested_at?: string | null
+          sponsor_id: string
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount?: number | null
+          auto_renew?: boolean
+          created_at?: string
+          created_by?: string | null
+          cycle_end?: string
+          cycle_start?: string
+          grace_until?: string | null
+          id?: string
+          invoice_reference?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          renewal_requested?: boolean
+          renewal_requested_at?: string | null
+          sponsor_id?: string
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_billing_cycles_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_billing_cycles_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "sponsor_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsor_campaigns: {
         Row: {
           budget: number | null
@@ -8383,6 +8461,15 @@ export type Database = {
         Args: { _doc_type: string; _lead_id: string; _path: string }
         Returns: undefined
       }
+      admin_mark_billing_paid: {
+        Args: {
+          _admin_note?: string
+          _cycle_id: string
+          _invoice_reference?: string
+          _payment_method?: string
+        }
+        Returns: Json
+      }
       admin_meta_tracking_quality: { Args: never; Returns: Json }
       admin_notify_users: {
         Args: {
@@ -8551,6 +8638,15 @@ export type Database = {
           }
       admin_system_health: { Args: { _limit?: number }; Returns: Json }
       admin_system_health_full: { Args: never; Returns: Json }
+      admin_update_billing_cycle: {
+        Args: {
+          _admin_note?: string
+          _cycle_id: string
+          _grace_until?: string
+          _status: string
+        }
+        Returns: Json
+      }
       apply_sponsor_scope_fix: {
         Args: {
           _new_category?: string
@@ -9077,6 +9173,10 @@ export type Database = {
           user_ref: string
         }[]
       }
+      get_sponsor_billing_status: {
+        Args: { _sponsor_id: string }
+        Returns: Json
+      }
       get_sponsor_delivery_status: {
         Args: { _only_active?: boolean }
         Returns: {
@@ -9587,6 +9687,7 @@ export type Database = {
         }[]
       }
       refresh_featured_providers_mv: { Args: never; Returns: undefined }
+      refresh_sponsor_billing_status: { Args: never; Returns: Json }
       register_click_lead: {
         Args: {
           _contact_kind: string
@@ -9755,6 +9856,7 @@ export type Database = {
         Args: { _sponsor_id: string }
         Returns: boolean
       }
+      sponsor_request_renewal: { Args: { _sponsor_id: string }; Returns: Json }
       sponsor_submit_change_request: {
         Args: { _changes: Json; _sponsor_id: string; _storage_paths?: string[] }
         Returns: string
