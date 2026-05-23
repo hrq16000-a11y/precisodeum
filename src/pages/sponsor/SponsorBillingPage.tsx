@@ -189,10 +189,13 @@ const SponsorBillingPage = () => {
             )}
           </CardContent>
         </Card>
+
+        <SponsorInvoicesCard sponsorId={sponsor?.id} />
       </div>
     </SponsorLayout>
   );
 };
+
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
