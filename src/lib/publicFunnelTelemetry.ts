@@ -16,6 +16,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { getActiveSponsorRef } from '@/lib/sponsorAttribution';
 
 export type PublicFunnelAction =
   | 'public_search'
@@ -80,9 +81,14 @@ function shouldSend(key: string): boolean {
 }
 
 function fire(action: PublicFunnelAction, payload: Record<string, unknown>) {
+  // Atribuição leve: anexa sponsor_ref se houver clique sponsor recente
+  // (apenas para eventos de conversão — search/category/city não atribuem).
+  const wantsAttr = action === 'profile_view' || action === 'lead_submit';
+  const sponsorRef = wantsAttr ? getActiveSponsorRef() : null;
   void supabase.rpc('record_public_funnel_event' as any, {
     _action: action,
     ...payload,
+    ...(sponsorRef ? { _sponsor_ref: sponsorRef } : {}),
   } as any).then(() => {}, () => {});
 }
 

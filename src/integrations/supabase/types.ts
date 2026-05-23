@@ -8719,6 +8719,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_admin_sponsor_roi: { Args: { _days?: number }; Returns: Json }
       get_app_version_config: { Args: never; Returns: Json }
       get_community_feed: {
         Args: { _limit?: number }
@@ -9096,6 +9097,10 @@ export type Database = {
           slot_slug: string
           sponsor_id: string
         }[]
+      }
+      get_sponsor_roi: {
+        Args: { _days?: number; _sponsor_id: string }
+        Returns: Json
       }
       get_sponsor_usage: { Args: { _sponsor_id: string }; Returns: Json }
       get_staff_permissions: { Args: { _user_id: string }; Returns: Json }
@@ -9475,19 +9480,34 @@ export type Database = {
         }
         Returns: string
       }
-      record_public_funnel_event: {
-        Args: {
-          _action: string
-          _category?: string
-          _city?: string
-          _pathname?: string
-          _resource_id?: string
-          _result_count?: number
-          _source?: string
-          _term?: string
-        }
-        Returns: undefined
-      }
+      record_public_funnel_event:
+        | {
+            Args: {
+              _action: string
+              _category?: string
+              _city?: string
+              _pathname?: string
+              _resource_id?: string
+              _result_count?: number
+              _source?: string
+              _term?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _action: string
+              _category?: string
+              _city?: string
+              _pathname?: string
+              _resource_id?: string
+              _result_count?: number
+              _source?: string
+              _sponsor_ref?: string
+              _term?: string
+            }
+            Returns: undefined
+          }
       record_registration_snapshot: {
         Args: { _payload: Json }
         Returns: string

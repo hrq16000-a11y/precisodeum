@@ -3,6 +3,7 @@ import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getPositionConfig } from '@/config/sponsorPositions';
 import { isSponsorDeliverable, resolveSponsorHealthStatus, logBlockedSponsor, reportBlockedSponsor } from '@/lib/sponsorDeliveryGuard';
+import { recordSponsorClick } from '@/lib/sponsorAttribution';
 
 export interface SponsorFull {
   id: string;
@@ -145,6 +146,8 @@ export function useSponsorsBySlot(
     // FASE 1.8 — Bloqueia click em sponsor não-entregável.
     const sponsor = (query.data || []).find((s) => s.id === id);
     if (!sponsor || !isSponsorDeliverable(sponsor as any)) return;
+    // FASE 2.3 — registra atribuição leve para o funil (TTL 30 min).
+    recordSponsorClick(id, position);
     supabase.rpc('track_sponsor_metric', {
       _sponsor_id: id,
       _slot_slug: position,

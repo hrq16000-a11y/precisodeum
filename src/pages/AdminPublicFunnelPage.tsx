@@ -16,6 +16,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Activity, Search, Eye, MessageCircle, Phone, Target, RefreshCw, AlertTriangle, TrendingUp } from 'lucide-react';
+import AdminSponsorRoiPanel from '@/components/sponsors/AdminSponsorRoiPanel';
 
 interface Telemetry {
   window_days: number;
@@ -247,6 +248,14 @@ export default function AdminPublicFunnelPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Fase 2.3 — ROI sponsor (atribuição leve via sessionStorage) */}
+        <div className="pt-2">
+          <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <Target className="h-4 w-4" /> ROI Sponsor (atribuição leve)
+          </h2>
+          <AdminSponsorRoiPanel days={days} />
+        </div>
       </div>
     </AdminLayout>
   );
