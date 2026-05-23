@@ -86,6 +86,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Estatísticas', icon: 'BarChart3', path: '/admin/estatisticas' },
       { label: 'Funil Público', icon: 'BarChart3', path: '/admin/funil-publico' },
       { label: 'Conversão (Profissionais)', icon: 'Sparkles', path: '/admin/provider-conversion' },
+      { label: 'SEO Landings', icon: 'Globe', path: '/admin/seo-landings' },
       { label: 'Solicitações Sponsor', icon: 'BarChart3', path: '/admin/sponsor-change-requests' },
       { label: 'Faturamento Sponsor', icon: 'Receipt', path: '/admin/sponsor-billing' },
     ],
