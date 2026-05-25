@@ -880,6 +880,13 @@ export type Database = {
             foreignKeyName: "contact_clicks_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "public_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_clicks_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "user_master_view"
             referencedColumns: ["provider_id"]
           },
@@ -2424,6 +2431,13 @@ export type Database = {
             foreignKeyName: "lead_interactions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "public_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_interactions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "user_master_view"
             referencedColumns: ["provider_id"]
           },
@@ -2543,6 +2557,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "public_providers"
             referencedColumns: ["id"]
           },
           {
@@ -2720,6 +2741,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_completions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "public_providers"
             referencedColumns: ["id"]
           },
           {
@@ -3370,6 +3398,13 @@ export type Database = {
             foreignKeyName: "portfolio_albums_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "public_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_albums_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "user_master_view"
             referencedColumns: ["provider_id"]
           },
@@ -3758,6 +3793,13 @@ export type Database = {
             foreignKeyName: "provider_daily_stats_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "public_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_daily_stats_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "user_master_view"
             referencedColumns: ["provider_id"]
           },
@@ -3822,6 +3864,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_dashboard_sessions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "public_providers"
             referencedColumns: ["id"]
           },
           {
@@ -3934,6 +3983,13 @@ export type Database = {
             foreignKeyName: "provider_geo_audit_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "public_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_geo_audit_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "user_master_view"
             referencedColumns: ["provider_id"]
           },
@@ -3992,6 +4048,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_impressions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "public_providers"
             referencedColumns: ["id"]
           },
           {
@@ -4068,6 +4131,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_neighborhood_corrections_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "public_providers"
             referencedColumns: ["id"]
           },
           {
@@ -4174,6 +4244,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: true
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_page_settings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "public_providers"
             referencedColumns: ["id"]
           },
           {
@@ -5044,6 +5121,13 @@ export type Database = {
             foreignKeyName: "reviews_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "public_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "user_master_view"
             referencedColumns: ["provider_id"]
           },
@@ -5647,6 +5731,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "public_providers"
             referencedColumns: ["id"]
           },
           {
@@ -6908,6 +6999,13 @@ export type Database = {
             foreignKeyName: "subscriptions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "public_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "user_master_view"
             referencedColumns: ["provider_id"]
           },
@@ -7802,6 +7900,13 @@ export type Database = {
             foreignKeyName: "whatsapp_clicks_log_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "public_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_clicks_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "user_master_view"
             referencedColumns: ["provider_id"]
           },
@@ -8173,6 +8278,254 @@ export type Database = {
           id?: string | null
         }
         Relationships: []
+      }
+      public_providers: {
+        Row: {
+          accepts_on_demand: boolean | null
+          account_type: string | null
+          address_complete: boolean | null
+          avg_response_minutes: number | null
+          business_name: string | null
+          business_segment: string | null
+          category_custom: string | null
+          category_id: string | null
+          city: string | null
+          community_verified: boolean | null
+          community_verified_at: string | null
+          complement: string | null
+          completion_boost_until: string | null
+          contact_hours: Json | null
+          content_flags: Json | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          featured: boolean | null
+          geo_source: string | null
+          geo_source_confidence: number | null
+          geo_source_notes: Json | null
+          geo_source_updated_at: string | null
+          geog: unknown
+          ibge_code: string | null
+          id: string | null
+          is_24h: boolean | null
+          is_verified: boolean | null
+          last_active_at: string | null
+          last_response_calc_at: string | null
+          latitude: number | null
+          lead_followup_hours: number | null
+          legal_name: string | null
+          longitude: number | null
+          meta_description: string | null
+          meta_title: string | null
+          meta_tracking: Json | null
+          mission_answers: Json | null
+          neighborhood: string | null
+          neighborhood_source: string | null
+          neighborhood_source_at: string | null
+          notification_channels: Json | null
+          onboarding_progress: Json | null
+          opens_late_night: boolean | null
+          opens_overnight: boolean | null
+          opens_weekend: boolean | null
+          phone: string | null
+          photo_url: string | null
+          plan: string | null
+          portfolio_album_count: number | null
+          portfolio_photo_count: number | null
+          postal_code: string | null
+          rating_avg: number | null
+          response_time: string | null
+          review_count: number | null
+          service_radius: string | null
+          services_count: number | null
+          show_full_address: boolean | null
+          slug: string | null
+          social_links: Json | null
+          state: string | null
+          status: string | null
+          street: string | null
+          street_number: string | null
+          updated_at: string | null
+          user_id: string | null
+          user_ref: string | null
+          verified_at: string | null
+          verified_by: string | null
+          verified_criteria: Json | null
+          verified_manual: boolean | null
+          verified_reason: string | null
+          website: string | null
+          whatsapp: string | null
+          working_hours: string | null
+          working_hours_struct: Json | null
+          years_experience: number | null
+        }
+        Insert: {
+          accepts_on_demand?: boolean | null
+          account_type?: string | null
+          address_complete?: boolean | null
+          avg_response_minutes?: number | null
+          business_name?: string | null
+          business_segment?: string | null
+          category_custom?: string | null
+          category_id?: string | null
+          city?: string | null
+          community_verified?: boolean | null
+          community_verified_at?: string | null
+          complement?: string | null
+          completion_boost_until?: string | null
+          contact_hours?: Json | null
+          content_flags?: Json | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          geo_source?: string | null
+          geo_source_confidence?: number | null
+          geo_source_notes?: Json | null
+          geo_source_updated_at?: string | null
+          geog?: unknown
+          ibge_code?: string | null
+          id?: string | null
+          is_24h?: boolean | null
+          is_verified?: boolean | null
+          last_active_at?: string | null
+          last_response_calc_at?: string | null
+          latitude?: number | null
+          lead_followup_hours?: number | null
+          legal_name?: string | null
+          longitude?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
+          meta_tracking?: Json | null
+          mission_answers?: Json | null
+          neighborhood?: string | null
+          neighborhood_source?: string | null
+          neighborhood_source_at?: string | null
+          notification_channels?: Json | null
+          onboarding_progress?: Json | null
+          opens_late_night?: boolean | null
+          opens_overnight?: boolean | null
+          opens_weekend?: boolean | null
+          phone?: string | null
+          photo_url?: string | null
+          plan?: string | null
+          portfolio_album_count?: number | null
+          portfolio_photo_count?: number | null
+          postal_code?: string | null
+          rating_avg?: number | null
+          response_time?: string | null
+          review_count?: number | null
+          service_radius?: string | null
+          services_count?: number | null
+          show_full_address?: boolean | null
+          slug?: string | null
+          social_links?: Json | null
+          state?: string | null
+          status?: string | null
+          street?: string | null
+          street_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          user_ref?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_criteria?: Json | null
+          verified_manual?: boolean | null
+          verified_reason?: string | null
+          website?: string | null
+          whatsapp?: string | null
+          working_hours?: string | null
+          working_hours_struct?: Json | null
+          years_experience?: number | null
+        }
+        Update: {
+          accepts_on_demand?: boolean | null
+          account_type?: string | null
+          address_complete?: boolean | null
+          avg_response_minutes?: number | null
+          business_name?: string | null
+          business_segment?: string | null
+          category_custom?: string | null
+          category_id?: string | null
+          city?: string | null
+          community_verified?: boolean | null
+          community_verified_at?: string | null
+          complement?: string | null
+          completion_boost_until?: string | null
+          contact_hours?: Json | null
+          content_flags?: Json | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          geo_source?: string | null
+          geo_source_confidence?: number | null
+          geo_source_notes?: Json | null
+          geo_source_updated_at?: string | null
+          geog?: unknown
+          ibge_code?: string | null
+          id?: string | null
+          is_24h?: boolean | null
+          is_verified?: boolean | null
+          last_active_at?: string | null
+          last_response_calc_at?: string | null
+          latitude?: number | null
+          lead_followup_hours?: number | null
+          legal_name?: string | null
+          longitude?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
+          meta_tracking?: Json | null
+          mission_answers?: Json | null
+          neighborhood?: string | null
+          neighborhood_source?: string | null
+          neighborhood_source_at?: string | null
+          notification_channels?: Json | null
+          onboarding_progress?: Json | null
+          opens_late_night?: boolean | null
+          opens_overnight?: boolean | null
+          opens_weekend?: boolean | null
+          phone?: string | null
+          photo_url?: string | null
+          plan?: string | null
+          portfolio_album_count?: number | null
+          portfolio_photo_count?: number | null
+          postal_code?: string | null
+          rating_avg?: number | null
+          response_time?: string | null
+          review_count?: number | null
+          service_radius?: string | null
+          services_count?: number | null
+          show_full_address?: boolean | null
+          slug?: string | null
+          social_links?: Json | null
+          state?: string | null
+          status?: string | null
+          street?: string | null
+          street_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          user_ref?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_criteria?: Json | null
+          verified_manual?: boolean | null
+          verified_reason?: string | null
+          website?: string | null
+          whatsapp?: string | null
+          working_hours?: string | null
+          working_hours_struct?: Json | null
+          years_experience?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "providers_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       public_user_levels: {
         Row: {
