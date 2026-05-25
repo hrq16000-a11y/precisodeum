@@ -1302,13 +1302,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
         // Mapa: motivo técnico → (label humano em pt-BR + fase do wizard para corrigir + campo focável).
         // Garante que o usuário NUNCA veja "Complete os campos obrigatórios" sem saber QUAL campo falta.
+        // Containment patch — Crítico #1: aponta para `phase_repair_contact`
+        // (fase auxiliar fora do PHASE_ORDER) em vez da extinta `phase1_basic`.
+        // Sem isso, "Voltar e corrigir" era um beco sem saída.
         const REASON_MAP: Record<string, { label: string; backPhase: any; field: string }> = {
-          full_name_required:      { label: 'Nome completo',         backPhase: 'phase1_basic',   field: 'full_name' },
-          whatsapp_required:       { label: 'WhatsApp com DDD',      backPhase: 'phase1_basic',   field: 'whatsapp' },
-          city_and_state_required: { label: 'Cidade e estado (UF)',  backPhase: 'phase1_basic',   field: 'city' },
-          category_required:       { label: 'Categoria do serviço',  backPhase: 'phase2_service', field: 'service_name' },
-          provider_required:       { label: 'Perfil de prestador',   backPhase: 'phase1_basic',   field: 'full_name' },
-          user_required:           { label: 'Sessão de login',       backPhase: 'phase1_basic',   field: 'full_name' },
+          full_name_required:      { label: 'Nome completo',         backPhase: 'phase_repair_contact', field: 'full_name' },
+          whatsapp_required:       { label: 'WhatsApp com DDD',      backPhase: 'phase_repair_contact', field: 'whatsapp' },
+          city_and_state_required: { label: 'Cidade e estado (UF)',  backPhase: 'phase_repair_contact', field: 'city' },
+          category_required:       { label: 'Categoria do serviço',  backPhase: 'phase2_service',       field: 'service_name' },
+          provider_required:       { label: 'Perfil de prestador',   backPhase: 'phase_repair_contact', field: 'full_name' },
+          user_required:           { label: 'Sessão de login',       backPhase: 'phase_repair_contact', field: 'full_name' },
         };
         const info = REASON_MAP[fail.reason] || { label: fail.reason, backPhase: state.phase, field: '' };
         const description = `Falta preencher: ${info.label}. Toque em "Voltar e corrigir" — vamos te levar direto ao campo (ele vai piscar em vermelho).`;
