@@ -2177,7 +2177,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                   requestWizardBack({ phase: 'phase2_service', source: 'phase2_service' });
                 });
               }}
-              onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
+              onNext={async () => {
+                track('next');
+                // Containment patch — Crítico #2: persist EARLY antes de
+                // avançar. Best-effort (silencioso): se falhar, segue mesmo
+                // assim — o persistFirstService completo cobre em phase2_details.
+                try { await persistFirstServiceEarly(); } catch { /* fail-soft */ }
+                dispatch({ type: 'NEXT' });
+              }}
               firstServiceId={state.firstServiceId}
               onSkip={() => {
                 // BLINDAGEM (regression-locked): "Pular o 1º serviço" NUNCA
