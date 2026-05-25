@@ -66,12 +66,15 @@ export const initialOnboardingState: OnboardingState = {
   userRef: null,
   providerId: null,
   firstServiceId: null,
+  returnToPhase: null,
 };
 
 export type OnboardingAction =
   | { type: 'PATCH_PROFILE'; patch: Partial<OnboardingProfileData> }
   | { type: 'PATCH_SERVICE'; patch: Partial<OnboardingFirstServiceData> }
   | { type: 'GO_TO'; phase: OnboardingPhase }
+  | { type: 'GO_TO_REPAIR'; from: OnboardingPhase }
+  | { type: 'RETURN_FROM_REPAIR' }
   | { type: 'NEXT' }
   | { type: 'SKIP_TO_NEXT' }
   | { type: 'SET_USER_REF'; userRef: string }
