@@ -1328,9 +1328,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
         const goBackAndFocus = () => {
           // Marca o campo a destacar piscando ao chegar na fase de destino.
+          // Usa a MESMA chave do hook `useFocusFieldFromReview` para garantir
+          // que o destaque visual (ring vermelho pulsante) seja aplicado.
           try {
-            sessionStorage.setItem('wizard:focus_field', info.field);
-            sessionStorage.setItem('wizard:focus_field_set_at', String(Date.now()));
+            sessionStorage.setItem('onboarding-v2:focus-field', info.field);
           } catch { /* fail-soft */ }
           void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
             requestWizardBackForPhase({
