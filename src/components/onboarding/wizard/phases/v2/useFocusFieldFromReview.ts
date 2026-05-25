@@ -39,6 +39,11 @@ export function useFocusFieldFromReview(fieldName: string) {
   return {
     ref: ref as any,
     highlight,
-    highlightClass: highlight ? 'ring-2 ring-primary ring-offset-2 transition-shadow' : '',
+    // Destaque "piscando" para chamar atenção do usuário ao campo que falta.
+    // Combina ring vermelho + animate-pulse + sombra para máximo contraste,
+    // sem depender de cores fora dos tokens.
+    highlightClass: highlight
+      ? 'ring-4 ring-destructive ring-offset-2 animate-pulse shadow-[0_0_24px_hsl(var(--destructive)/0.55)] transition-shadow'
+      : '',
   };
 }
