@@ -40,8 +40,8 @@ const SponsorPublicPage = () => {
 
   const name = sponsor?.company_name || sponsor?.title;
   const desc = sponsor?.full_description || sponsor?.short_description;
-  const wpp = sponsor?.whatsapp ? sponsor.whatsapp.replace(/\D/g, '') : '';
-  const wppLink = wpp ? `https://wa.me/${wpp.startsWith('55') ? wpp : '55' + wpp}` : null;
+  // LGPD/A1: e-mail, WhatsApp e telefone NÃO são expostos a visitantes anônimos.
+  // O contato acontece via site externo (external_link / link_url).
 
   return (
     <div className="flex min-h-screen flex-col">
