@@ -9914,6 +9914,32 @@ export type Database = {
         }
         Returns: string
       }
+      log_error_page_event: {
+        Args: {
+          _code: number
+          _path: string
+          _referrer?: string
+          _user_agent?: string
+          _visitor_id?: string
+        }
+        Returns: string
+      }
+      log_exit_intent_event: {
+        Args: {
+          _city?: string
+          _kind: string
+          _meta?: Json
+          _neighborhood?: string
+          _page_kind?: string
+          _pathname: string
+          _session_id?: string
+          _source?: string
+          _state?: string
+          _user_agent?: string
+          _visitor_id?: string
+        }
+        Returns: string
+      }
       log_provider_geo_issue: {
         Args: {
           _actor_user_id?: string
