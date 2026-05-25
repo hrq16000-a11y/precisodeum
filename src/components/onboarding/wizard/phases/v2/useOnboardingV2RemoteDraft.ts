@@ -123,7 +123,7 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
               const { error: err2 } = await upsertOnce();
               if (err2) throw err2;
               markRemoteDraftWritten(state.phase as any, userId);
-              recordWizardSupabaseCall('useRemoteDraft.retry_ok', state.phase as any, userId);
+              recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
             } catch (retryErr: any) {
               await reportFailure(retryErr, 2);
             }
