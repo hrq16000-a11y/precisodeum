@@ -8318,7 +8318,6 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           meta_tracking: Json | null
-          mission_answers: Json | null
           neighborhood: string | null
           neighborhood_source: string | null
           neighborhood_source_at: string | null
@@ -8397,7 +8396,6 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           meta_tracking?: Json | null
-          mission_answers?: Json | null
           neighborhood?: string | null
           neighborhood_source?: string | null
           neighborhood_source_at?: string | null
@@ -8476,7 +8474,6 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           meta_tracking?: Json | null
-          mission_answers?: Json | null
           neighborhood?: string | null
           neighborhood_source?: string | null
           neighborhood_source_at?: string | null
