@@ -16,7 +16,6 @@ export async function logSearchIntent(params: {
   if (now - lastLog < 1500) return;
   lastLog = now;
   try {
-    const { data: u } = await supabase.auth.getUser();
     let visitorId: string | null = null;
     try {
       visitorId = localStorage.getItem('pdu_visitor_id');
