@@ -19,9 +19,17 @@ const SponsorPublicPage = () => {
   useEffect(() => {
     if (!slug) return;
     (async () => {
+      // LGPD/A1: anon não tem SELECT em cnpj/email/whatsapp/phone.
+      // Lista explícita evita "permission denied for column ..." no select('*').
       const { data } = await supabase
         .from('sponsors')
-        .select('*')
+        .select(
+          'id, user_id, slug, title, company_name, short_description, full_description, ' +
+          'logo_url, image_url, link_url, external_link, ' +
+          'linked_city, linked_city_slug, linked_category, linked_category_slug, ' +
+          'status, plan, plan_tier, tier, sponsor_type, badge_type, ' +
+          'campaign_start, campaign_end, deleted_at, created_at'
+        )
         .eq('slug', slug)
         .is('deleted_at', null)
         .maybeSingle();
@@ -32,8 +40,8 @@ const SponsorPublicPage = () => {
 
   const name = sponsor?.company_name || sponsor?.title;
   const desc = sponsor?.full_description || sponsor?.short_description;
-  const wpp = sponsor?.whatsapp ? sponsor.whatsapp.replace(/\D/g, '') : '';
-  const wppLink = wpp ? `https://wa.me/${wpp.startsWith('55') ? wpp : '55' + wpp}` : null;
+  // LGPD/A1: e-mail, WhatsApp e telefone NÃO são expostos a visitantes anônimos.
+  // O contato acontece via site externo (external_link / link_url).
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -67,8 +75,7 @@ const SponsorPublicPage = () => {
                     </span>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                    {sponsor.email && <span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{sponsor.email}</span>}
-                    {wpp && <a href={wppLink!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-foreground"><Phone className="h-3.5 w-3.5" />WhatsApp</a>}
+                    {/* LGPD/A1: email/whatsapp/phone bloqueados para anon. Contato via site. */}
                     {(sponsor.external_link || sponsor.link_url) && (
                       <a href={sponsor.external_link || sponsor.link_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
                         <Globe className="h-3.5 w-3.5" />Site
