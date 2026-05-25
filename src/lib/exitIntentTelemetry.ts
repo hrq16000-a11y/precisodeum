@@ -80,25 +80,24 @@ export async function trackExitIntent(input: ExitIntentEventInput): Promise<void
   const ua =
     typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 512) : null;
 
-  const payload = {
-    kind: input.kind,
-    pathname: input.pathname,
-    page_kind: input.page_kind ?? null,
-    city: input.city ?? null,
-    state: input.state ?? null,
-    neighborhood: input.neighborhood ?? null,
-    source: input.source ?? null,
-    user_id: input.user_id ?? null,
-    session_id,
-    user_agent: ua,
-    meta: input.meta ?? {},
+  const rpcPayload = {
+    _kind: input.kind,
+    _pathname: input.pathname,
+    _page_kind: input.page_kind ?? null,
+    _city: input.city ?? null,
+    _state: input.state ?? null,
+    _neighborhood: input.neighborhood ?? null,
+    _source: input.source ?? null,
+    _session_id: session_id,
+    _user_agent: ua,
+    _meta: input.meta ?? {},
   };
 
   try {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('precisodeum:telemetry', {
-          detail: { event: `exit_intent_${input.kind}`, meta: payload },
+          detail: { event: `exit_intent_${input.kind}`, meta: { ...rpcPayload, user_id: input.user_id ?? null } },
         }),
       );
     }
@@ -107,8 +106,8 @@ export async function trackExitIntent(input: ExitIntentEventInput): Promise<void
   }
 
   try {
-    // RLS permite INSERT anônimo. Não esperamos resposta para não atrasar UX.
-    await supabase.from('exit_intent_events' as any).insert(payload as any);
+    // RPC SECURITY DEFINER valida e grava (RLS bloqueia INSERT direto).
+    await supabase.rpc('log_exit_intent_event' as any, rpcPayload as any);
   } catch (err) {
     if (typeof console !== 'undefined' && import.meta?.env?.DEV) {
       console.debug('[exit-intent-telemetry] insert failed', err);
