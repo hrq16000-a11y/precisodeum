@@ -14,26 +14,27 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Verify admin
+    // Autorização: admin via has_role() (NUNCA profiles.role, que é mutável pelo usuário)
+    // ou cron com CRON_SECRET via query string.
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
-      const { data: { user } } = await supabase.auth.getUser(token);
-      if (!user) {
+      const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
+      if (authErr || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
       }
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (profile?.role !== 'admin') {
+      // Verificação segura via security-definer function has_role()
+      const { data: isAdmin, error: roleErr } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin',
+      });
+      if (roleErr || isAdmin !== true) {
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers: corsHeaders });
       }
     } else {
-      // Allow cron with secret
+      // Permite chamada de cron com secret
       const url = new URL(req.url);
       const cronSecret = url.searchParams.get('secret');
-      if (cronSecret !== Deno.env.get('CRON_SECRET')) {
+      if (!cronSecret || cronSecret !== Deno.env.get('CRON_SECRET')) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
       }
     }
@@ -55,7 +56,6 @@ Deno.serve(async (req) => {
 
     for (const orphan of orphans) {
       try {
-        // Determine bucket from storage_path
         const pathParts = orphan.storage_path?.split('/') || [];
         const bucket = pathParts[0] || '';
         const filePath = pathParts.slice(1).join('/');
@@ -64,12 +64,11 @@ Deno.serve(async (req) => {
           await supabase.storage.from(bucket).remove([filePath]);
         }
 
-        // Deactivate media record
         await supabase.from('media').update({ is_active: false }).eq('id', orphan.id);
         deleted++;
         freedBytes += orphan.size_bytes || 0;
       } catch (e) {
-        errors.push(`${orphan.id}: ${e.message}`);
+        errors.push(`${orphan.id}: ${(e as Error).message}`);
       }
     }
 
@@ -85,7 +84,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
