@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Building2, MapPin, Mail, Phone, Globe, Briefcase } from 'lucide-react';
+import { Building2, MapPin, Globe, Briefcase } from 'lucide-react';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { formatCityState } from '@/lib/locationFormat';
 
