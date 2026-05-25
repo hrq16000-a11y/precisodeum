@@ -1,635 +1,136 @@
-# FASE 2.4 — SPONSOR SELF-SERVICE FOUNDATION
+# Containment Patch — Onboarding (Stop-Loss)
+
+Objetivo: parar sangramento em 5 pontos críticos sem refactor. Cada item lista
+arquivo, mudança, risco e plano de rollback. Nada além desta lista será tocado.
 
-Autonomia controlada para patrocinadores operarem o básico da campanha sem depender do admin para mudanças simples. Tudo fail-closed, approval-based, auditável.
+## Resolução da contradição PHASE_ORDER
 
----
+A regra #2 diz "não quebrar PHASE_ORDER atual" e o Crítico #1 pede uma fase
+nova `phase_repair_contact`. Resolvo assim, da forma menos invasiva:
+
+- A fase de reparo é **opcional e fora do fluxo linear**: NÃO entra em
+  `PHASE_ORDER` (não muda contagem de barra, nem ordem do `NEXT`).
+- É uma **fase auxiliar** acessível só via `GO_TO` quando o erro
+  `whatsapp_required`/`invalid_whatsapp` é detectado, e retorna via `GO_TO`
+  para a fase de origem (guardada em `state.returnToPhase`).
+- Isso preserva 100% do funil atual e evita renumerar progresso/telemetria.
 
-## Etapa 1 — Auditoria prévia (READ-ONLY, antes de codar)
+Se você preferir que ela entre em `PHASE_ORDER`, me avise antes — é trivial,
+mas reabre a discussão de progresso global e quebra dashboards de funil.
 
-Verificar e mapear:
+## Mudanças por item
 
-- `sponsors` (colunas editáveis vs sensíveis)
-- `sponsor_contacts`, `sponsor_subscriptions`, `sponsor_assets` (bucket privado)
-- `SponsorStatusPage`, `SponsorPublicPage`, `SponsorContractPage`, `SponsorNotificationsPage`, `SponsorDashboardPage`
-- RLS atual em `sponsors` e buckets
-- Pipeline de upload existente (reaproveitar `sponsor_assets` + edge function de upload)
-- `audit_log` (formato dos `resource_type` já em uso)
+### Crítico #1 — Dead-end do WhatsApp
 
-Resultado da auditoria documentado no commit message + memória (`.lovable/memory/funcionalidades/patrocinadores/self-service-fase-2-4.md`).
+**Arquivos**:
+- `src/components/onboarding/wizard/phases/v2/types.ts`
+  - Adicionar `'phase_repair_contact'` ao tipo `OnboardingPhase`.
+  - Adicionar campo opcional `returnToPhase?: OnboardingPhase` no `OnboardingState`.
+- `src/components/onboarding/wizard/phases/v2/state.ts`
+  - **NÃO** adicionar ao `PHASE_ORDER` (mantém regra #2).
+  - Estender reducer com action `RETURN_FROM_REPAIR` (volta para `returnToPhase`).
+- `src/components/onboarding/wizard/phases/v2/PhaseRepairContact.tsx` (NOVO, ~120 linhas)
+  - Input único WhatsApp + máscara BR (reusa `formatWhatsappBR` já existente).
+  - Validação local (`getOnboardingContactValidation`).
+  - Botão "Salvar e voltar" → `PATCH_PROFILE` + `RETURN_FROM_REPAIR`.
+- `src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx`
+  - Render switch ganha case `phase_repair_contact`.
+  - `REASON_MAP` para `whatsapp_required`/`invalid_whatsapp` aponta para
+    `phase_repair_contact` (remove referências mortas a `phase1_basic`).
+  - Botão "Voltar e corrigir" passa a salvar `returnToPhase = state.phase` e
+    despachar `GO_TO phase_repair_contact`.
+  - `requestWizardBackForPhase` corrigido para usar `info.backPhase`.
 
----
+**Risco**: baixo. Fase nova é isolada e só aparece sob erro. Rollback: deletar
+arquivo + remover case do switch + reverter REASON_MAP.
 
-## Etapa 2 — Escopo self-service (campos liberados)
+### Crítico #2 — Persistência tardia do 1º serviço
 
-**Liberado em draft (vai para aprovação):**
+**Arquivos**:
+- `src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx`
+  - Adicionar `persistFirstServiceEarly()` chamado no `onNext` de `Phase2Service`
+    (transição `phase2_service → phase2_details`).
+  - Idempotência: se `state.firstServiceId` já existe, NOOP.
+  - Reusa `buildPersistFirstServiceOperation` já existente (mesma RPC
+    `create_service_atomic`, mesmo caminho que o celebration usa).
+  - Em caso de falha: NÃO avança, exibe `errorModal`, registra
+    `error/early_service_persist_failed`.
+- `Phase3Celebration.tsx`: NÃO mexer; já é idempotente via `findExistingFirstService`.
 
-- `image_url` (banner)
-- `logo_url`
-- `link_url` (CTA)
-- `phone` / `whatsapp`
-- `description` curta
-- `city` / `category` (marcados como `sensitive=true`)
-- `renewal_requested` (boolean)
+**Risco**: médio. Mitigação: o INSERT atômico já é o mesmo usado hoje na
+Phase3; só estamos antecipando. A idempotência por `(userRef, slug)` já está
+implementada no RPC. Rollback: remover a chamada antecipada — celebration
+continua funcionando.
 
-**Bloqueado (sempre admin):**
+### Crítico #3 — Falso "rascunho recuperado"
 
-- `tier`, `position`, `display_order`, `active`, `start_date`, `end_date`
-- billing, slot premium, pacing, prioridade
-- qualquer coluna de inventory
+**Arquivo**: `src/components/onboarding/wizard/phases/v2/useOnboardingV2Draft.ts`
 
----
+- `readOnboardingV2Draft` ganha guard de conteúdo mínimo. Retorna `null` se
+  não houver pelo menos um de: `service.service_name` (≥3), `profile.whatsapp`
+  (≥10 dígitos), ou `service.category_ids.length > 0`.
+- Banner/toast "rascunho restaurado" no Shell já é condicional a `draft != null`,
+  então automaticamente para de mentir.
 
-## Etapa 3 — Draft system + approval flow (DB)
+**Risco**: baixo. Drafts genuínos têm pelo menos um desses campos. Rollback:
+reverter o guard.
 
-Nova tabela `sponsor_change_requests`:
+### Crítico #4 — Race condition local × remoto
 
-```text
-id uuid pk
-sponsor_id uuid → sponsors
-requested_by uuid → auth.users
-status text: pending | approved | rejected | cancelled
-changes jsonb (apenas campos da whitelist)
-admin_comment text
-reviewed_by uuid
-reviewed_at timestamptz
-created_at, updated_at
-```
+**Arquivo**: `src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx`
+(bloco de hidratação remota, junto do `fetchRemoteDraft`).
 
-RPCs (security definer, fail-closed):
+- Envelope local já tem `savedAt` (timestamp). Comparar `localDraft.savedAt`
+  com `remoteDraft.updated_at` (ISO → ms). Se local for **mais novo**, NÃO
+  abrir `RemoteDraftRecoveryModal` e descartar remoto na sessão.
+- Flag `hydrationDoneRef` impede 2ª hidratação remota acidental.
 
-- `sponsor_submit_change_request(_sponsor_id, _changes jsonb)` — valida whitelist server-side + ownership via `sponsor_contacts`, rejeita campos fora da whitelist, audita.
-- `sponsor_cancel_change_request(_id)` — só o próprio sponsor enquanto `pending`.
-- `admin_review_sponsor_change_request(_id, _decision, _comment)` — aplica diffs em `sponsors` quando approved; tudo em `audit_log` (`resource_type='sponsor_change_request'`).
+**Risco**: baixo. Apenas inverte critério de "ganhador" quando há ambos.
+Rollback: remover comparação.
 
-RLS:
+### Crítico #5 — Erro remoto silencioso
 
-- Sponsor lê/cria suas próprias requests.
-- Admin lê todas e revisa.
+**Arquivo**: `src/components/onboarding/wizard/phases/v2/useOnboardingV2RemoteDraft.ts`
 
----
+- `catch` do upsert: além do `console.error`, chamar
+  `trackOnboardingEvent({ event: 'error', meta: { kind: 'remote_draft_failed', code, message } })`.
+- Retry simples: 1 nova tentativa após 1500ms (backoff fixo único), sem loop.
 
-## Etapa 4 — Creative management (uploads)
+**Risco**: muito baixo. Telemetria + 1 retry. Rollback trivial.
 
-Reutiliza `sponsor_assets` (bucket privado já existente).
+## Testes de regressão (novos)
 
-- Upload via componente já existente do projeto; URL pública resultante entra no `changes.image_url` / `changes.logo_url` da request (não aplica direto em `sponsors`).
-- Validação client: tipo (image/jpeg|png|webp), tamanho ≤ 2MB, dimensão mínima (banner 800×200, logo 256×256).
-- Sem cropper, sem editor.
+`src/test/containment-onboarding-stop-loss.test.ts(x)`:
 
----
+1. WhatsApp ausente → REASON_MAP leva a `phase_repair_contact`, campo existe.
+2. "Voltar e corrigir" → `requestWizardBackForPhase` recebe `info.backPhase`.
+3. `Phase2Service.onNext` chama persist e popula `firstServiceId` antes de avançar.
+4. INSERT do 1º serviço é idempotente (segundo `onNext` não cria duplicata).
+5. Refresh em `phase2_photos` mantém `service.service_name`.
+6. `readOnboardingV2Draft` retorna `null` quando draft vazio/parcial.
+7. Local `savedAt` > remoto `updated_at` → modal de recuperação NÃO abre.
+8. Falha no upsert remoto registra `error/remote_draft_failed` e tenta retry.
 
-## Etapa 5 — UI Sponsor
+## Fora de escopo (explicitamente NÃO mexer)
 
-Novos componentes/páginas:
+Schema do banco, migrations, upload de fotos, autenticação, design visual,
+Bet Mode, providers/profiles além do necessário para o INSERT antecipado,
+`PHASE_ORDER` linear, tipos globais fora dos 2 campos novos acima.
 
-- `src/pages/sponsor/SponsorSelfServicePage.tsx` — rota `/sponsor-panel/editar`:
-  - Formulário com os campos da whitelist (zod)
-  - Botão "Solicitar alteração" → cria request
-  - Painel "Pendências" lista requests `pending` com botão cancelar
-  - Histórico das últimas 10 (aprovadas/rejeitadas/comentários)
-  - Botão "Solicitar renovação" (request com `changes={renewal_requested:true}`)
-- `SponsorAlertsCard.tsx` em `SponsorDashboardPage`:
-  - Campanha expira em ≤7d
-  - Banner/logo ausente
-  - Pacing crítico (reaproveita `sponsor_metrics`)
-  - Pendências aguardando aprovação admin
-- Link "Editar campanha" no menu sponsor.
+## Ordem de execução
 
----
+1. Tipos + reducer + PhaseRepairContact (Crítico #1 parte estrutural).
+2. Shell: REASON_MAP + render switch + requestWizardBackForPhase (Crítico #1 fim).
+3. Shell: persist antecipado em `phase2_service.onNext` (Crítico #2).
+4. `useOnboardingV2Draft` guard (Crítico #3).
+5. Shell: comparação de timestamps na hidratação (Crítico #4).
+6. `useOnboardingV2RemoteDraft` telemetria + retry (Crítico #5).
+7. Testes Vitest.
 
-## Etapa 6 — UI Admin
+Total estimado: ~9 arquivos tocados + 2 novos (PhaseRepairContact + teste).
+Zero migrations. Zero mudança em PHASE_ORDER. Zero refactor.
 
-`src/pages/AdminSponsorChangeRequestsPage.tsx` (rota `/admin/sponsor-change-requests`):
+## Pergunta de bloqueio
 
-- Lista paginada de requests `pending`
-- Diff visual (antes/depois) por campo
-- Botões aprovar / rejeitar (com comentário)
-- Filtro por status + sponsor
-- Item no `AdminLayout` grupo "Comercial"
-
----
-
-## Etapa 7 — Segurança & testes
-
-- RLS testada: sponsor não consegue editar `sponsors` direto, só via RPC.
-- RPC rejeita chaves fora da whitelist com `raise exception`.
-- Notificação para admin via `notifications` ao criar request; sponsor recebe notificação ao ser aprovada/rejeitada.
-- Testes Vitest:
-  - `sponsor-change-request-whitelist.test.ts` — campos fora da whitelist rejeitados.
-  - `sponsor-change-request-ownership.test.ts` — sponsor A não cria request para sponsor B.
-  - `sponsor-self-service-form.test.tsx` — submit cria payload válido.
-
----
-
-## Etapa 8 — Performance
-
-- Sem realtime, sem polling.
-- Queries simples (`select` com filtro + limit 20).
-- Lazy import da página `SponsorSelfServicePage` e `AdminSponsorChangeRequestsPage` no `App.tsx`.
-
----
-
-## Etapa 9 — Auditoria final + entregáveis
-
-Doc em `.lovable/memory/funcionalidades/patrocinadores/self-service-fase-2-4.md` com:
-
-- Escopo liberado
-- Fluxo draft/approval
-- Evidências de segurança (RLS, whitelist server-side)
-- Performance impact
-- Dependências manuais restantes (billing, tier, slots)
-- Maturidade: **Operacional** (self-service para criativos/contato; admin ainda dono de billing/inventory)
-- Próximo gargalo recomendado
-
----
-
-## Próxima fase recomendada (justificada)
-
-**Sponsor Billing Layer** — agora que sponsor edita criativos sozinho, o próximo gargalo operacional real é renovação/cobrança (hoje 100% manual via admin). Isso fecha o loop comercial: aquisição → entrega → ROI → autonomia → **renovação automatizada**. Maior impacto em receita recorrente e menor em complexidade que SEO Massivo ou Landing Factory.
-
----
-
-## Arquivos a criar/editar
-
-**Novos:**
-
-- `supabase/migrations/<ts>_sponsor_change_requests.sql`
-- `src/pages/sponsor/SponsorSelfServicePage.tsx`
-- `src/pages/AdminSponsorChangeRequestsPage.tsx`
-- `src/components/sponsors/SponsorAlertsCard.tsx`
-- `src/components/sponsors/SponsorChangeRequestForm.tsx`
-- `src/components/sponsors/SponsorChangeRequestList.tsx`
-- `src/components/sponsors/AdminChangeRequestDiff.tsx`
-- `src/lib/sponsorSelfService.ts` (whitelist constants + helpers + zod)
-- `src/__tests__/sponsor-change-request-whitelist.test.ts`
-- `src/__tests__/sponsor-change-request-ownership.test.ts`
-- `.lovable/memory/funcionalidades/patrocinadores/self-service-fase-2-4.md`
-
-**Editados:**
-
-- `src/App.tsx` (rotas lazy)
-- `src/components/AdminLayout.tsx` + `AdminGroupNav.tsx` (item "Solicitações sponsor")
-- `src/pages/sponsor/SponsorDashboardPage.tsx` (alerts card + link editar)
-- `.lovable/memory/index.md` (referência)
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
----
-
-&nbsp;
-
-ADITIVO A — IMMUTABLE SNAPSHOT NO REVIEW
-
-&nbsp;
-
-Problema: Hoje o sponsor pode editar novamente enquanto existe request pending/cancelled/rejected, e o admin pode aprovar olhando um estado já alterado visualmente.
-
-&nbsp;
-
-Adicionar em sponsor_change_requests:
-
-&nbsp;
-
-current_snapshot jsonb
-
-&nbsp;
-
-No submit:
-
-&nbsp;
-
-salvar snapshot atual do sponsor antes da mudança.
-
-&nbsp;
-
-&nbsp;
-
-No diff admin:
-
-&nbsp;
-
-comparar:
-
-&nbsp;
-
-snapshot anterior
-
-&nbsp;
-
-proposed changes
-
-&nbsp;
-
-estado atual
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-Resultado:
-
-&nbsp;
-
-evita race conditions operacionais
-
-&nbsp;
-
-evita aprovação baseada em estado já alterado
-
-&nbsp;
-
-melhora auditoria
-
-&nbsp;
-
-&nbsp;
-
-Sem complexidade relevante.
-
-&nbsp;
-
-&nbsp;
-
----
-
-&nbsp;
-
-ADITIVO B — SINGLE PENDING REQUEST LOCK
-
-&nbsp;
-
-Hoje nada impede:
-
-&nbsp;
-
-8 requests pendentes simultâneas do mesmo sponsor.
-
-&nbsp;
-
-&nbsp;
-
-Adicionar regra:
-
-&nbsp;
-
-UNIQUE pending per sponsor_id
-
-WHERE status='pending'
-
-&nbsp;
-
-OU validar na RPC.
-
-&nbsp;
-
-Mensagem:
-
-&nbsp;
-
-> “Existe uma solicitação pendente aguardando revisão.”
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
-Resultado:
-
-&nbsp;
-
-evita spam operacional
-
-&nbsp;
-
-simplifica fila admin
-
-&nbsp;
-
-evita conflitos de merge manual
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
----
-
-&nbsp;
-
-ADITIVO C — RATE LIMIT SELF-SERVICE
-
-&nbsp;
-
-Mesmo com ownership:
-
-&nbsp;
-
-sponsor pode floodar requests.
-
-&nbsp;
-
-&nbsp;
-
-Adicionar debounce server-side:
-
-&nbsp;
-
-máximo 5 requests / 24h / sponsor
-
-&nbsp;
-
-&nbsp;
-
-Via RPC:
-
-&nbsp;
-
-count(*) where created_at > now()-interval '24h'
-
-&nbsp;
-
-Sem Redis. Sem edge. Sem infra nova.
-
-&nbsp;
-
-&nbsp;
-
----
-
-&nbsp;
-
-ADITIVO D — ASSET ORPHAN CLEANUP
-
-&nbsp;
-
-Hoje:
-
-&nbsp;
-
-sponsor sobe banner
-
-&nbsp;
-
-cancela request
-
-&nbsp;
-
-asset fica órfão no bucket
-
-&nbsp;
-
-&nbsp;
-
-Adicionar:
-
-&nbsp;
-
-storage_path
-
-&nbsp;
-
-em sponsor_change_requests.
-
-&nbsp;
-
-Quando:
-
-&nbsp;
-
-rejected
-
-&nbsp;
-
-cancelled
-
-&nbsp;
-
-expired draft
-
-&nbsp;
-
-&nbsp;
-
-→ marcar asset como órfão em audit_log.
-
-&nbsp;
-
-NÃO deletar automático ainda.
-
-&nbsp;
-
-Resultado:
-
-&nbsp;
-
-prepara hygiene futura do bucket
-
-&nbsp;
-
-evita lixo infinito
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
----
-
-&nbsp;
-
-ADITIVO E — REVIEW STATUS BADGES NO DASHBOARD SPONSOR
-
-&nbsp;
-
-No SponsorDashboard: mostrar:
-
-&nbsp;
-
-“Alteração aguardando aprovação”
-
-&nbsp;
-
-“Última alteração aprovada”
-
-&nbsp;
-
-“Última alteração rejeitada”
-
-&nbsp;
-
-&nbsp;
-
-Sem abrir tela admin.
-
-&nbsp;
-
-Resultado:
-
-&nbsp;
-
-reduz suporte manual
-
-&nbsp;
-
-reduz tickets
-
-&nbsp;
-
-melhora UX operacional
-
-&nbsp;
-
-&nbsp;
-
-&nbsp;
-
----
-
-&nbsp;
-
-ADITIVO F — AUDITORIA FINAL OBRIGATÓRIA
-
-&nbsp;
-
-Adicionar explicitamente no plano:
-
-&nbsp;
-
-Auditoria final obrigatória (READ-ONLY)
-
-&nbsp;
-
-Validar:
-
-&nbsp;
-
-sponsor NÃO consegue UPDATE direto em sponsors
-
-&nbsp;
-
-sponsor NÃO consegue aprovar request
-
-&nbsp;
-
-sponsor NÃO consegue editar sponsor_id alheio
-
-&nbsp;
-
-whitelist server-side realmente bloqueia campos sensíveis
-
-&nbsp;
-
-uploads órfãos identificáveis
-
-&nbsp;
-
-pending-lock funcionando
-
-&nbsp;
-
-rate-limit funcionando
-
-&nbsp;
-
-App.tsx lazy correto
-
-&nbsp;
-
-sem regressão no SponsorDashboard
-
-&nbsp;
-
-sem N+1 nas páginas novas
-
-&nbsp;
-
-bundle impact medido
-
-&nbsp;
-
-queries indexadas
-
-&nbsp;
-
-&nbsp;
-
-E exigir:
-
-&nbsp;
-
-Tabela:
-
-- arquivos criados
-
-- arquivos alterados
-
-- LOC adicionada
-
-- novas RPCs
-
-- novos índices
-
-- impacto estimado bundle
-
-- riscos restantes
-
-- débitos aceitos conscientemente
-
-&nbsp;
-
-&nbsp;
-
----
-
-&nbsp;
-
-VEREDITO
-
-&nbsp;
-
-Sem os aditivos:
-
-&nbsp;
-
-já está operacional.
-
-&nbsp;
-
-&nbsp;
-
-Com os aditivos:
-
-&nbsp;
-
-fica pronto para escalar sponsor self-service sem virar caos operacional em 3-6 meses.
-
-&nbsp;
-
-&nbsp;
-
-Os aditivos A+B+C são os mais importantes.
+Confirma a decisão de manter `phase_repair_contact` **fora** do `PHASE_ORDER`
+(como fase auxiliar acessível via erro)? Se sim, executo nesta ordem.
