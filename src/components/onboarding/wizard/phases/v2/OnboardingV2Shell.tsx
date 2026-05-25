@@ -1796,6 +1796,56 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         }
       }
 
+      // ── SYNC DE DETALHES EM RESERVA (Containment Crítico #2) ────────────
+      // Se o serviço JÁ existia (early-persist em phase2_service, reuso via
+      // findExisting ou state com firstServiceId), a row tem só o esqueleto
+      // mínimo. Aplicamos UPDATE idempotente para garantir que cidades,
+      // horários e descrição coletados depois sejam persistidos. Sem isso,
+      // chamadas subsequentes ao persistFirstService perdiam silenciosamente
+      // os dados de phase2_details.
+      if (reusedExistingService && resolvedServiceId) {
+        const detailsPatch: Record<string, any> = {
+          service_name: resolvedCategoryName,
+          category_id: categoryId,
+          category_ids: [categoryId, ...s.category_ids.slice(1)],
+        };
+        if ((s.description || '').trim()) detailsPatch.description = s.description;
+        if ((p.whatsapp || '').trim()) detailsPatch.whatsapp = p.whatsapp;
+        if (serviceArea) detailsPatch.service_area = serviceArea;
+        if (cityForAddress) detailsPatch.address = cityForAddress;
+        if (workingHoursSummary) detailsPatch.working_hours = workingHoursSummary;
+        if (s.working_hours_struct) detailsPatch.working_hours_struct = s.working_hours_struct;
+        const { error: detErr } = await supabase
+          .from('services')
+          .update(detailsPatch)
+          .eq('id', resolvedServiceId);
+        if (detErr) {
+          console.warn('[onboardingV2] sync details on reused service failed', detErr);
+          void trackEvent({
+            phase: state.phase,
+            event: 'error',
+            userId: user?.id,
+            meta: {
+              kind: 'reused_service_details_sync_failed',
+              service_id: resolvedServiceId,
+              error_code: (detErr as any)?.code || null,
+              error_message: detErr.message?.slice(0, 240) || null,
+            },
+          });
+        } else {
+          void trackEvent({
+            phase: state.phase,
+            event: 'submit',
+            userId: user?.id,
+            meta: {
+              kind: 'reused_service_details_synced',
+              service_id: resolvedServiceId,
+              fields: Object.keys(detailsPatch),
+            },
+          });
+        }
+      }
+
       // 2) Herança — categoria principal + horário sobem para o provider
       const updates: any = { category_id: categoryId };
       if (workingHoursSummary) updates.working_hours = workingHoursSummary;
