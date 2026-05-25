@@ -1331,11 +1331,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
         const goBackAndFocus = () => {
           // Marca o campo a destacar piscando ao chegar na fase de destino.
-          // Usa a MESMA chave do hook `useFocusFieldFromReview` para garantir
-          // que o destaque visual (ring vermelho pulsante) seja aplicado.
           try {
             sessionStorage.setItem('onboarding-v2:focus-field', info.field);
           } catch { /* fail-soft */ }
+          // Containment patch — Crítico #1: se o destino é a fase auxiliar de
+          // reparo, despacha GO_TO_REPAIR direto (atalho síncrono) em vez de
+          // depender do orquestrador de Voltar, que não conhece essa fase.
+          if (info.backPhase === 'phase_repair_contact') {
+            dispatch({ type: 'GO_TO_REPAIR', from: state.phase } as any);
+            return;
+          }
           void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
             requestWizardBackForPhase({
               phase: state.phase,
