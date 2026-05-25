@@ -31,13 +31,14 @@ const NotFound = () => {
     }
     (async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        await supabase.from("error_page_events" as any).insert({
-          path,
-          code: 404,
-          referrer,
-          user_id: user?.id ?? null,
-          user_agent: userAgent ? `${userAgent.slice(0, 240)} | kind:${referrerKind}` : `kind:${referrerKind}`,
+        const composedUa = userAgent
+          ? `${userAgent.slice(0, 240)} | kind:${referrerKind}`
+          : `kind:${referrerKind}`;
+        await supabase.rpc("log_error_page_event" as any, {
+          _path: path,
+          _code: 404,
+          _referrer: referrer,
+          _user_agent: composedUa,
         } as any);
       } catch (e) {
         console.debug("[NotFound] Failed to log event:", e);

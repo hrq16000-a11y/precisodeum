@@ -40,13 +40,11 @@ const ErrorPage = ({ code = 404 }: ErrorPageProps) => {
 
     (async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        await supabase.from("error_page_events" as any).insert({
-          path,
-          code,
-          referrer,
-          user_id: user?.id ?? null,
-          user_agent: userAgent,
+        await supabase.rpc("log_error_page_event" as any, {
+          _path: path,
+          _code: code,
+          _referrer: referrer,
+          _user_agent: userAgent,
         } as any);
       } catch (e) {
         console.debug("[ErrorPage] Failed to log event:", e);
