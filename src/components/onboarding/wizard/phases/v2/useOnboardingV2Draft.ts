@@ -44,6 +44,19 @@ export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
       localStorage.removeItem(DRAFT_KEY);
       return null;
     }
+    // Containment patch — Crítico #3: NÃO anuncia "rascunho recuperado" se
+    // não há conteúdo mínimo. Antes, qualquer envelope salvo (mesmo só com
+    // a fase setada) acionava o banner de recuperação enganando o usuário
+    // ("recuperei seu serviço!" quando não havia serviço algum).
+    const svc = parsed.service || ({} as any);
+    const prof = parsed.profile || ({} as any);
+    const serviceName = String(svc.service_name || '').trim();
+    const whatsappDigits = String(prof.whatsapp || '').replace(/\D/g, '');
+    const hasCategory = Array.isArray(svc.category_ids) && svc.category_ids.length > 0;
+    const hasMeaningfulContent = serviceName.length >= 3 || whatsappDigits.length >= 10 || hasCategory;
+    if (!hasMeaningfulContent) {
+      return null;
+    }
     return {
       profile: parsed.profile,
       service: parsed.service,
@@ -52,6 +65,20 @@ export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
       providerId: parsed.providerId ?? null,
       firstServiceId: parsed.firstServiceId ?? null,
     };
+  } catch {
+    return null;
+  }
+}
+
+/** Lê só o timestamp do envelope local — usado para resolver race condition
+ *  entre draft local e remoto na hidratação inicial (Crítico #4). */
+export function readOnboardingV2DraftSavedAt(): number | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as DraftEnvelope;
+    return typeof parsed?.savedAt === 'number' ? parsed.savedAt : null;
   } catch {
     return null;
   }
