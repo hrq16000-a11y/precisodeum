@@ -68,8 +68,8 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
           recordWizardSupabaseCall('useRemoteDraft.skipped', state.phase as any, userId);
           return;
         }
-        try {
-          await supabase.from('onboarding_v2_drafts' as any).upsert({
+        const upsertOnce = async () =>
+          supabase.from('onboarding_v2_drafts' as any).upsert({
             user_id: userId,
             payload: {
               profile: state.profile,
@@ -80,17 +80,54 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
             },
             phase: state.phase,
           } as any, { onConflict: 'user_id' });
-          markRemoteDraftWritten(state.phase as any, userId);
-          recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
-        } catch (error) {
+
+        const reportFailure = async (error: any, attempt: number) => {
           console.error('[onboardingV2] remote draft upsert failed', {
             phase: state.phase,
             userId,
-            message: (error as any)?.message || String(error),
-            code: (error as any)?.code || null,
-            details: (error as any)?.details || null,
-            hint: (error as any)?.hint || null,
+            attempt,
+            message: error?.message || String(error),
+            code: error?.code || null,
+            details: error?.details || null,
+            hint: error?.hint || null,
           });
+          // Containment patch — Crítico #5: telemetria explícita p/ falhas de
+          // draft remoto. Antes era console.error silencioso e perdíamos a
+          // pista quando o usuário relatava "nada foi salvo".
+          try {
+            const { trackOnboardingEvent } = await import('./telemetry');
+            void trackOnboardingEvent({
+              phase: state.phase as any,
+              event: 'error',
+              userId,
+              meta: {
+                kind: 'remote_draft_failed',
+                attempt,
+                code: error?.code || null,
+                message: String(error?.message || error || '').slice(0, 240),
+              },
+            });
+          } catch { /* fail-soft: telemetria nunca pode travar o fluxo */ }
+        };
+
+        try {
+          const { error } = await upsertOnce();
+          if (error) throw error;
+          markRemoteDraftWritten(state.phase as any, userId);
+          recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
+        } catch (error: any) {
+          await reportFailure(error, 1);
+          // Retry simples (1 nova tentativa, sem loop). Backoff fixo 1500ms.
+          window.setTimeout(async () => {
+            try {
+              const { error: err2 } = await upsertOnce();
+              if (err2) throw err2;
+              markRemoteDraftWritten(state.phase as any, userId);
+              recordWizardSupabaseCall('useRemoteDraft.retry_ok', state.phase as any, userId);
+            } catch (retryErr: any) {
+              await reportFailure(retryErr, 2);
+            }
+          }, 1500);
         }
       },
       REMOTE_DEBOUNCE_MS,
