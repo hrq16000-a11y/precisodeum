@@ -91,7 +91,7 @@ export const PhaseRepairContact = ({
             autoFocus
             inputMode="tel"
             placeholder="(11) 99999-9999"
-            value={formatWhatsappBR(whatsappRaw) || whatsappRaw}
+            value={toDisplayPhoneBR(whatsappRaw) || whatsappRaw}
             onChange={(e) => { setWhatsappRaw(e.target.value); if (!touched) setTouched(true); }}
             onBlur={() => setTouched(true)}
             aria-invalid={showError || undefined}
