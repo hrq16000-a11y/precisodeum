@@ -2399,6 +2399,31 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             />
           </>
         );
+      case 'phase_repair_contact': {
+        // Containment patch — Crítico #1: fase auxiliar para corrigir
+        // WhatsApp/contato faltante sem perder o progresso do wizard.
+        let focusField: string | null = null;
+        try { focusField = sessionStorage.getItem('onboarding-v2:focus-field'); } catch { /* fail-soft */ }
+        return (
+          <PhaseRepairContact
+            profile={state.profile}
+            focusField={focusField}
+            saving={saving}
+            onSave={(patch) => {
+              patchProfile(patch);
+              try { sessionStorage.removeItem('onboarding-v2:focus-field'); } catch { /* noop */ }
+              void trackEvent({
+                phase: 'phase_repair_contact' as any,
+                event: 'submit',
+                userId: user?.id,
+                meta: { kind: 'repair_contact_saved', fields: Object.keys(patch) },
+              });
+              dispatch({ type: 'RETURN_FROM_REPAIR' } as any);
+            }}
+            onCancel={() => { dispatch({ type: 'RETURN_FROM_REPAIR' } as any); }}
+          />
+        );
+      }
       case 'phase3_celebration':
         return (
           <Phase3Celebration
