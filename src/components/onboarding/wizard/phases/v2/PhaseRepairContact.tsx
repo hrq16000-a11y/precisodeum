@@ -24,7 +24,7 @@ import {
   normalizeOnboardingPhone,
   isOnboardingWhatsappValid,
 } from './contactValidation';
-import { formatWhatsappBR } from '@/lib/validation/phoneNormalization';
+import { toDisplayPhoneBR } from '@/lib/validation/phoneNormalization';
 import type { OnboardingProfileData } from './types';
 
 interface PhaseRepairContactProps {
