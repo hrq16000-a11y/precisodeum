@@ -125,6 +125,7 @@ import { Phase2Photos } from './Phase2Photos';
 import { Phase3Celebration } from './Phase3Celebration';
 import { Phase4Document, Phase4Avatar, Phase4ExtrasA, Phase4ExtrasB } from './Phase4Final';
 // Phase4Review removido — Wizard publica silenciosamente, sem tela de revisão.
+import { PhaseRepairContact } from './PhaseRepairContact';
 import { AutoSaveBadge } from './AutoSaveBadge';
 import { nullifyEmpty } from './optionalPatch';
 import { playWizardTransition } from '@/lib/wizardTransition';
@@ -1302,13 +1303,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
         // Mapa: motivo técnico → (label humano em pt-BR + fase do wizard para corrigir + campo focável).
         // Garante que o usuário NUNCA veja "Complete os campos obrigatórios" sem saber QUAL campo falta.
+        // Containment patch — Crítico #1: aponta para `phase_repair_contact`
+        // (fase auxiliar fora do PHASE_ORDER) em vez da extinta `phase1_basic`.
+        // Sem isso, "Voltar e corrigir" era um beco sem saída.
         const REASON_MAP: Record<string, { label: string; backPhase: any; field: string }> = {
-          full_name_required:      { label: 'Nome completo',         backPhase: 'phase1_basic',   field: 'full_name' },
-          whatsapp_required:       { label: 'WhatsApp com DDD',      backPhase: 'phase1_basic',   field: 'whatsapp' },
-          city_and_state_required: { label: 'Cidade e estado (UF)',  backPhase: 'phase1_basic',   field: 'city' },
-          category_required:       { label: 'Categoria do serviço',  backPhase: 'phase2_service', field: 'service_name' },
-          provider_required:       { label: 'Perfil de prestador',   backPhase: 'phase1_basic',   field: 'full_name' },
-          user_required:           { label: 'Sessão de login',       backPhase: 'phase1_basic',   field: 'full_name' },
+          full_name_required:      { label: 'Nome completo',         backPhase: 'phase_repair_contact', field: 'full_name' },
+          whatsapp_required:       { label: 'WhatsApp com DDD',      backPhase: 'phase_repair_contact', field: 'whatsapp' },
+          city_and_state_required: { label: 'Cidade e estado (UF)',  backPhase: 'phase_repair_contact', field: 'city' },
+          category_required:       { label: 'Categoria do serviço',  backPhase: 'phase2_service',       field: 'service_name' },
+          provider_required:       { label: 'Perfil de prestador',   backPhase: 'phase_repair_contact', field: 'full_name' },
+          user_required:           { label: 'Sessão de login',       backPhase: 'phase_repair_contact', field: 'full_name' },
         };
         const info = REASON_MAP[fail.reason] || { label: fail.reason, backPhase: state.phase, field: '' };
         const description = `Falta preencher: ${info.label}. Toque em "Voltar e corrigir" — vamos te levar direto ao campo (ele vai piscar em vermelho).`;
@@ -1328,11 +1332,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
         const goBackAndFocus = () => {
           // Marca o campo a destacar piscando ao chegar na fase de destino.
-          // Usa a MESMA chave do hook `useFocusFieldFromReview` para garantir
-          // que o destaque visual (ring vermelho pulsante) seja aplicado.
           try {
             sessionStorage.setItem('onboarding-v2:focus-field', info.field);
           } catch { /* fail-soft */ }
+          // Containment patch — Crítico #1: se o destino é a fase auxiliar de
+          // reparo, despacha GO_TO_REPAIR direto (atalho síncrono) em vez de
+          // depender do orquestrador de Voltar, que não conhece essa fase.
+          if (info.backPhase === 'phase_repair_contact') {
+            dispatch({ type: 'GO_TO_REPAIR', from: state.phase } as any);
+            return;
+          }
           void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
             requestWizardBackForPhase({
               phase: state.phase,
@@ -2390,6 +2399,31 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             />
           </>
         );
+      case 'phase_repair_contact': {
+        // Containment patch — Crítico #1: fase auxiliar para corrigir
+        // WhatsApp/contato faltante sem perder o progresso do wizard.
+        let focusField: string | null = null;
+        try { focusField = sessionStorage.getItem('onboarding-v2:focus-field'); } catch { /* fail-soft */ }
+        return (
+          <PhaseRepairContact
+            profile={state.profile}
+            focusField={focusField}
+            saving={saving}
+            onSave={(patch) => {
+              patchProfile(patch);
+              try { sessionStorage.removeItem('onboarding-v2:focus-field'); } catch { /* noop */ }
+              void trackEvent({
+                phase: 'phase_repair_contact' as any,
+                event: 'submit',
+                userId: user?.id,
+                meta: { kind: 'repair_contact_saved', fields: Object.keys(patch) },
+              });
+              dispatch({ type: 'RETURN_FROM_REPAIR' } as any);
+            }}
+            onCancel={() => { dispatch({ type: 'RETURN_FROM_REPAIR' } as any); }}
+          />
+        );
+      }
       case 'phase3_celebration':
         return (
           <Phase3Celebration

@@ -100,6 +100,7 @@ export type OnboardingPhase =
   | 'phase4_avatar'        // Step 8.5 — Foto de perfil (se ainda faltar)
   | 'phase4_extras_a'      // Step 9 — Bairro + Bio
   | 'phase4_extras_b'      // Step 10 — Redes sociais
+  | 'phase_repair_contact' // AUXILIAR (fora do PHASE_ORDER) — corrige WhatsApp/contato faltante
   | 'done';
 
 /** Fases que NUNCA podem ser puladas (regra do prompt).
@@ -118,4 +119,11 @@ export interface OnboardingState {
   providerId: string | null;
   /** serviceId criado durante a Fase 2. */
   firstServiceId: string | null;
+  /**
+   * Fase para onde voltar ao concluir a fase auxiliar `phase_repair_contact`.
+   * Definida no momento em que enviamos o usuário para o reparo; quando ele
+   * salva o contato, o reducer despacha `RETURN_FROM_REPAIR` para restaurar
+   * a fase original.
+   */
+  returnToPhase?: OnboardingPhase | null;
 }
