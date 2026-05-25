@@ -78,11 +78,11 @@ type ContactCtaOrigin = 'principal' | 'sticky' | 'flutuante' | 'servico';
 
 const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone', pagePath: string, serviceName?: string, ctaOrigin: ContactCtaOrigin = 'principal') => {
   try {
-    supabase.from('contact_clicks' as any).insert({
-      provider_id: providerId,
-      contact_type: contactType,
-      page_path: pagePath,
-      visitor_id: crypto.randomUUID?.() || Math.random().toString(36).slice(2),
+    (supabase.rpc as any)('log_contact_click', {
+      _provider_id: providerId,
+      _contact_type: contactType,
+      _page_path: pagePath,
+      _visitor_id: crypto.randomUUID?.() || Math.random().toString(36).slice(2),
     }).then(() => {});
   } catch { /* silent */ }
 
