@@ -1609,6 +1609,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           }
           resolvedServiceId = reusedId;
           dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
+          reusedExistingService = true;
         } else {
           // ── PRÉ-VALIDAÇÃO LOCAL (Hotfix #2) ─────────────────────────────────
           // Garante que os campos NOT NULL chegam preenchidos. Se faltar algo,
