@@ -99,8 +99,19 @@ export function onboardingReducer(
       return { ...state, service: { ...state.service, ...action.patch } };
     case 'GO_TO':
       return { ...state, phase: action.phase };
+    case 'GO_TO_REPAIR':
+      // Fase auxiliar (FORA do PHASE_ORDER). Guarda a fase de origem para
+      // que `RETURN_FROM_REPAIR` consiga restaurar o fluxo principal.
+      return { ...state, phase: 'phase_repair_contact', returnToPhase: action.from };
+    case 'RETURN_FROM_REPAIR':
+      // Volta para a fase guardada (ou phase2_service como fallback seguro).
+      return { ...state, phase: state.returnToPhase || 'phase2_service', returnToPhase: null };
     case 'NEXT':
     case 'SKIP_TO_NEXT':
+      // Se estamos na fase auxiliar, NEXT sempre retorna ao fluxo principal.
+      if (state.phase === 'phase_repair_contact') {
+        return { ...state, phase: state.returnToPhase || 'phase2_service', returnToPhase: null };
+      }
       return { ...state, phase: nextPhase(state.phase) };
     case 'SET_USER_REF':
       return { ...state, userRef: action.userRef };
