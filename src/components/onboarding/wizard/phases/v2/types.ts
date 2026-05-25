@@ -119,4 +119,11 @@ export interface OnboardingState {
   providerId: string | null;
   /** serviceId criado durante a Fase 2. */
   firstServiceId: string | null;
+  /**
+   * Fase para onde voltar ao concluir a fase auxiliar `phase_repair_contact`.
+   * Definida no momento em que enviamos o usuário para o reparo; quando ele
+   * salva o contato, o reducer despacha `RETURN_FROM_REPAIR` para restaurar
+   * a fase original.
+   */
+  returnToPhase?: OnboardingPhase | null;
 }
