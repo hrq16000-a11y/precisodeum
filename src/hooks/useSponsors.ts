@@ -81,9 +81,21 @@ export function useSponsorsBySlot(
   const query = useQuery({
     queryKey: ['sponsors-slot', position, filters?.city ?? '', filters?.category ?? ''],
     queryFn: async () => {
+      // LGPD/A1: anon não tem GRANT SELECT em cnpj/email/whatsapp/phone/etc.
+      // Lista explícita evita "permission denied for column ..." no select('*').
+      // Donos e admins recebem campos sensíveis por outras queries autenticadas.
       let q = supabase
         .from('sponsors')
-        .select('*')
+        .select(
+          'id, user_id, slug, title, company_name, short_description, full_description, ' +
+          'logo_url, image_url, link_url, external_link, ' +
+          'linked_city, linked_city_slug, linked_category, linked_category_slug, ' +
+          'status, plan, plan_tier, tier, sponsor_type, badge_type, ' +
+          'position, ad_format, target_pages, display_order, active, ' +
+          'start_date, end_date, campaign_start, campaign_end, ' +
+          'guaranteed_impressions, delivered_impressions, impressions, clicks, ' +
+          'pacing_status, max_width, max_height, deleted_at, created_at'
+        )
         .eq('active', true)
         .eq('position', position)
         .order('display_order')
