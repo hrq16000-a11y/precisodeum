@@ -499,6 +499,26 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     (async () => {
       const remote = await fetchRemoteDraft(user.id);
       if (!alive || !remote) return;
+      // Containment patch — Crítico #4: NÃO sobrescrever estado mais novo.
+      // Se o draft LOCAL foi salvo depois do remoto (>5s de folga p/ relógios
+      // dessincronizados), o usuário tem dados frescos que ainda não subiram
+      // ao banco — ignorar o remoto evita reverter o estado dele.
+      const localSavedAt = readOnboardingV2DraftSavedAt() || 0;
+      const remoteSavedAt = remote.updated_at ? Date.parse(remote.updated_at) : 0;
+      if (localSavedAt > 0 && remoteSavedAt > 0 && localSavedAt > remoteSavedAt + 5000) {
+        void trackOnboardingEvent({
+          phase: state.phase,
+          event: 'next',
+          userId: user.id,
+          meta: {
+            kind: 'remote_draft_discarded_local_newer',
+            local_saved_at: localSavedAt,
+            remote_updated_at: remoteSavedAt,
+            delta_ms: localSavedAt - remoteSavedAt,
+          },
+        });
+        return;
+      }
       const remotePhase = remote.phase as any;
       const remoteIdx = phaseIndex(remotePhase);
       const localIdx = phaseIndex(localPhase);
