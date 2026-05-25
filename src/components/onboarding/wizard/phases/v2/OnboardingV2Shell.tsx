@@ -145,6 +145,7 @@ import { pushReviewPhase, popReviewPhase, clearReviewHistory } from './reviewHis
 import {
   useOnboardingV2Draft,
   readOnboardingV2Draft,
+  readOnboardingV2DraftSavedAt,
   clearOnboardingV2Draft,
 } from './useOnboardingV2Draft';
 import { flushOnboardingV2Draft, flushLocalDraft } from './flushDraft';
@@ -498,6 +499,26 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     (async () => {
       const remote = await fetchRemoteDraft(user.id);
       if (!alive || !remote) return;
+      // Containment patch — Crítico #4: NÃO sobrescrever estado mais novo.
+      // Se o draft LOCAL foi salvo depois do remoto (>5s de folga p/ relógios
+      // dessincronizados), o usuário tem dados frescos que ainda não subiram
+      // ao banco — ignorar o remoto evita reverter o estado dele.
+      const localSavedAt = readOnboardingV2DraftSavedAt() || 0;
+      const remoteSavedAt = remote.updated_at ? Date.parse(remote.updated_at) : 0;
+      if (localSavedAt > 0 && remoteSavedAt > 0 && localSavedAt > remoteSavedAt + 5000) {
+        void trackOnboardingEvent({
+          phase: state.phase,
+          event: 'next',
+          userId: user.id,
+          meta: {
+            kind: 'remote_draft_discarded_local_newer',
+            local_saved_at: localSavedAt,
+            remote_updated_at: remoteSavedAt,
+            delta_ms: localSavedAt - remoteSavedAt,
+          },
+        });
+        return;
+      }
       const remotePhase = remote.phase as any;
       const remoteIdx = phaseIndex(remotePhase);
       const localIdx = phaseIndex(localPhase);
@@ -1182,6 +1203,98 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     return null;
   };
 
+  /* ───── Persistência ANTECIPADA do 1º serviço (Containment Crítico #2) ─────
+   * Cria APENAS o registro mínimo em `services` ao sair de phase2_service —
+   * sem chamar finalizeOnboarding, sem mexer em providers.category_id, sem
+   * mostrar feedback. Objetivo: garantir que F5 entre phase2_service e
+   * phase3_celebration NÃO perca o serviço já escolhido.
+   *
+   * 100% idempotente:
+   *  - Se state.firstServiceId já existe → no-op.
+   *  - Se já há um serviço dessa categoria p/ esse provider → reusa o id.
+   *  - Caso contrário → INSERT mínimo (provider_id + service_name + category_id
+   *    + campos defensivos com fallback null para satisfazer schema).
+   *
+   * Falha silenciosa (best-effort): NUNCA bloqueia o avanço do usuário — o
+   * persistFirstService completo (phase2_details) cobre os campos restantes
+   * e refaz a verificação de duplicidade.
+   */
+  const persistFirstServiceEarly = async (): Promise<boolean> => {
+    if (!user) return false;
+    if (state.firstServiceId) return true;
+    const categoryId = state.service.category_ids?.[0];
+    const serviceName = (state.service.service_name || '').trim();
+    if (!categoryId || !serviceName) return false;
+
+    const providerId = await ensureProviderId();
+    if (!providerId) return false;
+
+    try {
+      const reusedId = await findExistingFirstService(providerId, categoryId, serviceName);
+      if (reusedId) {
+        dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
+        void trackEvent({
+          phase: state.phase,
+          event: 'submit',
+          userId: user.id,
+          meta: { kind: 'persist_first_service_early_reused', service_id: reusedId },
+        });
+        return true;
+      }
+
+      const cityAddress = [state.profile.city, state.profile.state].filter(Boolean).join(' - ');
+      const { data: insertRow, error: insertErr } = await supabase
+        .from('services')
+        .insert({
+          provider_id: providerId,
+          service_name: serviceName,
+          description: (state.service.description || '').trim(),
+          whatsapp: state.profile.whatsapp || null,
+          service_area: state.service.cities_served?.join('; ') || null,
+          address: cityAddress || null,
+          working_hours: state.service.working_hours || null,
+          category_id: categoryId,
+          category_ids: [categoryId],
+        } as any)
+        .select('id')
+        .single();
+
+      if (insertErr || !insertRow?.id) {
+        void trackEvent({
+          phase: state.phase,
+          event: 'error',
+          userId: user.id,
+          meta: {
+            kind: 'persist_first_service_early_failed',
+            error_code: (insertErr as any)?.code || null,
+            error_message: insertErr?.message?.slice(0, 240) || null,
+          },
+        });
+        return false;
+      }
+
+      dispatch({ type: 'SET_FIRST_SERVICE_ID', id: insertRow.id });
+      void trackEvent({
+        phase: state.phase,
+        event: 'submit',
+        userId: user.id,
+        meta: { kind: 'persist_first_service_early_ok', service_id: insertRow.id },
+      });
+      return true;
+    } catch (e: any) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user.id,
+        meta: {
+          kind: 'persist_first_service_early_throw',
+          error_message: String(e?.message || e).slice(0, 240),
+        },
+      });
+      return false;
+    }
+  };
+
   /* ───── Persistência: cria 1º serviço (Fase 2) ───── */
   const persistFirstService = async (): Promise<boolean> => {
     if (!user) return false;
@@ -1447,8 +1560,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // `state.firstServiceId` no mesmo tick, então o read-back abaixo
       // precisa de uma referência síncrona.
       let resolvedServiceId: string | null = state.firstServiceId;
+      // Containment patch — Crítico #2: flag p/ disparar UPDATE de detalhes
+      // (cidades/horários/descrição) quando o serviço já existia ANTES desta
+      // chamada (early-persist em phase2_service ou reuse por findExisting).
+      // Sem isso, dados coletados em phase2_details eram silenciosamente
+      // ignorados quando o early-persist tinha criado o esqueleto.
+      let reusedExistingService = false;
       if (resolvedServiceId) {
         // Estado local já tem ID → confiar e seguir para herança/conclusão.
+        reusedExistingService = true;
       } else {
         const reusedId = await findExistingFirstService(
           workingProviderId,
@@ -1489,6 +1609,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           }
           resolvedServiceId = reusedId;
           dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
+          reusedExistingService = true;
         } else {
           // ── PRÉ-VALIDAÇÃO LOCAL (Hotfix #2) ─────────────────────────────────
           // Garante que os campos NOT NULL chegam preenchidos. Se faltar algo,
@@ -1672,6 +1793,56 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             resolvedServiceId = data.service_id;
             dispatch({ type: 'SET_FIRST_SERVICE_ID', id: data.service_id });
           }
+        }
+      }
+
+      // ── SYNC DE DETALHES EM RESERVA (Containment Crítico #2) ────────────
+      // Se o serviço JÁ existia (early-persist em phase2_service, reuso via
+      // findExisting ou state com firstServiceId), a row tem só o esqueleto
+      // mínimo. Aplicamos UPDATE idempotente para garantir que cidades,
+      // horários e descrição coletados depois sejam persistidos. Sem isso,
+      // chamadas subsequentes ao persistFirstService perdiam silenciosamente
+      // os dados de phase2_details.
+      if (reusedExistingService && resolvedServiceId) {
+        const detailsPatch: Record<string, any> = {
+          service_name: resolvedCategoryName,
+          category_id: categoryId,
+          category_ids: [categoryId, ...s.category_ids.slice(1)],
+        };
+        if ((s.description || '').trim()) detailsPatch.description = s.description;
+        if ((p.whatsapp || '').trim()) detailsPatch.whatsapp = p.whatsapp;
+        if (serviceArea) detailsPatch.service_area = serviceArea;
+        if (cityForAddress) detailsPatch.address = cityForAddress;
+        if (workingHoursSummary) detailsPatch.working_hours = workingHoursSummary;
+        if (s.working_hours_struct) detailsPatch.working_hours_struct = s.working_hours_struct;
+        const { error: detErr } = await supabase
+          .from('services')
+          .update(detailsPatch)
+          .eq('id', resolvedServiceId);
+        if (detErr) {
+          console.warn('[onboardingV2] sync details on reused service failed', detErr);
+          void trackEvent({
+            phase: state.phase,
+            event: 'error',
+            userId: user?.id,
+            meta: {
+              kind: 'reused_service_details_sync_failed',
+              service_id: resolvedServiceId,
+              error_code: (detErr as any)?.code || null,
+              error_message: detErr.message?.slice(0, 240) || null,
+            },
+          });
+        } else {
+          void trackEvent({
+            phase: state.phase,
+            event: 'submit',
+            userId: user?.id,
+            meta: {
+              kind: 'reused_service_details_synced',
+              service_id: resolvedServiceId,
+              fields: Object.keys(detailsPatch),
+            },
+          });
         }
       }
 
@@ -2006,7 +2177,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                   requestWizardBack({ phase: 'phase2_service', source: 'phase2_service' });
                 });
               }}
-              onNext={() => { track('next'); dispatch({ type: 'NEXT' }); }}
+              onNext={async () => {
+                track('next');
+                // Containment patch — Crítico #2: persist EARLY antes de
+                // avançar. Best-effort (silencioso): se falhar, segue mesmo
+                // assim — o persistFirstService completo cobre em phase2_details.
+                try { await persistFirstServiceEarly(); } catch { /* fail-soft */ }
+                dispatch({ type: 'NEXT' });
+              }}
               firstServiceId={state.firstServiceId}
               onSkip={() => {
                 // BLINDAGEM (regression-locked): "Pular o 1º serviço" NUNCA
