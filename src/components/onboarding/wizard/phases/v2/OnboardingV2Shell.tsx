@@ -1560,8 +1560,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       // `state.firstServiceId` no mesmo tick, então o read-back abaixo
       // precisa de uma referência síncrona.
       let resolvedServiceId: string | null = state.firstServiceId;
+      // Containment patch — Crítico #2: flag p/ disparar UPDATE de detalhes
+      // (cidades/horários/descrição) quando o serviço já existia ANTES desta
+      // chamada (early-persist em phase2_service ou reuse por findExisting).
+      // Sem isso, dados coletados em phase2_details eram silenciosamente
+      // ignorados quando o early-persist tinha criado o esqueleto.
+      let reusedExistingService = false;
       if (resolvedServiceId) {
         // Estado local já tem ID → confiar e seguir para herança/conclusão.
+        reusedExistingService = true;
       } else {
         const reusedId = await findExistingFirstService(
           workingProviderId,
