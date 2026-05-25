@@ -19,9 +19,17 @@ const SponsorPublicPage = () => {
   useEffect(() => {
     if (!slug) return;
     (async () => {
+      // LGPD/A1: anon não tem SELECT em cnpj/email/whatsapp/phone.
+      // Lista explícita evita "permission denied for column ..." no select('*').
       const { data } = await supabase
         .from('sponsors')
-        .select('*')
+        .select(
+          'id, user_id, slug, title, company_name, short_description, full_description, ' +
+          'logo_url, image_url, link_url, external_link, ' +
+          'linked_city, linked_city_slug, linked_category, linked_category_slug, ' +
+          'status, plan, plan_tier, tier, sponsor_type, badge_type, ' +
+          'campaign_start, campaign_end, deleted_at, created_at'
+        )
         .eq('slug', slug)
         .is('deleted_at', null)
         .maybeSingle();
