@@ -16,7 +16,6 @@ export async function logSearchIntent(params: {
   if (now - lastLog < 1500) return;
   lastLog = now;
   try {
-    const { data: u } = await supabase.auth.getUser();
     let visitorId: string | null = null;
     try {
       visitorId = localStorage.getItem('pdu_visitor_id');
@@ -27,14 +26,13 @@ export async function logSearchIntent(params: {
     } catch {
       // ignore
     }
-    await supabase.from('search_intent_log').insert({
-      category_slug: params.categorySlug || null,
-      category_name: params.categoryName || null,
-      city: params.city || null,
-      state: params.state || null,
-      visitor_id: visitorId,
-      user_id: u.user?.id || null,
-    } as any);
+    await (supabase.rpc as any)('log_search_intent', {
+      _category_slug: params.categorySlug || null,
+      _category_name: params.categoryName || null,
+      _city: params.city || null,
+      _state: params.state || null,
+      _visitor_id: visitorId,
+    });
   } catch {
     // best-effort, never block search
   }
