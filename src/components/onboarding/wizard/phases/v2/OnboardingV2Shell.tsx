@@ -1310,7 +1310,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           provider_required:       { label: 'Perfil de prestador',   backPhase: 'phase1_basic',   field: 'full_name' },
           user_required:           { label: 'Sessão de login',       backPhase: 'phase1_basic',   field: 'full_name' },
         };
-        const info = REASON_MAP[op.reason] || { label: op.reason, backPhase: state.phase, field: '' };
+        const info = REASON_MAP[fail.reason] || { label: fail.reason, backPhase: state.phase, field: '' };
         const description = `Falta preencher: ${info.label}. Toque em "Voltar e corrigir" — vamos te levar direto ao campo (ele vai piscar em vermelho).`;
 
         void trackEvent({
@@ -1319,8 +1319,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           userId: user?.id,
           meta: {
             code: 'persist_first_service_op_build_failed',
-            op_code: op.code,
-            op_reason: op.reason,
+            op_code: fail.code,
+            op_reason: fail.reason,
             missing_field: info.field,
             back_phase: info.backPhase,
           },
@@ -1356,8 +1356,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         setErrorModal({
           code: 'persist_first_service_op_build_failed',
           missingFields: [info.label],
-          techMessage: `reason: ${op.reason}`,
-          techCode: op.code,
+          techMessage: `reason: ${fail.reason}`,
+          techCode: fail.code,
           onRetry: goBackAndFocus,
         });
         return false;
