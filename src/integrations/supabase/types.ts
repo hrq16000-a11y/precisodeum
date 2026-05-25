@@ -10023,6 +10023,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_web_vitals: {
+        Args: { _samples: Json; _visitor_id?: string }
+        Returns: number
+      }
       mark_consent_revocations_read: {
         Args: { _ids: string[] }
         Returns: number
