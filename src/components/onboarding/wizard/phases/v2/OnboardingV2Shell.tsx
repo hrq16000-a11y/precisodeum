@@ -1296,7 +1296,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         state: state.profile.state || '',
       });
       if (!op.ok) {
-        await logOperationBuildFailure('onboarding_v2_persist_first_service', op as any);
+        const fail = op as { ok: false; code: string; reason: string };
+        await logOperationBuildFailure('onboarding_v2_persist_first_service', fail as any);
         setSaving(false);
 
         // Mapa: motivo técnico → (label humano em pt-BR + fase do wizard para corrigir + campo focável).
