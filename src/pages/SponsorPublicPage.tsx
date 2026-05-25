@@ -75,8 +75,7 @@ const SponsorPublicPage = () => {
                     </span>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                    {sponsor.email && <span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{sponsor.email}</span>}
-                    {wpp && <a href={wppLink!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-foreground"><Phone className="h-3.5 w-3.5" />WhatsApp</a>}
+                    {/* LGPD/A1: email/whatsapp/phone bloqueados para anon. Contato via site. */}
                     {(sponsor.external_link || sponsor.link_url) && (
                       <a href={sponsor.external_link || sponsor.link_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
                         <Globe className="h-3.5 w-3.5" />Site
