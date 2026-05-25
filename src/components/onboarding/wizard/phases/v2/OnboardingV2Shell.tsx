@@ -1203,6 +1203,98 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     return null;
   };
 
+  /* ───── Persistência ANTECIPADA do 1º serviço (Containment Crítico #2) ─────
+   * Cria APENAS o registro mínimo em `services` ao sair de phase2_service —
+   * sem chamar finalizeOnboarding, sem mexer em providers.category_id, sem
+   * mostrar feedback. Objetivo: garantir que F5 entre phase2_service e
+   * phase3_celebration NÃO perca o serviço já escolhido.
+   *
+   * 100% idempotente:
+   *  - Se state.firstServiceId já existe → no-op.
+   *  - Se já há um serviço dessa categoria p/ esse provider → reusa o id.
+   *  - Caso contrário → INSERT mínimo (provider_id + service_name + category_id
+   *    + campos defensivos com fallback null para satisfazer schema).
+   *
+   * Falha silenciosa (best-effort): NUNCA bloqueia o avanço do usuário — o
+   * persistFirstService completo (phase2_details) cobre os campos restantes
+   * e refaz a verificação de duplicidade.
+   */
+  const persistFirstServiceEarly = async (): Promise<boolean> => {
+    if (!user) return false;
+    if (state.firstServiceId) return true;
+    const categoryId = state.service.category_ids?.[0];
+    const serviceName = (state.service.service_name || '').trim();
+    if (!categoryId || !serviceName) return false;
+
+    const providerId = await ensureProviderId();
+    if (!providerId) return false;
+
+    try {
+      const reusedId = await findExistingFirstService(providerId, categoryId, serviceName);
+      if (reusedId) {
+        dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
+        void trackEvent({
+          phase: state.phase,
+          event: 'submit',
+          userId: user.id,
+          meta: { kind: 'persist_first_service_early_reused', service_id: reusedId },
+        });
+        return true;
+      }
+
+      const cityAddress = [state.profile.city, state.profile.state].filter(Boolean).join(' - ');
+      const { data: insertRow, error: insertErr } = await supabase
+        .from('services')
+        .insert({
+          provider_id: providerId,
+          service_name: serviceName,
+          description: (state.service.description || '').trim(),
+          whatsapp: state.profile.whatsapp || null,
+          service_area: state.service.cities_served?.join('; ') || null,
+          address: cityAddress || null,
+          working_hours: state.service.working_hours || null,
+          category_id: categoryId,
+          category_ids: [categoryId],
+        } as any)
+        .select('id')
+        .single();
+
+      if (insertErr || !insertRow?.id) {
+        void trackEvent({
+          phase: state.phase,
+          event: 'error',
+          userId: user.id,
+          meta: {
+            kind: 'persist_first_service_early_failed',
+            error_code: (insertErr as any)?.code || null,
+            error_message: insertErr?.message?.slice(0, 240) || null,
+          },
+        });
+        return false;
+      }
+
+      dispatch({ type: 'SET_FIRST_SERVICE_ID', id: insertRow.id });
+      void trackEvent({
+        phase: state.phase,
+        event: 'submit',
+        userId: user.id,
+        meta: { kind: 'persist_first_service_early_ok', service_id: insertRow.id },
+      });
+      return true;
+    } catch (e: any) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user.id,
+        meta: {
+          kind: 'persist_first_service_early_throw',
+          error_message: String(e?.message || e).slice(0, 240),
+        },
+      });
+      return false;
+    }
+  };
+
   /* ───── Persistência: cria 1º serviço (Fase 2) ───── */
   const persistFirstService = async (): Promise<boolean> => {
     if (!user) return false;
