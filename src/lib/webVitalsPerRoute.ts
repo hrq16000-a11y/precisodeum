@@ -132,7 +132,6 @@ const flush = async (s: RouteState) => {
   if (!samples.length) return;
 
   try {
-    const { data: { session } } = await supabase.auth.getSession();
     const conn = (navigator as any).connection?.effectiveType ?? null;
     const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
 
@@ -146,10 +145,13 @@ const flush = async (s: RouteState) => {
       device_pixel_ratio: window.devicePixelRatio || 1,
       viewport: `${window.innerWidth}x${window.innerHeight}`,
       user_agent: navigator.userAgent.slice(0, 256),
-      user_id: session?.user?.id || null,
     }));
 
-    await (supabase.from('web_vitals_log' as any) as any).insert(rows);
+    // user_id é capturado server-side via auth.uid() na RPC (sem spoofing).
+    await (supabase.rpc as any)('log_web_vitals', {
+      _samples: rows,
+      _visitor_id: null,
+    });
   } catch (err) {
     if (import.meta.env.DEV) console.warn('[web-vitals] flush failed', err);
   }
