@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Building2, MapPin, Mail, Phone, Globe, Briefcase } from 'lucide-react';
+import { Building2, MapPin, Globe, Briefcase } from 'lucide-react';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { formatCityState } from '@/lib/locationFormat';
 
@@ -21,9 +21,11 @@ const AgencyPublicPage = () => {
   useEffect(() => {
     if (!slug) return;
     (async () => {
-      const { data } = await (supabase as any)
+      // LGPD: anon não tem SELECT em cnpj/legal_name/email/whatsapp.
+      // Lista explícita evita "permission denied for column ..." no select('*').
+      const { data } = await supabase
         .from('agencies')
-        .select('*')
+        .select('id, user_id, slug, name, description, city, state, website, logo_url, cover_image_url, status, created_at')
         .eq('slug', slug)
         .eq('status', 'approved')
         .maybeSingle();
@@ -62,13 +64,11 @@ const AgencyPublicPage = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h1 className="font-display text-2xl font-bold text-foreground">{agency.name}</h1>
-                  {agency.legal_name && <p className="text-xs text-muted-foreground mt-0.5">{agency.legal_name}</p>}
+                  {/* LGPD: legal_name, email e whatsapp não são visíveis para visitantes anônimos. */}
                   <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
                     {(agency.city || agency.state) && (
                       <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{formatCityState(agency.city, agency.state, ' • ')}</span>
                     )}
-                    {agency.email && <span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{agency.email}</span>}
-                    {agency.whatsapp && <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{agency.whatsapp}</span>}
                     {agency.website && <a href={agency.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-foreground"><Globe className="h-3.5 w-3.5" />Site</a>}
                   </div>
                 </div>
