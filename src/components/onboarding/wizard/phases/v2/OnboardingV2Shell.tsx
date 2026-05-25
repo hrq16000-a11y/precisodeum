@@ -1298,7 +1298,67 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       if (!op.ok) {
         await logOperationBuildFailure('onboarding_v2_persist_first_service', op as any);
         setSaving(false);
-        toast.error('Complete os campos obrigatórios para publicar o serviço.');
+
+        // Mapa: motivo técnico → (label humano em pt-BR + fase do wizard para corrigir + campo focável).
+        // Garante que o usuário NUNCA veja "Complete os campos obrigatórios" sem saber QUAL campo falta.
+        const REASON_MAP: Record<string, { label: string; backPhase: any; field: string }> = {
+          full_name_required:      { label: 'Nome completo',         backPhase: 'phase1_basic',   field: 'full_name' },
+          whatsapp_required:       { label: 'WhatsApp com DDD',      backPhase: 'phase1_basic',   field: 'whatsapp' },
+          city_and_state_required: { label: 'Cidade e estado (UF)',  backPhase: 'phase1_basic',   field: 'city' },
+          category_required:       { label: 'Categoria do serviço',  backPhase: 'phase2_service', field: 'service_name' },
+          provider_required:       { label: 'Perfil de prestador',   backPhase: 'phase1_basic',   field: 'full_name' },
+          user_required:           { label: 'Sessão de login',       backPhase: 'phase1_basic',   field: 'full_name' },
+        };
+        const info = REASON_MAP[op.reason] || { label: op.reason, backPhase: state.phase, field: '' };
+        const description = `Falta preencher: ${info.label}. Toque em "Voltar e corrigir" — vamos te levar direto ao campo (ele vai piscar em vermelho).`;
+
+        void trackEvent({
+          phase: state.phase,
+          event: 'error',
+          userId: user?.id,
+          meta: {
+            code: 'persist_first_service_op_build_failed',
+            op_code: op.code,
+            op_reason: op.reason,
+            missing_field: info.field,
+            back_phase: info.backPhase,
+          },
+        });
+
+        const goBackAndFocus = () => {
+          // Marca o campo a destacar piscando ao chegar na fase de destino.
+          try {
+            sessionStorage.setItem('wizard:focus_field', info.field);
+            sessionStorage.setItem('wizard:focus_field_set_at', String(Date.now()));
+          } catch { /* fail-soft */ }
+          void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
+            requestWizardBackForPhase({
+              phase: state.phase,
+              source: 'error_toast',
+              editMode,
+              meta: {
+                code: 'persist_first_service_op_build_failed',
+                target_phase: info.backPhase,
+                missing_field: info.field,
+              },
+            });
+          });
+        };
+
+        toast.error('Complete os campos obrigatórios para publicar o serviço', {
+          description,
+          action: { label: 'Voltar e corrigir', onClick: goBackAndFocus },
+          duration: 15000,
+        });
+
+        // Modal claro: lista o campo faltante em pt-BR e oferece CTA de correção.
+        setErrorModal({
+          code: 'persist_first_service_op_build_failed',
+          missingFields: [info.label],
+          techMessage: `reason: ${op.reason}`,
+          techCode: op.code,
+          onRetry: goBackAndFocus,
+        });
         return false;
       }
     }
