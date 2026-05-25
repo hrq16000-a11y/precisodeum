@@ -100,6 +100,7 @@ export type OnboardingPhase =
   | 'phase4_avatar'        // Step 8.5 — Foto de perfil (se ainda faltar)
   | 'phase4_extras_a'      // Step 9 — Bairro + Bio
   | 'phase4_extras_b'      // Step 10 — Redes sociais
+  | 'phase_repair_contact' // AUXILIAR (fora do PHASE_ORDER) — corrige WhatsApp/contato faltante
   | 'done';
 
 /** Fases que NUNCA podem ser puladas (regra do prompt).
