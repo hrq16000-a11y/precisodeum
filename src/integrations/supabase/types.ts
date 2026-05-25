@@ -9905,6 +9905,15 @@ export type Database = {
         }
         Returns: Json
       }
+      log_contact_click: {
+        Args: {
+          _contact_type?: string
+          _page_path?: string
+          _provider_id: string
+          _visitor_id?: string
+        }
+        Returns: string
+      }
       log_provider_geo_issue: {
         Args: {
           _actor_user_id?: string
@@ -9959,6 +9968,16 @@ export type Database = {
           _rows?: number
         }
         Returns: undefined
+      }
+      log_search_intent: {
+        Args: {
+          _category_name?: string
+          _category_slug?: string
+          _city?: string
+          _state?: string
+          _visitor_id?: string
+        }
+        Returns: string
       }
       log_sponsor_access_event: {
         Args: {
