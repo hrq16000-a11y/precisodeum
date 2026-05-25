@@ -21,9 +21,11 @@ const AgencyPublicPage = () => {
   useEffect(() => {
     if (!slug) return;
     (async () => {
-      const { data } = await (supabase as any)
+      // LGPD: anon não tem SELECT em cnpj/legal_name/email/whatsapp.
+      // Lista explícita evita "permission denied for column ..." no select('*').
+      const { data } = await supabase
         .from('agencies')
-        .select('*')
+        .select('id, user_id, slug, name, description, city, state, website, logo_url, cover_image_url, status, created_at')
         .eq('slug', slug)
         .eq('status', 'approved')
         .maybeSingle();
