@@ -13,6 +13,11 @@ import { useEffect, useRef } from 'react';
 import type { OnboardingState } from './types';
 import { broadcastDraftChange } from './crossTabSync';
 import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
+import {
+  DRAFT_ENVELOPE_VERSION,
+  computeDraftChecksum,
+  validateDraftShape,
+} from './draftEnvelope';
 
 /**
  * Versão de RUPTURA (V3): trocamos a chave para invalidar instantaneamente
@@ -24,7 +29,18 @@ const DEBOUNCE_MS = 600;
 const MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7; // 7 dias
 
 interface DraftEnvelope {
+  /** Versão do envelope. >=2 inclui checksum. v1 (sem campo) é descartado. */
+  version?: number;
+  /** Checksum FNV-1a de (profile,service,phase). Ausente em v1. */
+  checksum?: string;
   savedAt: number;
+  profile: OnboardingState['profile'];
+  service: OnboardingState['service'];
+  phase: OnboardingState['phase'];
+  userRef: OnboardingState['userRef'];
+  providerId: OnboardingState['providerId'];
+  firstServiceId: OnboardingState['firstServiceId'];
+}
   profile: OnboardingState['profile'];
   service: OnboardingState['service'];
   phase: OnboardingState['phase'];
