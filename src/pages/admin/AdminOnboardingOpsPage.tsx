@@ -975,8 +975,352 @@ export default function AdminOnboardingOpsPage() {
 }
 
 // =====================================================================
-// Sub-componentes
+// Gatekeeper — Release Safety
 // =====================================================================
+
+type ReleaseSnapshot = {
+  id: string;
+  captured_at: string;
+  app_version: string | null;
+  release_channel: string;
+  stage: string;
+  window_hours: number;
+  health_score: number;
+  classification: 'SAFE' | 'WARNING' | 'DEGRADED' | 'BLOCKED' | string;
+  blocked: boolean;
+  block_reasons: Array<{ code: string; value: number }>;
+  metrics: Record<string, number>;
+  open_regressions: number;
+  critical_regressions: number;
+  open_incidents: number;
+  notes: string | null;
+};
+
+function GatekeeperTab() {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [windowHours, setWindowHours] = useState(24);
+  const [stage, setStage] = useState<'production' | 'canary' | 'staging'>('production');
+  const [appVersion, setAppVersion] = useState('');
+  const [notes, setNotes] = useState('');
+  const [baselineId, setBaselineId] = useState<string | null>(null);
+  const [candidateId, setCandidateId] = useState<string | null>(null);
+
+  const health = useQuery({
+    queryKey: ['gk-health', windowHours, stage],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('compute_onboarding_release_health', {
+        _hours: windowHours,
+        _channel: stage === 'production' ? null : stage,
+      });
+      if (error) throw error;
+      return data as any;
+    },
+    refetchInterval: 60_000,
+  });
+
+  const snapshots = useQuery({
+    queryKey: ['gk-snapshots', stage],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('list_onboarding_release_snapshots', {
+        _limit: 50,
+        _stage: null,
+      });
+      if (error) throw error;
+      return (data ?? []) as ReleaseSnapshot[];
+    },
+  });
+
+  const createSnap = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await (supabase as any).rpc('create_onboarding_release_snapshot', {
+        _app_version: appVersion || null,
+        _channel: stage === 'production' ? 'production' : stage,
+        _stage: stage,
+        _hours: windowHours,
+        _notes: notes || null,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: 'Snapshot capturado',
+        description: `Health ${data?.health_score} · ${data?.classification}`,
+      });
+      qc.invalidateQueries({ queryKey: ['gk-snapshots'] });
+      setNotes('');
+    },
+    onError: (e: any) =>
+      toast({ title: 'Falha ao capturar snapshot', description: String(e?.message ?? e), variant: 'destructive' }),
+  });
+
+  const compare = useQuery({
+    queryKey: ['gk-compare', baselineId, candidateId],
+    enabled: !!(baselineId && candidateId && baselineId !== candidateId),
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('compare_onboarding_release_snapshots', {
+        _a: baselineId,
+        _b: candidateId,
+      });
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const h = health.data ?? null;
+  const klass = h?.classification ?? 'SAFE';
+  const klassColor =
+    klass === 'BLOCKED'
+      ? 'bg-red-100 text-red-700 border-red-300'
+      : klass === 'DEGRADED'
+      ? 'bg-orange-100 text-orange-700 border-orange-300'
+      : klass === 'WARNING'
+      ? 'bg-amber-100 text-amber-700 border-amber-300'
+      : 'bg-emerald-100 text-emerald-700 border-emerald-300';
+
+  return (
+    <div className="space-y-4">
+      {/* Health atual */}
+      <Card>
+        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Shield className="h-5 w-5" /> Release Health (janela ao vivo)
+            </CardTitle>
+            <CardDescription>
+              Avalia métricas dos últimos {windowHours}h e calcula score 0–100 + classificação. Apenas leitura — não dispara rollback.
+            </CardDescription>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={String(windowHours)} onValueChange={(v) => setWindowHours(Number(v))}>
+              <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="6">Últimas 6h</SelectItem>
+                <SelectItem value="24">Últimas 24h</SelectItem>
+                <SelectItem value="72">Últimas 72h</SelectItem>
+                <SelectItem value="168">Últimos 7d</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={stage} onValueChange={(v) => setStage(v as any)}>
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="production">Production</SelectItem>
+                <SelectItem value="canary">Canary</SelectItem>
+                <SelectItem value="staging">Staging</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="outline" onClick={() => health.refetch()}>
+              <RefreshCcw className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {health.isLoading ? (
+            <EmptyState message="Calculando health..." icon={<Activity className="h-6 w-6 animate-pulse" />} />
+          ) : !h ? (
+            <EmptyState message="Sem dados na janela selecionada." />
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <div className="text-5xl font-bold">{h.health_score}</div>
+                <Badge className={`text-sm ${klassColor}`} variant="outline">{klass}</Badge>
+                {h.blocked ? <Badge variant="destructive">BLOCKED</Badge> : null}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
+                <Kpi label="Completion" value={`${h.metrics?.completion_rate ?? 0}%`} />
+                <Kpi label="Abandon" value={`${h.metrics?.abandon_rate ?? 0}%`} highlight={(h.metrics?.abandon_rate ?? 0) > 50} />
+                <Kpi label="Autosave fail" value={h.metrics?.autosave_fail ?? 0} highlight={(h.metrics?.autosave_fail ?? 0) >= 10} />
+                <Kpi label="Recovery corruption" value={h.metrics?.recovery_corruption ?? 0} highlight={(h.metrics?.recovery_corruption ?? 0) >= 3} />
+                <Kpi label="Regressões abertas" value={h.open_regressions ?? 0} />
+                <Kpi label="Críticas" value={h.critical_regressions ?? 0} highlight={(h.critical_regressions ?? 0) > 0} />
+                <Kpi label="Incidentes abertos" value={h.open_incidents ?? 0} highlight={(h.open_incidents ?? 0) > 0} />
+                <Kpi label="Sample (enters)" value={h.metrics?.enters ?? 0} hint="Mín. 20 p/ bloquear por completion" />
+              </div>
+              {h.block_reasons?.length ? (
+                <div className="rounded-md border border-red-200 bg-red-50/50 p-3">
+                  <p className="text-xs font-semibold text-red-700">Motivos de bloqueio / penalidade:</p>
+                  <ul className="mt-1 space-y-0.5 text-xs text-red-800">
+                    {h.block_reasons.map((r: any, i: number) => (
+                      <li key={i}>• <code className="font-mono">{r.code}</code> = {r.value}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Capturar snapshot */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Capturar release snapshot</CardTitle>
+          <CardDescription>
+            Salva uma fotografia operacional (métricas + regressões + incidentes + flags). Use antes e depois do deploy para comparar.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-3">
+            <div>
+              <Label className="text-xs">App version</Label>
+              <Input value={appVersion} onChange={(e) => setAppVersion(e.target.value)} placeholder="1.1.0" />
+            </div>
+            <div>
+              <Label className="text-xs">Stage</Label>
+              <Select value={stage} onValueChange={(v) => setStage(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="production">Production</SelectItem>
+                  <SelectItem value="canary">Canary</SelectItem>
+                  <SelectItem value="staging">Staging</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Janela (h)</Label>
+              <Input type="number" value={windowHours} onChange={(e) => setWindowHours(Math.max(1, Number(e.target.value) || 24))} />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Notas (opcional)</Label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="baseline antes do deploy X" />
+          </div>
+          <Button onClick={() => createSnap.mutate()} disabled={createSnap.isPending}>
+            {createSnap.isPending ? 'Capturando...' : 'Capturar snapshot agora'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Histórico */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Snapshots recentes</CardTitle>
+          <CardDescription>Marque um baseline e um candidato para comparar.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {snapshots.isLoading ? (
+            <EmptyState message="Carregando..." />
+          ) : !(snapshots.data?.length) ? (
+            <EmptyState message="Nenhum snapshot capturado ainda." />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[80px]">Comparar</TableHead>
+                    <TableHead>Capturado</TableHead>
+                    <TableHead>Versão</TableHead>
+                    <TableHead>Stage</TableHead>
+                    <TableHead className="text-right">Score</TableHead>
+                    <TableHead>Classe</TableHead>
+                    <TableHead className="text-right">Compl.%</TableHead>
+                    <TableHead className="text-right">Regr.</TableHead>
+                    <TableHead className="text-right">Inc.</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {snapshots.data.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={baselineId === s.id ? 'default' : 'outline'}
+                          className="h-7 px-2 text-[10px]"
+                          onClick={() => setBaselineId(s.id)}
+                          aria-label="Marcar como baseline"
+                        >A</Button>
+                        <Button
+                          size="sm"
+                          variant={candidateId === s.id ? 'default' : 'outline'}
+                          className="h-7 px-2 text-[10px]"
+                          onClick={() => setCandidateId(s.id)}
+                          aria-label="Marcar como candidato"
+                        >B</Button>
+                      </TableCell>
+                      <TableCell className="text-xs">{new Date(s.captured_at).toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="font-mono text-xs">{s.app_version ?? '—'}</TableCell>
+                      <TableCell><Badge variant="outline">{s.stage}</Badge></TableCell>
+                      <TableCell className="text-right font-bold">{s.health_score}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            s.classification === 'BLOCKED'
+                              ? 'border-red-300 bg-red-50 text-red-700'
+                              : s.classification === 'DEGRADED'
+                              ? 'border-orange-300 bg-orange-50 text-orange-700'
+                              : s.classification === 'WARNING'
+                              ? 'border-amber-300 bg-amber-50 text-amber-700'
+                              : 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                          }
+                        >
+                          {s.classification}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{s.metrics?.completion_rate ?? '—'}</TableCell>
+                      <TableCell className="text-right">{s.open_regressions} ({s.critical_regressions})</TableCell>
+                      <TableCell className="text-right">{s.open_incidents}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Comparação */}
+      {baselineId && candidateId && baselineId !== candidateId ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ArrowRight className="h-4 w-4" /> Comparação A → B
+            </CardTitle>
+            <CardDescription>Detecta se a release nova piorou em relação ao baseline.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {compare.isLoading ? (
+              <EmptyState message="Comparando..." />
+            ) : !compare.data ? (
+              <EmptyState message="Sem dados." />
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
+                <DeltaKpi label="Δ Health" value={compare.data.delta.health_score} inverse={false} />
+                <DeltaKpi label="Δ Completion %" value={compare.data.delta.completion_rate} inverse={false} />
+                <DeltaKpi label="Δ Abandon %" value={compare.data.delta.abandon_rate} inverse={true} />
+                <DeltaKpi label="Δ Autosave fail" value={compare.data.delta.autosave_fail} inverse={true} />
+                <DeltaKpi label="Δ Recovery corruption" value={compare.data.delta.recovery_corruption} inverse={true} />
+                <DeltaKpi label="Δ Regressões" value={compare.data.delta.open_regressions} inverse={true} />
+                <DeltaKpi label="Δ Críticas" value={compare.data.delta.critical_regressions} inverse={true} />
+                <DeltaKpi label="Δ Incidentes" value={compare.data.delta.open_incidents} inverse={true} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
+  );
+}
+
+function DeltaKpi({ label, value, inverse }: { label: string; value: number; inverse: boolean }) {
+  const worse = inverse ? value > 0 : value < 0;
+  const better = inverse ? value < 0 : value > 0;
+  const color = worse
+    ? 'border-red-300 bg-red-50/40'
+    : better
+    ? 'border-emerald-300 bg-emerald-50/40'
+    : '';
+  const sign = value > 0 ? '+' : '';
+  return (
+    <Card className={color}>
+      <CardContent className="p-3">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className="text-xl font-bold leading-tight">{sign}{value}</p>
+      </CardContent>
+    </Card>
+  );
+}
 
 function Kpi({
   label,
