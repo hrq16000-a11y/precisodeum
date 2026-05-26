@@ -127,6 +127,11 @@ export async function trackOnboardingEvent(opts: TrackOptions): Promise<void> {
     if (!('flow' in meta)) {
       meta = { ...meta, flow: getOnboardingFlow() ?? 'unknown' };
     }
+    // ── DIMENSÕES DE RELEASE (auto-injetadas) ──────────────────────────────
+    // Permite correlacionar regressões a deploys específicos sem precisar
+    // alterar cada call-site. Apenas adiciona se o caller não tiver enviado.
+    if (!('app_version' in meta)) meta = { ...meta, app_version: APP_VERSION };
+    if (!('release_channel' in meta)) meta = { ...meta, release_channel: getReleaseChannel() };
     // ── PADRONIZAÇÃO DE META PARA EVENTOS DE ERRO ─────────────────────────
     // Garante que dashboards/queries possam fazer GROUP BY meta->>'error_code'
     // sem se preocupar com NULL vs ausente. Para eventos `error`, força a
