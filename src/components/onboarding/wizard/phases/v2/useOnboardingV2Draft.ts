@@ -41,13 +41,6 @@ interface DraftEnvelope {
   providerId: OnboardingState['providerId'];
   firstServiceId: OnboardingState['firstServiceId'];
 }
-  profile: OnboardingState['profile'];
-  service: OnboardingState['service'];
-  phase: OnboardingState['phase'];
-  userRef: OnboardingState['userRef'];
-  providerId: OnboardingState['providerId'];
-  firstServiceId: OnboardingState['firstServiceId'];
-}
 
 export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
   if (typeof window === 'undefined') return null;
