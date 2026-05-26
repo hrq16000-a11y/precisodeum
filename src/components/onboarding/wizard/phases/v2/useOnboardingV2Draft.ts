@@ -160,7 +160,12 @@ export function useOnboardingV2Draft(state: OnboardingState, enabled: boolean = 
       { phase: state.phase as any, action: 'autosave_local_draft', runIfStale: true },
       () => {
         try {
+          const checksum = computeDraftChecksum({
+            profile: state.profile, service: state.service, phase: state.phase,
+          });
           const envelope: DraftEnvelope = {
+            version: DRAFT_ENVELOPE_VERSION,
+            checksum,
             savedAt: Date.now(),
             profile: state.profile,
             service: state.service,
