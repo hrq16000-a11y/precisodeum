@@ -280,7 +280,7 @@ const bootstrap = () => {
       throw new Error("Configuração do backend ausente.");
     }
 
-    createRoot(rootElement).render(<App />);
+    createRoot(rootElement).render(<HelmetProvider><App /></HelmetProvider>);
 
     clearAutoHealAttempts();
     removeShell();
