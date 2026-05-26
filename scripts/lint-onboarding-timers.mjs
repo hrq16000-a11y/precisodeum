@@ -63,7 +63,10 @@ const EXTRA_FILES = [
 
 /** Arquivos isentos com justificativa explícita. */
 const ALLOW_FILES = new Set([
-  // ex.: 'src/lib/soundFx.ts', // WebAudio puro, sem state React.
+  // BackButton: setTimeout de 600ms apenas zera `lockRef.current` (lock fire-
+  // and-forget de transição). Se o componente desmontar antes, a mutação cai
+  // num ref órfão — no-op natural, sem leak nem efeito colateral observável.
+  'src/components/onboarding/wizard/BackButton.tsx',
 ]);
 
 const EXTS = new Set(['.ts', '.tsx']);
