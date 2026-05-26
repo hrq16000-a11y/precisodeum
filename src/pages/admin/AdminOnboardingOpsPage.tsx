@@ -31,7 +31,9 @@ import {
   GitBranch,
   RefreshCcw,
   Search,
+  Shield,
   ShieldAlert,
+  ShieldCheck,
   Telescope,
 } from 'lucide-react';
 
