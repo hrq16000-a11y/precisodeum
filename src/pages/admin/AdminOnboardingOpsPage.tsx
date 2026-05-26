@@ -50,6 +50,7 @@ import AdminRuntimeGovernancePanel from '@/components/admin/AdminRuntimeGovernan
 import AdminSelfAuditPanel from '@/components/admin/AdminSelfAuditPanel';
 import AdminEvidencePanel from '@/components/admin/AdminEvidencePanel';
 import AdminRealityPanel from '@/components/admin/AdminRealityPanel';
+import AdminMemoryPanel from '@/components/admin/AdminMemoryPanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
