@@ -67,8 +67,22 @@ describe('useOnboardingV2Draft v2 envelope', () => {
     return await import('@/components/onboarding/wizard/phases/v2/useOnboardingV2Draft');
   }
 
-  it('descarta envelope v1 (sem version)', async () => {
+  it('FAIL-OPEN: envelope v1 (sem version) é ACEITO durante rollout', async () => {
     writeRaw({
+      savedAt: Date.now(),
+      profile: { whatsapp: '11999999999' },
+      service: { service_name: 'Encanador' },
+      phase: 'phase2_details',
+    });
+    const m = await load();
+    const out = m.readOnboardingV2Draft();
+    expect(out).not.toBeNull();
+    expect(out?.phase).toBe('phase2_details');
+  });
+
+  it('descarta envelope com version explícita diferente da atual', async () => {
+    writeRaw({
+      version: 99,
       savedAt: Date.now(),
       profile: { whatsapp: '11999999999' },
       service: { service_name: 'Encanador' },
@@ -79,7 +93,7 @@ describe('useOnboardingV2Draft v2 envelope', () => {
     expect(m.getLastReadDraftDiagnostics().reason).toBe('version_mismatch');
   });
 
-  it('descarta envelope v2 com checksum inválido', async () => {
+  it('descarta envelope v2 com checksum PRESENTE e inválido', async () => {
     writeRaw({
       version: DRAFT_ENVELOPE_VERSION,
       checksum: 'deadbeef',
@@ -91,6 +105,18 @@ describe('useOnboardingV2Draft v2 envelope', () => {
     const m = await load();
     expect(m.readOnboardingV2Draft()).toBeNull();
     expect(m.getLastReadDraftDiagnostics().reason).toBe('checksum_invalid');
+  });
+
+  it('envelope SEM checksum (mas com version=2) é aceito — fail-open', async () => {
+    writeRaw({
+      version: DRAFT_ENVELOPE_VERSION,
+      savedAt: Date.now(),
+      profile: { whatsapp: '11999999999' },
+      service: { service_name: 'Encanador' },
+      phase: 'phase2_details',
+    });
+    const m = await load();
+    expect(m.readOnboardingV2Draft()).not.toBeNull();
   });
 
   it('aceita envelope v2 com checksum válido + conteúdo significativo', async () => {
