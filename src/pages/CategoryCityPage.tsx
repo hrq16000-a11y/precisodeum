@@ -28,7 +28,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import ProviderCard from '@/components/ProviderCard';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Button } from '@/components/ui/button';
-import { useSeoHead } from '@/hooks/useSeoHead';
+import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useCategoryProviders } from '@/hooks/useProviders';
 import { isKnownCity } from '@/lib/citiesIndex';
