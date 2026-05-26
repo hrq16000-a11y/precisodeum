@@ -67,10 +67,13 @@ export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
       lastReadDiag.reason = 'expired';
       return null;
     }
-    // Hardening F1: versão antiga (v1, sem campo) é descartada silenciosamente.
-    // Graceful: se o campo simplesmente faltar mas o conteúdo parecer válido,
-    // ainda assim descartamos — drafts v1 expiram naturalmente em 7d.
-    if (typeof parsed.version !== 'number' || parsed.version !== DRAFT_ENVELOPE_VERSION) {
+    // Hardening F1 — FAIL-OPEN durante rollout:
+    //  - envelope sem `version` (legado v1)  → aceitar por compat (expira em 7d)
+    //  - envelope com `version` ≠ DRAFT_ENVELOPE_VERSION → descartar
+    //  - envelope sem `checksum` → aceitar (não há como conferir)
+    //  - envelope com `checksum` presente e inválido → descartar + telemetria
+    // Evita matar drafts legítimos de usuários ainda na versão antiga.
+    if (typeof parsed.version === 'number' && parsed.version !== DRAFT_ENVELOPE_VERSION) {
       lastReadDiag.reason = 'version_mismatch';
       return null;
     }
@@ -82,13 +85,16 @@ export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
       lastReadDiag.reason = 'shape_invalid';
       return null;
     }
-    // Hardening F1: checksum confere?
-    const expected = computeDraftChecksum({
-      profile: parsed.profile, service: parsed.service, phase: parsed.phase,
-    });
-    if (parsed.checksum && parsed.checksum !== expected) {
-      lastReadDiag.reason = 'checksum_invalid';
-      return null;
+    // Hardening F1: só descarta por checksum quando ele está presente.
+    // Drafts v1 (sem checksum) passam direto durante a janela de transição.
+    if (typeof parsed.checksum === 'string' && parsed.checksum.length > 0) {
+      const expected = computeDraftChecksum({
+        profile: parsed.profile, service: parsed.service, phase: parsed.phase,
+      });
+      if (parsed.checksum !== expected) {
+        lastReadDiag.reason = 'checksum_invalid';
+        return null;
+      }
     }
     // Containment patch — Crítico #3: NÃO anuncia "rascunho recuperado" se
     // não há conteúdo mínimo. Antes, qualquer envelope salvo (mesmo só com
