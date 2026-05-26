@@ -39,7 +39,8 @@ const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T
 
 
 // Route-level chunks — keep App shell light and split every page by route.
-const Index = lazy(() => import("./pages/Index"));
+// Homepage é eager para eliminar waterfall de chunk no LCP da rota "/".
+import Index from "./pages/Index";
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const CategoryCityPage = lazy(() => import("./pages/CategoryCityPage"));
