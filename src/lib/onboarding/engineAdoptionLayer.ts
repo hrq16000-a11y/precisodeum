@@ -70,7 +70,7 @@ export interface DerivedRealityInput {
 }
 export function deriveRealityInput(signals: ReadonlyArray<RuntimeSignal>): DerivedRealityInput {
   const events = signals
-    .filter((s) => s.kind === 'event' || s.kind === 'behavioral')
+    .filter((s) => s.kind === 'event' || s.kind === 'behavioral_summary')
     .map((s) => ({
       phase: s.phase ?? 'unknown',
       event: s.category ?? s.kind,

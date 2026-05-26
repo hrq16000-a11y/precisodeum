@@ -83,7 +83,7 @@ export function validateOperationalContracts(
   }
 
   // orphan_engine_contract — kind não reconhecido
-  const KNOWN_KINDS = new Set(['event', 'incident', 'release', 'experiment', 'flag', 'behavioral', 'regression', 'memory', 'hardening', 'evidence']);
+  const KNOWN_KINDS = new Set(['event', 'incident', 'release', 'experiment', 'flag', 'behavioral_summary', 'regression_snapshot', 'memory_finding', 'hardening_result', 'evidence_finding']);
   const unknownKinds = new Set<string>();
   for (const s of signals) {
     if (!KNOWN_KINDS.has(s.kind as string)) unknownKinds.add(s.kind as string);

@@ -71,7 +71,7 @@ export interface PropagationReport {
 // Heurística estrutural baseada em kind/source/severity.
 function reachedEnginesFor(s: RuntimeSignal): EngineNode[] {
   const r = new Set<EngineNode>();
-  if (s.kind === 'event' || s.kind === 'behavioral') r.add('reality');
+  if (s.kind === 'event' || s.kind === 'behavioral_summary') r.add('reality');
   if (s.kind === 'incident') {
     r.add('reality');
     r.add('memory');
