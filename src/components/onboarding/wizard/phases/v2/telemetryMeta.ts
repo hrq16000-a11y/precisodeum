@@ -46,6 +46,14 @@ export interface OnboardingEventMeta {
   attempt?: number;
   /** Ação semântica: 'submit', 'next', 'skip', etc. */
   action?: string;
+  /** Estado do recovery: 'local'|'remote'|'discarded'|'corrupted'|'none'. */
+  recovery_state?: 'local' | 'remote' | 'discarded' | 'corrupted' | 'none';
+  /** Estado da hidratação: 'seed'|'draft'|'fresh'|'concurrent'. */
+  hydration_state?: 'seed' | 'draft' | 'fresh' | 'concurrent';
+  /** Resultado da validação de checksum do envelope local. */
+  checksum_ok?: boolean;
+  /** Subtipo do evento — usado por dashboards (ex: 'autosave_remote_ok'). */
+  kind?: string;
   /** Campo livre — flags, contadores, IDs de feature. */
   [key: string]: unknown;
 }

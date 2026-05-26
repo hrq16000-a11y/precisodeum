@@ -165,6 +165,10 @@ import {
   setOnboardingFlow,
 } from './telemetry';
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
+import { validateDraftShape } from './draftEnvelope';
+import { detectConcurrentTab, startTabHeartbeat } from './crossTabSync';
+import { useAbandonmentTimer } from './useAbandonmentTimer';
+import { getLastReadDraftDiagnostics } from './useOnboardingV2Draft';
 import WizardErrorModal from '@/components/wizard/WizardErrorModal';
 import {
   buildOnboardingCoreLocks,
@@ -473,6 +477,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     if (draft && draft.phase && draft.phase !== 'phase2_service') {
       setDraftRestored({ source: 'local' });
       setOnboardingDraftSource('local');
+      // Hardening F4/F7: emite eventos canônicos para detectar refresh e uso
+      // de recovery local. Não troca de fase nem mostra modal — só observa.
+      void trackOnboardingEvent({
+        phase: draft.phase as any,
+        event: 'next',
+        userId: user?.id,
+        meta: { kind: 'recovery_local_used', refresh_detected: true },
+      });
       const t = scheduleWizardTimeout(
         { phase: state.phase as any, action: 'shell_local_draft_hint_clear' },
         () => setDraftRestored(null),
@@ -481,9 +493,37 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       return () => clearTimeout(t);
     }
     // Sessão limpa: marca explicitamente como "none" para diferenciar de
-    // sessões antigas onde a chave estava ausente.
+    // sessões antigas onde a chave estava ausente. Se houve descarte por
+    // checksum/shape/versão, emite telemetria com a razão para análise.
     if (!getOnboardingDraftSource()) setOnboardingDraftSource('none');
+    const diag = getLastReadDraftDiagnostics();
+    if (diag.reason && diag.reason !== 'empty' && diag.reason !== 'thin_content') {
+      void trackOnboardingEvent({
+        phase: state.phase as any,
+        event: 'error',
+        userId: user?.id,
+        meta: { kind: 'recovery_corrupted', reason: diag.reason },
+      });
+    }
   }, [skipDraftRestore]);
+
+  // Hardening F8: heartbeat de aba ativa + detecção de concorrência.
+  useEffect(() => {
+    const stop = startTabHeartbeat();
+    if (detectConcurrentTab()) {
+      void trackOnboardingEvent({
+        phase: state.phase as any,
+        event: 'error',
+        userId: user?.id,
+        meta: { kind: 'concurrent_tab_detected' },
+      });
+    }
+    return () => stop();
+  }, []);
+
+  // Hardening F4: detector de abandono silencioso (15min sem interação).
+  useAbandonmentTimer(state.phase as any, user?.id);
+
 
   // Detecta rascunho REMOTO (troca de dispositivo) e ABRE MODAL para o usuário decidir.
   // Não auto-hidrata mais — evita "salto" silencioso de etapa.
@@ -511,7 +551,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           event: 'next',
           userId: user.id,
           meta: {
-            kind: 'remote_draft_discarded_local_newer',
+            kind: 'recovery_remote_discarded',
+            reason: 'local_newer',
             local_saved_at: localSavedAt,
             remote_updated_at: remoteSavedAt,
             delta_ms: localSavedAt - remoteSavedAt,
@@ -534,6 +575,23 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   const handleRemoteContinue = () => {
     if (remoteDraft) {
+      // Hardening F6: valida shape antes de hidratar — descarta payload corrompido.
+      const shape = validateDraftShape({
+        profile: remoteDraft.payload?.profile,
+        service: remoteDraft.payload?.service,
+        phase: remoteDraft.phase,
+      });
+      if (!shape.ok) {
+        void trackOnboardingEvent({
+          phase: state.phase,
+          event: 'error',
+          userId: user?.id,
+          meta: { kind: 'recovery_remote_discarded', reason: `shape_${shape.reason}` },
+        });
+        setShowRemoteModal(false);
+        setRemoteDraft(null);
+        return;
+      }
       dispatch({
         type: 'HYDRATE',
         state: {
@@ -544,6 +602,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           firstServiceId: remoteDraft.payload.firstServiceId ?? null,
           phase: remoteDraft.phase as any,
         },
+      });
+      void trackOnboardingEvent({
+        phase: remoteDraft.phase as any,
+        event: 'next',
+        userId: user?.id,
+        meta: { kind: 'recovery_remote_used' },
       });
       setDraftRestored({ source: 'remote', at: remoteDraft.updated_at });
       setOnboardingDraftSource('remote');
