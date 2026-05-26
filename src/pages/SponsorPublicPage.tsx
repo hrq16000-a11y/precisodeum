@@ -4,17 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Megaphone, Globe, Phone, Mail, ExternalLink, BadgeCheck } from 'lucide-react';
-import { useSeoHead } from '@/hooks/useSeoHead';
+import { SeoMeta } from '@/components/SeoMeta';
 
 const SponsorPublicPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [sponsor, setSponsor] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useSeoHead({
-    title: sponsor ? `${sponsor.company_name || sponsor.title} — Patrocinador` : 'Patrocinador',
-    description: sponsor?.full_description || sponsor?.short_description || 'Patrocinador oficial da plataforma.',
-  });
+  const seoTitle = sponsor ? `${sponsor.company_name || sponsor.title} — Patrocinador` : 'Patrocinador';
+  const seoDescription = sponsor?.full_description || sponsor?.short_description || 'Patrocinador oficial da plataforma.';
+  const seoCanonical = slug ? `/patrocinador/${slug}` : undefined;
+  const seoImage = sponsor?.logo_url || sponsor?.image_url || undefined;
 
   useEffect(() => {
     if (!slug) return;
