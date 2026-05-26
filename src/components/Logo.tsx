@@ -31,8 +31,10 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/', priority = fa
         width="710"
         height="209"
         loading={priority ? 'eager' : 'lazy'}
-        fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
+        // PR 7: fetchpriority é DOM attr nativo; React 18 não reconhece a versão
+        // camelCase e emite warning. Passamos via spread em lowercase.
+        {...({ fetchpriority: priority ? 'high' : 'auto' } as Record<string, string>)}
         onError={(e) => handleBrandImageError(e, 'logo')}
       />
     </picture>
