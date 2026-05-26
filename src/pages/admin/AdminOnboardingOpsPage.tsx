@@ -450,6 +450,10 @@ export default function AdminOnboardingOpsPage() {
             <AdminRealityPanel enabled={!!isAdmin} />
           </TabsContent>
 
+          <TabsContent value="memory" className="space-y-3">
+            <AdminMemoryPanel enabled={!!isAdmin} />
+          </TabsContent>
+
           <TabsContent value="evidence" className="space-y-3">
             <AdminEvidencePanel enabled={!!isAdmin} />
           </TabsContent>
