@@ -424,6 +424,7 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="alerts" className="gap-1"><AlertTriangle className="h-4 w-4" /> Alertas</TabsTrigger>
             <TabsTrigger value="incidents" className="gap-1"><ShieldAlert className="h-4 w-4" /> Incidentes</TabsTrigger>
             <TabsTrigger value="experiments" className="gap-1"><Beaker className="h-4 w-4" /> Experiments</TabsTrigger>
+            <TabsTrigger value="intelligence" className="gap-1"><Brain className="h-4 w-4" /> Intelligence</TabsTrigger>
           </TabsList>
 
           <TabsContent value="experiments" className="space-y-3">
