@@ -38,10 +38,12 @@ import {
   ShieldCheck,
   Sparkles,
   Telescope,
+  Workflow,
 } from 'lucide-react';
 import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
 import AdminIntelligencePanel from '@/components/admin/AdminIntelligencePanel';
 import AdminExecutivePanel from '@/components/admin/AdminExecutivePanel';
+import AdminGovernancePanel from '@/components/admin/AdminGovernancePanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -428,6 +430,7 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="incidents" className="gap-1"><ShieldAlert className="h-4 w-4" /> Incidentes</TabsTrigger>
             <TabsTrigger value="experiments" className="gap-1"><Beaker className="h-4 w-4" /> Experiments</TabsTrigger>
             <TabsTrigger value="intelligence" className="gap-1"><Brain className="h-4 w-4" /> Intelligence</TabsTrigger>
+            <TabsTrigger value="governance" className="gap-1"><Workflow className="h-4 w-4" /> Governance</TabsTrigger>
           </TabsList>
 
           <TabsContent value="experiments" className="space-y-3">
@@ -993,6 +996,10 @@ export default function AdminOnboardingOpsPage() {
 
           <TabsContent value="executive" className="space-y-3">
             <AdminExecutivePanel />
+          </TabsContent>
+
+          <TabsContent value="governance" className="space-y-3">
+            <AdminGovernancePanel />
           </TabsContent>
         </Tabs>
       </main>
