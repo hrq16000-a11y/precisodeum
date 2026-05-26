@@ -5,16 +5,20 @@ const read = (path: string) => fs.readFileSync(path, 'utf8');
 
 describe('Onboarding hard gate regression guard', () => {
   it('blocks dashboard until onboarding is completed and step is 5', () => {
-    const app = read('src/App.tsx');
-    const route = read('src/components/ProtectedRoute.tsx');
+    // PR 3 split: gate centralizado vive em App.tsx + src/routes/*.
+    const { readRouterSources } = require('./helpers/routerSources');
+    const app: string = readRouterSources();
     expect(app).toContain('onboarding_completed !== true');
     expect(app).not.toContain('onboardingStep < 5');
     expect(app).toContain('/cadastro-inicial');
-    expect(route).toContain('The onboarding redirect');
+    // O gate é resolvido por um helper compartilhado (intenção do antigo
+    // comentário em ProtectedRoute, hoje no App.tsx).
+    expect(app).toContain('resolveOnboardingGateTarget');
   });
 
   it('registers a dedicated admin diagnostics route for wizard resets', () => {
-    const app = read('src/App.tsx');
+    const { readRouterSources } = require('./helpers/routerSources');
+    const app: string = readRouterSources();
     const adminNav = read('src/components/admin/AdminGroupNav.tsx');
     expect(app).toContain('/admin/wizard-diagnostico');
     expect(adminNav).toContain('/admin/wizard-diagnostico');
