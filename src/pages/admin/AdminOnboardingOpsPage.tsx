@@ -997,6 +997,10 @@ export default function AdminOnboardingOpsPage() {
           <TabsContent value="executive" className="space-y-3">
             <AdminExecutivePanel />
           </TabsContent>
+
+          <TabsContent value="governance" className="space-y-3">
+            <AdminGovernancePanel />
+          </TabsContent>
         </Tabs>
       </main>
       <Footer />
