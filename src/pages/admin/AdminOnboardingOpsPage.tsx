@@ -1004,6 +1004,10 @@ export default function AdminOnboardingOpsPage() {
           <TabsContent value="governance" className="space-y-3">
             <AdminGovernancePanel />
           </TabsContent>
+
+          <TabsContent value="runtime-drift" className="space-y-3">
+            <AdminRuntimeGovernancePanel />
+          </TabsContent>
         </Tabs>
       </main>
       <Footer />
