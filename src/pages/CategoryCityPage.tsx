@@ -91,12 +91,7 @@ export default function CategoryCityPage() {
     ? buildCanonicalUrl(`/categoria/${slug}/em/${cidade}`)
     : undefined;
 
-  useSeoHead({
-    title,
-    description,
-    canonical,
-    noindex: !valid || providers.length === 0,
-  });
+  const seoNoindex = !valid || providers.length === 0;
 
   // JSON-LD ItemList apenas quando há resultados — evita lixo nos motores.
   useJsonLd(
