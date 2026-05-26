@@ -13,8 +13,8 @@ const subscribeMock = vi.fn(() => fakeChannel);
 const onMock = vi.fn(() => fakeChannel);
 const fakeChannel: any = { on: onMock, subscribe: subscribeMock };
 
-const channelFactory = vi.fn(() => fakeChannel);
-const removeChannelMock = vi.fn();
+const channelFactory = vi.fn((_name: string) => fakeChannel);
+const removeChannelMock = vi.fn((_ch: unknown) => undefined);
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
