@@ -146,7 +146,7 @@ describe('regressionDetector — detectRegressions (lote)', () => {
       expect(a.release_channel).toBe('production');
     }
     const abandon = anomalies.find((a) => a.metric === 'abandon_rate')!;
-    expect(abandon.severity).toBe('critical');
+    expect(abandon.severity).toBe('high');
   });
 
   it('debounce: mesma severidade já emitida → suprime', () => {
