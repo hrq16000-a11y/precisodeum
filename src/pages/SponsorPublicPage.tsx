@@ -45,6 +45,14 @@ const SponsorPublicPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <SeoMeta
+        title={seoTitle}
+        description={seoDescription}
+        canonical={seoCanonical}
+        ogImage={seoImage}
+        ogType="profile"
+        noindex={!sponsor}
+      />
       <Header />
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8">
         {loading ? (
