@@ -57,6 +57,7 @@ import AdminMemoryPanel from '@/components/admin/AdminMemoryPanel';
 import AdminHardeningPanel from '@/components/admin/AdminHardeningPanel';
 import AdminCorrelationPanel from '@/components/admin/AdminCorrelationPanel';
 import AdminSignalCenter from '@/components/admin/AdminSignalCenter';
+import AdminMirrorCenter from '@/components/admin/AdminMirrorCenter';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -452,6 +453,7 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="hardening" className="gap-1"><Zap className="h-4 w-4" /> Hardening</TabsTrigger>
             <TabsTrigger value="correlation" className="gap-1"><GitMerge className="h-4 w-4" /> Correlation</TabsTrigger>
             <TabsTrigger value="signals" className="gap-1"><Activity className="h-4 w-4" /> Signals</TabsTrigger>
+            <TabsTrigger value="mirror" className="gap-1"><Sparkles className="h-4 w-4" /> Mirror</TabsTrigger>
           </TabsList>
 
           <TabsContent value="reality" className="space-y-3">
@@ -472,6 +474,10 @@ export default function AdminOnboardingOpsPage() {
 
           <TabsContent value="signals" className="space-y-3">
             <AdminSignalCenter />
+          </TabsContent>
+
+          <TabsContent value="mirror" className="space-y-3">
+            <AdminMirrorCenter />
           </TabsContent>
 
           <TabsContent value="evidence" className="space-y-3">
