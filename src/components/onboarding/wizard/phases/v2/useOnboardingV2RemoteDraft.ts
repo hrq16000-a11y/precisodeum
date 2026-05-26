@@ -110,11 +110,23 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
           } catch { /* fail-soft: telemetria nunca pode travar o fluxo */ }
         };
 
+        const reportSuccess = async (attempt: number) => {
+          try {
+            const { trackOnboardingEvent } = await import('./telemetry');
+            void trackOnboardingEvent({
+              phase: state.phase as any,
+              event: 'next',
+              userId,
+              meta: { kind: 'autosave_remote_ok', attempt },
+            });
+          } catch { /* fail-soft */ }
+        };
         try {
           const { error } = await upsertOnce();
           if (error) throw error;
           markRemoteDraftWritten(state.phase as any, userId);
           recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
+          await reportSuccess(1);
         } catch (error: any) {
           await reportFailure(error, 1);
           // Retry simples (1 nova tentativa, sem loop). Backoff fixo 1500ms.
@@ -124,6 +136,7 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
               if (err2) throw err2;
               markRemoteDraftWritten(state.phase as any, userId);
               recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
+              await reportSuccess(2);
             } catch (retryErr: any) {
               await reportFailure(retryErr, 2);
             }
