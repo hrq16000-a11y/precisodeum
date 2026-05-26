@@ -190,8 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (isStale()) return profileData ?? null;
     setProfile(profileData);
-    if (isStale()) return profileData ?? null;
-    setCelebrationMuted(resolveCelebrationMutedPreference(profileData?.celebration_muted));
+    // celebration_muted é sincronizado pelo AuthCompanion (side-effect não-auth).
 
     const metaChosen = authUser?.user_metadata?.profile_type_chosen === true;
     const hasType = !!profileData?.profile_type;
@@ -213,9 +212,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!isStale()) setProvider(best);
 
       if (best.city && best.city !== 'Não informada' && best.state && (best.latitude == null || best.longitude == null)) {
+        // Geocoding é best-effort e fica fora do bundle inicial do auth:
+        // importamos sob demanda apenas quando realmente precisamos resolver.
         window.setTimeout(() => {
-          geocodeCity(best.city, best.state)
-            .then(({ latitude, longitude }) => {
+          import('@/lib/geoUtils')
+            .then(({ geocodeCity }) => geocodeCity(best.city, best.state))
+            .then((coords) => {
+              if (!coords) return;
+              const { latitude, longitude } = coords;
               if (latitude != null && longitude != null) {
                 supabase.from('providers').update({ latitude, longitude }).eq('id', best.id).then(() => {
                   if (!isStale()) setProvider(prev => prev ? { ...prev, latitude, longitude } : prev);
@@ -223,8 +227,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               }
             })
             .catch((err) => {
-              // Geocode best-effort — não bloqueia o login, mas logamos
-              // para detectar quedas sistemáticas do provedor de geocoding.
               console.warn('[useAuth] geocodeCity background update failed', err);
             });
         }, 1200);
