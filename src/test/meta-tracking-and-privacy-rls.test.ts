@@ -71,9 +71,9 @@ describe("RLS contract · admin_meta_tracking_quality é restrito ao painel admi
     }
   });
 
-  it("AdminGuard cobre rotas /admin (failure-closed)", () => {
+  it("AdminGuard cobre rotas /admin (failure-closed)", async () => {
     // PR 3 split: rotas /admin/* vivem agora em src/routes/adminRoutes.tsx.
-    const { readRouterSources } = require("./helpers/routerSources");
+    const { readRouterSources } = await import("./helpers/routerSources");
     const routerSrc: string = readRouterSources();
     expect(routerSrc).toMatch(/AdminGuard/);
   });

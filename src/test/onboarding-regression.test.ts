@@ -4,9 +4,9 @@ import fs from 'fs';
 const read = (path: string) => fs.readFileSync(path, 'utf8');
 
 describe('Onboarding hard gate regression guard', () => {
-  it('blocks dashboard until onboarding is completed and step is 5', () => {
+  it('blocks dashboard until onboarding is completed and step is 5', async () => {
     // PR 3 split: gate centralizado vive em App.tsx + src/routes/*.
-    const { readRouterSources } = require('./helpers/routerSources');
+    const { readRouterSources } = await import('./helpers/routerSources');
     const app: string = readRouterSources();
     expect(app).toContain('onboarding_completed !== true');
     expect(app).not.toContain('onboardingStep < 5');
@@ -16,8 +16,8 @@ describe('Onboarding hard gate regression guard', () => {
     expect(app).toContain('resolveOnboardingGateTarget');
   });
 
-  it('registers a dedicated admin diagnostics route for wizard resets', () => {
-    const { readRouterSources } = require('./helpers/routerSources');
+  it('registers a dedicated admin diagnostics route for wizard resets', async () => {
+    const { readRouterSources } = await import('./helpers/routerSources');
     const app: string = readRouterSources();
     const adminNav = read('src/components/admin/AdminGroupNav.tsx');
     expect(app).toContain('/admin/wizard-diagnostico');

@@ -64,10 +64,10 @@ describe('Onboarding V2 — fluxo final', () => {
     expect(successSrc).toMatch(/Ir para o Dashboard/);
   });
 
-  it('Rota /onboarding-v2/sucesso está registrada no router (App.tsx ou src/routes/*)', () => {
+  it('Rota /onboarding-v2/sucesso está registrada no router (App.tsx ou src/routes/*)', async () => {
     // PR 3 split: rotas foram movidas para src/routes/*. Agregamos todas as
     // fontes de roteamento para evitar falso negativo.
-    const { readRouterSources } = require('./helpers/routerSources');
+    const { readRouterSources } = await import('./helpers/routerSources');
     const routerSrc: string = readRouterSources();
     expect(routerSrc).toMatch(/path="\/onboarding-v2\/sucesso"/);
     expect(routerSrc).toMatch(/OnboardingV2SuccessPage/);

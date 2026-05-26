@@ -72,10 +72,10 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     }
   });
 
-  it('Router só conhece /cadastro-inicial (rotas legadas REMOVIDAS, não há mais Navigate)', () => {
+  it('Router só conhece /cadastro-inicial (rotas legadas REMOVIDAS, não há mais Navigate)', async () => {
     // PR 3 split: lemos App.tsx + src/routes/* como fonte única do router.
     const app = read('src/App.tsx');
-    const { readRouterSources } = require('./helpers/routerSources');
+    const { readRouterSources } = await import('./helpers/routerSources');
     const routerSrc: string = readRouterSources();
     // Gate centralizado (vive em App.tsx) usa helper + rota única do onboarding.
     expect(app).toContain('resolveOnboardingGateTarget');
