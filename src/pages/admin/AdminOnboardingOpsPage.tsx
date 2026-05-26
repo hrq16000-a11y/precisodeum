@@ -39,6 +39,7 @@ import {
   Sparkles,
   Radar,
   Telescope,
+  Network,
   Workflow,
 } from 'lucide-react';
 import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
@@ -47,6 +48,7 @@ import AdminExecutivePanel from '@/components/admin/AdminExecutivePanel';
 import AdminGovernancePanel from '@/components/admin/AdminGovernancePanel';
 import AdminRuntimeGovernancePanel from '@/components/admin/AdminRuntimeGovernancePanel';
 import AdminSelfAuditPanel from '@/components/admin/AdminSelfAuditPanel';
+import AdminEvidencePanel from '@/components/admin/AdminEvidencePanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
