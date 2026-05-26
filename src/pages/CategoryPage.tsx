@@ -259,6 +259,12 @@ const CategoryPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <SeoMeta
+        title={dynamicTitle}
+        description={dynamicDescription}
+        canonical={seoCanonical}
+        ogImage={categorySocialImage || undefined}
+      />
       <Header />
 
       {/* Hero section with enhanced visual */}
