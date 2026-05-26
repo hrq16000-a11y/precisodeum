@@ -36,6 +36,7 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   Telescope,
 } from 'lucide-react';
 import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
