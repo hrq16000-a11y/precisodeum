@@ -199,8 +199,7 @@ describe('crossTabSync heartbeat', () => {
       JSON.stringify({ tabId: 'aba-pre-reload', updatedAt: Date.now() }),
     );
     const original = performance.getEntriesByType;
-    // @ts-expect-error mock para simular reload
-    performance.getEntriesByType = (type: string) =>
+    (performance as any).getEntriesByType = (type: string) =>
       type === 'navigation' ? [{ type: 'reload' } as any] : [];
     try {
       expect(m.detectConcurrentTab()).toBe(false);
