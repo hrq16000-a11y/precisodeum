@@ -144,23 +144,23 @@ const AdminRealtimeToasts = () => {
       }
     };
 
-    const channel = supabase
-      .channel('admin-realtime-toasts')
+    acquireChannel('admin-realtime-toasts', {
       // Filtros server-side: reduzem WebSocket flood + carga RLS no Postgres.
       // - providers: somente novos pendentes (que exigem ação do admin).
       // - error_reports: somente severidade crítica (ruído operacional fica fora).
       // - leads/reviews/profiles: sem filtro — admin precisa ver todos.
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'providers', filter: 'status=eq.pending' }, (p) => enqueue('providers', p))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, (p) => enqueue('leads', p))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reviews' }, (p) => enqueue('reviews', p))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, (p) => enqueue('profiles', p))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'error_reports', filter: 'severity=eq.critical' }, (p) => enqueue('error_reports', p))
-      .subscribe();
+      setup: (ch) => ch
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'providers', filter: 'status=eq.pending' }, (p) => enqueue('providers', p))
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, (p) => enqueue('leads', p))
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reviews' }, (p) => enqueue('reviews', p))
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, (p) => enqueue('profiles', p))
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'error_reports', filter: 'severity=eq.critical' }, (p) => enqueue('error_reports', p)),
+    });
 
     return () => {
       buckets.forEach((b) => { if (b.timer) clearTimeout(b.timer); });
       buckets.clear();
-      supabase.removeChannel(channel);
+      releaseChannel('admin-realtime-toasts');
     };
   }, []);
 
