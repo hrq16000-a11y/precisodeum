@@ -15,7 +15,7 @@ vi.mock('@/hooks/useSeoHead', () => ({
   SITE_BASE_URL: 'https://precisodeum.com.br',
 }));
 vi.mock('@/hooks/useJsonLd', () => ({ useJsonLd: vi.fn() }));
-vi.mock('@/lib/citiesIndex', () => ({ isKnownCity: (c: string) => c === 'Curitiba' }));
+vi.mock('@/lib/citiesIndex', () => ({ isKnownCity: (c: string) => c === 'Curitiba', preloadCitiesIndex: () => Promise.resolve({}) }));
 vi.mock('@/components/Header', () => ({ default: () => <header /> }));
 vi.mock('@/components/Footer', () => ({ default: () => <footer /> }));
 vi.mock('@/components/Breadcrumbs', () => ({ default: () => <nav data-testid="breadcrumbs" /> }));

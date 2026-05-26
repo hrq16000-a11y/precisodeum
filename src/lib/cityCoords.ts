@@ -5,9 +5,15 @@
  */
 import { normalize } from './normalize';
 
-// Lazy-load the 229KB cities index only when actually needed (no pre-warm)
+// Lazy-load the ~258KB cities dataset only when actually needed (PR 4).
+// O shell `citiesIndex` cuida do code-split; aqui só pedimos preload.
 let _isKnownCity: ((n: string) => boolean) | null = null;
-const loadCitiesIndex = () => import('./citiesIndex').then(m => { _isKnownCity = m.isKnownCity; return m; });
+const loadCitiesIndex = () =>
+  import('./citiesIndex').then(async (m) => {
+    await m.preloadCitiesIndex();
+    _isKnownCity = m.isKnownCity;
+    return m;
+  });
 
 interface CityCoord {
   lat: number;
@@ -276,7 +282,13 @@ export function getCityCoords(city: string): { lat: number; lon: number } | null
  * Does NOT require coordinates — just validates the city name exists.
  */
 export function isRecognizedCity(normCity: string): boolean {
-  return normCity in CITY_COORDS || (_isKnownCity ? _isKnownCity(normCity) : false);
+  if (normCity in CITY_COORDS) return true;
+  if (!_isKnownCity) {
+    // Dispara preload em background; render subsequente fica estrito.
+    void loadCitiesIndex();
+    return false;
+  }
+  return _isKnownCity(normCity);
 }
 
 /** Async version that ensures citiesIndex is loaded */

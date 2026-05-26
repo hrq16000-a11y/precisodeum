@@ -24,7 +24,7 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { getSeoAuthorityData } from '@/lib/seoAuthority';
 import CategorySeoBlock from '@/components/CategorySeoBlock';
-import { isKnownCity } from '@/lib/citiesIndex';
+import { isKnownCity, preloadCitiesIndex } from '@/lib/citiesIndex';
 import { normalize } from '@/lib/normalize';
 import { lintServiceDescription } from '@/lib/serviceQualityLinter';
 import { useSettingValue } from '@/hooks/useSiteSettings';
@@ -65,6 +65,15 @@ const CategoryPage = () => {
   useEffect(() => {
     requestPreciseLocation();
   }, [requestPreciseLocation]);
+
+  // PR 4: preload do dataset IBGE (chunk separado). `isKnownCity` é fail-open
+  // até terminar; re-render leve quando o dataset estiver pronto.
+  const [, setCitiesLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void preloadCitiesIndex().then(() => { if (!cancelled) setCitiesLoaded(true); });
+    return () => { cancelled = true; };
+  }, []);
 
   // FASE 2.1 — telemetria de visualização da landing de categoria.
   useEffect(() => {

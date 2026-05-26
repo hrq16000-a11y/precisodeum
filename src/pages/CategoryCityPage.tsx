@@ -18,7 +18,7 @@
  * `useCategoryProviders` + filtragem cliente-side por cidade. Todo o ranking
  * vem do hook (mesmo do CategoryPage).
  */
-import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, MapPin, Search, Users } from 'lucide-react';
@@ -31,7 +31,7 @@ import { Button } from '@/components/ui/button';
 import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useCategoryProviders } from '@/hooks/useProviders';
-import { isKnownCity } from '@/lib/citiesIndex';
+import { isKnownCity, preloadCitiesIndex } from '@/lib/citiesIndex';
 import { normalize } from '@/lib/normalize';
 import { buildCanonicalUrl } from '@/lib/canonicalUrl';
 import { sanitizeSlug } from '@/lib/slugify';
@@ -64,6 +64,15 @@ export default function CategoryCityPage() {
       trackCategoryView({ category: slug, city: cidade, source: 'category_city_page' })
     );
   }, [slug, cidade]);
+
+  // PR 4: preload do dataset IBGE (chunk separado). `isKnownCity` é fail-open
+  // até terminar, evitando esconder conteúdo durante o load.
+  const [citiesLoaded, setCitiesLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void preloadCitiesIndex().then(() => { if (!cancelled) setCitiesLoaded(true); });
+    return () => { cancelled = true; };
+  }, []);
 
   const cityHuman = humanizeSlug(cidade);
   const categoryHuman = category?.name || humanizeSlug(slug);

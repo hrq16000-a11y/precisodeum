@@ -21,11 +21,12 @@ import { normalize } from './normalize';
 import { getCityCoords, isRecognizedCity, CITY_COORDS } from './cityCoords';
 import { resolveMetroRegion, isMemberOfMetro, type MetroRegion } from './metroRegions';
 import { extractUFFromQuery, isUF, getUFCapital } from './ufIndex';
-// citiesIndex (229KB) loaded lazily — lookupCity accessed via async import
+// citiesIndex (~258KB) lazy-loaded — lookupCity disponível via shell PR 4.
 let _lookupCity: ((n: string, s?: string) => { name: string; state: string } | null) | null = null;
 const ensureLookupCity = async () => {
   if (!_lookupCity) {
     const m = await import('./citiesIndex');
+    await m.preloadCitiesIndex();
     _lookupCity = m.lookupCity;
   }
   return _lookupCity!;
