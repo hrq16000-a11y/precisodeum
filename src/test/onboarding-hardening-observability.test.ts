@@ -97,7 +97,7 @@ describe('useOnboardingV2Draft v2 envelope', () => {
     const profile = { whatsapp: '11999999999' };
     const service = { service_name: 'Encanador' };
     const phase = 'phase2_details';
-    const checksum = computeDraftChecksum({ profile, service, phase });
+    const checksum = computeDraftChecksum({ profile: profile as any, service: service as any, phase });
     writeRaw({
       version: DRAFT_ENVELOPE_VERSION,
       checksum,
@@ -114,7 +114,7 @@ describe('useOnboardingV2Draft v2 envelope', () => {
     const profile = { whatsapp: '11' };
     const service = {};
     const phase = 'phase2_service';
-    const checksum = computeDraftChecksum({ profile, service, phase });
+    const checksum = computeDraftChecksum({ profile: profile as any, service: service as any, phase });
     writeRaw({
       version: DRAFT_ENVELOPE_VERSION,
       checksum,
