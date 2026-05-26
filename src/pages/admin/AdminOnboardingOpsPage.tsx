@@ -301,6 +301,7 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="releases" className="gap-1"><GitBranch className="h-4 w-4" /> Releases</TabsTrigger>
             <TabsTrigger value="forensics" className="gap-1"><Telescope className="h-4 w-4" /> Sessão</TabsTrigger>
             <TabsTrigger value="alerts" className="gap-1"><AlertTriangle className="h-4 w-4" /> Alertas</TabsTrigger>
+            <TabsTrigger value="incidents" className="gap-1"><ShieldAlert className="h-4 w-4" /> Incidentes</TabsTrigger>
           </TabsList>
 
           {/* === FUNIL ============================================== */}
