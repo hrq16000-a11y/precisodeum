@@ -24,7 +24,7 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { calculateDistanceKm } from '@/lib/geoDistance';
 import { getSeoAuthorityData } from '@/lib/seoAuthority';
 import CategorySeoBlock from '@/components/CategorySeoBlock';
-import { isKnownCity } from '@/lib/citiesIndex';
+import { isKnownCity, preloadCitiesIndex } from '@/lib/citiesIndex';
 import { normalize } from '@/lib/normalize';
 import { lintServiceDescription } from '@/lib/serviceQualityLinter';
 import { useSettingValue } from '@/hooks/useSiteSettings';
