@@ -2918,6 +2918,69 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_incidents: {
+        Row: {
+          actions: Json
+          app_version: string | null
+          baseline_value: number | null
+          created_at: string
+          duration_seconds: number | null
+          flags_changed: Json
+          id: string
+          notes: string | null
+          opened_at: string
+          release_channel: string | null
+          resolution_kind: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          state: string
+          threshold_value: number | null
+          trigger_metric: string
+          trigger_value: number | null
+        }
+        Insert: {
+          actions?: Json
+          app_version?: string | null
+          baseline_value?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          flags_changed?: Json
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          release_channel?: string | null
+          resolution_kind?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          state?: string
+          threshold_value?: number | null
+          trigger_metric: string
+          trigger_value?: number | null
+        }
+        Update: {
+          actions?: Json
+          app_version?: string | null
+          baseline_value?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          flags_changed?: Json
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          release_channel?: string | null
+          resolution_kind?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          state?: string
+          threshold_value?: number | null
+          trigger_metric?: string
+          trigger_value?: number | null
+        }
+        Relationships: []
+      }
       onboarding_settings: {
         Row: {
           active: boolean
@@ -8821,6 +8884,35 @@ export type Database = {
           source: string
         }[]
       }
+      admin_list_onboarding_incidents: {
+        Args: { _hours?: number; _only_open?: boolean }
+        Returns: {
+          actions: Json
+          app_version: string | null
+          baseline_value: number | null
+          created_at: string
+          duration_seconds: number | null
+          flags_changed: Json
+          id: string
+          notes: string | null
+          opened_at: string
+          release_channel: string | null
+          resolution_kind: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          state: string
+          threshold_value: number | null
+          trigger_metric: string
+          trigger_value: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_incidents"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_list_orphan_profiles: {
         Args: never
         Returns: {
@@ -9097,6 +9189,35 @@ export type Database = {
       admin_reprocess_kill_switch_block: {
         Args: { p_correction_id: string }
         Returns: Json
+      }
+      admin_resolve_onboarding_incident: {
+        Args: { _incident_id: string; _notes?: string }
+        Returns: {
+          actions: Json
+          app_version: string | null
+          baseline_value: number | null
+          created_at: string
+          duration_seconds: number | null
+          flags_changed: Json
+          id: string
+          notes: string | null
+          opened_at: string
+          release_channel: string | null
+          resolution_kind: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          state: string
+          threshold_value: number | null
+          trigger_metric: string
+          trigger_value: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_incidents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_review_anchor_audit: { Args: { _days?: number }; Returns: Json }
       admin_review_sponsor_change_request: {
@@ -9387,6 +9508,18 @@ export type Database = {
       }
       distribute_open_lead: { Args: { _open_lead_id: string }; Returns: number }
       effective_user_permissions: { Args: { _user_id: string }; Returns: Json }
+      evaluate_onboarding_auto_response: {
+        Args: {
+          _auto_resolve_minutes?: number
+          _debounce_minutes?: number
+          _window_minutes?: number
+        }
+        Returns: {
+          opened_count: number
+          resolved_count: number
+          skipped_disabled: boolean
+        }[]
+      }
       expire_registration_blocks_180d: { Args: never; Returns: number }
       finalize_onboarding_atomic: {
         Args: { _profile_type: string; _user_id: string }
