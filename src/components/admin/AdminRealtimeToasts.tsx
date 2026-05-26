@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { acquireChannel, releaseChannel } from '@/lib/realtimeRegistry';
 import { toast } from 'sonner';
 
 /**
