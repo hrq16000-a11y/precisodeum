@@ -68,13 +68,26 @@ export function useAbandonmentTimer(
       }, ABANDON_MS);
     };
 
+    // Atividade real (input) → re-arma o timer.
     const onActivity = () => schedule();
-    const events = ['pointerdown', 'keydown', 'touchstart', 'visibilitychange'] as const;
-    events.forEach((e) => window.addEventListener(e, onActivity, { passive: true } as any));
+    // Visibilidade muda → cancela quando vai pra background e re-arma quando volta.
+    // Fecha a janela em que setTimeout poderia disparar enquanto a aba está oculta.
+    const onVisibility = () => {
+      if (typeof document === 'undefined') return;
+      if (document.visibilityState === 'hidden') {
+        clear();
+      } else {
+        schedule();
+      }
+    };
+    const activityEvents = ['pointerdown', 'keydown', 'touchstart'] as const;
+    activityEvents.forEach((e) => window.addEventListener(e, onActivity, { passive: true } as any));
+    window.addEventListener('visibilitychange', onVisibility);
     if (!startedHidden) schedule();
     return () => {
       clear();
-      events.forEach((e) => window.removeEventListener(e, onActivity as any));
+      activityEvents.forEach((e) => window.removeEventListener(e, onActivity as any));
+      window.removeEventListener('visibilitychange', onVisibility);
     };
   }, [phase, userId, disabled]);
 }
