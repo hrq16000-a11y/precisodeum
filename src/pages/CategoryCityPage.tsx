@@ -126,6 +126,7 @@ export default function CategoryCityPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SeoMeta title={title} description={description} canonical={canonical} noindex={seoNoindex} />
       <Header />
 
       <main className="flex-1 mx-auto w-full max-w-screen-xl px-4 py-6 space-y-6">
