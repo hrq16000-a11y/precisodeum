@@ -31,6 +31,7 @@ import {
   ExternalLink,
   Flame,
   GitBranch,
+  History,
   RefreshCcw,
   Search,
   Shield,
