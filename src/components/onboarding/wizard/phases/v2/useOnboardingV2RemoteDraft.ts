@@ -51,6 +51,7 @@ export async function clearRemoteDraft(userId: string): Promise<void> {
 export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: string | undefined) {
   const firstRun = useRef(true);
   const timerRef = useRef<number | null>(null);
+  const retryRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!userId) return;
