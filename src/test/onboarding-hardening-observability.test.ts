@@ -299,3 +299,23 @@ describe('hardening · hydration parcial não destrói reducer válido', () => {
     expect(merged.service.service_name).toBe('Encanador');  // preservado
   });
 });
+
+describe('autosave remoto · retry zombie-guard', () => {
+  it('retry após falha NÃO dispara se a fase mudou no meio (runIfStale:false)', async () => {
+    // Simula o contrato: ao mudar a fase entre falha e retry, setActiveWizardPhase
+    // bumpa a época e scheduleWizardTimeout (runIfStale:false) suprime o callback.
+    const { setActiveWizardPhase, scheduleWizardTimeout } = await import('@/lib/wizardZombieGuard');
+    setActiveWizardPhase('phase2_service');
+    let executed = false;
+    const handle = scheduleWizardTimeout(
+      { phase: 'phase2_service' as any, action: 'autosave_remote_retry', runIfStale: false },
+      () => { executed = true; },
+      50,
+    );
+    // Usuário avança antes do retry
+    setActiveWizardPhase('phase2_details');
+    await new Promise((r) => setTimeout(r, 80));
+    expect(executed).toBe(false);
+    if (handle) clearTimeout(handle);
+  });
+});

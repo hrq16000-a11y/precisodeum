@@ -51,6 +51,7 @@ export async function clearRemoteDraft(userId: string): Promise<void> {
 export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: string | undefined) {
   const firstRun = useRef(true);
   const timerRef = useRef<number | null>(null);
+  const retryRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -138,18 +139,26 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
           await reportSuccess(1);
         } catch (error: any) {
           await reportFailure(error, 1);
-          // Retry simples (1 nova tentativa, sem loop). Backoff fixo 1500ms.
-          window.setTimeout(async () => {
-            try {
-              const { error: err2 } = await upsertOnce();
-              if (err2) throw err2;
-              markRemoteDraftWritten(state.phase as any, userId);
-              recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
-              await reportSuccess(2);
-            } catch (retryErr: any) {
-              await reportFailure(retryErr, 2);
-            }
-          }, 1500);
+          // Retry simples (1 nova tentativa). Usa scheduleWizardTimeout com
+          // runIfStale:false para que, se a fase tiver mudado entre a falha
+          // e o retry, o upsert seja CANCELADO — assim evitamos sobrescrever
+          // um upsert mais novo da nova fase com payload da fase antiga.
+          if (retryRef.current) window.clearTimeout(retryRef.current);
+          retryRef.current = scheduleWizardTimeout(
+            { phase: state.phase as any, action: 'autosave_remote_retry', runIfStale: false },
+            async () => {
+              try {
+                const { error: err2 } = await upsertOnce();
+                if (err2) throw err2;
+                markRemoteDraftWritten(state.phase as any, userId);
+                recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
+                await reportSuccess(2);
+              } catch (retryErr: any) {
+                await reportFailure(retryErr, 2);
+              }
+            },
+            1500,
+          );
         }
       },
       REMOTE_DEBOUNCE_MS,
@@ -157,6 +166,7 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
 
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
+      if (retryRef.current) window.clearTimeout(retryRef.current);
     };
   }, [state.profile, state.service, state.phase, state.userRef, state.providerId, state.firstServiceId, userId]);
 }
