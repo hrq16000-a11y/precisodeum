@@ -318,8 +318,9 @@ function checkTimer(masked, raw, idx) {
   //     o `await` — não há ref para limpar e a Promise se auto-resolve.
   //     Detectamos olhando ~60 chars antes do `setTimeout(`.
   {
-    const before = masked.slice(Math.max(0, idx - 60), idx);
-    if (/new\s+Promise\s*\(\s*(?:\([^)]*\)|\w+)\s*=>\s*$/.test(before)) {
+    const before = masked.slice(Math.max(0, idx - 80), idx);
+    // Aceita `setTimeout(` e `window.setTimeout(` / `globalThis.setTimeout(`.
+    if (/new\s+Promise\s*\(\s*(?:\([^)]*\)|\w+)\s*=>\s*(?:\w+\.)?$/.test(before)) {
       return { ok: true, reason: 'sleep-promise (awaitable)' };
     }
   }
