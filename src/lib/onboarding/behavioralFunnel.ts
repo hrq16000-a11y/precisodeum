@@ -158,7 +158,11 @@ export function shouldEmitBehavioral(
   nowMs: number,
   minIntervalMs = 2_000,
 ): boolean {
-  const last = state.lastSentAt[key] ?? 0;
+  if (!(key in state.lastSentAt)) {
+    state.lastSentAt[key] = nowMs;
+    return true;
+  }
+  const last = state.lastSentAt[key];
   if (nowMs - last < minIntervalMs) return false;
   state.lastSentAt[key] = nowMs;
   return true;
