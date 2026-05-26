@@ -49,7 +49,7 @@ describe('computeHealthScore', () => {
   });
 
   it('completion baixo gera WARNING (sem bloqueio)', () => {
-    const r = computeHealthScore({ ...baseInputs(), completes: 55 });
+    const r = computeHealthScore({ ...baseInputs(), completes: 55, zombie_timer: 5 });
     expect(r.block_reasons.map((x) => x.code)).toContain('completion_low');
     expect(r.classification).toBe('WARNING');
     expect(r.blocked).toBe(false);
