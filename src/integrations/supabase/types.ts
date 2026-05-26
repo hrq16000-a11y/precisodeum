@@ -2981,6 +2981,66 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_release_snapshots: {
+        Row: {
+          app_version: string | null
+          block_reasons: Json
+          blocked: boolean
+          captured_at: string
+          classification: string
+          created_by: string | null
+          critical_regressions: number
+          flags: Json
+          health_score: number
+          id: string
+          metrics: Json
+          notes: string | null
+          open_incidents: number
+          open_regressions: number
+          release_channel: string
+          stage: string
+          window_hours: number
+        }
+        Insert: {
+          app_version?: string | null
+          block_reasons?: Json
+          blocked?: boolean
+          captured_at?: string
+          classification: string
+          created_by?: string | null
+          critical_regressions?: number
+          flags?: Json
+          health_score: number
+          id?: string
+          metrics?: Json
+          notes?: string | null
+          open_incidents?: number
+          open_regressions?: number
+          release_channel?: string
+          stage?: string
+          window_hours?: number
+        }
+        Update: {
+          app_version?: string | null
+          block_reasons?: Json
+          blocked?: boolean
+          captured_at?: string
+          classification?: string
+          created_by?: string | null
+          critical_regressions?: number
+          flags?: Json
+          health_score?: number
+          id?: string
+          metrics?: Json
+          notes?: string | null
+          open_incidents?: number
+          open_regressions?: number
+          release_channel?: string
+          stage?: string
+          window_hours?: number
+        }
+        Relationships: []
+      }
       onboarding_settings: {
         Row: {
           active: boolean
@@ -9420,6 +9480,10 @@ export type Database = {
           }
       claim_sponsor_lead: { Args: { _lead_id: string }; Returns: Json }
       close_presence_session: { Args: never; Returns: Json }
+      compare_onboarding_release_snapshots: {
+        Args: { _a: string; _b: string }
+        Returns: Json
+      }
       complete_app_install_mission: { Args: never; Returns: Json }
       complete_first_contact_mission: {
         Args: { _provider_id: string }
@@ -9428,6 +9492,10 @@ export type Database = {
       complete_mission: { Args: { _key: string; _value: Json }; Returns: Json }
       complete_onboarding_checklist: { Args: never; Returns: Json }
       complete_referral: { Args: { _referred_id: string }; Returns: boolean }
+      compute_onboarding_release_health: {
+        Args: { _channel?: string; _hours?: number }
+        Returns: Json
+      }
       compute_sponsor_cycle_amount: {
         Args: { _cycle_id: string }
         Returns: Json
@@ -9440,6 +9508,40 @@ export type Database = {
       create_daily_post: {
         Args: { _caption: string; _image_url: string }
         Returns: Json
+      }
+      create_onboarding_release_snapshot: {
+        Args: {
+          _app_version?: string
+          _channel?: string
+          _hours?: number
+          _notes?: string
+          _stage?: string
+        }
+        Returns: {
+          app_version: string | null
+          block_reasons: Json
+          blocked: boolean
+          captured_at: string
+          classification: string
+          created_by: string | null
+          critical_regressions: number
+          flags: Json
+          health_score: number
+          id: string
+          metrics: Json
+          notes: string | null
+          open_incidents: number
+          open_regressions: number
+          release_channel: string
+          stage: string
+          window_hours: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_release_snapshots"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       create_service_atomic: {
         Args: {
@@ -10027,6 +10129,34 @@ export type Database = {
           state: string
           status: string
         }[]
+      }
+      list_onboarding_release_snapshots: {
+        Args: { _limit?: number; _stage?: string }
+        Returns: {
+          app_version: string | null
+          block_reasons: Json
+          blocked: boolean
+          captured_at: string
+          classification: string
+          created_by: string | null
+          critical_regressions: number
+          flags: Json
+          health_score: number
+          id: string
+          metrics: Json
+          notes: string | null
+          open_incidents: number
+          open_regressions: number
+          release_channel: string
+          stage: string
+          window_hours: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_release_snapshots"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       list_provider_geo_fallbacks: {
         Args: { _limit?: number; _status?: string }
