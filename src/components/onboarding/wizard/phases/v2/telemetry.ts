@@ -11,8 +11,33 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { APP_VERSION } from '@/lib/appVersion';
 import type { OnboardingPhase } from './types';
 import type { UnifiedPhase } from '../../wizardReducer';
+
+/**
+ * Detecta o canal de release a partir do hostname (heurística leve, fail-soft).
+ *   - `*lovable.app` com `id-preview--` ou `preview--` → 'preview'
+ *   - `localhost` / `127.0.0.1`                       → 'dev'
+ *   - qualquer outro                                  → 'production'
+ *
+ * Computado uma vez e cacheado para baratear cada `trackOnboardingEvent`.
+ */
+let _releaseChannel: 'preview' | 'production' | 'dev' | 'unknown' | null = null;
+export function getReleaseChannel(): 'preview' | 'production' | 'dev' | 'unknown' {
+  if (_releaseChannel) return _releaseChannel;
+  try {
+    if (typeof window === 'undefined') { _releaseChannel = 'unknown'; return _releaseChannel; }
+    const h = window.location?.hostname || '';
+    if (/^(localhost|127\.0\.0\.1)$/i.test(h)) _releaseChannel = 'dev';
+    else if (/(^|--)(id-preview|preview)--/i.test(h) || /\.lovable\.app$/i.test(h) && /preview/i.test(h)) _releaseChannel = 'preview';
+    else _releaseChannel = 'production';
+  } catch { _releaseChannel = 'unknown'; }
+  return _releaseChannel;
+}
+
+/** Apenas para testes — limpa cache do canal. */
+export function __resetReleaseChannelCache(): void { _releaseChannel = null; }
 
 const SESSION_KEY = 'onboarding_v2_session_id';
 const INTENT_KEY = 'onboarding_v2_intent';
@@ -102,6 +127,11 @@ export async function trackOnboardingEvent(opts: TrackOptions): Promise<void> {
     if (!('flow' in meta)) {
       meta = { ...meta, flow: getOnboardingFlow() ?? 'unknown' };
     }
+    // ── DIMENSÕES DE RELEASE (auto-injetadas) ──────────────────────────────
+    // Permite correlacionar regressões a deploys específicos sem precisar
+    // alterar cada call-site. Apenas adiciona se o caller não tiver enviado.
+    if (!('app_version' in meta)) meta = { ...meta, app_version: APP_VERSION };
+    if (!('release_channel' in meta)) meta = { ...meta, release_channel: getReleaseChannel() };
     // ── PADRONIZAÇÃO DE META PARA EVENTOS DE ERRO ─────────────────────────
     // Garante que dashboards/queries possam fazer GROUP BY meta->>'error_code'
     // sem se preocupar com NULL vs ausente. Para eventos `error`, força a
