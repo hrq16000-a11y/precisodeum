@@ -1892,12 +1892,23 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           category_id: categoryId,
           category_ids: [categoryId, ...s.category_ids.slice(1)],
         };
+        // Mapa fonte→campo para registrar quais opcionais foram pulados
+        // (draft incompleto). Observabilidade pura: NÃO altera o patch.
+        const optionalSources: Array<{ key: string; present: boolean }> = [
+          { key: 'description',          present: !!(s.description || '').trim() },
+          { key: 'whatsapp',             present: !!(p.whatsapp || '').trim() },
+          { key: 'service_area',         present: !!serviceArea },
+          { key: 'address',              present: !!cityForAddress },
+          { key: 'working_hours',        present: !!workingHoursSummary },
+          { key: 'working_hours_struct', present: !!s.working_hours_struct },
+        ];
         if ((s.description || '').trim()) detailsPatch.description = s.description;
         if ((p.whatsapp || '').trim()) detailsPatch.whatsapp = p.whatsapp;
         if (serviceArea) detailsPatch.service_area = serviceArea;
         if (cityForAddress) detailsPatch.address = cityForAddress;
         if (workingHoursSummary) detailsPatch.working_hours = workingHoursSummary;
         if (s.working_hours_struct) detailsPatch.working_hours_struct = s.working_hours_struct;
+        const fieldsSkipped = optionalSources.filter((o) => !o.present).map((o) => o.key);
         const { error: detErr } = await supabase
           .from('services')
           .update(detailsPatch)
@@ -1913,6 +1924,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               service_id: resolvedServiceId,
               error_code: (detErr as any)?.code || null,
               error_message: detErr.message?.slice(0, 240) || null,
+              fields_attempted: Object.keys(detailsPatch),
+              fields_skipped: fieldsSkipped,
             },
           });
         } else {
@@ -1924,6 +1937,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               kind: 'reused_service_details_synced',
               service_id: resolvedServiceId,
               fields: Object.keys(detailsPatch),
+              fields_skipped: fieldsSkipped,
             },
           });
         }
