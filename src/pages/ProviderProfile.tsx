@@ -55,7 +55,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeSlug } from '@/lib/slugify';
 import { toast } from 'sonner';
-import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { extractSpecialties } from '@/lib/specialtyExtractor';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
