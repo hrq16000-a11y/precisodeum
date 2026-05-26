@@ -117,6 +117,7 @@ const JobDetailPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <SeoMeta title={seoTitle} description={seoDescription} canonical={pageUrl} noindex={!job} />
       <Header />
       <div className="container py-8">
         <div className="flex items-center justify-between mb-6">
