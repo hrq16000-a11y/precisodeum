@@ -1,11 +1,10 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { usePresenceTracker } from '@/hooks/useOnlinePresence';
-import { geocodeCity } from '@/lib/geoUtils';
-import { resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/celebrate';
+import { setCelebrationMuted } from '@/lib/celebrate';
 import { reportError } from '@/lib/errorReporter';
 import { queryClient } from '@/lib/queryClient';
+import { AuthCompanion } from '@/hooks/AuthCompanion';
 
 /**
  * Detecta de forma síncrona se há um token de sessão Supabase persistido
@@ -191,8 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (isStale()) return profileData ?? null;
     setProfile(profileData);
-    if (isStale()) return profileData ?? null;
-    setCelebrationMuted(resolveCelebrationMutedPreference(profileData?.celebration_muted));
+    // celebration_muted é sincronizado pelo AuthCompanion (side-effect não-auth).
 
     const metaChosen = authUser?.user_metadata?.profile_type_chosen === true;
     const hasType = !!profileData?.profile_type;
@@ -214,9 +212,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!isStale()) setProvider(best);
 
       if (best.city && best.city !== 'Não informada' && best.state && (best.latitude == null || best.longitude == null)) {
+        // Geocoding é best-effort e fica fora do bundle inicial do auth:
+        // importamos sob demanda apenas quando realmente precisamos resolver.
         window.setTimeout(() => {
-          geocodeCity(best.city, best.state)
-            .then(({ latitude, longitude }) => {
+          import('@/lib/geoUtils')
+            .then(({ geocodeCity }) => geocodeCity(best.city, best.state))
+            .then((coords) => {
+              if (!coords) return;
+              const { latitude, longitude } = coords;
               if (latitude != null && longitude != null) {
                 supabase.from('providers').update({ latitude, longitude }).eq('id', best.id).then(() => {
                   if (!isStale()) setProvider(prev => prev ? { ...prev, latitude, longitude } : prev);
@@ -224,8 +227,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               }
             })
             .catch((err) => {
-              // Geocode best-effort — não bloqueia o login, mas logamos
-              // para detectar quedas sistemáticas do provedor de geocoding.
               console.warn('[useAuth] geocodeCity background update failed', err);
             });
         }, 1200);
@@ -340,13 +341,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               console.error('[useAuth] fetchProfile threw:', err);
             }
           }, 0);
-          if (event === 'SIGNED_IN') {
-            setTimeout(() => {
-              supabase.functions.invoke('log-user-access', {
-                body: { event_type: 'login', source: 'web' },
-              }).catch(() => {/* silent */});
-            }, 500);
-          }
+          // log-user-access foi movido para o AuthCompanion (side-effect não-auth).
         } else {
           setProfile(null);
           setProvider(null);
@@ -395,46 +390,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [fetchProfile]);
 
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const syncMutedFromProfile = (nextProfile: any) => {
-      setProfile(prev => ({ ...(prev ?? {}), ...(nextProfile ?? {}) }));
-      setCelebrationMuted(resolveCelebrationMutedPreference(nextProfile?.celebration_muted));
-    };
-
-    const channel = supabase
-      .channel(`profile-preferences:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${user.id}`,
-        },
-        (payload) => syncMutedFromProfile(payload.new)
-      )
-      .subscribe();
-
-    let visibilityTimer: number | null = null;
-    const refreshOnFocus = () => {
-      if (document.visibilityState !== 'visible') return;
-      // Debounce: rapid alt-tab / tab switches should result in a single refetch.
-      if (visibilityTimer != null) window.clearTimeout(visibilityTimer);
-      visibilityTimer = window.setTimeout(() => {
-        visibilityTimer = null;
-        void refetchProfile();
-      }, 500);
-    };
-    document.addEventListener('visibilitychange', refreshOnFocus);
-
-    return () => {
-      if (visibilityTimer != null) window.clearTimeout(visibilityTimer);
-      document.removeEventListener('visibilitychange', refreshOnFocus);
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, refetchProfile]);
+  // Realtime de preferências do profile, visibility refresh e log-user-access
+  // foram movidos para `<AuthCompanion />` (side-effects não-auth).
 
   const signOut = useCallback(async () => {
     // 1) Encerra a sessão no Supabase (revoga refresh token + limpa storage sb-*).
@@ -468,8 +425,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (typeof window !== 'undefined') {
         const ss = window.sessionStorage;
-        // Remove explicitamente chaves de impersonação/admin que NUNCA podem
-        // sobreviver a um logout, mesmo que o clear() abaixo falhe.
         const sensitiveKeys = [
           'impersonation_admin_token',
           'impersonation_admin_refresh',
@@ -485,14 +440,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.warn('[useAuth] signOut(): sessionStorage.clear falhou', err);
     }
   }, []);
-  // Track online presence for the current user, including their city
-  const providerCity = provider?.city;
-  const presenceMeta = useMemo(() => (providerCity ? { city: providerCity } : undefined), [providerCity]);
-  usePresenceTracker(user?.id, presenceMeta);
 
   // Memoize the context value so consumers (~50+ across the app) don't re-render
-  // unless one of the actual primitives changes. Without this, every parent
-  // re-render of AuthProvider cascaded a re-render to every `useAuth()` consumer.
+  // unless one of the actual primitives changes. Sem isso, qualquer parent
+  // re-render do AuthProvider cascateava re-render para todos os `useAuth()`.
   const contextValue = useMemo<AuthContextType>(
     () => ({ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }),
     [session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile],
@@ -500,6 +451,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={contextValue}>
+      {/* AuthCompanion isola side-effects não-auth (presença é tratada no
+          DashboardLayout). Renderizado como irmão para não inflar o body do
+          provider nem o seu ciclo de re-render. */}
+      <AuthCompanion />
       {children}
     </AuthContext.Provider>
   );

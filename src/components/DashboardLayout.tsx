@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
+import { usePresenceTracker } from '@/hooks/useOnlinePresence';
 import DashboardGroupNav from '@/components/dashboard/DashboardGroupNav';
 import { supabase } from '@/integrations/supabase/client';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -30,8 +31,13 @@ const sidebarItemVariants = {
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, provider, signOut } = useAuth();
   const { hasProfilePermission } = usePermissions();
+  // Presença online: só faz sentido em áreas autenticadas. Movido pra cá
+  // (era global no AuthProvider) pra evitar canal aberto em rotas públicas.
+  const providerCity = (provider as any)?.city as string | undefined;
+  const presenceMeta = useMemo(() => (providerCity ? { city: providerCity } : undefined), [providerCity]);
+  usePresenceTracker(user?.id, presenceMeta);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
