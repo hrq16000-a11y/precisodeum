@@ -57,10 +57,10 @@ export async function trackBehavioral(opts: TrackBehavioralOptions): Promise<boo
   try {
     await trackOnboardingEvent({
       phase: opts.phase ?? ('phase2_service' as OnboardingPhase),
-      event: opts.event,
+      event: opts.event as unknown as any,
       userId: opts.userId ?? null,
       meta: { ...cleanMeta, behavioral: true },
-    });
+    } as any);
     return true;
   } catch {
     // fail-soft: telemetria nunca quebra runtime
