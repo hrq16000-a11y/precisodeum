@@ -82,7 +82,7 @@ export const GOVERNANCE_REGISTRY: GovernanceItem[] = [
     updated_at: NOW,
     lifecycle: 'active',
     risk_level: 'high',
-    dependencies: ['threshold.regression.min_sample', 'feature_flag.regression_watch_enabled'],
+    dependencies: ['threshold.regression.min_sample', 'feature_flag.regression_watch_enabled', 'telemetry.onboarding_events'],
     consumers: ['/admin/onboarding-ops#alerts', 'cron.detect_onboarding_regressions'],
     description: 'Detecta anomalias por métrica e severidade. Sem ML.',
     tags: ['observability'],
