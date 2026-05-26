@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { acquireChannel, releaseChannel } from '@/lib/realtimeRegistry';
 import { resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/celebrate';
 
 /**
@@ -44,9 +45,9 @@ export const AuthCompanion = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const channel = supabase
-      .channel(`profile-preferences:${user.id}`)
-      .on(
+    const channelName = `profile-preferences:${user.id}`;
+    acquireChannel(channelName, {
+      setup: (ch) => ch.on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
         (payload) => {
@@ -55,8 +56,8 @@ export const AuthCompanion = () => {
           );
           void refetchProfile();
         },
-      )
-      .subscribe();
+      ),
+    });
 
     let visibilityTimer: number | null = null;
     const refreshOnFocus = () => {
@@ -72,7 +73,7 @@ export const AuthCompanion = () => {
     return () => {
       if (visibilityTimer != null) window.clearTimeout(visibilityTimer);
       document.removeEventListener('visibilitychange', refreshOnFocus);
-      supabase.removeChannel(channel);
+      releaseChannel(channelName);
     };
   }, [user?.id, refetchProfile]);
 
