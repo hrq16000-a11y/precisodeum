@@ -1,136 +1,185 @@
-# Containment Patch — Onboarding (Stop-Loss)
+# Plano — Pós-Containment · Hardening + Observabilidade do Onboarding
 
-Objetivo: parar sangramento em 5 pontos críticos sem refactor. Cada item lista
-arquivo, mudança, risco e plano de rollback. Nada além desta lista será tocado.
+Escopo cirúrgico, sem refactor, sem mudar `PHASE_ORDER`, sem alterar UX principal. Foco: tornar o onboarding **rastreável, recuperável e resiliente**.
 
-## Resolução da contradição PHASE_ORDER
+---
 
-A regra #2 diz "não quebrar PHASE_ORDER atual" e o Crítico #1 pede uma fase
-nova `phase_repair_contact`. Resolvo assim, da forma menos invasiva:
+## 1. Mapa dos pontos frágeis restantes (auditoria)
 
-- A fase de reparo é **opcional e fora do fluxo linear**: NÃO entra em
-  `PHASE_ORDER` (não muda contagem de barra, nem ordem do `NEXT`).
-- É uma **fase auxiliar** acessível só via `GO_TO` quando o erro
-  `whatsapp_required`/`invalid_whatsapp` é detectado, e retorna via `GO_TO`
-  para a fase de origem (guardada em `state.returnToPhase`).
-- Isso preserva 100% do funil atual e evita renumerar progresso/telemetria.
+Identificados durante a leitura do containment já aplicado:
 
-Se você preferir que ela entre em `PHASE_ORDER`, me avise antes — é trivial,
-mas reabre a discussão de progresso global e quebra dashboards de funil.
+| # | Ponto | Risco atual | Severidade |
+|---|---|---|---|
+| F1 | `useOnboardingV2Draft` salva sem checksum/versão — corrupção silenciosa hidrata lixo | Médio | A endurecer |
+| F2 | `flushRemoteDraft` tem lock por user, mas não detecta sessão paralela em outro device | Médio | A monitorar |
+| F3 | `persistFirstServiceEarly` é otimista — sucesso de UI antes do confirm do INSERT em casos de rede degradada | Médio | A observar |
+| F4 | Não existe evento `phase_exit`/`phase_duration` granular — abandono é invisível | Alto (cego) | A criar |
+| F5 | Recovery local x remoto: existe race-guard de 5s, mas não há evento quando remoto é descartado | Baixo | A observar |
+| F6 | `RemoteDraftRecoveryModal` aceita payload sem validar shape — hydration parcial inválida possível | Médio | A endurecer |
+| F7 | Sem detecção de "refresh em fase X" — não dá pra correlacionar refresh ↔ perda | Médio | A criar |
+| F8 | Multi-tab: `broadcastDraftChange` existe mas não bloqueia escrita concorrente entre abas em fases distintas | Médio | A endurecer leve |
 
-## Mudanças por item
+Nenhum requer migração nem schema novo.
 
-### Crítico #1 — Dead-end do WhatsApp
+---
 
-**Arquivos**:
-- `src/components/onboarding/wizard/phases/v2/types.ts`
-  - Adicionar `'phase_repair_contact'` ao tipo `OnboardingPhase`.
-  - Adicionar campo opcional `returnToPhase?: OnboardingPhase` no `OnboardingState`.
-- `src/components/onboarding/wizard/phases/v2/state.ts`
-  - **NÃO** adicionar ao `PHASE_ORDER` (mantém regra #2).
-  - Estender reducer com action `RETURN_FROM_REPAIR` (volta para `returnToPhase`).
-- `src/components/onboarding/wizard/phases/v2/PhaseRepairContact.tsx` (NOVO, ~120 linhas)
-  - Input único WhatsApp + máscara BR (reusa `formatWhatsappBR` já existente).
-  - Validação local (`getOnboardingContactValidation`).
-  - Botão "Salvar e voltar" → `PATCH_PROFILE` + `RETURN_FROM_REPAIR`.
-- `src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx`
-  - Render switch ganha case `phase_repair_contact`.
-  - `REASON_MAP` para `whatsapp_required`/`invalid_whatsapp` aponta para
-    `phase_repair_contact` (remove referências mortas a `phase1_basic`).
-  - Botão "Voltar e corrigir" passa a salvar `returnToPhase = state.phase` e
-    despachar `GO_TO phase_repair_contact`.
-  - `requestWizardBackForPhase` corrigido para usar `info.backPhase`.
+## 2. Telemetria estruturada (sem spam)
 
-**Risco**: baixo. Fase nova é isolada e só aparece sob erro. Rollback: deletar
-arquivo + remover case do switch + reverter REASON_MAP.
+Estender `telemetry.ts` (que já tem `trackOnboardingEvent`) com um **dicionário canônico** de eventos. Reusa tabela `onboarding_events` existente — **zero schema change**.
 
-### Crítico #2 — Persistência tardia do 1º serviço
+Eventos novos (todos via `trackOnboardingEvent`, herdam `flow`/`intent` sticky):
 
-**Arquivos**:
-- `src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx`
-  - Adicionar `persistFirstServiceEarly()` chamado no `onNext` de `Phase2Service`
-    (transição `phase2_service → phase2_details`).
-  - Idempotência: se `state.firstServiceId` já existe, NOOP.
-  - Reusa `buildPersistFirstServiceOperation` já existente (mesma RPC
-    `create_service_atomic`, mesmo caminho que o celebration usa).
-  - Em caso de falha: NÃO avança, exibe `errorModal`, registra
-    `error/early_service_persist_failed`.
-- `Phase3Celebration.tsx`: NÃO mexer; já é idempotente via `findExistingFirstService`.
+```
+phase_enter             → emitido 1x ao montar fase
+phase_exit              → emitido com duration_ms ao trocar de fase
+autosave_local_ok       → 1x a cada 10s (debounce) — não a cada keystroke
+autosave_remote_ok      → após flushRemoteDraft resolver
+autosave_remote_failed  → já existe, padronizar shape
+recovery_local_used     → quando readOnboardingV2Draft hidrata
+recovery_remote_used    → quando modal aceita remoto
+recovery_remote_discarded → quando race-guard descarta remoto (Crítico #4)
+first_service_persisted → INSERT inicial OK
+first_service_reused    → reusedExistingService=true
+first_service_update    → detailsPatch aplicado
+validation_failed       → REASON_MAP disparou repair
+refresh_detected        → mount com draft local válido e mesma fase
+abandonment_suspected   → fase ativa há >15min sem interação (timer leve)
+```
 
-**Risco**: médio. Mitigação: o INSERT atômico já é o mesmo usado hoje na
-Phase3; só estamos antecipando. A idempotência por `(userRef, slug)` já está
-implementada no RPC. Rollback: remover a chamada antecipada — celebration
-continua funcionando.
+**Anti-spam:**
+- `phase_enter` / `phase_exit` deduplicado por `(phase, sessionId)` em sessionStorage.
+- `autosave_local_ok` com throttle de 10s.
+- `abandonment_suspected` 1x por fase por sessão.
 
-### Crítico #3 — Falso "rascunho recuperado"
+Meta canônica já existe em `telemetryMeta.ts` — só estender `OnboardingEventMeta` com `recovery_state`, `hydration_state`, `checksum_ok`.
 
-**Arquivo**: `src/components/onboarding/wizard/phases/v2/useOnboardingV2Draft.ts`
+---
 
-- `readOnboardingV2Draft` ganha guard de conteúdo mínimo. Retorna `null` se
-  não houver pelo menos um de: `service.service_name` (≥3), `profile.whatsapp`
-  (≥10 dígitos), ou `service.category_ids.length > 0`.
-- Banner/toast "rascunho restaurado" no Shell já é condicional a `draft != null`,
-  então automaticamente para de mentir.
+## 3. Hardening do recovery (envelope versionado)
 
-**Risco**: baixo. Drafts genuínos têm pelo menos um desses campos. Rollback:
-reverter o guard.
+Em `useOnboardingV2Draft.ts`:
 
-### Crítico #4 — Race condition local × remoto
+1. Envelope ganha `version: 2` e `checksum` (SHA-1 simples do JSON dos campos `profile+service+phase`, helper em `src/lib/lightChecksum.ts`).
+2. `readOnboardingV2Draft` valida:
+   - `version === 2` (caso contrário descarta — drafts v1 expiram naturalmente em 7d).
+   - `checksum` confere → senão descarta + emite `recovery_corrupted`.
+   - Shape mínimo (`profile` é objeto, `service` é objeto, `phase` é string conhecida).
+3. `RemoteDraftRecoveryModal` recebe `validateRemoteDraftShape()` antes de hidratar.
 
-**Arquivo**: `src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx`
-(bloco de hidratação remota, junto do `fetchRemoteDraft`).
+Tudo fail-soft: corrupção = ignorar draft, nunca crash.
 
-- Envelope local já tem `savedAt` (timestamp). Comparar `localDraft.savedAt`
-  com `remoteDraft.updated_at` (ISO → ms). Se local for **mais novo**, NÃO
-  abrir `RemoteDraftRecoveryModal` e descartar remoto na sessão.
-- Flag `hydrationDoneRef` impede 2ª hidratação remota acidental.
+---
 
-**Risco**: baixo. Apenas inverte critério de "ganhador" quando há ambos.
-Rollback: remover comparação.
+## 4. Multi-tab / multi-device safety
 
-### Crítico #5 — Erro remoto silencioso
+Sem lock pesado. Apenas:
 
-**Arquivo**: `src/components/onboarding/wizard/phases/v2/useOnboardingV2RemoteDraft.ts`
+1. **Heartbeat de aba ativa**: chave `onboarding_v2_active_tab` em localStorage com `{tabId, updatedAt}` atualizada a cada 5s. Reusa `crossTabSync.ts`.
+2. Na hidratação, se outra aba escreveu há <3s e o `tabId` é diferente → não bloqueia, mas emite `concurrent_tab_detected` + (opcional) toast discreto "Esta conta está aberta em outra aba".
+3. **Multi-device**: `flushRemoteDraft` já tem dedupe; adicionar campo `device_fingerprint` (reusa `src/lib/deviceFingerprint.ts` quando consent functional=true) na linha de `onboarding_v2_drafts` para correlação posterior — sem bloquear nada.
 
-- `catch` do upsert: além do `console.error`, chamar
-  `trackOnboardingEvent({ event: 'error', meta: { kind: 'remote_draft_failed', code, message } })`.
-- Retry simples: 1 nova tentativa após 1500ms (backoff fixo único), sem loop.
+---
 
-**Risco**: muito baixo. Telemetria + 1 retry. Rollback trivial.
+## 5. Auditoria de persistência (relatório gerado, não código)
 
-## Testes de regressão (novos)
+Adicionar `.lovable/audit/onboarding-persistence-2026-05.md` listando:
 
-`src/test/containment-onboarding-stop-loss.test.ts(x)`:
+- Pontos otimistas: `persistFirstServiceEarly` (UI segue antes de confirm em rede lenta).
+- Pontos garantidos: `Phase4Final.handleFinish` (await + tracker).
+- Pontos parciais: `detailsPatch` (não retorna erro ao usuário se UPDATE falha).
+- Pontos ilusórios: nenhum após containment — confirmar.
 
-1. WhatsApp ausente → REASON_MAP leva a `phase_repair_contact`, campo existe.
-2. "Voltar e corrigir" → `requestWizardBackForPhase` recebe `info.backPhase`.
-3. `Phase2Service.onNext` chama persist e popula `firstServiceId` antes de avançar.
-4. INSERT do 1º serviço é idempotente (segundo `onNext` não cria duplicata).
-5. Refresh em `phase2_photos` mantém `service.service_name`.
-6. `readOnboardingV2Draft` retorna `null` quando draft vazio/parcial.
-7. Local `savedAt` > remoto `updated_at` → modal de recuperação NÃO abre.
-8. Falha no upsert remoto registra `error/remote_draft_failed` e tenta retry.
+Cada um marcado com: tem retry? tem telemetria? tem feedback ao usuário?
 
-## Fora de escopo (explicitamente NÃO mexer)
+---
 
-Schema do banco, migrations, upload de fotos, autenticação, design visual,
-Bet Mode, providers/profiles além do necessário para o INSERT antecipado,
-`PHASE_ORDER` linear, tipos globais fora dos 2 campos novos acima.
+## 6. Detecção de abandono
 
-## Ordem de execução
+`useAbandonmentTimer` (novo hook leve, ~40 linhas) em `phases/v2/`:
+- Reset em qualquer `dispatch` ou interação no DOM raiz.
+- Após 15min sem evento → emite `abandonment_suspected` 1x.
+- Após 60min → marca draft local com `abandoned_at` para análise.
 
-1. Tipos + reducer + PhaseRepairContact (Crítico #1 parte estrutural).
-2. Shell: REASON_MAP + render switch + requestWizardBackForPhase (Crítico #1 fim).
-3. Shell: persist antecipado em `phase2_service.onNext` (Crítico #2).
-4. `useOnboardingV2Draft` guard (Crítico #3).
-5. Shell: comparação de timestamps na hidratação (Crítico #4).
-6. `useOnboardingV2RemoteDraft` telemetria + retry (Crítico #5).
-7. Testes Vitest.
+Sem UI, sem modal. Só telemetria.
 
-Total estimado: ~9 arquivos tocados + 2 novos (PhaseRepairContact + teste).
-Zero migrations. Zero mudança em PHASE_ORDER. Zero refactor.
+---
 
-## Pergunta de bloqueio
+## 7. Testes de resiliência (Vitest)
 
-Confirma a decisão de manter `phase_repair_contact` **fora** do `PHASE_ORDER`
-(como fase auxiliar acessível via erro)? Se sim, executo nesta ordem.
+Novo arquivo `src/test/onboarding-hardening-observability.test.ts`:
+
+1. Envelope v1 (sem version) é descartado.
+2. Envelope com checksum inválido é descartado + emite `recovery_corrupted`.
+3. Refresh com draft válido emite `refresh_detected` 1x.
+4. `phase_exit` carrega `duration_ms > 0`.
+5. Autosave local respeita throttle 10s (3 chamadas → 1 evento).
+6. Race local-mais-novo descarta remoto E emite `recovery_remote_discarded`.
+7. Shape inválido no remote modal não hidrata.
+8. Multi-tab: 2ª aba detecta heartbeat e emite `concurrent_tab_detected`.
+9. Abandono: 15min sem interação emite 1x.
+10. `first_service_update` dispara só quando há `detailsPatch` real.
+11. Validation `whatsapp_required` emite `validation_failed` com `error_code`.
+12. Falha de `flushRemoteDraft` + retry sucesso emite `autosave_remote_ok` no final.
+
+Meta: ≥12 testes verdes, sem flake.
+
+---
+
+## 8. Arquivos a alterar/criar
+
+**Novos (5):**
+- `src/lib/lightChecksum.ts` (~30 linhas)
+- `src/components/onboarding/wizard/phases/v2/useAbandonmentTimer.ts` (~50 linhas)
+- `src/components/onboarding/wizard/phases/v2/draftEnvelope.ts` — helpers de versão/checksum/shape (~80 linhas)
+- `src/test/onboarding-hardening-observability.test.ts`
+- `.lovable/audit/onboarding-persistence-2026-05.md`
+
+**Editados (6):**
+- `useOnboardingV2Draft.ts` — envelope v2 + checksum
+- `useOnboardingV2RemoteDraft.ts` — emitir `autosave_remote_ok`
+- `OnboardingV2Shell.tsx` — hook `useAbandonmentTimer`, eventos `phase_enter/exit/duration`, `refresh_detected`, `recovery_*_used/discarded`
+- `RemoteDraftRecoveryModal.tsx` — `validateRemoteDraftShape`
+- `crossTabSync.ts` — heartbeat de tabId
+- `telemetryMeta.ts` — campos `recovery_state`, `hydration_state`, `checksum_ok`
+
+**Memória (1):**
+- `mem://funcionalidades/onboarding/hardening-observabilidade-v1`
+
+---
+
+## 9. Riscos
+
+| Risco | Mitigação |
+|---|---|
+| Spam de eventos inflar `onboarding_events` | Throttle/dedupe por sessionStorage |
+| Heartbeat multi-tab causar loop de write | Intervalo 5s + comparação tabId |
+| Validação de shape descartar drafts legítimos antigos | Versionamento (v1 expira em 7d sozinho) |
+| Checksum quebrar hidratação em produção no rollout | Fallback: se checksum ausente, aceitar (graceful) |
+| Hook de abandono custar bateria | `setTimeout` único, não `setInterval` |
+
+---
+
+## 10. Proibições reafirmadas
+
+- Sem migração SQL.
+- Sem mudar `PHASE_ORDER`.
+- Sem mexer em wizard Bet/Smart/V1.
+- Sem novo modal, sem nova rota.
+- Sem alterar `state.ts` reducer (só leitura).
+- Sem trocar `flushRemoteDraft` (só envelope/telemetria ao redor).
+
+---
+
+## 11. Critério de aceite
+
+- Testes 12/12 verdes.
+- Build sem warning novo.
+- `onboarding_events` recebe os eventos novos em dev (validado por console grep).
+- Refresh em fase 2 deixa rastro (`refresh_detected` + `recovery_local_used`).
+- Draft v1 antigo no localStorage não crasha — é descartado silenciosamente.
+- Audit `.md` entregue.
+
+**Confirmar antes de executar:**  
+1. Mantemos a tabela `onboarding_events` como destino único (sem nova tabela)?  
+2. Posso usar SHA-1 puro em JS (sem libs) para o checksum leve?  
+3. OK emitir toast discreto em `concurrent_tab_detected`, ou só telemetria silenciosa?
