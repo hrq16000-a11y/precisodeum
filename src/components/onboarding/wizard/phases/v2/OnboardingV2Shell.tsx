@@ -575,6 +575,23 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   const handleRemoteContinue = () => {
     if (remoteDraft) {
+      // Hardening F6: valida shape antes de hidratar — descarta payload corrompido.
+      const shape = validateDraftShape({
+        profile: remoteDraft.payload?.profile,
+        service: remoteDraft.payload?.service,
+        phase: remoteDraft.phase,
+      });
+      if (!shape.ok) {
+        void trackOnboardingEvent({
+          phase: state.phase,
+          event: 'error',
+          userId: user?.id,
+          meta: { kind: 'recovery_remote_discarded', reason: `shape_${shape.reason}` },
+        });
+        setShowRemoteModal(false);
+        setRemoteDraft(null);
+        return;
+      }
       dispatch({
         type: 'HYDRATE',
         state: {
@@ -585,6 +602,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           firstServiceId: remoteDraft.payload.firstServiceId ?? null,
           phase: remoteDraft.phase as any,
         },
+      });
+      void trackOnboardingEvent({
+        phase: remoteDraft.phase as any,
+        event: 'next',
+        userId: user?.id,
+        meta: { kind: 'recovery_remote_used' },
       });
       setDraftRestored({ source: 'remote', at: remoteDraft.updated_at });
       setOnboardingDraftSource('remote');
