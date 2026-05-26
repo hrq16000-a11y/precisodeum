@@ -17,19 +17,21 @@
  *  - Index (session_id, created_at) garante O(log n) na timeline.
  */
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   Activity,
   AlertTriangle,
   ArrowRight,
   BarChart3,
+  CheckCircle2,
   Clock,
   ExternalLink,
   Flame,
   GitBranch,
   RefreshCcw,
   Search,
+  ShieldAlert,
   Telescope,
 } from 'lucide-react';
 
