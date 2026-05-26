@@ -56,9 +56,7 @@ export function useAbandonmentTimer(phase: OnboardingPhase, userId?: string | nu
     };
 
     const onActivity = () => schedule();
-    const events: Array<keyof WindowEventMap> = [
-      'pointerdown', 'keydown', 'touchstart', 'visibilitychange',
-    ];
+    const events = ['pointerdown', 'keydown', 'touchstart', 'visibilitychange'] as const;
     events.forEach((e) => window.addEventListener(e, onActivity, { passive: true } as any));
     schedule();
     return () => {
