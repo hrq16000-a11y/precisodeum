@@ -28,7 +28,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import ProviderCard from '@/components/ProviderCard';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Button } from '@/components/ui/button';
-import { useSeoHead } from '@/hooks/useSeoHead';
+import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useCategoryProviders } from '@/hooks/useProviders';
 import { isKnownCity } from '@/lib/citiesIndex';
@@ -91,12 +91,7 @@ export default function CategoryCityPage() {
     ? buildCanonicalUrl(`/categoria/${slug}/em/${cidade}`)
     : undefined;
 
-  useSeoHead({
-    title,
-    description,
-    canonical,
-    noindex: !valid || providers.length === 0,
-  });
+  const seoNoindex = !valid || providers.length === 0;
 
   // JSON-LD ItemList apenas quando há resultados — evita lixo nos motores.
   useJsonLd(
@@ -131,6 +126,7 @@ export default function CategoryCityPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SeoMeta title={title} description={description} canonical={canonical} noindex={seoNoindex} />
       <Header />
 
       <main className="flex-1 mx-auto w-full max-w-screen-xl px-4 py-6 space-y-6">

@@ -55,7 +55,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeSlug } from '@/lib/slugify';
 import { toast } from 'sonner';
-import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { extractSpecialties } from '@/lib/specialtyExtractor';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
@@ -998,13 +999,7 @@ const ProviderProfile = () => {
   const seoTitle = truncateAt(seoTitleRaw, 60);
   const seoDescription = truncateAt(seoDescriptionRaw, 160);
 
-  useSeoHead({
-    title: seoTitle,
-    description: seoDescription,
-    canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
-    ogImage: providerSocialImage || undefined,
-    ogType: 'profile',
-  });
+  const seoCanonical = slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined;
 
   // Validação automática de SEO em desenvolvimento.
   // Avisa (sem quebrar produção) se title/description fugirem dos limites
@@ -1632,6 +1627,13 @@ const ProviderProfile = () => {
 
   return (
     <div className={`flex min-h-screen flex-col ${tc.page} ${tc.fontBody}`} style={accentStyle}>
+      <SeoMeta
+        title={seoTitle}
+        description={seoDescription}
+        canonical={seoCanonical}
+        ogImage={providerSocialImage || undefined}
+        ogType="profile"
+      />
       <Header />
 
       {/* Cover Image Hero — aspect-ratio reservado ANTES da imagem chegar

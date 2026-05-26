@@ -17,7 +17,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { useCategoryProviders, filterAndRankProvidersGrouped, type DbProvider } from '@/hooks/useProviders';
-import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { calculateDistanceKm } from '@/lib/geoDistance';
@@ -147,13 +148,7 @@ const CategoryPage = () => {
         : `Encontre os melhores profissionais de ${category.name} no Brasil. ${seoCount} prestadores com perfil completo e cidade validada.`)
     : 'Encontre profissionais por categoria.';
 
-  useSeoHead({
-    title: dynamicTitle,
-    description: dynamicDescription,
-    canonical: slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined,
-    ogImage: categorySocialImage || undefined,
-    noindex: !category,
-  });
+  const seoCanonical = slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined;
 
   const breadcrumbLd = useMemo(() => category ? ({
     '@context': 'https://schema.org',
@@ -264,6 +259,12 @@ const CategoryPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <SeoMeta
+        title={dynamicTitle}
+        description={dynamicDescription}
+        canonical={seoCanonical}
+        ogImage={categorySocialImage || undefined}
+      />
       <Header />
 
       {/* Hero section with enhanced visual */}

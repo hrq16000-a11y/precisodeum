@@ -8,7 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import InfoRow from '@/components/ui/InfoRow';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
@@ -39,11 +40,10 @@ const JobDetailPage = () => {
 
   const pageUrl = `${SITE_BASE_URL}/vaga/${slug}`;
 
-  useSeoHead({
-    title: job ? `${job.title} - Vaga em ${job.city || 'Brasil'}` : 'Vaga',
-    description: job ? `${job.title} em ${formatCityState(job.city, job.state) || job.city}. ${(job.description || '').slice(0, 120)}` : 'Vaga de serviço.',
-    canonical: pageUrl,
-  });
+  const seoTitle = job ? `${job.title} - Vaga em ${job.city || 'Brasil'}` : 'Vaga';
+  const seoDescription = job
+    ? `${job.title} em ${formatCityState(job.city, job.state) || job.city}. ${(job.description || '').slice(0, 120)}`
+    : 'Vaga de serviço.';
 
   const jobLd = useMemo(() => job ? ({
     '@context': 'https://schema.org',
@@ -117,6 +117,7 @@ const JobDetailPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <SeoMeta title={seoTitle} description={seoDescription} canonical={pageUrl} noindex={!job} />
       <Header />
       <div className="container py-8">
         <div className="flex items-center justify-between mb-6">

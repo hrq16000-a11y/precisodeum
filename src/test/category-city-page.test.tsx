@@ -4,6 +4,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 
 const useCategoryProvidersMock = vi.fn();
 vi.mock('@/hooks/useProviders', () => ({
@@ -29,11 +30,13 @@ import CategoryCityPage from '@/pages/CategoryCityPage';
 
 function renderAt(path: string) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/categoria/:slug/em/:cidade" element={<CategoryCityPage />} />
-      </Routes>
-    </MemoryRouter>,
+    <HelmetProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/categoria/:slug/em/:cidade" element={<CategoryCityPage />} />
+        </Routes>
+      </MemoryRouter>
+    </HelmetProvider>,
   );
 }
 
