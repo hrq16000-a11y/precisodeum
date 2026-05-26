@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   ArrowRight,
   BarChart3,
+  Brain,
   CheckCircle2,
   Clock,
   ExternalLink,
