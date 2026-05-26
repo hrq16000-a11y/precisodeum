@@ -551,7 +551,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           event: 'next',
           userId: user.id,
           meta: {
-            kind: 'remote_draft_discarded_local_newer',
+            kind: 'recovery_remote_discarded',
+            reason: 'local_newer',
             local_saved_at: localSavedAt,
             remote_updated_at: remoteSavedAt,
             delta_ms: localSavedAt - remoteSavedAt,
