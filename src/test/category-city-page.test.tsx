@@ -28,12 +28,16 @@ vi.mock('@/components/EmptyStateFallback', () => ({
 import CategoryCityPage from '@/pages/CategoryCityPage';
 
 function renderAt(path: string) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { HelmetProvider } = require('react-helmet-async');
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/categoria/:slug/em/:cidade" element={<CategoryCityPage />} />
-      </Routes>
-    </MemoryRouter>,
+    <HelmetProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/categoria/:slug/em/:cidade" element={<CategoryCityPage />} />
+        </Routes>
+      </MemoryRouter>
+    </HelmetProvider>,
   );
 }
 
