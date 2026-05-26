@@ -438,7 +438,12 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="governance" className="gap-1"><Workflow className="h-4 w-4" /> Governance</TabsTrigger>
             <TabsTrigger value="runtime-drift" className="gap-1"><Radar className="h-4 w-4" /> Runtime Drift</TabsTrigger>
             <TabsTrigger value="self-audit" className="gap-1"><Shield className="h-4 w-4" /> Self-Audit</TabsTrigger>
+            <TabsTrigger value="evidence" className="gap-1"><Network className="h-4 w-4" /> Evidence</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="evidence" className="space-y-3">
+            <AdminEvidencePanel enabled={!!isAdmin} />
+          </TabsContent>
 
           <TabsContent value="experiments" className="space-y-3">
             <AdminExperimentsPanel enabled={!!isAdmin} />
