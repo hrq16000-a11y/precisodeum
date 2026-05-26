@@ -72,18 +72,21 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     }
   });
 
-  it('App.tsx só conhece /cadastro-inicial (rotas legadas REMOVIDAS, não há mais Navigate)', () => {
+  it('Router só conhece /cadastro-inicial (rotas legadas REMOVIDAS, não há mais Navigate)', async () => {
+    // PR 3 split: lemos App.tsx + src/routes/* como fonte única do router.
     const app = read('src/App.tsx');
-    // Gate centralizado usa helper + rota única do onboarding.
+    const { readRouterSources } = await import('./helpers/routerSources');
+    const routerSrc: string = readRouterSources();
+    // Gate centralizado (vive em App.tsx) usa helper + rota única do onboarding.
     expect(app).toContain('resolveOnboardingGateTarget');
     expect(app).toContain('to={gateDecision.target}');
-    expect(app).toContain('path="/cadastro-inicial"');
+    expect(routerSrc).toContain('path="/cadastro-inicial"');
     // Rotas legadas NÃO existem mais (nem como redirect).
-    expect(app).not.toMatch(/path="\/cadastro-bet"/);
-    expect(app).not.toMatch(/path="\/onboarding-v2"\s/);
-    expect(app).not.toMatch(/path="\/triagem"/);
+    expect(routerSrc).not.toMatch(/path="\/cadastro-bet"/);
+    expect(routerSrc).not.toMatch(/path="\/onboarding-v2"\s/);
+    expect(routerSrc).not.toMatch(/path="\/triagem"/);
     // Sucesso pós-fluxo continua acessível.
-    expect(app).toContain('path="/onboarding-v2/sucesso"');
+    expect(routerSrc).toContain('path="/onboarding-v2/sucesso"');
   });
 
   it('WizardShell único renderiza orquestradores internos sem trocar de URL', () => {

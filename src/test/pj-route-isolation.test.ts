@@ -1,25 +1,28 @@
 /**
  * Garante que as rotas /agencia/:slug (RH) e /empresa/:slug (PJ) coexistam
- * sem colisão e apontem para componentes distintos. Lê src/App.tsx como
- * fonte da verdade para evitar regressão se alguém mover uma rota.
+ * sem colisão e apontem para componentes distintos.
+ *
+ * PR 3 split: rotas foram movidas de src/App.tsx para src/routes/*.tsx.
+ * Usamos o helper `readRouterSources()` para ler todas as fontes do router
+ * e evitar falsos negativos.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readRouterSources } from './helpers/routerSources';
 
-const APP = readFileSync(resolve(__dirname, '../App.tsx'), 'utf8');
+const APP = readRouterSources();
 
 describe('PJ route isolation', () => {
   it('expõe /profissional/:slug → ProviderProfile', () => {
-    expect(APP).toMatch(/path="\/profissional\/:slug"\s+element=\{<ProviderProfile/);
+    // Tolera wrappers tipo <RouteErrorBoundary> entre `element={` e o componente.
+    expect(APP).toMatch(/path="\/profissional\/:slug"\s+element=\{[^}]*<ProviderProfile/);
   });
 
   it('expõe /empresa/:slug → CompanyProfile (PJ)', () => {
-    expect(APP).toMatch(/path="\/empresa\/:slug"\s+element=\{<CompanyProfile/);
+    expect(APP).toMatch(/path="\/empresa\/:slug"\s+element=\{[^}]*<CompanyProfile/);
   });
 
   it('expõe /agencia/:slug → AgencyPublicPage (RH) e NUNCA aponta para CompanyProfile', () => {
-    expect(APP).toMatch(/path="\/agencia\/:slug"\s+element=\{<AgencyPublicPage/);
+    expect(APP).toMatch(/path="\/agencia\/:slug"\s+element=\{[^}]*<AgencyPublicPage/);
     expect(APP).not.toMatch(/path="\/agencia\/:slug"[^>]*<CompanyProfile/);
   });
 

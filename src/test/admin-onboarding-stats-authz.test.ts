@@ -13,9 +13,11 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { readRouterSources } from './helpers/routerSources';
 
 const root = process.cwd();
-const APP_TSX = readFileSync(join(root, 'src/App.tsx'), 'utf8');
+// PR 3 split: rotas /admin/* foram movidas para src/routes/adminRoutes.tsx.
+const APP_TSX = readRouterSources();
 const PAGE_TSX = readFileSync(
   join(root, 'src/pages/admin/AdminOnboardingStatsPage.tsx'),
   'utf8',

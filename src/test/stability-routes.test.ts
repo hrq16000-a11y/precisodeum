@@ -45,15 +45,15 @@ const PROTECTED_ROUTES = [
 ] as const;
 
 describe('Route registry integrity', () => {
-  it('App.tsx contains all protected routes', async () => {
-    // Read the App module to verify route strings
-    const fs = await import('fs');
-    const appContent = fs.readFileSync('src/App.tsx', 'utf-8');
+  it('Router (App.tsx + src/routes/*) contains all protected routes', async () => {
+    // PR 3 split: rotas vivem agora em src/routes/*. Agregamos as fontes.
+    const { readRouterSources } = await import('./helpers/routerSources');
+    const appContent = readRouterSources();
 
     for (const route of PROTECTED_ROUTES) {
       expect(
         appContent.includes(`path="${route}"`) || appContent.includes(`path="${route.slice(1)}"`),
-        `Route "${route}" must exist in App.tsx`
+        `Route "${route}" must exist in router sources`
       ).toBe(true);
     }
   });

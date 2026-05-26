@@ -64,10 +64,13 @@ describe('Onboarding V2 — fluxo final', () => {
     expect(successSrc).toMatch(/Ir para o Dashboard/);
   });
 
-  it('Rota /onboarding-v2/sucesso está registrada no App.tsx', () => {
-    const appSrc = read('App.tsx');
-    expect(appSrc).toMatch(/path="\/onboarding-v2\/sucesso"/);
-    expect(appSrc).toMatch(/OnboardingV2SuccessPage/);
+  it('Rota /onboarding-v2/sucesso está registrada no router (App.tsx ou src/routes/*)', async () => {
+    // PR 3 split: rotas foram movidas para src/routes/*. Agregamos todas as
+    // fontes de roteamento para evitar falso negativo.
+    const { readRouterSources } = await import('./helpers/routerSources');
+    const routerSrc: string = readRouterSources();
+    expect(routerSrc).toMatch(/path="\/onboarding-v2\/sucesso"/);
+    expect(routerSrc).toMatch(/OnboardingV2SuccessPage/);
   });
 
   it('wizardReducer mapeia "done" para "done" (não volta a main_more_services)', () => {
