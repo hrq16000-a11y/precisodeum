@@ -63,7 +63,7 @@ export default function AdminOnboardingRegressionPage() {
         .maybeSingle();
       if (error) throw error;
       return {
-        enabled: data?.value === true || (data?.value as unknown) === 'true',
+        enabled: (data?.value as unknown) === true || (data?.value as unknown) === 'true',
         updated_at: data?.updated_at as string | undefined,
       };
     },
