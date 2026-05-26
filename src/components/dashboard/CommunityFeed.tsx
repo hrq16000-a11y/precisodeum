@@ -47,9 +47,8 @@ const CommunityFeed = ({ compact = false }: CommunityFeedProps) => {
 
     loadFeed();
 
-    const channel = supabase
-      .channel('public_activities_feed')
-      .on(
+    acquireChannel('public_activities_feed', {
+      setup: (ch) => ch.on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'public_activities' },
         (payload) => {
@@ -61,13 +60,13 @@ const CommunityFeed = ({ compact = false }: CommunityFeedProps) => {
           });
           setHighlightId(fresh.id);
           setTimeout(() => setHighlightId(null), 4000);
-        }
-      )
-      .subscribe();
+        },
+      ),
+    });
 
     return () => {
       mounted = false;
-      supabase.removeChannel(channel);
+      releaseChannel('public_activities_feed');
     };
   }, []);
 
