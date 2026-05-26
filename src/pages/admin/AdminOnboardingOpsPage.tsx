@@ -42,6 +42,7 @@ import {
 import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
 import AdminIntelligencePanel from '@/components/admin/AdminIntelligencePanel';
 import AdminExecutivePanel from '@/components/admin/AdminExecutivePanel';
+import AdminGovernancePanel from '@/components/admin/AdminGovernancePanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
