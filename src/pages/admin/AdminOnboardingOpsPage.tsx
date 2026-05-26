@@ -470,6 +470,10 @@ export default function AdminOnboardingOpsPage() {
             <AdminCorrelationPanel enabled={!!isAdmin} />
           </TabsContent>
 
+          <TabsContent value="signals" className="space-y-3">
+            <AdminSignalCenter />
+          </TabsContent>
+
           <TabsContent value="evidence" className="space-y-3">
             <AdminEvidencePanel enabled={!!isAdmin} />
           </TabsContent>
