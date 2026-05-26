@@ -999,13 +999,7 @@ const ProviderProfile = () => {
   const seoTitle = truncateAt(seoTitleRaw, 60);
   const seoDescription = truncateAt(seoDescriptionRaw, 160);
 
-  useSeoHead({
-    title: seoTitle,
-    description: seoDescription,
-    canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
-    ogImage: providerSocialImage || undefined,
-    ogType: 'profile',
-  });
+  const seoCanonical = slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined;
 
   // Validação automática de SEO em desenvolvimento.
   // Avisa (sem quebrar produção) se title/description fugirem dos limites
