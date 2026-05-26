@@ -42,6 +42,7 @@ import {
   Telescope,
   Network,
   Workflow,
+  Zap,
 } from 'lucide-react';
 import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
 import AdminIntelligencePanel from '@/components/admin/AdminIntelligencePanel';
@@ -52,6 +53,7 @@ import AdminSelfAuditPanel from '@/components/admin/AdminSelfAuditPanel';
 import AdminEvidencePanel from '@/components/admin/AdminEvidencePanel';
 import AdminRealityPanel from '@/components/admin/AdminRealityPanel';
 import AdminMemoryPanel from '@/components/admin/AdminMemoryPanel';
+import AdminHardeningPanel from '@/components/admin/AdminHardeningPanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -444,6 +446,7 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="evidence" className="gap-1"><Network className="h-4 w-4" /> Evidence</TabsTrigger>
             <TabsTrigger value="reality" className="gap-1"><Telescope className="h-4 w-4" /> Reality</TabsTrigger>
             <TabsTrigger value="memory" className="gap-1"><History className="h-4 w-4" /> Memory</TabsTrigger>
+            <TabsTrigger value="hardening" className="gap-1"><Zap className="h-4 w-4" /> Hardening</TabsTrigger>
           </TabsList>
 
           <TabsContent value="reality" className="space-y-3">
@@ -452,6 +455,10 @@ export default function AdminOnboardingOpsPage() {
 
           <TabsContent value="memory" className="space-y-3">
             <AdminMemoryPanel enabled={!!isAdmin} />
+          </TabsContent>
+
+          <TabsContent value="hardening" className="space-y-3">
+            <AdminHardeningPanel />
           </TabsContent>
 
           <TabsContent value="evidence" className="space-y-3">
