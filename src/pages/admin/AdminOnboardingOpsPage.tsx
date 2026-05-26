@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   ArrowRight,
   BarChart3,
+  Beaker,
   Brain,
   CheckCircle2,
   Clock,
@@ -37,6 +38,7 @@ import {
   ShieldCheck,
   Telescope,
 } from 'lucide-react';
+import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
