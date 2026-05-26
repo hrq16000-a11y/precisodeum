@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { acquireChannel, releaseChannel } from '@/lib/realtimeRegistry';
 import { resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/celebrate';
 
 /**
