@@ -37,6 +37,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Radar,
   Telescope,
   Workflow,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
 import AdminIntelligencePanel from '@/components/admin/AdminIntelligencePanel';
 import AdminExecutivePanel from '@/components/admin/AdminExecutivePanel';
 import AdminGovernancePanel from '@/components/admin/AdminGovernancePanel';
+import AdminRuntimeGovernancePanel from '@/components/admin/AdminRuntimeGovernancePanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
