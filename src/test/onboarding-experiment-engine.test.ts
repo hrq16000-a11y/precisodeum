@@ -110,17 +110,16 @@ describe('matchesAudience', () => {
 });
 
 describe('pickVariant weighting', () => {
-  it('distribui ~proporcional ao weight', () => {
+  it('distribui ~proporcional ao weight via buckets derivados de hash', () => {
     const variants = [
       { id: 'a', weight: 1, isControl: true },
       { id: 'b', weight: 3 },
     ];
     const counts: Record<string, number> = { a: 0, b: 0 };
     for (let i = 0; i < 4000; i++) {
-      const v = pickVariant(variants, i % 10000);
+      const v = pickVariant(variants, bucketFor('exp', `u${i}`));
       counts[v!.id]++;
     }
-    // b deve ter ~3x mais que a
     expect(counts.b / counts.a).toBeGreaterThan(2.3);
     expect(counts.b / counts.a).toBeLessThan(3.7);
   });
