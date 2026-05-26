@@ -82,6 +82,7 @@ const AdminIntegrityReportsPage = lazy(() => import("./pages/admin/AdminIntegrit
 const AdminInboxPage = lazy(() => import("./pages/admin/AdminInboxPage"));
 const AdminSitemapAuditPage = lazy(() => import("./pages/admin/AdminSitemapAuditPage"));
 const AdminOnboardingStatsPage = lazy(() => import("./pages/admin/AdminOnboardingStatsPage"));
+const AdminOnboardingRegressionPage = lazy(() => import("./pages/admin/AdminOnboardingRegressionPage"));
 const AdminAuthHealthPage = lazy(() => import("./pages/admin/AdminAuthHealthPage"));
 const AdminUploadStressTestPage = lazy(() => import("./pages/admin/AdminUploadStressTestPage"));
 const AdminSearchSortingPage = lazy(() => import("./pages/admin/AdminSearchSortingPage"));
