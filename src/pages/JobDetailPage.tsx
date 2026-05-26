@@ -40,11 +40,10 @@ const JobDetailPage = () => {
 
   const pageUrl = `${SITE_BASE_URL}/vaga/${slug}`;
 
-  useSeoHead({
-    title: job ? `${job.title} - Vaga em ${job.city || 'Brasil'}` : 'Vaga',
-    description: job ? `${job.title} em ${formatCityState(job.city, job.state) || job.city}. ${(job.description || '').slice(0, 120)}` : 'Vaga de serviço.',
-    canonical: pageUrl,
-  });
+  const seoTitle = job ? `${job.title} - Vaga em ${job.city || 'Brasil'}` : 'Vaga';
+  const seoDescription = job
+    ? `${job.title} em ${formatCityState(job.city, job.state) || job.city}. ${(job.description || '').slice(0, 120)}`
+    : 'Vaga de serviço.';
 
   const jobLd = useMemo(() => job ? ({
     '@context': 'https://schema.org',
