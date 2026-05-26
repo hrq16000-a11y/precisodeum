@@ -6,20 +6,10 @@
  * runtimeGovernance) + o registry estático (GOVERNANCE_REGISTRY) e produz
  * uma malha de **evidência observada** sobre toda a inteligência percebida.
  *
- * Objetivos:
- *  - Acabar com confiança falsa em engines alimentadas por arrays vazios.
- *  - Diferenciar SINAL OBSERVADO de HEURÍSTICA / CATÁLOGO ESTÁTICO.
- *  - Detectar contradições entre camadas (ex: governance="active" mas runtime
- *    zero execuções há 30d).
- *  - Calcular um Trust Score por item e propagar confiança para consumidores
- *    e dependências (downgrade quando upstream é fraco).
- *  - Mapear blindspots reais — áreas sem cobertura observacional.
- *
  * Política (frozen):
  *  - APENAS observa. NUNCA muta registry, runtime, flags, banco.
  *  - SEM IA, SEM realtime, SEM novas tabelas, SEM abstrações paralelas.
- *  - Reutiliza tipos e dados das camadas existentes (governanceRegistry +
- *    runtimeGovernance.RuntimeEvent).
+ *  - Reutiliza tipos e dados das camadas existentes.
  */
 
 import {
@@ -47,23 +37,22 @@ export const EVIDENCE_POLICY = Object.freeze({
 // Tipos
 // ============================================================================
 
-/** Origem de um sinal — qualifica a confiança. */
 export type EvidenceSource =
-  | 'runtime_event'         // observação direta no onboarding_events
-  | 'registry_static'       // catálogo manual
-  | 'heuristic_token_match' // token-match (proxy)
-  | 'synthetic_fallback'    // gerado por engine sem entrada real
-  | 'config_state';         // valor de flag/threshold sem execução
+  | 'runtime_event'
+  | 'registry_static'
+  | 'heuristic_token_match'
+  | 'synthetic_fallback'
+  | 'config_state';
 
 export type EvidenceQuality = 'strong' | 'medium' | 'weak' | 'none';
 
 export type ProvenanceClass =
-  | 'observed'        // 100% runtime
-  | 'observed_proxy'  // runtime via token-match
-  | 'declared'        // só registry
-  | 'inferred'        // derivado de outros sinais
-  | 'synthetic'       // engine emitiu sem evidência
-  | 'empty';          // sem sinal algum
+  | 'observed'
+  | 'observed_proxy'
+  | 'declared'
+  | 'inferred'
+  | 'synthetic'
+  | 'empty';
 
 export type TrustBand = 'high' | 'medium' | 'low' | 'unknown';
 
@@ -71,24 +60,16 @@ export interface EvidenceSignal {
   readonly item_id: string;
   readonly source: EvidenceSource;
   readonly quality: EvidenceQuality;
-  /** epoch ms da observação mais recente; null se nunca. */
   readonly last_seen_ms: number | null;
-  /** Contagem de eventos que sustentam este sinal. */
   readonly sample_size: number;
-  /** Notas estruturais (sem PII). */
   readonly notes?: string;
 }
 
 export interface EvidenceCorrelationOptions {
-  /** "Agora" injetável para testes. */
   now?: number;
-  /** Janela de freshness em dias. Default 14. */
   window_days?: number;
-  /** Tamanho mínimo de amostra para considerar quality=strong. Default 30. */
   min_sample_strong?: number;
-  /** Tamanho mínimo para quality>=medium. Default 5. */
   min_sample_medium?: number;
-  /** Dias a partir dos quais um sinal vira "stale". Default 7. */
   stale_after_days?: number;
 }
 
@@ -102,7 +83,7 @@ const DEFAULTS = Object.freeze({
 const MS_DAY = 86_400_000;
 
 // ============================================================================
-// 1. Signal Lineage Map — para cada item, de onde vem o sinal
+// 1. Signal Lineage Map
 // ============================================================================
 
 export interface SignalLineageEntry {
@@ -111,14 +92,14 @@ export interface SignalLineageEntry {
   readonly lifecycle: LifecycleState;
   readonly signals: ReadonlyArray<EvidenceSignal>;
   readonly provenance: ProvenanceClass;
-  readonly confidence: number;   // 0..1
+  readonly confidence: number;
   readonly trust_band: TrustBand;
   readonly stale: boolean;
 }
 
 function pickQuality(
   sample: number,
-  opts: Required<Pick<EvidenceCorrelationOptions, 'min_sample_strong' | 'min_sample_medium'>>,
+  opts: { min_sample_strong: number; min_sample_medium: number },
 ): EvidenceQuality {
   if (sample <= 0) return 'none';
   if (sample >= opts.min_sample_strong) return 'strong';
@@ -127,7 +108,7 @@ function pickQuality(
 }
 
 function tokenMatches(itemId: string, eventItemId: string): boolean {
-  if (itemId === eventItemId) return false; // exata cobre fora
+  if (itemId === eventItemId) return false;
   const a = itemId.toLowerCase();
   const b = eventItemId.toLowerCase();
   if (a.length < 4 || b.length < 4) return false;
@@ -137,10 +118,10 @@ function tokenMatches(itemId: string, eventItemId: string): boolean {
 function classifyProvenance(signals: ReadonlyArray<EvidenceSignal>): ProvenanceClass {
   if (signals.length === 0) return 'empty';
   const sources = new Set(signals.map((s) => s.source));
-  if (sources.has('runtime_event') && !sources.has('heuristic_token_match')) return 'observed';
-  if (sources.has('runtime_event') || sources.has('heuristic_token_match')) {
-    return sources.has('runtime_event') ? 'observed_proxy' : 'observed_proxy';
-  }
+  const hasRuntime = sources.has('runtime_event');
+  const hasProxy = sources.has('heuristic_token_match');
+  if (hasRuntime && !hasProxy) return 'observed';
+  if (hasRuntime || hasProxy) return 'observed_proxy';
   if (sources.has('synthetic_fallback')) return 'synthetic';
   if (sources.has('registry_static') || sources.has('config_state')) return 'declared';
   return 'inferred';
@@ -191,10 +172,7 @@ export function buildSignalLineage(
   };
   const staleAfter = (options.stale_after_days ?? DEFAULTS.stale_after_days) * MS_DAY;
 
-  // Agrega por item_id observado
   const exactById = new Map<string, { count: number; last: number }>();
-  const tokenById = new Map<string, { count: number; last: number }>();
-
   for (const ev of events) {
     const cur = exactById.get(ev.item_id) ?? { count: 0, last: 0 };
     cur.count += 1;
@@ -202,7 +180,7 @@ export function buildSignalLineage(
     exactById.set(ev.item_id, cur);
   }
 
-  // Para itens do registry sem match exato, tentar token-match
+  const tokenById = new Map<string, { count: number; last: number }>();
   for (const item of registry) {
     if (exactById.has(item.id)) continue;
     let count = 0;
@@ -219,7 +197,6 @@ export function buildSignalLineage(
   return registry.map((item) => {
     const signals: EvidenceSignal[] = [];
 
-    // 1. Runtime exato
     const exact = exactById.get(item.id);
     if (exact) {
       signals.push({
@@ -231,7 +208,6 @@ export function buildSignalLineage(
       });
     }
 
-    // 2. Token-match (proxy)
     const proxy = tokenById.get(item.id);
     if (proxy && !exact) {
       signals.push({
@@ -244,7 +220,6 @@ export function buildSignalLineage(
       });
     }
 
-    // 3. Registry estático sempre presente como declaração
     signals.push({
       item_id: item.id,
       source: 'registry_static',
@@ -253,7 +228,6 @@ export function buildSignalLineage(
       sample_size: 0,
     });
 
-    // 4. Flags/thresholds sem execução → config_state
     if ((item.kind === 'feature_flag' || item.kind === 'threshold') && !exact && !proxy) {
       signals.push({
         item_id: item.id,
@@ -287,14 +261,13 @@ export function buildSignalLineage(
 }
 
 // ============================================================================
-// 2. Cross-Engine Evidence Graph (lineage por consumidor/dependência)
+// 2. Cross-Engine Evidence Graph
 // ============================================================================
 
 export interface EvidenceGraphEdge {
   readonly from: string;
   readonly to: string;
   readonly relation: 'depends_on' | 'consumed_by';
-  /** Confiança propagada (mínima entre as pontas). */
   readonly propagated_confidence: number;
 }
 
@@ -329,7 +302,6 @@ export function buildEvidenceGraph(
 
 // ============================================================================
 // 3. Confidence Propagation & Downgrade
-//    Se um item depende de outro com confiança baixa, sua confiança efetiva cai.
 // ============================================================================
 
 export interface ConfidencePropagationResult {
@@ -358,7 +330,6 @@ export function propagateConfidence(
       if (!dep) continue;
       if (dep.confidence < minDep) { minDep = dep.confidence; worstId = d; }
     }
-    // Efetiva = média ponderada (70% própria, 30% pior dependência) — propagação suave.
     const effective = Math.max(0, Math.min(1, l.confidence * 0.7 + minDep * 0.3));
     const downgraded = effective < l.confidence - 0.05;
     return {
@@ -373,16 +344,15 @@ export function propagateConfidence(
 
 // ============================================================================
 // 4. Truth Score por item
-//    Combina confiança propagada + freshness + provenance.
 // ============================================================================
 
 export interface RuntimeTruthScore {
   readonly item_id: string;
-  readonly score: number;     // 0..100
+  readonly score: number;
   readonly band: TrustBand;
   readonly provenance: ProvenanceClass;
   readonly stale: boolean;
-  readonly contributors: string[];
+  readonly contributors: ReadonlyArray<string>;
 }
 
 export function computeTruthScores(
@@ -390,23 +360,23 @@ export function computeTruthScores(
   propagation: ReadonlyArray<ConfidencePropagationResult>,
 ): RuntimeTruthScore[] {
   const propById = new Map(propagation.map((p) => [p.item_id, p] as const));
+  const provenanceMul: Record<ProvenanceClass, number> = {
+    observed: 1.0,
+    observed_proxy: 0.85,
+    inferred: 0.7,
+    declared: 0.55,
+    synthetic: 0.25,
+    empty: 0,
+  };
   return lineage.map((l) => {
     const eff = propById.get(l.item_id)?.effective ?? l.confidence;
     const stalePenalty = l.stale ? 0.7 : 1;
-    const provenanceMul: Record<ProvenanceClass, number> = {
-      observed: 1.0,
-      observed_proxy: 0.85,
-      inferred: 0.7,
-      declared: 0.55,
-      synthetic: 0.25,
-      empty: 0,
-    };
     const score = Math.round(eff * 100 * stalePenalty * provenanceMul[l.provenance]);
     const contributors: string[] = [];
-    if (l.provenance === 'synthetic') contributors.push('synthetic-only signal');
+    if (l.provenance === 'synthetic') contributors.push('sinal apenas sintético');
     if (l.provenance === 'declared') contributors.push('apenas declaração de registry');
     if (l.stale) contributors.push('sinal stale');
-    if (eff < l.confidence - 0.05) contributors.push('confidence downgrade via dependency');
+    if (eff < l.confidence - 0.05) contributors.push('downgrade por dependência fraca');
     if (contributors.length === 0) contributors.push('observação direta consistente');
     return {
       item_id: l.item_id,
@@ -421,14 +391,13 @@ export function computeTruthScores(
 
 // ============================================================================
 // 5. Source Reliability Ranking
-//    Quão confiável é cada fonte de sinal globalmente.
 // ============================================================================
 
 export interface SourceReliability {
   readonly source: EvidenceSource;
   readonly items_supported: number;
-  readonly avg_quality: number;     // 0..1
-  readonly reliability_score: number; // 0..1
+  readonly avg_quality: number;
+  readonly reliability_score: number;
 }
 
 export function rankSourceReliability(
@@ -460,9 +429,8 @@ export function rankSourceReliability(
 }
 
 // ============================================================================
-// 6. Detection helpers
-//    contradictions / stale / orphan / broken-chain / blindspot /
-//    false-confidence / empty-state / synthetic-vs-observed
+// 6. Findings (contradição / stale / orphan / broken-chain / blindspot /
+//    false-confidence / empty-state / synthetic-only)
 // ============================================================================
 
 export type DetectionKind =
@@ -494,19 +462,16 @@ export function detectEvidenceFindings(
   for (const l of lineage) {
     const reg = regById.get(l.item_id);
 
-    // contradiction: registry diz active/stable + runtime vazio
     if (reg && (reg.lifecycle === 'active' || reg.lifecycle === 'stable')) {
       const hasRuntime = l.signals.some((s) => s.source === 'runtime_event' && s.sample_size > 0);
       if (!hasRuntime) {
         out.push({
-          kind: 'contradiction', item_id: l.id_for_finding(l.item_id) ?? l.item_id,
-          severity: 'warning',
+          kind: 'contradiction', item_id: l.item_id, severity: 'warning',
           message: `${l.item_id}: lifecycle=${reg.lifecycle} mas sem evidência runtime exata`,
         });
       }
     }
 
-    // stale_signal
     if (l.stale && l.signals.some((s) => s.last_seen_ms != null)) {
       out.push({
         kind: 'stale_signal', item_id: l.item_id, severity: 'warning',
@@ -514,7 +479,6 @@ export function detectEvidenceFindings(
       });
     }
 
-    // empty_state
     if (l.provenance === 'empty') {
       out.push({
         kind: 'empty_state', item_id: l.item_id, severity: 'info',
@@ -522,7 +486,6 @@ export function detectEvidenceFindings(
       });
     }
 
-    // synthetic_only
     if (l.provenance === 'synthetic') {
       out.push({
         kind: 'synthetic_only', item_id: l.item_id, severity: 'critical',
@@ -530,15 +493,13 @@ export function detectEvidenceFindings(
       });
     }
 
-    // false_confidence: trust_band high mas provenance declared/synthetic
     if (l.trust_band === 'high' && (l.provenance === 'declared' || l.provenance === 'synthetic')) {
       out.push({
         kind: 'false_confidence', item_id: l.item_id, severity: 'critical',
-        message: `${l.item_id}: confiança alta sem evidência observada — revisar inputs`,
+        message: `${l.item_id}: confiança alta sem evidência observada`,
       });
     }
 
-    // broken_chain: depende de item sem confiança
     if (reg) {
       for (const d of reg.dependencies) {
         const dep = byId.get(d);
@@ -557,7 +518,7 @@ export function detectEvidenceFindings(
     }
   }
 
-  // orphan_telemetry: evento observado sem item no registry e sem token-match
+  // orphan_telemetry
   const knownIds = new Set(registry.map((r) => r.id));
   const matchedByToken = new Set<string>();
   for (const item of registry) {
@@ -577,7 +538,7 @@ export function detectEvidenceFindings(
     }
   }
 
-  // blindspot: registry item categoria "dashboard"/"telemetry_contract" sem nenhuma observação
+  // blindspot
   for (const item of registry) {
     if (item.kind !== 'dashboard' && item.kind !== 'telemetry_contract') continue;
     const l = byId.get(item.id);
@@ -593,14 +554,6 @@ export function detectEvidenceFindings(
   return out;
 }
 
-// Pequeno helper para evitar quebra em runtime — SignalLineageEntry não tem método.
-// Garantimos que o detector tolere a chamada via fallback.
-declare module './evidenceCorrelation' {
-  interface SignalLineageEntry {
-    id_for_finding?: (id: string) => string | null;
-  }
-}
-
 // ============================================================================
 // 7. Runtime Coverage Matrix
 // ============================================================================
@@ -612,39 +565,36 @@ export interface CoverageMatrixEntry {
   readonly proxy: number;
   readonly declared_only: number;
   readonly empty: number;
-  readonly coverage_ratio: number;     // 0..1 (observed / total)
+  readonly coverage_ratio: number;
 }
 
 export function buildCoverageMatrix(
   lineage: ReadonlyArray<SignalLineageEntry>,
 ): CoverageMatrixEntry[] {
-  const byKind = new Map<GovernanceKind, CoverageMatrixEntry & { _o: number; _p: number; _d: number; _e: number }>();
+  type Mut = {
+    kind: GovernanceKind; total: number; observed: number; proxy: number;
+    declared_only: number; empty: number;
+  };
+  const byKind = new Map<GovernanceKind, Mut>();
   for (const l of lineage) {
     const cur = byKind.get(l.kind) ?? {
-      kind: l.kind, total: 0, observed: 0, proxy: 0, declared_only: 0, empty: 0, coverage_ratio: 0,
-      _o: 0, _p: 0, _d: 0, _e: 0,
+      kind: l.kind, total: 0, observed: 0, proxy: 0, declared_only: 0, empty: 0,
     };
     cur.total += 1;
-    if (l.provenance === 'observed') cur._o += 1;
-    else if (l.provenance === 'observed_proxy' || l.provenance === 'inferred') cur._p += 1;
-    else if (l.provenance === 'declared') cur._d += 1;
-    else if (l.provenance === 'empty' || l.provenance === 'synthetic') cur._e += 1;
+    if (l.provenance === 'observed') cur.observed += 1;
+    else if (l.provenance === 'observed_proxy' || l.provenance === 'inferred') cur.proxy += 1;
+    else if (l.provenance === 'declared') cur.declared_only += 1;
+    else if (l.provenance === 'empty' || l.provenance === 'synthetic') cur.empty += 1;
     byKind.set(l.kind, cur);
   }
   return Array.from(byKind.values()).map((c) => ({
-    kind: c.kind,
-    total: c.total,
-    observed: c._o,
-    proxy: c._p,
-    declared_only: c._d,
-    empty: c._e,
-    coverage_ratio: c.total > 0 ? c._o / c.total : 0,
+    ...c,
+    coverage_ratio: c.total > 0 ? c.observed / c.total : 0,
   }));
 }
 
 // ============================================================================
 // 8. Cross-layer consistency audit
-//    Verifica coerência entre lifecycle (declarado) e provenance (observado).
 // ============================================================================
 
 export interface CrossLayerAuditEntry {
@@ -661,37 +611,51 @@ export function auditCrossLayer(
   return lineage.map((l) => {
     const isObserved = l.provenance === 'observed' || l.provenance === 'observed_proxy';
     let verdict: CrossLayerAuditEntry['verdict'] = 'aligned';
-    let note = '';
+    let note = 'declaração coerente com observação';
     if ((l.lifecycle === 'active' || l.lifecycle === 'stable') && !isObserved) {
       verdict = 'over-declared';
       note = 'declarado ativo mas sem evidência runtime';
-    } else if ((l.lifecycle === 'deprecated' || l.lifecycle === 'disabled' || l.lifecycle === 'archived') && isObserved) {
+    } else if (
+      (l.lifecycle === 'deprecated' || l.lifecycle === 'disabled' || l.lifecycle === 'archived') &&
+      isObserved
+    ) {
       verdict = 'under-declared';
       note = 'declarado deprecated/disabled mas ainda observado em runtime';
     } else if (l.provenance === 'synthetic') {
       verdict = 'inconsistent';
       note = 'evidência sintética — confiança não auditável';
-    } else {
-      note = 'declaração coerente com observação';
     }
     return { item_id: l.item_id, lifecycle: l.lifecycle, provenance: l.provenance, verdict, note };
   });
 }
 
 // ============================================================================
-// Helper de entrada: aceita SignalLineageEntry "puro" mesmo sem método extra.
-// (corrige a chamada no detector acima, defensivo.)
+// 9. Aggregate convenience
 // ============================================================================
 
-function _safeIdForFinding(_l: SignalLineageEntry, id: string): string {
-  return id;
+export interface EvidenceReport {
+  readonly lineage: ReadonlyArray<SignalLineageEntry>;
+  readonly graph: EvidenceGraph;
+  readonly propagation: ReadonlyArray<ConfidencePropagationResult>;
+  readonly truth: ReadonlyArray<RuntimeTruthScore>;
+  readonly sources: ReadonlyArray<SourceReliability>;
+  readonly findings: ReadonlyArray<EvidenceFinding>;
+  readonly coverage: ReadonlyArray<CoverageMatrixEntry>;
+  readonly audit: ReadonlyArray<CrossLayerAuditEntry>;
 }
-// Patch dinâmico do helper (mantém o pure function readability sem quebrar).
-Object.defineProperty((globalThis as unknown as { __evHelper?: unknown }), '__evHelper', {
-  value: _safeIdForFinding, configurable: true,
-});
 
-// Substitui o uso de `l.id_for_finding(l.item_id)` por uma chamada segura.
-// Reescreve a função detectEvidenceFindings via wrapper sem alterar a assinatura:
-const _origDetect = detectEvidenceFindings;
-export const detectEvidenceFindingsSafe = _origDetect; // alias defensivo (mesma referência)
+export function buildEvidenceReport(
+  events: ReadonlyArray<RuntimeEvent>,
+  options: EvidenceCorrelationOptions = {},
+  registry: ReadonlyArray<GovernanceItem> = GOVERNANCE_REGISTRY,
+): EvidenceReport {
+  const lineage = buildSignalLineage(events, options, registry);
+  const graph = buildEvidenceGraph(lineage, registry);
+  const propagation = propagateConfidence(lineage, registry);
+  const truth = computeTruthScores(lineage, propagation);
+  const sources = rankSourceReliability(lineage);
+  const findings = detectEvidenceFindings(lineage, events, registry);
+  const coverage = buildCoverageMatrix(lineage);
+  const audit = auditCrossLayer(lineage);
+  return { lineage, graph, propagation, truth, sources, findings, coverage, audit };
+}
