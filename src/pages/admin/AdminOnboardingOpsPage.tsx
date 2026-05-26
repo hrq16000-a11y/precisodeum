@@ -967,6 +967,10 @@ export default function AdminOnboardingOpsPage() {
           </TabsContent>
 
           {/* === GATEKEEPER ========================================== */}
+          <TabsContent value="behavior" className="space-y-3">
+            <BehaviorTab />
+          </TabsContent>
+
           <TabsContent value="gatekeeper" className="space-y-3">
             <GatekeeperTab />
           </TabsContent>
