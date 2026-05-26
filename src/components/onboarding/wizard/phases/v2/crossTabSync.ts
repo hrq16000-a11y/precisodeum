@@ -108,15 +108,24 @@ function writeHeartbeat(tabId: string) {
 }
 
 /**
- * Detecta sessão concorrente: outra aba escreveu heartbeat há <3s.
+ * Detecta sessão concorrente: outra aba escreveu heartbeat há <FRESH_MS.
  * Retorna `true` se houver concorrência. Não bloqueia nada.
+ *
+ * Anti falso-positivo no boot pós-reload: se o documento veio de um reload
+ * (Navigation Timing type='reload'), ignoramos heartbeat órfão — a aba
+ * anterior somos nós mesmos antes do refresh.
  */
 export function detectConcurrentTab(): boolean {
   const myId = getOrCreateTabId();
   const hb = readHeartbeat();
   if (!hb) return false;
   if (hb.tabId === myId) return false;
-  return Date.now() - hb.updatedAt < HEARTBEAT_FRESH_MS;
+  if (Date.now() - hb.updatedAt >= HEARTBEAT_FRESH_MS) return false;
+  try {
+    const nav = (performance.getEntriesByType?.('navigation') || [])[0] as PerformanceNavigationTiming | undefined;
+    if (nav && nav.type === 'reload') return false;
+  } catch { /* fail-soft */ }
+  return true;
 }
 
 /**
