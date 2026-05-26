@@ -185,9 +185,19 @@ export function getOnboardingDraftSource(): OnboardingDraftSource | null {
 
 const phaseStartedAt = new Map<string, number>();
 
+/** Monotonic clock quando disponível (imune a skew/NTP). Fallback p/ Date.now(). */
+function monoNow(): number {
+  try {
+    if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+      return performance.now();
+    }
+  } catch { /* fail-soft */ }
+  return Date.now();
+}
+
 export function markPhaseEnter(phase: OnboardingPhase): void {
   try {
-    phaseStartedAt.set(String(phase), Date.now());
+    phaseStartedAt.set(String(phase), monoNow());
   } catch { /* fail-soft */ }
 }
 
@@ -204,8 +214,8 @@ export async function markPhaseExit(
 ): Promise<void> {
   try {
     const startedAt = phaseStartedAt.get(String(phase));
-    if (!startedAt) return; // sem enter prévio — não emite duração espúria
-    const duration_ms = Math.max(0, Date.now() - startedAt);
+    if (startedAt === undefined) return; // sem enter prévio — não emite duração espúria
+    const duration_ms = Math.max(0, Math.round(monoNow() - startedAt));
     phaseStartedAt.delete(String(phase));
     const draft_source = opts.draftSource ?? getOnboardingDraftSource() ?? 'none';
     await trackOnboardingEvent({
