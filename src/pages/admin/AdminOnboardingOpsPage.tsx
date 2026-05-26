@@ -49,6 +49,7 @@ import AdminGovernancePanel from '@/components/admin/AdminGovernancePanel';
 import AdminRuntimeGovernancePanel from '@/components/admin/AdminRuntimeGovernancePanel';
 import AdminSelfAuditPanel from '@/components/admin/AdminSelfAuditPanel';
 import AdminEvidencePanel from '@/components/admin/AdminEvidencePanel';
+import AdminRealityPanel from '@/components/admin/AdminRealityPanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -439,7 +440,12 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="runtime-drift" className="gap-1"><Radar className="h-4 w-4" /> Runtime Drift</TabsTrigger>
             <TabsTrigger value="self-audit" className="gap-1"><Shield className="h-4 w-4" /> Self-Audit</TabsTrigger>
             <TabsTrigger value="evidence" className="gap-1"><Network className="h-4 w-4" /> Evidence</TabsTrigger>
+            <TabsTrigger value="reality" className="gap-1"><Telescope className="h-4 w-4" /> Reality</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="reality" className="space-y-3">
+            <AdminRealityPanel enabled={!!isAdmin} />
+          </TabsContent>
 
           <TabsContent value="evidence" className="space-y-3">
             <AdminEvidencePanel enabled={!!isAdmin} />
