@@ -105,6 +105,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Auditoria Ref', icon: 'Shield', path: '/admin/auditoria-ref' },
       { label: 'Políticas RLS', icon: 'ShieldCheck', path: '/admin/auditoria-rls' },
       { label: 'Wizard Debug', icon: 'GitBranch', path: '/admin/wizard-diagnostico' },
+      { label: 'Regression Watch', icon: 'Activity', path: '/admin/onboarding-regression' },
     ],
   },
   {
