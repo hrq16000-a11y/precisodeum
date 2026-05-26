@@ -962,6 +962,11 @@ export default function AdminOnboardingOpsPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* === GATEKEEPER ========================================== */}
+          <TabsContent value="gatekeeper" className="space-y-3">
+            <GatekeeperTab />
+          </TabsContent>
         </Tabs>
       </main>
       <Footer />
