@@ -53,3 +53,76 @@ export function subscribeDraftChange(handler: (reason: string) => void): () => v
     window.removeEventListener('storage', onStorage);
   };
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Heartbeat de aba ativa — detecta sessões concorrentes em outra aba.
+ * Não bloqueia escrita; apenas permite observabilidade para evitar
+ * overwrite silencioso em multi-tab.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+const HEARTBEAT_KEY = 'onboarding_v2_active_tab';
+const HEARTBEAT_INTERVAL_MS = 5_000;
+const HEARTBEAT_FRESH_MS = 3_000;
+
+function getOrCreateTabId(): string {
+  if (typeof window === 'undefined') return 'ssr';
+  try {
+    let id = sessionStorage.getItem('onboarding_v2_tab_id');
+    if (!id) {
+      id = (crypto as any)?.randomUUID?.() ||
+        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      sessionStorage.setItem('onboarding_v2_tab_id', id);
+    }
+    return id;
+  } catch {
+    return 'no-storage';
+  }
+}
+
+export function getTabId(): string {
+  return getOrCreateTabId();
+}
+
+interface HeartbeatRecord { tabId: string; updatedAt: number }
+
+function readHeartbeat(): HeartbeatRecord | null {
+  try {
+    const raw = localStorage.getItem(HEARTBEAT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as HeartbeatRecord;
+    if (!parsed || typeof parsed.tabId !== 'string') return null;
+    return parsed;
+  } catch { return null; }
+}
+
+function writeHeartbeat(tabId: string) {
+  try {
+    localStorage.setItem(
+      HEARTBEAT_KEY,
+      JSON.stringify({ tabId, updatedAt: Date.now() } satisfies HeartbeatRecord),
+    );
+  } catch { /* fail-soft */ }
+}
+
+/**
+ * Detecta sessão concorrente: outra aba escreveu heartbeat há <3s.
+ * Retorna `true` se houver concorrência. Não bloqueia nada.
+ */
+export function detectConcurrentTab(): boolean {
+  const myId = getOrCreateTabId();
+  const hb = readHeartbeat();
+  if (!hb) return false;
+  if (hb.tabId === myId) return false;
+  return Date.now() - hb.updatedAt < HEARTBEAT_FRESH_MS;
+}
+
+/**
+ * Inicia heartbeat periódico para esta aba. Retorna cleanup.
+ */
+export function startTabHeartbeat(): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const myId = getOrCreateTabId();
+  writeHeartbeat(myId);
+  const handle = window.setInterval(() => writeHeartbeat(myId), HEARTBEAT_INTERVAL_MS);
+  return () => window.clearInterval(handle);
+}
