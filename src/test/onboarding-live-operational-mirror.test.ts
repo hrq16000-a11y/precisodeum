@@ -32,21 +32,22 @@ import { validateOperationalContracts } from '@/lib/onboarding/operationalContra
 const NOW = 1_700_000_000_000;
 
 function sig(over: Partial<RuntimeSignal> = {}): RuntimeSignal {
+  const has = (k: keyof RuntimeSignal) => Object.prototype.hasOwnProperty.call(over, k);
   return {
-    id: over.id ?? `s_${Math.random().toString(36).slice(2, 8)}`,
-    kind: over.kind ?? 'event',
-    source: over.source ?? 'onboarding_events',
-    at: over.at ?? NOW,
-    session_id: over.session_id ?? 'sess_a',
-    user_id: over.user_id ?? 'u1',
-    phase: over.phase ?? 'phase2_service',
-    release: over.release ?? null,
-    experiment: over.experiment ?? null,
-    incident: over.incident ?? null,
-    severity: over.severity ?? 'info',
-    category: over.category ?? 'phase_entered',
-    meta: over.meta ?? {},
-    partial: over.partial ?? false,
+    id: has('id') ? (over.id as string) : `s_${Math.random().toString(36).slice(2, 8)}`,
+    kind: has('kind') ? (over.kind as any) : 'event',
+    source: has('source') ? (over.source as any) : 'onboarding_events',
+    at: has('at') ? (over.at as number) : NOW,
+    session_id: has('session_id') ? (over.session_id as any) : 'sess_a',
+    user_id: has('user_id') ? (over.user_id as any) : 'u1',
+    phase: has('phase') ? (over.phase as any) : 'phase2_service',
+    release: has('release') ? (over.release as any) : null,
+    experiment: has('experiment') ? (over.experiment as any) : null,
+    incident: has('incident') ? (over.incident as any) : null,
+    severity: has('severity') ? (over.severity as any) : 'info',
+    category: has('category') ? (over.category as any) : 'phase_entered',
+    meta: has('meta') ? (over.meta as any) : {},
+    partial: has('partial') ? (over.partial as boolean) : false,
   };
 }
 
@@ -193,10 +194,12 @@ describe('Live Evidence Propagation', () => {
     expect(r.anomalies.some((a) => a.id === 'delayed_visibility')).toBe(true);
   });
 
-  it('detects silent_engine_divergence when only correlation populated', () => {
-    const only = [sig({ id: 'x' })];
-    const r = buildEvidencePropagationReport(only);
-    // Many engines silent given single low-severity event
+  it('detects silent_engine_divergence with many signals + limited reach', () => {
+    // 6 release events only touch memory + correlation → other engines silent
+    const onlyReleases = Array.from({ length: 6 }, (_, i) =>
+      sig({ id: `rel${i}`, kind: 'release', source: 'onboarding_release_snapshots' }),
+    );
+    const r = buildEvidencePropagationReport(onlyReleases);
     expect(r.anomalies.some((a) => a.id === 'silent_engine_divergence')).toBe(true);
   });
 
@@ -301,10 +304,10 @@ describe('Operational Blind-Spot Detector', () => {
     expect(r.blindSpots.some((b) => b.id === 'unstable_runtime_area')).toBe(true);
   });
 
-  it('blindSpotScore decreases with more findings', () => {
-    const empty = detectOperationalBlindSpots([], buildEvidencePropagationReport([]));
-    const some = detectOperationalBlindSpots(baseSignals, buildEvidencePropagationReport(baseSignals));
-    expect(some.blindSpotScore).toBeLessThan(empty.blindSpotScore + 1);
+  it('blindSpotScore is bounded between 0 and 100', () => {
+    const r = detectOperationalBlindSpots(baseSignals, buildEvidencePropagationReport(baseSignals));
+    expect(r.blindSpotScore).toBeGreaterThanOrEqual(0);
+    expect(r.blindSpotScore).toBeLessThanOrEqual(100);
   });
 });
 

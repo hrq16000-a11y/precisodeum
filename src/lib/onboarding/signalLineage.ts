@@ -153,9 +153,9 @@ export function buildSignalLineage(signals: ReadonlyArray<RuntimeSignal>): Linea
     breaks.push({ id: 'lineage_break', reason: `${broken}/${chains.length} chains broken` });
   }
 
-  const total = chains.length || 1;
+  const total = chains.length;
   const okCount = chains.filter((c) => c.status === 'ok').length;
-  const lineageIntegrity = Math.round((okCount / total) * 100);
+  const lineageIntegrity = total === 0 ? 100 : Math.round((okCount / total) * 100);
 
   return { lineageChains: chains, lineageBreaks: breaks, unresolvedSignals: unresolved, duplicatedPaths, lineageIntegrity };
 }
