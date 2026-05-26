@@ -66,6 +66,15 @@ const CategoryPage = () => {
     requestPreciseLocation();
   }, [requestPreciseLocation]);
 
+  // PR 4: preload do dataset IBGE (chunk separado). `isKnownCity` é fail-open
+  // até terminar; re-render leve quando o dataset estiver pronto.
+  const [, setCitiesLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void preloadCitiesIndex().then(() => { if (!cancelled) setCitiesLoaded(true); });
+    return () => { cancelled = true; };
+  }, []);
+
   // FASE 2.1 — telemetria de visualização da landing de categoria.
   useEffect(() => {
     if (!slug) return;
