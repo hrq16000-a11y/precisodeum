@@ -148,13 +148,7 @@ const CategoryPage = () => {
         : `Encontre os melhores profissionais de ${category.name} no Brasil. ${seoCount} prestadores com perfil completo e cidade validada.`)
     : 'Encontre profissionais por categoria.';
 
-  useSeoHead({
-    title: dynamicTitle,
-    description: dynamicDescription,
-    canonical: slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined,
-    ogImage: categorySocialImage || undefined,
-    noindex: !category,
-  });
+  const seoCanonical = slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined;
 
   const breadcrumbLd = useMemo(() => category ? ({
     '@context': 'https://schema.org',
