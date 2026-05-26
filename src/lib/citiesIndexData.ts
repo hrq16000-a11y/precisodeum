@@ -8,6 +8,7 @@
 export interface CityEntry { name: string; state: string; }
 
 const C: Record<string, CityEntry[]> = {
+abadiadegoias:[{name:"Abadia de Goiás",state:"GO"}],
 abadiadosdourados:[{name:"Abadia dos Dourados",state:"MG"}],
 abadiania:[{name:"Abadiânia",state:"GO"}],
 abaete:[{name:"Abaeté",state:"MG"}],
