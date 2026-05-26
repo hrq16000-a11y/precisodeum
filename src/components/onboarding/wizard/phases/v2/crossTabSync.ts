@@ -62,7 +62,10 @@ export function subscribeDraftChange(handler: (reason: string) => void): () => v
 
 const HEARTBEAT_KEY = 'onboarding_v2_active_tab';
 const HEARTBEAT_INTERVAL_MS = 5_000;
-const HEARTBEAT_FRESH_MS = 3_000;
+// Ampliado de 3s → 7s: cobre janela típica entre o write da aba antiga e o
+// primeiro write da nova aba após reload, evitando falso positivo de
+// "concurrent_tab_detected" no boot.
+const HEARTBEAT_FRESH_MS = 7_000;
 
 function getOrCreateTabId(): string {
   if (typeof window === 'undefined') return 'ssr';
