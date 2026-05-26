@@ -223,6 +223,119 @@ export default function AdminOnboardingOpsPage() {
     },
   });
 
+  // ---- Incidentes (auto-response) -----------------------------------------
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [incidentScope, setIncidentScope] = useState<'open' | 'all'>('open');
+
+  const flagsQuery = useQuery({
+    queryKey: ['admin', 'onb-ops', 'flags'],
+    enabled: !!isAdmin,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const keys = [
+        'onboarding_auto_response_enabled',
+        'onboarding_regression_watch_enabled',
+        'onboarding_remote_draft_enabled',
+        'onboarding_recovery_modal_enabled',
+        'onboarding_remote_recovery_enabled',
+        'onboarding_phase2_early_persist_enabled',
+        'onboarding_multitab_detection_enabled',
+        'onboarding_local_autosave_boost',
+      ];
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('key, value, updated_at')
+        .in('key', keys);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const flagToggle = useMutation({
+    mutationFn: async ({ key, value }: { key: string; value: boolean }) => {
+      const { error } = await supabase.from('site_settings').upsert(
+        { key, value: value as unknown as never, updated_at: new Date().toISOString() },
+        { onConflict: 'key' },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'onb-ops', 'flags'] });
+      toast({ title: 'Flag atualizada' });
+    },
+    onError: (e: Error) => toast({ title: 'Falha', description: e.message, variant: 'destructive' }),
+  });
+
+  const incidentsQuery = useQuery({
+    queryKey: ['admin', 'onb-ops', 'incidents', incidentScope],
+    enabled: !!isAdmin,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_list_onboarding_incidents', {
+        _hours: 168,
+        _only_open: incidentScope === 'open',
+      } as never);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        state: string;
+        severity: string;
+        trigger_metric: string;
+        trigger_value: number | null;
+        baseline_value: number | null;
+        actions: unknown;
+        app_version: string | null;
+        opened_at: string;
+        resolved_at: string | null;
+        duration_seconds: number | null;
+        resolution_kind: string | null;
+        notes: string | null;
+      }>;
+    },
+  });
+
+  const resolveIncident = useMutation({
+    mutationFn: async ({ id, notes }: { id: string; notes?: string }) => {
+      const { error } = await supabase.rpc('admin_resolve_onboarding_incident', {
+        _incident_id: id,
+        _notes: notes ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'onb-ops', 'incidents'] });
+      toast({ title: 'Incidente resolvido manualmente' });
+    },
+    onError: (e: Error) => toast({ title: 'Falha', description: e.message, variant: 'destructive' }),
+  });
+
+  const evalEngine = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('evaluate_onboarding_auto_response', {
+        _window_minutes: 30,
+        _debounce_minutes: 30,
+        _auto_resolve_minutes: 60,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'onb-ops', 'incidents'] });
+      toast({ title: 'Motor executado' });
+    },
+    onError: (e: Error) => toast({ title: 'Falha', description: e.message, variant: 'destructive' }),
+  });
+
+  const flagsByKey = useMemo(() => {
+    const map: Record<string, { value: boolean; updated_at?: string }> = {};
+    for (const f of flagsQuery.data ?? []) {
+      const v = f.value as unknown;
+      map[f.key] = { value: v === true || v === 'true', updated_at: f.updated_at };
+    }
+    return map;
+  }, [flagsQuery.data]);
+
+
   if (adminLoading) {
     return (
       <div className="flex min-h-screen flex-col">
