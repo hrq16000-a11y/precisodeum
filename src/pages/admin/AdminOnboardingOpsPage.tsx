@@ -983,6 +983,10 @@ export default function AdminOnboardingOpsPage() {
           <TabsContent value="gatekeeper" className="space-y-3">
             <GatekeeperTab />
           </TabsContent>
+
+          <TabsContent value="intelligence" className="space-y-3">
+            <AdminIntelligencePanel />
+          </TabsContent>
         </Tabs>
       </main>
       <Footer />
