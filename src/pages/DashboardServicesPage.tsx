@@ -57,18 +57,28 @@ const SuspenseFallback = lazy(() => import('@/components/dashboard/SuspenseFallb
 
 import { format } from 'date-fns';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { CITIES_INDEX, type CityEntry } from '@/lib/citiesIndex';
+import { preloadCitiesIndex, type CityEntry } from '@/lib/citiesIndex';
 import { normalize } from '@/lib/normalize';
 import { saveSupportContext } from '@/lib/supportContext';
 
 
-// Build flat city list once for autocomplete
+// Build flat city list — POPULATED ASYNC após preload do dataset (PR 4).
+// O dataset (~258KB) vive em chunk separado e é carregado sob demanda.
+// O autocomplete fica vazio até o preload terminar (~ms em conexões boas).
 const ALL_CITIES: { label: string; value: string; state: string }[] = [];
-Object.values(CITIES_INDEX).forEach((entries: CityEntry[]) => {
-  entries.forEach(e => {
-    ALL_CITIES.push({ label: `${e.name} - ${e.state}`, value: e.name, state: e.state });
+let _allCitiesReady = false;
+function ensureAllCitiesBuilt(): Promise<void> {
+  if (_allCitiesReady) return Promise.resolve();
+  return preloadCitiesIndex().then((data) => {
+    if (_allCitiesReady) return;
+    Object.values(data).forEach((entries: CityEntry[]) => {
+      entries.forEach((e) => {
+        ALL_CITIES.push({ label: `${e.name} - ${e.state}`, value: e.name, state: e.state });
+      });
+    });
+    _allCitiesReady = true;
   });
-});
+}
 
 const DashboardServicesPage = () => {
   const { user, provider, profile, loading, refetchProfile } = useAuth();
