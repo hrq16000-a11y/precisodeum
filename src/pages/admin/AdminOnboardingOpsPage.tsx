@@ -31,6 +31,7 @@ import {
   ExternalLink,
   Flame,
   GitBranch,
+  History,
   RefreshCcw,
   Search,
   Shield,
@@ -442,10 +443,15 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="self-audit" className="gap-1"><Shield className="h-4 w-4" /> Self-Audit</TabsTrigger>
             <TabsTrigger value="evidence" className="gap-1"><Network className="h-4 w-4" /> Evidence</TabsTrigger>
             <TabsTrigger value="reality" className="gap-1"><Telescope className="h-4 w-4" /> Reality</TabsTrigger>
+            <TabsTrigger value="memory" className="gap-1"><History className="h-4 w-4" /> Memory</TabsTrigger>
           </TabsList>
 
           <TabsContent value="reality" className="space-y-3">
             <AdminRealityPanel enabled={!!isAdmin} />
+          </TabsContent>
+
+          <TabsContent value="memory" className="space-y-3">
+            <AdminMemoryPanel enabled={!!isAdmin} />
           </TabsContent>
 
           <TabsContent value="evidence" className="space-y-3">
