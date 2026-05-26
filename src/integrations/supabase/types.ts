@@ -9101,6 +9101,10 @@ export type Database = {
         }
         Returns: number
       }
+      admin_onboarding_behavioral_summary: {
+        Args: { _hours?: number }
+        Returns: Json
+      }
       admin_onboarding_funnel: {
         Args: { _days?: number; _variant?: string }
         Returns: {
