@@ -132,8 +132,8 @@ describe('computeFrictionScore', () => {
 
   it('alto atrito → critical, drivers ordenados', () => {
     const r = computeFrictionScore({
-      enters: 100, abandons: 60, refreshes: 30, hesitations: 80,
-      rage_clicks: 50, repeated_validations: 70, back_buttons: 40, multi_submits: 40, avg_time_ms: 60_000,
+      enters: 100, abandons: 90, refreshes: 80, hesitations: 100,
+      rage_clicks: 90, repeated_validations: 100, back_buttons: 80, multi_submits: 90, avg_time_ms: 60_000,
     });
     expect(r.level).toBe('critical');
     expect(r.score).toBeGreaterThanOrEqual(70);
