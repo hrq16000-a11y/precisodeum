@@ -17,15 +17,19 @@ Guardrail contínuo que falha o CI quando um arquivo do onboarding declara `setT
 - `src/components/dashboard/DashboardTour.tsx`
 - `src/pages/CadastroInicialPage.tsx`, `src/pages/OnboardingV2SuccessPage.tsx`
 
-## Regra (heurística por arquivo)
-Se há `setTimeout(`, `setInterval(` ou `.addEventListener(` (fora de comentários), exige PELO MENOS UM sinal de cleanup no mesmo arquivo:
-- `clearTimeout` / `clearInterval` / `removeEventListener`
-- `scheduleWizardTimeout(` (helper já cleanup-friendly)
-- `return () =>` (useEffect cleanup function)
+## Regra (per-occurrence, escopo léxico)
+Cada `setTimeout`/`setInterval`/`.addEventListener` é avaliado individualmente. Aceita um destes sinais:
+- `scheduleWizardTimeout(` (helper instrumentado).
+- Cleanup pareado por nome no mesmo bloco (`const id = setTimeout(...); ... clearTimeout(id)`).
+- Atribuição a `useRef.current` + `clearTimeout` em qualquer lugar do arquivo.
+- Dentro de `useEffect`/`useLayoutEffect` cujo `return () => {...}` contém `clear*`/`removeEventListener`.
+- **Sleep-promise** (`await new Promise((r) => setTimeout(r, ms))` — também aceita `window.setTimeout`). Cleanup mataria o await; Promise auto-resolve.
+- **Cleanup-factory** — função (não-useEffect) que `return () => clearInterval(handle)` no mesmo bloco (ex.: `startTabHeartbeat`).
+- `addEventListener` inline (arrow/function literal) é sempre FAIL — handler nunca pode ser removido.
 
 ## Allowlist
-`ALLOW_FILES` no script — vazio por padrão. Adicionar com comentário justificando se necessário.
+`ALLOW_FILES` no script. Atualmente: `BackButton.tsx` (setTimeout 600ms de lock fire-and-forget; mutação cai em ref órfão se desmontar — no-op).
 
 ## Status
-- 82 arquivos varridos, todos passam.
+- 92 arquivos varridos, todos passam.
 - Smoke-test confirma detecção de violações sintéticas.

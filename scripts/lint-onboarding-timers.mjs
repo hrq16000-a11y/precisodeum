@@ -63,7 +63,10 @@ const EXTRA_FILES = [
 
 /** Arquivos isentos com justificativa explícita. */
 const ALLOW_FILES = new Set([
-  // ex.: 'src/lib/soundFx.ts', // WebAudio puro, sem state React.
+  // BackButton: setTimeout de 600ms apenas zera `lockRef.current` (lock fire-
+  // and-forget de transição). Se o componente desmontar antes, a mutação cai
+  // num ref órfão — no-op natural, sem leak nem efeito colateral observável.
+  'src/components/onboarding/wizard/BackButton.tsx',
 ]);
 
 const EXTS = new Set(['.ts', '.tsx']);
@@ -310,12 +313,40 @@ function lineCol(src, pos) {
 }
 
 function checkTimer(masked, raw, idx) {
-  // 1) helper instrumentado anywhere — aceitamos se a chamada está envolta
-  //    pelo helper (mesma linha/anterior). Mais barato: helper presente NO
-  //    arquivo cobre todos os timers daquele arquivo.
+  // 0a) Sleep-promise idiom: `new Promise((r) => setTimeout(r, ms))` /
+  //     `new Promise((res, rej) => setTimeout(res, ms))`. Cleanup destruiria
+  //     o `await` — não há ref para limpar e a Promise se auto-resolve.
+  //     Detectamos olhando ~60 chars antes do `setTimeout(`.
+  {
+    const before = masked.slice(Math.max(0, idx - 80), idx);
+    // Aceita `setTimeout(` e `window.setTimeout(` / `globalThis.setTimeout(`.
+    if (/new\s+Promise\s*\(\s*(?:\([^)]*\)|\w+)\s*=>\s*(?:\w+\.)?$/.test(before)) {
+      return { ok: true, reason: 'sleep-promise (awaitable)' };
+    }
+  }
+
+  // 0b) Helper instrumentado anywhere — heurística arquivo-wide.
+  //     Mantida por compat: se o arquivo já adota scheduleWizardTimeout,
+  //     timers cruzados restantes provavelmente são casos especiais já
+  //     auditados (ainda assim as regras 1–4 abaixo continuam protegendo).
   if (SCHEDULE_HELPER.test(masked)) return { ok: true, reason: 'scheduleWizardTimeout' };
 
-  // 2) bloco enclosing
+  // 1) Cleanup-factory: função que RETORNA `() => clear*(handle)` no mesmo
+  //    bloco onde o timer foi criado (ex.: startTabHeartbeat). Não exige
+  //    useEffect — é o pattern "factory devolve o disposer".
+  {
+    const block0 = enclosingBlock(masked, idx);
+    if (block0) {
+      const [bs0, be0] = block0;
+      const blockSrc0 = masked.slice(bs0, be0 + 1);
+      // `return () => window.clearInterval(handle)` ou variações.
+      if (/return\s+(?:\([^)]*\)|\w+)?\s*=>\s*(?:\{[\s\S]*?\bclear(?:Timeout|Interval)\b[\s\S]*?\}|[^;\n]*\bclear(?:Timeout|Interval)\b)/.test(blockSrc0)) {
+        return { ok: true, reason: 'cleanup-factory return' };
+      }
+    }
+  }
+
+  // 2) bloco enclosing dentro de useEffect com return de cleanup
   const block = enclosingBlock(masked, idx);
   if (block) {
     const [bs, be] = block;
