@@ -1,11 +1,10 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { usePresenceTracker } from '@/hooks/useOnlinePresence';
-import { geocodeCity } from '@/lib/geoUtils';
-import { resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/celebrate';
+import { setCelebrationMuted } from '@/lib/celebrate';
 import { reportError } from '@/lib/errorReporter';
 import { queryClient } from '@/lib/queryClient';
+import { AuthCompanion } from '@/hooks/AuthCompanion';
 
 /**
  * Detecta de forma síncrona se há um token de sessão Supabase persistido
