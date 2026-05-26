@@ -33,7 +33,7 @@ function withSuffix(title: string) {
   return title.includes(SUFFIX) ? title : `${title} | ${SUFFIX}`;
 }
 
-export function SeoMeta({ title, description, canonical, ogType = 'website', ogImage }: SeoMetaProps) {
+export function SeoMeta({ title, description, canonical, ogType = 'website', ogImage, noindex }: SeoMetaProps) {
   const fullTitle = withSuffix(title);
   const desc = (description && description.trim().length >= 10)
     ? description
@@ -48,6 +48,7 @@ export function SeoMeta({ title, description, canonical, ogType = 'website', ogI
     <Helmet prioritizeSeoTags>
       <title>{fullTitle}</title>
       <meta name="description" content={desc} />
+      <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
       <link rel="canonical" href={canonicalUrl} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={desc} />
