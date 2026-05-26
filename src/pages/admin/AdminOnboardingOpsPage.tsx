@@ -414,12 +414,14 @@ export default function AdminOnboardingOpsPage() {
           <TabsList className="flex flex-wrap">
             <TabsTrigger value="funnel" className="gap-1"><BarChart3 className="h-4 w-4" /> Funil</TabsTrigger>
             <TabsTrigger value="heatmap" className="gap-1"><Flame className="h-4 w-4" /> Heatmap</TabsTrigger>
+            <TabsTrigger value="behavior" className="gap-1"><Brain className="h-4 w-4" /> Behavior</TabsTrigger>
             <TabsTrigger value="releases" className="gap-1"><GitBranch className="h-4 w-4" /> Releases</TabsTrigger>
             <TabsTrigger value="gatekeeper" className="gap-1"><ShieldCheck className="h-4 w-4" /> Gatekeeper</TabsTrigger>
             <TabsTrigger value="forensics" className="gap-1"><Telescope className="h-4 w-4" /> Sessão</TabsTrigger>
             <TabsTrigger value="alerts" className="gap-1"><AlertTriangle className="h-4 w-4" /> Alertas</TabsTrigger>
             <TabsTrigger value="incidents" className="gap-1"><ShieldAlert className="h-4 w-4" /> Incidentes</TabsTrigger>
           </TabsList>
+
 
           {/* === FUNIL ============================================== */}
           <TabsContent value="funnel" className="space-y-3">
