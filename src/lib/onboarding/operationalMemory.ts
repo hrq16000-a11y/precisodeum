@@ -322,7 +322,7 @@ export function detectChronicHotspots(
   history: readonly HistoricalIncident[],
   opts: { multiplier?: number } = {},
 ): ChronicHotspot[] {
-  const multiplier = opts.multiplier ?? 2;
+  const multiplier = opts.multiplier ?? 1.5;
   if (history.length < MIN_SAMPLE_FOR_INFERENCE) return [];
   const byPhase = new Map<string, HistoricalIncident[]>();
   for (const inc of history) {
@@ -363,7 +363,7 @@ export function detectReleaseInstability(
   history: readonly HistoricalIncident[],
   opts: { multiplier?: number } = {},
 ): ReleaseInstability[] {
-  const multiplier = opts.multiplier ?? 1.75;
+  const multiplier = opts.multiplier ?? 1.5;
   const byRel = new Map<string, HistoricalIncident[]>();
   for (const inc of history) {
     if (!inc.release) continue;
