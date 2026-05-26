@@ -62,7 +62,10 @@ export function subscribeDraftChange(handler: (reason: string) => void): () => v
 
 const HEARTBEAT_KEY = 'onboarding_v2_active_tab';
 const HEARTBEAT_INTERVAL_MS = 5_000;
-const HEARTBEAT_FRESH_MS = 3_000;
+// Ampliado de 3s → 7s: cobre janela típica entre o write da aba antiga e o
+// primeiro write da nova aba após reload, evitando falso positivo de
+// "concurrent_tab_detected" no boot.
+const HEARTBEAT_FRESH_MS = 7_000;
 
 function getOrCreateTabId(): string {
   if (typeof window === 'undefined') return 'ssr';
@@ -105,15 +108,24 @@ function writeHeartbeat(tabId: string) {
 }
 
 /**
- * Detecta sessão concorrente: outra aba escreveu heartbeat há <3s.
+ * Detecta sessão concorrente: outra aba escreveu heartbeat há <FRESH_MS.
  * Retorna `true` se houver concorrência. Não bloqueia nada.
+ *
+ * Anti falso-positivo no boot pós-reload: se o documento veio de um reload
+ * (Navigation Timing type='reload'), ignoramos heartbeat órfão — a aba
+ * anterior somos nós mesmos antes do refresh.
  */
 export function detectConcurrentTab(): boolean {
   const myId = getOrCreateTabId();
   const hb = readHeartbeat();
   if (!hb) return false;
   if (hb.tabId === myId) return false;
-  return Date.now() - hb.updatedAt < HEARTBEAT_FRESH_MS;
+  if (Date.now() - hb.updatedAt >= HEARTBEAT_FRESH_MS) return false;
+  try {
+    const nav = (performance.getEntriesByType?.('navigation') || [])[0] as PerformanceNavigationTiming | undefined;
+    if (nav && nav.type === 'reload') return false;
+  } catch { /* fail-soft */ }
+  return true;
 }
 
 /**

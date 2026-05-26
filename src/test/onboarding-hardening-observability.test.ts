@@ -191,6 +191,22 @@ describe('crossTabSync heartbeat', () => {
     stop();
     vi.useRealTimers();
   });
+
+  it('detectConcurrentTab=false em navegação tipo "reload" (ignora heartbeat órfão)', async () => {
+    const m = await import('@/components/onboarding/wizard/phases/v2/crossTabSync');
+    localStorage.setItem(
+      'onboarding_v2_active_tab',
+      JSON.stringify({ tabId: 'aba-pre-reload', updatedAt: Date.now() }),
+    );
+    const original = performance.getEntriesByType;
+    (performance as any).getEntriesByType = (type: string) =>
+      type === 'navigation' ? [{ type: 'reload' } as any] : [];
+    try {
+      expect(m.detectConcurrentTab()).toBe(false);
+    } finally {
+      performance.getEntriesByType = original;
+    }
+  });
 });
 
 /* ─────────────────────────────────────────────────────────────────────────
