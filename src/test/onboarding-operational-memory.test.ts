@@ -37,6 +37,7 @@ import {
 } from '@/lib/onboarding/operationalMemory';
 
 let _i = 0;
+const BASE_NOW = Date.now();
 function mk(
   detector: IncidentDetectorKind,
   opts: Partial<HistoricalIncident> = {},
@@ -54,7 +55,7 @@ function mk(
     timing_bucket: opts.timing_bucket ?? 'medium',
     severity: opts.severity ?? 'high',
     divergence_chain: opts.divergence_chain ?? ['ui_completion', 'no_provider'],
-    occurred_at: opts.occurred_at ?? new Date(2026, 0, 1, 12, 0, _i).toISOString(),
+    occurred_at: opts.occurred_at ?? new Date(BASE_NOW - (1000 - _i) * 1000).toISOString(),
     mitigation_id: opts.mitigation_id ?? null,
   };
 }
