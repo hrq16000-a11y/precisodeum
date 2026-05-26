@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
+import { acquireChannel, releaseChannel } from '@/lib/realtimeRegistry';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { sanitizeSlug as slugify } from '@/lib/slugify';
