@@ -115,6 +115,18 @@ const DashboardServicesPage = () => {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [geoDetected, setGeoDetected] = useState(false);
   const cityRef = useRef<HTMLDivElement>(null);
+  const [citiesReady, setCitiesReady] = useState(_allCitiesReady);
+
+  // PR 4: dispara o lazy-load do dataset IBGE no mount (chunk separado).
+  // Re-render leve assim que o autocomplete estiver pronto.
+  useEffect(() => {
+    if (_allCitiesReady) return;
+    let cancelled = false;
+    void ensureAllCitiesBuilt().then(() => {
+      if (!cancelled) setCitiesReady(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   // Kill-switch modal (score < 50% OR > 3 leilão hits)
   const [blockModal, setBlockModal] = useState<{ open: boolean; score: number; hits: number; reasons: string[] }>({
