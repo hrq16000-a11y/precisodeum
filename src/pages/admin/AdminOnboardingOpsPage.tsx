@@ -38,6 +38,7 @@ import {
   ShieldCheck,
   Sparkles,
   Telescope,
+  Workflow,
 } from 'lucide-react';
 import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
 import AdminIntelligencePanel from '@/components/admin/AdminIntelligencePanel';
