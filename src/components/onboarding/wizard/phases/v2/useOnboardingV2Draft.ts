@@ -42,21 +42,57 @@ interface DraftEnvelope {
   firstServiceId: OnboardingState['firstServiceId'];
 }
 
+export interface ReadDraftDiagnostics {
+  /** Motivo do descarte quando readOnboardingV2Draft retorna null. */
+  reason?: 'empty' | 'expired' | 'parse_error' | 'version_mismatch' | 'checksum_invalid' | 'shape_invalid' | 'thin_content';
+}
+const lastReadDiag: ReadDraftDiagnostics = {};
+export function getLastReadDraftDiagnostics(): ReadDraftDiagnostics {
+  return { ...lastReadDiag };
+}
+
 export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
   if (typeof window === 'undefined') return null;
+  lastReadDiag.reason = undefined;
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return null;
+    if (!raw) { lastReadDiag.reason = 'empty'; return null; }
     const parsed = JSON.parse(raw) as DraftEnvelope;
-    if (!parsed || typeof parsed !== 'object') return null;
+    if (!parsed || typeof parsed !== 'object') {
+      lastReadDiag.reason = 'parse_error';
+      return null;
+    }
     if (Date.now() - (parsed.savedAt || 0) > MAX_AGE_MS) {
       localStorage.removeItem(DRAFT_KEY);
+      lastReadDiag.reason = 'expired';
+      return null;
+    }
+    // Hardening F1: versão antiga (v1, sem campo) é descartada silenciosamente.
+    // Graceful: se o campo simplesmente faltar mas o conteúdo parecer válido,
+    // ainda assim descartamos — drafts v1 expiram naturalmente em 7d.
+    if (typeof parsed.version !== 'number' || parsed.version !== DRAFT_ENVELOPE_VERSION) {
+      lastReadDiag.reason = 'version_mismatch';
+      return null;
+    }
+    // Hardening F1: valida shape antes de qualquer outra checagem semântica.
+    const shape = validateDraftShape({
+      profile: parsed.profile, service: parsed.service, phase: parsed.phase,
+    });
+    if (!shape.ok) {
+      lastReadDiag.reason = 'shape_invalid';
+      return null;
+    }
+    // Hardening F1: checksum confere?
+    const expected = computeDraftChecksum({
+      profile: parsed.profile, service: parsed.service, phase: parsed.phase,
+    });
+    if (parsed.checksum && parsed.checksum !== expected) {
+      lastReadDiag.reason = 'checksum_invalid';
       return null;
     }
     // Containment patch — Crítico #3: NÃO anuncia "rascunho recuperado" se
     // não há conteúdo mínimo. Antes, qualquer envelope salvo (mesmo só com
-    // a fase setada) acionava o banner de recuperação enganando o usuário
-    // ("recuperei seu serviço!" quando não havia serviço algum).
+    // a fase setada) acionava o banner de recuperação enganando o usuário.
     const svc = parsed.service || ({} as any);
     const prof = parsed.profile || ({} as any);
     const serviceName = String(svc.service_name || '').trim();
@@ -64,6 +100,7 @@ export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
     const hasCategory = Array.isArray(svc.category_ids) && svc.category_ids.length > 0;
     const hasMeaningfulContent = serviceName.length >= 3 || whatsappDigits.length >= 10 || hasCategory;
     if (!hasMeaningfulContent) {
+      lastReadDiag.reason = 'thin_content';
       return null;
     }
     return {
@@ -75,6 +112,7 @@ export function readOnboardingV2Draft(): Partial<OnboardingState> | null {
       firstServiceId: parsed.firstServiceId ?? null,
     };
   } catch {
+    lastReadDiag.reason = 'parse_error';
     return null;
   }
 }
