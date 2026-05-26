@@ -341,13 +341,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               console.error('[useAuth] fetchProfile threw:', err);
             }
           }, 0);
-          if (event === 'SIGNED_IN') {
-            setTimeout(() => {
-              supabase.functions.invoke('log-user-access', {
-                body: { event_type: 'login', source: 'web' },
-              }).catch(() => {/* silent */});
-            }, 500);
-          }
+          // log-user-access foi movido para o AuthCompanion (side-effect não-auth).
         } else {
           setProfile(null);
           setProvider(null);
