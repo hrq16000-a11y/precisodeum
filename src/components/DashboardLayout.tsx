@@ -33,6 +33,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
   const { hasProfilePermission } = usePermissions();
+  // Presença online: só faz sentido em áreas autenticadas. Movido pra cá
+  // (era global no AuthProvider) pra evitar canal aberto em rotas públicas.
+  const providerCity = (profile as any)?.city as string | undefined;
+  const presenceMeta = useMemo(() => (providerCity ? { city: providerCity } : undefined), [providerCity]);
+  usePresenceTracker(user?.id, presenceMeta);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
