@@ -7,11 +7,11 @@ import { normalize } from './normalize';
 
 // Lazy-load the ~258KB cities dataset only when actually needed (PR 4).
 // O shell `citiesIndex` cuida do code-split; aqui só pedimos preload.
-let _citiesReady = false;
+let _isKnownCity: ((n: string) => boolean) | null = null;
 const loadCitiesIndex = () =>
   import('./citiesIndex').then(async (m) => {
     await m.preloadCitiesIndex();
-    _citiesReady = true;
+    _isKnownCity = m.isKnownCity;
     return m;
   });
 
@@ -283,23 +283,19 @@ export function getCityCoords(city: string): { lat: number; lon: number } | null
  */
 export function isRecognizedCity(normCity: string): boolean {
   if (normCity in CITY_COORDS) return true;
-  if (!_citiesReady) {
-    // Fail-open: dispara preload em background; o próximo render fica estrito.
+  if (!_isKnownCity) {
+    // Dispara preload em background; render subsequente fica estrito.
     void loadCitiesIndex();
     return false;
   }
-  // Após o preload, `isKnownCity` do shell consulta o dataset.
-  // Import síncrono é seguro: o shell já está em cache do bundler.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { isKnownCity } = require('./citiesIndex') as typeof import('./citiesIndex');
-  return isKnownCity(normCity);
+  return _isKnownCity(normCity);
 }
 
 /** Async version that ensures citiesIndex is loaded */
 export async function isRecognizedCityAsync(normCity: string): Promise<boolean> {
   if (normCity in CITY_COORDS) return true;
-  const m = await loadCitiesIndex();
-  return m.isKnownCity(normCity);
+  if (!_isKnownCity) await loadCitiesIndex();
+  return _isKnownCity ? _isKnownCity(normCity) : false;
 }
 
 export { CITY_COORDS };
