@@ -96,9 +96,10 @@ export default function AdminRealityPanel({ enabled }: Props) {
     queryFn: async (): Promise<BackendTruth | null> => {
       const userId = timelineQuery.data?.find((e) => e.user_id)?.user_id;
       if (!userId) return null;
+      const sb = supabase as any;
       const [providerRes, serviceRes] = await Promise.all([
-        supabase.from('providers').select('id, onboarding_completed').eq('user_id', userId).maybeSingle(),
-        supabase.from('services').select('id, category_id').eq('user_id', userId).limit(1).maybeSingle(),
+        sb.from('providers').select('id, onboarding_completed').eq('user_id', userId).maybeSingle(),
+        sb.from('services').select('id, category_id').eq('user_id', userId).limit(1).maybeSingle(),
       ]);
       const provider = providerRes.data as { id?: string; onboarding_completed?: boolean } | null;
       const service = serviceRes.data as { id?: string; category_id?: string | null } | null;
