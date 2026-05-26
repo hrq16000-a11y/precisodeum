@@ -9312,6 +9312,14 @@ export type Database = {
           opens_weekend: boolean
         }[]
       }
+      detect_onboarding_regressions: {
+        Args: {
+          _baseline_days?: number
+          _debounce_hours?: number
+          _window_minutes?: number
+        }
+        Returns: Json
+      }
       dismiss_dashboard_widget: {
         Args: { _widget: string }
         Returns: {
