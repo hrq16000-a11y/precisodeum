@@ -13,15 +13,16 @@ const APP = readRouterSources();
 
 describe('PJ route isolation', () => {
   it('expõe /profissional/:slug → ProviderProfile', () => {
-    expect(APP).toMatch(/path="\/profissional\/:slug"\s+element=\{<ProviderProfile/);
+    // Tolera wrappers tipo <RouteErrorBoundary> entre `element={` e o componente.
+    expect(APP).toMatch(/path="\/profissional\/:slug"\s+element=\{[^}]*<ProviderProfile/);
   });
 
   it('expõe /empresa/:slug → CompanyProfile (PJ)', () => {
-    expect(APP).toMatch(/path="\/empresa\/:slug"\s+element=\{<CompanyProfile/);
+    expect(APP).toMatch(/path="\/empresa\/:slug"\s+element=\{[^}]*<CompanyProfile/);
   });
 
   it('expõe /agencia/:slug → AgencyPublicPage (RH) e NUNCA aponta para CompanyProfile', () => {
-    expect(APP).toMatch(/path="\/agencia\/:slug"\s+element=\{<AgencyPublicPage/);
+    expect(APP).toMatch(/path="\/agencia\/:slug"\s+element=\{[^}]*<AgencyPublicPage/);
     expect(APP).not.toMatch(/path="\/agencia\/:slug"[^>]*<CompanyProfile/);
   });
 
