@@ -36,10 +36,12 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   Telescope,
 } from 'lucide-react';
 import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
 import AdminIntelligencePanel from '@/components/admin/AdminIntelligencePanel';
+import AdminExecutivePanel from '@/components/admin/AdminExecutivePanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -415,6 +417,7 @@ export default function AdminOnboardingOpsPage() {
 
         <Tabs defaultValue="funnel" className="space-y-4">
           <TabsList className="flex flex-wrap">
+            <TabsTrigger value="executive" className="gap-1"><Sparkles className="h-4 w-4" /> Executive</TabsTrigger>
             <TabsTrigger value="funnel" className="gap-1"><BarChart3 className="h-4 w-4" /> Funil</TabsTrigger>
             <TabsTrigger value="heatmap" className="gap-1"><Flame className="h-4 w-4" /> Heatmap</TabsTrigger>
             <TabsTrigger value="behavior" className="gap-1"><Brain className="h-4 w-4" /> Behavior</TabsTrigger>
@@ -986,6 +989,10 @@ export default function AdminOnboardingOpsPage() {
 
           <TabsContent value="intelligence" className="space-y-3">
             <AdminIntelligencePanel />
+          </TabsContent>
+
+          <TabsContent value="executive" className="space-y-3">
+            <AdminExecutivePanel />
           </TabsContent>
         </Tabs>
       </main>
