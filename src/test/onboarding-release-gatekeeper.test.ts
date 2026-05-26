@@ -170,7 +170,9 @@ describe('detectCanaryDegradation', () => {
     });
     expect(v.kind).toBe('blocked');
     expect(escalationEventName(v)).toBe('release_blocked');
-    expect(v.reasons.some((r) => r.startsWith('critical_regressions'))).toBe(true);
+    if (v.kind !== 'safe') {
+      expect(v.reasons.some((r) => r.startsWith('critical_regressions'))).toBe(true);
+    }
   });
 
   it('completion -10pp bloqueia canary', () => {
