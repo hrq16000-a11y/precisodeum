@@ -46,6 +46,7 @@ import AdminIntelligencePanel from '@/components/admin/AdminIntelligencePanel';
 import AdminExecutivePanel from '@/components/admin/AdminExecutivePanel';
 import AdminGovernancePanel from '@/components/admin/AdminGovernancePanel';
 import AdminRuntimeGovernancePanel from '@/components/admin/AdminRuntimeGovernancePanel';
+import AdminSelfAuditPanel from '@/components/admin/AdminSelfAuditPanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -434,6 +435,7 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="intelligence" className="gap-1"><Brain className="h-4 w-4" /> Intelligence</TabsTrigger>
             <TabsTrigger value="governance" className="gap-1"><Workflow className="h-4 w-4" /> Governance</TabsTrigger>
             <TabsTrigger value="runtime-drift" className="gap-1"><Radar className="h-4 w-4" /> Runtime Drift</TabsTrigger>
+            <TabsTrigger value="self-audit" className="gap-1"><Shield className="h-4 w-4" /> Self-Audit</TabsTrigger>
           </TabsList>
 
           <TabsContent value="experiments" className="space-y-3">
@@ -1007,6 +1009,10 @@ export default function AdminOnboardingOpsPage() {
 
           <TabsContent value="runtime-drift" className="space-y-3">
             <AdminRuntimeGovernancePanel />
+          </TabsContent>
+
+          <TabsContent value="self-audit" className="space-y-3">
+            <AdminSelfAuditPanel />
           </TabsContent>
         </Tabs>
       </main>
