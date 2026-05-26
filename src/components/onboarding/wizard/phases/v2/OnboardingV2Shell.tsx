@@ -477,13 +477,26 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     if (draft && draft.phase && draft.phase !== 'phase2_service') {
       setDraftRestored({ source: 'local' });
       setOnboardingDraftSource('local');
-      // Hardening F4/F7: emite eventos canônicos para detectar refresh e uso
-      // de recovery local. Não troca de fase nem mostra modal — só observa.
+      // Hardening F4 — `refresh_detected` SÓ se houver evidência real:
+      //  - draft válido e na MESMA fase do estado atual (sem salto)
+      //  - savedAt recente (< 6h) — exclui drafts dormentes do dia anterior
+      //  - usuário já interagiu (envelope tem conteúdo significativo —
+      //    readOnboardingV2Draft já garante isso via thin_content guard)
+      // Evita falso positivo em mount limpo ou recovery de sessão antiga.
+      const savedAt = readOnboardingV2DraftSavedAt() || 0;
+      const REFRESH_TTL_MS = 6 * 60 * 60 * 1000;
+      const samePhase = String(draft.phase) === String(state.phase);
+      const isRecent = savedAt > 0 && (Date.now() - savedAt) < REFRESH_TTL_MS;
+      const refreshDetected = samePhase && isRecent;
       void trackOnboardingEvent({
         phase: draft.phase as any,
         event: 'next',
         userId: user?.id,
-        meta: { kind: 'recovery_local_used', refresh_detected: true },
+        meta: {
+          kind: 'recovery_local_used',
+          refresh_detected: refreshDetected,
+          age_ms: savedAt ? Date.now() - savedAt : null,
+        },
       });
       const t = scheduleWizardTimeout(
         { phase: state.phase as any, action: 'shell_local_draft_hint_clear' },
@@ -508,6 +521,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   }, [skipDraftRestore]);
 
   // Hardening F8: heartbeat de aba ativa + detecção de concorrência.
+  // SOMENTE telemetria silenciosa nesta fase (sem toast/UI).
   useEffect(() => {
     const stop = startTabHeartbeat();
     if (detectConcurrentTab()) {
@@ -522,7 +536,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   }, []);
 
   // Hardening F4: detector de abandono silencioso (15min sem interação).
-  useAbandonmentTimer(state.phase as any, user?.id);
+  // Desabilitado se onboarding já concluído — evita ruído pós-finalize.
+  useAbandonmentTimer(
+    state.phase as any,
+    user?.id,
+    Boolean((profile as any)?.onboarding_completed) || state.phase === 'done',
+  );
 
 
   // Detecta rascunho REMOTO (troca de dispositivo) e ABRE MODAL para o usuário decidir.

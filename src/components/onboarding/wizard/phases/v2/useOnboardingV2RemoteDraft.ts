@@ -111,6 +111,15 @@ export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: strin
         };
 
         const reportSuccess = async (attempt: number) => {
+          // Throttle adicional por fase: evita flood de `autosave_remote_ok`
+          // quando o usuário digita rapidamente (cada keystroke debounce-ok).
+          // Janela de 8s por (phase, userId) — telemetria, não persistência.
+          try {
+            const tkey = `onboarding_v2_autosave_ok:${userId}:${state.phase}`;
+            const last = Number(sessionStorage.getItem(tkey) || '0');
+            if (Date.now() - last < 8_000) return;
+            sessionStorage.setItem(tkey, String(Date.now()));
+          } catch { /* fail-soft */ }
           try {
             const { trackOnboardingEvent } = await import('./telemetry');
             void trackOnboardingEvent({
