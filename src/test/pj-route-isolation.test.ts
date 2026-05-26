@@ -1,13 +1,15 @@
 /**
  * Garante que as rotas /agencia/:slug (RH) e /empresa/:slug (PJ) coexistam
- * sem colisão e apontem para componentes distintos. Lê src/App.tsx como
- * fonte da verdade para evitar regressão se alguém mover uma rota.
+ * sem colisão e apontem para componentes distintos.
+ *
+ * PR 3 split: rotas foram movidas de src/App.tsx para src/routes/*.tsx.
+ * Usamos o helper `readRouterSources()` para ler todas as fontes do router
+ * e evitar falsos negativos.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readRouterSources } from './helpers/routerSources';
 
-const APP = readFileSync(resolve(__dirname, '../App.tsx'), 'utf8');
+const APP = readRouterSources();
 
 describe('PJ route isolation', () => {
   it('expõe /profissional/:slug → ProviderProfile', () => {

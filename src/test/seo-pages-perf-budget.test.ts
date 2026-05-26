@@ -12,8 +12,11 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { readRouterSources } from './helpers/routerSources';
 
-const APP = fs.readFileSync(path.join(process.cwd(), 'src/App.tsx'), 'utf8');
+// PR 3 split: lazy imports vivem em src/routes/publicRoutes.tsx (e similares).
+// Agregamos App.tsx + src/routes/* para varredura única.
+const APP = readRouterSources();
 
 const SEO_PAGES = [
   { name: 'CategoryPage',    file: 'src/pages/CategoryPage.tsx',    maxKb: 40 },
@@ -23,8 +26,11 @@ const SEO_PAGES = [
 
 describe('SEO pages — performance budget estático', () => {
   for (const p of SEO_PAGES) {
-    it(`${p.name} é code-split em App.tsx`, () => {
-      const re = new RegExp(`lazy\\(\\(\\) => import\\(["']\\./pages/${p.name}["']\\)\\)`);
+    it(`${p.name} é code-split no router`, () => {
+      // Aceita import relativo (./pages/...) ou alias (@/pages/...).
+      const re = new RegExp(
+        `lazy\\(\\(\\) => import\\(["'](?:\\./|@/)pages/${p.name}["']\\)\\)`,
+      );
       expect(re.test(APP), `${p.name} não está em lazy import`).toBe(true);
     });
 
