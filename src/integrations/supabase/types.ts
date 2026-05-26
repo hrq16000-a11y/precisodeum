@@ -8970,6 +8970,52 @@ export type Database = {
           unique_users: number
         }[]
       }
+      admin_onboarding_ops_funnel: {
+        Args: { _hours?: number }
+        Returns: {
+          abandons: number
+          autosave_failed: number
+          completes: number
+          enters: number
+          exits: number
+          phase: string
+          recoveries: number
+          refreshes: number
+          regressions: number
+          unique_sessions: number
+          unique_users: number
+          validation_failed: number
+        }[]
+      }
+      admin_onboarding_release_compare: {
+        Args: { _hours?: number }
+        Returns: {
+          abandons: number
+          app_version: string
+          autosave_failed: number
+          completes: number
+          first_seen: string
+          last_seen: string
+          regressions: number
+          release_channel: string
+          total_events: number
+          unique_sessions: number
+          unique_users: number
+          validation_failed: number
+        }[]
+      }
+      admin_onboarding_session_timeline: {
+        Args: { _limit?: number; _session_id: string }
+        Returns: {
+          created_at: string
+          event: string
+          id: string
+          meta: Json
+          phase: string
+          user_id: string
+          variant: string
+        }[]
+      }
       admin_onboarding_stats: { Args: { _days?: number }; Returns: Json }
       admin_onboarding_user_funnel: {
         Args: { _days?: number; _limit?: number }
