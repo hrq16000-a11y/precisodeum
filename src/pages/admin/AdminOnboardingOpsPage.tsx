@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
 import AdminIntelligencePanel from '@/components/admin/AdminIntelligencePanel';
+import AdminExecutivePanel from '@/components/admin/AdminExecutivePanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
