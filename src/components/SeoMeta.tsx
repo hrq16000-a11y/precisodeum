@@ -22,6 +22,8 @@ export interface SeoMetaProps {
   ogType?: 'website' | 'article' | 'profile';
   /** URL absoluta ou relativa da imagem de compartilhamento. Opcional. */
   ogImage?: string;
+  /** Emite robots="noindex, nofollow" para páginas inválidas/vazias. */
+  noindex?: boolean;
 }
 
 const SUFFIX = 'Preciso de um';
