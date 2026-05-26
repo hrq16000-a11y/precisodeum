@@ -161,13 +161,13 @@ describe('regressionDetector — detectRegressions (lote)', () => {
 
   it('escalonamento: medium já emitida, agora high → re-emite', () => {
     const anomalies = detectRegressions({
-      current: { abandon_rate: { value: 0.45, sample: 200 } },
+      current: { abandon_rate: { value: 0.45, sample: 200 } }, // delta=0.25 → high
       baseline: { abandon_rate: { value: 0.20, sample: 2000 } },
       recentlyEmitted: [{ metric: 'abandon_rate', severity: 'medium' }],
       context: ctx,
     });
     expect(anomalies).toHaveLength(1);
-    expect(anomalies[0].severity).toBe('critical');
+    expect(anomalies[0].severity).toBe('high');
   });
 
   it('métrica ausente em current ou baseline → ignora silenciosamente', () => {
