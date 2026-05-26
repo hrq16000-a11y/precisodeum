@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, Megaphone, Globe, HelpCircle, Wrench, Sparkles,
   ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Smartphone, Crown,
   FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList,
-  Target, CreditCard, Shield, Menu as MenuIcon, ImageIcon, ShieldCheck, KeyRound, GitBranch, Shuffle, Activity, Receipt,
+  Target, CreditCard, Shield, Menu as MenuIcon, ImageIcon, ShieldCheck, KeyRound, GitBranch, Shuffle, Activity, Receipt, Telescope,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
