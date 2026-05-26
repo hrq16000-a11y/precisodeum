@@ -82,6 +82,7 @@ const AdminIntegrityReportsPage = lazy(() => import("./pages/admin/AdminIntegrit
 const AdminInboxPage = lazy(() => import("./pages/admin/AdminInboxPage"));
 const AdminSitemapAuditPage = lazy(() => import("./pages/admin/AdminSitemapAuditPage"));
 const AdminOnboardingStatsPage = lazy(() => import("./pages/admin/AdminOnboardingStatsPage"));
+const AdminOnboardingRegressionPage = lazy(() => import("./pages/admin/AdminOnboardingRegressionPage"));
 const AdminAuthHealthPage = lazy(() => import("./pages/admin/AdminAuthHealthPage"));
 const AdminUploadStressTestPage = lazy(() => import("./pages/admin/AdminUploadStressTestPage"));
 const AdminSearchSortingPage = lazy(() => import("./pages/admin/AdminSearchSortingPage"));
@@ -589,6 +590,7 @@ const App = () => {
                 <Route path="/admin/conversao" element={<AdminGuard><RouteErrorBoundary sectionName="AdminConversionMetricsPage"><AdminConversionMetricsPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/onboarding-funnel" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingFunnelPage"><AdminOnboardingFunnelPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/onboarding-stats" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingStatsPage"><AdminOnboardingStatsPage /></RouteErrorBoundary></AdminGuard>} />
+                <Route path="/admin/onboarding-regression" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingRegressionPage"><AdminOnboardingRegressionPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/health-check" element={<AdminGuard><RouteErrorBoundary sectionName="AdminAuthHealthPage"><AdminAuthHealthPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/integridade" element={<AdminGuard><RouteErrorBoundary sectionName="AdminIntegrityReportsPage"><AdminIntegrityReportsPage /></RouteErrorBoundary></AdminGuard>} />
                 <Route path="/admin/upload-stress-test" element={<AdminGuard><RouteErrorBoundary sectionName="AdminUploadStressTestPage"><AdminUploadStressTestPage /></RouteErrorBoundary></AdminGuard>} />
