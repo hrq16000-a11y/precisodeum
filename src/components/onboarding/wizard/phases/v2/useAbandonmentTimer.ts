@@ -27,11 +27,22 @@ function markEmitted(phase: string) {
   } catch { /* fail-soft */ }
 }
 
-export function useAbandonmentTimer(phase: OnboardingPhase, userId?: string | null) {
+export function useAbandonmentTimer(
+  phase: OnboardingPhase,
+  userId?: string | null,
+  /** Quando true, o hook é no-op (ex.: onboarding já concluído). */
+  disabled: boolean = false,
+) {
   const timerRef = useRef<number | null>(null);
+  const mountedAtRef = useRef<number>(0);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (disabled) return;
+    // Guard #1: tab inicia hidden/backgrounded — usuário nem viu a página.
+    // Não armar timer; só armaremos quando ele voltar (visibilitychange).
+    const startedHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+    mountedAtRef.current = Date.now();
     const phaseStr = String(phase);
 
     const clear = () => {
@@ -42,9 +53,11 @@ export function useAbandonmentTimer(phase: OnboardingPhase, userId?: string | nu
     };
     const schedule = () => {
       clear();
-      if (alreadyEmitted(phaseStr)) return;
+      if (alreadyEmitted(phaseStr)) return; // Guard #3: 1x por fase/sessão
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       timerRef.current = window.setTimeout(() => {
         if (alreadyEmitted(phaseStr)) return;
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
         markEmitted(phaseStr);
         void trackOnboardingEvent({
           phase,
@@ -58,10 +71,10 @@ export function useAbandonmentTimer(phase: OnboardingPhase, userId?: string | nu
     const onActivity = () => schedule();
     const events = ['pointerdown', 'keydown', 'touchstart', 'visibilitychange'] as const;
     events.forEach((e) => window.addEventListener(e, onActivity, { passive: true } as any));
-    schedule();
+    if (!startedHidden) schedule();
     return () => {
       clear();
       events.forEach((e) => window.removeEventListener(e, onActivity as any));
     };
-  }, [phase, userId]);
+  }, [phase, userId, disabled]);
 }
