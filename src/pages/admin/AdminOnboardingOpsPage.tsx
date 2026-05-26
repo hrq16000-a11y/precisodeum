@@ -990,6 +990,10 @@ export default function AdminOnboardingOpsPage() {
           <TabsContent value="intelligence" className="space-y-3">
             <AdminIntelligencePanel />
           </TabsContent>
+
+          <TabsContent value="executive" className="space-y-3">
+            <AdminExecutivePanel />
+          </TabsContent>
         </Tabs>
       </main>
       <Footer />
