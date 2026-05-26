@@ -1310,6 +1310,177 @@ function GatekeeperTab() {
   );
 }
 
+function BehaviorTab() {
+  const [hours, setHours] = useState(24);
+  const q = useQuery({
+    queryKey: ['behavior-summary', hours],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('admin_onboarding_behavioral_summary', { _hours: hours });
+      if (error) throw error;
+      return data as any;
+    },
+    refetchInterval: 120_000,
+  });
+
+  const phases: any[] = q.data?.phases ?? [];
+  const devices: any[] = q.data?.devices ?? [];
+  const sources: any[] = q.data?.sources ?? [];
+  const fields: any[] = q.data?.fields ?? [];
+  const patterns: any[] = q.data?.abandonment_patterns ?? [];
+
+  const rankedPhases = useMemo(() => {
+    return phases
+      .map((p) => {
+        const enters = Math.max(1, p.enters ?? 0);
+        const score = Math.min(100, Math.round(
+          ((p.abandons ?? 0) / enters) * 30 +
+          ((p.hesitations ?? 0) / enters) * 15 +
+          ((p.rage_clicks ?? 0) / enters) * 15 +
+          ((p.repeated_validations ?? 0) / enters) * 15 +
+          ((p.multi_submits ?? 0) / enters) * 10 +
+          ((p.refreshes ?? 0) / enters) * 5
+        ));
+        return { ...p, friction: score };
+      })
+      .sort((a, b) => b.friction - a.friction);
+  }, [phases]);
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg"><Brain className="h-5 w-5" /> Behavioral Funnel</CardTitle>
+            <CardDescription>Comportamento real — sem PII, somente timing e frequência.</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={String(hours)} onValueChange={(v) => setHours(Number(v))}>
+              <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="6">Últimas 6h</SelectItem>
+                <SelectItem value="24">Últimas 24h</SelectItem>
+                <SelectItem value="72">Últimas 72h</SelectItem>
+                <SelectItem value="168">Últimos 7d</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="outline" onClick={() => q.refetch()}><RefreshCcw className="h-4 w-4" /></Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {q.isLoading ? (
+            <EmptyState message="Carregando..." icon={<Activity className="h-6 w-6 animate-pulse" />} />
+          ) : !q.data ? (
+            <EmptyState message="Sem dados na janela." />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <h4 className="mb-2 text-sm font-semibold">Friction por fase</h4>
+                {rankedPhases.length === 0 ? <p className="text-xs text-muted-foreground">Sem eventos.</p> : (
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead>Fase</TableHead><TableHead className="text-right">Enters</TableHead>
+                      <TableHead className="text-right">Aband.</TableHead><TableHead className="text-right">Hesit.</TableHead>
+                      <TableHead className="text-right">Rage</TableHead><TableHead className="text-right">Score</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {rankedPhases.slice(0, 10).map((p) => (
+                        <TableRow key={p.phase}>
+                          <TableCell className="font-mono text-xs">{p.phase}</TableCell>
+                          <TableCell className="text-right">{p.enters}</TableCell>
+                          <TableCell className="text-right">{p.abandons}</TableCell>
+                          <TableCell className="text-right">{p.hesitations}</TableCell>
+                          <TableCell className="text-right">{p.rage_clicks}</TableCell>
+                          <TableCell className="text-right">
+                            <Badge variant="outline" className={
+                              p.friction >= 70 ? 'border-red-300 bg-red-50 text-red-700'
+                              : p.friction >= 50 ? 'border-orange-300 bg-orange-50 text-orange-700'
+                              : p.friction >= 25 ? 'border-amber-300 bg-amber-50 text-amber-700'
+                              : 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                            }>{p.friction}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+              <div>
+                <h4 className="mb-2 text-sm font-semibold">Campos mais problemáticos</h4>
+                {fields.length === 0 ? <p className="text-xs text-muted-foreground">Sem eventos de campo.</p> : (
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead>Field</TableHead><TableHead className="text-right">Hesit.</TableHead>
+                      <TableHead className="text-right">Rage</TableHead><TableHead className="text-right">Rep.Val.</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {fields.slice(0, 10).map((f, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-mono text-xs">{f.field}</TableCell>
+                          <TableCell className="text-right">{f.hesitations}</TableCell>
+                          <TableCell className="text-right">{f.rage_clicks}</TableCell>
+                          <TableCell className="text-right">{f.repeated_validations}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+              <div>
+                <h4 className="mb-2 text-sm font-semibold">Por dispositivo</h4>
+                <SegmentTable rows={devices} />
+              </div>
+              <div>
+                <h4 className="mb-2 text-sm font-semibold">Por origem</h4>
+                <SegmentTable rows={sources} />
+              </div>
+              <div className="md:col-span-2">
+                <h4 className="mb-2 text-sm font-semibold">Top padrões de abandono</h4>
+                {patterns.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum padrão.</p> : (
+                  <ul className="space-y-1 text-xs">
+                    {patterns.map((p, i) => (
+                      <li key={i} className="flex items-center justify-between rounded border bg-muted/30 px-2 py-1">
+                        <code className="font-mono">{p.pattern}</code>
+                        <Badge variant="outline">{p.count}</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function SegmentTable({ rows }: { rows: any[] }) {
+  if (!rows?.length) return <p className="text-xs text-muted-foreground">Sem dados.</p>;
+  return (
+    <Table>
+      <TableHeader><TableRow>
+        <TableHead>Segmento</TableHead><TableHead className="text-right">Enters</TableHead>
+        <TableHead className="text-right">Compl.</TableHead><TableHead className="text-right">Aband.</TableHead>
+        <TableHead className="text-right">Compl. %</TableHead>
+      </TableRow></TableHeader>
+      <TableBody>
+        {rows.slice(0, 8).map((r, i) => {
+          const rate = r.enters > 0 ? Math.round((r.completes / r.enters) * 100) : 0;
+          return (
+            <TableRow key={i}>
+              <TableCell className="font-mono text-xs">{r.segment}</TableCell>
+              <TableCell className="text-right">{r.enters}</TableCell>
+              <TableCell className="text-right">{r.completes}</TableCell>
+              <TableCell className="text-right">{r.abandons}</TableCell>
+              <TableCell className="text-right">{rate}%</TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
+  );
+}
+
 function DeltaKpi({ label, value, inverse }: { label: string; value: number; inverse: boolean }) {
   const worse = inverse ? value > 0 : value < 0;
   const better = inverse ? value < 0 : value > 0;
