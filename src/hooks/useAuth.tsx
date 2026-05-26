@@ -390,46 +390,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [fetchProfile]);
 
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const syncMutedFromProfile = (nextProfile: any) => {
-      setProfile(prev => ({ ...(prev ?? {}), ...(nextProfile ?? {}) }));
-      setCelebrationMuted(resolveCelebrationMutedPreference(nextProfile?.celebration_muted));
-    };
-
-    const channel = supabase
-      .channel(`profile-preferences:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${user.id}`,
-        },
-        (payload) => syncMutedFromProfile(payload.new)
-      )
-      .subscribe();
-
-    let visibilityTimer: number | null = null;
-    const refreshOnFocus = () => {
-      if (document.visibilityState !== 'visible') return;
-      // Debounce: rapid alt-tab / tab switches should result in a single refetch.
-      if (visibilityTimer != null) window.clearTimeout(visibilityTimer);
-      visibilityTimer = window.setTimeout(() => {
-        visibilityTimer = null;
-        void refetchProfile();
-      }, 500);
-    };
-    document.addEventListener('visibilitychange', refreshOnFocus);
-
-    return () => {
-      if (visibilityTimer != null) window.clearTimeout(visibilityTimer);
-      document.removeEventListener('visibilitychange', refreshOnFocus);
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, refetchProfile]);
+  // Realtime de preferências do profile, visibility refresh e log-user-access
+  // foram movidos para `<AuthCompanion />` (side-effects não-auth).
 
   const signOut = useCallback(async () => {
     // 1) Encerra a sessão no Supabase (revoga refresh token + limpa storage sb-*).
@@ -463,8 +425,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (typeof window !== 'undefined') {
         const ss = window.sessionStorage;
-        // Remove explicitamente chaves de impersonação/admin que NUNCA podem
-        // sobreviver a um logout, mesmo que o clear() abaixo falhe.
         const sensitiveKeys = [
           'impersonation_admin_token',
           'impersonation_admin_refresh',
@@ -480,14 +440,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.warn('[useAuth] signOut(): sessionStorage.clear falhou', err);
     }
   }, []);
-  // Track online presence for the current user, including their city
-  const providerCity = provider?.city;
-  const presenceMeta = useMemo(() => (providerCity ? { city: providerCity } : undefined), [providerCity]);
-  usePresenceTracker(user?.id, presenceMeta);
 
   // Memoize the context value so consumers (~50+ across the app) don't re-render
-  // unless one of the actual primitives changes. Without this, every parent
-  // re-render of AuthProvider cascaded a re-render to every `useAuth()` consumer.
+  // unless one of the actual primitives changes. Sem isso, qualquer parent
+  // re-render do AuthProvider cascateava re-render para todos os `useAuth()`.
   const contextValue = useMemo<AuthContextType>(
     () => ({ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }),
     [session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile],
@@ -495,6 +451,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={contextValue}>
+      {/* AuthCompanion isola side-effects não-auth (presença é tratada no
+          DashboardLayout). Renderizado como irmão para não inflar o body do
+          provider nem o seu ciclo de re-render. */}
+      <AuthCompanion />
       {children}
     </AuthContext.Provider>
   );
