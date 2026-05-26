@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   ArrowRight,
   BarChart3,
+  Beaker,
   Brain,
   CheckCircle2,
   Clock,
@@ -37,6 +38,7 @@ import {
   ShieldCheck,
   Telescope,
 } from 'lucide-react';
+import AdminExperimentsPanel from '@/components/admin/AdminExperimentsPanel';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -420,7 +422,12 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="forensics" className="gap-1"><Telescope className="h-4 w-4" /> Sessão</TabsTrigger>
             <TabsTrigger value="alerts" className="gap-1"><AlertTriangle className="h-4 w-4" /> Alertas</TabsTrigger>
             <TabsTrigger value="incidents" className="gap-1"><ShieldAlert className="h-4 w-4" /> Incidentes</TabsTrigger>
+            <TabsTrigger value="experiments" className="gap-1"><Beaker className="h-4 w-4" /> Experiments</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="experiments" className="space-y-3">
+            <AdminExperimentsPanel enabled={!!isAdmin} />
+          </TabsContent>
 
 
           {/* === FUNIL ============================================== */}

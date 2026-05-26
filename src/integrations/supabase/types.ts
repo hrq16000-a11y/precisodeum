@@ -2918,6 +2918,110 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_experiment_snapshots: {
+        Row: {
+          captured_at: string
+          experiment_id: string
+          experiment_key: string
+          id: string
+          kind: string
+          meta: Json
+          rollout_reached: number
+          status_at_capture: string
+          variants: Json
+        }
+        Insert: {
+          captured_at?: string
+          experiment_id: string
+          experiment_key: string
+          id?: string
+          kind: string
+          meta?: Json
+          rollout_reached?: number
+          status_at_capture: string
+          variants?: Json
+        }
+        Update: {
+          captured_at?: string
+          experiment_id?: string
+          experiment_key?: string
+          id?: string
+          kind?: string
+          meta?: Json
+          rollout_reached?: number
+          status_at_capture?: string
+          variants?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_experiment_snapshots_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_experiments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_experiments: {
+        Row: {
+          audience: Json
+          auto_kill_enabled: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string | null
+          experiment_key: string
+          id: string
+          last_evaluated_at: string | null
+          last_kill_reason: string | null
+          name: string
+          rollout_percentage: number
+          start_at: string | null
+          status: string
+          type: string
+          updated_at: string
+          variants: Json
+        }
+        Insert: {
+          audience?: Json
+          auto_kill_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          experiment_key: string
+          id?: string
+          last_evaluated_at?: string | null
+          last_kill_reason?: string | null
+          name: string
+          rollout_percentage?: number
+          start_at?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          variants?: Json
+        }
+        Update: {
+          audience?: Json
+          auto_kill_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          experiment_key?: string
+          id?: string
+          last_evaluated_at?: string | null
+          last_kill_reason?: string | null
+          name?: string
+          rollout_percentage?: number
+          start_at?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          variants?: Json
+        }
+        Relationships: []
+      }
       onboarding_incidents: {
         Row: {
           actions: Json
@@ -8796,6 +8900,26 @@ export type Database = {
         Args: { _reason?: string; _reset_after?: boolean }
         Returns: string
       }
+      admin_capture_onboarding_experiment_snapshot: {
+        Args: { _experiment_key: string; _hours?: number; _kind?: string }
+        Returns: {
+          captured_at: string
+          experiment_id: string
+          experiment_key: string
+          id: string
+          kind: string
+          meta: Json
+          rollout_reached: number
+          status_at_capture: string
+          variants: Json
+        }
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_experiment_snapshots"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_capture_rls_snapshot: {
         Args: never
         Returns: {
@@ -8863,6 +8987,21 @@ export type Database = {
           page_kind: string
           post_signup_conversion: number
           signup_rate: number
+        }[]
+      }
+      admin_experiment_variant_metrics: {
+        Args: { _experiment_key: string; _hours?: number }
+        Returns: {
+          abandons: number
+          completes: number
+          enters: number
+          hesitations: number
+          rage_clicks: number
+          recoveries: number
+          refreshes: number
+          units_assigned: number
+          validation_failed: number
+          variant_id: string
         }[]
       }
       admin_explain_query: {
@@ -8943,6 +9082,34 @@ export type Database = {
           service_id: string
           source: string
         }[]
+      }
+      admin_list_onboarding_experiments: {
+        Args: never
+        Returns: {
+          audience: Json
+          auto_kill_enabled: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string | null
+          experiment_key: string
+          id: string
+          last_evaluated_at: string | null
+          last_kill_reason: string | null
+          name: string
+          rollout_percentage: number
+          start_at: string | null
+          status: string
+          type: string
+          updated_at: string
+          variants: Json
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_experiments"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       admin_list_onboarding_incidents: {
         Args: { _hours?: number; _only_open?: boolean }
@@ -9292,6 +9459,34 @@ export type Database = {
         Args: { _decision: string; _lead_id: string; _reason?: string }
         Returns: Json
       }
+      admin_set_onboarding_experiment_status: {
+        Args: { _experiment_key: string; _reason?: string; _status: string }
+        Returns: {
+          audience: Json
+          auto_kill_enabled: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string | null
+          experiment_key: string
+          id: string
+          last_evaluated_at: string | null
+          last_kill_reason: string | null
+          name: string
+          rollout_percentage: number
+          start_at: string | null
+          status: string
+          type: string
+          updated_at: string
+          variants: Json
+        }
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_experiments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_set_profile_tax_id: {
         Args: { _profile_id: string; _tax_id: string }
         Returns: undefined
@@ -9361,6 +9556,45 @@ export type Database = {
           _status: string
         }
         Returns: Json
+      }
+      admin_upsert_onboarding_experiment: {
+        Args: {
+          _audience?: Json
+          _auto_kill_enabled?: boolean
+          _description?: string
+          _end_at?: string
+          _experiment_key: string
+          _name: string
+          _rollout_percentage: number
+          _start_at?: string
+          _type: string
+          _variants: Json
+        }
+        Returns: {
+          audience: Json
+          auto_kill_enabled: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string | null
+          experiment_key: string
+          id: string
+          last_evaluated_at: string | null
+          last_kill_reason: string | null
+          name: string
+          rollout_percentage: number
+          start_at: string | null
+          status: string
+          type: string
+          updated_at: string
+          variants: Json
+        }
+        SetofOptions: {
+          from: "*"
+          to: "onboarding_experiments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       apply_sponsor_scope_fix: {
         Args: {
@@ -9625,6 +9859,10 @@ export type Database = {
           resolved_count: number
           skipped_disabled: boolean
         }[]
+      }
+      evaluate_onboarding_experiments_kill_switch: {
+        Args: never
+        Returns: Json
       }
       expire_registration_blocks_180d: { Args: never; Returns: number }
       finalize_onboarding_atomic: {
