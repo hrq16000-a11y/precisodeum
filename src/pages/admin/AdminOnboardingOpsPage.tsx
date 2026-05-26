@@ -772,6 +772,193 @@ export default function AdminOnboardingOpsPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* === INCIDENTES (auto-response) ======================= */}
+          <TabsContent value="incidents" className="space-y-3">
+            {/* Painel de controle: flags operacionais + botão "rodar motor" */}
+            <Card>
+              <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <CardTitle className="text-lg">Controle operacional</CardTitle>
+                  <CardDescription>
+                    Feature flags vivem em <code className="rounded bg-muted px-1">site_settings</code>. O motor avalia regressões a cada 5 min via cron.
+                  </CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1"
+                  disabled={evalEngine.isPending}
+                  onClick={() => evalEngine.mutate()}
+                >
+                  <RefreshCcw className={`h-4 w-4 ${evalEngine.isPending ? 'animate-spin' : ''}`} />
+                  Rodar motor agora
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {flagsQuery.isLoading ? (
+                  <p className="text-sm text-muted-foreground">Carregando flags…</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {[
+                      ['onboarding_auto_response_enabled', 'Auto-response (master)'],
+                      ['onboarding_regression_watch_enabled', 'Regression watcher'],
+                      ['onboarding_remote_draft_enabled', 'Autosave remoto'],
+                      ['onboarding_remote_recovery_enabled', 'Recovery remoto'],
+                      ['onboarding_recovery_modal_enabled', 'Modal de recovery'],
+                      ['onboarding_phase2_early_persist_enabled', 'Fase 2 · persist precoce'],
+                      ['onboarding_multitab_detection_enabled', 'Detecção multi-aba'],
+                      ['onboarding_local_autosave_boost', 'Boost autosave local'],
+                    ].map(([key, label]) => {
+                      const f = flagsByKey[key];
+                      const on = f?.value === true;
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between rounded-md border bg-card p-2.5"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">{label}</p>
+                            <p className="truncate font-mono text-[10px] text-muted-foreground">{key}</p>
+                          </div>
+                          <Switch
+                            checked={on}
+                            disabled={flagToggle.isPending}
+                            onCheckedChange={(v) => flagToggle.mutate({ key, value: v })}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tabela de incidentes */}
+            <Card>
+              <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <CardTitle className="text-lg">Incidentes (últimos 7 dias)</CardTitle>
+                  <CardDescription>
+                    Abertos automaticamente a partir de regressões. Auto-resolve quando a métrica normaliza por 60 min.
+                  </CardDescription>
+                </div>
+                <Select value={incidentScope} onValueChange={(v) => setIncidentScope(v as 'open' | 'all')}>
+                  <SelectTrigger className="w-36">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Apenas abertos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardHeader>
+              <CardContent>
+                {incidentsQuery.isLoading ? (
+                  <p className="text-sm text-muted-foreground">Carregando…</p>
+                ) : (incidentsQuery.data ?? []).length === 0 ? (
+                  <EmptyState
+                    icon={<CheckCircle2 className="h-6 w-6 text-emerald-600" />}
+                    message={
+                      incidentScope === 'open'
+                        ? 'Nenhum incidente aberto — sistema em estado normal.'
+                        : 'Sem incidentes nos últimos 7 dias.'
+                    }
+                  />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Estado</TableHead>
+                          <TableHead>Severidade</TableHead>
+                          <TableHead>Métrica</TableHead>
+                          <TableHead>Ações</TableHead>
+                          <TableHead>Aberto em</TableHead>
+                          <TableHead>Duração</TableHead>
+                          <TableHead>Release</TableHead>
+                          <TableHead className="text-right">Override</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(incidentsQuery.data ?? []).map((row) => {
+                          const open = row.resolved_at === null;
+                          const acts = Array.isArray(row.actions) ? (row.actions as Array<{ flag: string; to: boolean }>) : [];
+                          const dur = row.duration_seconds
+                            ? `${Math.round(row.duration_seconds / 60)} min`
+                            : open
+                              ? `${Math.round((Date.now() - new Date(row.opened_at).getTime()) / 60_000)} min (em curso)`
+                              : '—';
+                          return (
+                            <TableRow key={row.id}>
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    open
+                                      ? row.state === 'incident'
+                                        ? 'bg-red-500 text-white'
+                                        : 'bg-amber-200 text-amber-900'
+                                      : 'bg-emerald-200 text-emerald-900'
+                                  }
+                                >
+                                  {row.state}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={SEVERITY_STYLES[row.severity] ?? SEVERITY_STYLES.low}>
+                                  {row.severity}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">{row.trigger_metric}</TableCell>
+                              <TableCell className="text-xs">
+                                {acts.length === 0 ? (
+                                  <span className="text-muted-foreground">—</span>
+                                ) : (
+                                  <ul className="space-y-0.5">
+                                    {acts.map((a, i) => (
+                                      <li key={i} className="font-mono">
+                                        {a.flag} → {String(a.to)}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                                <Clock className="mr-1 inline h-3 w-3" />
+                                {new Date(row.opened_at).toLocaleString('pt-BR')}
+                              </TableCell>
+                              <TableCell className="text-xs">{dur}</TableCell>
+                              <TableCell className="font-mono text-xs">{row.app_version ?? '—'}</TableCell>
+                              <TableCell className="text-right">
+                                {open ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={resolveIncident.isPending}
+                                    onClick={() => {
+                                      if (window.confirm('Forçar resolução manual deste incidente?')) {
+                                        resolveIncident.mutate({ id: row.id, notes: 'manual override via ops' });
+                                      }
+                                    }}
+                                  >
+                                    Resolver
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">
+                                    {row.resolution_kind ?? 'resolved'}
+                                  </span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
       <Footer />
