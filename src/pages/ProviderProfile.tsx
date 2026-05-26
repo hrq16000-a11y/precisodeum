@@ -1627,6 +1627,13 @@ const ProviderProfile = () => {
 
   return (
     <div className={`flex min-h-screen flex-col ${tc.page} ${tc.fontBody}`} style={accentStyle}>
+      <SeoMeta
+        title={seoTitle}
+        description={seoDescription}
+        canonical={seoCanonical}
+        ogImage={providerSocialImage || undefined}
+        ogType="profile"
+      />
       <Header />
 
       {/* Cover Image Hero — aspect-ratio reservado ANTES da imagem chegar
