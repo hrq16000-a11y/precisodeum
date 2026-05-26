@@ -56,6 +56,7 @@ import AdminRealityPanel from '@/components/admin/AdminRealityPanel';
 import AdminMemoryPanel from '@/components/admin/AdminMemoryPanel';
 import AdminHardeningPanel from '@/components/admin/AdminHardeningPanel';
 import AdminCorrelationPanel from '@/components/admin/AdminCorrelationPanel';
+import AdminSignalCenter from '@/components/admin/AdminSignalCenter';
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -450,6 +451,7 @@ export default function AdminOnboardingOpsPage() {
             <TabsTrigger value="memory" className="gap-1"><History className="h-4 w-4" /> Memory</TabsTrigger>
             <TabsTrigger value="hardening" className="gap-1"><Zap className="h-4 w-4" /> Hardening</TabsTrigger>
             <TabsTrigger value="correlation" className="gap-1"><GitMerge className="h-4 w-4" /> Correlation</TabsTrigger>
+            <TabsTrigger value="signals" className="gap-1"><Activity className="h-4 w-4" /> Signals</TabsTrigger>
           </TabsList>
 
           <TabsContent value="reality" className="space-y-3">
