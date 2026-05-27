@@ -203,6 +203,8 @@ export default function CadastroInicialPage() {
   // um fallback visível em vez de renderizar o WizardShell com dados nulos
   // (que poderia quebrar silenciosamente em hooks downstream).
   const [selfHealFailed, setSelfHealFailed] = useState(false);
+  const [providerStatus, setProviderStatus] = useState<string | null>(null);
+  const [statusLoading, setStatusLoading] = useState(false);
   useEffect(() => {
     if (loading || !authSettled || !user) return;
     if (profile) {
