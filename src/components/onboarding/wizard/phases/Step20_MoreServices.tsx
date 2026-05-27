@@ -74,15 +74,17 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
     let active = true;
     (async () => {
       setLoadingProvider(true);
+      setProviderError(null);
       const startedAt = performance.now();
       try {
         let prov = providerFull;
         if (!prov?.id && user?.id) {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('providers')
             .select('*')
             .eq('user_id', user.id)
             .maybeSingle();
+          if (error) throw error;
           if (data) prov = data;
         }
         const { data: cats } = await supabase
@@ -93,6 +95,9 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
         providerLoadMsRef.current = Math.round(performance.now() - startedAt);
         setProviderFull(prov);
         setCategories(cats || []);
+      } catch (e: any) {
+        if (!active) return;
+        setProviderError(e?.message || 'Falha ao carregar dados.');
       } finally {
         if (active) setLoadingProvider(false);
       }
