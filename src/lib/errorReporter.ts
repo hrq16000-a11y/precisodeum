@@ -64,6 +64,9 @@ export async function reportError(opts: ReportErrorOptions): Promise<string | nu
         viewport,
         action_history: getActionHistory(),
         severity: opts.severity || 'error',
+        app_version: APP_VERSION,
+        release_channel: detectReleaseChannel(),
+        build_id: APP_BUILD_ID,
       } as any)
       .select('id')
       .single();
