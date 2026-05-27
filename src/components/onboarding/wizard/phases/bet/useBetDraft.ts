@@ -113,7 +113,24 @@ export function useBetDraft(state: BetState) {
     timer.current = scheduleWizardTimeout(
       { phase: state.phase as any, action: 'autosave_bet_local', runIfStale: true },
       () => {
-        try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* noop */ }
+        try { localStorage.setItem(KEY, JSON.stringify(state)); }
+        catch (e: any) {
+          // Background — sem toast. Telemetria fail-soft.
+          void (async () => {
+            try {
+              const { trackOnboardingEvent } = await import('../v2/telemetry');
+              await trackOnboardingEvent({
+                phase: state.phase as any,
+                event: 'error' as any,
+                meta: {
+                  kind: 'bet_draft_debounce_failed',
+                  error: String(e?.message || e || 'unknown').slice(0, 200),
+                  source: 'useBetDraft.debounce',
+                },
+              });
+            } catch { /* fail-soft */ }
+          })();
+        }
       },
       DEBOUNCE_MS,
     );
