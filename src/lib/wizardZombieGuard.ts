@@ -44,6 +44,21 @@ export function getActiveWizardPhase(): string | null {
   return activePhase;
 }
 
+/**
+ * Invalida TODOS os timers pendentes agendados via `scheduleWizardTimeout`
+ * sem precisar de seus handles. Bumpa a época do guard — qualquer callback
+ * que disparar depois será detectado como zumbi e (default) suprimido.
+ *
+ * Caso de uso principal: transição entre shells (BetModeShell →
+ * OnboardingV2Shell). Chamado pelo shell que monta para "neutralizar"
+ * qualquer timer remanescente do shell anterior antes de iniciar seus
+ * próprios efeitos.
+ */
+export function neutralizeZombieTimers(): void {
+  phaseEpoch += 1;
+  phaseChangedAt = Date.now();
+}
+
 export interface ScheduleOptions {
   /** Fase em que o timer foi agendado (não obrigatório, mas recomendado). */
   phase?: OnboardingPhase | string | null;
