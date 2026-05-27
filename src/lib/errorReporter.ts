@@ -4,6 +4,19 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { APP_VERSION, APP_BUILD_ID } from './appVersion';
+
+/** Heurística leve igual à de `telemetry.ts` para identificar o canal de release. */
+function detectReleaseChannel(): 'preview' | 'production' | 'dev' | 'unknown' {
+  try {
+    if (typeof window === 'undefined') return 'unknown';
+    const h = window.location?.hostname || '';
+    if (/^(localhost|127\.0\.0\.1)$/i.test(h)) return 'dev';
+    if (/(^|--)(id-preview|preview)--/i.test(h)) return 'preview';
+    if (/\.lovable\.app$/i.test(h) && /preview/i.test(h)) return 'preview';
+    return 'production';
+  } catch { return 'unknown'; }
+}
 
 // Action history buffer (last 20 actions)
 const actionHistory: Array<{ action: string; timestamp: string; detail?: string }> = [];
