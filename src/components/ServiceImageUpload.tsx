@@ -212,7 +212,9 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
         } catch (err) {
           failed.push(raw);
           const kind = classifyUploadError(err);
-          toast.error(`${raw.name}: ${userMessageFor(kind)}`);
+          toast.error(`${raw.name}: ${userMessageFor(kind)}`, {
+            description: 'Não foi possível enviar a foto. Você pode tentar novamente ou pular e adicionar depois.',
+          });
         }
       }
 
