@@ -386,6 +386,27 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
           Concluir <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
+      <div className="flex items-center gap-2 pt-1">
+        {onBack && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="flex-1 gap-2"
+          >
+            ← Voltar
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 gap-2"
+          disabled={navigating !== null}
+          onClick={() => void goTo('/dashboard')}
+        >
+          Salvar e continuar depois →
+        </Button>
+      </div>
       <p className="text-center text-[11px] text-muted-foreground">
         Você pode adicionar fotos e novos álbuns a qualquer momento em <span className="font-medium">Painel → Portfólio</span>.
       </p>
