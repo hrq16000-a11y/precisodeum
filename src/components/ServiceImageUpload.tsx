@@ -232,7 +232,9 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
       }
       fetchImages();
     } catch (err: any) {
-      toast.error('Erro: ' + err.message);
+      toast.error('Não foi possível enviar a foto. Você pode tentar novamente ou pular e adicionar depois.', {
+        description: err?.message,
+      });
       setHasFailed(true);
     } finally {
       setUploading(false);
