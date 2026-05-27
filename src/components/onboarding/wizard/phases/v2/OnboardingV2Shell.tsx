@@ -1331,6 +1331,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
    * e refaz a verificação de duplicidade.
    */
   const persistFirstServiceEarly = async (): Promise<boolean> => {
+    if (!isTabLeader()) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: { kind: 'write_blocked_non_leader', where: 'persistFirstServiceEarly' } as any,
+      });
+      return false;
+    }
     if (!user) return false;
     if (state.firstServiceId) return true;
     const categoryId = state.service.category_ids?.[0];
