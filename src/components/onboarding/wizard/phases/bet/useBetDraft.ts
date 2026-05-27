@@ -78,7 +78,23 @@ export function flushBetDraftSync(state: BetState): void {
   try {
     if (state.phase === 'done' || state.phase === 'celebration') return;
     localStorage.setItem(KEY, JSON.stringify(state));
-  } catch { /* noop */ }
+  } catch (e: any) {
+    // Background — sem toast. Só telemetria fail-soft.
+    void (async () => {
+      try {
+        const { trackOnboardingEvent } = await import('../v2/telemetry');
+        await trackOnboardingEvent({
+          phase: state.phase as any,
+          event: 'error' as any,
+          meta: {
+            kind: 'bet_draft_flush_sync_failed',
+            error: String(e?.message || e || 'unknown').slice(0, 200),
+            source: 'flushBetDraftSync',
+          },
+        });
+      } catch { /* fail-soft */ }
+    })();
+  }
 }
 
 /** Chave de sessão que sinaliza ao OnboardingV2Shell que o BetModeShell já desmontou e finalizou seus writes. */
