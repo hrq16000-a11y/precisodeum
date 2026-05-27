@@ -372,17 +372,20 @@ export default function CadastroInicialPage() {
   useEffect(() => {
     if (loading || !authSettled || !user) return;
     setStatusLoading(true);
-    supabase
-      .from('providers')
-      .select('status')
-      .eq('user_id', user.id)
-      .maybeSingle()
-      .then(({ data, error }) => {
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('providers')
+          .select('status')
+          .eq('user_id', user.id)
+          .maybeSingle();
         if (!error && data?.status) {
           setProviderStatus(data.status);
         }
-      })
-      .finally(() => setStatusLoading(false));
+      } finally {
+        setStatusLoading(false);
+      }
+    })();
   }, [loading, authSettled, user]);
 
   // Side-effect ÚNICO de telemetria/toast quando vamos redirecionar para
