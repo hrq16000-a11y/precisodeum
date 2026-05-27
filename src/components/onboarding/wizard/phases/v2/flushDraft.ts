@@ -109,11 +109,48 @@ function emitFlushEvent(kind: 'start' | 'end') {
   try { window.dispatchEvent(new CustomEvent(`onboarding:remote-flush:${kind}`)); } catch { /* noop */ }
 }
 
+/** Fases pertencentes à triagem (BetModeShell). Se a fase recebida em
+ *  `flushRemoteDraft` casar com qualquer uma delas, o write é rejeitado
+ *  para evitar contaminar `onboarding_v2_drafts` com payload do shell errado. */
+const BET_PHASES = new Set<string>([
+  'identity', 'who', 'client_city', 'pro_kind', 'pro_document', 'pro_location', 'celebration',
+]);
+
+/** Detecta payload de triagem chegando ao draft V2 (write zumbi após handoff). */
+function isTriagePayload(state: OnboardingState): boolean {
+  const phase = state.phase ? String(state.phase) : '';
+  if (BET_PHASES.has(phase)) return true;
+  const anyState = state as unknown as Record<string, unknown>;
+  if ('intent' in anyState && anyState.intent != null) return true;
+  if ('triage_who' in anyState) return true;
+  if ('bet_phase' in anyState) return true;
+  return false;
+}
+
 export async function flushRemoteDraft(
   state: OnboardingState,
   userId: string | undefined,
 ): Promise<void> {
   if (!userId || state.phase === 'done') return;
+  // Anti-zumbi: bloqueia writes vindos de timers remanescentes do BetModeShell
+  // que carregam payload de triagem para a tabela do V2.
+  if (isTriagePayload(state)) {
+    try {
+      const { trackOnboardingEvent } = await import('./telemetry');
+      await trackOnboardingEvent({
+        phase: state.phase as any,
+        event: 'error' as any,
+        userId,
+        meta: {
+          kind: 'zombie_write_blocked',
+          error_code: 'zombie_write_blocked',
+          source: 'flushRemoteDraft',
+          phase_received: String(state.phase ?? ''),
+        },
+      });
+    } catch { /* fail-soft */ }
+    return;
+  }
   // Guarda simétrica: se o hook debounced (ou outro flush) já gravou esta
   // mesma fase para este userId nos últimos 2s, pulamos para eliminar a 2ª
   // escrita redundante no Supabase quando o usuário avança rápido.

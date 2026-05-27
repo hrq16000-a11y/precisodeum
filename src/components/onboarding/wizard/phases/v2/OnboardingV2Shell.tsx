@@ -33,7 +33,7 @@ import { logWizardError } from '@/lib/wizardErrorGuard';
 import { registerBackOwner, claimBackEvent } from '@/lib/wizardBackOrchestrator';
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
 import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
-import { setActiveWizardPhase, scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
+import { setActiveWizardPhase, scheduleWizardTimeout, neutralizeZombieTimers } from '@/lib/wizardZombieGuard';
 import { parseProviderIntegrityError, dispatchProviderIntegrityFocus } from '@/lib/providerIntegrityError';
 
 // Aviso única vez por sessão para evitar spam
@@ -552,6 +552,12 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   useEffect(() => {
     if (!user?.id) return;
     if (skipDraftRestore) return;
+    // Anti-zumbi: neutraliza qualquer timer remanescente do BetModeShell e
+    // consome a flag de finalização da triagem (se presente). Se ausente,
+    // significa entrada direta no Step 8+ sem passar pela triagem — prossegue
+    // normalmente.
+    try { neutralizeZombieTimers(); } catch { /* noop */ }
+    try { if (typeof window !== 'undefined') sessionStorage.removeItem('bet_shell_finalized'); } catch { /* noop */ }
     const local = readOnboardingV2Draft();
     const localPhase = (local?.phase as any) || 'phase2_service';
     let alive = true;
