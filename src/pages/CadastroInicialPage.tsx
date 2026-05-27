@@ -475,5 +475,13 @@ export default function CadastroInicialPage() {
     );
   }
 
+  // Prestador já ativo e NÃO em modo revisão → redireciona para dashboard.
+  if (!statusLoading && providerStatus === 'active' && !reviewMode) {
+    const otherParams = new URLSearchParams(params);
+    otherParams.delete('mode');
+    const qs = otherParams.toString();
+    return <Navigate to={`/dashboard${qs ? '?' + qs : ''}`} replace />;
+  }
+
   return <WizardShell mode={reviewMode ? 'edit_profile' : 'new_signup'} reviewSection={reviewSection} />;
 }
