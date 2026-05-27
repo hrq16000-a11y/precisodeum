@@ -166,7 +166,7 @@ import {
 } from './telemetry';
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
 import { validateDraftShape } from './draftEnvelope';
-import { detectConcurrentTab, startTabHeartbeat } from './crossTabSync';
+import { detectConcurrentTab, startTabHeartbeat, startTabLeaderElection, isTabLeader } from './crossTabSync';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
 import { getLastReadDraftDiagnostics } from './useOnboardingV2Draft';
 import WizardErrorModal from '@/components/wizard/WizardErrorModal';
@@ -522,8 +522,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // Hardening F8: heartbeat de aba ativa + detecção de concorrência.
   // SOMENTE telemetria silenciosa nesta fase (sem toast/UI).
+  // Prompt 5 cont.: ativa Leader Election (write-guard em flushDraft + persist*).
   useEffect(() => {
-    const stop = startTabHeartbeat();
+    const stopHeartbeat = startTabHeartbeat();
+    const stopLeader = startTabLeaderElection();
     if (detectConcurrentTab()) {
       void trackOnboardingEvent({
         phase: state.phase as any,
@@ -532,7 +534,18 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         meta: { kind: 'concurrent_tab_detected' },
       });
     }
-    return () => stop();
+    return () => {
+      stopHeartbeat();
+      stopLeader();
+    };
+  }, []);
+
+  // Prompt 5 cont. — Parte A: polling leve para detectar troca de liderança
+  // (aba líder anterior fechou). Mantém banner de CadastroInicialPage atualizado.
+  const [isLeader, setIsLeader] = useState<boolean>(() => isTabLeader());
+  useEffect(() => {
+    const id = setInterval(() => setIsLeader(isTabLeader()), 5000);
+    return () => clearInterval(id);
   }, []);
 
   // Hardening F4: detector de abandono silencioso (15min sem interação).
@@ -968,6 +981,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
+    if (!isTabLeader()) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: { kind: 'write_blocked_non_leader', where: 'persistPhase1' } as any,
+      });
+      return false;
+    }
     if (!user) {
       void trackEvent({
         phase: state.phase,
@@ -1309,6 +1331,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
    * e refaz a verificação de duplicidade.
    */
   const persistFirstServiceEarly = async (): Promise<boolean> => {
+    if (!isTabLeader()) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: { kind: 'write_blocked_non_leader', where: 'persistFirstServiceEarly' } as any,
+      });
+      return false;
+    }
     if (!user) return false;
     if (state.firstServiceId) return true;
     const categoryId = state.service.category_ids?.[0];
@@ -1386,6 +1417,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   /* ───── Persistência: cria 1º serviço (Fase 2) ───── */
   const persistFirstService = async (): Promise<boolean> => {
+    if (!isTabLeader()) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: { kind: 'write_blocked_non_leader', where: 'persistFirstService' } as any,
+      });
+      return false;
+    }
     if (!user) return false;
     let workingProviderId = await ensureProviderId();
 
@@ -2133,6 +2173,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   /* ───── Persistência: patches incrementais Fase 4 ───── */
   const persistPatch = async (patch: Record<string, any>): Promise<boolean> => {
+    if (!isTabLeader()) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: { kind: 'write_blocked_non_leader', where: 'persistPatch' } as any,
+      });
+      return false;
+    }
     if (!user) return true;
     setSaving(true);
     try {

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import WizardShell from '@/components/onboarding/wizard/WizardShell';
+import { isTabLeader } from '@/components/onboarding/wizard/phases/v2/crossTabSync';
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 import { getOnboardingReviewSection, isOnboardingReviewMode } from '@/lib/onboardingAccess';
 
@@ -205,6 +206,22 @@ export default function CadastroInicialPage() {
   const [selfHealFailed, setSelfHealFailed] = useState(false);
   const [providerStatus, setProviderStatus] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
+  // Prompt 5 cont. — Parte C: banner para aba não-líder.
+  const [isLeader, setIsLeader] = useState<boolean>(() => isTabLeader());
+  useEffect(() => {
+    const id = setInterval(() => setIsLeader(isTabLeader()), 5000);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    if (!isLeader) {
+      toast.warning('Você está editando em outra aba. Feche esta para continuar aqui.', {
+        id: 'non-leader-warning',
+        duration: Infinity,
+      });
+    } else {
+      toast.dismiss('non-leader-warning');
+    }
+  }, [isLeader]);
   useEffect(() => {
     if (loading || !authSettled || !user) return;
     if (profile) {
