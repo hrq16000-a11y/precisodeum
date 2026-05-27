@@ -1417,6 +1417,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   /* ───── Persistência: cria 1º serviço (Fase 2) ───── */
   const persistFirstService = async (): Promise<boolean> => {
+    if (!isTabLeader()) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: { kind: 'write_blocked_non_leader', where: 'persistFirstService' } as any,
+      });
+      return false;
+    }
     if (!user) return false;
     let workingProviderId = await ensureProviderId();
 
