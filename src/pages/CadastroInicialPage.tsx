@@ -206,6 +206,22 @@ export default function CadastroInicialPage() {
   const [selfHealFailed, setSelfHealFailed] = useState(false);
   const [providerStatus, setProviderStatus] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
+  // Prompt 5 cont. — Parte C: banner para aba não-líder.
+  const [isLeader, setIsLeader] = useState<boolean>(() => isTabLeader());
+  useEffect(() => {
+    const id = setInterval(() => setIsLeader(isTabLeader()), 5000);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    if (!isLeader) {
+      toast.warning('Você está editando em outra aba. Feche esta para continuar aqui.', {
+        id: 'non-leader-warning',
+        duration: Infinity,
+      });
+    } else {
+      toast.dismiss('non-leader-warning');
+    }
+  }, [isLeader]);
   useEffect(() => {
     if (loading || !authSettled || !user) return;
     if (profile) {
