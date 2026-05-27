@@ -374,11 +374,13 @@ export default function CadastroInicialPage() {
     setStatusLoading(true);
     void (async () => {
       try {
-        const { data, error } = await supabase
+        const result = await supabase
           .from('providers')
           .select('status')
           .eq('user_id', user.id)
           .maybeSingle();
+        if (!result) return;
+        const { data, error } = result;
         if (!error && data?.status) {
           setProviderStatus(data.status);
         }
