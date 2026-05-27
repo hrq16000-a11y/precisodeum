@@ -33,7 +33,7 @@ import { logWizardError } from '@/lib/wizardErrorGuard';
 import { registerBackOwner, claimBackEvent } from '@/lib/wizardBackOrchestrator';
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
 import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
-import { setActiveWizardPhase, scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
+import { setActiveWizardPhase, scheduleWizardTimeout, neutralizeZombieTimers } from '@/lib/wizardZombieGuard';
 import { parseProviderIntegrityError, dispatchProviderIntegrityFocus } from '@/lib/providerIntegrityError';
 
 // Aviso única vez por sessão para evitar spam
