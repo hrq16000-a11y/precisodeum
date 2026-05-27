@@ -203,6 +203,8 @@ export default function CadastroInicialPage() {
   // um fallback visível em vez de renderizar o WizardShell com dados nulos
   // (que poderia quebrar silenciosamente em hooks downstream).
   const [selfHealFailed, setSelfHealFailed] = useState(false);
+  const [providerStatus, setProviderStatus] = useState<string | null>(null);
+  const [statusLoading, setStatusLoading] = useState(false);
   useEffect(() => {
     if (loading || !authSettled || !user) return;
     if (profile) {
@@ -365,7 +367,28 @@ export default function CadastroInicialPage() {
     })();
   }, [loading, authSettled, user, profile, refetchProfile]);
 
-
+  // Verificação de provider existente + ativo — evita reabrir wizard
+  // para prestadores que já completaram cadastro.
+  useEffect(() => {
+    if (loading || !authSettled || !user) return;
+    setStatusLoading(true);
+    void (async () => {
+      try {
+        const result = await supabase
+          .from('providers')
+          .select('status')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (!result) return;
+        const { data, error } = result;
+        if (!error && data?.status) {
+          setProviderStatus(data.status);
+        }
+      } finally {
+        setStatusLoading(false);
+      }
+    })();
+  }, [loading, authSettled, user]);
 
   // Side-effect ÚNICO de telemetria/toast quando vamos redirecionar para
   // /login. NÃO navega (a navegação é declarativa via `<Navigate>` abaixo).
@@ -452,6 +475,14 @@ export default function CadastroInicialPage() {
         </div>
       </div>
     );
+  }
+
+  // Prestador já ativo e NÃO em modo revisão → redireciona para dashboard.
+  if (!statusLoading && providerStatus === 'active' && !reviewMode) {
+    const otherParams = new URLSearchParams(params);
+    otherParams.delete('mode');
+    const qs = otherParams.toString();
+    return <Navigate to={`/dashboard${qs ? '?' + qs : ''}`} replace />;
   }
 
   return <WizardShell mode={reviewMode ? 'edit_profile' : 'new_signup'} reviewSection={reviewSection} />;
