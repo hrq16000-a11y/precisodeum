@@ -15,7 +15,7 @@
 
 import { reportError, trackAction } from './errorReporter';
 import { supabase } from '@/integrations/supabase/client';
-import { APP_VERSION } from './appVersion';
+import { APP_VERSION, APP_BUILD_ID } from './appVersion';
 
 let installed = false;
 let cachedUserId: string | null = null;
