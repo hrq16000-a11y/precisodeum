@@ -14,8 +14,7 @@ export const APP_VERSION = '1.1.0';
  */
 export const APP_BUILD_ID: string = (() => {
   try {
-    // @ts-expect-error injetado por vite define
-    return String(__BUILD_TIMESTAMP__);
+    return String((globalThis as any).__BUILD_TIMESTAMP__ ?? 'unknown');
   } catch {
     return 'unknown';
   }
