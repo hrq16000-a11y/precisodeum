@@ -522,8 +522,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // Hardening F8: heartbeat de aba ativa + detecção de concorrência.
   // SOMENTE telemetria silenciosa nesta fase (sem toast/UI).
+  // Prompt 5 cont.: ativa Leader Election (write-guard em flushDraft + persist*).
   useEffect(() => {
-    const stop = startTabHeartbeat();
+    const stopHeartbeat = startTabHeartbeat();
+    const stopLeader = startTabLeaderElection();
     if (detectConcurrentTab()) {
       void trackOnboardingEvent({
         phase: state.phase as any,
@@ -532,7 +534,18 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         meta: { kind: 'concurrent_tab_detected' },
       });
     }
-    return () => stop();
+    return () => {
+      stopHeartbeat();
+      stopLeader();
+    };
+  }, []);
+
+  // Prompt 5 cont. — Parte A: polling leve para detectar troca de liderança
+  // (aba líder anterior fechou). Mantém banner de CadastroInicialPage atualizado.
+  const [isLeader, setIsLeader] = useState<boolean>(() => isTabLeader());
+  useEffect(() => {
+    const id = setInterval(() => setIsLeader(isTabLeader()), 5000);
+    return () => clearInterval(id);
   }, []);
 
   // Hardening F4: detector de abandono silencioso (15min sem interação).
