@@ -367,7 +367,23 @@ export default function CadastroInicialPage() {
     })();
   }, [loading, authSettled, user, profile, refetchProfile]);
 
-
+  // Verificação de provider existente + ativo — evita reabrir wizard
+  // para prestadores que já completaram cadastro.
+  useEffect(() => {
+    if (loading || !authSettled || !user) return;
+    setStatusLoading(true);
+    supabase
+      .from('providers')
+      .select('status')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!error && data?.status) {
+          setProviderStatus(data.status);
+        }
+      })
+      .finally(() => setStatusLoading(false));
+  }, [loading, authSettled, user]);
 
   // Side-effect ÚNICO de telemetria/toast quando vamos redirecionar para
   // /login. NÃO navega (a navegação é declarativa via `<Navigate>` abaixo).
