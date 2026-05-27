@@ -70,6 +70,7 @@ const getDeviceInfo = () => {
 const buildContext = () => ({
   userId: cachedUserId,
   appVersion: APP_VERSION,
+  buildId: APP_BUILD_ID,
   route: window.location.pathname + window.location.search,
   referrer: document.referrer || null,
   viewport: `${window.innerWidth}x${window.innerHeight}`,
