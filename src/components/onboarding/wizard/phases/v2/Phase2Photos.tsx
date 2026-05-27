@@ -105,7 +105,7 @@ export const Phase2Photos = ({
         aria-label="Pular esta etapa e finalizar sem adicionar fotos agora"
         className="w-full text-muted-foreground"
       >
-        Pular por enquanto
+        Pular fotos por agora →
       </Button>
     </div>
 
