@@ -217,9 +217,12 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
           >
             <p className="flex items-center gap-1.5 font-medium">
               <AlertCircle className="h-3.5 w-3.5" aria-hidden />
-              {providerError.message}
+              Ocorreu um erro ao carregar seus dados.
             </p>
-            <p className="text-[11px] text-destructive/80">{providerError.hint}</p>
+            <p className="text-[11px] text-destructive/80">
+              Você pode voltar ao passo anterior ou salvar e continuar depois.
+            </p>
+            <p className="text-[11px] text-destructive/70">{providerError.hint}</p>
             {(providerError.code === 'network' || providerError.code === 'query' || providerError.code === 'rls') && (
               <button
                 type="button"
