@@ -1239,12 +1239,15 @@ export type Database = {
           action_context: string
           action_history: Json | null
           admin_notes: string | null
+          app_version: string | null
+          build_id: string | null
           component_name: string | null
           created_at: string
           error_message: string
           error_stack: string | null
           id: string
           page_path: string
+          release_channel: string | null
           resolved: boolean
           resolved_at: string | null
           resolved_by: string | null
@@ -1258,12 +1261,15 @@ export type Database = {
           action_context?: string
           action_history?: Json | null
           admin_notes?: string | null
+          app_version?: string | null
+          build_id?: string | null
           component_name?: string | null
           created_at?: string
           error_message?: string
           error_stack?: string | null
           id?: string
           page_path?: string
+          release_channel?: string | null
           resolved?: boolean
           resolved_at?: string | null
           resolved_by?: string | null
@@ -1277,12 +1283,15 @@ export type Database = {
           action_context?: string
           action_history?: Json | null
           admin_notes?: string | null
+          app_version?: string | null
+          build_id?: string | null
           component_name?: string | null
           created_at?: string
           error_message?: string
           error_stack?: string | null
           id?: string
           page_path?: string
+          release_channel?: string | null
           resolved?: boolean
           resolved_at?: string | null
           resolved_by?: string | null
