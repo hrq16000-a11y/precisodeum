@@ -14,7 +14,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { OnboardingState } from './types';
-import { broadcastDraftChange } from './crossTabSync';
+import { broadcastDraftChange, isTabLeader } from './crossTabSync';
 
 // Mantido em sincronia com `useOnboardingV2Draft.ts` (versão V3 de ruptura).
 const DRAFT_KEY = 'onboarding_v3_institutional_final';
@@ -132,6 +132,23 @@ export async function flushRemoteDraft(
   userId: string | undefined,
 ): Promise<void> {
   if (!userId || state.phase === 'done') return;
+  // Multi-tab: apenas a aba líder escreve no Supabase. Seguidoras saem
+  // silenciosamente e registram telemetria — sem toast (background).
+  if (!isTabLeader()) {
+    try {
+      const { trackOnboardingEvent } = await import('./telemetry');
+      await trackOnboardingEvent({
+        phase: state.phase as any,
+        event: 'error' as any,
+        userId,
+        meta: {
+          kind: 'flush_blocked_non_leader',
+          source: 'flushRemoteDraft',
+        },
+      });
+    } catch { /* fail-soft */ }
+    return;
+  }
   // Anti-zumbi: bloqueia writes vindos de timers remanescentes do BetModeShell
   // que carregam payload de triagem para a tabela do V2.
   if (isTriagePayload(state)) {
