@@ -11,7 +11,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { APP_VERSION } from '@/lib/appVersion';
+import { APP_VERSION, APP_BUILD_ID } from '@/lib/appVersion';
 import type { OnboardingPhase } from './types';
 import type { UnifiedPhase } from '../../wizardReducer';
 
@@ -132,6 +132,7 @@ export async function trackOnboardingEvent(opts: TrackOptions): Promise<void> {
     // alterar cada call-site. Apenas adiciona se o caller não tiver enviado.
     if (!('app_version' in meta)) meta = { ...meta, app_version: APP_VERSION };
     if (!('release_channel' in meta)) meta = { ...meta, release_channel: getReleaseChannel() };
+    if (!('build_id' in meta)) meta = { ...meta, build_id: APP_BUILD_ID };
     // ── PADRONIZAÇÃO DE META PARA EVENTOS DE ERRO ─────────────────────────
     // Garante que dashboards/queries possam fazer GROUP BY meta->>'error_code'
     // sem se preocupar com NULL vs ausente. Para eventos `error`, força a

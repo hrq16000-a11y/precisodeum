@@ -15,7 +15,7 @@
 
 import { reportError, trackAction } from './errorReporter';
 import { supabase } from '@/integrations/supabase/client';
-import { APP_VERSION } from './appVersion';
+import { APP_VERSION, APP_BUILD_ID } from './appVersion';
 
 let installed = false;
 let cachedUserId: string | null = null;
@@ -70,6 +70,7 @@ const getDeviceInfo = () => {
 const buildContext = () => ({
   userId: cachedUserId,
   appVersion: APP_VERSION,
+  buildId: APP_BUILD_ID,
   route: window.location.pathname + window.location.search,
   referrer: document.referrer || null,
   viewport: `${window.innerWidth}x${window.innerHeight}`,
@@ -98,7 +99,7 @@ export function installGlobalErrorMonitor() {
 
   // Define versão do app no sink externo (uma vez)
   const sinkBoot = getExternalSink();
-  sinkBoot?.setContext?.('app', { version: APP_VERSION });
+  sinkBoot?.setContext?.('app', { version: APP_VERSION, build_id: APP_BUILD_ID });
 
   supabase.auth.onAuthStateChange((_event, session) => {
     cachedUserId = session?.user?.id ?? null;
