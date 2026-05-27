@@ -48,6 +48,8 @@ export async function clearRemoteBetDraft(userId: string): Promise<void> {
  * - Pula até a primeira hidratação remota (firstRun) para não sobrescrever
  *   antes de o caller ter a chance de mesclar payload existente.
  * - Não persiste fases finais.
+ * - Não dispara se o BetModeShell já sinalizou término (`bet_shell_finalized`),
+ *   o que indica que a transição para OnboardingV2Shell já ocorreu.
  */
 export function useBetRemoteDraft(state: BetState, userId: string | undefined, options: { ready: boolean }) {
   const timer = useRef<number | null>(null);
@@ -61,6 +63,12 @@ export function useBetRemoteDraft(state: BetState, userId: string | undefined, o
     timer.current = scheduleWizardTimeout(
       { phase: state.phase as any, action: 'autosave_bet_remote', runIfStale: true },
       async () => {
+        // Guard: se o shell já finalizou a transição, não escreve mais nada.
+        try {
+          if (typeof window !== 'undefined' && sessionStorage.getItem('bet_shell_finalized') === '1') {
+            return;
+          }
+        } catch { /* noop */ }
         try {
           await (supabase as any).from('bet_drafts').upsert({
             user_id: userId,
@@ -74,6 +82,6 @@ export function useBetRemoteDraft(state: BetState, userId: string | undefined, o
       REMOTE_DEBOUNCE_MS,
     );
 
-    return () => { if (timer.current) window.clearTimeout(timer.current); };
+    return () => { if (timer.current) { window.clearTimeout(timer.current); timer.current = null; } };
   }, [state, userId, options.ready]);
 }
