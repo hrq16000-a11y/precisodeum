@@ -68,9 +68,28 @@ export function seedBetDraftFromProfile(seed: Partial<BetState>): void {
   } catch { /* fail-soft */ }
 }
 
-/** Persiste o estado com debounce. Não persiste fases finais ('celebration'/'done'). */
+/**
+ * Flush síncrono imediato do estado para localStorage. Usado no unmount
+ * do BetModeShell para garantir que nenhum dado em-debounce seja perdido
+ * na transição para o OnboardingV2Shell.
+ */
+export function flushBetDraftSync(state: BetState): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (state.phase === 'done' || state.phase === 'celebration') return;
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch { /* noop */ }
+}
+
+/** Chave de sessão que sinaliza ao OnboardingV2Shell que o BetModeShell já desmontou e finalizou seus writes. */
+export const BET_SHELL_FINALIZED_KEY = 'bet_shell_finalized';
+
+/** Persiste o estado com debounce. Não persiste fases finais ('celebration'/'done').
+ *  No unmount executa flush síncrono final e seta a flag de sessão. */
 export function useBetDraft(state: BetState) {
   const timer = useRef<number | null>(null);
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   useEffect(() => {
     if (state.phase === 'done' || state.phase === 'celebration') return;
@@ -82,6 +101,16 @@ export function useBetDraft(state: BetState) {
       },
       DEBOUNCE_MS,
     );
-    return () => { if (timer.current) window.clearTimeout(timer.current); };
+    return () => { if (timer.current) { window.clearTimeout(timer.current); timer.current = null; } };
   }, [state]);
+
+  // Unmount-only: cancela timer pendente, executa flush síncrono final e
+  // sinaliza ao próximo shell (OnboardingV2Shell) que pode prosseguir.
+  useEffect(() => {
+    return () => {
+      if (timer.current) { window.clearTimeout(timer.current); timer.current = null; }
+      try { flushBetDraftSync(stateRef.current); } catch { /* noop */ }
+      try { sessionStorage.setItem(BET_SHELL_FINALIZED_KEY, '1'); } catch { /* noop */ }
+    };
+  }, []);
 }
