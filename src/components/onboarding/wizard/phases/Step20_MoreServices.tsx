@@ -54,6 +54,7 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
   const [editorOpen, setEditorOpen] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(false);
   const [providerFull, setProviderFull] = useState<any>(provider);
+  const [providerError, setProviderError] = useState<string | null>(null);
   const refreshMsRef = useRef<number | null>(null);
   const providerLoadMsRef = useRef<number | null>(null);
 
