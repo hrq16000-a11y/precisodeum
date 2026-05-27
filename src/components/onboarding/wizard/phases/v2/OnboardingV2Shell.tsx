@@ -1690,11 +1690,27 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 categoryId,
               },
             });
-            // Fallback defensivo: tenta UPDATE direto (mantém comportamento legado)
-            await supabase
+            // Fallback defensivo: tenta UPDATE direto (mantém comportamento legado).
+            // Resultado agora é checado e auditado (antes era silencioso).
+            const { error: fallbackUpdErr } = await supabase
               .from('services')
               .update({ service_name: resolvedCategoryName, category_id: categoryId })
               .eq('id', reusedId);
+            if (fallbackUpdErr) {
+              void trackEvent({
+                phase: state.phase,
+                event: 'error',
+                userId: user?.id,
+                meta: {
+                  kind: 'realign_fallback_update_failed',
+                  error_code: (fallbackUpdErr as any)?.code || null,
+                  error_message: String(fallbackUpdErr.message || '').slice(0, 240),
+                  service_id: reusedId,
+                  provider_id: workingProviderId,
+                  category_id: categoryId,
+                },
+              });
+            }
           }
           resolvedServiceId = reusedId;
           dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
@@ -2143,9 +2159,22 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       const safe = normalizeProviderPayload(providerPatch);
       const { error } = await supabase.from('providers').update(safe as any).eq('id', workingProviderId);
       if (error) throw error;
-      // Salva também tax_id no profile se vier
+      // Salva também tax_id no profile se vier — agora com checagem de erro
+      // (antes o resultado era totalmente ignorado).
       if (incomingTaxId) {
-        await supabase.from('profiles').update({ tax_id: incomingTaxId }).eq('id', user.id);
+        const { error: taxErr } = await supabase
+          .from('profiles')
+          .update({ tax_id: incomingTaxId })
+          .eq('id', user.id);
+        if (taxErr) {
+          logWizardError({
+            phase: state.phase,
+            userId: user?.id,
+            error: taxErr,
+            variant: 'v2',
+            context: { action: 'persist_patch_tax_id' },
+          });
+        }
       }
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
       return true;

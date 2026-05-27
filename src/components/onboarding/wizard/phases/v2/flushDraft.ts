@@ -179,6 +179,7 @@ export async function flushRemoteDraft(
   emitFlushEvent('start');
   const promise = (async () => {
     try {
+      // TODO: tipar payload (onboarding_v2_drafts ainda não está no schema gerado)
       await supabase.from('onboarding_v2_drafts' as any).upsert({
         user_id: userId,
         payload: {
@@ -197,7 +198,23 @@ export async function flushRemoteDraft(
           recordWizardSupabaseCall('flushRemoteDraft', state.phase as any, userId);
         } catch { /* fail-soft */ }
       }
-    } catch { /* fail-soft */ }
+    } catch (e: any) {
+      // Background flush: SEM toast. Apenas telemetria para diagnóstico.
+      try {
+        const { trackOnboardingEvent } = await import('./telemetry');
+        await trackOnboardingEvent({
+          phase: state.phase as any,
+          event: 'error' as any,
+          userId,
+          meta: {
+            kind: 'flush_draft_failed',
+            error_code: e?.code || null,
+            error: String(e?.message || e || 'unknown').slice(0, 240),
+            source: 'flushRemoteDraft',
+          },
+        });
+      } catch { /* fail-soft — telemetria não pode quebrar runtime */ }
+    }
   })();
   inFlightByUser.set(key, promise);
   try {
