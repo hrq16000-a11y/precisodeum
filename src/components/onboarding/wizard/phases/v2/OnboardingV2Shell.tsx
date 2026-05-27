@@ -2159,9 +2159,22 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       const safe = normalizeProviderPayload(providerPatch);
       const { error } = await supabase.from('providers').update(safe as any).eq('id', workingProviderId);
       if (error) throw error;
-      // Salva também tax_id no profile se vier
+      // Salva também tax_id no profile se vier — agora com checagem de erro
+      // (antes o resultado era totalmente ignorado).
       if (incomingTaxId) {
-        await supabase.from('profiles').update({ tax_id: incomingTaxId }).eq('id', user.id);
+        const { error: taxErr } = await supabase
+          .from('profiles')
+          .update({ tax_id: incomingTaxId })
+          .eq('id', user.id);
+        if (taxErr) {
+          logWizardError({
+            phase: state.phase,
+            userId: user?.id,
+            error: taxErr,
+            variant: 'v2',
+            context: { action: 'persist_patch_tax_id' },
+          });
+        }
       }
       try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
       return true;
