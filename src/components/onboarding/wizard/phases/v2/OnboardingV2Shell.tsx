@@ -1690,11 +1690,27 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 categoryId,
               },
             });
-            // Fallback defensivo: tenta UPDATE direto (mantém comportamento legado)
-            await supabase
+            // Fallback defensivo: tenta UPDATE direto (mantém comportamento legado).
+            // Resultado agora é checado e auditado (antes era silencioso).
+            const { error: fallbackUpdErr } = await supabase
               .from('services')
               .update({ service_name: resolvedCategoryName, category_id: categoryId })
               .eq('id', reusedId);
+            if (fallbackUpdErr) {
+              void trackEvent({
+                phase: state.phase,
+                event: 'error',
+                userId: user?.id,
+                meta: {
+                  kind: 'realign_fallback_update_failed',
+                  error_code: (fallbackUpdErr as any)?.code || null,
+                  error_message: String(fallbackUpdErr.message || '').slice(0, 240),
+                  service_id: reusedId,
+                  provider_id: workingProviderId,
+                  category_id: categoryId,
+                },
+              });
+            }
           }
           resolvedServiceId = reusedId;
           dispatch({ type: 'SET_FIRST_SERVICE_ID', id: reusedId });
