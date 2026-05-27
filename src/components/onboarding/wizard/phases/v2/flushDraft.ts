@@ -14,7 +14,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { OnboardingState } from './types';
-import { broadcastDraftChange } from './crossTabSync';
+import { broadcastDraftChange, isTabLeader } from './crossTabSync';
 
 // Mantido em sincronia com `useOnboardingV2Draft.ts` (versão V3 de ruptura).
 const DRAFT_KEY = 'onboarding_v3_institutional_final';
