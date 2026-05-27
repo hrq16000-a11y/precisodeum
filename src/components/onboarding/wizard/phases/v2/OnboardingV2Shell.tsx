@@ -2173,6 +2173,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   /* ───── Persistência: patches incrementais Fase 4 ───── */
   const persistPatch = async (patch: Record<string, any>): Promise<boolean> => {
+    if (!isTabLeader()) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: { kind: 'write_blocked_non_leader', where: 'persistPatch' } as any,
+      });
+      return false;
+    }
     if (!user) return true;
     setSaving(true);
     try {
