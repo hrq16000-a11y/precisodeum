@@ -981,6 +981,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
+    if (!isTabLeader()) {
+      void trackEvent({
+        phase: state.phase,
+        event: 'error',
+        userId: user?.id,
+        meta: { kind: 'write_blocked_non_leader', where: 'persistPhase1' } as any,
+      });
+      return false;
+    }
     if (!user) {
       void trackEvent({
         phase: state.phase,
