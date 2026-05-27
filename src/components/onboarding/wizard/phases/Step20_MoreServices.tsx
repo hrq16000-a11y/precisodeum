@@ -241,6 +241,44 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
           </p>
         </div>
       )}
+
+      {providerError && (
+        <div
+          role="alert"
+          data-testid="step20-provider-error"
+          className="space-y-1 rounded border border-destructive/40 bg-destructive/10 px-2 py-2 text-xs text-destructive"
+        >
+          <p className="flex items-center gap-1.5 font-medium">
+            <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+            Ocorreu um erro ao carregar seus dados.
+          </p>
+          <p className="text-[11px] text-destructive/80">
+            Você pode voltar ao passo anterior ou salvar e continuar depois.
+          </p>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 pt-1">
+        {onBack && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="flex-1 gap-2"
+          >
+            ← Voltar
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 gap-2"
+          disabled={navigating !== null}
+          onClick={() => void goTo('/dashboard')}
+        >
+          Salvar e continuar depois →
+        </Button>
+      </div>
     </div>
   );
 };
