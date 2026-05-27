@@ -14,7 +14,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ArrowRight, SkipForward, CheckCircle2, LayoutDashboard, UserRound } from 'lucide-react';
+import { Plus, ArrowRight, SkipForward, CheckCircle2, LayoutDashboard, UserRound, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -54,6 +54,7 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
   const [editorOpen, setEditorOpen] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(false);
   const [providerFull, setProviderFull] = useState<any>(provider);
+  const [providerError, setProviderError] = useState<string | null>(null);
   const refreshMsRef = useRef<number | null>(null);
   const providerLoadMsRef = useRef<number | null>(null);
 
@@ -73,15 +74,17 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
     let active = true;
     (async () => {
       setLoadingProvider(true);
+      setProviderError(null);
       const startedAt = performance.now();
       try {
         let prov = providerFull;
         if (!prov?.id && user?.id) {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('providers')
             .select('*')
             .eq('user_id', user.id)
             .maybeSingle();
+          if (error) throw error;
           if (data) prov = data;
         }
         const { data: cats } = await supabase
@@ -92,6 +95,9 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
         providerLoadMsRef.current = Math.round(performance.now() - startedAt);
         setProviderFull(prov);
         setCategories(cats || []);
+      } catch (e: any) {
+        if (!active) return;
+        setProviderError(e?.message || 'Falha ao carregar dados.');
       } finally {
         if (active) setLoadingProvider(false);
       }
@@ -235,6 +241,44 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
           </p>
         </div>
       )}
+
+      {providerError && (
+        <div
+          role="alert"
+          data-testid="step20-provider-error"
+          className="space-y-1 rounded border border-destructive/40 bg-destructive/10 px-2 py-2 text-xs text-destructive"
+        >
+          <p className="flex items-center gap-1.5 font-medium">
+            <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+            Ocorreu um erro ao carregar seus dados.
+          </p>
+          <p className="text-[11px] text-destructive/80">
+            Você pode voltar ao passo anterior ou salvar e continuar depois.
+          </p>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 pt-1">
+        {onBack && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="flex-1 gap-2"
+          >
+            ← Voltar
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 gap-2"
+          disabled={navigating !== null}
+          onClick={() => void goTo('/dashboard')}
+        >
+          Salvar e continuar depois →
+        </Button>
+      </div>
     </div>
   );
 };

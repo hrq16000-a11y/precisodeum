@@ -217,9 +217,12 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
           >
             <p className="flex items-center gap-1.5 font-medium">
               <AlertCircle className="h-3.5 w-3.5" aria-hidden />
-              {providerError.message}
+              Ocorreu um erro ao carregar seus dados.
             </p>
-            <p className="text-[11px] text-destructive/80">{providerError.hint}</p>
+            <p className="text-[11px] text-destructive/80">
+              Você pode voltar ao passo anterior ou salvar e continuar depois.
+            </p>
+            <p className="text-[11px] text-destructive/70">{providerError.hint}</p>
             {(providerError.code === 'network' || providerError.code === 'query' || providerError.code === 'rls') && (
               <button
                 type="button"
@@ -381,6 +384,27 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
         </Button>
         <Button type="button" onClick={onContinue} className="flex-1 gap-2">
           Concluir <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="flex items-center gap-2 pt-1">
+        {onBack && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="flex-1 gap-2"
+          >
+            ← Voltar
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 gap-2"
+          disabled={navigating !== null}
+          onClick={() => void goTo('/dashboard')}
+        >
+          Salvar e continuar depois →
         </Button>
       </div>
       <p className="text-center text-[11px] text-muted-foreground">
