@@ -7,6 +7,21 @@
 export const APP_VERSION = '1.1.0';
 
 /**
+ * Identificador único do build atual — injetado pelo Vite via
+ * `__BUILD_TIMESTAMP__` (ver `vite.config.ts`). Muda a cada deploy mesmo
+ * quando `APP_VERSION` permanece igual, o que permite correlacionar
+ * erros/telemetria a deploys específicos.
+ */
+export const APP_BUILD_ID: string = (() => {
+  try {
+    // @ts-expect-error injetado por vite define
+    return String(__BUILD_TIMESTAMP__);
+  } catch {
+    return 'unknown';
+  }
+})();
+
+/**
  * Compara duas versões semver-like (`major.minor.patch`).
  * - Retorna -1 se a < b, 0 se igual, 1 se a > b.
  * - Tolera valores ausentes/inválidos retornando 0.
