@@ -2554,25 +2554,28 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // PR 13 — Chrome/modal externos extraídos para componentes presentational
   // em `src/components/onboarding/v2/layout/`. O shell mantém runtime/owner-
   // ship intactos; apenas a composição visual final foi achatada.
+  // PR 14 — Snapshots/derivações UI agora vêm de builders puros em
+  // `src/components/onboarding/v2/layout/build*Props.ts`. Callbacks de
+  // runtime continuam sob ownership do shell.
+  const chromeProps = buildShellChromeProps({
+    draftRestored,
+    showAutoSaveBadge: viewModel.showAutoSaveBadge,
+    autoSaveSignal: state.profile,
+    phase: state.phase,
+  });
+  const errorContextSnapshot = buildErrorContextSnapshot(state, lastPersistError);
+  const remoteSnapshot = buildRemoteDraftSnapshot(remoteDraft);
+
   return (
     <>
-      <OnboardingShellChrome
-        draftRestored={draftRestored}
-        showAutoSaveBadge={viewModel.showAutoSaveBadge}
-        autoSaveSignal={state.profile}
-        phaseKey={state.phase}
-      >
+      <OnboardingShellChrome {...chromeProps}>
         {renderPhase()}
       </OnboardingShellChrome>
 
       <OnboardingShellModals
         remote={{
           open: showRemoteModal,
-          snapshot: {
-            payload: remoteDraft?.payload || null,
-            phase: (remoteDraft?.phase as string | null) || null,
-            updatedAt: remoteDraft?.updated_at || null,
-          },
+          snapshot: remoteSnapshot,
           onContinue: handleRemoteContinue,
           onDiscard: handleRemoteDiscard,
         }}
@@ -2584,14 +2587,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           missingFields: errorModal?.missingFields,
           technicalMessage: errorModal?.techMessage ?? null,
           technicalCode: errorModal?.techCode ?? null,
-          contextSnapshot: {
-            category: (state.service?.category_ids?.[0]) || null,
-            city: state.profile?.city || null,
-            state_uf: state.profile?.state || null,
-            lastPersistError: lastPersistError
-              ? { message: lastPersistError.message, code: lastPersistError.code || null }
-              : null,
-          },
+          contextSnapshot: errorContextSnapshot,
           onRetry: () => errorModal?.onRetry?.(),
           onBack: () => {
             void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
