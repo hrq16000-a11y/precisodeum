@@ -33,7 +33,7 @@ import { logWizardError } from '@/lib/wizardErrorGuard';
 // E19 (back orchestrator) owns registerBackOwner/claimBackEvent — extraído.
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
 import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
-import { setActiveWizardPhase, scheduleWizardTimeout, neutralizeZombieTimers } from '@/lib/wizardZombieGuard';
+import { setActiveWizardPhase, scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
 import { parseProviderIntegrityError, dispatchProviderIntegrityFocus } from '@/lib/providerIntegrityError';
 import {
   warnIfForbiddenAddress,
