@@ -113,6 +113,11 @@ import {
   buildPhase2PhotosBlockedDiagnostics,
 } from '@/components/onboarding/v2/phases/buildPhaseProps';
 import { useOnboardingViewModel } from '@/hooks/onboarding/useOnboardingViewModel';
+import { useWizardSkipListener } from '@/hooks/onboarding/useWizardSkipListener';
+import { useRemoteDraftHintTimer } from '@/hooks/onboarding/useRemoteDraftHintTimer';
+import { useFlowMismatchAudit } from '@/hooks/onboarding/useFlowMismatchAudit';
+import { usePhaseLifecycleTelemetry } from '@/hooks/onboarding/usePhaseLifecycleTelemetry';
+import { useReviewHistoryCleanup } from '@/hooks/onboarding/useReviewHistoryCleanup';
 
 
 
