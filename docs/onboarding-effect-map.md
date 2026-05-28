@@ -298,3 +298,74 @@ Extração futura requer pré-requisitos arquiteturais já listados (espelhar
 - Effects bloqueados explicitamente listados — extração proibida até as
   3 pré-condições arquiteturais serem implementadas.
 - 0 effects extraídos · 0 mudanças de runtime · readiness para PR seguinte: **OK**.
+
+---
+
+## POST-EXTRACTION FINAL STATE (PR 8 · pós-desacoplamento)
+
+Todos os núcleos operacionais críticos do `OnboardingV2Shell` foram
+externalizados. O shell virou **composition shell + state container +
+render coordinator**.
+
+### Effects extraídos · hook substituto · ownership final
+
+| Effect | Chain | Hook substituto | Owner runtime |
+|--------|-------|-----------------|---------------|
+| E5  · Phase transition flush       | B/3   | `usePhaseTransitionOrchestrator`     | hook |
+| E8  · Persistence / Recovery       | A/RECOV | `usePersistenceRecoveryOrchestrator` | hook |
+| E9  · Cross-Tab Recovery           | D + A | `useCrossTabRecoveryOrchestrator`    | hook (detecção) + shell (handlers do modal) |
+| E11 · Leader / Write Gate          | D     | `useLeaderWriteGate`                 | hook |
+| E14 + E15 · Hydration Core         | A     | `useHydrationCoreOrchestrator`       | hook |
+| E18 · Submit Core                  | B/5   | `useSubmitCoreOrchestrator`          | hook |
+| E19 · Back Navigation              | C     | `useBackNavigationOrchestrator`      | hook |
+
+### Permaneceram no shell (por design)
+
+- Reducer `onboardingReducer` + `initialOnboardingState`.
+- `dispatch(HYDRATE)` em `handleRemoteContinue` — único caminho legítimo
+  fora dos hooks de hydration (decisão UI do usuário no modal remoto).
+- Callbacks UI (`handleRemoteContinue`, `handleRemoteDiscard`,
+  `handleEditFromReview`, etc.).
+- `getCurrentState` / `signalLifecyclePhase` helpers (passados aos hooks).
+- Render tree + composição de fases.
+
+### Invariantes finais (runtime authorities)
+
+1. **`isTabLeader()`** continua ÚNICA autoridade de write-gate
+   (consumida por `flushDraft`/`persist*` via `crossTabSync`).
+2. **`signalLifecyclePhase()`** continua ÚNICO mutator de
+   `lifecyclePhaseRef`.
+3. **`HYDRATE`** dispatch restrito a: `useHydrationCoreOrchestrator`
+   (bootstrap/replay) + `handleRemoteContinue` (decisão do usuário).
+4. **`finishWizard()`** continua ÚNICO entrypoint terminal do submit
+   automático (`useSubmitCoreOrchestrator`).
+5. **`finalize_onboarding_atomic`** continua ÚNICA autoridade
+   transacional de "onboarding concluído".
+
+### Shell size audit (PR 8)
+
+- LOC antes do ciclo de extrações (pré-PR 5): ~3 200 (pico observado).
+- LOC após PR 7 (extração E9): 2 945.
+- LOC após PR 8 (consolidação + remoção de scaffolds documentais
+  transitórios + dead `isLeader` consumer): **2 790**.
+- Redução acumulada do ciclo de extrações: **≈ 410 linhas** + 7 hooks
+  externalizados (`useBackNavigationOrchestrator`,
+  `usePhaseTransitionOrchestrator`, `usePersistenceRecoveryOrchestrator`,
+  `useCrossTabRecoveryOrchestrator`, `useLeaderWriteGate`,
+  `useHydrationCoreOrchestrator`, `useSubmitCoreOrchestrator`).
+
+### Effects bloqueados restantes
+
+Nenhum. Todos os núcleos operacionais críticos estão externalizados.
+Próximas iterações são **composicionais** (extrair sub-blocos UI,
+não orchestration runtime).
+
+### Validações executadas (PR 8)
+
+- `tsc --noEmit` → 0 erros.
+- Zero effects duplicados, zero orchestration residual, zero write-path
+  novo, zero duplicate finalize, zero duplicate hydration, zero duplicate
+  leader election.
+- Zero refs sem readers (`isLeader` removido), zero imports mortos
+  (verificado em PR 7), zero helper transitório sem uso.
+

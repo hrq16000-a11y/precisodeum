@@ -497,14 +497,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // E11 · Leader / Write Gating Orchestrator (Chain D) — extraído em PR 8.
   // Contract completo vive em `useLeaderWriteGate`. Hook é o único owner
-  // de heartbeat + leader election no shell V2. `isLeader` exposto para
-  // paridade — atualmente não consumido localmente (CadastroInicialPage
-  // mantém seu próprio polling). Mantemos a leitura para evitar dead-code.
-  const { isLeader } = useLeaderWriteGate({
+  // de heartbeat + leader election no shell V2. Nenhum consumer local de
+  // `isLeader` — CadastroInicialPage mantém seu próprio polling para o
+  // banner de aba secundária.
+  useLeaderWriteGate({
     getCurrentState,
     userId: user?.id,
   });
-  void isLeader; // paridade comportamental — futuro banner consumirá.
+
 
 
 
@@ -688,169 +688,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // o card abaixo (case 'phase2_photos') exibe diagnóstico específico com
   // botões de recuperação. NÃO pulamos automaticamente.
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // E18 · SUBMIT CORE (Chain B step 5 · SUBMIT) — MAPEAMENTO PR 11
-  // ═══════════════════════════════════════════════════════════════════════
-  //
-  // STATUS: NÃO EXTRAÍDO ainda. Este bloco é o último núcleo operacional
-  // perigoso restante. Apenas mapeado/coordenado explicitamente nesta PR;
-  // a extração para hook acontecerá em PR posterior, após validação.
-  //
-  // ─── OWNERSHIP ─────────────────────────────────────────────────────────
-  //   submit-trigger        : E18 (este effect) — único disparador legítimo
-  //                           do submit terminal. Reage a state.phase==='done'.
-  //   finalize              : finishWizard() → finalizeOnboarding() (lib
-  //                           `@/lib/finalizeOnboarding`, ENTRYPOINT ÚNICO
-  //                           e idempotente do servidor via RPC atômica
-  //                           `finalize_onboarding_atomic`).
-  //   cleanup (draft)       : E18 chama clearOnboardingV2Draft() ANTES de
-  //                           agendar finishWizard. finalizeOnboarding
-  //                           também limpa drafts remotos (defesa em
-  //                           profundidade).
-  //   session lock release  : finalizeOnboarding → releaseWizardSessionLock
-  //                           (rodado ANTES de qualquer navigate).
-  //   completion lifecycle  : signalLifecyclePhase() — E18 é o ÚNICO
-  //                           emissor de 'SUBMITTING' e 'COMPLETED'.
-  //   redirect/navigation   : finishWizard → navigate('/onboarding-v2/sucesso')
-  //                           SÓ acontece após finalizeOnboarding.ok===true.
-  //   telemetry final       : logWizardError em caso de falha; track('submit')
-  //                           é responsabilidade dos callsites de Step19/done
-  //                           (NÃO duplicar aqui).
-  //
-  // ─── CONTRACTS ─────────────────────────────────────────────────────────
-  //   REQUIRES:
-  //     - state.phase === 'done' (set pelo reducer após Step19/conclusão).
-  //     - lifecyclePhaseRef atual em 'READY' (transições válidas:
-  //       READY → SUBMITTING → COMPLETED; signalLifecyclePhase é monotônico).
-  //     - !deferCompletionToParent (parent pode assumir o controle).
-  //     - leader-write-gate NÃO bloqueia esta operação: finalizeOnboarding
-  //       é idempotente server-side e roda mesmo em aba secundária.
-  //   PRODUCES:
-  //     - clearOnboardingV2Draft() (síncrono, local).
-  //     - scheduleWizardTimeout(300ms) → finishWizard().
-  //     - lifecyclePhaseRef: 'SUBMITTING' (síncrono) → 'COMPLETED' (após await).
-  //     - navigate('/onboarding-v2/sucesso', { replace: true }) em sucesso.
-  //   CONSUMERS:
-  //     - useBackNavigationOrchestrator (E19): observa lifecyclePhaseRef
-  //       para suprimir back-redirects pós-submit.
-  //     - AppVersionGate / parent route: reage a profiles.onboarding_completed=true.
-  //   OWNERSHIP:
-  //     - E18 é o ÚNICO trigger automático de submit. persistFirstService
-  //       (linha ~1410) é um WRITE-CORE separado de phase2_photos, não um
-  //       submit terminal — não emite 'SUBMITTING'/'COMPLETED'.
-  //   POSITION-DEPENDENCY:
-  //     - Deve ser declarado APÓS E17 (zombie guard) e APÓS E5 (phase
-  //       transition orchestrator). Hoje cumprido por ordem textual.
-  //   SUBMIT-SEQUENCE (ordering obrigatória):
-  //     1. signalLifecyclePhase('SUBMITTING')   ← síncrono, gate visual
-  //     2. clearOnboardingV2Draft()             ← síncrono, local
-  //     3. scheduleWizardTimeout(300ms)         ← debounce contra re-entrância
-  //     4. finishWizard():
-  //        4a. finalizeOnboarding({ userId, extraProfilePatch })
-  //            ├─ releaseWizardSessionLock()    ← ANTES do navigate
-  //            ├─ markOnboardingCompletionGrace()
-  //            ├─ clear drafts (local + remoto, fire-and-forget)
-  //            ├─ UPDATE profiles (extras)      ← await
-  //            └─ RPC finalize_onboarding_atomic ← await, idempotente
-  //        4b. refetchProfile() (fail-soft, NÃO bloqueia navigate)
-  //        4c. toast.success + navigate('/onboarding-v2/sucesso', replace:true)
-  //     5. signalLifecyclePhase('COMPLETED')    ← APÓS await de finishWizard
-  //   CLEANUP-SEQUENCE:
-  //     - return () => window.clearTimeout(timer) cancela o timer agendado
-  //       se o effect re-disparar antes do flush. NÃO cancela uma chamada
-  //       finalize já em voo (intencional: o servidor é idempotente).
-  //     - drafts: local (clearOnboardingV2Draft) + remoto (finalizeOnboarding).
-  //     - session lock: liberado dentro de finalizeOnboarding (passo 1 lá).
-  //     - sessionTouched/BetDraft: limpos por finalizeOnboarding.
-  //   FINALIZE-BOUNDARY:
-  //     - Toda escrita server-side de "onboarding terminou" é exclusiva da
-  //       RPC `finalize_onboarding_atomic` (server-side, em transação).
-  //     - Nenhum callsite no shell pode fazer UPDATE direto em
-  //       profiles.onboarding_completed/onboarding_step (governado por
-  //       finalizeOnboarding.ts).
-  //     - persistFirstService chama finalizeOnboarding também — porém com
-  //       seu próprio contrato (ver bloco persistFirstService). Sequência:
-  //       persistFirstService.finalize ≠ finishWizard.finalize (são caminhos
-  //       distintos para casos distintos; finalize_onboarding_atomic dedupa).
-  //
-  // ─── ASYNC BOUNDARIES ──────────────────────────────────────────────────
-  //   awaits críticos (dentro de finishWizard → finalizeOnboarding):
-  //     - await UPDATE profiles (extras)        ← bloqueia RPC se falhar
-  //     - await RPC finalize_onboarding_atomic  ← bloqueia navigate se !ok
-  //     - await refetchProfile (fail-soft)      ← NÃO bloqueia navigate
-  //   ordering obrigatório:
-  //     - flush-before-finalize    : clearOnboardingV2Draft (sync) antes
-  //       do scheduleWizardTimeout. Flush remoto de autosave já cancelado
-  //       por leader gate / unmount em E11.
-  //     - finalize-before-cleanup  : RPC atômica precede limpezas remotas
-  //       (finalizeOnboarding faz clear ANTES por design — drafts ficam
-  //       inertes; a RPC é a fonte da verdade).
-  //     - cleanup-before-navigation: navigate só ocorre após
-  //       finalizeOnboarding.ok===true (que já liberou lock + limpou drafts).
-  //     - telemetry-before-unmount : logWizardError (caso !ok) executa antes
-  //       de qualquer navigate de fallback. toast persiste pós-unmount.
-  //
-  // ─── RACES IDENTIFICADAS (mapeadas — NÃO corrigidas nesta PR) ──────────
-  //   R1 · duplicate submit (double-click)
-  //        Mitigado por: useSubmitGuard nos CTAs de Step19 (impede dispatch
-  //        duplicado de NEXT). E18 também é idempotente: re-entradas em
-  //        state.phase==='done' apenas cancelam/reagendam o timer 300ms
-  //        (cleanup retorna clearTimeout).
-  //   R2 · stale submit snapshot
-  //        finalizeOnboarding lê APENAS user.id (closure curta) e
-  //        extraProfilePatch literal. Sem leitura de state.profile aqui.
-  //        Risco residual: 0 (não usa snapshot do reducer).
-  //   R3 · submit during hydration
-  //        Mitigado por gate de phases: reducer só atinge 'done' após
-  //        HYDRATE completar. E15 idempotente; HYDRATED→READY→SUBMITTING.
-  //   R4 · finalize duplication
-  //        Mitigado server-side: RPC finalize_onboarding_atomic é
-  //        idempotente (profiles.onboarding_completed=true já set => no-op).
-  //        Cliente: scheduleWizardTimeout + lifecyclePhaseRef monotônico.
-  //   R5 · cleanup duplication
-  //        clearOnboardingV2Draft é idempotente (deleta chave LS).
-  //        clearRemoteDraft fire-and-forget; servidor tolera no-op.
-  //   R6 · double redirect
-  //        navigate é { replace: true } — segunda chamada não empilha
-  //        history. /onboarding-v2/sucesso → dashboard é responsabilidade
-  //        da página de sucesso, não de E18.
-  //   R7 · submit + reconnect
-  //        Se a RPC falhar por rede, !result.ok → toast com "Tentar
-  //        novamente" (re-invoca finishWizard). Lifecycle NÃO regride a
-  //        READY (fica em SUBMITTING até user retry).
-  //   R8 · submit + multi-tab
-  //        Aba secundária pode atingir 'done' simultaneamente. RPC server
-  //        dedupa. Drafts: clearRemoteDraft idempotente. Session lock:
-  //        releaseWizardSessionLock idempotente. navigate isolado por aba.
-  //   R9 · back-navigation durante submit
-  //        E19 (useBackNavigationOrchestrator) observa lifecyclePhase
-  //        ≥ SUBMITTING e NÃO redireciona para fases anteriores nesse
-  //        estado. Pop-state durante finalize aborta navigate? Não — o
-  //        await já está em voo; toast/navigate executam após retorno.
-  //
-  // ─── LIFECYCLE CONSOLIDADO ─────────────────────────────────────────────
-  //   READY → SUBMITTING : E18 dispara ao detectar state.phase==='done'.
-  //   SUBMITTING         : Janela onde drafts foram limpos, timer 300ms
-  //                        agendado, e finishWizard pode estar awaitando.
-  //                        Outros effects (E19) consultam este estado para
-  //                        suprimir navigations conflitantes.
-  //   SUBMITTING → COMPLETED : Após finishWizard().then(...) resolver com
-  //                        sucesso. Em caso de !ok, lifecycle PERMANECE em
-  //                        SUBMITTING (intencional: estado de erro recuperável
-  //                        via toast retry).
-  //   COMPLETED          : Estado terminal. signalLifecyclePhase é
-  //                        monotônico — não há transição de volta.
-  //
-  // ─── EFFECT EXTRAÍDO PARA useSubmitCoreOrchestrator (PR 13) ────────────
-  //   E9 permanece bloqueado. E18 agora vive em
-  //   `@/hooks/onboarding/useSubmitCoreOrchestrator` preservando:
-  //     - SUBMIT-SEQUENCE (1..7) byte-a-byte
-  //     - CLEANUP-SEQUENCE (clearTimeout + clearOnboardingV2Draft)
-  //     - RETRY semantics (lifecycle mantém SUBMITTING em finalize !ok)
-  //     - FINALIZE-BOUNDARY (finalize_onboarding_atomic continua único)
-  //     - ASYNC BOUNDARIES (mesmos awaits dentro de finishWizard)
-  //
-  // ═══════════════════════════════════════════════════════════════════════
+  // E18 · Submit Core Orchestrator (Chain B step 5) — extraído em PR 13.
+  // Contract completo (SUBMIT-SEQUENCE, CLEANUP-SEQUENCE, RETRY semantics,
+  // FINALIZE-BOUNDARY, ASYNC BOUNDARIES, R1–R9 races) vive em
+  // `useSubmitCoreOrchestrator`. `finalize_onboarding_atomic` continua
+  // sendo a ÚNICA autoridade transacional terminal; este hook é o ÚNICO
+  // trigger automático de submit (persistFirstService é write-core
+  // separado, não submit terminal).
+
   useSubmitCoreOrchestrator({
     phase: state.phase,
     deferCompletionToParent,
