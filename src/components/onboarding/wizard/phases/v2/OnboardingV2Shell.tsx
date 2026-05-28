@@ -536,33 +536,18 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
   }, [skipDraftRestore]);
 
-  // Hardening F8: heartbeat de aba ativa + detecção de concorrência.
-  // SOMENTE telemetria silenciosa nesta fase (sem toast/UI).
-  // Prompt 5 cont.: ativa Leader Election (write-guard em flushDraft + persist*).
-  useEffect(() => {
-    const stopHeartbeat = startTabHeartbeat();
-    const stopLeader = startTabLeaderElection();
-    if (detectConcurrentTab()) {
-      void trackOnboardingEvent({
-        phase: state.phase as any,
-        event: 'error',
-        userId: user?.id,
-        meta: { kind: 'concurrent_tab_detected' },
-      });
-    }
-    return () => {
-      stopHeartbeat();
-      stopLeader();
-    };
-  }, []);
+  // E11 · Leader / Write Gating Orchestrator (Chain D) — extraído em PR 8.
+  // Contract completo vive em `useLeaderWriteGate`. Hook é o único owner
+  // de heartbeat + leader election no shell V2. `isLeader` exposto para
+  // paridade — atualmente não consumido localmente (CadastroInicialPage
+  // mantém seu próprio polling). Mantemos a leitura para evitar dead-code.
+  const { isLeader } = useLeaderWriteGate({
+    getCurrentState,
+    userId: user?.id,
+  });
+  void isLeader; // paridade comportamental — futuro banner consumirá.
 
-  // Prompt 5 cont. — Parte A: polling leve para detectar troca de liderança
-  // (aba líder anterior fechou). Mantém banner de CadastroInicialPage atualizado.
-  const [isLeader, setIsLeader] = useState<boolean>(() => isTabLeader());
-  useEffect(() => {
-    const id = setInterval(() => setIsLeader(isTabLeader()), 5000);
-    return () => clearInterval(id);
-  }, []);
+
 
   // Hardening F4: detector de abandono silencioso (15min sem interação).
   // Desabilitado se onboarding já concluído — evita ruído pós-finalize.
