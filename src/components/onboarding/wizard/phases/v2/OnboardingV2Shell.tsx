@@ -105,6 +105,7 @@ import { useBackNavigationOrchestrator } from '@/hooks/onboarding/useBackNavigat
 import { usePhaseTransitionOrchestrator } from '@/hooks/onboarding/usePhaseTransitionOrchestrator';
 import { usePersistenceRecoveryOrchestrator } from '@/hooks/onboarding/usePersistenceRecoveryOrchestrator';
 import { useHydrationCoreOrchestrator } from '@/hooks/onboarding/useHydrationCoreOrchestrator';
+import { useSubmitCoreOrchestrator } from '@/hooks/onboarding/useSubmitCoreOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
 // getLastReadDraftDiagnostics consumido dentro de usePersistenceRecoveryOrchestrator (E8, PR 9).
 import WizardErrorModal from '@/components/wizard/WizardErrorModal';
