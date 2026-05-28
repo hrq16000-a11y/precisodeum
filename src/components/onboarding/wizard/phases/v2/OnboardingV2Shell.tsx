@@ -917,11 +917,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   //   POSITION-DEPENDENCY: precisa rodar depois de E17 (zombie guard).
   useEffect(() => {
     if (state.phase !== 'done' || deferCompletionToParent) return;
-    lifecyclePhaseRef.current = 'SUBMITTING';
+    signalLifecyclePhase('SUBMITTING');
     clearOnboardingV2Draft();
     const timer = scheduleWizardTimeout(
       { phase: 'done', action: 'shell_finish_wizard', runIfStale: true },
-      () => { void finishWizard().then(() => { lifecyclePhaseRef.current = 'COMPLETED'; }); },
+      () => { void finishWizard().then(() => { signalLifecyclePhase('COMPLETED'); }); },
       300,
     );
     return () => window.clearTimeout(timer);
