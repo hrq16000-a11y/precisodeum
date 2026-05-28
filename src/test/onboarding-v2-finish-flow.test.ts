@@ -48,18 +48,23 @@ describe('Onboarding V2 — fluxo final', () => {
     expect(shellSrc).not.toMatch(/phase4_review/);
   });
 
-  it('finishWizard é fail-soft (erro não bloqueia navegação)', () => {
+  it('finishWizard é fail-LOUD: bloqueia navegação quando finalizeOnboarding retorna !ok', () => {
     const shellSrc = read('components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
-    // Procuramos o bloco da função e validamos que não retorna cedo no erro.
     const start = shellSrc.indexOf('const finishWizard');
     expect(start).toBeGreaterThan(-1);
     const end = shellSrc.indexOf('};', start) + 2;
     const fn = shellSrc.slice(start, end);
-    // Aviso (warning/warn) presente, mas sem `return;` cancelando a navegação.
+    // Caminho feliz: navega para /sucesso quando result.ok.
     expect(fn).toMatch(/navigate\('\/onboarding-v2\/sucesso'/);
-    expect(fn).toMatch(/fail-soft/i);
-    // O `return;` antigo, dentro do if(error), foi removido.
-    expect(fn).not.toMatch(/toast\.error\([^)]*Não consegui concluir/);
+    // Contrato fail-loud: `if (!result.ok)` aborta antes da navegação.
+    expect(fn).toMatch(/if\s*\(!result\.ok\)/);
+    expect(fn).toMatch(/return;/);
+    // Toast com retry — sem isso o usuário fica preso sem reação possível.
+    expect(fn).toMatch(/toast\.error\([^)]*Não foi possível concluir/);
+    expect(fn).toMatch(/Tentar novamente/);
+    // Refetch de profile permanece não-bloqueante (try/catch + warn).
+    expect(fn).toMatch(/refetchProfile/);
+    expect(fn).toMatch(/non-blocking/i);
   });
 
   it('Página de sucesso tem CTA direto para /dashboard', () => {
