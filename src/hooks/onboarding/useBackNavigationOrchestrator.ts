@@ -4,7 +4,8 @@ import {
   popReviewPhase,
 } from '@/components/onboarding/wizard/phases/v2/reviewHistory';
 import { flushLocalDraft } from '@/components/onboarding/wizard/phases/v2/flushDraft';
-import type { OnboardingState, OnboardingAction } from '@/components/onboarding/wizard/phases/v2/types';
+import type { OnboardingState } from '@/components/onboarding/wizard/phases/v2/types';
+import type { OnboardingAction } from '@/components/onboarding/wizard/phases/v2/state';
 
 /**
  * E19 · Back Navigation Orchestrator (Chain C)
