@@ -74,7 +74,7 @@ import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
 import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
 import { markPatchTouched, clearSessionTouched } from './sessionTouched';
-import { pushReviewPhase, popReviewPhase, clearReviewHistory } from './reviewHistory';
+import { pushReviewPhase, clearReviewHistory } from './reviewHistory';
 import {
   useOnboardingV2Draft,
   readOnboardingV2Draft,
