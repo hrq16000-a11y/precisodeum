@@ -594,30 +594,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
 
 
-  // Telemetria: dispara 'enter' a cada troca de fase + mede tempo na fase anterior.
-  // - Cada fase recebe `markPhaseEnter` no mount/troca.
-  // - Ao trocar de fase (cleanup), `markPhaseExit` emite o evento `phase_exit`
-  //   com `duration_ms` e `draft_source` (local/remote/seed/none).
-  // - O evento `enter` também carrega `draft_source` para segmentação.
-  // E16 · ORDER CONTRACT (Chain B step 2 · phase telemetry)
-  //   REQUIRES: E17 já chamado setActiveWizardPhase nesta fase.
-  //   PRODUCES: 'enter'/'complete' event + markPhaseEnter; cleanup → markPhaseExit.
-  useEffect(() => {
-
-    const draftSource = getOnboardingDraftSource() || 'none';
-    void trackEvent({
-      phase: state.phase,
-      event: state.phase === 'done' ? 'complete' : 'enter',
-      userId: user?.id,
-      meta: { draft_source: draftSource },
-    });
-    markPhaseEnter(state.phase);
-    const exitingPhase = state.phase;
-    return () => {
-      // Emite duração da fase que está sendo deixada.
-      void markPhaseExit(exitingPhase, { userId: user?.id });
-    };
-  }, [state.phase, user?.id]);
+  // E16 · Phase lifecycle telemetry — extraído em PR 17 (`usePhaseLifecycleTelemetry`).
+  // ORDER CONTRACT preservado: REQUIRES E17 (setActiveWizardPhase) já chamado.
+  // Mesma dep-array `[phase, userId]`, mesmo evento (`enter`/`complete`),
+  // mesmo cleanup (`markPhaseExit`). `trackEvent` injeta `meta.flow`.
+  usePhaseLifecycleTelemetry({
+    phase: state.phase,
+    userId: user?.id,
+    trackEvent,
+  });
 
   // Reporta a fase para a barra de progresso global do WizardShell.
   // E17 · ORDER CONTRACT (Chain B step 1 · phase change head)
