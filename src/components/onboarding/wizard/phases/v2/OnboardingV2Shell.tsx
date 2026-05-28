@@ -114,7 +114,7 @@ import {
 } from './bootstrap';
 import { buildWorkingHoursSummary } from './workingHours';
 // BetCardShell migrou para OnboardingShellChrome (PR 13).
-import { TERMS_VERSION, readVelocityMps, readAccuracyMeters } from '@/lib/wizardSnapshotInputs';
+// TERMS_VERSION/readAccuracyMeters/readVelocityMps migraram para buildRegistrationSnapshotPayload (PR 14).
 import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/lib/operations';
 // PR 9/11/12 — UI Composition Pass: extrações puramente visuais.
 // DraftRestoredBanner migrou para OnboardingShellChrome (PR 13).
