@@ -15,7 +15,7 @@
  */
 import type {
   OnboardingProfileData,
-  OnboardingServiceData,
+  OnboardingFirstServiceData as OnboardingServiceData,
 } from '@/components/onboarding/wizard/phases/v2/types';
 import { phase2PhotosBlockCode } from '@/lib/wizardErrorCodes';
 
