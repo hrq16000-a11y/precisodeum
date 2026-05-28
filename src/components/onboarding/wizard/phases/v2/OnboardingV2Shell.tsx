@@ -30,7 +30,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { logWizardError } from '@/lib/wizardErrorGuard';
-import { registerBackOwner, claimBackEvent } from '@/lib/wizardBackOrchestrator';
+// E19 (back orchestrator) owns registerBackOwner/claimBackEvent — extraído.
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
 import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 import { setActiveWizardPhase, scheduleWizardTimeout, neutralizeZombieTimers } from '@/lib/wizardZombieGuard';
@@ -74,7 +74,7 @@ import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
 import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
 import { markPatchTouched, clearSessionTouched } from './sessionTouched';
-import { pushReviewPhase, popReviewPhase, clearReviewHistory } from './reviewHistory';
+import { pushReviewPhase, clearReviewHistory } from './reviewHistory';
 import {
   useOnboardingV2Draft,
   readOnboardingV2Draft,
@@ -100,6 +100,7 @@ import {
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
 import { validateDraftShape } from './draftEnvelope';
 import { detectConcurrentTab, startTabHeartbeat, startTabLeaderElection, isTabLeader } from './crossTabSync';
+import { useBackNavigationOrchestrator } from '@/hooks/onboarding/useBackNavigationOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
 import { getLastReadDraftDiagnostics } from './useOnboardingV2Draft';
 import WizardErrorModal from '@/components/wizard/WizardErrorModal';
@@ -948,100 +949,17 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   }, [state.phase, deferCompletionToParent]);
 
 
-  // E19 · ORDER CONTRACT (Chain C · back navigation)
-  //   REQUIRES: state estável (ou stateRef se extraído no futuro).
-  //   PRODUCES: flushLocalDraft + flushRemoteDraft + dispatch GO_TO/evento.
-  //   CONSUMERS: Chain B reentra após dispatch GO_TO.
-  //   OWNERSHIP: registerBackOwner('v2') é o owner canônico — Bet handler
-  //              cede prioridade. claimBackEvent('v2') aplica mutex de 400ms.
-  //   POSITION-DEPENDENCY: re-binda em cada mudança de `state` (deps massivas)
-  //              — janela de 2 listeners coexistindo é coberta pelo mutex.
-  //   EXTRAÇÃO FUTURA: requer migrar leitura de `state` para stateRef.current
-  //              e fixar deps em [editMode, navigate, user?.id].
-  useEffect(() => {
+  // E19 · Back Navigation Orchestrator (Chain C) — extraído em PR 6.
+  // Contract completo vive em `useBackNavigationOrchestrator`. Listener
+  // registra UMA vez por (editMode, userId) — não rebinda em mudança de
+  // `state` (read via getCurrentState/stateRef). dispatch é estável.
+  useBackNavigationOrchestrator({
+    getCurrentState,
+    editMode,
+    userId: user?.id,
+    dispatch,
+  });
 
-    const goBack = async () => {
-      // ── ANTI-AMNÉSIA: persiste o snapshot atual (local + remoto) ANTES
-      // de despachar a troca de fase. Garante que qualquer dado digitado
-      // ainda dentro do debounce do auto-save não se perca quando o
-      // componente da fase atual desmontar.
-      try {
-        flushLocalDraft(state);
-        if (!editMode) {
-          // Em editMode evitamos overwrite remoto parcial (mesma blindagem
-          // já aplicada no auto-save). Local é seguro.
-          const { flushRemoteDraft } = await import('./flushDraft');
-          await flushRemoteDraft(state, user?.id).catch(() => { /* fail-soft */ });
-        }
-      } catch { /* fail-soft */ }
-
-      // ── MODO REVISÃO: navegação não-linear (Assistente é dono do Wizard) ─
-      // 1) Tenta desempilhar fase REAL anterior visitada nesta sessão.
-      // 2) Se a pilha esgota, delega ao WizardShell via evento global, que
-      //    sabe retroceder linearmente pela UNIFIED_PHASE_ORDER (incluindo
-      //    voltar de phase2_service para a triagem). Nunca cai no Dashboard
-      //    abruptamente: o Voltar é "infinito" até a Step 1.
-      if (editMode) {
-        const previous = popReviewPhase();
-        if (previous && previous !== state.phase) {
-          dispatch({ type: 'GO_TO', phase: previous as any });
-          return;
-        }
-        // Pilha esgotada — peça ao WizardShell para retroceder na régua unificada.
-        try {
-          window.dispatchEvent(new CustomEvent('wizard:request-prev-unified', {
-            detail: { fromV2Phase: state.phase },
-          }));
-        } catch { /* fail-soft */ }
-        return;
-      }
-
-      // ── FLUXO NORMAL (new_signup): mapa estático de antecessores ───────
-      switch (state.phase) {
-        // phase1_* removidas em mai/2026; phase2_service é a 1ª fase viva do V2.
-        // Voltar de phase2_service é responsabilidade do WizardShell (sai para triage_celebration).
-        case 'phase2_service':
-          /* noop — WizardShell trata o retorno à triagem */
-          break;
-        case 'phase2_details':
-          dispatch({ type: 'GO_TO', phase: 'phase2_service' });
-          break;
-        case 'phase2_photos':
-          dispatch({ type: 'GO_TO', phase: 'phase2_details' });
-          break;
-        case 'phase3_celebration':
-          dispatch({ type: 'GO_TO', phase: 'phase2_photos' });
-          break;
-        case 'phase4_document':
-          dispatch({ type: 'GO_TO', phase: 'phase3_celebration' });
-          break;
-        case 'phase4_avatar':
-          dispatch({ type: 'GO_TO', phase: 'phase4_document' });
-          break;
-        case 'phase4_extras_a':
-          dispatch({ type: 'GO_TO', phase: 'phase4_avatar' });
-          break;
-        case 'phase4_extras_b':
-          dispatch({ type: 'GO_TO', phase: 'phase4_extras_a' });
-          break;
-      }
-    };
-    // Registra como owner 'v2' do orquestrador unificado de Voltar.
-    // V2 tem prioridade sobre Bet — quando ambos estão registrados (durante
-    // handoff), apenas o V2 processa o evento.
-    const releaseOwner = registerBackOwner('v2');
-    const handler = (e: Event) => {
-      // Mutex global: ignora se outro listener já consumiu este evento ou
-      // se ainda estamos no cooldown anti-double-tap (400ms).
-      if (!claimBackEvent('v2', e)) return;
-      void goBack();
-    };
-    window.addEventListener('wizard:request-back', handler as EventListener);
-    return () => {
-      window.removeEventListener('wizard:request-back', handler as EventListener);
-      releaseOwner();
-    };
-  }, [state, editMode, navigate, user?.id]);
 
   // Limpeza do histórico de revisão ao SAIR do modo edit_profile (ex.: usuário
   // volta para new_signup na mesma aba). Garante que pilha velha não vaze
