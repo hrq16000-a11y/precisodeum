@@ -1,7 +1,0 @@
-import type { ManifoldStabilityClass, RuntimeContinuityEnvelope, RuntimeContinuityMetric, RuntimeContinuumSingularity, RuntimeDeformationContinuum, RuntimePropagationGeodesic } from './manifoldTypes';
-export function explainManifold(c: ManifoldStabilityClass): string { switch (c) { case 'STABLE': return 'manifold estável e contínuo'; case 'CONTINUOUS': return 'manifold contínuo com variações leves'; case 'DISTORTED': return 'manifold distorcido mas íntegro'; case 'FRACTURED': return 'manifold fraturado em sub-variedades'; case 'SINGULAR': return 'manifold com singularidade contínua'; } }
-export function explainContinuity(c: RuntimeContinuityEnvelope): string { return `continuidade ${c.class.toLowerCase()} (força=${c.strength.toFixed(2)}, breaks=${c.breaks})`; }
-export function explainGeodesics(g: RuntimePropagationGeodesic): string { return `geodésicas ${g.propagation.toLowerCase()} (length=${g.length}, contenção=${g.containment.toFixed(2)})`; }
-export function explainDeformation(d: RuntimeDeformationContinuum): string { return `deformação ${d.deformation.toLowerCase()} (pressão=${d.pressure.toFixed(2)})`; }
-export function explainContinuumMetrics(m: RuntimeContinuityMetric): string { return `métricas score=${m.score.toFixed(2)} equilíbrio=${m.equilibrium.toFixed(2)} estável=${m.stable}`; }
-export function explainContinuumSingularity(s: RuntimeContinuumSingularity): string { return `singularidade ${s.class.toLowerCase()} (spread=${s.spread.toFixed(2)})`; }
