@@ -117,12 +117,17 @@ import { buildWorkingHoursSummary } from './workingHours';
 import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
 import { TERMS_VERSION, readVelocityMps, readAccuracyMeters } from '@/lib/wizardSnapshotInputs';
 import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/lib/operations';
-// PR 9/11 — UI Composition Pass: extrações puramente visuais.
+// PR 9/11/12 — UI Composition Pass: extrações puramente visuais.
 import { DraftRestoredBanner } from '@/components/onboarding/v2/phases/DraftRestoredBanner';
 import {
   phaseComponentMap,
-  isMigratedPhase,
 } from '@/components/onboarding/v2/phases/phaseComponentMap';
+import {
+  buildPhase2ServiceEncouragement,
+  buildPhase2DetailsEncouragement,
+  buildPhase2PhotosReadyEncouragement,
+  buildPhase2PhotosBlockedDiagnostics,
+} from '@/components/onboarding/v2/phases/buildPhaseProps';
 import { useOnboardingViewModel } from '@/hooks/onboarding/useOnboardingViewModel';
 
 
