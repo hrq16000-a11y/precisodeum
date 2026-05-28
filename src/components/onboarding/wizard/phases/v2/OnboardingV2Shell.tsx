@@ -21,7 +21,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// framer-motion: motion/AnimatePresence migraram para OnboardingShellChrome (PR 13).
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 // CheckCircle2 migrou para DraftRestoredBanner (PR 9 UI Composition Pass).
@@ -58,7 +58,7 @@ import {
 // (PR 10/11/12), não diretamente pelo shell. Após PR 12 o switch legado
 // foi eliminado — o registry é a única fonte de routing visual.
 // Phase4Review removido — Wizard publica silenciosamente, sem tela de revisão.
-import { AutoSaveBadge } from './AutoSaveBadge';
+// AutoSaveBadge migrou para OnboardingShellChrome (PR 13).
 import { nullifyEmpty } from './optionalPatch';
 import { playWizardTransition } from '@/lib/wizardTransition';
 import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
@@ -93,7 +93,7 @@ import {
   getOnboardingDraftSource,
   setOnboardingFlow,
 } from './telemetry';
-import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
+// RemoteDraftRecoveryModal migrou para OnboardingShellModals (PR 13).
 import { validateDraftShape } from './draftEnvelope';
 import { isTabLeader } from './crossTabSync';
 import { useLeaderWriteGate } from '@/hooks/onboarding/useLeaderWriteGate';
@@ -105,7 +105,7 @@ import { useHydrationCoreOrchestrator } from '@/hooks/onboarding/useHydrationCor
 import { useSubmitCoreOrchestrator } from '@/hooks/onboarding/useSubmitCoreOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
 // getLastReadDraftDiagnostics consumido dentro de usePersistenceRecoveryOrchestrator (E8, PR 9).
-import WizardErrorModal from '@/components/wizard/WizardErrorModal';
+// WizardErrorModal migrou para OnboardingShellModals (PR 13).
 import {
   buildOnboardingCoreLocks,
   buildOnboardingV2BootstrapState,
@@ -113,11 +113,13 @@ import {
   resolveOnboardingV2SeedState,
 } from './bootstrap';
 import { buildWorkingHoursSummary } from './workingHours';
-import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
+// BetCardShell migrou para OnboardingShellChrome (PR 13).
 import { TERMS_VERSION, readVelocityMps, readAccuracyMeters } from '@/lib/wizardSnapshotInputs';
 import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/lib/operations';
 // PR 9/11/12 — UI Composition Pass: extrações puramente visuais.
-import { DraftRestoredBanner } from '@/components/onboarding/v2/phases/DraftRestoredBanner';
+// DraftRestoredBanner migrou para OnboardingShellChrome (PR 13).
+import { OnboardingShellChrome } from '@/components/onboarding/v2/layout/OnboardingShellChrome';
+import { OnboardingShellModals } from '@/components/onboarding/v2/layout/OnboardingShellModals';
 import {
   phaseComponentMap,
 } from '@/components/onboarding/v2/phases/phaseComponentMap';
@@ -2571,69 +2573,58 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   const viewModel = useOnboardingViewModel({ phase: state.phase });
   void viewModel.isCelebrationOrLater; // mantido por compat de testes existentes.
 
+  // PR 13 — Chrome/modal externos extraídos para componentes presentational
+  // em `src/components/onboarding/v2/layout/`. O shell mantém runtime/owner-
+  // ship intactos; apenas a composição visual final foi achatada.
   return (
     <>
-      {/* Aviso "rascunho restaurado" — diferencia local x remoto.
-          UI extraída para DraftRestoredBanner (PR 9). */}
-      <DraftRestoredBanner draftRestored={draftRestored} />
+      <OnboardingShellChrome
+        draftRestored={draftRestored}
+        showAutoSaveBadge={viewModel.showAutoSaveBadge}
+        autoSaveSignal={state.profile}
+        phaseKey={state.phase}
+      >
+        {renderPhase()}
+      </OnboardingShellChrome>
 
-      <BetCardShell animated={false}>
-        {viewModel.showAutoSaveBadge && (
-          <div className="mb-2 flex items-center justify-end">
-            <AutoSaveBadge signal={state.profile} />
-          </div>
-        )}
-{/* Faixa "Já preenchido" removida — vazava nomes técnicos (full_name, document)
-            ao usuário final. Os locks continuam ativos via `coreLocks`/`pendingCoreFields`
-            para a lógica interna, mas sem renderização. */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={state.phase}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25 }}
-          >
-            {renderPhase()}
-          </motion.div>
-        </AnimatePresence>
-      </BetCardShell>
-
-      <RemoteDraftRecoveryModal
-        open={showRemoteModal}
-        payload={remoteDraft?.payload || null}
-        phase={(remoteDraft?.phase as any) || null}
-        updatedAt={remoteDraft?.updated_at || null}
-        onContinue={handleRemoteContinue}
-        onDiscard={handleRemoteDiscard}
-      />
-
-      <WizardErrorModal
-        open={!!errorModal}
-        onOpenChange={(v) => { if (!v) setErrorModal(null); }}
-        code={errorModal?.code || ''}
-        step={String(state.phase)}
-        missingFields={errorModal?.missingFields}
-        technicalMessage={errorModal?.techMessage ?? null}
-        technicalCode={errorModal?.techCode ?? null}
-        contextSnapshot={{
-          category: (state.service?.category_ids?.[0]) || null,
-          city: state.profile?.city || null,
-          state_uf: state.profile?.state || null,
-          lastPersistError: lastPersistError
-            ? { message: lastPersistError.message, code: lastPersistError.code || null }
-            : null,
+      <OnboardingShellModals
+        remote={{
+          open: showRemoteModal,
+          snapshot: {
+            payload: remoteDraft?.payload || null,
+            phase: (remoteDraft?.phase as string | null) || null,
+            updatedAt: remoteDraft?.updated_at || null,
+          },
+          onContinue: handleRemoteContinue,
+          onDiscard: handleRemoteDiscard,
         }}
-        onRetry={() => errorModal?.onRetry?.()}
-        onBack={() => {
-          void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
-            requestWizardBackForPhase({
-              phase: state.phase,
-              source: 'error_modal',
-              editMode,
-              meta: { code: errorModal?.code || null },
+        error={{
+          open: !!errorModal,
+          onOpenChange: (v) => { if (!v) setErrorModal(null); },
+          code: errorModal?.code || '',
+          step: String(state.phase),
+          missingFields: errorModal?.missingFields,
+          technicalMessage: errorModal?.techMessage ?? null,
+          technicalCode: errorModal?.techCode ?? null,
+          contextSnapshot: {
+            category: (state.service?.category_ids?.[0]) || null,
+            city: state.profile?.city || null,
+            state_uf: state.profile?.state || null,
+            lastPersistError: lastPersistError
+              ? { message: lastPersistError.message, code: lastPersistError.code || null }
+              : null,
+          },
+          onRetry: () => errorModal?.onRetry?.(),
+          onBack: () => {
+            void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
+              requestWizardBackForPhase({
+                phase: state.phase,
+                source: 'error_modal',
+                editMode,
+                meta: { code: errorModal?.code || null },
+              });
             });
-          });
+          },
         }}
       />
     </>
