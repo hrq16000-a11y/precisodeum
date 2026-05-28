@@ -30,9 +30,12 @@ const read = (p: string) => fs.readFileSync(p, 'utf8');
 describe('Skip 1º serviço — E2E unificado', () => {
   it('Phase2Service.skip aciona continueWithoutFirstService (não navega ao dashboard)', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
-    expect(shell).toMatch(/onSkip=\{\(\)\s*=>\s*\{[\s\S]*?continueWithoutFirstService\(\)/);
-    expect(shell).not.toMatch(/onSkip=\{\(\)\s*=>\s*navigate\(['"]\/dashboard/);
+    // Após a migração para `phaseComponentMap`, o handler `onSkip` é
+    // declarado como propriedade do objeto de props (não mais atributo JSX).
+    expect(shell).toMatch(/onSkip:\s*\(\)\s*=>\s*\{[\s\S]*?continueWithoutFirstService\(\)/);
+    expect(shell).not.toMatch(/onSkip[:=]\s*\(\)\s*=>\s*navigate\(['"]\/dashboard/);
   });
+
 
   it('continueWithoutFirstService loga nextRoute=phase4_document e despacha GO_TO', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
@@ -95,16 +98,20 @@ describe('Skip 1º serviço — E2E unificado', () => {
 
   it('Shell passa locked=coreLocks.document para Phase4Document e não re-grava se já travado', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
-    expect(shell).toContain('locked={!!coreLocks.document}');
-    expect(shell).toMatch(/if \(!coreLocks\.document\)\s*\{\s*await persistPatch/);
+    // `phaseComponentMap` recebe props como objeto → property syntax.
+    expect(shell).toMatch(/locked:\s*!!coreLocks\.document/);
+    expect(shell).toMatch(/if \(!coreLocks\.document\)\s*\{\s*\n?\s*ok = await persistPatch/);
   });
+
 
   it('Phase4ExtrasA pede tempo de experiência e Phase4ExtrasB avança para extras finais do wizard', () => {
     const finalPhase = read('src/components/onboarding/wizard/phases/v2/Phase4Final.tsx');
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(finalPhase).toContain('Tempo de experiência');
     expect(finalPhase).toContain('years_experience');
-    expect(shell).toMatch(/phase4_extras_b[\s\S]*onSkip=\{\(\) => \{ track\('skip'\); dispatch\(\{ type: 'NEXT' \}\); \}\}/);
-    expect(shell).toMatch(/phase4_extras_b[\s\S]*dispatch\(\{ type: 'NEXT' \}\);/);
+    // phaseComponentMap → onSkip declarado como propriedade.
+    expect(shell).toMatch(/phase4_extras_b[\s\S]*?onSkip:\s*[^,]+track\('skip'\)/);
+    expect(shell).toMatch(/phase4_extras_b[\s\S]*?dispatch\(\{\s*type:\s*'NEXT'\s*\}\)/);
   });
+
 });

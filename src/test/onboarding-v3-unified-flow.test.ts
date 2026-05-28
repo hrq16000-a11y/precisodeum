@@ -95,15 +95,17 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).toContain('MainOrchestrator');
     expect(shell).toContain('wizardReducer');
     expect(shell).toContain('WizardProgressBar');
-    // Cada fase tem o seu próprio botão Voltar interno; o shell expõe
-    // navegação global via wizard:request-back / source: 'global-nav'.
-    expect(shell).toMatch(/source:\s*['"]global-nav['"]/);
     // Telemetria unificada por fase.
     expect(shell).toContain("variant: 'unified'");
     // Não navega entre rotas para fazer handoff.
     expect(shell).not.toMatch(/navigate\(['"]\/onboarding-v2/);
     expect(shell).not.toMatch(/navigate\(['"]\/cadastro-bet/);
+    // Cada fase tem o seu próprio botão Voltar interno; a navegação global
+    // é entregue via evento `wizard:request-back`, listado pelo BetModeShell.
+    const bet = read('src/components/onboarding/wizard/phases/bet/BetModeShell.tsx');
+    expect(bet).toMatch(/addEventListener\(['"]wizard:request-back['"]/);
   });
+
 
   it('PhaseCelebration sugere instalar o app via InstallAppCard', () => {
     const phase3 = read('src/components/onboarding/wizard/phases/v2/Phase3Celebration.tsx');
@@ -136,8 +138,12 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).not.toContain('bet-first-service');
     expect(shell).toContain('internalHandoffFromTriage');
     expect(shell).toContain('deferCompletionToParent');
-    expect(shell).toContain('resolveOnboardingV2SeedState');
-    expect(shell).toContain('onboarding-v2-phase-regression-blocked');
+    // Hidratação + anti-regressão de fase moveram para o hook orchestrator.
+    // O shell continua sendo o ÚNICO consumidor desse hook.
+    expect(shell).toContain('useHydrationCoreOrchestrator');
+    const hydration = read('src/hooks/onboarding/useHydrationCoreOrchestrator.ts');
+    expect(hydration).toContain('resolveOnboardingV2SeedState');
+    expect(hydration).toContain('onboarding-v2-phase-regression-blocked');
   });
 
   it('WizardShell segura a conclusão final e oferece saídas para dashboard, serviços, portfólio e app', () => {
@@ -147,10 +153,11 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).toContain('Step21_PortfolioAlbums');
     expect(shell).toContain('finalizeUnifiedOnboarding');
     expect(shell).toContain('Continuar cadastrando serviços');
-    expect(shell).toContain('Abrir portfólio');
-    expect(shell).toContain('Conhecer o dashboard');
+    expect(shell).toContain('Criar Portfólio');
+    expect(shell).toContain('Ir para o dashboard');
     expect(shell).toContain('InstallAppCard');
   });
+
 
   it('Etapas finais deixam claro o atalho para painel, perfil e fotos do portfólio', () => {
     const moreServices = read('src/components/onboarding/wizard/phases/Step20_MoreServices.tsx');
@@ -181,8 +188,15 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
 
   it('Profissional finaliza marcando onboarding_completed=true mesmo sem serviço', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
-    expect(shell).toMatch(/onboarding_step:\s*5,\s*onboarding_completed:\s*true/);
+    // A escrita literal de `onboarding_step: 5, onboarding_completed: true`
+    // é responsabilidade da RPC `finalize_onboarding_atomic`. O shell apenas
+    // chama `finalizeOnboarding({ extraProfilePatch: { profile_type: 'provider' } })`.
+    expect(shell).toMatch(/finalizeOnboarding\(\{/);
+    expect(shell).toMatch(/extraProfilePatch:\s*\{\s*profile_type:\s*'provider'\s*\}/);
+    const finalizeLib = read('src/lib/finalizeOnboarding.ts');
+    expect(finalizeLib).toContain('finalize_onboarding_atomic');
   });
+
 
   it('Sidebar admin não anuncia mais /admin/onboarding (V1)', () => {
     const nav = read('src/components/admin/AdminGroupNav.tsx');
