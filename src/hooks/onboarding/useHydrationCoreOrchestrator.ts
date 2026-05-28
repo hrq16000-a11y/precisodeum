@@ -13,10 +13,8 @@ import {
   parseStartingPrice,
 } from '@/lib/onboarding/persistence/providerPatchHelpers';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
-import type {
-  OnboardingState,
-  OnboardingAction,
-} from '@/components/onboarding/wizard/phases/v2/types';
+import type { OnboardingState } from '@/components/onboarding/wizard/phases/v2/types';
+import type { OnboardingAction } from '@/components/onboarding/wizard/phases/v2/state';
 
 type LifecyclePhase = 'BOOT' | 'HYDRATING' | 'HYDRATED' | 'READY' | 'SUBMITTING' | 'COMPLETED';
 
