@@ -52,12 +52,11 @@ import {
 // Phase1Action/Kind/Location/Contact REMOVIDOS na consolidação Bet Mode
 // (mai/2026). Esses passos eram duplicações das telas da triagem (Bet Mode);
 // agora a fase principal começa direto em phase2_service.
-// Phase2Service / Phase2Details / Phase4ExtrasA / Phase4ExtrasB são
-// importados pelos wrappers de `phaseComponentMap` (PR 10), não diretamente
-// pelo shell.
-import { Phase2Photos } from './Phase2Photos';
+// Phase2Service / Phase2Details / Phase2Photos / Phase4Document / Phase4Avatar
+// / Phase4ExtrasA / Phase4ExtrasB são importados pelos wrappers de
+// `phaseComponentMap` (PR 10/11), não diretamente pelo shell. Phase3Celebration
+// e PhaseRepairContact permanecem no switch legado por enquanto.
 import { Phase3Celebration } from './Phase3Celebration';
-import { Phase4Document, Phase4Avatar } from './Phase4Final';
 // Phase4Review removido — Wizard publica silenciosamente, sem tela de revisão.
 import { PhaseRepairContact } from './PhaseRepairContact';
 import { AutoSaveBadge } from './AutoSaveBadge';
@@ -72,7 +71,6 @@ import {
   recoverBackoffDelayMs,
 } from '@/lib/wizardErrorCodes';
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
-import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
 import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
 import { markPatchTouched, clearSessionTouched } from './sessionTouched';
 import { pushReviewPhase, clearReviewHistory } from './reviewHistory';
