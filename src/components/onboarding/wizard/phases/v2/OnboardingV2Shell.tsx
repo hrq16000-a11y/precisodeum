@@ -753,7 +753,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     });
 
     dispatch({ type: 'HYDRATE', state: resolved });
-    lifecyclePhaseRef.current = 'HYDRATED';
+    signalLifecyclePhase('HYDRATED');
   }, [profile, provider, internalHandoffFromTriage]);
 
 
