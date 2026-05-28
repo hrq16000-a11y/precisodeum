@@ -247,19 +247,6 @@ const LazyImage = ({
         )}
         onLoad={(e) => {
           setLoaded(true);
-          if (surface) {
-            const dur =
-              (typeof performance !== 'undefined' ? performance.now() : Date.now()) -
-              startedAtRef.current;
-            logImageLoad({
-              variant: 'medium',
-              url: variants.medium,
-              durationMs: dur,
-              mode: 'blur-up',
-              surface,
-              renderedWidth: e.currentTarget.clientWidth || null,
-            });
-          }
           onLoad?.(e);
         }}
         onError={(e) => {
