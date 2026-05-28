@@ -24,7 +24,6 @@ interface RegistrationSnapshotProfile {
   longitude?: number | null;
   accuracy_m?: number | null;
   velocity_mps?: number | null;
-  [key: string]: unknown;
 }
 
 export interface RegistrationSnapshotPayload {
