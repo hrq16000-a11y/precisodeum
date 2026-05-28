@@ -117,10 +117,15 @@ describe('Onboarding V2 — fluxo final', () => {
     const btnSrc = read('components/onboarding/wizard/EditModeSkipButton.tsx');
     expect(btnSrc).toMatch(/return null/);
     expect(btnSrc).toMatch(/DESATIVADO|no-op/i);
-    // OnboardingV2Shell ainda escuta o evento (caso futuras phases voltem a emitir).
+    // O listener do evento foi extraído para `useWizardSkipListener`. O shell
+    // V2 ainda é o único consumidor desse hook (caso futuras phases voltem a
+    // emitir o evento).
     const v2Src = read('components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
-    expect(v2Src).toContain("'wizard:request-skip'");
+    expect(v2Src).toContain('useWizardSkipListener');
+    const listenerSrc = read('hooks/onboarding/useWizardSkipListener.ts');
+    expect(listenerSrc).toContain("'wizard:request-skip'");
   });
+
 
   it('rotas protegidas do onboarding não retornam para /cadastro-inicial após /onboarding-v2/sucesso', () => {
     const profile = { profile_type: 'provider', onboarding_completed: false, onboarding_step: 4 };
