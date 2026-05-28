@@ -32,12 +32,16 @@ describe('V3→V2 first service continuity (handoff interno)', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     // O shell delega hidratação + guard de regressão para o hook orchestrator.
     expect(shell).toContain('useHydrationCoreOrchestrator');
-    expect(shell).toContain('Já preenchido:');
     expect(shell).not.toContain("searchParams.get('source')");
     const hydration = read('src/hooks/onboarding/useHydrationCoreOrchestrator.ts');
     expect(hydration).toContain('resolveOnboardingV2SeedState');
     expect(hydration).toContain('onboarding-v2-phase-regression-blocked');
+    // A indicação "Já preenchido" passou a viver no componente dedicado
+    // `PrefilledBadge` (a faixa textual do chrome foi removida em PR 17).
+    const badge = read('src/components/onboarding/wizard/PrefilledBadge.tsx');
+    expect(badge).toContain("'Já preenchido'");
   });
+
 
 
   it('wizardReducer mantém triage_pro_document na ordem visual do profissional', () => {
