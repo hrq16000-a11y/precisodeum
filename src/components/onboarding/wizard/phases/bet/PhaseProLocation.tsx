@@ -501,7 +501,16 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
               data-testid="location-source-pill"
               className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground/80"
             >
-              Origem: {effectiveSource === 'gps' ? 'GPS' : effectiveSource === 'cep' ? 'CEP' : effectiveSource === 'manual' ? 'Manual' : 'Não definida'}
+              Origem:{' '}
+              {effectiveSource === 'gps'
+                ? 'GPS'
+                : effectiveSource === 'cep'
+                ? 'CEP'
+                : effectiveSource === 'manual'
+                ? 'Manual'
+                : effectiveSource === 'ip'
+                ? 'IP (aproximada)'
+                : 'Não definida'}
             </span>
             {isHydratedFromDraft && (
               <span
