@@ -50,7 +50,6 @@ export interface PhaseRendererMap {
  * mas agora coincide 1:1 com `OnboardingPhase` — todas as fases migraram.
  */
 export type MigratedPhase = keyof PhaseRendererMap;
-export type AllOnboardingPhases = OnboardingPhase;
 
 /**
  * Registry de componentes — TYPE-EXHAUSTIVE. O `satisfies` garante em

@@ -1,13 +1,10 @@
 /**
- * buildPhaseVisualState — builder PURO (sem hooks, sem refs, sem side-effects)
- * que reagrupa derivações já calculadas pelo `useOnboardingViewModel` em um
- * único objeto imutável tipado, pronto para consumo declarativo no shell.
+ * buildPhaseVisualState — builder PURO que reagrupa derivações já
+ * calculadas pelo `useOnboardingViewModel` em um objeto imutável tipado.
  *
- * Não duplica regras de fase: lê o ViewModel + a fase corrente e devolve
- * o mesmo conjunto de booleans/strings já validados em testes, evitando
- * que o shell precise referenciar 4–5 campos avulsos no tail JSX.
- *
- * PR 15 — Final Shell Density Pass (UI-only).
+ * PR 16 — consolidação final: mantém apenas os campos efetivamente
+ * consumidos pelo `buildShellRenderState` / chrome. Sem hooks, sem refs,
+ * sem effects.
  */
 import type { OnboardingPhase } from '@/components/onboarding/wizard/phases/v2/types';
 import type { OnboardingViewModel } from '@/hooks/onboarding/useOnboardingViewModel';
@@ -15,17 +12,7 @@ import type { OnboardingViewModel } from '@/hooks/onboarding/useOnboardingViewMo
 export interface PhaseVisualState {
   readonly phase: OnboardingPhase;
   readonly phaseKey: string;
-  readonly isTerminalPhase: boolean;
-  readonly isRepairPhase: boolean;
-  readonly showProgressChrome: boolean;
-  readonly showCompletionChrome: boolean;
   readonly showAutoSaveBadge: boolean;
-  readonly showDraftBanner: boolean;
-  readonly showEncouragement: boolean;
-  readonly usesCompactLayout: boolean;
-  readonly isMigratedPhase: boolean;
-  readonly isMediaFlow: boolean;
-  readonly isProfileCompletionFlow: boolean;
 }
 
 export const buildPhaseVisualState = (
@@ -34,17 +21,7 @@ export const buildPhaseVisualState = (
 ): PhaseVisualState => ({
   phase,
   phaseKey: phase,
-  isTerminalPhase: viewModel.isTerminalPhase,
-  isRepairPhase: viewModel.isRepairPhase,
-  showProgressChrome: viewModel.showProgressChrome,
-  showCompletionChrome: viewModel.showCompletionChrome,
   showAutoSaveBadge: viewModel.showAutoSaveBadge,
-  showDraftBanner: viewModel.showDraftBanner,
-  showEncouragement: viewModel.showEncouragement,
-  usesCompactLayout: viewModel.usesCompactLayout,
-  isMigratedPhase: viewModel.isMigratedPhase,
-  isMediaFlow: viewModel.isMediaFlow,
-  isProfileCompletionFlow: viewModel.isProfileCompletionFlow,
 });
 
 export default buildPhaseVisualState;
