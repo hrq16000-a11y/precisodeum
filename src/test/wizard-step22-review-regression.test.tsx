@@ -93,25 +93,27 @@ describe('Step22_Review', () => {
   beforeEach(() => {
     if (typeof window !== 'undefined') localStorage.clear();
     supabaseMock.from.mockReset();
+    supabaseMock.rpc.mockReset();
   });
 
-  it('mostra resumo com 5 linhas após carregar', async () => {
+  function setFromTablesOnly(servicesCount: number, albumsCount: number) {
     supabaseMock.from.mockImplementation((table: string) => {
-      if (table === 'providers')
-        return makeProvidersOk({
-          id: 'p1',
-          city: 'Curitiba',
-          cpf: '12345678901',
-          working_hours_struct: { mon: { start: '09:00' } },
-        });
-      if (table === 'services') return makeServicesCount(2);
-      if (table === 'portfolio_albums') return makeAlbumsCount(1);
+      if (table === 'services') return makeServicesCount(servicesCount);
+      if (table === 'portfolio_albums') return makeAlbumsCount(albumsCount);
       throw new Error(`unexpected ${table}`);
     });
+  }
 
-    render(
-      <Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />,
-    );
+  it('mostra resumo com 5 linhas após carregar', async () => {
+    setProviderRpcOk({
+      id: 'p1',
+      city: 'Curitiba',
+      cpf: '12345678901',
+      working_hours_struct: { mon: { start: '09:00' } },
+    });
+    setFromTablesOnly(2, 1);
+
+    render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
 
     await waitFor(() => {
       expect(screen.getByTestId('review-row-identity')).toBeInTheDocument();
@@ -126,13 +128,8 @@ describe('Step22_Review', () => {
   });
 
   it('dispara onEdit ao clicar em "Editar Serviços"', async () => {
-    supabaseMock.from.mockImplementation((table: string) => {
-      if (table === 'providers')
-        return makeProvidersOk({ id: 'p1', city: 'SP', working_hours_struct: {} });
-      if (table === 'services') return makeServicesCount(1);
-      if (table === 'portfolio_albums') return makeAlbumsCount(0);
-      throw new Error(`unexpected ${table}`);
-    });
+    setProviderRpcOk({ id: 'p1', city: 'SP', working_hours_struct: {} });
+    setFromTablesOnly(1, 0);
 
     const onEdit = vi.fn();
     render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={onEdit} />);
@@ -144,17 +141,8 @@ describe('Step22_Review', () => {
   });
 
   it('mostra mensagem de erro quando providers query falha', async () => {
+    setProviderRpcError('boom');
     supabaseMock.from.mockImplementation((table: string) => {
-      if (table === 'providers')
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              maybeSingle: vi
-                .fn()
-                .mockResolvedValue({ data: null, error: { message: 'boom' } }),
-            }),
-          }),
-        };
       throw new Error(`unexpected ${table}`);
     });
 
@@ -167,19 +155,14 @@ describe('Step22_Review', () => {
   });
 
   it('mostra lista detalhada de pendências (actions) quando há lacunas', async () => {
-    supabaseMock.from.mockImplementation((table: string) => {
-      if (table === 'providers')
-        return makeProvidersOk({
-          id: 'p1',
-          city: 'Curitiba',
-          working_hours_struct: {},
-          cpf: null,
-          cnpj: null,
-        });
-      if (table === 'services') return makeServicesCount(0);
-      if (table === 'portfolio_albums') return makeAlbumsCount(0);
-      throw new Error(`unexpected ${table}`);
+    setProviderRpcOk({
+      id: 'p1',
+      city: 'Curitiba',
+      working_hours_struct: {},
+      cpf: null,
+      cnpj: null,
     });
+    setFromTablesOnly(0, 0);
 
     render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
 
@@ -215,16 +198,8 @@ describe('Step22_Review', () => {
         },
       }),
     );
-
+    setProviderRpcReject('Failed to fetch');
     supabaseMock.from.mockImplementation((table: string) => {
-      if (table === 'providers')
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              maybeSingle: vi.fn().mockRejectedValue(new Error('Failed to fetch')),
-            }),
-          }),
-        };
       throw new Error(`unexpected ${table}`);
     });
 
@@ -240,10 +215,7 @@ describe('Step22_Review', () => {
   });
 
   it('NÃO mostra banner de "rascunho desatualizado" só por idade — sem schemaVersion divergente', async () => {
-    // Regra atual: idade pura (>24h) não basta para sinalizar desatualização.
-    // Apenas divergência de schemaVersion dispara o banner — drafts antigos
-    // mas compatíveis seguem usáveis sem alarme falso.
-    const oldSavedAt = Date.now() - 1000 * 60 * 60 * 26; // 26h atrás
+    const oldSavedAt = Date.now() - 1000 * 60 * 60 * 26;
     localStorage.setItem(
       'onboarding_v3_institutional_final',
       JSON.stringify({
@@ -252,16 +224,8 @@ describe('Step22_Review', () => {
         service: { name: 'Pintura', gallery_urls: [] },
       }),
     );
-
+    setProviderRpcReject('Failed to fetch');
     supabaseMock.from.mockImplementation((table: string) => {
-      if (table === 'providers')
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              maybeSingle: vi.fn().mockRejectedValue(new Error('Failed to fetch')),
-            }),
-          }),
-        };
       throw new Error(`unexpected ${table}`);
     });
 
@@ -274,19 +238,14 @@ describe('Step22_Review', () => {
   });
 
   it('mostra botões de copiar pendência por linha quando há ações pendentes', async () => {
-    supabaseMock.from.mockImplementation((table: string) => {
-      if (table === 'providers')
-        return makeProvidersOk({
-          id: 'p1',
-          city: 'Curitiba',
-          working_hours_struct: {},
-          cpf: null,
-          cnpj: null,
-        });
-      if (table === 'services') return makeServicesCount(0);
-      if (table === 'portfolio_albums') return makeAlbumsCount(0);
-      throw new Error(`unexpected ${table}`);
+    setProviderRpcOk({
+      id: 'p1',
+      city: 'Curitiba',
+      working_hours_struct: {},
+      cpf: null,
+      cnpj: null,
     });
+    setFromTablesOnly(0, 0);
 
     render(<Step22_Review onBack={vi.fn()} onFinalize={vi.fn()} onEdit={vi.fn()} />);
 
@@ -298,27 +257,18 @@ describe('Step22_Review', () => {
   });
 
   it('NÃO mostra banner "rascunho desatualizado" quando o draft local é recente', async () => {
-    const recentSavedAt = Date.now() - 1000 * 60 * 5; // 5 min atrás
+    const recentSavedAt = Date.now() - 1000 * 60 * 5;
     localStorage.setItem(
       'onboarding_v3_institutional_final',
       JSON.stringify({
         savedAt: recentSavedAt,
-        // versão atual do schema — não deve marcar como desatualizado
         schemaVersion: 'v3.2026-05',
         profile: { city: 'Curitiba' },
         service: { name: 'Pintura', gallery_urls: [] },
       }),
     );
-
+    setProviderRpcReject('Failed to fetch');
     supabaseMock.from.mockImplementation((table: string) => {
-      if (table === 'providers')
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              maybeSingle: vi.fn().mockRejectedValue(new Error('Failed to fetch')),
-            }),
-          }),
-        };
       throw new Error(`unexpected ${table}`);
     });
 
@@ -327,31 +277,22 @@ describe('Step22_Review', () => {
     await waitFor(() => {
       expect(screen.getByTestId('step22-local-fallback')).toBeInTheDocument();
     });
-    // Banner de desatualizado NÃO deve aparecer em draft fresco + schema atual
     expect(screen.queryByTestId('step22-draft-outdated')).toBeNull();
   });
 
   it('mostra banner "rascunho desatualizado" quando o schemaVersion difere', async () => {
-    const recentSavedAt = Date.now() - 1000 * 60 * 5; // 5 min — recente
+    const recentSavedAt = Date.now() - 1000 * 60 * 5;
     localStorage.setItem(
       'onboarding_v3_institutional_final',
       JSON.stringify({
         savedAt: recentSavedAt,
-        schemaVersion: 'v2.2025-01', // versão antiga
+        schemaVersion: 'v2.2025-01',
         profile: { city: 'Curitiba' },
         service: { name: 'Pintura', gallery_urls: [] },
       }),
     );
-
+    setProviderRpcReject('Failed to fetch');
     supabaseMock.from.mockImplementation((table: string) => {
-      if (table === 'providers')
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              maybeSingle: vi.fn().mockRejectedValue(new Error('Failed to fetch')),
-            }),
-          }),
-        };
       throw new Error(`unexpected ${table}`);
     });
 
