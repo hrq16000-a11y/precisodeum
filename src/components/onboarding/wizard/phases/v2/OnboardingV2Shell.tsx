@@ -647,12 +647,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       });
       setDraftRestored({ source: 'remote', at: remoteDraft.updated_at });
       setOnboardingDraftSource('remote');
-      if (remoteDraftHintTimer.current) window.clearTimeout(remoteDraftHintTimer.current);
-      remoteDraftHintTimer.current = scheduleWizardTimeout(
-        { phase: state.phase as any, action: 'shell_remote_draft_hint_clear' },
-        () => setDraftRestored(null),
-        6000,
-      );
+      // PR 5: timer de "esconder hint" agora é OWNED pelo effect abaixo
+      // (busca `draftRestored?.source === 'remote'`). Aqui apenas setamos o
+      // state — o lifecycle do timer pertence ao effect, com cleanup garantido.
     }
     setShowRemoteModal(false);
     setRemoteDraft(null);
