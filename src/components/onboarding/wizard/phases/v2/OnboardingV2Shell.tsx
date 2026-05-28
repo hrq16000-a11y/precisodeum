@@ -866,16 +866,24 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // o card abaixo (case 'phase2_photos') exibe diagnóstico específico com
   // botões de recuperação. NÃO pulamos automaticamente.
 
+  // E18 · ORDER CONTRACT (Chain B step 5 · SUBMIT)
+  //   REQUIRES: state.phase === 'done' (set por reducer após Step19).
+  //   PRODUCES: clearOnboardingV2Draft + scheduleWizardTimeout → finishWizard.
+  //             Atualiza lifecyclePhaseRef → 'SUBMITTING' / 'COMPLETED'.
+  //   GATE: deferCompletionToParent (parent assume controle quando true).
+  //   POSITION-DEPENDENCY: precisa rodar depois de E17 (zombie guard).
   useEffect(() => {
     if (state.phase !== 'done' || deferCompletionToParent) return;
+    lifecyclePhaseRef.current = 'SUBMITTING';
     clearOnboardingV2Draft();
     const timer = scheduleWizardTimeout(
       { phase: 'done', action: 'shell_finish_wizard', runIfStale: true },
-      () => { void finishWizard(); },
+      () => { void finishWizard().then(() => { lifecyclePhaseRef.current = 'COMPLETED'; }); },
       300,
     );
     return () => window.clearTimeout(timer);
   }, [state.phase, deferCompletionToParent]);
+
 
   // E19 · ORDER CONTRACT (Chain C · back navigation)
   //   REQUIRES: state estável (ou stateRef se extraído no futuro).
