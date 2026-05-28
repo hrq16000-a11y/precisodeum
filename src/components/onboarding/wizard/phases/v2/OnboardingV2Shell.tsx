@@ -833,7 +833,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // - Ao trocar de fase (cleanup), `markPhaseExit` emite o evento `phase_exit`
   //   com `duration_ms` e `draft_source` (local/remote/seed/none).
   // - O evento `enter` também carrega `draft_source` para segmentação.
+  // E16 · ORDER CONTRACT (Chain B step 2 · phase telemetry)
+  //   REQUIRES: E17 já chamado setActiveWizardPhase nesta fase.
+  //   PRODUCES: 'enter'/'complete' event + markPhaseEnter; cleanup → markPhaseExit.
   useEffect(() => {
+
     const draftSource = getOnboardingDraftSource() || 'none';
     void trackEvent({
       phase: state.phase,
