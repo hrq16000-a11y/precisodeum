@@ -442,8 +442,22 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         </p>
       </header>
 
-      {/* Banner "Localização aproximada pelo seu IP" removido — UX direta:
-          confirmar/editar a cidade no campo abaixo, sem ruído de origem. */}
+      {/* Banner de fallback IP — explica ao usuário, com a11y (role=status),
+          que a cidade foi inferida pelo IP (sem GPS) e o que ele deve revisar.
+          Contrato travado em wizard-e2e-location-paths-and-22023.test.tsx. */}
+      {effectiveSource === 'ip' && (
+        <div
+          data-testid="ip-fallback-notice"
+          role="status"
+          aria-live="polite"
+          className="rounded-md border border-amber-300 bg-amber-50 p-2 text-[11px] leading-snug text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-200"
+        >
+          <strong>Localização aproximada pelo seu IP</strong> — o GPS do
+          navegador está bloqueado ou indisponível. Confira a{' '}
+          <strong>Cidade-base</strong> e preencha o <strong>Bairro</strong> para
+          que seu perfil apareça corretamente nas buscas.
+        </div>
+      )}
 
       {/* Card único: Cidade-base + status GPS compacto — animação radar pulse */}
       <motion.div
