@@ -81,7 +81,7 @@ import {
   readOnboardingV2DraftSavedAt,
   clearOnboardingV2Draft,
 } from './useOnboardingV2Draft';
-import { flushOnboardingV2Draft, flushLocalDraft } from './flushDraft';
+import { flushLocalDraft } from './flushDraft';
 import { findExistingFirstService, findExistingProvider, fetchExistingFirstService } from './findExistingRecords';
 import {
   useOnboardingV2RemoteDraft,
