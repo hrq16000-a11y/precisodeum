@@ -138,8 +138,12 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).not.toContain('bet-first-service');
     expect(shell).toContain('internalHandoffFromTriage');
     expect(shell).toContain('deferCompletionToParent');
-    expect(shell).toContain('resolveOnboardingV2SeedState');
-    expect(shell).toContain('onboarding-v2-phase-regression-blocked');
+    // Hidratação + anti-regressão de fase moveram para o hook orchestrator.
+    // O shell continua sendo o ÚNICO consumidor desse hook.
+    expect(shell).toContain('useHydrationCoreOrchestrator');
+    const hydration = read('src/hooks/onboarding/useHydrationCoreOrchestrator.ts');
+    expect(hydration).toContain('resolveOnboardingV2SeedState');
+    expect(hydration).toContain('onboarding-v2-phase-regression-blocked');
   });
 
   it('WizardShell segura a conclusão final e oferece saídas para dashboard, serviços, portfólio e app', () => {
@@ -149,10 +153,11 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).toContain('Step21_PortfolioAlbums');
     expect(shell).toContain('finalizeUnifiedOnboarding');
     expect(shell).toContain('Continuar cadastrando serviços');
-    expect(shell).toContain('Abrir portfólio');
-    expect(shell).toContain('Conhecer o dashboard');
+    expect(shell).toContain('Criar Portfólio');
+    expect(shell).toContain('Ir para o dashboard');
     expect(shell).toContain('InstallAppCard');
   });
+
 
   it('Etapas finais deixam claro o atalho para painel, perfil e fotos do portfólio', () => {
     const moreServices = read('src/components/onboarding/wizard/phases/Step20_MoreServices.tsx');
