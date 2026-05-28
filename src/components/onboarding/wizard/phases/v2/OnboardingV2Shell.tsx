@@ -105,6 +105,7 @@ import { useBackNavigationOrchestrator } from '@/hooks/onboarding/useBackNavigat
 import { usePhaseTransitionOrchestrator } from '@/hooks/onboarding/usePhaseTransitionOrchestrator';
 import { usePersistenceRecoveryOrchestrator } from '@/hooks/onboarding/usePersistenceRecoveryOrchestrator';
 import { useHydrationCoreOrchestrator } from '@/hooks/onboarding/useHydrationCoreOrchestrator';
+import { useSubmitCoreOrchestrator } from '@/hooks/onboarding/useSubmitCoreOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
 // getLastReadDraftDiagnostics consumido dentro de usePersistenceRecoveryOrchestrator (E8, PR 9).
 import WizardErrorModal from '@/components/wizard/WizardErrorModal';
@@ -881,24 +882,22 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   //   COMPLETED          : Estado terminal. signalLifecyclePhase é
   //                        monotônico — não há transição de volta.
   //
-  // ─── EFFECTS AINDA BLOQUEADOS PARA EXTRAÇÃO ────────────────────────────
-  //   E9, E14, E15, E18. E18 será extraído em PR posterior, somente após:
-  //     (a) validação completa das races R1..R9 em ambiente real;
-  //     (b) extração coordenada de E14+E15 (hydration core); pois E18
-  //         consome lifecyclePhase produzido pelos hydration owners.
+  // ─── EFFECT EXTRAÍDO PARA useSubmitCoreOrchestrator (PR 13) ────────────
+  //   E9 permanece bloqueado. E18 agora vive em
+  //   `@/hooks/onboarding/useSubmitCoreOrchestrator` preservando:
+  //     - SUBMIT-SEQUENCE (1..7) byte-a-byte
+  //     - CLEANUP-SEQUENCE (clearTimeout + clearOnboardingV2Draft)
+  //     - RETRY semantics (lifecycle mantém SUBMITTING em finalize !ok)
+  //     - FINALIZE-BOUNDARY (finalize_onboarding_atomic continua único)
+  //     - ASYNC BOUNDARIES (mesmos awaits dentro de finishWizard)
   //
   // ═══════════════════════════════════════════════════════════════════════
-  useEffect(() => {
-    if (state.phase !== 'done' || deferCompletionToParent) return;
-    signalLifecyclePhase('SUBMITTING');
-    clearOnboardingV2Draft();
-    const timer = scheduleWizardTimeout(
-      { phase: 'done', action: 'shell_finish_wizard', runIfStale: true },
-      () => { void finishWizard().then(() => { signalLifecyclePhase('COMPLETED'); }); },
-      300,
-    );
-    return () => window.clearTimeout(timer);
-  }, [state.phase, deferCompletionToParent]);
+  useSubmitCoreOrchestrator({
+    phase: state.phase,
+    deferCompletionToParent,
+    signalLifecyclePhase,
+    finishWizard: () => finishWizard(),
+  });
 
 
   // E19 · Back Navigation Orchestrator (Chain C) — extraído em PR 6.
