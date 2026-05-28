@@ -877,7 +877,18 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     return () => window.clearTimeout(timer);
   }, [state.phase, deferCompletionToParent]);
 
+  // E19 · ORDER CONTRACT (Chain C · back navigation)
+  //   REQUIRES: state estável (ou stateRef se extraído no futuro).
+  //   PRODUCES: flushLocalDraft + flushRemoteDraft + dispatch GO_TO/evento.
+  //   CONSUMERS: Chain B reentra após dispatch GO_TO.
+  //   OWNERSHIP: registerBackOwner('v2') é o owner canônico — Bet handler
+  //              cede prioridade. claimBackEvent('v2') aplica mutex de 400ms.
+  //   POSITION-DEPENDENCY: re-binda em cada mudança de `state` (deps massivas)
+  //              — janela de 2 listeners coexistindo é coberta pelo mutex.
+  //   EXTRAÇÃO FUTURA: requer migrar leitura de `state` para stateRef.current
+  //              e fixar deps em [editMode, navigate, user?.id].
   useEffect(() => {
+
     const goBack = async () => {
       // ── ANTI-AMNÉSIA: persiste o snapshot atual (local + remoto) ANTES
       // de despachar a troca de fase. Garante que qualquer dado digitado
