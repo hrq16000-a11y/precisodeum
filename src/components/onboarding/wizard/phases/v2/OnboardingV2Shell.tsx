@@ -850,7 +850,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   }, [state.phase, user?.id]);
 
   // Reporta a fase para a barra de progresso global do WizardShell.
+  // E17 · ORDER CONTRACT (Chain B step 1 · phase change head)
+  //   PRODUCES: setActiveWizardPhase (zombie-timer gate global).
+  //   CONSUMERS: TODOS os effects que agendam timers (E18, hint timers, etc.).
+  //   POSITION-DEPENDENCY CRÍTICA: deve declarar-se ANTES de E16/E5/E18 para
+  //              que setActiveWizardPhase rode primeiro no commit do React.
+  //              Mover este bloco quebra atribuição de timers à fase correta.
+  //   Atualiza lifecyclePhaseRef para 'READY' quando já hidratado.
   useEffect(() => {
+    if (lifecyclePhaseRef.current === 'HYDRATED') lifecyclePhaseRef.current = 'READY';
+
     onPhaseChange?.(state.phase);
     // Instrumentação: registra a fase ativa para o detector de timer zumbi.
     setActiveWizardPhase(state.phase);
