@@ -19,7 +19,10 @@ vi.mock('sonner', () => ({
 }));
 
 const { supabaseMock } = vi.hoisted(() => ({
-  supabaseMock: { from: vi.fn() },
+  // Step22_Review usa supabase.rpc('get_my_provider_details') para ler
+  // providers (necessário para acessar CPF/CNPJ — column-level REVOKE +
+  // SECURITY DEFINER). Mantemos `from` para services e portfolio_albums.
+  supabaseMock: { from: vi.fn(), rpc: vi.fn() },
 }));
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: supabaseMock,
