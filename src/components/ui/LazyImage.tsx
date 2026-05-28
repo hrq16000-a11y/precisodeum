@@ -185,19 +185,6 @@ const LazyImage = ({
         style={legacyBlurStyle}
         onLoad={(e) => {
           setLoaded(true);
-          if (surface) {
-            const dur =
-              (typeof performance !== 'undefined' ? performance.now() : Date.now()) -
-              startedAtRef.current;
-            logImageLoad({
-              variant: 'unknown',
-              url: typeof src === 'string' ? src : null,
-              durationMs: dur,
-              mode: disableBlurUp ? 'no-variants' : 'legacy',
-              surface,
-              renderedWidth: e.currentTarget.clientWidth || null,
-            });
-          }
           onLoad?.(e);
         }}
         onError={(e) => {
