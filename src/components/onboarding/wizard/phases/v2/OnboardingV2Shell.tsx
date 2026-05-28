@@ -103,6 +103,7 @@ import { isTabLeader } from './crossTabSync';
 import { useLeaderWriteGate } from '@/hooks/onboarding/useLeaderWriteGate';
 import { useBackNavigationOrchestrator } from '@/hooks/onboarding/useBackNavigationOrchestrator';
 import { usePhaseTransitionOrchestrator } from '@/hooks/onboarding/usePhaseTransitionOrchestrator';
+import { usePersistenceRecoveryOrchestrator } from '@/hooks/onboarding/usePersistenceRecoveryOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
 import { getLastReadDraftDiagnostics } from './useOnboardingV2Draft';
 import WizardErrorModal from '@/components/wizard/WizardErrorModal';
