@@ -100,6 +100,7 @@ import {
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
 import { validateDraftShape } from './draftEnvelope';
 import { detectConcurrentTab, startTabHeartbeat, startTabLeaderElection, isTabLeader } from './crossTabSync';
+import { useBackNavigationOrchestrator } from '@/hooks/onboarding/useBackNavigationOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
 import { getLastReadDraftDiagnostics } from './useOnboardingV2Draft';
 import WizardErrorModal from '@/components/wizard/WizardErrorModal';
