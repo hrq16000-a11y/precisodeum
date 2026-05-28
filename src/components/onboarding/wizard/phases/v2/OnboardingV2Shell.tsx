@@ -2544,22 +2544,26 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // em `src/components/onboarding/v2/layout/`. O shell mantém runtime/owner-
   // ship intactos; apenas a composição visual final foi achatada.
   // PR 14 — Snapshots/derivações UI agora vêm de builders puros em
-  // `src/components/onboarding/v2/layout/build*Props.ts`. Callbacks de
-  // runtime continuam sob ownership do shell.
-  const chromeProps = buildShellChromeProps({
-    draftRestored,
-    showAutoSaveBadge: viewModel.showAutoSaveBadge,
-    autoSaveSignal: state.profile,
+  // `src/components/onboarding/v2/layout/build*Props.ts`.
+  // PR 15 — Consolidação final em `buildShellRenderState`: uma única
+  // chamada devolve chrome+remoto+erro+visual state. Callbacks de runtime
+  // continuam sob ownership do shell.
+  const render = buildShellRenderState({
     phase: state.phase,
+    viewModel,
+    draftRestored,
+    autoSaveSignal: state.profile,
+    remoteDraft,
+    errorState: state,
+    lastPersistError,
   });
-  const errorContextSnapshot = buildErrorContextSnapshot(state, lastPersistError);
-  const remoteSnapshot = buildRemoteDraftSnapshot(remoteDraft);
 
   return (
     <>
-      <OnboardingShellChrome {...chromeProps}>
+      <OnboardingShellChrome {...render.chromeProps}>
         {renderPhase()}
       </OnboardingShellChrome>
+
 
       <OnboardingShellModals
         remote={{
