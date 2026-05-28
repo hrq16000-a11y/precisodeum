@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, ImgHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 import { getImageVariants } from '@/lib/imageVariants';
-import { logImageLoad } from '@/lib/lcpTelemetry';
+
 
 /**
  * LazyImage com efeito Blur-up (LQIP) usando variantes do Supabase.
