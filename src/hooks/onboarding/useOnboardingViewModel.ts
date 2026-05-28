@@ -1,7 +1,7 @@
 /**
  * useOnboardingViewModel — derivações puramente VISUAIS do OnboardingV2Shell.
  *
- * Camada de composição (PR 9 — UI Composition Pass; expandida em PR 10).
+ * Camada de composição (PR 9 — UI Composition Pass; expandida em PR 10/11).
  * Não toca runtime:
  *   ❌ não persiste, não hidrata, não fetch, não despacha reducer,
  *      não toca localStorage, cross-tab, lifecycle, refs ou writes.
@@ -27,11 +27,22 @@ export interface OnboardingViewModel {
   isRepairPhase: boolean;
   /** Fase está coberta pelo router declarativo `phaseComponentMap`. */
   isMigratedPhase: boolean;
+  /** Mostra o bloco `<WizardEncouragement>` por baixo do conteúdo principal. */
+  showEncouragement: boolean;
+  /** Mostra o banner de "rascunho restaurado". */
+  showDraftBanner: boolean;
+  /** Mostra CTAs/avisos terminais (apenas em `done`). */
+  showTerminalActions: boolean;
+  /** Fluxo de mídia do 1º serviço (fotos do serviço). */
+  isMediaFlow: boolean;
+  /** Fluxo de completar perfil pós-celebração (doc + avatar + extras). */
+  isProfileCompletionFlow: boolean;
 }
 
 const CELEBRATION_OR_LATER = new Set<OnboardingPhase>([
   'phase3_celebration',
   'phase4_document',
+  'phase4_avatar',
   'phase4_extras_a',
   'phase4_extras_b',
   'done',
@@ -40,6 +51,26 @@ const CELEBRATION_OR_LATER = new Set<OnboardingPhase>([
 const MIGRATED_PHASES = new Set<OnboardingPhase>([
   'phase2_service',
   'phase2_details',
+  'phase2_photos',
+  'phase4_document',
+  'phase4_avatar',
+  'phase4_extras_a',
+  'phase4_extras_b',
+]);
+
+const ENCOURAGEMENT_PHASES = new Set<OnboardingPhase>([
+  'phase2_service',
+  'phase2_details',
+  'phase2_photos',
+]);
+
+const MEDIA_FLOW_PHASES = new Set<OnboardingPhase>([
+  'phase2_photos',
+]);
+
+const PROFILE_COMPLETION_PHASES = new Set<OnboardingPhase>([
+  'phase4_document',
+  'phase4_avatar',
   'phase4_extras_a',
   'phase4_extras_b',
 ]);
@@ -54,6 +85,14 @@ export function useOnboardingViewModel({ phase }: OnboardingViewModelInput): Onb
       isTerminal: phase === 'done',
       isRepairPhase: phase === 'phase_repair_contact',
       isMigratedPhase: MIGRATED_PHASES.has(phase),
+      showEncouragement: ENCOURAGEMENT_PHASES.has(phase),
+      // Banner de rascunho restaurado só faz sentido antes da celebração e
+      // fora da fase auxiliar de reparo.
+      showDraftBanner:
+        !CELEBRATION_OR_LATER.has(phase) && phase !== 'phase_repair_contact' && phase !== 'done',
+      showTerminalActions: phase === 'done',
+      isMediaFlow: MEDIA_FLOW_PHASES.has(phase),
+      isProfileCompletionFlow: PROFILE_COMPLETION_PHASES.has(phase),
     }),
     [phase],
   );

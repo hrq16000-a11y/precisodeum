@@ -52,12 +52,11 @@ import {
 // Phase1Action/Kind/Location/Contact REMOVIDOS na consolidação Bet Mode
 // (mai/2026). Esses passos eram duplicações das telas da triagem (Bet Mode);
 // agora a fase principal começa direto em phase2_service.
-// Phase2Service / Phase2Details / Phase4ExtrasA / Phase4ExtrasB são
-// importados pelos wrappers de `phaseComponentMap` (PR 10), não diretamente
-// pelo shell.
-import { Phase2Photos } from './Phase2Photos';
+// Phase2Service / Phase2Details / Phase2Photos / Phase4Document / Phase4Avatar
+// / Phase4ExtrasA / Phase4ExtrasB são importados pelos wrappers de
+// `phaseComponentMap` (PR 10/11), não diretamente pelo shell. Phase3Celebration
+// e PhaseRepairContact permanecem no switch legado por enquanto.
 import { Phase3Celebration } from './Phase3Celebration';
-import { Phase4Document, Phase4Avatar } from './Phase4Final';
 // Phase4Review removido — Wizard publica silenciosamente, sem tela de revisão.
 import { PhaseRepairContact } from './PhaseRepairContact';
 import { AutoSaveBadge } from './AutoSaveBadge';
@@ -72,7 +71,6 @@ import {
   recoverBackoffDelayMs,
 } from '@/lib/wizardErrorCodes';
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
-import WizardEncouragement from '@/components/onboarding/wizard/WizardEncouragement';
 import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
 import { markPatchTouched, clearSessionTouched } from './sessionTouched';
 import { pushReviewPhase, clearReviewHistory } from './reviewHistory';
@@ -119,8 +117,7 @@ import { buildWorkingHoursSummary } from './workingHours';
 import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
 import { TERMS_VERSION, readVelocityMps, readAccuracyMeters } from '@/lib/wizardSnapshotInputs';
 import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/lib/operations';
-// PR 9 — UI Composition Pass: extrações puramente visuais.
-import { Phase2PhotosBlockedCard } from '@/components/onboarding/v2/phases/Phase2PhotosBlockedCard';
+// PR 9/11 — UI Composition Pass: extrações puramente visuais.
 import { DraftRestoredBanner } from '@/components/onboarding/v2/phases/DraftRestoredBanner';
 import {
   phaseComponentMap,
@@ -2300,234 +2297,291 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             />
           );
         }
-      }
-    }
+        case 'phase2_photos': {
+          const PhotosComponent = phaseComponentMap.phase2_photos;
+          if (!state.firstServiceId || !user?.id) {
+            // Diagnóstico específico campo-a-campo em vez de tela em branco.
+            const reason: 'no_service' | 'no_session' = !user?.id ? 'no_session' : 'no_service';
 
-    switch (state.phase) {
-      // phase2_service / phase2_details / phase4_extras_a / phase4_extras_b
-      // foram migrados para o phaseComponentMap acima.
-      // phase1_action / phase1_kind / phase1_location / phase1_contact
-      // foram removidas em mai/2026 (consolidação Bet Mode).
-      case 'phase2_photos':
-        if (!state.firstServiceId || !user?.id) {
-          // Diagnóstico específico campo-a-campo em vez de tela em branco.
-          const reason: 'no_service' | 'no_session' = !user?.id ? 'no_session' : 'no_service';
-          const title = reason === 'no_session'
-            ? 'Sua sessão expirou'
-            : 'Ainda não consegui carregar seu serviço';
+            // Lista exatamente quais campos faltam no draft local/state — assim
+            // o usuário sabe se foi categoria, descrição ou cidade.
+            const missing: string[] = [];
+            if (reason === 'no_service') {
+              const hasCategory =
+                (state.service.category_ids?.length || 0) > 0 ||
+                !!state.profile.primary_category_id;
+              const hasName = !!(state.service.service_name || '').trim();
+              const hasDesc = ((state.service.description || '').trim().length) >= 10;
+              const hasCity = !!(state.profile.city || '').trim();
+              if (!hasCategory) missing.push('categoria do serviço');
+              if (!hasName) missing.push('nome do serviço');
+              if (!hasDesc) missing.push('descrição (mínimo 10 caracteres)');
+              if (!hasCity) missing.push('cidade');
+            }
 
-          // Lista exatamente quais campos faltam no draft local/state — assim
-          // o usuário sabe se foi categoria, descrição ou cidade.
-          const missing: string[] = [];
-          if (reason === 'no_service') {
-            const hasCategory =
-              (state.service.category_ids?.length || 0) > 0 ||
-              !!state.profile.primary_category_id;
-            const hasName = !!(state.service.service_name || '').trim();
-            const hasDesc = ((state.service.description || '').trim().length) >= 10;
-            const hasCity = !!(state.profile.city || '').trim();
-            if (!hasCategory) missing.push('categoria do serviço');
-            if (!hasName) missing.push('nome do serviço');
-            if (!hasDesc) missing.push('descrição (mínimo 10 caracteres)');
-            if (!hasCity) missing.push('cidade');
-          }
+            // Código canônico do bloqueio (consumido por logs/telemetria/error_reports).
+            const blockCode = phase2PhotosBlockCode(reason);
 
-          const description = reason === 'no_session'
-            ? 'Faça login novamente para continuar de onde parou. Seu cadastro foi salvo.'
-            : missing.length > 0
-              ? `Faltam estes campos para publicar o serviço antes das fotos:`
-              : 'Para subir as fotos, primeiro preciso terminar de salvar seu serviço (categoria, descrição e cidade). Volte uma etapa, confirme os dados e tente novamente.';
+            // Telemetria estruturada com o código exato — para suporte reproduzir.
+            if (typeof window !== 'undefined' && !(window as any).__phase2BlockedLogged) {
+              (window as any).__phase2BlockedLogged = true;
+              console.warn(`[wizard] phase2_photos blocked: ${blockCode}`, {
+                missing,
+                providerId: state.providerId,
+                firstServiceId: state.firstServiceId,
+                hasUser: !!user?.id,
+              });
+              void trackEvent({
+                phase: 'phase2_photos',
+                event: 'error',
+                userId: user?.id,
+                meta: {
+                  code: blockCode,
+                  missing_fields: missing,
+                  has_provider: !!state.providerId,
+                  has_first_service: !!state.firstServiceId,
+                },
+              });
+            }
 
-          // Código canônico do bloqueio (consumido por logs/telemetria/error_reports).
-          const blockCode = phase2PhotosBlockCode(reason);
-
-          // Telemetria estruturada com o código exato — para suporte reproduzir.
-          if (typeof window !== 'undefined' && !(window as any).__phase2BlockedLogged) {
-            (window as any).__phase2BlockedLogged = true;
-            console.warn(`[wizard] phase2_photos blocked: ${blockCode}`, {
-              missing,
-              providerId: state.providerId,
-              firstServiceId: state.firstServiceId,
-              hasUser: !!user?.id,
-            });
-            void trackEvent({
-              phase: 'phase2_photos',
-              event: 'error',
-              userId: user?.id,
-              meta: {
-                code: blockCode,
-                missing_fields: missing,
-                has_provider: !!state.providerId,
-                has_first_service: !!state.firstServiceId,
-              },
-            });
-          }
-
-          // Tenta recuperar firstServiceId com backoff exponencial.
-          // 3 tentativas (0ms, 800ms, 2400ms) antes de marcar como falha — cobre
-          // races transitórias entre create_service_atomic e mudança de fase.
-          const handleRecoverDraft = async (opts?: { auto?: boolean }) => {
-            const isAuto = !!opts?.auto;
-            setPhase2RetryStatus('running');
-            track('next', {
-              code: isAuto
-                ? WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_AUTO
-                : WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_ATTEMPT,
-            });
-            const providerId = state.providerId;
-            const categoryId =
-              state.profile.primary_category_id || state.service.category_ids?.[0] || '';
-            if (!providerId) {
+            // Tenta recuperar firstServiceId com backoff exponencial.
+            // 3 tentativas (0ms, 800ms, 2400ms) antes de marcar como falha — cobre
+            // races transitórias entre create_service_atomic e mudança de fase.
+            const handleRecoverDraft = async (opts?: { auto?: boolean }) => {
+              const isAuto = !!opts?.auto;
+              setPhase2RetryStatus('running');
+              track('next', {
+                code: isAuto
+                  ? WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_AUTO
+                  : WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_ATTEMPT,
+              });
+              const providerId = state.providerId;
+              const categoryId =
+                state.profile.primary_category_id || state.service.category_ids?.[0] || '';
+              if (!providerId) {
+                setPhase2RetryStatus('failed');
+                if (!isAuto) {
+                  toast.message('Nada para recuperar', {
+                    description: 'Volte para revisar o serviço e tente publicar novamente.',
+                  });
+                }
+                return false;
+              }
+              for (let attempt = 0; attempt < RECOVER_MAX_ATTEMPTS; attempt++) {
+                const delay = recoverBackoffDelayMs(attempt);
+                if (delay > 0) {
+                  await new Promise((r) => setTimeout(r, delay));
+                  track('next', {
+                    code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_BACKOFF,
+                    attempt: attempt + 1,
+                    delay_ms: delay,
+                  });
+                }
+                try {
+                  const id = await findExistingFirstService(
+                    providerId,
+                    categoryId,
+                    state.service.service_name || '',
+                  );
+                  if (id) {
+                    dispatch({ type: 'SET_FIRST_SERVICE_ID', id });
+                    setPhase2RetryStatus('idle');
+                    track('next', {
+                      code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_SUCCESS,
+                      attempt: attempt + 1,
+                    });
+                    if (!isAuto) {
+                      toast.success('Recuperamos seu serviço — pronto para subir as fotos.');
+                    }
+                    return true;
+                  }
+                } catch (err: any) {
+                  // Em erro de rede/RLS: continua para a próxima tentativa.
+                  if (attempt === RECOVER_MAX_ATTEMPTS - 1) {
+                    setPhase2RetryStatus('failed');
+                    track('error', {
+                      code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_EXHAUSTED,
+                      attempts: RECOVER_MAX_ATTEMPTS,
+                      message: String(err?.message || err).slice(0, 160),
+                    });
+                    if (!isAuto) {
+                      toast.error('Não consegui recuperar o rascunho agora.', {
+                        description: err?.message || 'Tente novamente em instantes.',
+                      });
+                    }
+                    return false;
+                  }
+                }
+              }
+              // Todas as tentativas retornaram null — sem registro encontrado.
               setPhase2RetryStatus('failed');
+              track('error', {
+                code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_EXHAUSTED,
+                attempts: RECOVER_MAX_ATTEMPTS,
+              });
               if (!isAuto) {
                 toast.message('Nada para recuperar', {
                   description: 'Volte para revisar o serviço e tente publicar novamente.',
                 });
               }
               return false;
-            }
-            for (let attempt = 0; attempt < RECOVER_MAX_ATTEMPTS; attempt++) {
-              const delay = recoverBackoffDelayMs(attempt);
-              if (delay > 0) {
-                await new Promise((r) => setTimeout(r, delay));
-                track('next', {
-                  code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_BACKOFF,
-                  attempt: attempt + 1,
-                  delay_ms: delay,
-                });
-              }
-              try {
-                const id = await findExistingFirstService(
-                  providerId,
-                  categoryId,
-                  state.service.service_name || '',
-                );
-                if (id) {
-                  dispatch({ type: 'SET_FIRST_SERVICE_ID', id });
-                  setPhase2RetryStatus('idle');
-                  track('next', {
-                    code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_SUCCESS,
-                    attempt: attempt + 1,
-                  });
-                  if (!isAuto) {
-                    toast.success('Recuperamos seu serviço — pronto para subir as fotos.');
-                  }
-                  return true;
-                }
-              } catch (err: any) {
-                // Em erro de rede/RLS: continua para a próxima tentativa.
-                if (attempt === RECOVER_MAX_ATTEMPTS - 1) {
-                  setPhase2RetryStatus('failed');
-                  track('error', {
-                    code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_EXHAUSTED,
-                    attempts: RECOVER_MAX_ATTEMPTS,
-                    message: String(err?.message || err).slice(0, 160),
-                  });
-                  if (!isAuto) {
-                    toast.error('Não consegui recuperar o rascunho agora.', {
-                      description: err?.message || 'Tente novamente em instantes.',
-                    });
-                  }
-                  return false;
-                }
-              }
-            }
-            // Todas as tentativas retornaram null — sem registro encontrado.
-            setPhase2RetryStatus('failed');
-            track('error', {
-              code: WIZARD_ERROR_CODES.PHASE2_PHOTOS_RECOVER_EXHAUSTED,
-              attempts: RECOVER_MAX_ATTEMPTS,
-            });
-            if (!isAuto) {
-              toast.message('Nada para recuperar', {
-                description: 'Volte para revisar o serviço e tente publicar novamente.',
-              });
-            }
-            return false;
-          };
+            };
 
-          // Auto-retry: quando o bloqueio é por `no_service` e já temos um
-          // providerId + ao menos categoria/nome do serviço, tentamos recuperar
-          // automaticamente uma única vez por montagem deste card. Evita que o
-          // usuário precise clicar para casos transitórios (ex.: race entre
-          // criação do service e ida para fotos).
-          if (
-            typeof window !== 'undefined' &&
-            reason === 'no_service' &&
-            state.providerId &&
-            !(window as any).__phase2AutoRetryDone
-          ) {
-            const canTry =
-              !!state.profile.primary_category_id ||
-              (state.service.category_ids?.length || 0) > 0 ||
-              !!(state.service.service_name || '').trim();
-            if (canTry) {
-              (window as any).__phase2AutoRetryDone = true;
-              void handleRecoverDraft({ auto: true });
+            // Auto-retry: quando o bloqueio é por `no_service` e já temos um
+            // providerId + ao menos categoria/nome do serviço, tentamos recuperar
+            // automaticamente uma única vez por montagem deste card. Evita que o
+            // usuário precise clicar para casos transitórios (ex.: race entre
+            // criação do service e ida para fotos).
+            if (
+              typeof window !== 'undefined' &&
+              reason === 'no_service' &&
+              state.providerId &&
+              !(window as any).__phase2AutoRetryDone
+            ) {
+              const canTry =
+                !!state.profile.primary_category_id ||
+                (state.service.category_ids?.length || 0) > 0 ||
+                !!(state.service.service_name || '').trim();
+              if (canTry) {
+                (window as any).__phase2AutoRetryDone = true;
+                void handleRecoverDraft({ auto: true });
+              }
             }
+
+            return (
+              <PhotosComponent
+                view="blocked"
+                blockedProps={{
+                  reason,
+                  missing,
+                  phase2RetryStatus,
+                  context: {
+                    primaryCategoryId:
+                      state.profile.primary_category_id || state.service.category_ids?.[0] || null,
+                    city: state.profile.city || null,
+                    stateUF: state.profile.state || null,
+                    providerId: state.providerId,
+                    firstServiceId: state.firstServiceId,
+                    lastPersistError: lastPersistError
+                      ? { message: lastPersistError.message, code: lastPersistError.code || null }
+                      : null,
+                  },
+                  onRetryManual: () => { void handleRecoverDraft(); },
+                  onBackToDetails: () => {
+                    track('back');
+                    dispatch({ type: 'GO_TO', phase: 'phase2_details' });
+                  },
+                  onSkip: () => {
+                    track('skip', { reason: `blocked_${reason}` });
+                    dispatch({ type: 'NEXT' });
+                  },
+                  onLogin: () => {
+                    window.location.href = '/login?next=/cadastro-inicial';
+                  },
+                }}
+              />
+            );
           }
-
-
           return (
-            <Phase2PhotosBlockedCard
-              reason={reason}
-              missing={missing}
-              phase2RetryStatus={phase2RetryStatus}
-              context={{
-                primaryCategoryId:
-                  state.profile.primary_category_id || state.service.category_ids?.[0] || null,
-                city: state.profile.city || null,
-                stateUF: state.profile.state || null,
-                providerId: state.providerId,
-                firstServiceId: state.firstServiceId,
-                lastPersistError: lastPersistError
-                  ? { message: lastPersistError.message, code: lastPersistError.code || null }
-                  : null,
+            <PhotosComponent
+              view="ready"
+              photosProps={{
+                serviceId: state.firstServiceId,
+                userId: user.id,
+                serviceName: state.service.service_name,
+                onBack: () => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_details' }); },
+                onContinue: () => { track('next'); dispatch({ type: 'NEXT' }); },
+                onSkip: () => { track('skip'); dispatch({ type: 'NEXT' }); },
               }}
-              onRetryManual={() => { void handleRecoverDraft(); }}
-              onBackToDetails={() => {
-                track('back');
-                dispatch({ type: 'GO_TO', phase: 'phase2_details' });
-              }}
-              onSkip={() => {
-                track('skip', { reason: `blocked_${reason}` });
-                dispatch({ type: 'NEXT' });
-              }}
-              onLogin={() => {
-                window.location.href = '/login?next=/cadastro-inicial';
+              encouragement={{
+                tone: photoCount > 0 ? 'celebrate' : 'gentle',
+                title: photoCount > 0
+                  ? `Mandou bem! ${photoCount} foto${photoCount > 1 ? 's' : ''} no ar`
+                  : 'Última etapa do circuito principal',
+                description: 'Fotos bem feitas viram cliques. Mesmo 1 foto já libera o selo de anúncio completo.',
+                items: [
+                  { label: 'Serviço — pronto', done: true },
+                  { label: 'Detalhes — pronto', done: !!(state.service.description || '').trim() },
+                  { label: `Fotos — ${photoCount}/5`, done: photoCount > 0 },
+                ],
+                nextStep:
+                  photoCount === 0
+                    ? 'Suba pelo menos 1 foto ou pule por enquanto — você pode voltar depois.'
+                    : photoCount < 3
+                      ? 'Adicione mais fotos para destacar o anúncio (até 5).'
+                      : 'Tudo pronto! Pode concluir e celebrar.',
               }}
             />
           );
         }
-        return (
-          <>
-            <Phase2Photos
-              serviceId={state.firstServiceId}
-              userId={user.id}
-              serviceName={state.service.service_name}
-              onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_details' }); }}
-              onContinue={() => { track('next'); dispatch({ type: 'NEXT' }); }}
-              onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
+        case 'phase4_document': {
+          const DocumentComponent = phaseComponentMap.phase4_document;
+          return (
+            <DocumentComponent
+              documentProps={{
+                data: state.profile,
+                locked: !!coreLocks.document,
+                onChange: patchProfile,
+                saving,
+                userId: user?.id,
+                onSkip: () => { track('skip'); dispatch({ type: 'NEXT' }); },
+                onContinue: async () => {
+                  track('submit');
+                  let ok = true;
+                  if (!coreLocks.document) {
+                    ok = await persistPatch({ tax_id: state.profile.document });
+                  }
+                  if (!ok) {
+                    return;
+                  }
+                  track('next');
+                  dispatch({ type: 'NEXT' });
+                },
+              }}
             />
-            <WizardEncouragement
-              tone={photoCount > 0 ? 'celebrate' : 'gentle'}
-              title={photoCount > 0 ? `Mandou bem! ${photoCount} foto${photoCount > 1 ? 's' : ''} no ar` : 'Última etapa do circuito principal'}
-              description="Fotos bem feitas viram cliques. Mesmo 1 foto já libera o selo de anúncio completo."
-              items={[
-                { label: 'Serviço — pronto', done: true },
-                { label: 'Detalhes — pronto', done: !!(state.service.description || '').trim() },
-                { label: `Fotos — ${photoCount}/5`, done: photoCount > 0 },
-              ]}
-              nextStep={
-                photoCount === 0
-                  ? 'Suba pelo menos 1 foto ou pule por enquanto — você pode voltar depois.'
-                  : photoCount < 3
-                    ? 'Adicione mais fotos para destacar o anúncio (até 5).'
-                    : 'Tudo pronto! Pode concluir e celebrar.'
-              }
+          );
+        }
+        case 'phase4_avatar': {
+          const AvatarComponent = phaseComponentMap.phase4_avatar;
+          return (
+            <AvatarComponent
+              avatarProps={{
+                data: state.profile,
+                onChange: patchProfile,
+                saving,
+                userId: user?.id,
+                onSkip: () => { track('skip'); dispatch({ type: 'NEXT' }); },
+                onBack: () => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase4_document' }); },
+                onContinue: async () => {
+                  track('submit');
+                  if (state.profile.avatar_url) {
+                    // Fase 1.6.4 — Canonical avatar write boundary.
+                    const { setUserAvatar } = await import('@/lib/avatarSync');
+                    const res = await setUserAvatar({
+                      userId: user!.id,
+                      url: state.profile.avatar_url,
+                      source: 'onboarding_v2_shell',
+                    });
+                    if (!res.ok) return;
+                  }
+                  track('next');
+                  dispatch({ type: 'NEXT' });
+                },
+              }}
             />
-          </>
-        );
+          );
+        }
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Switch legado (fases ainda não migradas para o phaseComponentMap):
+    //   • phase_repair_contact — fase auxiliar de reparo de contato
+    //   • phase3_celebration   — tela de celebração entre fotos e doc
+    //   • done                  — terminal (não renderiza UI)
+    // phase1_* foram removidas em mai/2026 (consolidação Bet Mode).
+    // ──────────────────────────────────────────────────────────────
+    switch (state.phase) {
       case 'phase_repair_contact': {
         // Containment patch — Crítico #1: fase auxiliar para corrigir
         // WhatsApp/contato faltante sem perder o progresso do wizard.
@@ -2563,56 +2617,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             onContinue={() => { track('next'); dispatch({ type: 'NEXT' }); }}
           />
         );
-      case 'phase4_document':
-        return (
-          <Phase4Document
-            data={state.profile}
-            locked={!!coreLocks.document}
-            onChange={patchProfile}
-            saving={saving}
-            userId={user?.id}
-            onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
-            onContinue={async () => {
-              track('submit');
-              let ok = true;
-              if (!coreLocks.document) {
-                ok = await persistPatch({ tax_id: state.profile.document });
-              }
-              if (!ok) {
-                return;
-              }
-              track('next');
-              dispatch({ type: 'NEXT' });
-            }}
-          />
-        );
-      case 'phase4_avatar':
-        return (
-          <Phase4Avatar
-            data={state.profile}
-            onChange={patchProfile}
-            saving={saving}
-            userId={user?.id}
-            onSkip={() => { track('skip'); dispatch({ type: 'NEXT' }); }}
-            onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase4_document' }); }}
-            onContinue={async () => {
-              track('submit');
-              if (state.profile.avatar_url) {
-                // Fase 1.6.4 — Canonical avatar write boundary.
-                const { setUserAvatar } = await import('@/lib/avatarSync');
-                const res = await setUserAvatar({
-                  userId: user!.id,
-                  url: state.profile.avatar_url,
-                  source: 'onboarding_v2_shell',
-                });
-                if (!res.ok) return;
-              }
-              track('next');
-              dispatch({ type: 'NEXT' });
-            }}
-          />
-        );
-      // phase4_extras_a / phase4_extras_b: migrados para phaseComponentMap (PR 10).
       case 'done':
         return null;
     }
