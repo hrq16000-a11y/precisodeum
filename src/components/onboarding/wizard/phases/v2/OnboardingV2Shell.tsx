@@ -212,6 +212,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   //   SUBMITTING → state.phase === 'done' (E18 agendou finishWizard)
   //   COMPLETED  → finishWizard retornou com sucesso
   //
+  // SANITY (PR 4D): `lifecyclePhaseRef` pode permanecer em 'HYDRATING' quando
+  // E14 entra mas retorna cedo (bootstrap nulo, regressão de fase bloqueada
+  // ou snapshot estruturalmente idêntico). É COMPORTAMENTO ESPERADO — nenhum
+  // effect gateia por este ref. Promoção a gate funcional exigirá, no futuro,
+  // ou transição explícita 'HYDRATING → BOOT' nos early returns, ou um
+  // sentinel 'HYDRATING_NOOP' distinto. Ver docs/onboarding-effect-map.md
+  // (seção PR 4D · sanity).
+  //
   // ORDERING CONTRACTS (ver docs/onboarding-effect-map.md §PR 4C):
   //   Chain A (RECOV):  E9 → E12 → E13 → E8/E11 → E14 → E15 → E5
   //   Chain B (PHASE):  state.phase change → E17 → E16 → E5 → E6 → (E18 se 'done')

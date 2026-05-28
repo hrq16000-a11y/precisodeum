@@ -202,3 +202,99 @@ Esses 3 passos são pré-requisitos arquiteturais para PR 4C.
 - 0 effects extraídos (decisão consciente: pré-requisitos arquiteturais documentados acima são necessários antes).
 - 0 mudanças de código no shell.
 - Próxima PR (4C) deve atacar os 3 pré-requisitos antes de qualquer extração de chain.
+
+---
+
+# PR 4C / 4D · Ordering contracts explícitos + sync
+
+> Atualização **2026-05-28**. Reflete o estado atual de `OnboardingV2Shell.tsx`
+> (3067 linhas, ranges deslocados ~15 linhas em relação à tabela mestre acima
+> por adição dos blocos de contrato inline). A tabela mestre permanece válida
+> em estrutura — os contratos abaixo fecham o gap textual entre código e doc.
+
+## Scaffolding observacional adicionado (PR 4C)
+
+- `stateRef = useRef(state); stateRef.current = state;` — espelho atômico do
+  reducer. **Não é lido por nenhum effect** ainda; existe como pré-requisito
+  para extração futura de E5/E7/E19 sem stale closure.
+- `lifecyclePhaseRef` (`'BOOT' | 'HYDRATING' | 'HYDRATED' | 'READY' | 'SUBMITTING' | 'COMPLETED'`)
+  — marcador observacional. **Nenhum effect gateia por ele.** Atualizado em:
+  - E14 (entrada → `HYDRATING`, sucesso → `HYDRATED`)
+  - E17 (`HYDRATED` → `READY`)
+  - E18 (entrada → `SUBMITTING`, sucesso → `COMPLETED`)
+
+### Sanity: `lifecyclePhaseRef === 'HYDRATING'` pode persistir
+
+Comportamento **esperado e documentado**, não é bug:
+
+- E14 marca `HYDRATING` no topo do effect.
+- Em três paths de early-return (`bootstrap` nulo, regressão de fase
+  bloqueada, snapshot estruturalmente idêntico) o effect retorna **sem**
+  promover para `HYDRATED`.
+- Como nenhum effect gateia por `lifecyclePhaseRef`, isso não afeta runtime.
+- Promoção a gate funcional exige antes:
+  1. transição explícita `HYDRATING → BOOT` nos early returns, **ou**
+  2. um sentinel `HYDRATING_NOOP` distinto de `HYDRATING_PENDING`.
+
+Não fazer nada disso nesta PR — apenas registrar.
+
+## Contratos inline fechados (E5, E14, E15, E16, E17, E18, E19)
+
+Cada bloco `ORDER CONTRACT` no shell declara quatro campos canônicos:
+`REQUIRES`, `PRODUCES`, `CONSUMERS`, `POSITION-DEPENDENCY`. Resumo:
+
+| Effect | REQUIRES                                          | PRODUCES                                                  | CONSUMERS                                | POSITION-DEPENDENCY                                                            |
+|--------|---------------------------------------------------|-----------------------------------------------------------|------------------------------------------|--------------------------------------------------------------------------------|
+| E5     | E17 já chamou `setActiveWizardPhase`              | `flushOnboardingV2Draft` (write local + remoto por fase)  | backend                                  | declarado **após** E17 (commit order React top-to-bottom) — não mover          |
+| E14    | E12 (`full_name`) + E13 (`userRef`) dispatcharam; E8/E11 decidiram local-vs-remote | `dispatch(HYDRATE)`; `BOOT → HYDRATING → HYDRATED` | E5, E15, todo o resto             | deve preceder E15 (revisão usa providerId hidratado)                           |
+| E15    | E14 tentou hidratar (`HYDRATED` ou snapshot estável) + E13 produziu `userRef` | provider/serviço carregados do banco                  | UI de revisão; E5 ao mudar fase    | depois de E13/E14 — race com E5 mitigada por cancelamento via `cancelled` flag |
+| E16    | E17 chamou `setActiveWizardPhase` na fase atual    | `trackEvent('enter'|'complete')` + `markPhaseEnter/Exit`  | telemetria                               | declarado **após** E17                                                         |
+| E17    | (head da Chain B)                                  | `setActiveWizardPhase` (gate zombie-timer); promove `HYDRATED → READY` | E16, E5, E18, hint timers      | **CRÍTICA** — primeiro effect dependente de `state.phase`; mover quebra atribuição de timers |
+| E18    | `state.phase === 'done'` (dispatch do reducer pós-Step19) | `clearOnboardingV2Draft` + `scheduleWizardTimeout(finishWizard)`; `SUBMITTING → COMPLETED` | finalização do wizard | precisa rodar depois de E17 (zombie guard)                                     |
+| E19    | snapshot de `state` estável                        | `flushLocalDraft + flushRemoteDraft + dispatch(GO_TO)`    | Chain B reentra                          | re-binda em cada mudança de `state` — mutex `claimBackEvent('v2')` (400ms) cobre janela de 2 listeners |
+
+### Ownership de refs críticas (confirmado)
+
+| Ref                    | Owner       | Mutadores                | Leitores                                  | Status                                  |
+|------------------------|-------------|--------------------------|-------------------------------------------|-----------------------------------------|
+| `stateRef`             | render sync | render (sync write)      | nenhum (ainda)                            | observacional · pronto para PR futura   |
+| `lifecyclePhaseRef`    | E14/E17/E18 | E14, E17, E18            | nenhum effect (observacional)             | pode persistir em `HYDRATING` — documentado |
+| `state` (closure)      | reducer     | `dispatch`               | E5, E7, E15, E18, E19                     | extração exige migrar para `stateRef`   |
+| `isTabLeader()`        | crossTabSync| E9 (start)               | E10, persistPhase1, finishWizard, flush   | **gate global** — não extrair           |
+| `setActiveWizardPhase` | zombieGuard | E17                      | scheduleWizardTimeout (todos os timers)   | **gate de timers** — preservar ordem    |
+
+## Effects ainda bloqueados (núcleo de risco)
+
+Mantidos no shell por dependência cruzada com recovery, leader election,
+hydration sequencing, submit ordering ou back orchestration:
+
+- **E8** — recovery hint LOCAL (parte de RECOV sequencing)
+- **E9** — leader election + heartbeat init (gate global)
+- **E11** — decisão remote-vs-local (parte de RECOV sequencing)
+- **E14** — bootstrap HYDRATE (hydration sequencing)
+- **E15** — revisão DB hydrate (depende de E13/E14, race com E5)
+- **E18** — `finishWizard` timer (submit lifecycle)
+- **E19** — back handler com flush coordenado (write coordination com E5)
+
+Extração futura requer pré-requisitos arquiteturais já listados (espelhar
+`state`, contrato explícito de notifyPhaseChange, mover timer de
+`handleRemoteContinue`). Nenhum deles foi introduzido nesta PR.
+
+## Sanity checks (PR 4D)
+
+- Typecheck: shell continua compilando.
+- Onboarding refresh / multi-tab / recovery / submit / back / mobile: comportamento
+  inalterado (nenhuma mudança de runtime — apenas comentários e refs observacionais).
+- Zero regressão · zero race nova · zero deadlock · zero hydration mismatch
+  · zero write duplication · zero timer zombie.
+
+## Status final
+
+- Documentação **sincronizada** com scaffolding inline da PR 4C.
+- Contratos `REQUIRES/PRODUCES/CONSUMERS/POSITION-DEPENDENCY` consistentes
+  entre código e doc para E5, E14, E15, E16, E17, E18, E19.
+- `lifecyclePhaseRef` em `HYDRATING` persistente nos early-returns de E14 é
+  **comportamento documentado** (não gateia nada).
+- Effects bloqueados explicitamente listados — extração proibida até as
+  3 pré-condições arquiteturais serem implementadas.
+- 0 effects extraídos · 0 mudanças de runtime · readiness para PR seguinte: **OK**.
