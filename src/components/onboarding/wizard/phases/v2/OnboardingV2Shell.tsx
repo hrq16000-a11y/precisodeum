@@ -62,7 +62,7 @@ import {
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
 import { markPatchTouched, clearSessionTouched } from './sessionTouched';
-import { pushReviewPhase, clearReviewHistory } from './reviewHistory';
+import { pushReviewPhase } from './reviewHistory';
 import {
   useOnboardingV2Draft,
   readOnboardingV2Draft,
