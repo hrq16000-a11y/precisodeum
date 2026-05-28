@@ -147,6 +147,9 @@ const flush = async (s: RouteState) => {
       user_agent: navigator.userAgent.slice(0, 256),
     }));
 
+    // Amostragem controlada por site_settings.telemetry_sample_rate_web_vitals
+    const { shouldSampleTelemetry } = await import('./telemetrySampling');
+    if (!(await shouldSampleTelemetry('web_vitals'))) return;
     // user_id é capturado server-side via auth.uid() na RPC (sem spoofing).
     await (supabase.rpc as any)('log_web_vitals', {
       _samples: rows,
