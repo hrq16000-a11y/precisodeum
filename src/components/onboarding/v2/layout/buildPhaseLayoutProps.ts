@@ -52,7 +52,9 @@ export const buildRegistrationSnapshotPayload = (
   profile: RegistrationSnapshotProfile,
   hasFirstService: boolean,
   finishedVia: 'skip' | 'finish',
-): RegistrationSnapshotPayload => ({
+): RegistrationSnapshotPayload => {
+  const p = profile as RegistrationSnapshotProfile & Record<string, any>;
+  return ({
   whatsapp: profile.whatsapp,
   postal_code: profile.postal_code,
   street: profile.street,
