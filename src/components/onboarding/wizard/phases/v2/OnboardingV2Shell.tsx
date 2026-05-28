@@ -120,12 +120,9 @@ import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/l
 // DraftRestoredBanner migrou para OnboardingShellChrome (PR 13).
 import { OnboardingShellChrome } from '@/components/onboarding/v2/layout/OnboardingShellChrome';
 import { OnboardingShellModals } from '@/components/onboarding/v2/layout/OnboardingShellModals';
-import { buildShellChromeProps } from '@/components/onboarding/v2/layout/buildShellChromeProps';
-import {
-  buildErrorContextSnapshot,
-  buildRemoteDraftSnapshot,
-} from '@/components/onboarding/v2/layout/buildShellModalProps';
-import { buildRegistrationSnapshotPayload } from '@/components/onboarding/v2/layout/buildPhaseLayoutProps';
+// PR 15 — chrome/modal/visual derivations consolidados em buildShellRenderState.
+import { buildShellRenderState } from '@/components/onboarding/v2/layout/buildShellRenderState';
+import { recordExtrasBRegistrationSnapshot } from '@/components/onboarding/v2/layout/buildPhaseActionGroups';
 import {
   phaseComponentMap,
 } from '@/components/onboarding/v2/phases/phaseComponentMap';
