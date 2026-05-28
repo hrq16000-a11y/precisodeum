@@ -21,7 +21,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// framer-motion: motion/AnimatePresence migraram para OnboardingShellChrome (PR 13).
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 // CheckCircle2 migrou para DraftRestoredBanner (PR 9 UI Composition Pass).
@@ -58,7 +58,7 @@ import {
 // (PR 10/11/12), não diretamente pelo shell. Após PR 12 o switch legado
 // foi eliminado — o registry é a única fonte de routing visual.
 // Phase4Review removido — Wizard publica silenciosamente, sem tela de revisão.
-import { AutoSaveBadge } from './AutoSaveBadge';
+// AutoSaveBadge migrou para OnboardingShellChrome (PR 13).
 import { nullifyEmpty } from './optionalPatch';
 import { playWizardTransition } from '@/lib/wizardTransition';
 import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
@@ -93,7 +93,7 @@ import {
   getOnboardingDraftSource,
   setOnboardingFlow,
 } from './telemetry';
-import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
+// RemoteDraftRecoveryModal migrou para OnboardingShellModals (PR 13).
 import { validateDraftShape } from './draftEnvelope';
 import { isTabLeader } from './crossTabSync';
 import { useLeaderWriteGate } from '@/hooks/onboarding/useLeaderWriteGate';
@@ -105,7 +105,7 @@ import { useHydrationCoreOrchestrator } from '@/hooks/onboarding/useHydrationCor
 import { useSubmitCoreOrchestrator } from '@/hooks/onboarding/useSubmitCoreOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
 // getLastReadDraftDiagnostics consumido dentro de usePersistenceRecoveryOrchestrator (E8, PR 9).
-import WizardErrorModal from '@/components/wizard/WizardErrorModal';
+// WizardErrorModal migrou para OnboardingShellModals (PR 13).
 import {
   buildOnboardingCoreLocks,
   buildOnboardingV2BootstrapState,
@@ -113,11 +113,13 @@ import {
   resolveOnboardingV2SeedState,
 } from './bootstrap';
 import { buildWorkingHoursSummary } from './workingHours';
-import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
+// BetCardShell migrou para OnboardingShellChrome (PR 13).
 import { TERMS_VERSION, readVelocityMps, readAccuracyMeters } from '@/lib/wizardSnapshotInputs';
 import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/lib/operations';
 // PR 9/11/12 — UI Composition Pass: extrações puramente visuais.
-import { DraftRestoredBanner } from '@/components/onboarding/v2/phases/DraftRestoredBanner';
+// DraftRestoredBanner migrou para OnboardingShellChrome (PR 13).
+import { OnboardingShellChrome } from '@/components/onboarding/v2/layout/OnboardingShellChrome';
+import { OnboardingShellModals } from '@/components/onboarding/v2/layout/OnboardingShellModals';
 import {
   phaseComponentMap,
 } from '@/components/onboarding/v2/phases/phaseComponentMap';
