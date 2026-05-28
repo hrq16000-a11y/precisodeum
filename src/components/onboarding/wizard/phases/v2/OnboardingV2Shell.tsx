@@ -103,8 +103,9 @@ import { isTabLeader } from './crossTabSync';
 import { useLeaderWriteGate } from '@/hooks/onboarding/useLeaderWriteGate';
 import { useBackNavigationOrchestrator } from '@/hooks/onboarding/useBackNavigationOrchestrator';
 import { usePhaseTransitionOrchestrator } from '@/hooks/onboarding/usePhaseTransitionOrchestrator';
+import { usePersistenceRecoveryOrchestrator } from '@/hooks/onboarding/usePersistenceRecoveryOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
-import { getLastReadDraftDiagnostics } from './useOnboardingV2Draft';
+// getLastReadDraftDiagnostics consumido dentro de usePersistenceRecoveryOrchestrator (E8, PR 9).
 import WizardErrorModal from '@/components/wizard/WizardErrorModal';
 import {
   buildOnboardingCoreLocks,
@@ -482,59 +483,17 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [state]);
 
-  // Aviso de "rascunho restaurado" do LOCAL (mesmo dispositivo)
-  useEffect(() => {
-    if (skipDraftRestore) {
-      // Quando entramos via handoff da triagem, marcamos a fonte como "seed".
-      if (!getOnboardingDraftSource()) setOnboardingDraftSource('seed');
-      return;
-    }
-    const draft = readOnboardingV2Draft();
-    if (draft && draft.phase && draft.phase !== 'phase2_service') {
-      setDraftRestored({ source: 'local' });
-      setOnboardingDraftSource('local');
-      // Hardening F4 — `refresh_detected` SÓ se houver evidência real:
-      //  - draft válido e na MESMA fase do estado atual (sem salto)
-      //  - savedAt recente (< 6h) — exclui drafts dormentes do dia anterior
-      //  - usuário já interagiu (envelope tem conteúdo significativo —
-      //    readOnboardingV2Draft já garante isso via thin_content guard)
-      // Evita falso positivo em mount limpo ou recovery de sessão antiga.
-      const savedAt = readOnboardingV2DraftSavedAt() || 0;
-      const REFRESH_TTL_MS = 6 * 60 * 60 * 1000;
-      const samePhase = String(draft.phase) === String(state.phase);
-      const isRecent = savedAt > 0 && (Date.now() - savedAt) < REFRESH_TTL_MS;
-      const refreshDetected = samePhase && isRecent;
-      void trackOnboardingEvent({
-        phase: draft.phase as any,
-        event: 'next',
-        userId: user?.id,
-        meta: {
-          kind: 'recovery_local_used',
-          refresh_detected: refreshDetected,
-          age_ms: savedAt ? Date.now() - savedAt : null,
-        },
-      });
-      const t = scheduleWizardTimeout(
-        { phase: state.phase as any, action: 'shell_local_draft_hint_clear' },
-        () => setDraftRestored(null),
-        5000,
-      );
-      return () => clearTimeout(t);
-    }
-    // Sessão limpa: marca explicitamente como "none" para diferenciar de
-    // sessões antigas onde a chave estava ausente. Se houve descarte por
-    // checksum/shape/versão, emite telemetria com a razão para análise.
-    if (!getOnboardingDraftSource()) setOnboardingDraftSource('none');
-    const diag = getLastReadDraftDiagnostics();
-    if (diag.reason && diag.reason !== 'empty' && diag.reason !== 'thin_content') {
-      void trackOnboardingEvent({
-        phase: state.phase as any,
-        event: 'error',
-        userId: user?.id,
-        meta: { kind: 'recovery_corrupted', reason: diag.reason },
-      });
-    }
-  }, [skipDraftRestore]);
+  // E8 · Persistence / Recovery Orchestrator (Chain A · RECOV) — extraído em PR 9.
+  // Contract completo vive em `usePersistenceRecoveryOrchestrator`. POSITION-
+  // DEPENDENCY preservada: chamado ANTES de E14 (bootstrap HYDRATE) para que
+  // o sticky draft source (seed/local/none) esteja definido quando E14 rodar.
+  // `setDraftRestored` permanece ownership do shell (consumido pelo banner UI).
+  usePersistenceRecoveryOrchestrator({
+    getCurrentState,
+    skipDraftRestore,
+    userId: user?.id,
+    setDraftRestored,
+  });
 
   // E11 · Leader / Write Gating Orchestrator (Chain D) — extraído em PR 8.
   // Contract completo vive em `useLeaderWriteGate`. Hook é o único owner
