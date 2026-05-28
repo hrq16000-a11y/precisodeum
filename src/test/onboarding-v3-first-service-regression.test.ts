@@ -30,11 +30,15 @@ describe('V3→V2 first service continuity (handoff interno)', () => {
 
   it('OnboardingV2Shell hidrata profile/provider e bloqueia regressão de fase', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
-    expect(shell).toContain('resolveOnboardingV2SeedState');
-    expect(shell).toContain('onboarding-v2-phase-regression-blocked');
+    // O shell delega hidratação + guard de regressão para o hook orchestrator.
+    expect(shell).toContain('useHydrationCoreOrchestrator');
     expect(shell).toContain('Já preenchido:');
     expect(shell).not.toContain("searchParams.get('source')");
+    const hydration = read('src/hooks/onboarding/useHydrationCoreOrchestrator.ts');
+    expect(hydration).toContain('resolveOnboardingV2SeedState');
+    expect(hydration).toContain('onboarding-v2-phase-regression-blocked');
   });
+
 
   it('wizardReducer mantém triage_pro_document na ordem visual do profissional', () => {
     const reducer = read('src/components/onboarding/wizard/wizardReducer.ts');
