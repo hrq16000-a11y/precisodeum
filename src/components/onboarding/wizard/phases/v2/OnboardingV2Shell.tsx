@@ -114,12 +114,18 @@ import {
 } from './bootstrap';
 import { buildWorkingHoursSummary } from './workingHours';
 // BetCardShell migrou para OnboardingShellChrome (PR 13).
-import { TERMS_VERSION, readVelocityMps, readAccuracyMeters } from '@/lib/wizardSnapshotInputs';
+// TERMS_VERSION/readAccuracyMeters/readVelocityMps migraram para buildRegistrationSnapshotPayload (PR 14).
 import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/lib/operations';
 // PR 9/11/12 — UI Composition Pass: extrações puramente visuais.
 // DraftRestoredBanner migrou para OnboardingShellChrome (PR 13).
 import { OnboardingShellChrome } from '@/components/onboarding/v2/layout/OnboardingShellChrome';
 import { OnboardingShellModals } from '@/components/onboarding/v2/layout/OnboardingShellModals';
+import { buildShellChromeProps } from '@/components/onboarding/v2/layout/buildShellChromeProps';
+import {
+  buildErrorContextSnapshot,
+  buildRemoteDraftSnapshot,
+} from '@/components/onboarding/v2/layout/buildShellModalProps';
+import { buildRegistrationSnapshotPayload } from '@/components/onboarding/v2/layout/buildPhaseLayoutProps';
 import {
   phaseComponentMap,
 } from '@/components/onboarding/v2/phases/phaseComponentMap';
@@ -2210,27 +2216,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               onSkip: async () => {
                 track('skip');
                 void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
-                  recordRegistrationSnapshotOnce({
-                    whatsapp: state.profile.whatsapp,
-                    postal_code: state.profile.postal_code,
-                    street: state.profile.street,
-                    street_number: state.profile.street_number,
-                    neighborhood: state.profile.neighborhood,
-                    city: state.profile.city,
-                    state: state.profile.state,
-                    latitude: (state.profile as any).latitude ?? null,
-                    longitude: (state.profile as any).longitude ?? null,
-                    accuracy_m: (state.profile as any).accuracy_m ?? readAccuracyMeters(),
-                    velocity_mps: (state.profile as any).velocity_mps ?? readVelocityMps(),
-                    terms_accepted: true,
-                    terms_version: TERMS_VERSION,
-                    origin_summary: {
-                      flow: 'onboarding_v2',
-                      account_type: state.profile.kind,
-                      has_first_service: !!state.service.service_name,
-                      finished_via: 'skip',
-                    },
-                  }),
+                  recordRegistrationSnapshotOnce(
+                    buildRegistrationSnapshotPayload(
+                      state.profile,
+                      !!state.service.service_name,
+                      'skip',
+                    ),
+                  ),
                 );
                 dispatch({ type: 'NEXT' });
               },
@@ -2244,27 +2236,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                 }));
                 if (!ok) return;
                 void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
-                  recordRegistrationSnapshotOnce({
-                    whatsapp: state.profile.whatsapp,
-                    postal_code: state.profile.postal_code,
-                    street: state.profile.street,
-                    street_number: state.profile.street_number,
-                    neighborhood: state.profile.neighborhood,
-                    city: state.profile.city,
-                    state: state.profile.state,
-                    latitude: (state.profile as any).latitude ?? null,
-                    longitude: (state.profile as any).longitude ?? null,
-                    accuracy_m: (state.profile as any).accuracy_m ?? readAccuracyMeters(),
-                    velocity_mps: (state.profile as any).velocity_mps ?? readVelocityMps(),
-                    terms_accepted: true, // clique Finalizar = aceite explícito dos Termos
-                    terms_version: TERMS_VERSION,
-                    origin_summary: {
-                      flow: 'onboarding_v2',
-                      account_type: state.profile.kind,
-                      has_first_service: !!state.service.service_name,
-                      finished_via: 'finish',
-                    },
-                  }),
+                  recordRegistrationSnapshotOnce(
+                    buildRegistrationSnapshotPayload(
+                      state.profile,
+                      !!state.service.service_name,
+                      'finish',
+                    ),
+                  ),
                 );
                 track('next');
                 dispatch({ type: 'NEXT' });
@@ -2576,25 +2554,28 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // PR 13 — Chrome/modal externos extraídos para componentes presentational
   // em `src/components/onboarding/v2/layout/`. O shell mantém runtime/owner-
   // ship intactos; apenas a composição visual final foi achatada.
+  // PR 14 — Snapshots/derivações UI agora vêm de builders puros em
+  // `src/components/onboarding/v2/layout/build*Props.ts`. Callbacks de
+  // runtime continuam sob ownership do shell.
+  const chromeProps = buildShellChromeProps({
+    draftRestored,
+    showAutoSaveBadge: viewModel.showAutoSaveBadge,
+    autoSaveSignal: state.profile,
+    phase: state.phase,
+  });
+  const errorContextSnapshot = buildErrorContextSnapshot(state, lastPersistError);
+  const remoteSnapshot = buildRemoteDraftSnapshot(remoteDraft);
+
   return (
     <>
-      <OnboardingShellChrome
-        draftRestored={draftRestored}
-        showAutoSaveBadge={viewModel.showAutoSaveBadge}
-        autoSaveSignal={state.profile}
-        phaseKey={state.phase}
-      >
+      <OnboardingShellChrome {...chromeProps}>
         {renderPhase()}
       </OnboardingShellChrome>
 
       <OnboardingShellModals
         remote={{
           open: showRemoteModal,
-          snapshot: {
-            payload: remoteDraft?.payload || null,
-            phase: (remoteDraft?.phase as string | null) || null,
-            updatedAt: remoteDraft?.updated_at || null,
-          },
+          snapshot: remoteSnapshot,
           onContinue: handleRemoteContinue,
           onDiscard: handleRemoteDiscard,
         }}
@@ -2606,14 +2587,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           missingFields: errorModal?.missingFields,
           technicalMessage: errorModal?.techMessage ?? null,
           technicalCode: errorModal?.techCode ?? null,
-          contextSnapshot: {
-            category: (state.service?.category_ids?.[0]) || null,
-            city: state.profile?.city || null,
-            state_uf: state.profile?.state || null,
-            lastPersistError: lastPersistError
-              ? { message: lastPersistError.message, code: lastPersistError.code || null }
-              : null,
-          },
+          contextSnapshot: errorContextSnapshot,
           onRetry: () => errorModal?.onRetry?.(),
           onBack: () => {
             void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
