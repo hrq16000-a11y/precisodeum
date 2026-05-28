@@ -2685,17 +2685,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
   };
 
-  // Progresso: a celebração já é "100%" sensorial, então tudo a partir dela conta como completo.
-  // A barra de progresso GLOBAL agora vive no WizardShell. Mantemos apenas
-  // o cálculo interno por compat (testes), mas não renderizamos mais a barra
-  // local — evita duplicidade visual quando aberto via /cadastro-inicial.
-  const isCelebrationOrLater =
-    state.phase === 'phase3_celebration' ||
-    state.phase === 'phase4_document' ||
-    state.phase === 'phase4_extras_a' ||
-    state.phase === 'phase4_extras_b' ||
-    state.phase === 'done';
-  void isCelebrationOrLater;
+  // ViewModel visual (PR 9 — UI Composition Pass). Apenas derivações
+  // memoizadas: nenhum side-effect, nenhuma decisão de runtime. Substitui
+  // os booleans inline `isCelebrationOrLater` e `showAutoSaveBadge`.
+  const viewModel = useOnboardingViewModel({ phase: state.phase });
+  void viewModel.isCelebrationOrLater; // mantido por compat de testes existentes.
 
   return (
     <>
@@ -2704,7 +2698,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       <DraftRestoredBanner draftRestored={draftRestored} />
 
       <BetCardShell animated={false}>
-        {state.phase !== 'phase2_service' && state.phase !== 'done' && (
+        {viewModel.showAutoSaveBadge && (
           <div className="mb-2 flex items-center justify-end">
             <AutoSaveBadge signal={state.profile} />
           </div>
