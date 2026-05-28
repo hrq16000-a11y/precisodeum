@@ -95,15 +95,17 @@ describe('Onboarding — fluxo unificado (Consolidação Fase 2)', () => {
     expect(shell).toContain('MainOrchestrator');
     expect(shell).toContain('wizardReducer');
     expect(shell).toContain('WizardProgressBar');
-    // Cada fase tem o seu próprio botão Voltar interno; o shell expõe
-    // navegação global via wizard:request-back / source: 'global-nav'.
-    expect(shell).toMatch(/source:\s*['"]global-nav['"]/);
     // Telemetria unificada por fase.
     expect(shell).toContain("variant: 'unified'");
     // Não navega entre rotas para fazer handoff.
     expect(shell).not.toMatch(/navigate\(['"]\/onboarding-v2/);
     expect(shell).not.toMatch(/navigate\(['"]\/cadastro-bet/);
+    // Cada fase tem o seu próprio botão Voltar interno; a navegação global
+    // é entregue via evento `wizard:request-back`, listado pelo BetModeShell.
+    const bet = read('src/components/onboarding/wizard/phases/bet/BetModeShell.tsx');
+    expect(bet).toMatch(/addEventListener\(['"]wizard:request-back['"]/);
   });
+
 
   it('PhaseCelebration sugere instalar o app via InstallAppCard', () => {
     const phase3 = read('src/components/onboarding/wizard/phases/v2/Phase3Celebration.tsx');
