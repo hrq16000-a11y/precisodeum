@@ -222,18 +222,7 @@ const LazyImage = ({
             willChange: 'opacity',
           }}
           onLoad={() => {
-            if (surface) {
-              const dur =
-                (typeof performance !== 'undefined' ? performance.now() : Date.now()) -
-                thumbStartedAtRef.current;
-              logImageLoad({
-                variant: 'thumb',
-                url: variants.thumb,
-                durationMs: dur,
-                mode: 'blur-up',
-                surface,
-              });
-            }
+            /* thumb loaded — no-op */
           }}
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.opacity = '0';
