@@ -120,12 +120,9 @@ import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/l
 // DraftRestoredBanner migrou para OnboardingShellChrome (PR 13).
 import { OnboardingShellChrome } from '@/components/onboarding/v2/layout/OnboardingShellChrome';
 import { OnboardingShellModals } from '@/components/onboarding/v2/layout/OnboardingShellModals';
-import { buildShellChromeProps } from '@/components/onboarding/v2/layout/buildShellChromeProps';
-import {
-  buildErrorContextSnapshot,
-  buildRemoteDraftSnapshot,
-} from '@/components/onboarding/v2/layout/buildShellModalProps';
-import { buildRegistrationSnapshotPayload } from '@/components/onboarding/v2/layout/buildPhaseLayoutProps';
+// PR 15 — chrome/modal/visual derivations consolidados em buildShellRenderState.
+import { buildShellRenderState } from '@/components/onboarding/v2/layout/buildShellRenderState';
+import { recordExtrasBRegistrationSnapshot } from '@/components/onboarding/v2/layout/buildPhaseActionGroups';
 import {
   phaseComponentMap,
 } from '@/components/onboarding/v2/phases/phaseComponentMap';
@@ -2215,14 +2212,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               saving,
               onSkip: async () => {
                 track('skip');
-                void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
-                  recordRegistrationSnapshotOnce(
-                    buildRegistrationSnapshotPayload(
-                      state.profile,
-                      !!state.service.service_name,
-                      'skip',
-                    ),
-                  ),
+                recordExtrasBRegistrationSnapshot(
+                  state.profile,
+                  !!state.service.service_name,
+                  'skip',
                 );
                 dispatch({ type: 'NEXT' });
               },
@@ -2235,14 +2228,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                   website: state.profile.website_url,
                 }));
                 if (!ok) return;
-                void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
-                  recordRegistrationSnapshotOnce(
-                    buildRegistrationSnapshotPayload(
-                      state.profile,
-                      !!state.service.service_name,
-                      'finish',
-                    ),
-                  ),
+                recordExtrasBRegistrationSnapshot(
+                  state.profile,
+                  !!state.service.service_name,
+                  'finish',
                 );
                 track('next');
                 dispatch({ type: 'NEXT' });
@@ -2555,27 +2544,31 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // em `src/components/onboarding/v2/layout/`. O shell mantém runtime/owner-
   // ship intactos; apenas a composição visual final foi achatada.
   // PR 14 — Snapshots/derivações UI agora vêm de builders puros em
-  // `src/components/onboarding/v2/layout/build*Props.ts`. Callbacks de
-  // runtime continuam sob ownership do shell.
-  const chromeProps = buildShellChromeProps({
-    draftRestored,
-    showAutoSaveBadge: viewModel.showAutoSaveBadge,
-    autoSaveSignal: state.profile,
+  // `src/components/onboarding/v2/layout/build*Props.ts`.
+  // PR 15 — Consolidação final em `buildShellRenderState`: uma única
+  // chamada devolve chrome+remoto+erro+visual state. Callbacks de runtime
+  // continuam sob ownership do shell.
+  const render = buildShellRenderState({
     phase: state.phase,
+    viewModel,
+    draftRestored,
+    autoSaveSignal: state.profile,
+    remoteDraft,
+    errorState: state,
+    lastPersistError,
   });
-  const errorContextSnapshot = buildErrorContextSnapshot(state, lastPersistError);
-  const remoteSnapshot = buildRemoteDraftSnapshot(remoteDraft);
 
   return (
     <>
-      <OnboardingShellChrome {...chromeProps}>
+      <OnboardingShellChrome {...render.chromeProps}>
         {renderPhase()}
       </OnboardingShellChrome>
+
 
       <OnboardingShellModals
         remote={{
           open: showRemoteModal,
-          snapshot: remoteSnapshot,
+          snapshot: render.remoteSnapshot,
           onContinue: handleRemoteContinue,
           onDiscard: handleRemoteDiscard,
         }}
@@ -2587,7 +2580,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           missingFields: errorModal?.missingFields,
           technicalMessage: errorModal?.techMessage ?? null,
           technicalCode: errorModal?.techCode ?? null,
-          contextSnapshot: errorContextSnapshot,
+          contextSnapshot: render.errorContextSnapshot,
           onRetry: () => errorModal?.onRetry?.(),
           onBack: () => {
             void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
