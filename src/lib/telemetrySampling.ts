@@ -9,16 +9,14 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 
-type SampleKey = 'web_vitals' | 'query';
+type SampleKey = 'web_vitals';
 
 const SETTING_KEY: Record<SampleKey, string> = {
   web_vitals: 'telemetry_sample_rate_web_vitals',
-  query: 'telemetry_sample_rate_query',
 };
 
 const DEFAULT_RATE: Record<SampleKey, number> = {
   web_vitals: 0.10,
-  query: 0.05,
 };
 
 const CACHE_TTL_MS = 5 * 60 * 1000;

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, ImgHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 import { getImageVariants } from '@/lib/imageVariants';
-import { logImageLoad } from '@/lib/lcpTelemetry';
+
 
 /**
  * LazyImage com efeito Blur-up (LQIP) usando variantes do Supabase.
@@ -185,19 +185,6 @@ const LazyImage = ({
         style={legacyBlurStyle}
         onLoad={(e) => {
           setLoaded(true);
-          if (surface) {
-            const dur =
-              (typeof performance !== 'undefined' ? performance.now() : Date.now()) -
-              startedAtRef.current;
-            logImageLoad({
-              variant: 'unknown',
-              url: typeof src === 'string' ? src : null,
-              durationMs: dur,
-              mode: disableBlurUp ? 'no-variants' : 'legacy',
-              surface,
-              renderedWidth: e.currentTarget.clientWidth || null,
-            });
-          }
           onLoad?.(e);
         }}
         onError={(e) => {
@@ -235,18 +222,7 @@ const LazyImage = ({
             willChange: 'opacity',
           }}
           onLoad={() => {
-            if (surface) {
-              const dur =
-                (typeof performance !== 'undefined' ? performance.now() : Date.now()) -
-                thumbStartedAtRef.current;
-              logImageLoad({
-                variant: 'thumb',
-                url: variants.thumb,
-                durationMs: dur,
-                mode: 'blur-up',
-                surface,
-              });
-            }
+            /* thumb loaded — no-op */
           }}
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.opacity = '0';
@@ -271,19 +247,6 @@ const LazyImage = ({
         )}
         onLoad={(e) => {
           setLoaded(true);
-          if (surface) {
-            const dur =
-              (typeof performance !== 'undefined' ? performance.now() : Date.now()) -
-              startedAtRef.current;
-            logImageLoad({
-              variant: 'medium',
-              url: variants.medium,
-              durationMs: dur,
-              mode: 'blur-up',
-              surface,
-              renderedWidth: e.currentTarget.clientWidth || null,
-            });
-          }
           onLoad?.(e);
         }}
         onError={(e) => {
