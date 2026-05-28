@@ -2514,20 +2514,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   };
 
 
-  // ViewModel visual (PR 9 — UI Composition Pass). Apenas derivações
-  // memoizadas: nenhum side-effect, nenhuma decisão de runtime. Substitui
-  // os booleans inline `isCelebrationOrLater` e `showAutoSaveBadge`.
+  // ViewModel visual — derivações puras consumidas pelo render-state
+  // builder. Runtime/orchestration permanece neste shell.
   const viewModel = useOnboardingViewModel({ phase: state.phase });
-  void viewModel.isCelebrationOrLater; // mantido por compat de testes existentes.
-
-  // PR 13 — Chrome/modal externos extraídos para componentes presentational
-  // em `src/components/onboarding/v2/layout/`. O shell mantém runtime/owner-
-  // ship intactos; apenas a composição visual final foi achatada.
-  // PR 14 — Snapshots/derivações UI agora vêm de builders puros em
-  // `src/components/onboarding/v2/layout/build*Props.ts`.
-  // PR 15 — Consolidação final em `buildShellRenderState`: uma única
-  // chamada devolve chrome+remoto+erro+visual state. Callbacks de runtime
-  // continuam sob ownership do shell.
   const render = buildShellRenderState({
     phase: state.phase,
     viewModel,
