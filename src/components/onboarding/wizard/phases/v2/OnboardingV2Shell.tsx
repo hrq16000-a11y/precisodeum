@@ -2089,119 +2089,223 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     useState<'idle' | 'running' | 'failed'>('idle');
 
   const renderPhase = () => {
-    switch (state.phase) {
-      // phase1_action / phase1_kind / phase1_location / phase1_contact
-      // foram removidas em mai/2026 (consolidação Bet Mode). Esses dados
-      // agora vêm 100% da triagem; a fase principal começa em phase2_service.
-      case 'phase2_service':
-        return (
-          <>
-            <Phase2Service
-              service={state.service}
-              profile={state.profile}
-              onChangeService={patchService}
-              onChangeProfile={patchProfile}
-              onBack={() => {
-                // phase2_service é a 1ª fase viva do V2. O Voltar delega ao
-                // WizardShell via helper canônico (`requestWizardBack`), que
-                // centraliza telemetria + nome do evento + guard de fallback.
-                track('back');
-                import('@/lib/wizardBackNav').then(({ requestWizardBack }) => {
-                  requestWizardBack({ phase: 'phase2_service', source: 'phase2_service' });
-                });
+    // ──────────────────────────────────────────────────────────────
+    // PHASE ROUTER (PR 10 — UI Composition Pass).
+    // Estratégia híbrida: fases migradas são resolvidas pelo registry
+    // declarativo `phaseComponentMap`; o restante segue no switch legado.
+    // Toda a orquestração (callbacks, persist, telemetry, dispatch)
+    // permanece NESTE shell — os wrappers só compõem JSX.
+    // ──────────────────────────────────────────────────────────────
+    if (isMigratedPhase(state.phase)) {
+      switch (state.phase) {
+        case 'phase2_service': {
+          const Component = phaseComponentMap.phase2_service;
+          return (
+            <Component
+              serviceProps={{
+                service: state.service,
+                profile: state.profile,
+                onChangeService: patchService,
+                onChangeProfile: patchProfile,
+                onBack: () => {
+                  // phase2_service é a 1ª fase viva do V2. O Voltar delega ao
+                  // WizardShell via helper canônico (`requestWizardBack`).
+                  track('back');
+                  import('@/lib/wizardBackNav').then(({ requestWizardBack }) => {
+                    requestWizardBack({ phase: 'phase2_service', source: 'phase2_service' });
+                  });
+                },
+                onNext: async () => {
+                  track('next');
+                  // Containment patch — Crítico #2: persist EARLY antes de
+                  // avançar. Best-effort: persistFirstService completo cobre em phase2_details.
+                  try { await persistFirstServiceEarly(); } catch { /* fail-soft */ }
+                  dispatch({ type: 'NEXT' });
+                },
+                firstServiceId: state.firstServiceId,
+                onSkip: () => {
+                  // BLINDAGEM: "Pular o 1º serviço" NUNCA navega para o dashboard.
+                  track('skip', { milestone: 'skip_first_service', target: 'phase4_document' });
+                  continueWithoutFirstService();
+                },
               }}
-              onNext={async () => {
-                track('next');
-                // Containment patch — Crítico #2: persist EARLY antes de
-                // avançar. Best-effort (silencioso): se falhar, segue mesmo
-                // assim — o persistFirstService completo cobre em phase2_details.
-                try { await persistFirstServiceEarly(); } catch { /* fail-soft */ }
-                dispatch({ type: 'NEXT' });
-              }}
-              firstServiceId={state.firstServiceId}
-              onSkip={() => {
-                // BLINDAGEM (regression-locked): "Pular o 1º serviço" NUNCA
-                // navega para o dashboard. Em vez disso, registra a intenção
-                // via `continueWithoutFirstService`, que despacha
-                // GO_TO phase4_document e permite o usuário concluir o cadastro
-                // sem um serviço (selo "perfil incompleto" segue tratado pelo
-                // gate). Validado por `onboarding-v3-skip-first-service-e2e`.
-                track('skip', { milestone: 'skip_first_service', target: 'phase4_document' });
-                continueWithoutFirstService();
+              encouragement={{
+                title: 'Você está a 3 passos do seu 1º anúncio',
+                description: 'Cadastre o serviço, capriche nos detalhes e adicione fotos — clientes da sua região já estão buscando.',
+                items: [
+                  { label: `Serviço${(state.service.service_name || '').trim() ? ' — pronto' : ''}`, done: !!(state.service.service_name || '').trim() && (state.service.category_ids?.length ?? 0) > 0 },
+                  { label: `Detalhes${(state.service.description || '').trim().length >= 10 ? ' — pronto' : ''}`, done: (state.service.description || '').trim().length >= 10 },
+                  { label: `Fotos${photoCount > 0 ? ` — ${photoCount}/5` : ''}`, done: photoCount > 0 },
+                ],
+                nextStep:
+                  !(state.service.category_ids?.length ?? 0)
+                    ? 'Escolha a categoria do serviço.'
+                    : !(state.service.service_name || '').trim()
+                      ? 'Dê um nome curto e claro ao serviço.'
+                      : (state.service.description || '').trim().length < 10
+                        ? 'Escreva uma descrição (mín. 10 caracteres).'
+                        : 'Tudo pronto — pode salvar e continuar.',
               }}
             />
-            <WizardEncouragement
-              title="Você está a 3 passos do seu 1º anúncio"
-              description="Cadastre o serviço, capriche nos detalhes e adicione fotos — clientes da sua região já estão buscando."
-              items={[
-                { label: `Serviço${(state.service.service_name || '').trim() ? ' — pronto' : ''}`, done: !!(state.service.service_name || '').trim() && (state.service.category_ids?.length ?? 0) > 0 },
-                { label: `Detalhes${(state.service.description || '').trim().length >= 10 ? ' — pronto' : ''}`, done: (state.service.description || '').trim().length >= 10 },
-                { label: `Fotos${photoCount > 0 ? ` — ${photoCount}/5` : ''}`, done: photoCount > 0 },
-              ]}
-              nextStep={
-                !(state.service.category_ids?.length ?? 0)
-                  ? 'Escolha a categoria do serviço.'
-                  : !(state.service.service_name || '').trim()
-                    ? 'Dê um nome curto e claro ao serviço.'
-                    : (state.service.description || '').trim().length < 10
-                      ? 'Escreva uma descrição (mín. 10 caracteres).'
-                      : 'Tudo pronto — pode salvar e continuar.'
-              }
+          );
+        }
+        case 'phase2_details': {
+          const Component = phaseComponentMap.phase2_details;
+          return (
+            <Component
+              detailsProps={{
+                service: state.service,
+                profile: state.profile,
+                onChangeService: patchService,
+                onChangeProfile: patchProfile,
+                onBack: () => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_service' }); },
+                saving,
+                onSkip: async () => {
+                  // [FIX 2026-05-02] "Pular detalhes" NÃO joga mais para o dashboard.
+                  // Salva o serviço (criando o firstServiceId) e segue para phase2_photos.
+                  track('skip', { milestone: 'first_service_save_continue', target: 'phase2_photos' });
+                  const ok = await persistFirstService();
+                  if (ok) {
+                    toast.success('Serviço salvo! Agora adicione fotos para destacar seu trabalho.');
+                    dispatch({ type: 'GO_TO', phase: 'phase2_photos' });
+                  } else {
+                    track('error', { reason: 'persist_service_failed' });
+                    toast.error(
+                      'Falta pouco! Não conseguimos salvar agora — revise os campos e tente novamente.',
+                    );
+                  }
+                },
+                onSubmit: async () => {
+                  track('submit');
+                  const ok = await persistFirstService();
+                  if (ok) { track('next'); dispatch({ type: 'NEXT' }); }
+                  else track('error', { reason: 'persist_service_failed' });
+                },
+              }}
+              encouragement={{
+                title: 'Detalhes vendem mais',
+                description: 'Anúncios com descrição e horário recebem até 3× mais contatos — você pode pular e voltar depois.',
+                items: [
+                  { label: 'Serviço — pronto', done: !!(state.service.service_name || '').trim() },
+                  { label: `Detalhes${(state.service.cities_served?.length ?? 0) > 0 && (state.service.working_hours || '').trim() ? ' — completo' : ''}`, done: (state.service.cities_served?.length ?? 0) > 0 && (state.service.working_hours || '').trim().length > 0 },
+                  { label: `Fotos${photoCount > 0 ? ` — ${photoCount}/5` : ''}`, done: photoCount > 0 },
+                ],
+                nextStep:
+                  (state.service.cities_served?.length ?? 0) === 0
+                    ? 'Adicione pelo menos 1 cidade onde você atende.'
+                    : !(state.service.working_hours || '').trim()
+                      ? 'Defina seus horários de atendimento.'
+                      : 'Pode salvar e seguir para as fotos.',
+              }}
             />
-          </>
-        );
-      case 'phase2_details':
-        return (
-          <>
-            <Phase2Details
-              service={state.service}
-              profile={state.profile}
-              onChangeService={patchService}
-              onChangeProfile={patchProfile}
-              onBack={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_service' }); }}
-              saving={saving}
-              onSkip={async () => {
-                // [FIX 2026-05-02] "Pular detalhes" NÃO joga mais para o dashboard.
-                // Salva o serviço (criando o firstServiceId) e segue para
-                // phase2_photos, mantendo o circuito viciante e permitindo voltar.
-                // Se a persistência falhar, mostra toast e mantém o usuário na fase.
-                track('skip', { milestone: 'first_service_save_continue', target: 'phase2_photos' });
-                const ok = await persistFirstService();
-                if (ok) {
-                  toast.success('Serviço salvo! Agora adicione fotos para destacar seu trabalho.');
-                  dispatch({ type: 'GO_TO', phase: 'phase2_photos' });
-                } else {
-                  track('error', { reason: 'persist_service_failed' });
-                  toast.error(
-                    'Falta pouco! Não conseguimos salvar agora — revise os campos e tente novamente.',
+          );
+        }
+        case 'phase4_extras_a': {
+          const Component = phaseComponentMap.phase4_extras_a;
+          return (
+            <Component
+              extrasProps={{
+                data: state.profile,
+                onChange: patchProfile,
+                saving,
+                onSkip: () => { track('skip'); dispatch({ type: 'NEXT' }); },
+                onContinue: async () => {
+                  track('submit');
+                  const ok = await persistPatch(nullifyEmpty({
+                    years_experience: state.profile.years_experience,
+                    neighborhood: state.profile.neighborhood,
+                    description: state.profile.bio,
+                  }));
+                  if (!ok) return;
+                  track('next');
+                  dispatch({ type: 'NEXT' });
+                },
+              }}
+            />
+          );
+        }
+        case 'phase4_extras_b': {
+          const Component = phaseComponentMap.phase4_extras_b;
+          return (
+            <Component
+              extrasProps={{
+                data: state.profile,
+                onChange: patchProfile,
+                saving,
+                onSkip: async () => {
+                  track('skip');
+                  void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
+                    recordRegistrationSnapshotOnce({
+                      whatsapp: state.profile.whatsapp,
+                      postal_code: state.profile.postal_code,
+                      street: state.profile.street,
+                      street_number: state.profile.street_number,
+                      neighborhood: state.profile.neighborhood,
+                      city: state.profile.city,
+                      state: state.profile.state,
+                      latitude: (state.profile as any).latitude ?? null,
+                      longitude: (state.profile as any).longitude ?? null,
+                      accuracy_m: (state.profile as any).accuracy_m ?? readAccuracyMeters(),
+                      velocity_mps: (state.profile as any).velocity_mps ?? readVelocityMps(),
+                      terms_accepted: true,
+                      terms_version: TERMS_VERSION,
+                      origin_summary: {
+                        flow: 'onboarding_v2',
+                        account_type: state.profile.kind,
+                        has_first_service: !!state.service.service_name,
+                        finished_via: 'skip',
+                      },
+                    }),
                   );
-                }
-              }}
-              onSubmit={async () => {
-                track('submit');
-                const ok = await persistFirstService();
-                if (ok) { track('next'); dispatch({ type: 'NEXT' }); }
-                else track('error', { reason: 'persist_service_failed' });
+                  dispatch({ type: 'NEXT' });
+                },
+                onBack: () => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase4_extras_a' }); },
+                onFinish: async () => {
+                  track('submit');
+                  const ok = await persistPatch(nullifyEmpty({
+                    instagram_url: state.profile.instagram_url,
+                    facebook_url: state.profile.facebook_url,
+                    website: state.profile.website_url,
+                  }));
+                  if (!ok) return;
+                  void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
+                    recordRegistrationSnapshotOnce({
+                      whatsapp: state.profile.whatsapp,
+                      postal_code: state.profile.postal_code,
+                      street: state.profile.street,
+                      street_number: state.profile.street_number,
+                      neighborhood: state.profile.neighborhood,
+                      city: state.profile.city,
+                      state: state.profile.state,
+                      latitude: (state.profile as any).latitude ?? null,
+                      longitude: (state.profile as any).longitude ?? null,
+                      accuracy_m: (state.profile as any).accuracy_m ?? readAccuracyMeters(),
+                      velocity_mps: (state.profile as any).velocity_mps ?? readVelocityMps(),
+                      terms_accepted: true, // clique Finalizar = aceite explícito dos Termos
+                      terms_version: TERMS_VERSION,
+                      origin_summary: {
+                        flow: 'onboarding_v2',
+                        account_type: state.profile.kind,
+                        has_first_service: !!state.service.service_name,
+                        finished_via: 'finish',
+                      },
+                    }),
+                  );
+                  track('next');
+                  dispatch({ type: 'NEXT' });
+                },
               }}
             />
-            <WizardEncouragement
-              title="Detalhes vendem mais"
-              description="Anúncios com descrição e horário recebem até 3× mais contatos — você pode pular e voltar depois."
-              items={[
-                { label: 'Serviço — pronto', done: !!(state.service.service_name || '').trim() },
-                { label: `Detalhes${(state.service.cities_served?.length ?? 0) > 0 && (state.service.working_hours || '').trim() ? ' — completo' : ''}`, done: (state.service.cities_served?.length ?? 0) > 0 && (state.service.working_hours || '').trim().length > 0 },
-                { label: `Fotos${photoCount > 0 ? ` — ${photoCount}/5` : ''}`, done: photoCount > 0 },
-              ]}
-              nextStep={
-                (state.service.cities_served?.length ?? 0) === 0
-                  ? 'Adicione pelo menos 1 cidade onde você atende.'
-                  : !(state.service.working_hours || '').trim()
-                    ? 'Defina seus horários de atendimento.'
-                    : 'Pode salvar e seguir para as fotos.'
-              }
-            />
-          </>
-        );
+          );
+        }
+      }
+    }
+
+    switch (state.phase) {
+      // phase2_service / phase2_details / phase4_extras_a / phase4_extras_b
+      // foram migrados para o phaseComponentMap acima.
+      // phase1_action / phase1_kind / phase1_location / phase1_contact
+      // foram removidas em mai/2026 (consolidação Bet Mode).
       case 'phase2_photos':
         if (!state.firstServiceId || !user?.id) {
           // Diagnóstico específico campo-a-campo em vez de tela em branco.
