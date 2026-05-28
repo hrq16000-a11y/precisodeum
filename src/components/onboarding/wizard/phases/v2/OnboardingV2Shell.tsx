@@ -723,7 +723,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     });
 
     dispatch({ type: 'HYDRATE', state: resolved });
+    lifecyclePhaseRef.current = 'HYDRATED';
   }, [profile, provider, internalHandoffFromTriage]);
+
 
   // ── HIDRATAÇÃO EM MODO REVISÃO ─────────────────────────────────────────────
   // Se o usuário já tem provider e/ou serviço cadastrado mas o estado local
