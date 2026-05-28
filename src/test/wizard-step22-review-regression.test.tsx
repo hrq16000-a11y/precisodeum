@@ -30,14 +30,37 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 import Step22_Review from '@/components/onboarding/wizard/phases/Step22_Review';
 
-function makeProvidersOk(payload: any) {
-  return {
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        maybeSingle: vi.fn().mockResolvedValue({ data: payload, error: null }),
-      }),
-    }),
-  };
+/**
+ * Step22_Review lê providers via RPC SECURITY DEFINER
+ * `get_my_provider_details` (necessário para CPF/CNPJ — column-level
+ * REVOKE). Setamos `supabase.rpc` para esse caso e mantemos `from` para
+ * services / portfolio_albums.
+ */
+function setProviderRpcOk(payload: any) {
+  supabaseMock.rpc.mockImplementation((name: string) => {
+    if (name === 'get_my_provider_details') {
+      return Promise.resolve({ data: payload ? [payload] : [], error: null });
+    }
+    return Promise.resolve({ data: null, error: null });
+  });
+}
+
+function setProviderRpcError(message = 'boom') {
+  supabaseMock.rpc.mockImplementation((name: string) => {
+    if (name === 'get_my_provider_details') {
+      return Promise.resolve({ data: null, error: { message } });
+    }
+    return Promise.resolve({ data: null, error: null });
+  });
+}
+
+function setProviderRpcReject(message = 'Failed to fetch') {
+  supabaseMock.rpc.mockImplementation((name: string) => {
+    if (name === 'get_my_provider_details') {
+      return Promise.reject(new Error(message));
+    }
+    return Promise.resolve({ data: null, error: null });
+  });
 }
 
 function makeServicesCount(c: number) {
