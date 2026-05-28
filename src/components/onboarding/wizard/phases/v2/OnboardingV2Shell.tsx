@@ -2297,7 +2297,6 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
             />
           );
         }
-      }
         case 'phase2_photos': {
           const PhotosComponent = phaseComponentMap.phase2_photos;
           if (!state.firstServiceId || !user?.id) {
