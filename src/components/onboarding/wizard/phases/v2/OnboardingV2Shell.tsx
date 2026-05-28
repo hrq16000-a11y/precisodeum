@@ -645,16 +645,63 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
   }, [profile?.user_ref, state.userRef]);
 
-  // E14 · ORDER CONTRACT (Chain A · bootstrap HYDRATE)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HYDRATION CORE (E14 + E15) — NÚCLEO ÚNICO COORDENADO
+  // ───────────────────────────────────────────────────────────────────────────
+  // Tratamos E14 (bootstrap seed) e E15 (revisão DB) como UM ÚNICO núcleo
+  // crítico, com sequência explícita e ownership consolidado. NÃO devem ser
+  // extraídos separadamente — apenas em conjunto, depois de E18 (submit).
+  //
+  // OWNERSHIP CONSOLIDADO:
+  //   - bootstrap owner ............. E14 (este shell)
+  //   - replay/review owner ......... E15 (este shell)
+  //   - hydration sequencing owner .. este shell (via lifecyclePhaseRef)
+  //   - hydration lifecycle owner ... signalLifecyclePhase() único helper
+  //   - HYDRATE dispatch owner ...... E14 + E15 (exclusivos — nenhum outro
+  //                                   effect emite HYDRATE; E13/E14/E15 são
+  //                                   os únicos dispatchers de mutação inicial)
+  //
+  // HYDRATION-SEQUENCE (Chain A · ordem temporal garantida):
+  //   1. mount             → lifecyclePhaseRef = 'BOOT'
+  //   2. E8/E11 (RECOV)    → sticky draft source decidido (seed|local|none)
+  //   3. E12/E13           → full_name e userRef sincronizados do auth
+  //   4. E14 (bootstrap)   → BOOT → HYDRATING → dispatch HYDRATE → HYDRATED
+  //   5. E15 (review/DB)   → assíncrono; faz fetch e re-HYDRATE quando faltar
+  //                          providerId/firstServiceId/corpo do serviço.
+  //                          REPLAY APPLICATION (separado do bootstrap).
+  //   6. E17/E16/E5        → consomem snapshot já hidratado.
+  //
+  // REPLAY SEMANTICS · separação explícita:
+  //   - E14 = HYDRATION BOOTSTRAP (seed síncrono profile/provider/service).
+  //   - E15 = REPLAY APPLICATION  (fetch DB → reaplica registros reais).
+  //   E15 NÃO é "segundo bootstrap": só dispara quando bootstrap deixou
+  //   lacunas (providerId/firstServiceId/service body ausentes), e cada
+  //   dispatch HYDRATE dentro dele é uma APLICAÇÃO de replay restrita ao
+  //   campo recuperado (providerId, serviceId, service merged) — nunca
+  //   sobrescreve o que o usuário já preencheu (merge respeita existing).
+  //
+  // TEMPORAL COUPLING (estabilizado, não eliminado):
+  //   - E14 deve preceder E15: garantido por DEPS (E14 roda síncrono no
+  //     primeiro commit pós-mount; E15 é async com await — sempre depois).
+  //   - E15 vs E5 (flush): mitigado pela condição de E15 disparar APENAS
+  //     quando providerId/service estão ausentes — estado em que o flush
+  //     equivale a no-op (sem payload significativo para perder).
+  //   - E15 vs multi-tab: leitor de DB, escrita gated por isTabLeader em
+  //     downstream — E15 só dispatcha HYDRATE local (sem write remoto).
+  //
+  // E14 · ORDER CONTRACT (Chain A step · bootstrap HYDRATE)
   //   REQUIRES: E12 (full_name auth) e E13 (userRef sync) já dispatcharam;
   //             E8/E11 (RECOV) já decidiram local-vs-remote.
   //   PRODUCES: dispatch HYDRATE com seed resolvido (profile/provider/service).
   //             Atualiza lifecyclePhaseRef: BOOT → HYDRATING → HYDRATED.
   //   CONSUMERS: E5 (flush por fase), E15 (revisão DB), todo o resto.
+  //   OWNERSHIP: único owner do BOOTSTRAP. Nenhum outro effect computa seed.
   //   GUARD: regressão de fase bloqueada via phaseIndex; HYDRATE redundante
   //          short-circuitado por comparação estrutural.
   //   POSITION-DEPENDENCY: deve preceder E15 (revisão usa providerId já hidratado).
+  //   HYDRATION-SEQUENCE: passo 4 (após RECOV/auth, antes de replay).
   //   NÃO EXTRAIR sem antes promover lifecyclePhaseRef a gate explícito.
+
   useEffect(() => {
     if (lifecyclePhaseRef.current === 'BOOT') signalLifecyclePhase('HYDRATING');
     const bootstrap = buildOnboardingV2BootstrapState({ profile, provider });
@@ -726,26 +773,40 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   //             snapshot estável). E13 produziu state.userRef quando aplicável.
   //   PRODUCES: providerId e/ou serviço carregados do banco quando faltarem.
   //   CONSUMERS: UI das fases de revisão; E5 quando phase muda depois.
+  // E15 · ORDER CONTRACT (Chain A step · REPLAY APPLICATION / revisão DB)
+  //   REQUIRES: E14 já tentou hidratar (lifecyclePhaseRef === 'HYDRATED' ou
+  //             snapshot estável). E13 produziu state.userRef quando aplicável.
+  //   PRODUCES: providerId e/ou serviço carregados do banco quando faltarem.
+  //             Cada dispatch HYDRATE é uma APLICAÇÃO DE REPLAY restrita ao
+  //             campo recuperado (não recomputa seed completo).
+  //   CONSUMERS: UI das fases de revisão; E5 quando phase muda depois.
+  //   OWNERSHIP: único owner do REPLAY APPLICATION (fetch DB → reaplica).
+  //   POSITION-DEPENDENCY: roda DEPOIS de E14 (async + deps em state.providerId).
+  //   HYDRATION-SEQUENCE: passo 5 (último estágio do hydration core).
   //   RACE COM E5: se E15 hidrata DEPOIS de E5 flush, o flush usaria payload
   //             vazio — mitigado porque E15 só dispara quando providerId/service
   //             ESTÃO ausentes, condição em que o flush também é no-op-equivalente.
+  //   REPLAY ISOLATION: não sobrescreve campos preenchidos pelo usuário
+  //             (merge respeita `existingService.* || svc.*`).
   useEffect(() => {
 
     let cancelled = false;
     (async () => {
       if (!user?.id && !state.userRef) return;
 
-      // 1) Resgata providerId se ausente — tenta por user_id e por user_ref
+      // Replay stage 1 · providerId recovery (resgata se ausente)
       let pid = state.providerId;
       if (!pid) {
         pid = await findExistingProvider(user?.id ?? null, state.userRef ?? null);
         if (pid && !cancelled) {
           dispatch({ type: 'HYDRATE', state: { providerId: pid } });
+          signalLifecyclePhase('HYDRATED');
         }
       }
       if (cancelled) return;
 
-      // 2) Decide se precisamos buscar/rehidratar o serviço.
+      // Replay stage 2 · service body check.
+
       //    Antes: pulávamos sempre que firstServiceId estava setado — isso
       //    deixava a UI vazia quando o draft remoto trazia só o ID, mas o
       //    corpo do serviço (categoria/descrição/etc.) tinha sido perdido.
@@ -762,8 +823,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         !!(svcState.description && svcState.description.trim());
       if (state.firstServiceId && hasServiceBody) return;
 
-      // 3) Busca o melhor serviço existente (pelo provider OU pelo user_ref)
-      //    para hidratar o Wizard em modo revisão sem duplicar registros.
+      // Replay stage 3 · fetch best existing service (by provider OR user_ref)
+      //                   para hidratar Wizard em modo revisão sem duplicar.
       const svc = await fetchExistingFirstService(pid, state.userRef ?? null, state.profile.primary_category_id);
       if (!svc || cancelled) return;
 
@@ -771,6 +832,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         dispatch({ type: 'SET_FIRST_SERVICE_ID', id: svc.id });
       }
 
+      // Replay stage 4 · merge respeitando campos preenchidos (REPLAY ISOLATION).
       const existingService = state.service || ({} as any);
         const merged: any = {
         service_name: existingService.service_name || svc.service_name || '',
@@ -797,6 +859,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       };
 
       dispatch({ type: 'HYDRATE', state: { service: merged } });
+      signalLifecyclePhase('HYDRATED');
+
 
       if (svc.category_id && !state.profile.primary_category_id) {
         dispatch({ type: 'PATCH_PROFILE', patch: { primary_category_id: svc.category_id } });
