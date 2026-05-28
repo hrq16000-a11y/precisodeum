@@ -6,7 +6,7 @@ import {
 import { fetchRemoteDraft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2RemoteDraft';
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 import { neutralizeZombieTimers } from '@/lib/wizardZombieGuard';
-import { phaseIndex } from '@/components/onboarding/wizard/phases/v2/reducer';
+import { phaseIndex } from '@/components/onboarding/wizard/phases/v2/state';
 
 export interface RemoteDraftPayload {
   payload: {
