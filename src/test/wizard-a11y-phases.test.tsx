@@ -46,7 +46,11 @@ const serviceBase = {
 } as any;
 
 describe('Wizard a11y — Phase2Service', () => {
-  it('tem region rotulado e botão voltar com aria-label', () => {
+  it('tem region rotulado por aria-labelledby', () => {
+    // Contrato pós-PR consolidação: o botão "Voltar" foi removido das fases
+    // individuais — agora é provido globalmente pelo WizardNav (WizardShell).
+    // A a11y de back é coberta pelo teste do WizardNav. Aqui só validamos o
+    // landmark da fase em si.
     render(
       <Phase2Service
         service={serviceBase}
@@ -59,6 +63,5 @@ describe('Wizard a11y — Phase2Service', () => {
       />,
     );
     expect(screen.getByRole('region', { name: /qual serviço você quer cadastrar/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /voltar para a etapa anterior/i })).toBeInTheDocument();
   });
 });
