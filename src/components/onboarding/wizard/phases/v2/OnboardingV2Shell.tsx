@@ -428,25 +428,17 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // entrar em modo no-op (early return interno em !userId).
   useOnboardingV2RemoteDraft(state, editMode ? undefined : user?.id);
 
-  // Flush imediato (local + remoto) ao TROCAR DE FASE — garante que
-  // "Salvar e continuar" persista antes de qualquer fechamento de aba,
-  // sem esperar pelos debounces de 600ms / 1500ms.
-  // BLINDAGEM: pulamos o flush em editMode — evita gravar payload parcial
-  // (provisório, durante revisão) por cima dos dados reais já publicados.
-  // E5 · ORDER CONTRACT (Chain B step 3)
-  //   REQUIRES: E17 já chamou setActiveWizardPhase para a nova fase (timers ficam
-  //             atribuídos à fase correta)
-  //   PRODUCES: write remoto/local sincronizado por fase
-  //   CONSUMERS: nenhum effect — apenas backend
-  //   GATE: isTabLeader() é consultado dentro de flushOnboardingV2Draft
-  //   POSITION-DEPENDENCY: declaração após E17 garante ordem de execução por
-  //   regra do React (effects rodam top-to-bottom no mount/commit). NÃO mover.
-  useEffect(() => {
-    if (editMode) return;
-    if (state.phase === 'phase2_service' || state.phase === 'done') return;
-    flushOnboardingV2Draft(state, user?.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.phase, user?.id, editMode]);
+  // E5 · Phase Transition Orchestrator (Chain B step 3) — extraído em PR 7.
+  // Contract completo vive em `usePhaseTransitionOrchestrator`. POSITION-
+  // DEPENDENCY preservada: chamado APÓS E17 (acima) e ANTES de E18 (abaixo).
+  usePhaseTransitionOrchestrator({
+    getCurrentState,
+    phase: state.phase,
+    userId: user?.id,
+    editMode,
+  });
+
+
 
 
   // ── Sentinela anti-amnésia em fases finais (auditoria 2026-05) ─────────
