@@ -37,6 +37,14 @@ export interface OnboardingViewModel {
   isMediaFlow: boolean;
   /** Fluxo de completar perfil pós-celebração (doc + avatar + extras). */
   isProfileCompletionFlow: boolean;
+  /** PR 12 — chrome de progresso (barras/badges) deve aparecer? */
+  showProgressChrome: boolean;
+  /** PR 12 — chrome de conclusão (cards terminais) deve aparecer? */
+  showCompletionChrome: boolean;
+  /** PR 12 — alias semântico de `isTerminal` para consumidores visuais. */
+  isTerminalPhase: boolean;
+  /** PR 12 — fase usa layout compacto (sem padding/header pesado do shell). */
+  usesCompactLayout: boolean;
 }
 
 const CELEBRATION_OR_LATER = new Set<OnboardingPhase>([
