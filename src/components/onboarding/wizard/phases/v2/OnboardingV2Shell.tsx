@@ -120,6 +120,10 @@ import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/l
 // PR 9 — UI Composition Pass: extrações puramente visuais.
 import { Phase2PhotosBlockedCard } from '@/components/onboarding/v2/phases/Phase2PhotosBlockedCard';
 import { DraftRestoredBanner } from '@/components/onboarding/v2/phases/DraftRestoredBanner';
+import {
+  phaseComponentMap,
+  isMigratedPhase,
+} from '@/components/onboarding/v2/phases/phaseComponentMap';
 import { useOnboardingViewModel } from '@/hooks/onboarding/useOnboardingViewModel';
 
 
