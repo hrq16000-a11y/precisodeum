@@ -37,6 +37,14 @@ export interface OnboardingViewModel {
   isMediaFlow: boolean;
   /** Fluxo de completar perfil pós-celebração (doc + avatar + extras). */
   isProfileCompletionFlow: boolean;
+  /** PR 12 — chrome de progresso (barras/badges) deve aparecer? */
+  showProgressChrome: boolean;
+  /** PR 12 — chrome de conclusão (cards terminais) deve aparecer? */
+  showCompletionChrome: boolean;
+  /** PR 12 — alias semântico de `isTerminal` para consumidores visuais. */
+  isTerminalPhase: boolean;
+  /** PR 12 — fase usa layout compacto (sem padding/header pesado do shell). */
+  usesCompactLayout: boolean;
 }
 
 const CELEBRATION_OR_LATER = new Set<OnboardingPhase>([
@@ -93,6 +101,11 @@ export function useOnboardingViewModel({ phase }: OnboardingViewModelInput): Onb
       showTerminalActions: phase === 'done',
       isMediaFlow: MEDIA_FLOW_PHASES.has(phase),
       isProfileCompletionFlow: PROFILE_COMPLETION_PHASES.has(phase),
+      // PR 12 — derivações visuais finais. Permanecem puras e memoizadas.
+      isTerminalPhase: phase === 'done',
+      showProgressChrome: phase !== 'done' && phase !== 'phase_repair_contact',
+      showCompletionChrome: phase === 'done',
+      usesCompactLayout: phase === 'phase_repair_contact' || phase === 'done',
     }),
     [phase],
   );

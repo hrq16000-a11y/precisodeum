@@ -46,10 +46,13 @@ const EXPECTED_MIGRATED_PHASES: ReadonlyArray<MigratedPhase> = [
   'phase2_service',
   'phase2_details',
   'phase2_photos',
+  'phase3_celebration',
   'phase4_document',
   'phase4_avatar',
   'phase4_extras_a',
   'phase4_extras_b',
+  'phase_repair_contact',
+  'done',
 ];
 
 describe('phaseComponentMap — cobertura e contrato', () => {
@@ -64,18 +67,13 @@ describe('phaseComponentMap — cobertura e contrato', () => {
     );
   });
 
-  it('isMigratedPhase é coerente com o registry', () => {
+  it('isMigratedPhase cobre todas as fases após PR 12 (registry total)', () => {
     for (const phase of EXPECTED_MIGRATED_PHASES) {
       expect(isMigratedPhase(phase)).toBe(true);
     }
-    const nonMigrated: OnboardingPhase[] = [
-      'phase3_celebration',
-      'phase_repair_contact',
-      'done',
-    ];
-    for (const phase of nonMigrated) {
-      expect(isMigratedPhase(phase)).toBe(false);
-    }
+    // Sanity-check: o registry tem o mesmo cardinal que a união pública.
+    const allPhases: OnboardingPhase[] = [...EXPECTED_MIGRATED_PHASES];
+    expect(allPhases.every((p) => isMigratedPhase(p))).toBe(true);
   });
 
   it('type-narrowing: isMigratedPhase restringe a OnboardingPhase para MigratedPhase', () => {
