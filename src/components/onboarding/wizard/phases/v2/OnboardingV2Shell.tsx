@@ -47,7 +47,6 @@ import { useWizardDuplicateCheck } from '@/hooks/useWizardDuplicateCheck';
 import {
   initialOnboardingState,
   onboardingReducer,
-  phaseIndex,
   VISIBLE_PHASES_COUNT,
 } from './state';
 // Phase1Action/Kind/Location/Contact REMOVIDOS na consolidação Bet Mode
