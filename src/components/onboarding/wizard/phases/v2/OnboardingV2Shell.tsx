@@ -823,8 +823,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         !!(svcState.description && svcState.description.trim());
       if (state.firstServiceId && hasServiceBody) return;
 
-      // 3) Busca o melhor serviço existente (pelo provider OU pelo user_ref)
-      //    para hidratar o Wizard em modo revisão sem duplicar registros.
+      // Replay stage 3 · fetch best existing service (by provider OR user_ref)
+      //                   para hidratar Wizard em modo revisão sem duplicar.
       const svc = await fetchExistingFirstService(pid, state.userRef ?? null, state.profile.primary_category_id);
       if (!svc || cancelled) return;
 
@@ -832,6 +832,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         dispatch({ type: 'SET_FIRST_SERVICE_ID', id: svc.id });
       }
 
+      // Replay stage 4 · merge respeitando campos preenchidos (REPLAY ISOLATION).
       const existingService = state.service || ({} as any);
         const merged: any = {
         service_name: existingService.service_name || svc.service_name || '',
@@ -858,6 +859,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       };
 
       dispatch({ type: 'HYDRATE', state: { service: merged } });
+      signalLifecyclePhase('HYDRATED');
+
 
       if (svc.category_id && !state.profile.primary_category_id) {
         dispatch({ type: 'PATCH_PROFILE', patch: { primary_category_id: svc.category_id } });
