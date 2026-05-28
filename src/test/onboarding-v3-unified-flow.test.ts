@@ -223,13 +223,21 @@ describe('wizardReducer — máquina linear unificada', () => {
   });
 
   it('NEXT_PHASE avança linearmente até done sem regredir', () => {
-    let s = initialWizardState;
+    // Seed obrigatório: o reducer bloqueia o avanço em `triage_pro_location`
+    // se profile.city/state não estiverem hidratados (contrato
+    // PROVIDER_INCOMPLETE_CITY — invariante anti-perfil-inválido).
+    let s: typeof initialWizardState = {
+      ...initialWizardState,
+      profile: { ...initialWizardState.profile, city: 'Curitiba', state: 'PR' },
+      triage: { ...initialWizardState.triage, city: 'Curitiba', state: 'PR' },
+    };
     const visited: string[] = [s.phase];
     for (let i = 0; i < UNIFIED_VISIBLE_PHASES; i++) {
       const prevIdx = unifiedPhaseIndex(s.phase);
       s = wizardReducer(s, { type: 'NEXT_PHASE' });
       const nextIdx = unifiedPhaseIndex(s.phase);
       expect(nextIdx).toBeGreaterThanOrEqual(prevIdx);
+      expect(s.validationError).toBeNull();
       visited.push(s.phase);
     }
     expect(s.phase).toBe('done');
