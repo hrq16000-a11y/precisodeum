@@ -697,7 +697,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   //   POSITION-DEPENDENCY: deve preceder E15 (revisão usa providerId já hidratado).
   //   NÃO EXTRAIR sem antes promover lifecyclePhaseRef a gate explícito.
   useEffect(() => {
-    if (lifecyclePhaseRef.current === 'BOOT') lifecyclePhaseRef.current = 'HYDRATING';
+    if (lifecyclePhaseRef.current === 'BOOT') signalLifecyclePhase('HYDRATING');
     const bootstrap = buildOnboardingV2BootstrapState({ profile, provider });
 
     if (!bootstrap) return;
