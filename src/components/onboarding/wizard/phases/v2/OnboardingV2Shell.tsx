@@ -192,6 +192,41 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     };
   });
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // PR 4C · ORDERING CONTRACT SCAFFOLDING (observational only)
+  // ─────────────────────────────────────────────────────────────────────────
+  // `stateRef` espelha o `state` do reducer para que extrações futuras possam
+  // ler snapshot atômico sem stale closure. NÃO é lido por nenhum effect
+  // ainda (mantém behavior idêntico ao PR 4B).
+  //
+  // `lifecyclePhaseRef` é um marcador observacional do lifecycle operacional
+  // do shell. Atualizado por effects existentes nos pontos canônicos. Nenhum
+  // effect GATEIA por ele nesta PR — é apenas observabilidade para preparar
+  // futura promoção a contrato de ordem explícito.
+  //
+  // Lifecycle:
+  //   BOOT       → mount inicial (antes de qualquer HYDRATE)
+  //   HYDRATING  → bootstrap (E14) ou revisão DB (E15) em curso
+  //   HYDRATED   → HYDRATE concluído (E14/E15)
+  //   READY      → fase mudou após HYDRATED (E16 enter normal)
+  //   SUBMITTING → state.phase === 'done' (E18 agendou finishWizard)
+  //   COMPLETED  → finishWizard retornou com sucesso
+  //
+  // ORDERING CONTRACTS (ver docs/onboarding-effect-map.md §PR 4C):
+  //   Chain A (RECOV):  E9 → E12 → E13 → E8/E11 → E14 → E15 → E5
+  //   Chain B (PHASE):  state.phase change → E17 → E16 → E5 → E6 → (E18 se 'done')
+  //   Chain C (BACK):   wizard:request-back → E19 → flush → dispatch GO_TO → Chain B
+  //   Chain D (CT):     E9 (init) → E10 (poll) → isTabLeader() gate em flush/persist
+  //   Chain E (FLOW):   isCompany → E3 sticky → trackEvent → E4/E6/E16
+  // ─────────────────────────────────────────────────────────────────────────
+  const stateRef = useRef(state);
+  stateRef.current = state; // sync write em cada render — sem useEffect (evita race com flush)
+  const lifecyclePhaseRef = useRef<
+    'BOOT' | 'HYDRATING' | 'HYDRATED' | 'READY' | 'SUBMITTING' | 'COMPLETED'
+  >('BOOT');
+
+
+
   // Guard de rota: enquanto estiver entre phase2_service / details / photos,
   // qualquer tentativa de cair em /dashboard é bloqueada e devolvida ao wizard.
   // Não interfere em fases ≥ phase3_celebration nem em editMode.
@@ -343,12 +378,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // sem esperar pelos debounces de 600ms / 1500ms.
   // BLINDAGEM: pulamos o flush em editMode — evita gravar payload parcial
   // (provisório, durante revisão) por cima dos dados reais já publicados.
+  // E5 · ORDER CONTRACT (Chain B step 3)
+  //   REQUIRES: E17 já chamou setActiveWizardPhase para a nova fase (timers ficam
+  //             atribuídos à fase correta)
+  //   PRODUCES: write remoto/local sincronizado por fase
+  //   CONSUMERS: nenhum effect — apenas backend
+  //   GATE: isTabLeader() é consultado dentro de flushOnboardingV2Draft
+  //   POSITION-DEPENDENCY: declaração após E17 garante ordem de execução por
+  //   regra do React (effects rodam top-to-bottom no mount/commit). NÃO mover.
   useEffect(() => {
     if (editMode) return;
     if (state.phase === 'phase2_service' || state.phase === 'done') return;
     flushOnboardingV2Draft(state, user?.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, user?.id, editMode]);
+
 
   // ── Sentinela anti-amnésia em fases finais (auditoria 2026-05) ─────────
   // Em fases finais (extras_b/avatar/document/extras_a) city/state DEVEM já
@@ -612,10 +656,20 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
   }, [profile?.user_ref, state.userRef]);
 
-  // Bootstrap do fluxo único: se o V3 já coletou nome/WhatsApp/cidade,
-  // o V2 deve entrar direto na criação do primeiro serviço sem repetir perguntas.
+  // E14 · ORDER CONTRACT (Chain A · bootstrap HYDRATE)
+  //   REQUIRES: E12 (full_name auth) e E13 (userRef sync) já dispatcharam;
+  //             E8/E11 (RECOV) já decidiram local-vs-remote.
+  //   PRODUCES: dispatch HYDRATE com seed resolvido (profile/provider/service).
+  //             Atualiza lifecyclePhaseRef: BOOT → HYDRATING → HYDRATED.
+  //   CONSUMERS: E5 (flush por fase), E15 (revisão DB), todo o resto.
+  //   GUARD: regressão de fase bloqueada via phaseIndex; HYDRATE redundante
+  //          short-circuitado por comparação estrutural.
+  //   POSITION-DEPENDENCY: deve preceder E15 (revisão usa providerId já hidratado).
+  //   NÃO EXTRAIR sem antes promover lifecyclePhaseRef a gate explícito.
   useEffect(() => {
+    if (lifecyclePhaseRef.current === 'BOOT') lifecyclePhaseRef.current = 'HYDRATING';
     const bootstrap = buildOnboardingV2BootstrapState({ profile, provider });
+
     if (!bootstrap) return;
 
     const draftSnapshot = {
@@ -669,14 +723,25 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     });
 
     dispatch({ type: 'HYDRATE', state: resolved });
+    lifecyclePhaseRef.current = 'HYDRATED';
   }, [profile, provider, internalHandoffFromTriage]);
+
 
   // ── HIDRATAÇÃO EM MODO REVISÃO ─────────────────────────────────────────────
   // Se o usuário já tem provider e/ou serviço cadastrado mas o estado local
   // está vazio (ex.: voltou ao Wizard depois de fechar o navegador, ou o draft
   // expirou), busca os dados reais no banco para que a UI mostre uma REVISÃO
   // do que existe — em vez de criar do zero e duplicar registros.
+  // E15 · ORDER CONTRACT (Chain A · revisão DB)
+  //   REQUIRES: E14 já tentou hidratar (lifecyclePhaseRef === 'HYDRATED' ou
+  //             snapshot estável). E13 produziu state.userRef quando aplicável.
+  //   PRODUCES: providerId e/ou serviço carregados do banco quando faltarem.
+  //   CONSUMERS: UI das fases de revisão; E5 quando phase muda depois.
+  //   RACE COM E5: se E15 hidrata DEPOIS de E5 flush, o flush usaria payload
+  //             vazio — mitigado porque E15 só dispara quando providerId/service
+  //             ESTÃO ausentes, condição em que o flush também é no-op-equivalente.
   useEffect(() => {
+
     let cancelled = false;
     (async () => {
       if (!user?.id && !state.userRef) return;
@@ -768,7 +833,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // - Ao trocar de fase (cleanup), `markPhaseExit` emite o evento `phase_exit`
   //   com `duration_ms` e `draft_source` (local/remote/seed/none).
   // - O evento `enter` também carrega `draft_source` para segmentação.
+  // E16 · ORDER CONTRACT (Chain B step 2 · phase telemetry)
+  //   REQUIRES: E17 já chamado setActiveWizardPhase nesta fase.
+  //   PRODUCES: 'enter'/'complete' event + markPhaseEnter; cleanup → markPhaseExit.
   useEffect(() => {
+
     const draftSource = getOnboardingDraftSource() || 'none';
     void trackEvent({
       phase: state.phase,
@@ -785,7 +854,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   }, [state.phase, user?.id]);
 
   // Reporta a fase para a barra de progresso global do WizardShell.
+  // E17 · ORDER CONTRACT (Chain B step 1 · phase change head)
+  //   PRODUCES: setActiveWizardPhase (zombie-timer gate global).
+  //   CONSUMERS: TODOS os effects que agendam timers (E18, hint timers, etc.).
+  //   POSITION-DEPENDENCY CRÍTICA: deve declarar-se ANTES de E16/E5/E18 para
+  //              que setActiveWizardPhase rode primeiro no commit do React.
+  //              Mover este bloco quebra atribuição de timers à fase correta.
+  //   Atualiza lifecyclePhaseRef para 'READY' quando já hidratado.
   useEffect(() => {
+    if (lifecyclePhaseRef.current === 'HYDRATED') lifecyclePhaseRef.current = 'READY';
+
     onPhaseChange?.(state.phase);
     // Instrumentação: registra a fase ativa para o detector de timer zumbi.
     setActiveWizardPhase(state.phase);
@@ -801,18 +879,37 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // o card abaixo (case 'phase2_photos') exibe diagnóstico específico com
   // botões de recuperação. NÃO pulamos automaticamente.
 
+  // E18 · ORDER CONTRACT (Chain B step 5 · SUBMIT)
+  //   REQUIRES: state.phase === 'done' (set por reducer após Step19).
+  //   PRODUCES: clearOnboardingV2Draft + scheduleWizardTimeout → finishWizard.
+  //             Atualiza lifecyclePhaseRef → 'SUBMITTING' / 'COMPLETED'.
+  //   GATE: deferCompletionToParent (parent assume controle quando true).
+  //   POSITION-DEPENDENCY: precisa rodar depois de E17 (zombie guard).
   useEffect(() => {
     if (state.phase !== 'done' || deferCompletionToParent) return;
+    lifecyclePhaseRef.current = 'SUBMITTING';
     clearOnboardingV2Draft();
     const timer = scheduleWizardTimeout(
       { phase: 'done', action: 'shell_finish_wizard', runIfStale: true },
-      () => { void finishWizard(); },
+      () => { void finishWizard().then(() => { lifecyclePhaseRef.current = 'COMPLETED'; }); },
       300,
     );
     return () => window.clearTimeout(timer);
   }, [state.phase, deferCompletionToParent]);
 
+
+  // E19 · ORDER CONTRACT (Chain C · back navigation)
+  //   REQUIRES: state estável (ou stateRef se extraído no futuro).
+  //   PRODUCES: flushLocalDraft + flushRemoteDraft + dispatch GO_TO/evento.
+  //   CONSUMERS: Chain B reentra após dispatch GO_TO.
+  //   OWNERSHIP: registerBackOwner('v2') é o owner canônico — Bet handler
+  //              cede prioridade. claimBackEvent('v2') aplica mutex de 400ms.
+  //   POSITION-DEPENDENCY: re-binda em cada mudança de `state` (deps massivas)
+  //              — janela de 2 listeners coexistindo é coberta pelo mutex.
+  //   EXTRAÇÃO FUTURA: requer migrar leitura de `state` para stateRef.current
+  //              e fixar deps em [editMode, navigate, user?.id].
   useEffect(() => {
+
     const goBack = async () => {
       // ── ANTI-AMNÉSIA: persiste o snapshot atual (local + remoto) ANTES
       // de despachar a troca de fase. Garante que qualquer dado digitado
