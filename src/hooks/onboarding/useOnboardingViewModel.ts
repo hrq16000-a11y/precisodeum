@@ -101,6 +101,11 @@ export function useOnboardingViewModel({ phase }: OnboardingViewModelInput): Onb
       showTerminalActions: phase === 'done',
       isMediaFlow: MEDIA_FLOW_PHASES.has(phase),
       isProfileCompletionFlow: PROFILE_COMPLETION_PHASES.has(phase),
+      // PR 12 — derivações visuais finais. Permanecem puras e memoizadas.
+      isTerminalPhase: phase === 'done',
+      showProgressChrome: phase !== 'done' && phase !== 'phase_repair_contact',
+      showCompletionChrome: phase === 'done',
+      usesCompactLayout: phase === 'phase_repair_contact' || phase === 'done',
     }),
     [phase],
   );
