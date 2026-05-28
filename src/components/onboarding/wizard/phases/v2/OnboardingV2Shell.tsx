@@ -658,12 +658,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   });
 
 
-  // Limpeza do histórico de revisão ao SAIR do modo edit_profile (ex.: usuário
-  // volta para new_signup na mesma aba). Garante que pilha velha não vaze
-  // para uma próxima sessão de revisão.
-  useEffect(() => {
-    if (!editMode) clearReviewHistory();
-  }, [editMode]);
+  // Cleanup do histórico de revisão — extraído em PR 17 (`useReviewHistoryCleanup`).
+  useReviewHistoryCleanup(editMode);
 
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
