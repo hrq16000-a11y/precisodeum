@@ -105,7 +105,7 @@ import { useBackNavigationOrchestrator } from '@/hooks/onboarding/useBackNavigat
 import { usePhaseTransitionOrchestrator } from '@/hooks/onboarding/usePhaseTransitionOrchestrator';
 import { usePersistenceRecoveryOrchestrator } from '@/hooks/onboarding/usePersistenceRecoveryOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
-import { getLastReadDraftDiagnostics } from './useOnboardingV2Draft';
+// getLastReadDraftDiagnostics consumido dentro de usePersistenceRecoveryOrchestrator (E8, PR 9).
 import WizardErrorModal from '@/components/wizard/WizardErrorModal';
 import {
   buildOnboardingCoreLocks,
