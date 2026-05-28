@@ -77,10 +77,7 @@ import {
 import { getOnboardingContactValidation } from './contactValidation';
 import {
   trackOnboardingEvent,
-  markPhaseEnter,
-  markPhaseExit,
   setOnboardingDraftSource,
-  getOnboardingDraftSource,
   setOnboardingFlow,
 } from './telemetry';
 import { validateDraftShape } from './draftEnvelope';
