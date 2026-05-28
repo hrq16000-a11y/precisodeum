@@ -77,14 +77,12 @@ import { pushReviewPhase, clearReviewHistory } from './reviewHistory';
 import {
   useOnboardingV2Draft,
   readOnboardingV2Draft,
-  readOnboardingV2DraftSavedAt,
   clearOnboardingV2Draft,
 } from './useOnboardingV2Draft';
 import { flushLocalDraft } from './flushDraft';
 import { findExistingFirstService, findExistingProvider, fetchExistingFirstService } from './findExistingRecords';
 import {
   useOnboardingV2RemoteDraft,
-  fetchRemoteDraft,
   clearRemoteDraft,
 } from './useOnboardingV2RemoteDraft';
 import { getOnboardingContactValidation } from './contactValidation';
