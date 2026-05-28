@@ -656,10 +656,20 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
   }, [profile?.user_ref, state.userRef]);
 
-  // Bootstrap do fluxo único: se o V3 já coletou nome/WhatsApp/cidade,
-  // o V2 deve entrar direto na criação do primeiro serviço sem repetir perguntas.
+  // E14 · ORDER CONTRACT (Chain A · bootstrap HYDRATE)
+  //   REQUIRES: E12 (full_name auth) e E13 (userRef sync) já dispatcharam;
+  //             E8/E11 (RECOV) já decidiram local-vs-remote.
+  //   PRODUCES: dispatch HYDRATE com seed resolvido (profile/provider/service).
+  //             Atualiza lifecyclePhaseRef: BOOT → HYDRATING → HYDRATED.
+  //   CONSUMERS: E5 (flush por fase), E15 (revisão DB), todo o resto.
+  //   GUARD: regressão de fase bloqueada via phaseIndex; HYDRATE redundante
+  //          short-circuitado por comparação estrutural.
+  //   POSITION-DEPENDENCY: deve preceder E15 (revisão usa providerId já hidratado).
+  //   NÃO EXTRAIR sem antes promover lifecyclePhaseRef a gate explícito.
   useEffect(() => {
+    if (lifecyclePhaseRef.current === 'BOOT') lifecyclePhaseRef.current = 'HYDRATING';
     const bootstrap = buildOnboardingV2BootstrapState({ profile, provider });
+
     if (!bootstrap) return;
 
     const draftSnapshot = {
