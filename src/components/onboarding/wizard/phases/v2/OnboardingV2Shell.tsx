@@ -24,7 +24,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle2 } from 'lucide-react';
+// CheckCircle2 migrou para DraftRestoredBanner (PR 9 UI Composition Pass).
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
@@ -117,6 +117,10 @@ import { buildWorkingHoursSummary } from './workingHours';
 import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
 import { TERMS_VERSION, readVelocityMps, readAccuracyMeters } from '@/lib/wizardSnapshotInputs';
 import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/lib/operations';
+// PR 9 — UI Composition Pass: extrações puramente visuais.
+import { Phase2PhotosBlockedCard } from '@/components/onboarding/v2/phases/Phase2PhotosBlockedCard';
+import { DraftRestoredBanner } from '@/components/onboarding/v2/phases/DraftRestoredBanner';
+import { useOnboardingViewModel } from '@/hooks/onboarding/useOnboardingViewModel';
 
 
 
@@ -2355,122 +2359,34 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
 
           return (
-            <section
-              className="mx-auto w-full max-w-md space-y-3 px-4 py-5 text-center"
-              role="alert"
-              aria-live="polite"
-              data-testid="phase2-photos-blocked"
-            >
-              <div className="rounded-2xl border border-amber-300/60 bg-amber-50/70 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
-                <h2 className="font-display text-base font-extrabold text-amber-900 dark:text-amber-100">
-                  {title}
-                </h2>
-                <p className="mt-2 text-sm text-amber-900/90 dark:text-amber-200/90">
-                  {description}
-                </p>
-                {reason === 'no_service' && missing.length > 0 && (
-                  <ul
-                    data-testid="phase2-photos-missing-fields"
-                    className="mx-auto mt-2 max-w-xs space-y-0.5 text-left text-xs text-amber-900 dark:text-amber-200"
-                  >
-                    {missing.map((m) => (
-                      <li key={m} className="flex items-start gap-1.5">
-                        <span aria-hidden className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-700" />
-                        <span>{m}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <p className="mt-3 text-[11px] text-muted-foreground">
-                  Código: <code className="font-mono">phase2_photos:{reason}</code>
-                </p>
-                {reason === 'no_service' && phase2RetryStatus !== 'idle' && (
-                  <div
-                    data-testid="phase2-photos-retry-status"
-                    data-status={phase2RetryStatus}
-                    className={
-                      phase2RetryStatus === 'running'
-                        ? 'mx-auto mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-400/60 bg-amber-100/60 px-2.5 py-1 text-[11px] text-amber-900 dark:bg-amber-500/10 dark:text-amber-100'
-                        : 'mx-auto mt-2 flex max-w-xs flex-col items-center gap-1.5 rounded-md border border-rose-400/60 bg-rose-50/80 p-2 text-[11px] text-rose-900 dark:bg-rose-500/10 dark:text-rose-100'
-                    }
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {phase2RetryStatus === 'running' ? (
-                      <>
-                        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-amber-700/40 border-t-amber-700" aria-hidden />
-                        <span>Tentando recuperar seu rascunho automaticamente…</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="font-semibold">Não consegui recuperar automaticamente.</span>
-                        <button
-                          type="button"
-                          data-testid="phase2-photos-retry-manual"
-                          onClick={() => { void handleRecoverDraft(); }}
-                          className="rounded-md border border-rose-400/60 bg-white/70 px-2 py-1 text-[11px] font-semibold text-rose-900 hover:bg-white dark:bg-rose-500/10 dark:text-rose-100"
-                        >
-                          Tentar manualmente
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-                <div className="mt-4 flex flex-col gap-2">
-                  {reason === 'no_session' ? (
-                    <button
-                      type="button"
-                      onClick={() => { window.location.href = '/login?next=/cadastro-inicial'; }}
-                      className="h-11 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-sm font-bold text-white shadow-md hover:opacity-95"
-                    >
-                      Fazer login novamente
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => { track('back'); dispatch({ type: 'GO_TO', phase: 'phase2_details' }); }}
-                        className="h-11 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-sm font-bold text-white shadow-md hover:opacity-95"
-                      >
-                        Voltar e revisar o serviço
-                      </button>
-                      <button
-                        type="button"
-                        data-testid="phase2-photos-recover-draft"
-                        onClick={() => { void handleRecoverDraft(); }}
-                        className="h-10 rounded-xl border border-amber-400/60 text-sm font-semibold text-amber-900 hover:bg-amber-100/60 dark:text-amber-100 dark:hover:bg-amber-500/10"
-                      >
-                        Recuperar rascunho do serviço
-                      </button>
-                    </>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => { track('skip', { reason: `blocked_${reason}` }); dispatch({ type: 'NEXT' }); }}
-                    className="h-10 rounded-xl text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    Pular fotos por enquanto
-                  </button>
-                </div>
-              </div>
-              <ReportWizardErrorButton
-                step={`phase2_photos:${reason}`}
-                componentName="OnboardingV2Shell"
-                label="Reportar para o suporte"
-                contextSnapshot={{
-                  code: `phase2_photos:${reason}`,
-                  missing_fields: missing,
-                  category: state.profile.primary_category_id || state.service.category_ids?.[0] || null,
-                  city: state.profile.city || null,
-                  state: state.profile.state || null,
-                  has_provider: !!state.providerId,
-                  has_first_service: !!state.firstServiceId,
-                  lastPersistError: lastPersistError
-                    ? { message: lastPersistError.message, code: lastPersistError.code || null }
-                    : null,
-                }}
-              />
-            </section>
+            <Phase2PhotosBlockedCard
+              reason={reason}
+              missing={missing}
+              phase2RetryStatus={phase2RetryStatus}
+              context={{
+                primaryCategoryId:
+                  state.profile.primary_category_id || state.service.category_ids?.[0] || null,
+                city: state.profile.city || null,
+                stateUF: state.profile.state || null,
+                providerId: state.providerId,
+                firstServiceId: state.firstServiceId,
+                lastPersistError: lastPersistError
+                  ? { message: lastPersistError.message, code: lastPersistError.code || null }
+                  : null,
+              }}
+              onRetryManual={() => { void handleRecoverDraft(); }}
+              onBackToDetails={() => {
+                track('back');
+                dispatch({ type: 'GO_TO', phase: 'phase2_details' });
+              }}
+              onSkip={() => {
+                track('skip', { reason: `blocked_${reason}` });
+                dispatch({ type: 'NEXT' });
+              }}
+              onLogin={() => {
+                window.location.href = '/login?next=/cadastro-inicial';
+              }}
+            />
           );
         }
         return (
@@ -2681,51 +2597,20 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     }
   };
 
-  // Progresso: a celebração já é "100%" sensorial, então tudo a partir dela conta como completo.
-  // A barra de progresso GLOBAL agora vive no WizardShell. Mantemos apenas
-  // o cálculo interno por compat (testes), mas não renderizamos mais a barra
-  // local — evita duplicidade visual quando aberto via /cadastro-inicial.
-  const isCelebrationOrLater =
-    state.phase === 'phase3_celebration' ||
-    state.phase === 'phase4_document' ||
-    state.phase === 'phase4_extras_a' ||
-    state.phase === 'phase4_extras_b' ||
-    state.phase === 'done';
-  void isCelebrationOrLater;
+  // ViewModel visual (PR 9 — UI Composition Pass). Apenas derivações
+  // memoizadas: nenhum side-effect, nenhuma decisão de runtime. Substitui
+  // os booleans inline `isCelebrationOrLater` e `showAutoSaveBadge`.
+  const viewModel = useOnboardingViewModel({ phase: state.phase });
+  void viewModel.isCelebrationOrLater; // mantido por compat de testes existentes.
 
   return (
     <>
-      {/* Aviso "rascunho restaurado" — diferencia local x remoto */}
-      <AnimatePresence>
-        {draftRestored && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="mx-auto mt-3 flex max-w-md items-start gap-2 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-foreground"
-          >
-            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 text-accent shrink-0" />
-            <div className="space-y-0.5">
-              {draftRestored.source === 'remote' ? (
-                <>
-                  <p className="font-semibold">Rascunho de outro dispositivo restaurado.</p>
-                  <p className="text-muted-foreground">
-                    Trouxemos seus dados salvos
-                    {draftRestored.at && (
-                      <> em {new Date(draftRestored.at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</>
-                    )}.
-                  </p>
-                </>
-              ) : (
-                <p>Continuamos de onde você parou neste dispositivo.</p>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Aviso "rascunho restaurado" — diferencia local x remoto.
+          UI extraída para DraftRestoredBanner (PR 9). */}
+      <DraftRestoredBanner draftRestored={draftRestored} />
 
       <BetCardShell animated={false}>
-        {state.phase !== 'phase2_service' && state.phase !== 'done' && (
+        {viewModel.showAutoSaveBadge && (
           <div className="mb-2 flex items-center justify-end">
             <AutoSaveBadge signal={state.profile} />
           </div>
