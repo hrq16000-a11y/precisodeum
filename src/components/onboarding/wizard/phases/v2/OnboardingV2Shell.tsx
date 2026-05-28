@@ -892,7 +892,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   //              Mover este bloco quebra atribuição de timers à fase correta.
   //   Atualiza lifecyclePhaseRef para 'READY' quando já hidratado.
   useEffect(() => {
-    if (lifecyclePhaseRef.current === 'HYDRATED') lifecyclePhaseRef.current = 'READY';
+    if (lifecyclePhaseRef.current === 'HYDRATED') signalLifecyclePhase('READY');
 
     onPhaseChange?.(state.phase);
     // Instrumentação: registra a fase ativa para o detector de timer zumbi.
