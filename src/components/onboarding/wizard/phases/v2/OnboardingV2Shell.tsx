@@ -30,7 +30,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { logWizardError } from '@/lib/wizardErrorGuard';
-import { registerBackOwner, claimBackEvent } from '@/lib/wizardBackOrchestrator';
+// E19 (back orchestrator) owns registerBackOwner/claimBackEvent — extraído.
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
 import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 import { setActiveWizardPhase, scheduleWizardTimeout, neutralizeZombieTimers } from '@/lib/wizardZombieGuard';
