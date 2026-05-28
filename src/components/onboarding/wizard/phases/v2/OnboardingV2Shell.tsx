@@ -2699,34 +2699,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   return (
     <>
-      {/* Aviso "rascunho restaurado" — diferencia local x remoto */}
-      <AnimatePresence>
-        {draftRestored && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="mx-auto mt-3 flex max-w-md items-start gap-2 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-foreground"
-          >
-            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 text-accent shrink-0" />
-            <div className="space-y-0.5">
-              {draftRestored.source === 'remote' ? (
-                <>
-                  <p className="font-semibold">Rascunho de outro dispositivo restaurado.</p>
-                  <p className="text-muted-foreground">
-                    Trouxemos seus dados salvos
-                    {draftRestored.at && (
-                      <> em {new Date(draftRestored.at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</>
-                    )}.
-                  </p>
-                </>
-              ) : (
-                <p>Continuamos de onde você parou neste dispositivo.</p>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Aviso "rascunho restaurado" — diferencia local x remoto.
+          UI extraída para DraftRestoredBanner (PR 9). */}
+      <DraftRestoredBanner draftRestored={draftRestored} />
 
       <BetCardShell animated={false}>
         {state.phase !== 'phase2_service' && state.phase !== 'done' && (
