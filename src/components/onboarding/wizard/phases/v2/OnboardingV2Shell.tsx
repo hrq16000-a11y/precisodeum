@@ -2216,27 +2216,13 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               onSkip: async () => {
                 track('skip');
                 void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
-                  recordRegistrationSnapshotOnce({
-                    whatsapp: state.profile.whatsapp,
-                    postal_code: state.profile.postal_code,
-                    street: state.profile.street,
-                    street_number: state.profile.street_number,
-                    neighborhood: state.profile.neighborhood,
-                    city: state.profile.city,
-                    state: state.profile.state,
-                    latitude: (state.profile as any).latitude ?? null,
-                    longitude: (state.profile as any).longitude ?? null,
-                    accuracy_m: (state.profile as any).accuracy_m ?? readAccuracyMeters(),
-                    velocity_mps: (state.profile as any).velocity_mps ?? readVelocityMps(),
-                    terms_accepted: true,
-                    terms_version: TERMS_VERSION,
-                    origin_summary: {
-                      flow: 'onboarding_v2',
-                      account_type: state.profile.kind,
-                      has_first_service: !!state.service.service_name,
-                      finished_via: 'skip',
-                    },
-                  }),
+                  recordRegistrationSnapshotOnce(
+                    buildRegistrationSnapshotPayload(
+                      state.profile,
+                      !!state.service.service_name,
+                      'skip',
+                    ),
+                  ),
                 );
                 dispatch({ type: 'NEXT' });
               },
