@@ -315,12 +315,35 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     onRetry?: () => void;
   }>(null);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
-  // Timer rastreado do hint "rascunho restaurado" (caminho remoto, fora de useEffect).
-  // Mantido em ref para garantir cleanup no unmount e evitar setState zumbi.
+  // Timer do hint "rascunho restaurado". PR 5: lifecycle agora é OWNED por um
+  // useEffect que reage a `draftRestored?.source === 'remote'`. A ref existe
+  // apenas como handle de cleanup defensivo no unmount (mantida para zero risco
+  // de zombie timer durante a transição).
   const remoteDraftHintTimer = useRef<number | null>(null);
   useEffect(() => () => {
     if (remoteDraftHintTimer.current) window.clearTimeout(remoteDraftHintTimer.current);
   }, []);
+  // E-REMOTE-HINT · ORDER CONTRACT (PR 5 · timer internalizado)
+  //   REQUIRES: handleRemoteContinue setou draftRestored.source='remote'.
+  //   PRODUCES: setDraftRestored(null) após 6s.
+  //   CONSUMERS: UI hint.
+  //   OWNERSHIP: este effect é o ÚNICO owner do timer; cleanup garante zero zombie.
+  //   STALE-CLOSURE: usa getCurrentState() para fase-at-schedule (não closure).
+  useEffect(() => {
+    if (draftRestored?.source !== 'remote') return;
+    const phaseAtSchedule = getCurrentState().phase as any;
+    const handle = scheduleWizardTimeout(
+      { phase: phaseAtSchedule, action: 'shell_remote_draft_hint_clear' },
+      () => setDraftRestored(null),
+      6000,
+    );
+    remoteDraftHintTimer.current = handle;
+    return () => {
+      window.clearTimeout(handle);
+      if (remoteDraftHintTimer.current === handle) remoteDraftHintTimer.current = null;
+    };
+  }, [draftRestored?.source, draftRestored?.at, getCurrentState]);
+
   const [remoteDraft, setRemoteDraft] = useState<null | {
     payload: { profile: any; service: any; userRef?: string | null; providerId?: string | null; firstServiceId?: string | null };
     phase: any;
