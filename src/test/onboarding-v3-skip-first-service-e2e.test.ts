@@ -30,9 +30,12 @@ const read = (p: string) => fs.readFileSync(p, 'utf8');
 describe('Skip 1º serviço — E2E unificado', () => {
   it('Phase2Service.skip aciona continueWithoutFirstService (não navega ao dashboard)', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
-    expect(shell).toMatch(/onSkip=\{\(\)\s*=>\s*\{[\s\S]*?continueWithoutFirstService\(\)/);
-    expect(shell).not.toMatch(/onSkip=\{\(\)\s*=>\s*navigate\(['"]\/dashboard/);
+    // Após a migração para `phaseComponentMap`, o handler `onSkip` é
+    // declarado como propriedade do objeto de props (não mais atributo JSX).
+    expect(shell).toMatch(/onSkip:\s*\(\)\s*=>\s*\{[\s\S]*?continueWithoutFirstService\(\)/);
+    expect(shell).not.toMatch(/onSkip[:=]\s*\(\)\s*=>\s*navigate\(['"]\/dashboard/);
   });
+
 
   it('continueWithoutFirstService loga nextRoute=phase4_document e despacha GO_TO', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
