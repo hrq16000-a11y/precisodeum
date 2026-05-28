@@ -646,240 +646,35 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   }, [profile?.user_ref, state.userRef]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // HYDRATION CORE (E14 + E15) — NÚCLEO ÚNICO COORDENADO
+  // HYDRATION CORE (E14 + E15) — EXTRAÍDO PARA useHydrationCoreOrchestrator
   // ───────────────────────────────────────────────────────────────────────────
-  // Tratamos E14 (bootstrap seed) e E15 (revisão DB) como UM ÚNICO núcleo
-  // crítico, com sequência explícita e ownership consolidado. NÃO devem ser
-  // extraídos separadamente — apenas em conjunto, depois de E18 (submit).
+  // Núcleo único coordenado (bootstrap + replay). Mantido acoplado por
+  // contrato — não separar. Ver hook para HYDRATION-SEQUENCE, REPLAY
+  // ISOLATION, OWNERSHIP, LIFECYCLE e RACE COM E5.
   //
-  // OWNERSHIP CONSOLIDADO:
-  //   - bootstrap owner ............. E14 (este shell)
-  //   - replay/review owner ......... E15 (este shell)
-  //   - hydration sequencing owner .. este shell (via lifecyclePhaseRef)
-  //   - hydration lifecycle owner ... signalLifecyclePhase() único helper
-  //   - HYDRATE dispatch owner ...... E14 + E15 (exclusivos — nenhum outro
-  //                                   effect emite HYDRATE; E13/E14/E15 são
-  //                                   os únicos dispatchers de mutação inicial)
+  // Owners externalizados ao shell:
+  //   - bootstrap seed (E14)                 → hook
+  //   - replay/review (E15)                  → hook
+  //   - hydration sequencing                 → hook (via lifecyclePhaseRef passado)
+  //   - hydration lifecycle (HYDRATING/HYDRATED) → hook (via signalLifecyclePhase)
   //
-  // HYDRATION-SEQUENCE (Chain A · ordem temporal garantida):
-  //   1. mount             → lifecyclePhaseRef = 'BOOT'
-  //   2. E8/E11 (RECOV)    → sticky draft source decidido (seed|local|none)
-  //   3. E12/E13           → full_name e userRef sincronizados do auth
-  //   4. E14 (bootstrap)   → BOOT → HYDRATING → dispatch HYDRATE → HYDRATED
-  //   5. E15 (review/DB)   → assíncrono; faz fetch e re-HYDRATE quando faltar
-  //                          providerId/firstServiceId/corpo do serviço.
-  //                          REPLAY APPLICATION (separado do bootstrap).
-  //   6. E17/E16/E5        → consomem snapshot já hidratado.
-  //
-  // REPLAY SEMANTICS · separação explícita:
-  //   - E14 = HYDRATION BOOTSTRAP (seed síncrono profile/provider/service).
-  //   - E15 = REPLAY APPLICATION  (fetch DB → reaplica registros reais).
-  //   E15 NÃO é "segundo bootstrap": só dispara quando bootstrap deixou
-  //   lacunas (providerId/firstServiceId/service body ausentes), e cada
-  //   dispatch HYDRATE dentro dele é uma APLICAÇÃO de replay restrita ao
-  //   campo recuperado (providerId, serviceId, service merged) — nunca
-  //   sobrescreve o que o usuário já preencheu (merge respeita existing).
-  //
-  // TEMPORAL COUPLING (estabilizado, não eliminado):
-  //   - E14 deve preceder E15: garantido por DEPS (E14 roda síncrono no
-  //     primeiro commit pós-mount; E15 é async com await — sempre depois).
-  //   - E15 vs E5 (flush): mitigado pela condição de E15 disparar APENAS
-  //     quando providerId/service estão ausentes — estado em que o flush
-  //     equivale a no-op (sem payload significativo para perder).
-  //   - E15 vs multi-tab: leitor de DB, escrita gated por isTabLeader em
-  //     downstream — E15 só dispatcha HYDRATE local (sem write remoto).
-  //
-  // E14 · ORDER CONTRACT (Chain A step · bootstrap HYDRATE)
-  //   REQUIRES: E12 (full_name auth) e E13 (userRef sync) já dispatcharam;
-  //             E8/E11 (RECOV) já decidiram local-vs-remote.
-  //   PRODUCES: dispatch HYDRATE com seed resolvido (profile/provider/service).
-  //             Atualiza lifecyclePhaseRef: BOOT → HYDRATING → HYDRATED.
-  //   CONSUMERS: E5 (flush por fase), E15 (revisão DB), todo o resto.
-  //   OWNERSHIP: único owner do BOOTSTRAP. Nenhum outro effect computa seed.
-  //   GUARD: regressão de fase bloqueada via phaseIndex; HYDRATE redundante
-  //          short-circuitado por comparação estrutural.
-  //   POSITION-DEPENDENCY: deve preceder E15 (revisão usa providerId já hidratado).
-  //   HYDRATION-SEQUENCE: passo 4 (após RECOV/auth, antes de replay).
-  //   NÃO EXTRAIR sem antes promover lifecyclePhaseRef a gate explícito.
-
-  useEffect(() => {
-    if (lifecyclePhaseRef.current === 'BOOT') signalLifecyclePhase('HYDRATING');
-    const bootstrap = buildOnboardingV2BootstrapState({ profile, provider });
-
-    if (!bootstrap) return;
-
-    const draftSnapshot = {
-      phase: state.phase,
-      providerId: state.providerId,
-      firstServiceId: state.firstServiceId,
-      profile: state.profile,
-      service: state.service,
-    };
-    const resolved = resolveOnboardingV2SeedState({
-      draft: draftSnapshot,
-      bootstrap,
-      forceFromBootstrap: internalHandoffFromTriage,
-    });
-
-    const currentPhase = state.phase || 'phase2_service';
-    const nextPhase = resolved.phase || currentPhase;
-    const isRegression = phaseIndex(nextPhase) < phaseIndex(currentPhase);
-
-    if (isRegression) {
-      appendWizardResetDebugLog({
-        source: 'onboarding-v2-phase-regression-blocked',
-        route: `${location.pathname}${location.search}`,
-        phase: currentPhase,
-        nextRoute: null,
-        reason: 'bootstrap-attempted-older-phase',
-        meta: { currentPhase, nextPhase, internalHandoffFromTriage, pendingCoreFields },
-      });
-      return;
-    }
-
-    // Performance: evita HYDRATE redundante quando o `resolved` é
-    // estruturalmente igual ao snapshot atual (caso comum quando refetchProfile
-    // retorna o mesmo objeto e este efeito re-roda sem mudança real).
-    const samePhase = (resolved.phase || currentPhase) === currentPhase;
-    const sameProvider = (resolved.providerId ?? state.providerId ?? null) === (state.providerId ?? null);
-    const sameService = (resolved.firstServiceId ?? state.firstServiceId ?? null) === (state.firstServiceId ?? null);
-    const sameProfile = !resolved.profile || JSON.stringify({ ...state.profile, ...resolved.profile }) === JSON.stringify(state.profile);
-    const sameServicePayload = !resolved.service || JSON.stringify({ ...state.service, ...resolved.service }) === JSON.stringify(state.service);
-    if (samePhase && sameProvider && sameService && sameProfile && sameServicePayload) {
-      return;
-    }
-
-    appendWizardResetDebugLog({
-      source: 'onboarding-v2-bootstrap',
-      route: `${location.pathname}${location.search}`,
-      phase: nextPhase,
-      nextRoute: null,
-      reason: 'hydrate-from-profile-provider',
-      meta: { internalHandoffFromTriage, pendingCoreFields, providerId: resolved.providerId ?? null },
-    });
-
-    dispatch({ type: 'HYDRATE', state: resolved });
-    signalLifecyclePhase('HYDRATED');
-  }, [profile, provider, internalHandoffFromTriage]);
+  // Owners preservados no shell:
+  //   - reducer, submit (E18), persistence (E5/E11), leader election.
+  useHydrationCoreOrchestrator({
+    profile,
+    provider,
+    internalHandoffFromTriage,
+    user,
+    state,
+    dispatch,
+    signalLifecyclePhase,
+    lifecyclePhaseRef,
+    pendingCoreFields,
+    locationPath: location.pathname,
+    locationSearch: location.search,
+  });
 
 
-  // ── HIDRATAÇÃO EM MODO REVISÃO ─────────────────────────────────────────────
-  // Se o usuário já tem provider e/ou serviço cadastrado mas o estado local
-  // está vazio (ex.: voltou ao Wizard depois de fechar o navegador, ou o draft
-  // expirou), busca os dados reais no banco para que a UI mostre uma REVISÃO
-  // do que existe — em vez de criar do zero e duplicar registros.
-  // E15 · ORDER CONTRACT (Chain A · revisão DB)
-  //   REQUIRES: E14 já tentou hidratar (lifecyclePhaseRef === 'HYDRATED' ou
-  //             snapshot estável). E13 produziu state.userRef quando aplicável.
-  //   PRODUCES: providerId e/ou serviço carregados do banco quando faltarem.
-  //   CONSUMERS: UI das fases de revisão; E5 quando phase muda depois.
-  // E15 · ORDER CONTRACT (Chain A step · REPLAY APPLICATION / revisão DB)
-  //   REQUIRES: E14 já tentou hidratar (lifecyclePhaseRef === 'HYDRATED' ou
-  //             snapshot estável). E13 produziu state.userRef quando aplicável.
-  //   PRODUCES: providerId e/ou serviço carregados do banco quando faltarem.
-  //             Cada dispatch HYDRATE é uma APLICAÇÃO DE REPLAY restrita ao
-  //             campo recuperado (não recomputa seed completo).
-  //   CONSUMERS: UI das fases de revisão; E5 quando phase muda depois.
-  //   OWNERSHIP: único owner do REPLAY APPLICATION (fetch DB → reaplica).
-  //   POSITION-DEPENDENCY: roda DEPOIS de E14 (async + deps em state.providerId).
-  //   HYDRATION-SEQUENCE: passo 5 (último estágio do hydration core).
-  //   RACE COM E5: se E15 hidrata DEPOIS de E5 flush, o flush usaria payload
-  //             vazio — mitigado porque E15 só dispara quando providerId/service
-  //             ESTÃO ausentes, condição em que o flush também é no-op-equivalente.
-  //   REPLAY ISOLATION: não sobrescreve campos preenchidos pelo usuário
-  //             (merge respeita `existingService.* || svc.*`).
-  useEffect(() => {
-
-    let cancelled = false;
-    (async () => {
-      if (!user?.id && !state.userRef) return;
-
-      // Replay stage 1 · providerId recovery (resgata se ausente)
-      let pid = state.providerId;
-      if (!pid) {
-        pid = await findExistingProvider(user?.id ?? null, state.userRef ?? null);
-        if (pid && !cancelled) {
-          dispatch({ type: 'HYDRATE', state: { providerId: pid } });
-          signalLifecyclePhase('HYDRATED');
-        }
-      }
-      if (cancelled) return;
-
-      // Replay stage 2 · service body check.
-
-      //    Antes: pulávamos sempre que firstServiceId estava setado — isso
-      //    deixava a UI vazia quando o draft remoto trazia só o ID, mas o
-      //    corpo do serviço (categoria/descrição/etc.) tinha sido perdido.
-      //    Agora rehidratamos se QUALQUER campo crítico estiver vazio.
-      const svcState = state.service || ({} as any);
-      // BLINDAGEM (auditoria 2026-05): "ter corpo" exige TEXTO REAL.
-      // Antes aceitávamos apenas `category_ids`, mas o bootstrap injeta
-      // `category_ids` a partir de `provider.primary_category_id` mesmo
-      // quando o serviço real (services.service_name/description) está
-      // ausente do estado — isso fazia o efeito curto-circuitar e a UI
-      // ficava vazia em modo revisão.
-      const hasServiceBody =
-        !!(svcState.service_name && svcState.service_name.trim()) ||
-        !!(svcState.description && svcState.description.trim());
-      if (state.firstServiceId && hasServiceBody) return;
-
-      // Replay stage 3 · fetch best existing service (by provider OR user_ref)
-      //                   para hidratar Wizard em modo revisão sem duplicar.
-      const svc = await fetchExistingFirstService(pid, state.userRef ?? null, state.profile.primary_category_id);
-      if (!svc || cancelled) return;
-
-      if (svc.id !== state.firstServiceId) {
-        dispatch({ type: 'SET_FIRST_SERVICE_ID', id: svc.id });
-      }
-
-      // Replay stage 4 · merge respeitando campos preenchidos (REPLAY ISOLATION).
-      const existingService = state.service || ({} as any);
-        const merged: any = {
-        service_name: existingService.service_name || svc.service_name || '',
-        description: existingService.description || svc.description || '',
-        category_ids:
-          existingService.category_ids?.length
-            ? existingService.category_ids
-              : svc.category_id
-                ? [svc.category_id]
-                : [],
-        cities_served:
-          existingService.cities_served?.length
-            ? existingService.cities_served
-            : parseServiceAreaToCities(svc.service_area).length
-              ? parseServiceAreaToCities(svc.service_area)
-              : parseServiceAreaToCities(svc.address),
-        starting_price_brl:
-          existingService.starting_price_brl != null
-            ? existingService.starting_price_brl
-            : parseStartingPrice(svc.price),
-        working_days: existingService.working_days || [],
-        working_hours: existingService.working_hours || svc.working_hours || '',
-        working_hours_struct: existingService.working_hours_struct ?? svc.working_hours_struct ?? null,
-      };
-
-      dispatch({ type: 'HYDRATE', state: { service: merged } });
-      signalLifecyclePhase('HYDRATED');
-
-
-      if (svc.category_id && !state.profile.primary_category_id) {
-        dispatch({ type: 'PATCH_PROFILE', patch: { primary_category_id: svc.category_id } });
-      }
-
-      appendWizardResetDebugLog({
-        source: 'onboarding-v2-hydrate-existing-service',
-        route: `${location.pathname}${location.search}`,
-        phase: state.phase,
-        nextRoute: null,
-        reason: 'review-mode-existing-records',
-        meta: { providerId: pid, serviceId: svc.id },
-      });
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, state.userRef, state.providerId, state.firstServiceId]);
 
   // Telemetria: dispara 'enter' a cada troca de fase + mede tempo na fase anterior.
   // - Cada fase recebe `markPhaseEnter` no mount/troca.
