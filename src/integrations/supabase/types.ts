@@ -8835,6 +8835,18 @@ export type Database = {
           },
         ]
       }
+      web_vitals_weekly_summary: {
+        Row: {
+          avg_value: number | null
+          day: string | null
+          metric: string | null
+          p75_value: number | null
+          p95_value: number | null
+          route: string | null
+          samples: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _is_blank_text: { Args: { v: string }; Returns: boolean }
@@ -10739,6 +10751,7 @@ export type Database = {
       publish_my_provider: { Args: never; Returns: Json }
       purge_cold_storage_91d: { Args: never; Returns: number }
       purge_onboarding_events: { Args: never; Returns: Json }
+      purge_telemetry_tables: { Args: never; Returns: Json }
       realign_first_service: {
         Args: {
           _category_id: string
