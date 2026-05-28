@@ -101,6 +101,7 @@ import { useLeaderWriteGate } from '@/hooks/onboarding/useLeaderWriteGate';
 import { useBackNavigationOrchestrator } from '@/hooks/onboarding/useBackNavigationOrchestrator';
 import { usePhaseTransitionOrchestrator } from '@/hooks/onboarding/usePhaseTransitionOrchestrator';
 import { usePersistenceRecoveryOrchestrator } from '@/hooks/onboarding/usePersistenceRecoveryOrchestrator';
+import { useCrossTabRecoveryOrchestrator } from '@/hooks/onboarding/useCrossTabRecoveryOrchestrator';
 import { useHydrationCoreOrchestrator } from '@/hooks/onboarding/useHydrationCoreOrchestrator';
 import { useSubmitCoreOrchestrator } from '@/hooks/onboarding/useSubmitCoreOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
