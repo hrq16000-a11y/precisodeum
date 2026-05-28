@@ -6,7 +6,12 @@
  * 2. A última fase ativa antes de `done` é `phase4_extras_b` — depois disso
  *    o shell despacha para a página de sucesso (`/onboarding-v2/sucesso`),
  *    que tem um CTA explícito para `/dashboard`.
- * 3. `finishWizard` é fail-soft: erro de update/refetch NÃO impede navegação.
+ * 3. `finishWizard` é fail-LOUD por contrato: se `finalizeOnboarding` retorna
+ *    !ok, o shell mostra toast.error com retry e NÃO navega para /sucesso.
+ *    Motivo: navegar com perfil não marcado como completo gera loop no
+ *    OnboardingGate (Gate → /sucesso → /dashboard → Gate → /cadastro-inicial).
+ *    Atomicidade real vem da RPC `finalize_onboarding_atomic`; o front
+ *    apenas respeita o resultado da transação. Refetch de UI é não-bloqueante.
  */
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
