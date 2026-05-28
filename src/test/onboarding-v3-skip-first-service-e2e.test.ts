@@ -98,9 +98,11 @@ describe('Skip 1º serviço — E2E unificado', () => {
 
   it('Shell passa locked=coreLocks.document para Phase4Document e não re-grava se já travado', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
-    expect(shell).toContain('locked={!!coreLocks.document}');
-    expect(shell).toMatch(/if \(!coreLocks\.document\)\s*\{\s*await persistPatch/);
+    // `phaseComponentMap` recebe props como objeto → property syntax.
+    expect(shell).toMatch(/locked:\s*!!coreLocks\.document/);
+    expect(shell).toMatch(/if \(!coreLocks\.document\)\s*\{\s*\n?\s*ok = await persistPatch/);
   });
+
 
   it('Phase4ExtrasA pede tempo de experiência e Phase4ExtrasB avança para extras finais do wizard', () => {
     const finalPhase = read('src/components/onboarding/wizard/phases/v2/Phase4Final.tsx');
