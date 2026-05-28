@@ -62,7 +62,7 @@ import {
 import { useWizardExitGuard } from '@/hooks/useWizardExitGuard';
 import { useServicePhotoCount } from '@/hooks/useServicePhotoCount';
 import { markPatchTouched, clearSessionTouched } from './sessionTouched';
-import { pushReviewPhase, clearReviewHistory } from './reviewHistory';
+import { pushReviewPhase } from './reviewHistory';
 import {
   useOnboardingV2Draft,
   readOnboardingV2Draft,
@@ -77,10 +77,7 @@ import {
 import { getOnboardingContactValidation } from './contactValidation';
 import {
   trackOnboardingEvent,
-  markPhaseEnter,
-  markPhaseExit,
   setOnboardingDraftSource,
-  getOnboardingDraftSource,
   setOnboardingFlow,
 } from './telemetry';
 import { validateDraftShape } from './draftEnvelope';
@@ -113,6 +110,11 @@ import {
   buildPhase2PhotosBlockedDiagnostics,
 } from '@/components/onboarding/v2/phases/buildPhaseProps';
 import { useOnboardingViewModel } from '@/hooks/onboarding/useOnboardingViewModel';
+import { useWizardSkipListener } from '@/hooks/onboarding/useWizardSkipListener';
+import { useRemoteDraftHintTimer } from '@/hooks/onboarding/useRemoteDraftHintTimer';
+import { useFlowMismatchAudit } from '@/hooks/onboarding/useFlowMismatchAudit';
+import { usePhaseLifecycleTelemetry } from '@/hooks/onboarding/usePhaseLifecycleTelemetry';
+import { useReviewHistoryCleanup } from '@/hooks/onboarding/useReviewHistoryCleanup';
 
 
 
@@ -276,15 +278,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     },
   });
 
-  // Listener global do botão "Pular esta etapa" exibido pelo WizardShell em
-  // modo edit_profile. Avança a fase atual via NEXT — mesmo comportamento
-  // dos botões "Pular" internos. Idempotente; cleanup garante zero zumbi.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleSkip = () => { dispatch({ type: 'NEXT' } as any); };
-    window.addEventListener('wizard:request-skip', handleSkip as EventListener);
-    return () => window.removeEventListener('wizard:request-skip', handleSkip as EventListener);
-  }, []);
+  // Listener global do botão "Pular esta etapa" (modo edit_profile).
+  // Extraído em PR 17 — mesma semântica/cleanup, dispatch sob ownership do shell.
+  useWizardSkipListener(dispatch as any);
 
   // Wrappers que registram quais campos o usuário tocou nesta sessão
   // (usado pelo Review para merge não-destrutivo).
@@ -315,34 +311,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     onRetry?: () => void;
   }>(null);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
-  // Timer do hint "rascunho restaurado". PR 5: lifecycle agora é OWNED por um
-  // useEffect que reage a `draftRestored?.source === 'remote'`. A ref existe
-  // apenas como handle de cleanup defensivo no unmount (mantida para zero risco
-  // de zombie timer durante a transição).
-  const remoteDraftHintTimer = useRef<number | null>(null);
-  useEffect(() => () => {
-    if (remoteDraftHintTimer.current) window.clearTimeout(remoteDraftHintTimer.current);
-  }, []);
-  // E-REMOTE-HINT · ORDER CONTRACT (PR 5 · timer internalizado)
-  //   REQUIRES: handleRemoteContinue setou draftRestored.source='remote'.
-  //   PRODUCES: setDraftRestored(null) após 6s.
-  //   CONSUMERS: UI hint.
-  //   OWNERSHIP: este effect é o ÚNICO owner do timer; cleanup garante zero zombie.
-  //   STALE-CLOSURE: usa getCurrentState() para fase-at-schedule (não closure).
-  useEffect(() => {
-    if (draftRestored?.source !== 'remote') return;
-    const phaseAtSchedule = getCurrentState().phase as any;
-    const handle = scheduleWizardTimeout(
-      { phase: phaseAtSchedule, action: 'shell_remote_draft_hint_clear' },
-      () => setDraftRestored(null),
-      6000,
-    );
-    remoteDraftHintTimer.current = handle;
-    return () => {
-      window.clearTimeout(handle);
-      if (remoteDraftHintTimer.current === handle) remoteDraftHintTimer.current = null;
-    };
-  }, [draftRestored?.source, draftRestored?.at, getCurrentState]);
+  // Timer do hint "rascunho restaurado" — extraído em PR 17 (E-REMOTE-HINT).
+  // Mesmo contrato: REQUIRES draftRestored.source='remote'; PRODUCES
+  // setDraftRestored(null) após 6s; OWNERSHIP ÚNICO do hook (cleanup garante
+  // zero zombie); STALE-CLOSURE evitado via getCurrentState().phase.
+  useRemoteDraftHintTimer({
+    source: draftRestored?.source,
+    at: draftRestored?.at,
+    getCurrentPhase: () => getCurrentState().phase as string,
+    clearDraftRestored: () => setDraftRestored(null),
+  });
 
   const [remoteDraft, setRemoteDraft] = useState<null | {
     payload: { profile: any; service: any; userRef?: string | null; providerId?: string | null; firstServiceId?: string | null };
@@ -384,35 +362,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     setOnboardingFlow(isCompany ? 'company' : 'default');
   }, [isCompany]);
 
-  // Auditoria de consistência: detectamos `isCompany` por DOIS sinais
-  // (profile.account_type vindo do banco e state.profile.kind do reducer).
-  // Quando divergem, registramos um evento dedicado para que o admin
-  // (/admin/onboarding-stats) consiga identificar imediatamente PJs que
-  // estão caindo no fluxo PF (e vice-versa) — sintoma clássico do bug em
-  // que a triagem inicial setou um kind diferente do tipo de conta.
-  const lastFlowMismatchRef = useRef<string | null>(null);
-  useEffect(() => {
-    const acc = ((profile as any)?.account_type || '').toString().toLowerCase();
-    const accIsCompany = acc === 'company' || acc === 'pj';
-    const kindIsCompany = state.profile.kind === 'pj';
-    if (!acc) return; // ainda carregando profile — sem ruído
-    if (accIsCompany === kindIsCompany) return; // consistente
-    const fingerprint = `${acc}|${state.profile.kind || 'null'}|${state.phase}`;
-    if (lastFlowMismatchRef.current === fingerprint) return; // dedup por sessão
-    lastFlowMismatchRef.current = fingerprint;
-    void trackOnboardingEvent({
-      phase: state.phase,
-      event: 'error',
-      userId: user?.id,
-      meta: {
-        flow: isCompany ? 'company' : 'default',
-        kind: 'flow_mismatch',
-        account_type: acc,
-        profile_kind: state.profile.kind || null,
-        resolved_as: isCompany ? 'company' : 'default',
-      },
-    });
-  }, [profile, state.profile.kind, state.phase, user?.id, isCompany]);
+  // Auditoria de consistência PJ/PF — extraída em PR 17 (`useFlowMismatchAudit`).
+  // Mesma dedup por fingerprint, mesmo schema de evento (`/admin/onboarding-stats`).
+  useFlowMismatchAudit({
+    profile,
+    profileKind: state.profile.kind,
+    phase: state.phase,
+    userId: user?.id,
+    isCompany,
+  });
 
 
   // Auto-save em localStorage com debounce (rápido).
@@ -633,30 +591,15 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
 
 
-  // Telemetria: dispara 'enter' a cada troca de fase + mede tempo na fase anterior.
-  // - Cada fase recebe `markPhaseEnter` no mount/troca.
-  // - Ao trocar de fase (cleanup), `markPhaseExit` emite o evento `phase_exit`
-  //   com `duration_ms` e `draft_source` (local/remote/seed/none).
-  // - O evento `enter` também carrega `draft_source` para segmentação.
-  // E16 · ORDER CONTRACT (Chain B step 2 · phase telemetry)
-  //   REQUIRES: E17 já chamado setActiveWizardPhase nesta fase.
-  //   PRODUCES: 'enter'/'complete' event + markPhaseEnter; cleanup → markPhaseExit.
-  useEffect(() => {
-
-    const draftSource = getOnboardingDraftSource() || 'none';
-    void trackEvent({
-      phase: state.phase,
-      event: state.phase === 'done' ? 'complete' : 'enter',
-      userId: user?.id,
-      meta: { draft_source: draftSource },
-    });
-    markPhaseEnter(state.phase);
-    const exitingPhase = state.phase;
-    return () => {
-      // Emite duração da fase que está sendo deixada.
-      void markPhaseExit(exitingPhase, { userId: user?.id });
-    };
-  }, [state.phase, user?.id]);
+  // E16 · Phase lifecycle telemetry — extraído em PR 17 (`usePhaseLifecycleTelemetry`).
+  // ORDER CONTRACT preservado: REQUIRES E17 (setActiveWizardPhase) já chamado.
+  // Mesma dep-array `[phase, userId]`, mesmo evento (`enter`/`complete`),
+  // mesmo cleanup (`markPhaseExit`). `trackEvent` injeta `meta.flow`.
+  usePhaseLifecycleTelemetry({
+    phase: state.phase,
+    userId: user?.id,
+    trackEvent,
+  });
 
   // Reporta a fase para a barra de progresso global do WizardShell.
   // E17 · ORDER CONTRACT (Chain B step 1 · phase change head)
@@ -712,12 +655,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   });
 
 
-  // Limpeza do histórico de revisão ao SAIR do modo edit_profile (ex.: usuário
-  // volta para new_signup na mesma aba). Garante que pilha velha não vaze
-  // para uma próxima sessão de revisão.
-  useEffect(() => {
-    if (!editMode) clearReviewHistory();
-  }, [editMode]);
+  // Cleanup do histórico de revisão — extraído em PR 17 (`useReviewHistoryCleanup`).
+  useReviewHistoryCleanup(editMode);
 
   /* ───── Persistência: cria/atualiza provider ao fim da Fase 1 ───── */
   const persistPhase1 = async () => {
