@@ -192,6 +192,41 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     };
   });
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // PR 4C · ORDERING CONTRACT SCAFFOLDING (observational only)
+  // ─────────────────────────────────────────────────────────────────────────
+  // `stateRef` espelha o `state` do reducer para que extrações futuras possam
+  // ler snapshot atômico sem stale closure. NÃO é lido por nenhum effect
+  // ainda (mantém behavior idêntico ao PR 4B).
+  //
+  // `lifecyclePhaseRef` é um marcador observacional do lifecycle operacional
+  // do shell. Atualizado por effects existentes nos pontos canônicos. Nenhum
+  // effect GATEIA por ele nesta PR — é apenas observabilidade para preparar
+  // futura promoção a contrato de ordem explícito.
+  //
+  // Lifecycle:
+  //   BOOT       → mount inicial (antes de qualquer HYDRATE)
+  //   HYDRATING  → bootstrap (E14) ou revisão DB (E15) em curso
+  //   HYDRATED   → HYDRATE concluído (E14/E15)
+  //   READY      → fase mudou após HYDRATED (E16 enter normal)
+  //   SUBMITTING → state.phase === 'done' (E18 agendou finishWizard)
+  //   COMPLETED  → finishWizard retornou com sucesso
+  //
+  // ORDERING CONTRACTS (ver docs/onboarding-effect-map.md §PR 4C):
+  //   Chain A (RECOV):  E9 → E12 → E13 → E8/E11 → E14 → E15 → E5
+  //   Chain B (PHASE):  state.phase change → E17 → E16 → E5 → E6 → (E18 se 'done')
+  //   Chain C (BACK):   wizard:request-back → E19 → flush → dispatch GO_TO → Chain B
+  //   Chain D (CT):     E9 (init) → E10 (poll) → isTabLeader() gate em flush/persist
+  //   Chain E (FLOW):   isCompany → E3 sticky → trackEvent → E4/E6/E16
+  // ─────────────────────────────────────────────────────────────────────────
+  const stateRef = useRef(state);
+  stateRef.current = state; // sync write em cada render — sem useEffect (evita race com flush)
+  const lifecyclePhaseRef = useRef<
+    'BOOT' | 'HYDRATING' | 'HYDRATED' | 'READY' | 'SUBMITTING' | 'COMPLETED'
+  >('BOOT');
+
+
+
   // Guard de rota: enquanto estiver entre phase2_service / details / photos,
   // qualquer tentativa de cair em /dashboard é bloqueada e devolvida ao wizard.
   // Não interfere em fases ≥ phase3_celebration nem em editMode.
