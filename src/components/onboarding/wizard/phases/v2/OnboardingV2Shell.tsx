@@ -732,7 +732,16 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // está vazio (ex.: voltou ao Wizard depois de fechar o navegador, ou o draft
   // expirou), busca os dados reais no banco para que a UI mostre uma REVISÃO
   // do que existe — em vez de criar do zero e duplicar registros.
+  // E15 · ORDER CONTRACT (Chain A · revisão DB)
+  //   REQUIRES: E14 já tentou hidratar (lifecyclePhaseRef === 'HYDRATED' ou
+  //             snapshot estável). E13 produziu state.userRef quando aplicável.
+  //   PRODUCES: providerId e/ou serviço carregados do banco quando faltarem.
+  //   CONSUMERS: UI das fases de revisão; E5 quando phase muda depois.
+  //   RACE COM E5: se E15 hidrata DEPOIS de E5 flush, o flush usaria payload
+  //             vazio — mitigado porque E15 só dispara quando providerId/service
+  //             ESTÃO ausentes, condição em que o flush também é no-op-equivalente.
   useEffect(() => {
+
     let cancelled = false;
     (async () => {
       if (!user?.id && !state.userRef) return;
