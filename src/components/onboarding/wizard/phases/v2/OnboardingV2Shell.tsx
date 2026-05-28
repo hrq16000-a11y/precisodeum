@@ -2212,14 +2212,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               saving,
               onSkip: async () => {
                 track('skip');
-                void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
-                  recordRegistrationSnapshotOnce(
-                    buildRegistrationSnapshotPayload(
-                      state.profile,
-                      !!state.service.service_name,
-                      'skip',
-                    ),
-                  ),
+                recordExtrasBRegistrationSnapshot(
+                  state.profile,
+                  !!state.service.service_name,
+                  'skip',
                 );
                 dispatch({ type: 'NEXT' });
               },
@@ -2232,14 +2228,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
                   website: state.profile.website_url,
                 }));
                 if (!ok) return;
-                void import('@/lib/registrationSnapshot').then(({ recordRegistrationSnapshotOnce }) =>
-                  recordRegistrationSnapshotOnce(
-                    buildRegistrationSnapshotPayload(
-                      state.profile,
-                      !!state.service.service_name,
-                      'finish',
-                    ),
-                  ),
+                recordExtrasBRegistrationSnapshot(
+                  state.profile,
+                  !!state.service.service_name,
+                  'finish',
                 );
                 track('next');
                 dispatch({ type: 'NEXT' });
