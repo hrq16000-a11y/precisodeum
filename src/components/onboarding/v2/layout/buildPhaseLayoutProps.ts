@@ -11,20 +11,9 @@
  */
 import { TERMS_VERSION, readAccuracyMeters, readVelocityMps } from '@/lib/wizardSnapshotInputs';
 
-interface RegistrationSnapshotProfile {
-  whatsapp?: string | null;
-  postal_code?: string | null;
-  street?: string | null;
-  street_number?: string | null;
-  neighborhood?: string | null;
-  city?: string | null;
-  state?: string | null;
-  kind?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  accuracy_m?: number | null;
-  velocity_mps?: number | null;
-}
+// Aceita qualquer shape de profile (OnboardingProfileData ou subset) — o
+// builder é tolerante a campos extras e usa fallback nos opcionais.
+type ProfileLike = Record<string, any>;
 
 export interface RegistrationSnapshotPayload {
   whatsapp: string | null | undefined;
@@ -49,12 +38,10 @@ export interface RegistrationSnapshotPayload {
 }
 
 export const buildRegistrationSnapshotPayload = (
-  profile: RegistrationSnapshotProfile,
+  profile: ProfileLike,
   hasFirstService: boolean,
   finishedVia: 'skip' | 'finish',
-): RegistrationSnapshotPayload => {
-  const p = profile as RegistrationSnapshotProfile & Record<string, any>;
-  return ({
+): RegistrationSnapshotPayload => ({
   whatsapp: profile.whatsapp,
   postal_code: profile.postal_code,
   street: profile.street,
@@ -62,10 +49,10 @@ export const buildRegistrationSnapshotPayload = (
   neighborhood: profile.neighborhood,
   city: profile.city,
   state: profile.state,
-  latitude: (profile as any).latitude ?? null,
-  longitude: (profile as any).longitude ?? null,
-  accuracy_m: (profile as any).accuracy_m ?? readAccuracyMeters(),
-  velocity_mps: (profile as any).velocity_mps ?? readVelocityMps(),
+  latitude: profile.latitude ?? null,
+  longitude: profile.longitude ?? null,
+  accuracy_m: profile.accuracy_m ?? readAccuracyMeters(),
+  velocity_mps: profile.velocity_mps ?? readVelocityMps(),
   terms_accepted: true,
   terms_version: TERMS_VERSION,
   origin_summary: {
@@ -75,9 +62,5 @@ export const buildRegistrationSnapshotPayload = (
     finished_via: finishedVia,
   },
 });
-};
-
-void undefined; // keep helper p reachable for future fields
-void undefined;
 
 export default buildRegistrationSnapshotPayload;
