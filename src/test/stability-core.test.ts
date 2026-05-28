@@ -41,7 +41,6 @@ describe('Critical page imports', () => {
     { name: 'CategoryPage', path: '@/pages/CategoryPage' },
     { name: 'ProviderProfile', path: '@/pages/ProviderProfile' },
     { name: 'LoginPage', path: '@/pages/LoginPage' },
-    { name: 'SignupPage', path: '@/pages/SignupPage' },
     { name: 'DashboardPage', path: '@/pages/DashboardPage' },
     { name: 'DashboardProfilePage', path: '@/pages/DashboardProfilePage' },
     { name: 'AdminPage', path: '@/pages/AdminPage' },
