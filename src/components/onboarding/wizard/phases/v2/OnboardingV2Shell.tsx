@@ -497,14 +497,14 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   // E11 · Leader / Write Gating Orchestrator (Chain D) — extraído em PR 8.
   // Contract completo vive em `useLeaderWriteGate`. Hook é o único owner
-  // de heartbeat + leader election no shell V2. `isLeader` exposto para
-  // paridade — atualmente não consumido localmente (CadastroInicialPage
-  // mantém seu próprio polling). Mantemos a leitura para evitar dead-code.
-  const { isLeader } = useLeaderWriteGate({
+  // de heartbeat + leader election no shell V2. Nenhum consumer local de
+  // `isLeader` — CadastroInicialPage mantém seu próprio polling para o
+  // banner de aba secundária.
+  useLeaderWriteGate({
     getCurrentState,
     userId: user?.id,
   });
-  void isLeader; // paridade comportamental — futuro banner consumirá.
+
 
 
 
