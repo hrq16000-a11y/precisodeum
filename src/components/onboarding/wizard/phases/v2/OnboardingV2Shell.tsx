@@ -378,12 +378,21 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   // sem esperar pelos debounces de 600ms / 1500ms.
   // BLINDAGEM: pulamos o flush em editMode — evita gravar payload parcial
   // (provisório, durante revisão) por cima dos dados reais já publicados.
+  // E5 · ORDER CONTRACT (Chain B step 3)
+  //   REQUIRES: E17 já chamou setActiveWizardPhase para a nova fase (timers ficam
+  //             atribuídos à fase correta)
+  //   PRODUCES: write remoto/local sincronizado por fase
+  //   CONSUMERS: nenhum effect — apenas backend
+  //   GATE: isTabLeader() é consultado dentro de flushOnboardingV2Draft
+  //   POSITION-DEPENDENCY: declaração após E17 garante ordem de execução por
+  //   regra do React (effects rodam top-to-bottom no mount/commit). NÃO mover.
   useEffect(() => {
     if (editMode) return;
     if (state.phase === 'phase2_service' || state.phase === 'done') return;
     flushOnboardingV2Draft(state, user?.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, user?.id, editMode]);
+
 
   // ── Sentinela anti-amnésia em fases finais (auditoria 2026-05) ─────────
   // Em fases finais (extras_b/avatar/document/extras_a) city/state DEVEM já
