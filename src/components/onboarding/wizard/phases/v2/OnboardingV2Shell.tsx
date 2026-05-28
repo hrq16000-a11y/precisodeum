@@ -99,7 +99,8 @@ import {
 } from './telemetry';
 import { RemoteDraftRecoveryModal } from './RemoteDraftRecoveryModal';
 import { validateDraftShape } from './draftEnvelope';
-import { detectConcurrentTab, startTabHeartbeat, startTabLeaderElection, isTabLeader } from './crossTabSync';
+import { isTabLeader } from './crossTabSync';
+import { useLeaderWriteGate } from '@/hooks/onboarding/useLeaderWriteGate';
 import { useBackNavigationOrchestrator } from '@/hooks/onboarding/useBackNavigationOrchestrator';
 import { usePhaseTransitionOrchestrator } from '@/hooks/onboarding/usePhaseTransitionOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
