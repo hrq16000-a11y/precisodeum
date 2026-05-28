@@ -109,7 +109,9 @@ describe('Skip 1º serviço — E2E unificado', () => {
     const shell = read('src/components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
     expect(finalPhase).toContain('Tempo de experiência');
     expect(finalPhase).toContain('years_experience');
-    expect(shell).toMatch(/phase4_extras_b[\s\S]*onSkip=\{\(\) => \{ track\('skip'\); dispatch\(\{ type: 'NEXT' \}\); \}\}/);
-    expect(shell).toMatch(/phase4_extras_b[\s\S]*dispatch\(\{ type: 'NEXT' \}\);/);
+    // phaseComponentMap → onSkip declarado como propriedade.
+    expect(shell).toMatch(/phase4_extras_b[\s\S]*?onSkip:\s*[^,]+track\('skip'\)/);
+    expect(shell).toMatch(/phase4_extras_b[\s\S]*?dispatch\(\{\s*type:\s*'NEXT'\s*\}\)/);
   });
+
 });
