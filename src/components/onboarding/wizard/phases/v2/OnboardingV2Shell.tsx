@@ -21,16 +21,13 @@
  */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-// framer-motion: motion/AnimatePresence migraram para OnboardingShellChrome (PR 13).
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
-// CheckCircle2 migrou para DraftRestoredBanner (PR 9 UI Composition Pass).
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
 import { normalizeProviderPayload } from '@/lib/providerPayload';
 import { logWizardError } from '@/lib/wizardErrorGuard';
-// E19 (back orchestrator) owns registerBackOwner/claimBackEvent — extraído.
 import { markOnboardingCompletionGrace } from '@/lib/onboardingAccess';
 import { finalizeOnboarding } from '@/lib/finalizeOnboarding';
 import { setActiveWizardPhase, scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
@@ -49,16 +46,9 @@ import {
   onboardingReducer,
   VISIBLE_PHASES_COUNT,
 } from './state';
-// Phase1Action/Kind/Location/Contact REMOVIDOS na consolidação Bet Mode
-// (mai/2026). Esses passos eram duplicações das telas da triagem (Bet Mode);
-// agora a fase principal começa direto em phase2_service.
-// Phase2Service / Phase2Details / Phase2Photos / Phase3Celebration /
-// PhaseRepairContact / Phase4Document / Phase4Avatar / Phase4ExtrasA /
-// Phase4ExtrasB são importados pelos wrappers de `phaseComponentMap`
-// (PR 10/11/12), não diretamente pelo shell. Após PR 12 o switch legado
-// foi eliminado — o registry é a única fonte de routing visual.
-// Phase4Review removido — Wizard publica silenciosamente, sem tela de revisão.
-// AutoSaveBadge migrou para OnboardingShellChrome (PR 13).
+// Phase wrappers (UI) e helpers de chrome/modal vivem em `v2/phases` e
+// `v2/layout`. O shell mantém runtime/orchestration; toda composição
+// visual passa por `phaseComponentMap` + `buildShellRenderState`.
 import { nullifyEmpty } from './optionalPatch';
 import { playWizardTransition } from '@/lib/wizardTransition';
 import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
@@ -93,7 +83,6 @@ import {
   getOnboardingDraftSource,
   setOnboardingFlow,
 } from './telemetry';
-// RemoteDraftRecoveryModal migrou para OnboardingShellModals (PR 13).
 import { validateDraftShape } from './draftEnvelope';
 import { isTabLeader } from './crossTabSync';
 import { useLeaderWriteGate } from '@/hooks/onboarding/useLeaderWriteGate';
@@ -104,8 +93,6 @@ import { useCrossTabRecoveryOrchestrator } from '@/hooks/onboarding/useCrossTabR
 import { useHydrationCoreOrchestrator } from '@/hooks/onboarding/useHydrationCoreOrchestrator';
 import { useSubmitCoreOrchestrator } from '@/hooks/onboarding/useSubmitCoreOrchestrator';
 import { useAbandonmentTimer } from './useAbandonmentTimer';
-// getLastReadDraftDiagnostics consumido dentro de usePersistenceRecoveryOrchestrator (E8, PR 9).
-// WizardErrorModal migrou para OnboardingShellModals (PR 13).
 import {
   buildOnboardingCoreLocks,
   buildOnboardingV2BootstrapState,
@@ -113,19 +100,12 @@ import {
   resolveOnboardingV2SeedState,
 } from './bootstrap';
 import { buildWorkingHoursSummary } from './workingHours';
-// BetCardShell migrou para OnboardingShellChrome (PR 13).
-// TERMS_VERSION/readAccuracyMeters/readVelocityMps migraram para buildRegistrationSnapshotPayload (PR 14).
 import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/lib/operations';
-// PR 9/11/12 — UI Composition Pass: extrações puramente visuais.
-// DraftRestoredBanner migrou para OnboardingShellChrome (PR 13).
 import { OnboardingShellChrome } from '@/components/onboarding/v2/layout/OnboardingShellChrome';
 import { OnboardingShellModals } from '@/components/onboarding/v2/layout/OnboardingShellModals';
-// PR 15 — chrome/modal/visual derivations consolidados em buildShellRenderState.
 import { buildShellRenderState } from '@/components/onboarding/v2/layout/buildShellRenderState';
 import { recordExtrasBRegistrationSnapshot } from '@/components/onboarding/v2/layout/buildPhaseActionGroups';
-import {
-  phaseComponentMap,
-} from '@/components/onboarding/v2/phases/phaseComponentMap';
+import { phaseComponentMap } from '@/components/onboarding/v2/phases/phaseComponentMap';
 import {
   buildPhase2ServiceEncouragement,
   buildPhase2DetailsEncouragement,
@@ -2534,20 +2514,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   };
 
 
-  // ViewModel visual (PR 9 — UI Composition Pass). Apenas derivações
-  // memoizadas: nenhum side-effect, nenhuma decisão de runtime. Substitui
-  // os booleans inline `isCelebrationOrLater` e `showAutoSaveBadge`.
+  // ViewModel visual — derivações puras consumidas pelo render-state
+  // builder. Runtime/orchestration permanece neste shell.
   const viewModel = useOnboardingViewModel({ phase: state.phase });
-  void viewModel.isCelebrationOrLater; // mantido por compat de testes existentes.
-
-  // PR 13 — Chrome/modal externos extraídos para componentes presentational
-  // em `src/components/onboarding/v2/layout/`. O shell mantém runtime/owner-
-  // ship intactos; apenas a composição visual final foi achatada.
-  // PR 14 — Snapshots/derivações UI agora vêm de builders puros em
-  // `src/components/onboarding/v2/layout/build*Props.ts`.
-  // PR 15 — Consolidação final em `buildShellRenderState`: uma única
-  // chamada devolve chrome+remoto+erro+visual state. Callbacks de runtime
-  // continuam sob ownership do shell.
   const render = buildShellRenderState({
     phase: state.phase,
     viewModel,
