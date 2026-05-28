@@ -2568,7 +2568,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       <OnboardingShellModals
         remote={{
           open: showRemoteModal,
-          snapshot: remoteSnapshot,
+          snapshot: render.remoteSnapshot,
           onContinue: handleRemoteContinue,
           onDiscard: handleRemoteDiscard,
         }}
@@ -2580,7 +2580,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           missingFields: errorModal?.missingFields,
           technicalMessage: errorModal?.techMessage ?? null,
           technicalCode: errorModal?.techCode ?? null,
-          contextSnapshot: errorContextSnapshot,
+          contextSnapshot: render.errorContextSnapshot,
           onRetry: () => errorModal?.onRetry?.(),
           onBack: () => {
             void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
