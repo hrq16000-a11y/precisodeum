@@ -233,6 +233,28 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     'BOOT' | 'HYDRATING' | 'HYDRATED' | 'READY' | 'SUBMITTING' | 'COMPLETED'
   >('BOOT');
 
+  // PR 5 · OWNERSHIP HELPERS (preparação de extração — não muda behavior).
+  //
+  // `getCurrentState()` é o read-path canônico para callbacks assíncronos,
+  // delayed handlers e timers que precisam do snapshot ATUAL do reducer (não
+  // do snapshot capturado na closure). Effects síncronos continuam lendo
+  // `state` direto — é mais expressivo. Async/delayed deve preferir este
+  // helper para eliminar stale-closure risk em refactors futuros.
+  const getCurrentState = useCallback(() => stateRef.current, []);
+  // `signalLifecyclePhase(next)` centraliza TODA escrita em `lifecyclePhaseRef`.
+  // Sem state machine, sem event bus — apenas um setter único com no-op para
+  // transições idempotentes. Existir como helper permite, no futuro, adicionar
+  // gates/audit/log num único ponto sem caçar atribuições espalhadas.
+  const signalLifecyclePhase = useCallback(
+    (next: 'BOOT' | 'HYDRATING' | 'HYDRATED' | 'READY' | 'SUBMITTING' | 'COMPLETED') => {
+      if (lifecyclePhaseRef.current === next) return;
+      lifecyclePhaseRef.current = next;
+    },
+    [],
+  );
+
+
+
 
 
   // Guard de rota: enquanto estiver entre phase2_service / details / photos,
