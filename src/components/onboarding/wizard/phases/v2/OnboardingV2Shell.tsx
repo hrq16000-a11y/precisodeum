@@ -233,6 +233,28 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     'BOOT' | 'HYDRATING' | 'HYDRATED' | 'READY' | 'SUBMITTING' | 'COMPLETED'
   >('BOOT');
 
+  // PR 5 · OWNERSHIP HELPERS (preparação de extração — não muda behavior).
+  //
+  // `getCurrentState()` é o read-path canônico para callbacks assíncronos,
+  // delayed handlers e timers que precisam do snapshot ATUAL do reducer (não
+  // do snapshot capturado na closure). Effects síncronos continuam lendo
+  // `state` direto — é mais expressivo. Async/delayed deve preferir este
+  // helper para eliminar stale-closure risk em refactors futuros.
+  const getCurrentState = useCallback(() => stateRef.current, []);
+  // `signalLifecyclePhase(next)` centraliza TODA escrita em `lifecyclePhaseRef`.
+  // Sem state machine, sem event bus — apenas um setter único com no-op para
+  // transições idempotentes. Existir como helper permite, no futuro, adicionar
+  // gates/audit/log num único ponto sem caçar atribuições espalhadas.
+  const signalLifecyclePhase = useCallback(
+    (next: 'BOOT' | 'HYDRATING' | 'HYDRATED' | 'READY' | 'SUBMITTING' | 'COMPLETED') => {
+      if (lifecyclePhaseRef.current === next) return;
+      lifecyclePhaseRef.current = next;
+    },
+    [],
+  );
+
+
+
 
 
   // Guard de rota: enquanto estiver entre phase2_service / details / photos,
@@ -293,12 +315,35 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     onRetry?: () => void;
   }>(null);
   const [draftRestored, setDraftRestored] = useState<null | { source: 'local' | 'remote'; at?: string }>(null);
-  // Timer rastreado do hint "rascunho restaurado" (caminho remoto, fora de useEffect).
-  // Mantido em ref para garantir cleanup no unmount e evitar setState zumbi.
+  // Timer do hint "rascunho restaurado". PR 5: lifecycle agora é OWNED por um
+  // useEffect que reage a `draftRestored?.source === 'remote'`. A ref existe
+  // apenas como handle de cleanup defensivo no unmount (mantida para zero risco
+  // de zombie timer durante a transição).
   const remoteDraftHintTimer = useRef<number | null>(null);
   useEffect(() => () => {
     if (remoteDraftHintTimer.current) window.clearTimeout(remoteDraftHintTimer.current);
   }, []);
+  // E-REMOTE-HINT · ORDER CONTRACT (PR 5 · timer internalizado)
+  //   REQUIRES: handleRemoteContinue setou draftRestored.source='remote'.
+  //   PRODUCES: setDraftRestored(null) após 6s.
+  //   CONSUMERS: UI hint.
+  //   OWNERSHIP: este effect é o ÚNICO owner do timer; cleanup garante zero zombie.
+  //   STALE-CLOSURE: usa getCurrentState() para fase-at-schedule (não closure).
+  useEffect(() => {
+    if (draftRestored?.source !== 'remote') return;
+    const phaseAtSchedule = getCurrentState().phase as any;
+    const handle = scheduleWizardTimeout(
+      { phase: phaseAtSchedule, action: 'shell_remote_draft_hint_clear' },
+      () => setDraftRestored(null),
+      6000,
+    );
+    remoteDraftHintTimer.current = handle;
+    return () => {
+      window.clearTimeout(handle);
+      if (remoteDraftHintTimer.current === handle) remoteDraftHintTimer.current = null;
+    };
+  }, [draftRestored?.source, draftRestored?.at, getCurrentState]);
+
   const [remoteDraft, setRemoteDraft] = useState<null | {
     payload: { profile: any; service: any; userRef?: string | null; providerId?: string | null; firstServiceId?: string | null };
     phase: any;
@@ -625,12 +670,9 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       });
       setDraftRestored({ source: 'remote', at: remoteDraft.updated_at });
       setOnboardingDraftSource('remote');
-      if (remoteDraftHintTimer.current) window.clearTimeout(remoteDraftHintTimer.current);
-      remoteDraftHintTimer.current = scheduleWizardTimeout(
-        { phase: state.phase as any, action: 'shell_remote_draft_hint_clear' },
-        () => setDraftRestored(null),
-        6000,
-      );
+      // PR 5: timer de "esconder hint" agora é OWNED pelo effect abaixo
+      // (busca `draftRestored?.source === 'remote'`). Aqui apenas setamos o
+      // state — o lifecycle do timer pertence ao effect, com cleanup garantido.
     }
     setShowRemoteModal(false);
     setRemoteDraft(null);
@@ -675,7 +717,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   //   POSITION-DEPENDENCY: deve preceder E15 (revisão usa providerId já hidratado).
   //   NÃO EXTRAIR sem antes promover lifecyclePhaseRef a gate explícito.
   useEffect(() => {
-    if (lifecyclePhaseRef.current === 'BOOT') lifecyclePhaseRef.current = 'HYDRATING';
+    if (lifecyclePhaseRef.current === 'BOOT') signalLifecyclePhase('HYDRATING');
     const bootstrap = buildOnboardingV2BootstrapState({ profile, provider });
 
     if (!bootstrap) return;
@@ -731,7 +773,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
     });
 
     dispatch({ type: 'HYDRATE', state: resolved });
-    lifecyclePhaseRef.current = 'HYDRATED';
+    signalLifecyclePhase('HYDRATED');
   }, [profile, provider, internalHandoffFromTriage]);
 
 
@@ -870,7 +912,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   //              Mover este bloco quebra atribuição de timers à fase correta.
   //   Atualiza lifecyclePhaseRef para 'READY' quando já hidratado.
   useEffect(() => {
-    if (lifecyclePhaseRef.current === 'HYDRATED') lifecyclePhaseRef.current = 'READY';
+    if (lifecyclePhaseRef.current === 'HYDRATED') signalLifecyclePhase('READY');
 
     onPhaseChange?.(state.phase);
     // Instrumentação: registra a fase ativa para o detector de timer zumbi.
@@ -895,11 +937,11 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   //   POSITION-DEPENDENCY: precisa rodar depois de E17 (zombie guard).
   useEffect(() => {
     if (state.phase !== 'done' || deferCompletionToParent) return;
-    lifecyclePhaseRef.current = 'SUBMITTING';
+    signalLifecyclePhase('SUBMITTING');
     clearOnboardingV2Draft();
     const timer = scheduleWizardTimeout(
       { phase: 'done', action: 'shell_finish_wizard', runIfStale: true },
-      () => { void finishWizard().then(() => { lifecyclePhaseRef.current = 'COMPLETED'; }); },
+      () => { void finishWizard().then(() => { signalLifecyclePhase('COMPLETED'); }); },
       300,
     );
     return () => window.clearTimeout(timer);
