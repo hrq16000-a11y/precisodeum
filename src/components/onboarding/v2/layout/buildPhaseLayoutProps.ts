@@ -75,5 +75,9 @@ export const buildRegistrationSnapshotPayload = (
     finished_via: finishedVia,
   },
 });
+};
+
+void undefined; // keep helper p reachable for future fields
+void undefined;
 
 export default buildRegistrationSnapshotPayload;
