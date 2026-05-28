@@ -2571,69 +2571,58 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   const viewModel = useOnboardingViewModel({ phase: state.phase });
   void viewModel.isCelebrationOrLater; // mantido por compat de testes existentes.
 
+  // PR 13 — Chrome/modal externos extraídos para componentes presentational
+  // em `src/components/onboarding/v2/layout/`. O shell mantém runtime/owner-
+  // ship intactos; apenas a composição visual final foi achatada.
   return (
     <>
-      {/* Aviso "rascunho restaurado" — diferencia local x remoto.
-          UI extraída para DraftRestoredBanner (PR 9). */}
-      <DraftRestoredBanner draftRestored={draftRestored} />
+      <OnboardingShellChrome
+        draftRestored={draftRestored}
+        showAutoSaveBadge={viewModel.showAutoSaveBadge}
+        autoSaveSignal={state.profile}
+        phaseKey={state.phase}
+      >
+        {renderPhase()}
+      </OnboardingShellChrome>
 
-      <BetCardShell animated={false}>
-        {viewModel.showAutoSaveBadge && (
-          <div className="mb-2 flex items-center justify-end">
-            <AutoSaveBadge signal={state.profile} />
-          </div>
-        )}
-{/* Faixa "Já preenchido" removida — vazava nomes técnicos (full_name, document)
-            ao usuário final. Os locks continuam ativos via `coreLocks`/`pendingCoreFields`
-            para a lógica interna, mas sem renderização. */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={state.phase}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25 }}
-          >
-            {renderPhase()}
-          </motion.div>
-        </AnimatePresence>
-      </BetCardShell>
-
-      <RemoteDraftRecoveryModal
-        open={showRemoteModal}
-        payload={remoteDraft?.payload || null}
-        phase={(remoteDraft?.phase as any) || null}
-        updatedAt={remoteDraft?.updated_at || null}
-        onContinue={handleRemoteContinue}
-        onDiscard={handleRemoteDiscard}
-      />
-
-      <WizardErrorModal
-        open={!!errorModal}
-        onOpenChange={(v) => { if (!v) setErrorModal(null); }}
-        code={errorModal?.code || ''}
-        step={String(state.phase)}
-        missingFields={errorModal?.missingFields}
-        technicalMessage={errorModal?.techMessage ?? null}
-        technicalCode={errorModal?.techCode ?? null}
-        contextSnapshot={{
-          category: (state.service?.category_ids?.[0]) || null,
-          city: state.profile?.city || null,
-          state_uf: state.profile?.state || null,
-          lastPersistError: lastPersistError
-            ? { message: lastPersistError.message, code: lastPersistError.code || null }
-            : null,
+      <OnboardingShellModals
+        remote={{
+          open: showRemoteModal,
+          snapshot: {
+            payload: remoteDraft?.payload || null,
+            phase: (remoteDraft?.phase as string | null) || null,
+            updatedAt: remoteDraft?.updated_at || null,
+          },
+          onContinue: handleRemoteContinue,
+          onDiscard: handleRemoteDiscard,
         }}
-        onRetry={() => errorModal?.onRetry?.()}
-        onBack={() => {
-          void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
-            requestWizardBackForPhase({
-              phase: state.phase,
-              source: 'error_modal',
-              editMode,
-              meta: { code: errorModal?.code || null },
+        error={{
+          open: !!errorModal,
+          onOpenChange: (v) => { if (!v) setErrorModal(null); },
+          code: errorModal?.code || '',
+          step: String(state.phase),
+          missingFields: errorModal?.missingFields,
+          technicalMessage: errorModal?.techMessage ?? null,
+          technicalCode: errorModal?.techCode ?? null,
+          contextSnapshot: {
+            category: (state.service?.category_ids?.[0]) || null,
+            city: state.profile?.city || null,
+            state_uf: state.profile?.state || null,
+            lastPersistError: lastPersistError
+              ? { message: lastPersistError.message, code: lastPersistError.code || null }
+              : null,
+          },
+          onRetry: () => errorModal?.onRetry?.(),
+          onBack: () => {
+            void import('@/lib/wizardBackNav').then(({ requestWizardBackForPhase }) => {
+              requestWizardBackForPhase({
+                phase: state.phase,
+                source: 'error_modal',
+                editMode,
+                meta: { code: errorModal?.code || null },
+              });
             });
-          });
+          },
         }}
       />
     </>
