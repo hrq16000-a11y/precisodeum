@@ -773,26 +773,40 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   //             snapshot estável). E13 produziu state.userRef quando aplicável.
   //   PRODUCES: providerId e/ou serviço carregados do banco quando faltarem.
   //   CONSUMERS: UI das fases de revisão; E5 quando phase muda depois.
+  // E15 · ORDER CONTRACT (Chain A step · REPLAY APPLICATION / revisão DB)
+  //   REQUIRES: E14 já tentou hidratar (lifecyclePhaseRef === 'HYDRATED' ou
+  //             snapshot estável). E13 produziu state.userRef quando aplicável.
+  //   PRODUCES: providerId e/ou serviço carregados do banco quando faltarem.
+  //             Cada dispatch HYDRATE é uma APLICAÇÃO DE REPLAY restrita ao
+  //             campo recuperado (não recomputa seed completo).
+  //   CONSUMERS: UI das fases de revisão; E5 quando phase muda depois.
+  //   OWNERSHIP: único owner do REPLAY APPLICATION (fetch DB → reaplica).
+  //   POSITION-DEPENDENCY: roda DEPOIS de E14 (async + deps em state.providerId).
+  //   HYDRATION-SEQUENCE: passo 5 (último estágio do hydration core).
   //   RACE COM E5: se E15 hidrata DEPOIS de E5 flush, o flush usaria payload
   //             vazio — mitigado porque E15 só dispara quando providerId/service
   //             ESTÃO ausentes, condição em que o flush também é no-op-equivalente.
+  //   REPLAY ISOLATION: não sobrescreve campos preenchidos pelo usuário
+  //             (merge respeita `existingService.* || svc.*`).
   useEffect(() => {
 
     let cancelled = false;
     (async () => {
       if (!user?.id && !state.userRef) return;
 
-      // 1) Resgata providerId se ausente — tenta por user_id e por user_ref
+      // Replay stage 1 · providerId recovery (resgata se ausente)
       let pid = state.providerId;
       if (!pid) {
         pid = await findExistingProvider(user?.id ?? null, state.userRef ?? null);
         if (pid && !cancelled) {
           dispatch({ type: 'HYDRATE', state: { providerId: pid } });
+          signalLifecyclePhase('HYDRATED');
         }
       }
       if (cancelled) return;
 
-      // 2) Decide se precisamos buscar/rehidratar o serviço.
+      // Replay stage 2 · service body check.
+
       //    Antes: pulávamos sempre que firstServiceId estava setado — isso
       //    deixava a UI vazia quando o draft remoto trazia só o ID, mas o
       //    corpo do serviço (categoria/descrição/etc.) tinha sido perdido.
