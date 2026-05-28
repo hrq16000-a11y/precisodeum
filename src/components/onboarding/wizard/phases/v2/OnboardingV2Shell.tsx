@@ -519,59 +519,20 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
   );
 
 
-  // Detecta rascunho REMOTO (troca de dispositivo) e ABRE MODAL para o usuário decidir.
-  // Não auto-hidrata mais — evita "salto" silencioso de etapa.
-  // G5: comparação inteligente — se o rascunho remoto está numa fase MAIS AVANÇADA
-  // que a local, ainda assim oferecemos a recuperação (caso contrário o usuário
-  // poderia repetir etapas já concluídas em outro dispositivo).
-  useEffect(() => {
-    if (!user?.id) return;
-    if (skipDraftRestore) return;
-    // Anti-zumbi: neutraliza qualquer timer remanescente do BetModeShell e
-    // consome a flag de finalização da triagem (se presente). Se ausente,
-    // significa entrada direta no Step 8+ sem passar pela triagem — prossegue
-    // normalmente.
-    try { neutralizeZombieTimers(); } catch { /* noop */ }
-    try { if (typeof window !== 'undefined') sessionStorage.removeItem('bet_shell_finalized'); } catch { /* noop */ }
-    const local = readOnboardingV2Draft();
-    const localPhase = (local?.phase as any) || 'phase2_service';
-    let alive = true;
-    (async () => {
-      const remote = await fetchRemoteDraft(user.id);
-      if (!alive || !remote) return;
-      // Containment patch — Crítico #4: NÃO sobrescrever estado mais novo.
-      // Se o draft LOCAL foi salvo depois do remoto (>5s de folga p/ relógios
-      // dessincronizados), o usuário tem dados frescos que ainda não subiram
-      // ao banco — ignorar o remoto evita reverter o estado dele.
-      const localSavedAt = readOnboardingV2DraftSavedAt() || 0;
-      const remoteSavedAt = remote.updated_at ? Date.parse(remote.updated_at) : 0;
-      if (localSavedAt > 0 && remoteSavedAt > 0 && localSavedAt > remoteSavedAt + 5000) {
-        void trackOnboardingEvent({
-          phase: state.phase,
-          event: 'next',
-          userId: user.id,
-          meta: {
-            kind: 'recovery_remote_discarded',
-            reason: 'local_newer',
-            local_saved_at: localSavedAt,
-            remote_updated_at: remoteSavedAt,
-            delta_ms: localSavedAt - remoteSavedAt,
-          },
-        });
-        return;
-      }
-      const remotePhase = remote.phase as any;
-      const remoteIdx = phaseIndex(remotePhase);
-      const localIdx = phaseIndex(localPhase);
-      const remoteIsAhead = remoteIdx > localIdx;
-      const localIsEmpty = !local || localPhase === 'phase2_service';
-      // Pergunta sempre que (a) local vazio, ou (b) remoto está mais à frente.
-      if (!localIsEmpty && !remoteIsAhead) return;
-      setRemoteDraft(remote);
-      setShowRemoteModal(true);
-    })();
-    return () => { alive = false; };
-  }, [user?.id, skipDraftRestore]);
+  // E9 · Cross-Tab Recovery Orchestrator — extraído em PR 7 (final).
+  // Contract completo vive em `useCrossTabRecoveryOrchestrator`. Hook é o
+  // ÚNICO owner do bootstrap de detecção remote-draft + neutralização de
+  // zumbis da triagem. Handlers do modal (`handleRemoteContinue` /
+  // `handleRemoteDiscard`) permanecem aqui — únicos caminhos legítimos
+  // para dispatch HYDRATE / clearRemoteDraft após decisão do usuário.
+  useCrossTabRecoveryOrchestrator({
+    userId: user?.id,
+    skipDraftRestore,
+    currentPhase: state.phase,
+    setRemoteDraft,
+    setShowRemoteModal,
+  });
+
 
   const handleRemoteContinue = () => {
     if (remoteDraft) {
