@@ -117,8 +117,7 @@ import { buildWorkingHoursSummary } from './workingHours';
 import BetCardShell from '@/components/onboarding/wizard/BetCardShell';
 import { TERMS_VERSION, readVelocityMps, readAccuracyMeters } from '@/lib/wizardSnapshotInputs';
 import { buildPersistFirstServiceOperation, logOperationBuildFailure } from '@/lib/operations';
-// PR 9 — UI Composition Pass: extrações puramente visuais.
-import { Phase2PhotosBlockedCard } from '@/components/onboarding/v2/phases/Phase2PhotosBlockedCard';
+// PR 9/11 — UI Composition Pass: extrações puramente visuais.
 import { DraftRestoredBanner } from '@/components/onboarding/v2/phases/DraftRestoredBanner';
 import {
   phaseComponentMap,
