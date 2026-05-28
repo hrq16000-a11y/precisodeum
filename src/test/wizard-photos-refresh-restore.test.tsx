@@ -77,8 +77,14 @@ describe('Wizard · refresh em phase2_photos', () => {
 
   it('firstServiceId nunca volta a null se o usuário já tinha um salvo', () => {
     // Simula 2 ciclos de save/read — refresh 2× não corrompe o ID.
+    // O reader exige conteúdo mínimo significativo (guard anti-zombie
+    // `thin_content` — Crítico #3 em useOnboardingV2Draft.ts) para anunciar
+    // um draft restaurado: service_name ≥3 chars OU whatsapp ≥10 dígitos
+    // OU category_ids não vazio. Sem isso, retorna null mesmo com
+    // firstServiceId preenchido. Aqui injetamos o mínimo (service_name).
+    const minimalService = { service_name: 'Pintura' };
     writeDraft({
-      profile: {}, service: {}, phase: 'phase2_photos',
+      profile: {}, service: minimalService, phase: 'phase2_photos',
       userRef: null, providerId: 'p1', firstServiceId: 'svc-1',
     });
     const first = readOnboardingV2Draft();
@@ -86,7 +92,7 @@ describe('Wizard · refresh em phase2_photos', () => {
 
     // re-salva (round-trip: o que leu volta para o storage)
     writeDraft({
-      profile: {}, service: {}, phase: 'phase2_photos',
+      profile: {}, service: minimalService, phase: 'phase2_photos',
       userRef: null, providerId: 'p1', firstServiceId: first!.firstServiceId,
     });
     const second = readOnboardingV2Draft();
