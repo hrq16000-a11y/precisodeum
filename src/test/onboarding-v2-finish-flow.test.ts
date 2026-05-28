@@ -84,13 +84,19 @@ describe('Onboarding V2 — fluxo final', () => {
     expect(shellSrc).toContain("phase: 'main_portfolio_albums'");
     expect(shellSrc).toContain('Step21_PortfolioAlbums');
     expect(shellSrc).toContain('finalizeUnifiedOnboarding');
-    expect(shellSrc).toMatch(/update\(\{ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true \}\)/);
+    // O patch literal `onboarding_step: 5, onboarding_completed: true` é
+    // aplicado pela RPC `finalize_onboarding_atomic`. O shell unificado só
+    // injeta `profile_type: 'provider'` como complemento.
+    expect(shellSrc).toMatch(/finalizeOnboarding\(\{[\s\S]*?extraProfilePatch:\s*\{\s*profile_type:\s*'provider'\s*\}/);
   });
 
   it('finalização do V2 força profile_type=provider ao concluir', () => {
     const shellSrc = read('components/onboarding/wizard/phases/v2/OnboardingV2Shell.tsx');
-    expect(shellSrc).toMatch(/update\(\{ profile_type: 'provider', onboarding_step: 5, onboarding_completed: true \}\)/);
+    // Idem: a finalização canônica passa por `finalizeOnboarding` com
+    // `extraProfilePatch.profile_type = 'provider'`.
+    expect(shellSrc).toMatch(/finalizeOnboarding\(\{[\s\S]*?extraProfilePatch:\s*\{\s*profile_type:\s*'provider'\s*\}/);
   });
+
 
   it('WizardShell aceita prop mode (WizardMode) com alias deprecated reviewMode', () => {
     const shellSrc = read('components/onboarding/wizard/WizardShell.tsx');
