@@ -24,7 +24,7 @@ const DiscoverPreviewSection = ({ previews }: { previews: DiscoverPreview[] }) =
       <div className="grid gap-4 sm:grid-cols-2">
         {previews.map((preview) => (
           <Card key={preview.id} className="overflow-hidden border-border/70">
-            <img src={preview.image_variant_url} alt={preview.title_variant} className="aspect-video w-full object-cover" loading="lazy" />
+            <img src={preview.image_variant_url} alt={preview.title_variant} className="aspect-video w-full object-cover" loading="lazy" decoding="async" />
             <CardContent className="p-4">
               <Badge variant="secondary" className="mb-2 gap-1 text-[11px]">
                 <Images className="h-3 w-3" /> {preview.variant_name}

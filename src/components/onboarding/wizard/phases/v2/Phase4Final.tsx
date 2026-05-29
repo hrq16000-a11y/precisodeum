@@ -309,7 +309,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
             data-testid="phase4-avatar-use-google"
           >
             <span className="flex items-center justify-center gap-2">
-              <img src={socialUrl} alt="" aria-hidden="true" className="h-5 w-5 rounded-full object-cover" />
+              <img src={socialUrl} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-5 w-5 rounded-full object-cover" />
               Usar foto da conta
             </span>
           </button>
@@ -366,7 +366,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
                 }`}
                 data-testid={`phase4-avatar-variant-${v.seed}`}
               >
-                <img src={v.url} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+                <img src={v.url} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               </button>
             );
           })}
