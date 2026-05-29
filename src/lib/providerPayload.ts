@@ -154,13 +154,10 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
   //     por exibir o endereço completo, igual à PJ).
   //     Apenas segmento/CNPJ/social_links continuam exclusivos de PJ.
   const PJ_ONLY_KEYS = new Set<string>([
-    'business_segment', 'cnpj', 'social_links',
+    'business_segment', 'cnpj', 'social_links', 'show_full_address',
   ]);
 
-  // 1b.i) PF: remove APENAS chaves estritamente PJ (segmento/cnpj/social_links).
-  //        Endereço institucional (street/number/complement/postal_code) e
-  //        toggle show_full_address são preservados — autônomos podem ter
-  //        estúdio/consultório/residência (cadastro-bet-v3 + cpf-optional).
+  // 1b.i) PF: remove chaves estritamente PJ (segmento/cnpj/social_links/show_full_address).
   if (!isCompany) {
     for (const key of PJ_ONLY_KEYS) {
       if (key in out) {
@@ -171,19 +168,14 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
   }
 
   // 1b.ii) Sanitiza chaves institucionais preservadas (PF e PJ):
-  //         - strings: trim + null em vazias
-  //         - show_full_address: boolean estrito, forçado false sem street
-  //         - social_links (PJ): objeto com strings limpas ou null
   for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
     if (!(key in out)) continue;
     if (!isCompany && PJ_ONLY_KEYS.has(key)) continue;
     if (PROVIDER_PJ_STRING_KEYS.has(key)) {
       out[key] = safeOptionalString(out[key]);
     } else if (key === 'show_full_address') {
-      // Invariante: só pode ser true quando há street preenchido.
-      const streetRaw = out.street;
-      const hasStreet = typeof streetRaw === 'string' && streetRaw.trim().length > 0;
-      out[key] = hasStreet && out[key] === true;
+      // PJ: preserva boolean estrito (true/false) sem amarrar a street.
+      out[key] = out[key] === true;
     } else if (key === 'social_links') {
       const v = out[key];
       if (v == null) { out[key] = null; }
