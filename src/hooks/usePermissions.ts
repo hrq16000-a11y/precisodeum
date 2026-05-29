@@ -92,7 +92,7 @@ export const usePermissions = (): UsePermissionsReturn => {
 
     const fetchData = async () => {
       const levelPromise = profile.level_id
-        ? supabase.from('user_levels').select('name, color, permissions').eq('id', profile.level_id).single().then(r => r)
+        ? supabase.from('user_levels').select('name, color').eq('id', profile.level_id).single().then(r => r)
         : Promise.resolve({ data: null } as any);
 
       const accTypePromise = profile.account_type_id
@@ -104,10 +104,11 @@ export const usePermissions = (): UsePermissionsReturn => {
       if (levelRes.data) {
         setLevelName(levelRes.data.name || '');
         setLevelColor(levelRes.data.color || '');
-        const perms = (levelRes.data.permissions as UserPermissions) || DEFAULT_PERMISSIONS;
-        setPermissions(perms);
+        const perms = (profile.permissions as UserPermissions) || DEFAULT_PERMISSIONS;
+        setPermissions({ ...DEFAULT_PERMISSIONS, ...perms });
       } else {
-        setPermissions(DEFAULT_PERMISSIONS);
+        const perms = (profile.permissions as UserPermissions) || DEFAULT_PERMISSIONS;
+        setPermissions({ ...DEFAULT_PERMISSIONS, ...perms });
         setLevelName('');
         setLevelColor('');
       }
