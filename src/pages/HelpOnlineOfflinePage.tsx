@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+import { buildFaqPage, buildBreadcrumbList } from '@/lib/seo-schemas';
 import { Activity, Clock, Eye, EyeOff, ShieldCheck, Wifi, WifiOff, ChevronRight } from 'lucide-react';
 
 // Single source of truth for both the rendered FAQ and the schema.org JSON-LD —
@@ -42,36 +43,19 @@ const HelpOnlineOfflinePage = () => {
     canonical: `${SITE_BASE_URL}/ajuda/online-offline`,
   });
 
-  // FAQPage schema for rich-snippet eligibility
+  // FAQPage schema for rich-snippet eligibility — via helper centralizado.
   useJsonLd(
-    {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: FAQ_ITEMS.map((item) => ({
-        '@type': 'Question',
-        name: item.q,
-        acceptedAnswer: { '@type': 'Answer', text: item.a },
-      })),
-    },
+    buildFaqPage(FAQ_ITEMS.map((it) => ({ question: it.q, answer: it.a }))),
     'json-ld-faq-online-offline',
   );
 
-  // BreadcrumbList schema for breadcrumb-style result display
+  // BreadcrumbList schema — via helper centralizado.
   useJsonLd(
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_BASE_URL },
-        { '@type': 'ListItem', position: 2, name: 'Central de Ajuda', item: `${SITE_BASE_URL}/ajuda` },
-        {
-          '@type': 'ListItem',
-          position: 3,
-          name: 'Como funciona Online/Offline',
-          item: `${SITE_BASE_URL}/ajuda/online-offline`,
-        },
-      ],
-    },
+    buildBreadcrumbList([
+      { name: 'Início', url: SITE_BASE_URL },
+      { name: 'Central de Ajuda', url: `${SITE_BASE_URL}/ajuda` },
+      { name: 'Como funciona Online/Offline', url: `${SITE_BASE_URL}/ajuda/online-offline` },
+    ]),
     'json-ld-breadcrumb-online-offline',
   );
 

@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import FadeInSection from '@/components/FadeInSection';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+import { buildFaqPage } from '@/lib/seo-schemas';
 import {
   Accordion,
   AccordionContent,
@@ -34,21 +35,12 @@ const FaqPage = () => {
     },
   });
 
-  // FAQ Schema JSON-LD for rich snippets
+  // FAQ Schema JSON-LD para rich snippets — via helper centralizado.
   const faqJsonLd = useMemo(() => {
     if (!faqs.length) return null;
-    return {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: faqs.map((faq: any) => ({
-        '@type': 'Question',
-        name: faq.question,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: faq.answer,
-        },
-      })),
-    };
+    return buildFaqPage(
+      (faqs as any[]).map((f) => ({ question: f.question, answer: f.answer })),
+    );
   }, [faqs]);
 
   useJsonLd(faqJsonLd);

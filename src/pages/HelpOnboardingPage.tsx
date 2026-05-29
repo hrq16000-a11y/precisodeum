@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+import { buildFaqPage } from '@/lib/seo-schemas';
 import { markHelpPageVisited, markSupportContacted } from '@/lib/conversionFunnel';
 
 const SUPPORT_WHATSAPP = '5541997452053';
@@ -68,17 +69,9 @@ export default function HelpOnboardingPage() {
     canonical: `${SITE_BASE_URL}/ajuda/cadastro`,
   });
 
-  // FAQ Schema JSON-LD para rich snippets nas SERPs (Google FAQ rich result)
+  // FAQ Schema JSON-LD para rich snippets nas SERPs — via helper centralizado.
   const faqJsonLd = useMemo(
-    () => ({
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: faq.map((item) => ({
-        '@type': 'Question',
-        name: item.q,
-        acceptedAnswer: { '@type': 'Answer', text: item.a },
-      })),
-    }),
+    () => buildFaqPage(faq.map((it) => ({ question: it.q, answer: it.a }))),
     [],
   );
   useJsonLd(faqJsonLd);
