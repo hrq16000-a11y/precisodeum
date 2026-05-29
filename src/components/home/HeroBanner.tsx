@@ -141,21 +141,28 @@ const HeroBanner = () => {
       className="relative overflow-visible py-6 sm:py-8 md:overflow-hidden md:py-20"
       style={{ height: 340, minHeight: 340 }}
     >
-      {/* Current background — dimensions explicit to prevent CLS */}
-      <img
-        src={displayedImage}
-        alt="Profissionais de serviços"
-        width={1920}
-        height={768}
-        fetchPriority="high"
-        loading="eager"
-        decoding="async"
-        // @ts-expect-error - non-standard but supported by Chromium for LCP hinting
-        elementtiming="hero-lcp"
-        className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700"
-        style={{ width: '100%', height: '100%' }}
-        onLoad={() => setHeroImageLoaded(true)}
-      />
+      {/* Current background — dimensions explicit to prevent CLS.
+          Wrapped in <picture> to enable modern format negotiation.
+          AVIF source can be added later once variants are generated;
+          AVIF asset paths are intentionally omitted today to avoid 404s. */}
+      <picture className="absolute inset-0 h-full w-full">
+        <source srcSet={displayedImage} type="image/webp" />
+        <img
+          src={displayedImage.replace(/\.webp$/i, '.jpg')}
+          alt="Profissionais de serviços"
+          width={1920}
+          height={768}
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
+          // @ts-expect-error - non-standard but supported by Chromium for LCP hinting
+          elementtiming="hero-lcp"
+          className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700"
+          style={{ width: '100%', height: '100%' }}
+          onLoad={() => setHeroImageLoaded(true)}
+        />
+      </picture>
+
 
       {nextImage && (
         <img
