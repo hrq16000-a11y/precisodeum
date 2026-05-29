@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical, sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
 import { useSubmitGuard } from '@/hooks/useSubmitGuard';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
+import { resolveAvatarUrl } from '@/lib/providerDisplay';
 import { formatCityState, safeUF } from '@/lib/locationFormat';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
