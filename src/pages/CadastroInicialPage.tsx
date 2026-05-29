@@ -411,7 +411,7 @@ export default function CadastroInicialPage() {
         setStatusLoading(false);
       }
     })();
-  }, [loading, authSettled, user]);
+  }, [loading, authSettled, user, profile, selfHealFailed]);
 
   // Side-effect ÚNICO de telemetria/toast quando vamos redirecionar para
   // /login. NÃO navega (a navegação é declarativa via `<Navigate>` abaixo).
