@@ -151,12 +151,12 @@ const SlotLimitsTab = () => {
                 <TableCell className="text-right font-bold">{l.max_slots}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                    <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Editar limite" onClick={() => {
                       setEditLimitId(l.id);
                       setLimitForm({ context_type: l.context_type, context_value: l.context_value || '', max_slots: String(l.max_slots) });
                       setLimitDialog(true);
                     }}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => {
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" aria-label="Remover limite" onClick={() => {
                       if (confirm('Remover este limite?')) deleteMutation.mutate(l.id);
                     }}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
