@@ -12,6 +12,8 @@
  * 3. Provide a single source of truth so future changes only happen in ONE
  *    place — keeping all feeds visually consistent.
  */
+import { buildBoringAvatarDataUrl } from '@/lib/boringAvatarSvg';
+
 
 const GENERIC_PROVIDER_NAME_TOKENS = new Set([
   'pedreiro', 'padeiro', 'padreiro', 'eletricista', 'encanador', 'pintor',
@@ -84,7 +86,9 @@ export function resolveDisplayName(input: ResolveDisplayNameInput): string {
   return input.city ? `Profissional em ${input.city}` : 'Profissional';
 }
 
-export type AvatarFallbackMode = 'portfolio' | 'initials' | 'icon';
+export type AvatarFallbackMode = 'portfolio' | 'initials' | 'icon' | 'boring';
+
+export type BoringFallbackVariant = 'marble' | 'beam' | 'pixel' | 'sunset' | 'ring' | 'bauhaus';
 
 export interface AvatarFallbackConfigInput {
   /** Master switch. When false, skips portfolio pool and goes straight to initials/icon. */
@@ -95,6 +99,8 @@ export interface AvatarFallbackConfigInput {
   useServiceImage?: boolean;
   /** Override the initials palette (admin-configurable). */
   palette?: Array<{ bg: string; fg: string }>;
+  /** Boring-avatars visual variant (only used when mode === 'boring'). */
+  boringVariant?: BoringFallbackVariant;
 }
 
 export interface ResolveAvatarInput {
@@ -212,6 +218,14 @@ export function resolveAvatarUrl(input: ResolveAvatarInput): string {
     }
     // No portfolio available — fall through to initials.
     return buildInitialsAvatar(input.name, seedStr, palette);
+  }
+
+  if (mode === 'boring') {
+    return buildBoringAvatarDataUrl({
+      variant: cfg.boringVariant || 'marble',
+      seed: seedStr,
+      colors: palette.map((p) => p.bg),
+    });
   }
 
   if (mode === 'icon') return buildIconAvatar(seedStr, palette);

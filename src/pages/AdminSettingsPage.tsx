@@ -598,12 +598,23 @@ const AVATAR_FALLBACK_KEYS = {
   mode: 'avatar_fallback_mode',
   useServiceImage: 'avatar_fallback_use_service_image',
   palette: 'avatar_fallback_palette',
+  boringVariant: 'avatar_fallback_boring_variant',
 };
 
-const AVATAR_MODES: Array<{ value: 'portfolio' | 'initials' | 'icon'; label: string; desc: string }> = [
+const AVATAR_MODES: Array<{ value: 'portfolio' | 'initials' | 'icon' | 'boring'; label: string; desc: string }> = [
   { value: 'portfolio', label: 'Portfólio / Serviço', desc: 'Usa uma imagem real do trabalho do profissional (recomendado).' },
+  { value: 'boring', label: 'Geométrico (Boring)', desc: 'Padrões geométricos elegantes e únicos por profissional.' },
   { value: 'initials', label: 'Iniciais coloridas', desc: 'Mostra as iniciais do nome em um fundo da paleta abaixo.' },
   { value: 'icon', label: 'Ícone neutro', desc: 'Silhueta padrão em um fundo da paleta abaixo.' },
+];
+
+const BORING_VARIANTS: Array<{ value: 'marble' | 'beam' | 'pixel' | 'sunset' | 'ring' | 'bauhaus'; label: string }> = [
+  { value: 'marble', label: 'Marble' },
+  { value: 'beam', label: 'Beam' },
+  { value: 'pixel', label: 'Pixel' },
+  { value: 'sunset', label: 'Sunset' },
+  { value: 'ring', label: 'Ring' },
+  { value: 'bauhaus', label: 'Bauhaus' },
 ];
 
 const DEFAULT_PALETTE_CSV = '#1e3a8a,#0f766e,#7c2d12,#4338ca,#166534,#9a3412,#334155,#155e75,#854d0e,#6b21a8';
@@ -628,8 +639,9 @@ const AvatarFallbackSection = ({ settings, onToggle, onSaveText }: {
 
   const enabled = (map[AVATAR_FALLBACK_KEYS.enabled] ?? 'true') === 'true';
   const useServiceImage = (map[AVATAR_FALLBACK_KEYS.useServiceImage] ?? 'true') === 'true';
-  const modeRaw = (map[AVATAR_FALLBACK_KEYS.mode] || 'portfolio') as 'portfolio' | 'initials' | 'icon';
+  const modeRaw = (map[AVATAR_FALLBACK_KEYS.mode] || 'portfolio') as 'portfolio' | 'initials' | 'icon' | 'boring';
   const paletteCsv = map[AVATAR_FALLBACK_KEYS.palette] || DEFAULT_PALETTE_CSV;
+  const boringVariant = (map[AVATAR_FALLBACK_KEYS.boringVariant] || 'marble') as 'marble' | 'beam' | 'pixel' | 'sunset' | 'ring' | 'bauhaus';
 
   const [localPalette, setLocalPalette] = useState(paletteCsv);
   useEffect(() => { setLocalPalette(paletteCsv); }, [paletteCsv]);
@@ -640,12 +652,12 @@ const AvatarFallbackSection = ({ settings, onToggle, onSaveText }: {
       .map((bg) => ({ bg: bg.startsWith('#') ? bg : `#${bg}`, fg: '#ffffff' }))
   ), [localPalette]);
 
-  // Preview: 3 amostras (Ana Silva, João Pereira, Maria Costa) com modo selecionado.
+  // Preview: 4 amostras (Ana Silva, João Pereira, Maria Costa, Carlos Souza).
   const samples = ['Ana Silva', 'João Pereira', 'Maria Costa', 'Carlos Souza'];
   const previewUrls = samples.map((n) => resolveAvatarUrl({
     name: n,
     seed: n,
-    config: { enabled, mode: modeRaw, useServiceImage, palette },
+    config: { enabled, mode: modeRaw, useServiceImage, palette, boringVariant },
   }));
 
   const handleSaveOrCreate = async (key: string, value: string, label: string, description: string) => {
@@ -725,6 +737,29 @@ const AvatarFallbackSection = ({ settings, onToggle, onSaveText }: {
         </div>
       </div>
 
+      {/* Variante Boring — só relevante quando modo = boring */}
+      {modeRaw === 'boring' && (
+        <div className="mt-3 rounded-lg border border-border bg-card p-3">
+          <p className="text-sm font-medium text-foreground mb-2">Variante geométrica</p>
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+            {BORING_VARIANTS.map((v) => {
+              const active = boringVariant === v.value;
+              return (
+                <button
+                  type="button"
+                  key={v.value}
+                  onClick={() => handleSaveOrCreate(AVATAR_FALLBACK_KEYS.boringVariant, v.value, 'Variante Boring Avatar', `Estilo ${v.label}`)}
+                  className={`text-sm rounded-lg border p-2 transition-all ${active ? 'border-accent bg-accent/10 ring-2 ring-accent/30 font-bold' : 'border-border bg-background hover:border-accent/50'}`}
+                >
+                  {v.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
       {/* Paleta */}
       <div className="mt-3 rounded-lg border border-border bg-card p-3">
         <p className="text-sm font-medium text-foreground">Paleta de cores (iniciais / ícone)</p>
@@ -758,11 +793,15 @@ const AvatarFallbackSection = ({ settings, onToggle, onSaveText }: {
           ))}
         </div>
         <p className="text-[11px] text-muted-foreground mt-2">
-          {modeRaw === 'portfolio' && enabled
-            ? 'Modo Portfólio: profissionais sem foto verão a 1ª imagem do portfólio/serviço. Sem portfólio, caem para iniciais.'
-            : modeRaw === 'icon' || !enabled
-              ? 'Modo Ícone: silhueta neutra colorida.'
-              : 'Modo Iniciais: letras do nome em fundo colorido da paleta.'}
+          {!enabled
+            ? 'Fallback desligado: todos os perfis sem foto usam iniciais simples.'
+            : modeRaw === 'portfolio'
+              ? 'Modo Portfólio: profissionais sem foto verão a 1ª imagem do portfólio/serviço. Sem portfólio, caem para iniciais.'
+              : modeRaw === 'boring'
+                ? `Modo Geométrico: padrão "${boringVariant}" único por profissional usando as cores da paleta.`
+                : modeRaw === 'icon'
+                  ? 'Modo Ícone: silhueta neutra colorida.'
+                  : 'Modo Iniciais: letras do nome em fundo colorido da paleta.'}
         </p>
       </div>
     </div>
