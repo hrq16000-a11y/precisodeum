@@ -361,7 +361,7 @@ export const Phase2Service = ({
           size="lg"
           onClick={handleAdvance}
           aria-disabled={!selectedId || !descriptionOk}
-          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95"
+          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
         >
           Salvar e continuar
           <ArrowRight className="ml-2 h-5 w-5 transition group-hover:translate-x-0.5" />
@@ -540,7 +540,7 @@ export const Phase2Details = ({
           size="lg"
           onClick={handleSubmitDeduped}
           disabled={saving || blocked}
-          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 disabled:opacity-50 disabled:shadow-none"
+          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:opacity-50 disabled:shadow-none"
         >
           {saving && <Loader2 className="h-5 w-5 mr-2 animate-spin" />}
           {blocked ? 'Corrija os horários para continuar' : 'Salvar e continuar'}
