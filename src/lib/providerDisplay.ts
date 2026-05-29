@@ -12,6 +12,8 @@
  * 3. Provide a single source of truth so future changes only happen in ONE
  *    place — keeping all feeds visually consistent.
  */
+import { buildBoringAvatarDataUrl } from '@/lib/boringAvatarSvg';
+
 
 const GENERIC_PROVIDER_NAME_TOKENS = new Set([
   'pedreiro', 'padeiro', 'padreiro', 'eletricista', 'encanador', 'pintor',
