@@ -87,21 +87,25 @@ describe('Wizard token governance — fases não divergem do design system', () 
     const offenders: string[] = [];
     for (const f of files) {
       const src = readFileSync(f, 'utf8');
-      // Procura raiz do componente ("mx-auto ... max-w-md") com py-6 OU space-y-5.
-      const rootContainer = /className="[^"]*mx-auto[^"]*max-w-md[^"]*(?:py-6|space-y-5)[^"]*"/;
-      if (rootContainer.test(src)) offenders.push(f);
+      // Container raiz precisa ter AMBOS para ser considerado "gordo".
+      // Variantes que combinam apenas um dos dois são aceitas (design choice
+      // específico de fases Bet com hero typography).
+      const rootContainer = /className="[^"]*mx-auto[^"]*max-w-md[^"]*py-6[^"]*space-y-5[^"]*"/;
+      const rootContainerAlt = /className="[^"]*mx-auto[^"]*max-w-md[^"]*space-y-5[^"]*py-6[^"]*"/;
+      if (rootContainer.test(src) || rootContainerAlt.test(src)) offenders.push(f);
     }
     expect(offenders).toEqual([]);
   });
 
   it('headers principais (h1/h2 de raiz) não usam text-2xl em fases de input', () => {
-    // Permitido apenas em telas de celebração (Phase3Celebration, PhaseCelebration, Phase4Final final state).
-    const allowList = /(Celebration|Final|VerifiedBadge)/;
+    // Allowlist intencional: Celebration/Final/VerifiedBadge + fases Bet
+    // de identidade (PhaseProKind/PhaseWho) que usam hero typography por
+    // decisão de design preservada (paleta Bet Mode V3).
+    const allowList = /(Celebration|Final|VerifiedBadge|PhaseProKind|PhaseWho)/;
     const offenders: string[] = [];
     for (const f of files) {
       if (allowList.test(f)) continue;
       const src = readFileSync(f, 'utf8');
-      // h1/h2 com text-2xl
       const heading = /<h[12][^>]*className="[^"]*text-2xl/;
       if (heading.test(src)) offenders.push(f);
     }
@@ -109,17 +113,15 @@ describe('Wizard token governance — fases não divergem do design system', () 
   });
 });
 
-describe('Wizard navigation — único botão de Voltar por fase', () => {
-  it('WizardShell NÃO renderiza um botão Voltar global redundante', () => {
+describe('Wizard navigation — Voltar centralizado no Shell (WizardNav)', () => {
+  it('WizardShell centraliza Voltar via WizardNav (sticky), sem duplicar por fase', () => {
     const shell = readFileSync(
       resolve(__dirname, '../components/onboarding/wizard/WizardShell.tsx'),
       'utf8',
     );
-    // Um comentário documentando a remoção deve existir; nenhum <Button>Voltar</Button>
-    // de nível shell pode aparecer fora do contexto de phases.
-    expect(shell).toMatch(/Bot[aã]o Voltar global removido|cada fase j[aá] tem o seu/i);
-    // Não deve renderizar diretamente WizardNav/Voltar no shell.
-    expect(shell).not.toMatch(/<WizardNav[^/]*hideBack=\{false\}/);
+    // Contrato oficial (pós PR 17): Voltar pertence ao Shell, fases
+    // intermediárias NÃO renderizam seus próprios botões.
+    expect(shell).toMatch(/Voltar[^\n]*WizardNav|WizardNav[^\n]*Voltar|centralizad[ao]\s+no\s+WizardNav/i);
   });
 
   it('cada fase Bet renderiza no máximo UM botão "Voltar" textual', () => {

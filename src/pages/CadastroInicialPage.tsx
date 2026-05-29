@@ -388,6 +388,12 @@ export default function CadastroInicialPage() {
   // para prestadores que já completaram cadastro.
   useEffect(() => {
     if (loading || !authSettled || !user) return;
+    // Loop-guard / self-heal failure: não tocamos no banco — vamos renderizar
+    // o fallback de erro e queremos isolamento total de side-effects.
+    if (selfHealFailed) return;
+    // Sem profile (ainda hidratando ou self-heal em curso) → adia para evitar
+    // queries fantasma após early-return da self-heal.
+    if (!profile) return;
     setStatusLoading(true);
     void (async () => {
       try {
@@ -405,7 +411,7 @@ export default function CadastroInicialPage() {
         setStatusLoading(false);
       }
     })();
-  }, [loading, authSettled, user]);
+  }, [loading, authSettled, user, profile, selfHealFailed]);
 
   // Side-effect ÚNICO de telemetria/toast quando vamos redirecionar para
   // /login. NÃO navega (a navegação é declarativa via `<Navigate>` abaixo).

@@ -95,12 +95,10 @@ const LoginPage = () => {
     setEmailError(null);
     setPasswordError(null);
     const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail) {
-      setEmailError('Informe seu e-mail.');
-      return;
-    }
-    if (!password) {
-      setPasswordError('Informe sua senha.');
+    if (!trimmedEmail || !password) {
+      if (!trimmedEmail) setEmailError('Informe seu e-mail.');
+      if (!password) setPasswordError('Informe sua senha.');
+      toast.error('Preencha e-mail e senha para continuar.');
       return;
     }
     // Validação local antes de bater no servidor — evita mensagens genéricas
@@ -261,8 +259,9 @@ const LoginPage = () => {
         // Heurística: identities=[] indica e-mail já existente
         const identities = (signUpData.user as any)?.identities;
         if (Array.isArray(identities) && identities.length === 0) {
-          // PATH 7 (heurística): inline, sem abrir dialog automaticamente
+          // PATH 7 (heurística): inline + toast pt-BR para feedback imediato.
           setEmailError('Este e-mail já possui conta. Use sua senha ou clique em "Esqueci minha senha".');
+          toast.error('Já existe uma conta com esse e-mail. Use sua senha ou clique em "Esqueci minha senha".');
           emailRef.current?.focus();
           return;
         }

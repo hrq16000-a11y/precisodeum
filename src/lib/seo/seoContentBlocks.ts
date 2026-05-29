@@ -82,8 +82,8 @@ function buildHowToHire(input: SeoContentInput): SeoContentBlock {
     title: `Como contratar ${cat}${city}`,
     paragraphs: [
       `Para contratar ${cat}${city}, comece comparando perfis com fotos reais de serviços já entregues, área de atendimento compatível e tempo de resposta no WhatsApp.`,
-      `Descreva o problema com objetividade: tipo do serviço, prazo desejado, endereço aproximado (bairro) e materiais já disponíveis. Quanto mais claro o briefing, mais preciso o orçamento.`,
-      `Peça orçamento para pelo menos dois ou três profissionais. Avalie preço, prazo e disponibilidade — e priorize quem responde rápido e demonstra experiência prática.`,
+      `Descreva o problema com objetividade: tipo do serviço, prazo desejado, endereço aproximado (bairro) e materiais já disponíveis. Quanto mais claro o briefing, mais preciso o profissional pode ser na resposta.`,
+      `Converse com pelo menos dois ou três profissionais antes de fechar. Avalie disponibilidade, prazo e clareza nas respostas — e priorize quem responde rápido e demonstra experiência prática.`,
     ],
   };
 }
