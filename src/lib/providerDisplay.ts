@@ -87,8 +87,13 @@ export function resolveDisplayName(input: ResolveDisplayNameInput): string {
 export interface ResolveAvatarInput {
   profileAvatarUrl?: string | null;
   providerPhotoUrl?: string | null;
+  /** Single service cover image (back-compat). */
   serviceImage?: string | null;
-  /** Stable seed used to pick a consistent fallback color. */
+  /** Pool of portfolio/service images. When no real avatar exists, one is
+   *  picked deterministically by `seed` so the fallback feels personal but
+   *  remains stable across renders. */
+  portfolioImages?: Array<string | null | undefined> | null;
+  /** Stable seed used to pick a consistent fallback color / portfolio image. */
   seed?: string | null;
   /** Display name — used to derive initials for the professional fallback. */
   name?: string | null;
@@ -128,26 +133,54 @@ function extractInitials(name?: string | null, seed?: string | null): string {
   return (fallback.slice(0, 2) || 'PR').toUpperCase();
 }
 
+// Lightweight detection — avoids picking a video file as static avatar.
+const VIDEO_EXT_RE = /\.(mp4|mov|webm|m4v|ogv|avi|mkv)(\?|#|$)/i;
+const isLikelyImage = (u?: string | null): u is string => {
+  const v = (u || '').trim();
+  if (!v) return false;
+  if (v.startsWith('data:image/')) return true;
+  if (VIDEO_EXT_RE.test(v)) return false;
+  // YouTube/Vimeo and other video providers — skip.
+  if (/youtube\.com|youtu\.be|vimeo\.com/i.test(v)) return false;
+  return true;
+};
+
 /**
  * Resolution priority for avatar:
  *  1. public_profiles.avatar_url (real selfie / official photo)
  *  2. providers.photo_url (uploaded by provider)
- *  3. service image (first service portfolio image)
- *  4. Professional initials SVG (deterministic color from seed) — replaces DiceBear.
+ *  3. A deterministically-picked image from portfolioImages / serviceImage
+ *     (random-feeling but stable per provider)
+ *  4. Professional initials SVG (deterministic color from seed)
  */
 export function resolveAvatarUrl(input: ResolveAvatarInput): string {
   const profile = (input.profileAvatarUrl || '').trim();
   if (profile) return profile;
   const photo = (input.providerPhotoUrl || '').trim();
   if (photo) return photo;
-  const svc = (input.serviceImage || '').trim();
-  if (svc) return svc;
-  const seed = String(input.seed || input.name || 'profissional');
-  const palette = INITIALS_PALETTE[hashString(seed) % INITIALS_PALETTE.length];
-  const initials = extractInitials(input.name, seed);
+
+  const seedStr = String(input.seed || input.name || 'profissional');
+
+  // Build pool: explicit portfolio array first, then the legacy single serviceImage.
+  const pool: string[] = [];
+  if (Array.isArray(input.portfolioImages)) {
+    for (const u of input.portfolioImages) if (isLikelyImage(u)) pool.push(u as string);
+  }
+  if (isLikelyImage(input.serviceImage)) pool.push(input.serviceImage as string);
+
+  if (pool.length > 0) {
+    // Deterministic pick: same provider always sees the same fallback image,
+    // but different providers get different ones — "random-feeling" in feeds.
+    const idx = hashString(seedStr) % pool.length;
+    return pool[idx];
+  }
+
+  const palette = INITIALS_PALETTE[hashString(seedStr) % INITIALS_PALETTE.length];
+  const initials = extractInitials(input.name, seedStr);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="${palette.bg}"/><text x="50%" y="50%" dy=".1em" text-anchor="middle" dominant-baseline="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" font-size="88" font-weight="600" fill="${palette.fg}" letter-spacing="-2">${initials}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
+
 
 /** True when avatar comes from the user (not generated). Useful for badges. */
 export function hasRealAvatar(input: Pick<ResolveAvatarInput, 'profileAvatarUrl' | 'providerPhotoUrl' | 'serviceImage'>): boolean {
