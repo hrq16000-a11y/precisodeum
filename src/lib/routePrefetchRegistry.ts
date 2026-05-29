@@ -32,11 +32,11 @@ const RULES: PrefetchRule[] = [
   { key: 'route-cadastro',       match: startsWith('/cadastro-inicial'), load: () => import('@/pages/CadastroInicialPage') },
   // Painel
   { key: 'route-dashboard',      match: (p) => p === '/dashboard' || p === '/dashboard/', load: () => import('@/pages/DashboardPage') },
-  { key: 'route-dashboard-leads',match: startsWith('/dashboard/leads'), load: () => import('@/pages/dashboard/DashboardLeadsPage') },
+  { key: 'route-dashboard-leads',match: startsWith('/dashboard/leads'), load: () => import('@/pages/DashboardLeadsPage') },
   // Conteúdo
   { key: 'route-blog',           match: startsWith('/blog'),           load: () => import('@/pages/BlogPage') },
   { key: 'route-vagas',          match: (p) => p === '/vagas' || p.startsWith('/vagas/'), load: () => import('@/pages/JobsPage') },
-  { key: 'route-ajuda',          match: startsWith('/ajuda'),          load: () => import('@/pages/AjudaPage') },
+  { key: 'route-ajuda',          match: startsWith('/ajuda'),          load: () => import('@/pages/HelpCenterPage') },
 ];
 
 /**
