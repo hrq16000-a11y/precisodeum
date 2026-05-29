@@ -151,7 +151,9 @@ async function logCelebrationTelemetry(
 ) {
   if (!opts.id || typeof window === 'undefined') return;
   try {
-    const { supabase } = await import('@/integrations/supabase/client');
+    const { supabase } = await import('@/integrations/supabase/client'); // eslint-disable-line @typescript-eslint/no-unused-vars
+    // Static reference avoids the rollup "dynamic+static" warning since
+    // client.ts is already in the main bundle.
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) return;
 
