@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+import { buildFaqPage } from '@/lib/seo-schemas';
 import { markHelpPageVisited, markSupportContacted } from '@/lib/conversionFunnel';
 
 const SUPPORT_WHATSAPP = '5541997452053';
