@@ -112,7 +112,7 @@ export const Phase2PhotosBlockedCard = ({
                   type="button"
                   data-testid="phase2-photos-retry-manual"
                   onClick={onRetryManual}
-                  className="rounded-md border border-rose-400/60 bg-white/70 px-2 py-1 text-[11px] font-semibold text-rose-900 hover:bg-white dark:bg-rose-500/10 dark:text-rose-100"
+                  className="rounded-md border border-bet-error-border bg-white/70 px-2 py-1 text-[11px] font-semibold text-bet-error hover:bg-white"
                 >
                   Tentar manualmente
                 </button>
