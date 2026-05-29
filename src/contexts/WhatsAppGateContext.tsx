@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
@@ -68,66 +68,37 @@ const recordLead = async (
   }
 };
 
-export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+/**
+ * PR 3 (A4) — Dialog UI isolada do Provider.
+ * Mantém localmente o estado volátil (email/senha/nome/aceite/aba/submitting)
+ * para que keystrokes NÃO re-renderizem a árvore filha do Provider
+ * (dashboard, perfil, listas, etc.). Só monta quando `open` é true.
+ */
+interface GateDialogUIProps {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onSuccessGoToLogin: () => void;
+}
 
-  const [open, setOpen] = useState(false);
+const WhatsAppGateDialogUI = ({ open, onOpenChange, onSuccessGoToLogin }: GateDialogUIProps) => {
   const [tab, setTab] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const pendingRef = useRef<WhatsAppTarget | null>(null);
-  const [unlockTarget, setUnlockTarget] = useState<WhatsAppTarget | null>(null);
 
-  // Load any pending intent stored before an OAuth redirect
+  // Reset interno ao reabrir — substitui o reset que ficava no requestWhatsApp.
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(PENDING_KEY);
-      if (raw) pendingRef.current = JSON.parse(raw);
-    } catch {/* ignore */}
-  }, []);
-
-  // After authentication completes, fire the pending WhatsApp intent
-  useEffect(() => {
-    if (!user) return;
-    const pending = pendingRef.current;
-    if (!pending) return;
-    pendingRef.current = null;
-    try { localStorage.removeItem(PENDING_KEY); } catch {/* ignore */}
-    void recordLead({ id: user.id, email: user.email }, pending, true);
-    setOpen(false);
-    // Provider targets go through the daily-quota unlock dialog
-    if ((pending.targetType ?? 'provider') === 'provider' && pending.targetId) {
-      setTimeout(() => setUnlockTarget(pending), 150);
-    } else {
-      setTimeout(() => openExternal(pending.url), 150);
+    if (open) {
+      setTab('login');
+      setEmail('');
+      setPassword('');
+      setFullName('');
+      setAgreed(false);
+      setSubmitting(false);
     }
-  }, [user]);
-
-  const requestWhatsApp = useCallback((target: WhatsAppTarget) => {
-    if (user) {
-      // Logged in: provider → daily-quota dialog; sponsor/job/support → open immediately
-      void recordLead({ id: user.id, email: user.email }, target, true);
-      if ((target.targetType ?? 'provider') === 'provider' && target.targetId) {
-        setUnlockTarget(target);
-        return;
-      }
-      openExternal(target.url);
-      return;
-    }
-    // Anonymous: persist intent and open gate modal
-    pendingRef.current = target;
-    try { localStorage.setItem(PENDING_KEY, JSON.stringify(target)); } catch {/* ignore */}
-    setAgreed(false);
-    setEmail('');
-    setPassword('');
-    setFullName('');
-    setTab('login');
-    setOpen(true);
-  }, [user]);
+  }, [open]);
 
   const handleGoogle = async () => {
     if (!agreed) {
@@ -142,7 +113,6 @@ export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
       if (result.error) {
         toast({ title: 'Erro no login', description: 'Tente novamente.', variant: 'destructive' });
       }
-      // If redirected, browser will navigate away; intent stays in localStorage.
     } finally {
       setSubmitting(false);
     }
@@ -175,7 +145,6 @@ export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      // Auto-fire happens in useEffect when `user` is populated.
     } catch (err: any) {
       toast({ title: 'Não foi possível continuar', description: err?.message ?? 'Tente novamente.', variant: 'destructive' });
     } finally {
@@ -184,100 +153,177 @@ export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <GateContext.Provider value={{ requestWhatsApp }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-emerald-600" />
+            Liberar contato no WhatsApp
+          </DialogTitle>
+          <DialogDescription>
+            Para falar com o profissional, faça login ou cadastre-se. É rápido e garante a segurança da negociação.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs value={tab} onValueChange={(v) => setTab(v as 'login' | 'signup')} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">Entrar</TabsTrigger>
+            <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="login" className="space-y-3 pt-3">
+            <form onSubmit={handleEmailSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="wa-email">E-mail</Label>
+                <Input id="wa-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="wa-password">Senha</Label>
+                <Input id="wa-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+              </div>
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Mail className="h-4 w-4 mr-1" /> Entrar e liberar</>}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="signup" className="space-y-3 pt-3">
+            <form onSubmit={handleEmailSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="wa-name">Nome completo</Label>
+                <Input id="wa-name" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="wa-email-s">E-mail</Label>
+                <Input id="wa-email-s" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="wa-password-s">Senha</Label>
+                <Input id="wa-password-s" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={6} />
+              </div>
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Mail className="h-4 w-4 mr-1" /> Cadastrar e liberar</>}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+
+        <div className="relative my-2">
+          <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+          <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">ou</span></div>
+        </div>
+
+        <Button variant="outline" type="button" onClick={handleGoogle} disabled={submitting} className="w-full">
+          <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/>
+          </svg>
+          Continuar com Google
+        </Button>
+
+        <label className="flex items-start gap-2 text-sm pt-1 cursor-pointer">
+          <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" />
+          <span className="text-muted-foreground leading-snug">
+            Concordo com as{' '}
+            <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+              regras de atendimento
+            </a>.
+          </span>
+        </label>
+
+        <p className="text-[11px] text-muted-foreground text-center pt-1">
+          Esqueceu a senha?{' '}
+          <button type="button" className="underline" onClick={onSuccessGoToLogin}>
+            Recuperar
+          </button>
+        </p>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // PR 3 (A4): Provider mantém APENAS estado global infrequente.
+  // Inputs voláteis (email/senha/etc.) vivem dentro de WhatsAppGateDialogUI.
+  const [open, setOpen] = useState(false);
+  const pendingRef = useRef<WhatsAppTarget | null>(null);
+  const [unlockTarget, setUnlockTarget] = useState<WhatsAppTarget | null>(null);
+
+  // Load any pending intent stored before an OAuth redirect
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PENDING_KEY);
+      if (raw) pendingRef.current = JSON.parse(raw);
+    } catch {/* ignore */}
+  }, []);
+
+  // After authentication completes, fire the pending WhatsApp intent
+  useEffect(() => {
+    if (!user) return;
+    const pending = pendingRef.current;
+    if (!pending) return;
+    pendingRef.current = null;
+    try { localStorage.removeItem(PENDING_KEY); } catch {/* ignore */}
+    void recordLead({ id: user.id, email: user.email }, pending, true);
+    setOpen(false);
+    // Provider targets go through the daily-quota unlock dialog
+    if ((pending.targetType ?? 'provider') === 'provider' && pending.targetId) {
+      setTimeout(() => setUnlockTarget(pending), 150);
+    } else {
+      setTimeout(() => openExternal(pending.url), 150);
+    }
+  }, [user]);
+
+  const requestWhatsApp = useCallback((target: WhatsAppTarget) => {
+    if (user) {
+      void recordLead({ id: user.id, email: user.email }, target, true);
+      if ((target.targetType ?? 'provider') === 'provider' && target.targetId) {
+        setUnlockTarget(target);
+        return;
+      }
+      openExternal(target.url);
+      return;
+    }
+    // Anonymous: persist intent and open gate modal (form state resets internally)
+    pendingRef.current = target;
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify(target)); } catch {/* ignore */}
+    setOpen(true);
+  }, [user]);
+
+  // Memoiza o value para evitar re-render de consumers quando o Provider re-renderiza
+  // por mudança de `open`/`unlockTarget` (estado UI puro que não afeta requestWhatsApp).
+  const ctxValue = useMemo<Ctx>(() => ({ requestWhatsApp }), [requestWhatsApp]);
+
+  const handleGoToLogin = useCallback(() => {
+    setOpen(false);
+    navigate('/login');
+  }, [navigate]);
+
+  const handleUnlockChange = useCallback((o: boolean) => {
+    if (!o) setUnlockTarget(null);
+  }, []);
+
+  return (
+    <GateContext.Provider value={ctxValue}>
       {children}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-emerald-600" />
-              Liberar contato no WhatsApp
-            </DialogTitle>
-            <DialogDescription>
-              Para falar com o profissional, faça login ou cadastre-se. É rápido e garante a segurança da negociação.
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs value={tab} onValueChange={(v) => setTab(v as 'login' | 'signup')} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="login" className="space-y-3 pt-3">
-              <form onSubmit={handleEmailSubmit} className="space-y-3">
-                <div className="space-y-1">
-                  <Label htmlFor="wa-email">E-mail</Label>
-                  <Input id="wa-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="wa-password">Senha</Label>
-                  <Input id="wa-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
-                </div>
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Mail className="h-4 w-4 mr-1" /> Entrar e liberar</>}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup" className="space-y-3 pt-3">
-              <form onSubmit={handleEmailSubmit} className="space-y-3">
-                <div className="space-y-1">
-                  <Label htmlFor="wa-name">Nome completo</Label>
-                  <Input id="wa-name" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="wa-email-s">E-mail</Label>
-                  <Input id="wa-email-s" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="wa-password-s">Senha</Label>
-                  <Input id="wa-password-s" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={6} />
-                </div>
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Mail className="h-4 w-4 mr-1" /> Cadastrar e liberar</>}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-
-          <div className="relative my-2">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-            <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">ou</span></div>
-          </div>
-
-          <Button variant="outline" type="button" onClick={handleGoogle} disabled={submitting} className="w-full">
-            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/>
-            </svg>
-            Continuar com Google
-          </Button>
-
-          <label className="flex items-start gap-2 text-sm pt-1 cursor-pointer">
-            <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" />
-            <span className="text-muted-foreground leading-snug">
-              Concordo com as{' '}
-              <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
-                regras de atendimento
-              </a>.
-            </span>
-          </label>
-
-          <p className="text-[11px] text-muted-foreground text-center pt-1">
-            Esqueceu a senha?{' '}
-            <button type="button" className="underline" onClick={() => { setOpen(false); navigate('/login'); }}>
-              Recuperar
-            </button>
-          </p>
-        </DialogContent>
-      </Dialog>
+      {/* Monta a UI somente quando aberta: zero custo de render enquanto fechada,
+          e isola os keystrokes do form do resto da árvore. */}
+      {open && (
+        <WhatsAppGateDialogUI
+          open={open}
+          onOpenChange={setOpen}
+          onSuccessGoToLogin={handleGoToLogin}
+        />
+      )}
 
       <WhatsAppUnlockDialog
         open={!!unlockTarget}
-        onOpenChange={(o) => { if (!o) setUnlockTarget(null); }}
+        onOpenChange={handleUnlockChange}
         providerId={unlockTarget?.targetId ?? null}
         providerName={unlockTarget?.targetLabel ?? null}
         whatsappUrl={unlockTarget?.url ?? null}
@@ -303,7 +349,6 @@ export const WhatsAppGateInterceptor = () => {
 
   useEffect(() => {
     const handler = (ev: MouseEvent) => {
-      // Ignore non-primary clicks / modifier clicks (let user open in new tab)
       if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
 
       const path = (ev.composedPath?.() ?? []) as Element[];
@@ -321,7 +366,6 @@ export const WhatsAppGateInterceptor = () => {
       const targetId = anchor.dataset.waTargetId || null;
       const targetLabel = anchor.dataset.waTargetLabel || anchor.textContent?.trim().slice(0, 120) || null;
 
-      // Extract phone for tracking
       let whatsappNumber: string | null = null;
       try {
         const u = new URL(href!.startsWith('whatsapp://') ? href!.replace('whatsapp://send', 'https://wa.me/dummy') : href!);
