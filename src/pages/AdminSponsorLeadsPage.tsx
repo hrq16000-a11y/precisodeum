@@ -403,13 +403,13 @@ const AdminSponsorLeadsPage = () => {
                         </Button>
                       )}
                       {/* Edit */}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Editar lead" onClick={() => {
                         setEditItem(l); setEditForm({ status: l.status, notes: l.notes || '' }); setEditDialog(true);
                       }}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       {/* Delete */}
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => {
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" aria-label="Remover lead" onClick={() => {
                         if (confirm('Remover este lead?')) deleteMutation.mutate(l.id);
                       }}>
                         <Trash2 className="h-3.5 w-3.5" />
