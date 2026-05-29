@@ -219,10 +219,6 @@ export function resolveAvatarUrl(input: ResolveAvatarInput): string {
   }
 
   if (mode === 'boring') {
-    // Lazy import keeps boring-avatars + react-dom/server out of bundles
-    // that never use this fallback mode.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { buildBoringAvatarDataUrl } = require('@/lib/boringAvatarSvg') as typeof import('@/lib/boringAvatarSvg');
     return buildBoringAvatarDataUrl({
       variant: cfg.boringVariant || 'marble',
       seed: seedStr,
