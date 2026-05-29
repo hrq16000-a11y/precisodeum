@@ -87,6 +87,11 @@ const WhatsAppGateDialogUI = ({ open, onOpenChange, onSuccessGoToLogin }: GateDi
   const [fullName, setFullName] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // M6 · Erros inline por campo — substituem o toast genérico "Não foi
+  // possível continuar" quando dá para identificar o campo problemático.
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   // Reset interno ao reabrir — substitui o reset que ficava no requestWhatsApp.
   useEffect(() => {
@@ -97,7 +102,11 @@ const WhatsAppGateDialogUI = ({ open, onOpenChange, onSuccessGoToLogin }: GateDi
       setFullName('');
       setAgreed(false);
       setSubmitting(false);
+      setEmailError(null);
+      setPasswordError(null);
+      setNameError(null);
     }
+
   }, [open]);
 
   const handleGoogle = async () => {
