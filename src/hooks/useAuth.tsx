@@ -121,13 +121,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         'id, full_name, avatar_url, profile_type, onboarding_completed, onboarding_step, ' +
         'city, state, celebration_muted, role, permissions, account_type_id, ' +
         'level_id, engagement_points, user_ref, created_at';
+      const PROVIDER_AUTH_COLUMNS =
+        'id, user_id, business_name, description, city, state, neighborhood, photo_url, slug, ' +
+        'whatsapp, phone, website, years_experience, category_id, services_count, ' +
+        'portfolio_album_count, portfolio_photo_count, rating_avg, review_count, response_time, ' +
+        'service_radius, working_hours, working_hours_struct, latitude, longitude, account_type, ' +
+        'status, onboarding_progress, lead_followup_hours, mission_answers, user_ref, cnpj, cpf';
       try {
         // Per-attempt timeout: em mobile com rede ruim, requests do Supabase
         // podem ficar penduradas indefinidamente. Promise.race garante que
         // sempre retentamos antes de exaurir o orçamento total.
         const queryPromise = Promise.all([
           supabase.from('profiles').select(PROFILE_AUTH_COLUMNS).eq('id', userId).maybeSingle(),
-          supabase.from('providers').select('*, categories(name, slug, icon)').eq('user_id', userId).order('created_at', { ascending: true }),
+          supabase.from('providers').select(PROVIDER_AUTH_COLUMNS).eq('user_id', userId).order('created_at', { ascending: true }),
         ]);
         const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error(`fetchProfile attempt ${attemptsUsed} timed out after ${PER_ATTEMPT_TIMEOUT_MS}ms`)), PER_ATTEMPT_TIMEOUT_MS),
@@ -156,15 +162,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (pvErr) {
           lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)} (code=${(pvErr as any)?.code ?? 'n/a'})`;
           console.warn('[useAuth] providers query error', { code: (pvErr as any)?.code, message: pvErr.message });
+          const code = String((pvErr as any)?.code ?? '');
+          const msg = String(pvErr.message ?? '');
+          if (code === '42703' || code === 'PGRST204' || /column .* does not exist/i.test(msg)) {
+            console.warn('[useAuth] schema drift detectado — refazendo providers com select mínimo');
+            const fb = await supabase
+              .from('providers')
+              .select('id, user_id, business_name, description, city, state, slug, status')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: true });
+            pvRows = fb.data as any[];
+            if (fb.error) {
+              lastErrorMessage = `providers(min): ${fb.error.message}`;
+            } else {
+              pvErr = null as any;
+            }
+          }
         }
+        const normalizedProviderRows = Array.isArray(pvRows) ? (pvRows as any[]) : [];
         let derivedAccountType: string | null = null;
         let derivedPrimaryCategoryId: string | null = null;
-        if (Array.isArray(pvRows) && pvRows.length > 0) {
+        if (normalizedProviderRows.length > 0) {
           derivedAccountType = String(
-            pvRows.find((row: any) => row?.account_type)?.account_type ?? pvRows[0]?.account_type ?? '',
+            normalizedProviderRows.find((row: any) => row?.account_type)?.account_type ?? normalizedProviderRows[0]?.account_type ?? '',
           ).trim() || null;
           derivedPrimaryCategoryId = String(
-            pvRows.find((row: any) => row?.category_id)?.category_id ?? pvRows[0]?.category_id ?? '',
+            normalizedProviderRows.find((row: any) => row?.category_id)?.category_id ?? normalizedProviderRows[0]?.category_id ?? '',
           ).trim() || null;
         }
         profileData = pData && typeof pData === 'object'
@@ -174,7 +197,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               primary_category_id: (pData as any)?.primary_category_id ?? derivedPrimaryCategoryId,
             }
           : pData;
-        providerRows = pvRows;
+        providerRows = normalizedProviderRows;
         if (profileData) break;
       } catch (err: any) {
         lastErrorMessage = err?.message ?? String(err);
@@ -347,10 +370,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!isMounted) return;
         setSession(session);
         setUser(session?.user ?? null);
+        const shouldRefreshProfile = event === 'SIGNED_IN' || event === 'USER_UPDATED';
         if (session?.user) {
           // Background fetch — fetchProfile internamente descarta resultados
           // obsoletos via fetchGenerationRef, então múltiplos eventos rápidos
           // (SIGNED_IN → TOKEN_REFRESHED) só aplicam o último.
+          if (!shouldRefreshProfile) return;
           setTimeout(() => {
             if (!isMounted) return;
             try {
