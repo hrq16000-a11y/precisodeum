@@ -108,7 +108,7 @@ const TestimonialsSection = () => {
 
         {totalPages > 1 && (
           <div className="mt-8 flex items-center justify-center gap-3">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => { prev(); resetTimer(); }}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => { prev(); resetTimer(); }} aria-label="Depoimento anterior">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="flex gap-1.5">
@@ -116,13 +116,14 @@ const TestimonialsSection = () => {
                 <button
                   key={i}
                   onClick={() => { goTo(i); resetTimer(); }}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    i === page ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/20 hover:bg-muted-foreground/40'
+                  aria-label={`Ir para página ${i + 1}`}
+                  className={`h-2 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    i === page ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
                   }`}
                 />
               ))}
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => { next(); resetTimer(); }}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => { next(); resetTimer(); }} aria-label="Próximo depoimento">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
