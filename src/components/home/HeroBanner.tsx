@@ -190,8 +190,12 @@ const HeroBanner = () => {
       <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
         <div className="w-full max-w-full px-2">
           <h1
-            className="font-display font-black text-primary-foreground max-w-full text-[clamp(0.95rem,4vw,3.25rem)] leading-[1.1] sm:leading-[1.08] tracking-[-0.015em]"
-            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)' }}
+            className="font-display font-black text-primary-foreground max-w-full text-[clamp(0.95rem,4vw,3.25rem)] leading-[1.1] sm:leading-[1.08] tracking-[-0.015em] [text-wrap:balance]"
+            style={{
+              textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)',
+              // Reserva altura mínima para evitar CLS quando o texto rotaciona entre frases de 1 e 2 linhas (mobile-first).
+              minHeight: 'calc(2 * 1.1em * clamp(0.95rem, 4vw, 3.25rem))',
+            }}
           >
             <RotatingServiceText
               onServiceChange={handleServiceChange}
