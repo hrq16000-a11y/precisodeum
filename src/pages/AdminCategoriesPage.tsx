@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Edit2, ChevronRight, icons } from 'lucide-react';
+// PR-A1: importar `icons` puxa o catálogo Lucide inteiro. Roteado via
+// IconRenderer (iconLibrary pina ~250 ícones realmente usados).
+import { Plus, Trash2, Edit2, ChevronRight } from 'lucide-react';
+import { IconRenderer } from '@/components/ui/IconRenderer';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import IconPicker from '@/components/admin/IconPicker';
 
-/** Render a Lucide icon by name, falling back to emoji */
-const DynIcon = ({ name, size = 20 }: { name: string; size?: number }) => {
-  const Icon = (icons as Record<string, any>)[name];
-  if (Icon) return <Icon size={size} strokeWidth={1.75} className="text-slate-600" />;
-  return <span style={{ fontSize: size }}>{name}</span>;
-};
+/** Render a Lucide icon by name (delegated to the shared IconRenderer + iconLibrary registry). */
+const DynIcon = ({ name, size = 20 }: { name: string; size?: number }) => (
+  <IconRenderer name={name} size={size} className="text-slate-600" />
+);
 
 const AdminCategoriesPage = () => {
   const { isAdmin, loading } = useAdmin();
