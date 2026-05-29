@@ -207,14 +207,38 @@ const WhatsAppGateDialogUI = ({ open, onOpenChange, onSuccessGoToLogin }: GateDi
           </TabsList>
 
           <TabsContent value="login" className="space-y-3 pt-3">
-            <form onSubmit={handleEmailSubmit} className="space-y-3">
+            <form onSubmit={handleEmailSubmit} className="space-y-3" noValidate>
               <div className="space-y-1">
                 <Label htmlFor="wa-email">E-mail</Label>
-                <Input id="wa-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+                <Input
+                  id="wa-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
+                  autoComplete="email"
+                  aria-invalid={!!emailError}
+                  aria-describedby={emailError ? 'wa-email-err' : undefined}
+                  className={emailError ? 'border-destructive focus-visible:ring-destructive' : undefined}
+                />
+                {emailError && (
+                  <p id="wa-email-err" role="alert" className="text-xs text-destructive">{emailError}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label htmlFor="wa-password">Senha</Label>
-                <Input id="wa-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+                <Input
+                  id="wa-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(null); }}
+                  autoComplete="current-password"
+                  aria-invalid={!!passwordError}
+                  aria-describedby={passwordError ? 'wa-password-err' : undefined}
+                  className={passwordError ? 'border-destructive focus-visible:ring-destructive' : undefined}
+                />
+                {passwordError && (
+                  <p id="wa-password-err" role="alert" className="text-xs text-destructive">{passwordError}</p>
+                )}
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Mail className="h-4 w-4 mr-1" /> Entrar e liberar</>}
@@ -223,21 +247,58 @@ const WhatsAppGateDialogUI = ({ open, onOpenChange, onSuccessGoToLogin }: GateDi
           </TabsContent>
 
           <TabsContent value="signup" className="space-y-3 pt-3">
-            <form onSubmit={handleEmailSubmit} className="space-y-3">
+            <form onSubmit={handleEmailSubmit} className="space-y-3" noValidate>
               <div className="space-y-1">
                 <Label htmlFor="wa-name">Nome completo</Label>
-                <Input id="wa-name" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" />
+                <Input
+                  id="wa-name"
+                  value={fullName}
+                  onChange={(e) => { setFullName(e.target.value); if (nameError) setNameError(null); }}
+                  autoComplete="name"
+                  aria-invalid={!!nameError}
+                  aria-describedby={nameError ? 'wa-name-err' : undefined}
+                  className={nameError ? 'border-destructive focus-visible:ring-destructive' : undefined}
+                />
+                {nameError && (
+                  <p id="wa-name-err" role="alert" className="text-xs text-destructive">{nameError}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label htmlFor="wa-email-s">E-mail</Label>
-                <Input id="wa-email-s" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+                <Input
+                  id="wa-email-s"
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
+                  autoComplete="email"
+                  aria-invalid={!!emailError}
+                  aria-describedby={emailError ? 'wa-email-s-err' : undefined}
+                  className={emailError ? 'border-destructive focus-visible:ring-destructive' : undefined}
+                />
+                {emailError && (
+                  <p id="wa-email-s-err" role="alert" className="text-xs text-destructive">{emailError}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label htmlFor="wa-password-s">Senha</Label>
-                <Input id="wa-password-s" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={6} />
+                <Input
+                  id="wa-password-s"
+                  type="password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(null); }}
+                  autoComplete="new-password"
+                  minLength={6}
+                  aria-invalid={!!passwordError}
+                  aria-describedby={passwordError ? 'wa-password-s-err' : undefined}
+                  className={passwordError ? 'border-destructive focus-visible:ring-destructive' : undefined}
+                />
+                {passwordError && (
+                  <p id="wa-password-s-err" role="alert" className="text-xs text-destructive">{passwordError}</p>
+                )}
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Mail className="h-4 w-4 mr-1" /> Cadastrar e liberar</>}
+
               </Button>
             </form>
           </TabsContent>
