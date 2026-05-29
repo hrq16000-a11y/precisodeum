@@ -48,6 +48,7 @@ const MAX_BADGES_MOBILE = 3;
 
 const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', index = 0 }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const avatarFallbackConfig = useAvatarFallbackConfig();
 
   const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
   const destaqueRequirePortfolio = useSettingValue('destaque_require_portfolio') !== 'false';
