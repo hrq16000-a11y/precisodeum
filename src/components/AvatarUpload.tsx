@@ -18,6 +18,7 @@ import {
 } from '@/components/upload/UploadProgressIndicator';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateProviderCaches } from '@/lib/providerCacheInvalidation';
+import AvatarCropDialog from '@/components/AvatarCropDialog';
 
 interface AvatarUploadProps {
   userId: string;
