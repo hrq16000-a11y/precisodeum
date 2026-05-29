@@ -109,17 +109,15 @@ describe('Wizard token governance — fases não divergem do design system', () 
   });
 });
 
-describe('Wizard navigation — único botão de Voltar por fase', () => {
-  it('WizardShell NÃO renderiza um botão Voltar global redundante', () => {
+describe('Wizard navigation — Voltar centralizado no Shell (WizardNav)', () => {
+  it('WizardShell centraliza Voltar via WizardNav (sticky), sem duplicar por fase', () => {
     const shell = readFileSync(
       resolve(__dirname, '../components/onboarding/wizard/WizardShell.tsx'),
       'utf8',
     );
-    // Um comentário documentando a remoção deve existir; nenhum <Button>Voltar</Button>
-    // de nível shell pode aparecer fora do contexto de phases.
-    expect(shell).toMatch(/Bot[aã]o Voltar global removido|cada fase j[aá] tem o seu/i);
-    // Não deve renderizar diretamente WizardNav/Voltar no shell.
-    expect(shell).not.toMatch(/<WizardNav[^/]*hideBack=\{false\}/);
+    // Contrato oficial (pós PR 17): Voltar pertence ao Shell, fases
+    // intermediárias NÃO renderizam seus próprios botões.
+    expect(shell).toMatch(/Voltar[^\n]*WizardNav|WizardNav[^\n]*Voltar|centralizad[ao]\s+no\s+WizardNav/i);
   });
 
   it('cada fase Bet renderiza no máximo UM botão "Voltar" textual', () => {
