@@ -121,13 +121,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         'id, full_name, avatar_url, profile_type, onboarding_completed, onboarding_step, ' +
         'city, state, celebration_muted, role, permissions, account_type_id, ' +
         'level_id, engagement_points, user_ref, created_at';
+      const PROVIDER_AUTH_COLUMNS =
+        'id, user_id, business_name, description, city, state, neighborhood, photo_url, slug, ' +
+        'whatsapp, phone, website, years_experience, category_id, services_count, ' +
+        'portfolio_album_count, portfolio_photo_count, rating_avg, review_count, response_time, ' +
+        'service_radius, working_hours, working_hours_struct, latitude, longitude, account_type, ' +
+        'status, onboarding_progress, lead_followup_hours, mission_answers, user_ref, cnpj, cpf';
       try {
         // Per-attempt timeout: em mobile com rede ruim, requests do Supabase
         // podem ficar penduradas indefinidamente. Promise.race garante que
         // sempre retentamos antes de exaurir o orçamento total.
         const queryPromise = Promise.all([
           supabase.from('profiles').select(PROFILE_AUTH_COLUMNS).eq('id', userId).maybeSingle(),
-          supabase.from('providers').select('id, user_id, city, state, latitude, longitude, description, category_id, account_type, created_at, categories(name, slug, icon)').eq('user_id', userId).order('created_at', { ascending: true }),
+          supabase.from('providers').select(PROVIDER_AUTH_COLUMNS).eq('user_id', userId).order('created_at', { ascending: true }),
         ]);
         const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error(`fetchProfile attempt ${attemptsUsed} timed out after ${PER_ATTEMPT_TIMEOUT_MS}ms`)), PER_ATTEMPT_TIMEOUT_MS),
@@ -156,6 +162,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (pvErr) {
           lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)} (code=${(pvErr as any)?.code ?? 'n/a'})`;
           console.warn('[useAuth] providers query error', { code: (pvErr as any)?.code, message: pvErr.message });
+          const code = String((pvErr as any)?.code ?? '');
+          const msg = String(pvErr.message ?? '');
+          if (code === '42703' || code === 'PGRST204' || /column .* does not exist/i.test(msg)) {
+            console.warn('[useAuth] schema drift detectado — refazendo providers com select mínimo');
+            const fb = await supabase
+              .from('providers')
+              .select('id, user_id, business_name, description, city, state, slug, status')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: true });
+            pvRows = fb.data as any[];
+            if (fb.error) {
+              lastErrorMessage = `providers(min): ${fb.error.message}`;
+            } else {
+              pvErr = null as any;
+            }
+          }
         }
         let derivedAccountType: string | null = null;
         let derivedPrimaryCategoryId: string | null = null;
