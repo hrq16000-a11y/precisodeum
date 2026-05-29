@@ -92,7 +92,7 @@ export const Phase2Photos = ({
         type="button"
         size="lg"
         onClick={onContinue}
-        aria-label="Continuar para a próxima etapa"
+        aria-label="Concluir esta etapa e continuar"
         className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95"
       >
         Continuar
