@@ -144,11 +144,12 @@
     <div id="root">
       <!-- Minimal shell — invisível por padrão, só aparece se a recuperação for necessária -->
       <div id="app-shell" aria-hidden="true" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:hsl(210 20% 98%);padding:24px;text-align:center">
-        <div id="app-shell-recovery" style="display:none;max-width:420px;font-family:'Inter',system-ui,sans-serif;color:hsl(215 40% 12%)">
+        <div id="app-shell-recovery" style="display:none;max-width:440px;font-family:'Inter',system-ui,sans-serif;color:hsl(215 40% 12%)">
           <h2 id="app-shell-recovery-title" style="font-size:18px;font-weight:700;margin:0 0 8px">Estamos restaurando o aplicativo</h2>
           <p id="app-shell-recovery-msg" style="font-size:14px;color:hsl(215 20% 40%);margin:0 0 16px">A recuperação é automática e acontece internamente.</p>
-          <div id="app-shell-actions" style="display:none;justify-content:center;flex-wrap:wrap">
-            <a href="/ajuda" style="display:inline-flex;align-items:center;justify-content:center;background:hsl(25 95% 53%);color:hsl(0 0% 100%);text-decoration:none;border-radius:8px;padding:10px 18px;font-weight:600;cursor:pointer;font-size:14px">Acionar suporte</a>
+          <div id="app-shell-actions" style="display:none;justify-content:center;flex-wrap:wrap;gap:8px">
+            <button id="app-shell-hard-reload" type="button" style="display:inline-flex;align-items:center;justify-content:center;background:hsl(25 95% 53%);color:hsl(0 0% 100%);border:0;border-radius:8px;padding:10px 18px;font-weight:600;cursor:pointer;font-size:14px">Recarregar agora</button>
+            <a href="/ajuda" style="display:inline-flex;align-items:center;justify-content:center;background:transparent;color:hsl(215 40% 12%);text-decoration:none;border:1px solid hsl(215 20% 80%);border-radius:8px;padding:10px 18px;font-weight:600;cursor:pointer;font-size:14px">Acionar suporte</a>
           </div>
         </div>
       </div>
@@ -222,7 +223,27 @@
             return;
           }
 
-          setRecoveryState('Estamos finalizando a restauração automática internamente.', false);
+          // Esgotou as tentativas automáticas — mostra recuperação MANUAL
+          // com botões visíveis para o usuário sair do limbo.
+          setRecoveryState('Não foi possível restaurar automaticamente. Toque em Recarregar agora para limpar o cache e tentar novamente.', true);
+          var btn = document.getElementById('app-shell-hard-reload');
+          if (btn && !btn.__bound) {
+            btn.__bound = true;
+            btn.addEventListener('click', async function(){
+              btn.disabled = true;
+              btn.textContent = 'Limpando…';
+              setAttempts(0);
+              try { localStorage.removeItem('sw-killswitch-reset-day-v1'); } catch(e) {}
+              try { localStorage.removeItem('app_auto_force_reload_done_v'); } catch(e) {}
+              await clearRuntimeCaches();
+              try {
+                var url2 = new URL(location.href);
+                url2.searchParams.set('__fresh', Date.now());
+                location.replace(url2.toString());
+              } catch(e) { location.reload(); }
+            });
+          }
+          window.__appRecoveryInProgress = false;
         }
 
         window.__appShellTimer = setTimeout(function(){
