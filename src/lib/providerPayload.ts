@@ -158,29 +158,22 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
   ]);
 
   if (!isCompany) {
+    // PF: strip TODAS as chaves PJ silenciosamente (schema institucional só vale para company).
     for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
-      if (PJ_ONLY_KEYS.has(key) && key in out) {
+      if (key in out) {
         stripped.push(key);
         delete out[key];
-      } else if (key in out && PROVIDER_PJ_STRING_KEYS.has(key)) {
-        // PF mantém business_name/legal_name + endereço, apenas saneia.
-        out[key] = safeOptionalString(out[key]);
-      } else if (key === 'show_full_address' && key in out) {
-        // PF: normaliza para boolean e força false se não há logradouro.
-        const hasStreet = typeof out.street === 'string' && out.street.trim().length > 0;
-        out[key] = hasStreet && out[key] === true;
       }
     }
   } else {
     // PJ: sanitiza strings (trim + null em vazias). show_full_address
-    //      permanece booleano. social_links: objeto vazio → null.
+    //      preservado como boolean. social_links: objeto vazio → null.
     for (const key of PROVIDER_PJ_ADDRESS_KEYS) {
       if (!(key in out)) continue;
       if (PROVIDER_PJ_STRING_KEYS.has(key)) {
         out[key] = safeOptionalString(out[key]);
       } else if (key === 'show_full_address') {
-        const hasStreet = typeof out.street === 'string' && out.street.trim().length > 0;
-        out[key] = hasStreet && out[key] === true;
+        out[key] = out[key] === true;
       } else if (key === 'social_links') {
         const v = out[key];
         if (v == null) { out[key] = null; }

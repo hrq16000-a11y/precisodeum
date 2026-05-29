@@ -803,6 +803,7 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
     <motion.div {...wizardEnter} className={ws.container}>
       <button
         type="button"
+        data-testid="phase4-extras-b-back"
         onClick={() => (onBack ? onBack() : window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_b' } })))}
         className={ws.backBtn}
         aria-label="Voltar para a etapa anterior do cadastro"
@@ -918,7 +919,7 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
       <div className="flex flex-col gap-2 pt-1">
         <Button type="button" size="lg" onClick={onFinish} disabled={saving} className={ws.cta}>
           {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Continuar <ArrowRight className="ml-2 h-5 w-5" />
+          Concluir cadastro <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
         <Button type="button" variant="ghost" onClick={onSkip} disabled={saving} className={ws.ctaGhost}>
           Pular e concluir
