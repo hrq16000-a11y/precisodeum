@@ -193,8 +193,8 @@ const HeroBanner = () => {
             className="font-display font-black text-primary-foreground max-w-full text-[clamp(0.95rem,4vw,3.25rem)] leading-[1.1] sm:leading-[1.08] tracking-[-0.015em] [text-wrap:balance]"
             style={{
               textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)',
-              // Reserva altura mínima para evitar CLS quando o texto rotaciona entre frases de 1 e 2 linhas (mobile-first).
-              minHeight: 'calc(2 * 1.1em * clamp(0.95rem, 4vw, 3.25rem))',
+              // Reserva altura mínima (~2 linhas) para evitar CLS quando o rotator alterna frases (mobile-first).
+              minHeight: 'clamp(2.1rem, 8.8vw, 7.15rem)',
             }}
           >
             <RotatingServiceText
