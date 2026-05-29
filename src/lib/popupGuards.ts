@@ -55,41 +55,80 @@ export function hasReachedScrollThreshold(pct: number): boolean {
   return getScrollPct() >= pct;
 }
 
+/**
+ * M8 · Cache em memória + flush deferido.
+ *
+ * Os listeners globais disparam em CADA scroll/click/touch. Gravar
+ * síncrono em sessionStorage/localStorage no callback do evento bloqueia
+ * a main thread (alto INP, scroll jank). Mantemos um espelho em memória
+ * e adiamos a escrita real para `requestIdleCallback` / `setTimeout`.
+ */
+let interactedMem: boolean | null = null;
+let firstVisitMem: string | null | undefined;
+let pendingFlush = false;
+
+const scheduleIdle: (cb: () => void) => void =
+  typeof window !== 'undefined' && 'requestIdleCallback' in window
+    ? (cb) => (window as any).requestIdleCallback(cb, { timeout: 500 })
+    : (cb) => setTimeout(cb, 0);
+
+function flushDeferred() {
+  pendingFlush = false;
+  try {
+    if (interactedMem === true && sessionStorage.getItem(INTERACTED_KEY) !== '1') {
+      sessionStorage.setItem(INTERACTED_KEY, '1');
+    }
+    if (firstVisitMem && !localStorage.getItem(FIRST_VISIT_KEY)) {
+      localStorage.setItem(FIRST_VISIT_KEY, firstVisitMem);
+    }
+  } catch { /* noop */ }
+}
+
+function requestFlush() {
+  if (pendingFlush) return;
+  pendingFlush = true;
+  scheduleIdle(flushDeferred);
+}
+
 /** Marca interação atual da sessão (chamado pelo listener global). */
 export function markInteracted(): void {
-  try {
-    sessionStorage.setItem(INTERACTED_KEY, '1');
-  } catch {
-    /* noop */
-  }
+  if (interactedMem) return; // já marcado nesta sessão → noop, zero custo no hot path
+  interactedMem = true;
+  requestFlush();
 }
 
 export function hasInteracted(): boolean {
+  if (interactedMem !== null) return interactedMem;
   try {
-    return sessionStorage.getItem(INTERACTED_KEY) === '1';
+    interactedMem = sessionStorage.getItem(INTERACTED_KEY) === '1';
   } catch {
-    return false;
+    interactedMem = false;
   }
+  return interactedMem;
 }
 
 /** Primeira visita absoluta deste navegador (persiste no localStorage). */
 export function isFirstEverVisit(): boolean {
+  if (firstVisitMem !== undefined) return !firstVisitMem;
   try {
-    return !localStorage.getItem(FIRST_VISIT_KEY);
+    firstVisitMem = localStorage.getItem(FIRST_VISIT_KEY);
   } catch {
-    return false;
+    firstVisitMem = null;
   }
+  return !firstVisitMem;
 }
 
 export function markFirstVisitSeen(): void {
-  try {
-    if (!localStorage.getItem(FIRST_VISIT_KEY)) {
-      localStorage.setItem(FIRST_VISIT_KEY, String(Date.now()));
-    }
-  } catch {
-    /* noop */
+  if (firstVisitMem) return; // já gravado → noop no hot path
+  // Hidrata se ainda não consultamos
+  if (firstVisitMem === undefined) {
+    try { firstVisitMem = localStorage.getItem(FIRST_VISIT_KEY); } catch { firstVisitMem = null; }
+    if (firstVisitMem) return;
   }
+  firstVisitMem = String(Date.now());
+  requestFlush();
 }
+
 
 /**
  * Avalia se um popup automático pode disparar agora.
