@@ -218,7 +218,7 @@ const Header = () => {
         {active && (
           <div className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-accent" />
         )}
-      </Link>
+      </PrefetchLink>
     );
   };
 
