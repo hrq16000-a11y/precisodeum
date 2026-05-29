@@ -404,7 +404,7 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
           disabled={navigating !== null}
           onClick={() => void goTo('/dashboard')}
         >
-          Salvar e continuar depois →
+          Salvar para depois →
         </Button>
       </div>
       <p className="text-center text-[11px] text-muted-foreground">
