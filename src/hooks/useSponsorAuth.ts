@@ -60,37 +60,51 @@ export function useSponsorAuth(redirectIfNot = true) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const [queryError, setQueryError] = useState<boolean>(false);
+
   const refetch = useCallback(async () => {
     if (!user) return;
-    const { data: contact } = await supabase
-      .from('sponsor_contacts' as any)
-      .select('*')
-      .eq('user_id', user.id)
-      .limit(1)
-      .maybeSingle();
-
-    if (contact) {
-      setSponsorContact(contact as any);
-      const { data: sp } = await supabase
-        .from('sponsors')
+    try {
+      const { data: contact, error: contactErr } = await supabase
+        .from('sponsor_contacts' as any)
         .select('*')
-        .eq('id', (contact as any).sponsor_id)
-        .single();
-      setSponsor(sp as any);
-
-      const { data: sub } = await supabase
-        .from('sponsor_subscriptions')
-        .select('*, sponsor_plans!sponsor_subscriptions_plan_id_fkey(id, name, slug, features)')
-        .eq('sponsor_id', (contact as any).sponsor_id)
-        .in('status', ['active', 'trialing'])
-        .order('current_period_end', { ascending: false, nullsFirst: false })
+        .eq('user_id', user.id)
         .limit(1)
         .maybeSingle();
-      setSubscription(sub as SponsorSubscription | null);
-    } else {
-      setSponsorContact(null);
-      setSponsor(null);
-      setSubscription(null);
+
+      if (contactErr) {
+        // Audit-fix #2 — em erro, sinaliza falha sem ejetar o usuário
+        setQueryError(true);
+        return;
+      }
+
+      if (contact) {
+        setQueryError(false);
+        setSponsorContact(contact as any);
+        const { data: sp } = await supabase
+          .from('sponsors')
+          .select('*')
+          .eq('id', (contact as any).sponsor_id)
+          .single();
+        setSponsor(sp as any);
+
+        const { data: sub } = await supabase
+          .from('sponsor_subscriptions')
+          .select('*, sponsor_plans!sponsor_subscriptions_plan_id_fkey(id, name, slug, features)')
+          .eq('sponsor_id', (contact as any).sponsor_id)
+          .in('status', ['active', 'trialing'])
+          .order('current_period_end', { ascending: false, nullsFirst: false })
+          .limit(1)
+          .maybeSingle();
+        setSubscription(sub as SponsorSubscription | null);
+      } else {
+        setQueryError(false);
+        setSponsorContact(null);
+        setSponsor(null);
+        setSubscription(null);
+      }
+    } catch {
+      setQueryError(true);
     }
   }, [user]);
 
@@ -112,11 +126,19 @@ export function useSponsorAuth(redirectIfNot = true) {
   }, [user, authLoading, navigate, redirectIfNot, refetch]);
 
   useEffect(() => {
-    // Only redirect non-admins who aren't sponsor contacts
-    if (!loading && !authLoading && !sponsorContact && !isAdmin && user && redirectIfNot) {
+    // Audit-fix #2 — só ejeta se a query NÃO falhou (evita kick-out por erro transitório)
+    if (
+      !loading &&
+      !authLoading &&
+      !queryError &&
+      !sponsorContact &&
+      !isAdmin &&
+      user &&
+      redirectIfNot
+    ) {
       navigate('/dashboard', { replace: true });
     }
-  }, [loading, authLoading, sponsorContact, isAdmin, user, redirectIfNot, navigate]);
+  }, [loading, authLoading, queryError, sponsorContact, isAdmin, user, redirectIfNot, navigate]);
 
   useEffect(() => {
     if (!sponsorContact?.sponsor_id) return;

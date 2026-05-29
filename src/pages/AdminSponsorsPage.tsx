@@ -165,9 +165,9 @@ const AdminSponsorsPage = () => {
   const qc = useQueryClient();
   const loading = authLoading || adminLoading;
 
-  useEffect(() => {
-    if (!loading && !(!!user && isAdmin)) navigate('/', { replace: true });
-  }, [!!user && isAdmin, loading, navigate]);
+  // Audit-fix #3 — removido useEffect duplicado de redirect; useAdmin já cuida
+  // (não-admins vão para /dashboard, não-logados vão para /login com replace).
+
 
   // ── Data ──
   // Allowlist explícita: lista exatamente as colunas usadas na UI/edição
