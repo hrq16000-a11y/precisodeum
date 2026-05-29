@@ -38,27 +38,47 @@ const hasPersistedSupabaseSession = (): boolean => {
   return false;
 };
 
-interface AuthContextType {
+/**
+ * PR 4 (A3) — Split do "God-Provider":
+ *  - `AuthIdentityContext` carrega APENAS dados de sessão (estáveis, raros):
+ *    session, user, loading, signOut.
+ *  - `AuthProfileContext` carrega dados voláteis (profile, provider, flags
+ *    derivadas, refetchProfile). Consumers que só precisam saber "está
+ *    logado?" devem migrar para `useAuthIdentity()` e param de re-renderizar
+ *    quando o profile/provider muda.
+ *
+ * O hook legado `useAuth()` continua exportado e retorna a junção dos dois
+ * contextos (retrocompatibilidade total — nenhum consumer atual quebra).
+ */
+interface AuthIdentityContextType {
   session: Session | null;
   user: User | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+}
+
+interface AuthProfileContextType {
   profile: any | null;
   provider: any | null;
-  loading: boolean;
   /** True when the user exists but has never explicitly chosen a profile type (social login default) */
   needsTypeSelection: boolean;
-  signOut: () => Promise<void>;
   refetchProfile: () => Promise<any | null>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+interface AuthContextType extends AuthIdentityContextType, AuthProfileContextType {}
+
+const AuthIdentityContext = createContext<AuthIdentityContextType>({
   session: null,
   user: null,
+  loading: true,
+  signOut: async () => {},
+});
+
+const AuthProfileContext = createContext<AuthProfileContextType>({
   profile: null,
   provider: null,
-  loading: true,
   needsTypeSelection: false,
-  signOut: async () => {},
-  refetchProfile: async () => {},
+  refetchProfile: async () => null,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
