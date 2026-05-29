@@ -332,16 +332,16 @@ const AdminBottomNavPage = () => {
                     <div className="flex items-center gap-1 shrink-0">
                       {!item.is_active && <Badge variant="secondary" className="text-[9px]">Off</Badge>}
                       {item.requires_auth && <Badge variant="outline" className="text-[9px]">Auth</Badge>}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveItem(idx, -1)} disabled={idx === 0}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveItem(idx, -1)} disabled={idx === 0} aria-label="Mover para cima">
                         <ArrowUp className="h-3 w-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1} aria-label="Mover para baixo">
                         <ArrowDown className="h-3 w-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditItem(item); setShowDialog(true); }}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditItem(item); setShowDialog(true); }} aria-label="Editar item">
                         <Pencil className="h-3 w-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteItem.mutate(item.id)}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteItem.mutate(item.id)} aria-label="Excluir item">
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
