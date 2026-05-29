@@ -24,7 +24,7 @@ interface AdminGuardProps {
 }
 
 const AdminGuard = ({ children, denyToast }: AdminGuardProps) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthIdentity();
   const location = useLocation();
   const [state, setState] = useState<'checking' | 'allowed' | 'denied'>('checking');
 
