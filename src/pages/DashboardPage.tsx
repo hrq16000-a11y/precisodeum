@@ -1,42 +1,27 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, ArrowRight, Users, Settings, PlusCircle, Megaphone, Layout, Star, MessageSquare, Eye, ChevronDown, ChevronUp, TrendingUp, Sparkles, Zap, Camera, FileText, RotateCcw, Building2 } from 'lucide-react';
+import { Briefcase, User, Users, Layout, Star, MessageSquare, Eye, TrendingUp, Camera, Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
-import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import { useAuth } from '@/hooks/useAuth';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { hasAnyContact } from '@/lib/profileResolvers';
-import ProfileCompleteness from '@/components/dashboard/ProfileCompleteness';
-import AvatarReminder from '@/components/dashboard/AvatarReminder';
-import LeadsChart from '@/components/dashboard/LeadsChart';
-import RecentActivity from '@/components/dashboard/RecentActivity';
-import ConversionInsights from '@/components/dashboard/ConversionInsights';
+import LevelUpBanner from '@/components/dashboard/LevelUpBanner';
 import WelcomeHero from '@/components/dashboard/WelcomeHero';
 import QuickStatsBar from '@/components/dashboard/QuickStatsBar';
 import StatCardGrid from '@/components/dashboard/StatCardGrid';
 import DashboardTipOfDay from '@/components/dashboard/DashboardTipOfDay';
-import ProfileStrength from '@/components/dashboard/ProfileStrength';
 import LevelBenefits from '@/components/dashboard/LevelBenefits';
 import ShareProfileCard from '@/components/dashboard/ShareProfileCard';
-import RankingStatus from '@/components/dashboard/RankingStatus';
-import RankingAlertWidget from '@/components/dashboard/RankingAlertWidget';
-import CommunityFeed from '@/components/dashboard/CommunityFeed';
 import RealtimeEngagementToast from '@/components/dashboard/RealtimeEngagementToast';
-import LevelUpBanner from '@/components/dashboard/LevelUpBanner';
 import QrCodeCard from '@/components/dashboard/QrCodeCard';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useEngagementLevel } from '@/hooks/useEngagementLevel';
 import GlassCard from '@/components/ui/GlassCard';
-import ProgressRing from '@/components/ui/ProgressRing';
 import ActionQueue from '@/components/dashboard/ActionQueue';
-import UpsellBanner from '@/components/dashboard/UpsellBanner';
 import CoursesBanner from '@/components/dashboard/CoursesBanner';
 import OurStoryBanner from '@/components/OurStoryBanner';
 import StorageQuotaWidget from '@/components/dashboard/StorageQuotaWidget';
@@ -50,27 +35,17 @@ import EmptyStateBanner from '@/components/dashboard/EmptyStateBanner';
 import DashboardSkeleton from '@/components/dashboard/DashboardSkeleton';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
-import DemandSignalAlert from '@/components/dashboard/DemandSignalAlert';
-import ProfileHealthScore from '@/components/dashboard/ProfileHealthScore';
 import DashboardAnalytics from '@/components/dashboard/DashboardAnalytics';
 import AdPerformanceWidget from '@/components/dashboard/AdPerformanceWidget';
 import { useProviderActivityHeartbeat } from '@/hooks/useProviderActivityHeartbeat';
 import { useLeadInteractionPing } from '@/hooks/useLeadInteractionPing';
 import ServiceCompletionCard from '@/components/dashboard/ServiceCompletionCard';
-import CategoryBenchmarkWidget from '@/components/dashboard/CategoryBenchmarkWidget';
-import RegionalDemandWidget from '@/components/dashboard/RegionalDemandWidget';
-import WeeklySummary from '@/components/dashboard/WeeklySummary';
 import DailyPostCard from '@/components/dashboard/DailyPostCard';
 import MissedOpportunitiesWidget from '@/components/dashboard/MissedOpportunitiesWidget';
 import ReferralInviteCard from '@/components/dashboard/ReferralInviteCard';
 import { usePresenceHeartbeat } from '@/hooks/usePresenceHeartbeat';
 import { useReferralCapture } from '@/hooks/useReferralCapture';
-import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';
 import EngagementLoop from '@/components/dashboard/EngagementLoop';
-import AchievementHistory from '@/components/dashboard/AchievementHistory';
-import CelebrationMuteToggle from '@/components/dashboard/CelebrationMuteToggle';
-import LeadAnalytics from '@/components/dashboard/LeadAnalytics';
-import LeadInsights from '@/components/dashboard/LeadInsights';
 import ExpertTipsWidget from '@/components/dashboard/ExpertTipsWidget';
 import DismissibleWidget from '@/components/dashboard/DismissibleWidget';
 import MissionCard from '@/components/dashboard/MissionCard';
@@ -95,8 +70,23 @@ import {
   attachBlockedClickProbe,
 } from '@/lib/dashboardTelemetry';
 
+// ─── Sections síncronas (acima da dobra ou utilitárias leves) ──────────────
+import DebugResetBar from '@/pages/dashboard/sections/DebugResetBar';
+import SectionSkeleton from '@/pages/dashboard/sections/_skeleton';
+
+// ─── Sections lazy (abaixo da dobra ou condicionais) ───────────────────────
+// A7 — Code-split estratégico: cada chunk só baixa quando a seção realmente
+// vai renderizar. Reduz TTI do bundle inicial sem afetar UX (Suspense usa
+// skeletons leves que reservam altura → zero CLS).
+const ClientDashboardSection = lazy(() => import('@/pages/dashboard/sections/ClientDashboardSection'));
+const RhDashboardSection = lazy(() => import('@/pages/dashboard/sections/RhDashboardSection'));
+const ProviderInsightsCollapsible = lazy(() => import('@/pages/dashboard/sections/ProviderInsightsCollapsible'));
+const ProviderAnalyticsGrid = lazy(() => import('@/pages/dashboard/sections/ProviderAnalyticsGrid'));
+const ProviderQuickAccess = lazy(() => import('@/pages/dashboard/sections/ProviderQuickAccess'));
+const ProviderOnboardingStepper = lazy(() => import('@/pages/dashboard/sections/ProviderOnboardingStepper'));
+
 const DashboardPage = () => {
-  const { user, profile, provider, loading, refetchProfile, signOut } = useAuth();
+  const { user, profile, provider, loading, refetchProfile } = useAuth();
 
   // Telemetria do Dashboard: tempo de carga, primeiro render e cliques bloqueados
   // por overlays. Falhas de envio são silenciosas — não impactam UX.
@@ -115,7 +105,7 @@ const DashboardPage = () => {
     }
   }, [loading, provider?.id]);
   const { registerVisit } = useDashboardState();
-  const { isAtLeast, tier } = useMaturityTier();
+  useMaturityTier();
 
   // Auto-completa a missão "first_contact" quando detectar 1º clique no WhatsApp
   useFirstContactAutoMission();
@@ -146,14 +136,13 @@ const DashboardPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [statsLoaded, setStatsLoaded] = useState(false);
-  const [statsError, setStatsError] = useState(false);
+  const [, setStatsError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   const handleResetOnboarding = async () => {
     if (!user?.id) return;
     if (!window.confirm('Reiniciar o assistente? Seus dados (nome, telefone, cidade) serão preservados.')) return;
     try {
-      // Reset profile_type/role no banco e metadata no auth
       const [{ error: profErr }, { error: metaErr }] = await Promise.all([
         supabase.from('profiles').update({
           profile_type: null,
@@ -163,14 +152,12 @@ const DashboardPage = () => {
         supabase.auth.updateUser({ data: { profile_type_chosen: false, profile_type: null } }),
       ]);
       if (profErr || metaErr) throw profErr || metaErr;
-      // Limpeza completa de cache local relacionado ao fluxo de cadastro/triagem
       try {
         const keysToRemove = ['onboarding_wizard_state', 'pending_referral_code', 'auth_redirect', 'pending_signup_profile_type'];
         keysToRemove.forEach((k) => { localStorage.removeItem(k); sessionStorage.removeItem(k); });
-        // Limpa qualquer chave residual com prefixo de onboarding
         Object.keys(localStorage).filter(k => k.startsWith('onboarding_') || k.startsWith('wizard_')).forEach(k => localStorage.removeItem(k));
         Object.keys(sessionStorage).filter(k => k.startsWith('onboarding_') || k.startsWith('wizard_') || k.startsWith('pending_')).forEach(k => sessionStorage.removeItem(k));
-      } catch {}
+      } catch { /* storage may be unavailable */ }
       await refetchProfile();
       toast.success('Assistente reiniciado. Recarregando...');
       setTimeout(() => window.location.href = '/dashboard', 600);
@@ -180,7 +167,6 @@ const DashboardPage = () => {
     }
   };
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
-  // ServiceWizard ligado por padrão (a flag só serve para desativar explicitamente).
   const { levelName: legacyLevelName, levelColor: legacyLevelColor } = usePermissions();
   // FONTE DA VERDADE para o nível do prestador: gamification_levels via engagement_points.
   const { currentLevel } = useEngagementLevel();
@@ -196,8 +182,6 @@ const DashboardPage = () => {
   const [guideOpen, setGuideOpen] = useState(true);
 
   // Welcome celebration: triggered once when redirected from wizard with ?welcome=1
-  // GATE: só dispara quando provider e estatísticas estiverem carregados,
-  // evitando flicker de "0 serviços / 0 portfólio" durante o welcome.
   useEffect(() => {
     if (searchParams.get('welcome') !== '1') return;
     if (!provider || !statsLoaded) return;
@@ -269,20 +253,16 @@ const DashboardPage = () => {
 
   const profileType = resolveEffectiveProfileType(profile, provider);
   const isClient = profileType === 'client';
-  const isProvider = profileType === 'provider';
   const isRH = profileType === 'rh';
 
   // profileDone: exige descrição, cidade E whatsapp (canal principal de contato).
   // Sem whatsapp, lead não chega — então não é "perfil completo".
-  // Leitura via resolver central (read consolidation layer — Fase 1.5).
   const hasWhatsapp = hasAnyContact(provider, profile);
   const profileDone = !!provider?.description && !!provider?.city && hasWhatsapp;
   const servicesDone = servicesCount !== null && servicesCount > 0;
   const portfolioDone = portfolioCount > 0;
 
-  // Refetch contadores ao voltar para a aba/janela do dashboard. Garante que
-  // ações feitas em outras abas (Wizard, /servicos, /minha-pagina) reflitam
-  // imediatamente no "Como funciona" sem precisar dar F5.
+  // Refetch contadores ao voltar para a aba/janela do dashboard.
   useEffect(() => {
     const trigger = () => setReloadKey((k) => k + 1);
     const onVisibility = () => { if (document.visibilityState === 'visible') trigger(); };
@@ -298,7 +278,6 @@ const DashboardPage = () => {
   }, []);
 
   // Persist onboarding progress when steps complete (debounced, no loops).
-  // Canonical onboarding_progress write boundary — ver src/lib/onboardingProgressSync.ts.
   useEffect(() => {
     if (!provider?.id) return;
     const current = (provider?.onboarding_progress as Record<string, boolean>) || {};
@@ -320,7 +299,6 @@ const DashboardPage = () => {
   if (loading) return <DashboardLayout><DashboardSkeleton /></DashboardLayout>;
 
   // Onboarding redirect is owned exclusively by `OnboardingGate` in App.tsx.
-  // We only guard against the brief instant where `profile_type` hasn't loaded yet.
   if (profile && !profileType) {
     return <DashboardLayout><DashboardSkeleton /></DashboardLayout>;
   }
@@ -335,212 +313,50 @@ const DashboardPage = () => {
     }
   })();
 
-  const debugResetBar = (
-    <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm">
-      <div className="flex items-center gap-2 text-[12px] text-foreground min-w-0">
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
-          <User className="h-3.5 w-3.5" />
-        </div>
-        <span className="truncate">
-          Conta: <strong>{profileTypeLabel}</strong>
-        </span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <Button
-          size="sm"
-          variant="default"
-          className="h-7 gap-1.5 px-2.5 text-[11px]"
-          onClick={() => navigate('/cadastro-inicial?mode=review&next=/dashboard')}
-          title="Abrir o Wizard em modo revisão — ver tudo, editar o que pode e continuar o que falta"
-          aria-label="Assistente — abrir Wizard em modo revisão"
-        >
-          <Sparkles className="h-3 w-3" />
-          Assistente
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
-          onClick={handleResetOnboarding}
-          title="Reiniciar cadastro do zero"
-        >
-          <RotateCcw className="h-3 w-3" />
-          Reiniciar
-        </Button>
-      </div>
-    </div>
+  const debugBar = (
+    <DebugResetBar
+      profileTypeLabel={profileTypeLabel}
+      onAssistant={() => navigate('/cadastro-inicial?mode=review&next=/dashboard')}
+      onReset={handleResetOnboarding}
+    />
   );
-
 
   // ---- CLIENT DASHBOARD ----
   if (isClient) {
     return (
       <DashboardLayout>
-        {debugResetBar}
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
-          <motion.div
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-600/10"
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 6, repeat: Infinity }}
-          >
-            <User className="h-5 w-5 text-amber-600" />
-          </motion.div>
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Olá, {profile?.full_name?.split(' ')[0] || 'Bem-vindo'}!</h1>
-            <p className="text-sm text-muted-foreground">Sua conta de cliente</p>
-          </div>
-        </motion.div>
-
-        <GlassCard variant="gradient" className="mt-6">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
-              <User className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-display text-base font-bold text-foreground">Conta Cliente</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Como cliente, você pode buscar profissionais, visualizar perfis e entrar em contato por WhatsApp.
-              </p>
-            </div>
-          </div>
-        </GlassCard>
-
-        <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2">
-          <GlassCard variant="default" delay={0.1} className="cursor-pointer" onClick={() => navigate('/buscar')}>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent group-hover:scale-110 transition-transform">
-                <Eye className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">Buscar Profissionais</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Encontre o profissional ideal na sua cidade</p>
-              </div>
-            </div>
-          </GlassCard>
-
-          <GlassCard variant="default" delay={0.2} className="cursor-pointer" onClick={() => navigate('/vagas')}>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                <Megaphone className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">Ver Vagas</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Confira oportunidades disponíveis</p>
-              </div>
-            </div>
-          </GlassCard>
-        </div>
-
-        <GlassCard variant="glow" delay={0.3} className="mt-6">
-          <p className="text-sm text-foreground font-medium flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-accent" />
-            Quer oferecer serviços?
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Altere o tipo da sua conta para "Profissional" na página de perfil e comece a divulgar seus serviços.
-          </p>
-          <button
-            onClick={() => navigate('/dashboard/perfil')}
-            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
-          >
-            Alterar tipo de conta <ArrowRight className="h-3 w-3" />
-          </button>
-        </GlassCard>
-
-        {/* Courses promotion */}
-        <div className="mt-4">
-          <CoursesBanner />
-        </div>
-        <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
+        <Suspense fallback={<SectionSkeleton minH="min-h-[420px]" />}>
+          <ClientDashboardSection
+            fullName={profile?.full_name}
+            welcomeOpen={welcomeOpen}
+            onCloseWelcome={() => setWelcomeOpen(false)}
+            providerSlug={provider?.slug ?? null}
+            debugBar={debugBar}
+          />
+        </Suspense>
       </DashboardLayout>
     );
   }
 
-  // ---- RH DASHBOARD (Indigo Corporate Theme) ----
+  // ---- RH DASHBOARD ----
   if (isRH) {
     return (
       <DashboardLayout>
-        {debugResetBar}
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
-          <motion.div
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 to-slate-700/10"
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 6, repeat: Infinity }}
-          >
-            <Megaphone className="h-5 w-5 text-amber-600" />
-          </motion.div>
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Painel Agência de RH</h1>
-            <p className="text-sm text-muted-foreground">Gerencie vagas e candidatos da sua agência de recrutamento</p>
-          </div>
-        </motion.div>
-
-        <GlassCard variant="gradient" className="mt-6 border-amber-200 dark:border-amber-800/40 bg-gradient-to-br from-amber-500/5 to-slate-500/5">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
-              <Megaphone className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-display text-base font-bold text-foreground">Conta Agência de RH / Recrutamento</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Publique vagas com auto-aprovação, acesse perfis qualificados e gerencie processos seletivos.
-              </p>
-            </div>
-          </div>
-        </GlassCard>
-
-        {/* Métricas focadas em recrutamento (sem portfólio) */}
-        <div className="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-3">
-          <div className="rounded-2xl border border-amber-200/60 dark:border-amber-800/40 bg-card p-4">
-            <div className="flex items-center gap-2 text-amber-600"><Megaphone className="h-4 w-4" /><span className="text-[11px] font-semibold uppercase tracking-wide">Minhas Vagas</span></div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{jobsCount}</p>
-          </div>
-          <div className="rounded-2xl border border-amber-200/60 dark:border-amber-800/40 bg-card p-4">
-            <div className="flex items-center gap-2 text-amber-600"><MessageSquare className="h-4 w-4" /><span className="text-[11px] font-semibold uppercase tracking-wide">Candidatos</span></div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{leadsCount}</p>
-          </div>
-          <div className="rounded-2xl border border-amber-200/60 dark:border-amber-800/40 bg-card p-4">
-            <div className="flex items-center gap-2 text-amber-600"><Eye className="h-4 w-4" /><span className="text-[11px] font-semibold uppercase tracking-wide">Visualizações</span></div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{viewsTotal}</p>
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            { icon: Megaphone, title: 'Minhas Vagas', desc: 'Gerencie suas vagas publicadas', path: '/dashboard/vagas', count: jobsCount, countLabel: 'vaga', action: 'Publicar nova vaga' },
-            { icon: Layout, title: 'Dados da Agência', desc: 'Edite a página pública da sua agência', path: '/dashboard/agencia' },
-            { icon: Eye, title: 'Buscar Profissionais', desc: 'Encontre profissionais para suas vagas', path: '/buscar' },
-            { icon: Users, title: 'Comunidade', desc: 'Conecte-se com a comunidade', path: '/dashboard/comunidade' },
-          ].map((item, i) => (
-            <GlassCard key={item.path} variant="default" delay={0.1 + i * 0.1} className="cursor-pointer border-amber-200/40 dark:border-amber-800/30" onClick={() => navigate(item.path)}>
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
-                  <item.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">{item.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
-                  {item.count && item.count > 0 && <span className="inline-block mt-1 text-xs font-medium text-amber-600">{item.count} {item.countLabel}{item.count !== 1 ? 's' : ''}</span>}
-                </div>
-              </div>
-              {item.action && (
-                <button onClick={(e) => { e.stopPropagation(); navigate(item.path); }}
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:underline">
-                  <PlusCircle className="h-3.5 w-3.5" /> {item.action}
-                </button>
-              )}
-            </GlassCard>
-          ))}
-        </div>
-
-        {/* Botão "Ver minha página pública" */}
-        <RhPublicPageLink userId={user?.id} />
-        <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
+        <Suspense fallback={<SectionSkeleton minH="min-h-[520px]" />}>
+          <RhDashboardSection
+            userId={user?.id}
+            jobsCount={jobsCount}
+            leadsCount={leadsCount}
+            viewsTotal={viewsTotal}
+            welcomeOpen={welcomeOpen}
+            onCloseWelcome={() => setWelcomeOpen(false)}
+            providerSlug={provider?.slug ?? null}
+            debugBar={debugBar}
+          />
+        </Suspense>
       </DashboardLayout>
     );
   }
-
-  // Helper component declared inline below the file for RH public link
 
   // ---- PROVIDER DASHBOARD ----
   const onboardingProgress = (provider?.onboarding_progress as Record<string, any>) || {};
@@ -550,7 +366,6 @@ const DashboardPage = () => {
   const markProgress = async (key: string) => {
     if (!provider?.id) return;
     if (onboardingProgress[key]) return;
-    // Canonical onboarding_progress write boundary (Fase 1.6.5).
     const result = await setOnboardingProgress(
       provider.id,
       { [key]: true },
@@ -609,8 +424,7 @@ const DashboardPage = () => {
 
   const allStepsDone = profileDone && servicesDone && pageCustomized && (!whatsappGroupUrl || whatsappGroupJoined);
 
-  // FONTE ÚNICA da verdade da completude — `onboardingChecklist` (mesma usada pelos
-  // componentes filhos). Usar SEMPRE este `pct`/`stats` em qualquer lugar do dashboard.
+  // FONTE ÚNICA da verdade da completude
   const unifiedItems = buildOnboardingChecklist({
     profile, provider,
     servicesCount: servicesCount ?? 0,
@@ -620,7 +434,6 @@ const DashboardPage = () => {
   const completenessPercent = unifiedStats.pct;
   const remainingItems = unifiedStats.total - unifiedStats.completed;
   const allChecklistDone = remainingItems === 0;
-  // Banners persistentes (cobrem cenários estruturais)
   const showServiceEmptyBanner = servicesCount !== null && servicesCount === 0;
   const showPortfolioEmptyBanner = servicesCount !== null && servicesCount > 0 && portfolioAlbumCount === 0;
   const anyEmptyBannerVisible = showServiceEmptyBanner || showPortfolioEmptyBanner;
@@ -635,7 +448,6 @@ const DashboardPage = () => {
   ];
 
   // Welcome banner contextual greeting
-  // 0h-4h59 = Boa madrugada · 5h-11h59 = Bom dia · 12h-17h59 = Boa tarde · 18h-23h59 = Boa noite
   const hour = new Date().getHours();
   const greeting =
     hour < 5 ? 'Boa madrugada'
@@ -644,10 +456,13 @@ const DashboardPage = () => {
     : 'Boa noite';
   const pendingLeads = leadsCount;
 
+  const isCompanyProvider = profile?.profile_type === 'provider' && (provider as any)?.account_type === 'company';
+  const showFullAddress = !!(provider as any)?.show_full_address;
+
   return (
     <DashboardLayout>
       <div className="-mx-4 -my-6 bg-slate-50 px-4 py-6 dark:bg-background sm:-mx-6 sm:px-6">
-      {debugResetBar}
+      {debugBar}
       <RealtimeEngagementToast />
       <LevelUpBanner />
       {/* Enhanced Welcome Hero */}
@@ -661,18 +476,14 @@ const DashboardPage = () => {
         avatarUrl={profile?.avatar_url || undefined}
       />
 
-      {/* ===== ORDEM: AÇÕES ÚTEIS PRIMEIRO, MÉTRICAS DEPOIS =====
-          Diretriz UX: o usuário precisa AGIR antes de ver estatísticas.
-          Métricas (DashboardAnalytics, AdPerformance, LeadAnalytics, etc.) ficam
-          abaixo das ações úteis (QuickActions, Onboarding, Obra do Dia). */}
+      {/* ===== ORDEM: AÇÕES ÚTEIS PRIMEIRO, MÉTRICAS DEPOIS ===== */}
 
-      {/* 1) Ações Rápidas no topo — primeira coisa visível e mais útil */}
+      {/* 1) Ações Rápidas no topo */}
       <div className="mt-6">
         <QuickActionsHero />
       </div>
 
-      {/* 2) "Como funciona" — checklist de onboarding sincronizado com o estado real
-             (services/portfolio/profile). Mostra progressão imediata. */}
+      {/* 2) "Como funciona" — checklist de onboarding sincronizado */}
       <div className="mt-4">
         <OnboardingCompletionTracker
           servicesCount={servicesCount ?? 0}
@@ -685,28 +496,26 @@ const DashboardPage = () => {
         <UnifiedHealthScore score={completenessPercent} remaining={remainingItems} />
       </div>
 
-      {/* 4) Obra do Dia — ação principal de frescor */}
+      {/* 4) Obra do Dia */}
       {provider?.id && (
         <div className="mt-4">
           <DailyPostCard />
         </div>
       )}
 
-      {/* 5) MÉTRICAS E INSIGHTS — abaixo das ações, conforme prioridade definida */}
+      {/* 5) MÉTRICAS E INSIGHTS */}
       <div className="mt-6">
         <DashboardAnalytics />
       </div>
 
-      {/* 5b) Desempenho do Anúncio — métrica detalhada */}
+      {/* 5b) Desempenho do Anúncio */}
       {provider?.id && (
         <div className="mt-4">
           <AdPerformanceWidget providerId={provider.id} hasPhoto={!!provider?.photo_url} />
         </div>
       )}
 
-      {/* Impacto na Rede movido para o final da página, junto às demais métricas. */}
-
-      {/* Online Status Feedback — pulse + toast quando entra em modo Online */}
+      {/* Online Status Feedback */}
       <div className="mt-3 flex justify-end" data-tour="online-status">
         <OnlineStatusFeedback />
       </div>
@@ -725,27 +534,27 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Cards de Missão Profissional — gated por tier de maturidade */}
+      {/* Cards de Missão Profissional */}
       <div className="mt-4" data-tour="missions">
         <MissionCard />
       </div>
 
-      {/* Sugestões de identidade (governança) — só renderiza se houver pendências */}
+      {/* Sugestões de identidade (governança) */}
       <div className="mt-4">
         <IdentitySuggestionsWidget limit={2} />
       </div>
 
-      {/* Contador de Impacto Real (24h) — visualizações e cliques de contato */}
+      {/* Contador de Impacto Real (24h) */}
       <div className="mt-4" data-tour="contact-impact">
         <ContactImpactWidget />
       </div>
 
-      {/* Ciclo de Fechamento — botão "Concluí um serviço" (boost +15% por 3 dias) */}
+      {/* Ciclo de Fechamento */}
       <div className="mt-4">
         <ServiceCompletionCard />
       </div>
 
-      {/* Engagement Loop — guides the user to the next highest-impact action */}
+      {/* Engagement Loop */}
       <div className="mt-4">
         <EngagementLoop
           servicesCount={servicesCount ?? 0}
@@ -754,7 +563,7 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Banners persistentes de alta prioridade — Empty States estruturais */}
+      {/* Banners persistentes de alta prioridade */}
       {showServiceEmptyBanner && (
         <div className="mt-4">
           <EmptyStateBanner variant="service" />
@@ -766,11 +575,9 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* CTA único inteligente — só aparece se NÃO houver banner cobrindo a mesma pendência.
-          Quando há >1 pendência, mostra o checklist completo + status comunidade. */}
+      {/* CTA único inteligente */}
       {(() => {
         if (allChecklistDone) return null;
-        // Se um banner Empty State já está cobrindo a única pendência → suprimir CTA duplicado
         if (anyEmptyBannerVisible && remainingItems <= 1) return null;
 
         if (remainingItems <= 1) {
@@ -802,7 +609,7 @@ const DashboardPage = () => {
         );
       })()}
 
-      {/* Dica de especialista — muda conforme a categoria do prestador */}
+      {/* Dica de especialista */}
       {provider && (
         <div className="mt-4">
           <DismissibleWidget widgetKey="expert_tips">
@@ -811,57 +618,15 @@ const DashboardPage = () => {
         </div>
       )}
 
-
-      {/* OnboardingCompletionTracker movido para o topo (após QuickActionsHero) */}
-
       {/* Lembrete de follow-up de leads em aberto */}
       <div className="mt-4">
         <LeadFollowupWidget />
       </div>
 
-      {/* ===== INSIGHTS SECUNDÁRIOS — colapsáveis para reduzir scroll mobile =====
-          Cada widget interno já tem guarda própria de "sem dados". Aqui apenas
-          agrupamos atrás de um único toggle persistido em localStorage para
-          achatar a página e diminuir cansaço visual no mobile. */}
-      <details
-        className="group mt-4 rounded-2xl border border-border bg-card/60 [&_summary::-webkit-details-marker]:hidden"
-        open={typeof window !== 'undefined' && localStorage.getItem('dash_more_insights_open') === '1'}
-        onToggle={(e) => {
-          try {
-            localStorage.setItem(
-              'dash_more_insights_open',
-              (e.currentTarget as HTMLDetailsElement).open ? '1' : '0',
-            );
-          } catch {}
-        }}
-      >
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-left">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-              <TrendingUp className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="font-display text-sm font-bold text-foreground">Mais insights</h3>
-              <p className="text-[11px] text-muted-foreground truncate">
-                Demanda, ranking, benchmark e força do perfil
-              </p>
-            </div>
-          </div>
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="space-y-4 px-4 pb-4 pt-1">
-          <DemandSignalAlert />
-          <WeeklySummary />
-          <div data-tour="profile-strength">
-            <ProfileStrength />
-          </div>
-          <CategoryBenchmarkWidget />
-          <RegionalDemandWidget />
-          <RankingStatus />
-          <RankingAlertWidget />
-          <AvatarReminder avatarUrl={profile?.avatar_url} />
-        </div>
-      </details>
+      {/* INSIGHTS SECUNDÁRIOS — lazy: bloco colapsável com widgets pesados */}
+      <Suspense fallback={<SectionSkeleton minH="min-h-16" />}>
+        <ProviderInsightsCollapsible avatarUrl={profile?.avatar_url} />
+      </Suspense>
 
       {/* Share Profile Card & QR Code */}
       {provider?.slug && (
@@ -872,8 +637,6 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Community Feed desativado — exibia atividades antigas como "Ao vivo". */}
-
       {/* Courses promotion */}
       <div className="mt-4">
         <CoursesBanner />
@@ -881,15 +644,15 @@ const DashboardPage = () => {
 
       <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />
 
-      {/* Action Queue — what to do next (sincronizado com checklist unificado) */}
+      {/* Action Queue */}
       <div className="mt-4">
         <ActionQueue
           servicesCount={servicesCount ?? 0}
           portfolioAlbumsCount={portfolioAlbumCount}
         />
       </div>
-      {/* Dominant CTA when no services — REMOVIDO: substituído por EmptyStateBanner persistente acima */}
-      {/* Métricas finais — concentradas no fim da página conforme diretriz UX. */}
+
+      {/* Métricas finais */}
       <div className="mt-6">
         <ImpactSection
           views={viewsTotal}
@@ -898,45 +661,26 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Stats with animated counters — só renderiza se houver pelo menos 1 contador real >0 */}
+      {/* Stats com counters — só se houver dados reais */}
       {(servicesCount ?? 0) + leadsCount + viewsTotal + portfolioCount + jobsCount + reviewCount > 0 && (
         <div className="mt-5">
           <StatCardGrid cards={statCards} />
         </div>
       )}
 
-      {/* Analytics Grid: charts/insights — cada bloco já se auto-oculta quando
-          não há dados reais (evita UI estática enganosa). */}
-      {/* Analytics Grid: charts/insights — só renderiza quando há dados reais.
-          Cada bloco interno também tem guarda própria; o grid externo é
-          ocultado por completo se views/leads forem zero. */}
+      {/* Analytics Grid — lazy + gated por dados reais */}
       {provider && (viewsTotal > 0 || leadsCount > 0) && (
-        <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <GlassCard variant="default" hoverEffect={false} delay={0.4} data-tour="leads">
-            <LeadsChart providerId={provider.id} />
-          </GlassCard>
-
-          <GlassCard variant="default" hoverEffect={false} delay={0.5}>
-            <ConversionInsights views={viewsTotal} leads={leadsCount} services={servicesCount ?? 0} />
-          </GlassCard>
-
-          <div className="lg:col-span-2">
-            <LeadInsights providerId={provider.id} />
-          </div>
-
-          {leadsCount > 0 && (
-            <GlassCard variant="bordered" hoverEffect={false} delay={0.6}>
-              <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-accent" />
-                Atividade Recente
-              </h3>
-              <RecentActivity providerId={provider.id} />
-            </GlassCard>
-          )}
-        </div>
+        <Suspense fallback={<SectionSkeleton minH="min-h-[360px]" />}>
+          <ProviderAnalyticsGrid
+            providerId={provider.id}
+            viewsTotal={viewsTotal}
+            leadsCount={leadsCount}
+            servicesCount={servicesCount ?? 0}
+          />
+        </Suspense>
       )}
 
-      {/* Dica do dia + Benefícios do nível — sempre úteis, fora do grid analytics */}
+      {/* Dica do dia + Benefícios do nível */}
       {provider && (
         <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
           <DashboardTipOfDay
@@ -949,203 +693,29 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Quick Access — enhanced cards */}
-      <div className="mt-6">
-        <motion.h2
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2"
-        >
-          <Sparkles className="h-3.5 w-3.5 text-accent" />
-          Acesso Rápido
-        </motion.h2>
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <GlassCard variant="default" delay={0.5} className="cursor-pointer" onClick={() => navigate('/dashboard/servicos')} data-tour="services">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent transition-all duration-300 group-hover:bg-accent group-hover:text-accent-foreground">
-                <Settings className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-foreground">Meus Serviços</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Gerencie seus serviços cadastrados</p>
-                {servicesCount !== null && servicesCount > 0 && (
-                  <span className="inline-block mt-1.5 text-xs font-medium text-accent">{servicesCount} ativo{servicesCount !== 1 ? 's' : ''}</span>
-                )}
-              </div>
-            </div>
-            <button onClick={(e) => { e.stopPropagation(); navigate('/dashboard/servicos'); }}
-              className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
-              <PlusCircle className="h-3.5 w-3.5" /> Adicionar novo serviço
-            </button>
-          </GlassCard>
+      {/* Quick Access — lazy: abaixo da dobra, atalhos de navegação */}
+      <Suspense fallback={<SectionSkeleton minH="min-h-[280px]" />}>
+        <ProviderQuickAccess
+          servicesCount={servicesCount}
+          providerSlug={provider?.slug ?? null}
+          providerId={provider?.id ?? null}
+          isCompanyProvider={isCompanyProvider}
+          showFullAddress={showFullAddress}
+          levelName={(profile as any)?.levelInfo?.name ?? null}
+        />
+      </Suspense>
 
-          {provider?.slug && (
-            <GlassCard variant="bordered" delay={0.7} className="cursor-pointer border-dashed" onClick={() => navigate(`/profissional/${provider.slug}`)}>
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Eye className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-foreground">Ver Minha Página</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Veja como seu perfil aparece para os clientes</p>
-                </div>
-              </div>
-            </GlassCard>
-          )}
+      {/* Onboarding Stepper — lazy: bloco visual final "Como funciona" */}
+      <Suspense fallback={<SectionSkeleton minH="min-h-[180px]" />}>
+        <ProviderOnboardingStepper
+          steps={providerSteps}
+          allStepsDone={allStepsDone}
+          open={guideOpen}
+          onToggle={() => setGuideOpen(!guideOpen)}
+        />
+      </Suspense>
 
-          {profile?.profile_type === 'provider' && (provider as any)?.account_type === 'company' && (
-            <GlassCard
-              variant="default"
-              delay={0.65}
-              className="cursor-pointer"
-              onClick={() => navigate('/dashboard/empresa')}
-              data-tour="company-data"
-            >
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
-                  <Building2 className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-foreground">
-                    Minha Empresa <span className="text-[10px] font-medium text-muted-foreground">(Opcional)</span>
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Endereço, segmento e privacidade do seu ponto físico.
-                  </p>
-                  {(provider as any)?.show_full_address ? (
-                    <span className="inline-block mt-1.5 text-[11px] font-medium text-emerald-600">
-                      Endereço público ativo
-                    </span>
-                  ) : (
-                    <span className="inline-block mt-1.5 text-[11px] font-medium text-muted-foreground">
-                      Endereço completo oculto
-                    </span>
-                  )}
-                </div>
-              </div>
-            </GlassCard>
-          )}
-
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card/60 px-4 py-3 shadow-sm">
-            <div className="min-w-0">
-              <span className="text-sm font-semibold text-foreground">Som de conquistas</span>
-              <p className="text-xs text-muted-foreground">Controla o áudio das celebrações; confetes continuam ativos.</p>
-            </div>
-            <CelebrationMuteToggle />
-          </div>
-
-          <LeadAnalytics providerId={provider?.id ?? null} />
-
-          <AchievementHistory providerSlug={provider?.slug ?? null} levelName={(profile as any)?.levelInfo?.name ?? null} />
-        </div>
-      </div>
-
-      {/* Onboarding guide — enhanced */}
-      {/* Onboarding Stepper — visual horizontal */}
-      <GlassCard variant="glow" hoverEffect={false} delay={0.8} className="mt-6 border-accent/20 bg-accent/3">
-        <button
-          onClick={() => setGuideOpen(!guideOpen)}
-          className="flex w-full items-center justify-between text-left"
-        >
-          <div className="flex items-center gap-3">
-            <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 3, repeat: Infinity }} className="text-xl">🚀</motion.div>
-            <div>
-              <h2 className="font-display text-lg font-bold text-foreground">
-                Como funciona
-                {allStepsDone && <span className="ml-2 text-xs font-normal text-accent">✓ Concluído</span>}
-              </h2>
-              <p className="mt-0.5 text-sm text-muted-foreground">
-                {allStepsDone ? 'Parabéns! Perfil completo.' : 'Siga os passos para receber clientes.'}
-              </p>
-            </div>
-          </div>
-          <motion.div animate={{ rotate: guideOpen ? 180 : 0 }} transition={{ duration: 0.3 }}>
-            <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
-          </motion.div>
-        </button>
-
-        <AnimatePresence>
-          {guideOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' as const }}
-              className="overflow-hidden"
-            >
-              {/* Horizontal stepper */}
-              <div className="mt-5 flex items-start justify-between relative px-2">
-                {/* Progress line */}
-                <div className="absolute top-4 left-8 right-8 h-0.5 bg-border rounded-full">
-                  <motion.div
-                    className="h-full bg-accent rounded-full"
-                    initial={{ width: '0%' }}
-                    animate={{ width: `${(providerSteps.filter(s => !s.hidden && s.done).length / providerSteps.filter(s => !s.hidden).length) * 100}%` }}
-                    transition={{ duration: 0.8, delay: 0.3 }}
-                  />
-                </div>
-
-                {providerSteps.filter(s => !s.hidden).map((step, i) => {
-                  const StepIcon = step.icon;
-                  return (
-                    <motion.button
-                      key={step.number}
-                      onClick={step.action}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 + i * 0.1 }}
-                      className="flex flex-col items-center gap-2 relative z-10 group flex-1"
-                    >
-                      <motion.div
-                        className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${
-                          step.done
-                            ? 'bg-accent border-accent text-accent-foreground'
-                            : 'bg-background border-border text-muted-foreground group-hover:border-accent/50'
-                        }`}
-                        whileHover={{ scale: 1.15 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {step.done ? (
-                          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-xs font-bold">✓</motion.span>
-                        ) : (
-                          <StepIcon className="h-3.5 w-3.5" />
-                        )}
-                      </motion.div>
-                      <span className={`text-[10px] font-medium text-center leading-tight max-w-[72px] ${step.done ? 'text-accent' : 'text-muted-foreground'}`}>
-                        {step.title}
-                      </span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              {/* Expandable details below */}
-              <div className="mt-4 space-y-2">
-                {providerSteps.filter(s => !s.hidden && !s.done).slice(0, 1).map((step) => (
-                  <motion.div
-                    key={step.number}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-3"
-                  >
-                    <step.icon className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xs font-bold text-foreground">{step.title}</h3>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{step.description}</p>
-                      <button onClick={step.action} className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-accent hover:underline">
-                        {step.actionLabel} <ArrowRight className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </GlassCard>
-
-      {/* Lote 4 — Frescor & Inteligência (sem duplicar widgets já exibidos acima) */}
+      {/* Lote 4 — Frescor & Inteligência */}
       {provider?.id && (
         <>
           <div className="mt-6">
@@ -1162,7 +732,7 @@ const DashboardPage = () => {
 
       <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
 
-      {/* Tour guiado de 3 passos para tier "novato" — respeita dismiss server-side */}
+      {/* Tour guiado de 3 passos para tier "novato" */}
       <DashboardTour />
       </div>
     </DashboardLayout>
