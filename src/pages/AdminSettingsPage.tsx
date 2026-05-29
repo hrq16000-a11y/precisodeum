@@ -398,26 +398,13 @@ const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
         Configure os critérios para o selo DESTAQUE, política de perfis incompletos e estilo de avatar automático.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
-        {PROFILE_RULE_KEYS.map(({ key, label, type, options }) => {
+        {PROFILE_RULE_KEYS.map(({ key, label, type }) => {
           const val = map[key];
           if (type === 'boolean') {
             return (
               <div key={key} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
                 <span className="text-sm font-medium text-foreground">{label}</span>
                 <Switch checked={val === 'true'} onCheckedChange={() => onToggle(key, val || 'false')} />
-              </div>
-            );
-          }
-          if (type === 'select' && options) {
-            return (
-              <div key={key} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
-                <span className="text-sm font-medium text-foreground flex-1">{label}</span>
-                <Select value={localValues[key] || val || ''} onValueChange={(v) => { setLocalValues(p => ({ ...p, [key]: v })); onSaveText(key, v); }}>
-                  <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                  </SelectContent>
-                </Select>
               </div>
             );
           }
@@ -439,14 +426,6 @@ const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
             </div>
           );
         })}
-      </div>
-      {/* Avatar preview */}
-      <div className="mt-4 flex items-center gap-4 rounded-lg border border-border bg-card p-3">
-        <img src={previewUrl} alt="Preview avatar" className="h-14 w-14 rounded-xl" />
-        <div>
-          <p className="text-sm font-medium text-foreground">Preview do avatar gerado</p>
-          <p className="text-xs text-muted-foreground">Estilo: <strong>{avatarStyle}</strong> — Usado quando o profissional não tem foto própria</p>
-        </div>
       </div>
       {/* Migration button */}
       <div className="mt-4 rounded-lg border border-border bg-card p-4">
