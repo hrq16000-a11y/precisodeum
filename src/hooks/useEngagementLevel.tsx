@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { resolveGamificationMultiplier, scaleGamificationPoints } from '@/lib/gamification';
 
@@ -28,7 +28,7 @@ interface EngagementState {
  * Usado pela "Esteira de Dopamina" no wizard e dashboard.
  */
 export const useEngagementLevel = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const multiplier = resolveGamificationMultiplier(useSettingValue('gamification_multiplier'));
   const [state, setState] = useState<EngagementState>({
     points: 0, currentLevel: null, nextLevel: null,
