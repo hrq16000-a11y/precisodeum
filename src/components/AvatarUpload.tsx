@@ -34,6 +34,7 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
     const [hasFailed, setHasFailed] = useState(false);
     const [attemptInfo, setAttemptInfo] = useState<{ attempt: number; max: number; reason?: string } | null>(null);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [cropFile, setCropFile] = useState<File | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
     const lastFileRef = useRef<File | null>(null);
     const queryClient = useQueryClient();
