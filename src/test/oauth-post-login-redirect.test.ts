@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { shouldHandlePostLoginRedirect } from '@/lib/onboardingAccess';
 
 /**
  * E2E-lite: redirect pós-login OAuth + recuperação após expiração de sessão.
@@ -30,6 +31,15 @@ beforeEach(() => {
 });
 
 describe('Redirect pós-login OAuth', () => {
+  it('só arma o redirect automático nas rotas de entrada do auth', () => {
+    expect(shouldHandlePostLoginRedirect('/')).toBe(true);
+    expect(shouldHandlePostLoginRedirect('/login')).toBe(true);
+    expect(shouldHandlePostLoginRedirect('/cadastro-inicial')).toBe(true);
+    expect(shouldHandlePostLoginRedirect('/dashboard')).toBe(false);
+    expect(shouldHandlePostLoginRedirect('/dashboard/perfil')).toBe(false);
+    expect(shouldHandlePostLoginRedirect('/dashboard/leads')).toBe(false);
+  });
+
   it('persiste a rota original em sessionStorage para sobreviver ao redirect do Google', () => {
     sessionStorage.setItem('auth_redirect', '/dashboard/leads/abc-123');
     expect(sessionStorage.getItem('auth_redirect')).toBe('/dashboard/leads/abc-123');
