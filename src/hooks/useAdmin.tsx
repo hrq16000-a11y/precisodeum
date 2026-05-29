@@ -20,11 +20,10 @@ export const useAdmin = () => {
     }
 
     let cancelled = false;
-    supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' })
-      .then(({ data, error }) => {
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
         if (cancelled) return;
-        // Audit-fix #1 — em erro de RPC NÃO redireciona (evita ejetar admin real
-        // por falha transitória de rede). Apenas marca não-admin se data===false.
         if (error) {
           setIsAdmin(false);
           setLoading(false);
@@ -33,12 +32,12 @@ export const useAdmin = () => {
         if (!data) navigate('/dashboard', { replace: true });
         setIsAdmin(!!data);
         setLoading(false);
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return;
         setIsAdmin(false);
         setLoading(false);
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
