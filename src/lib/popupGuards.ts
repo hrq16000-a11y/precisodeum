@@ -163,13 +163,25 @@ export function installPopupGuards(): void {
   if (installed || typeof window === 'undefined') return;
   installed = true;
 
+  // M8 · Após a 1ª interação consolidada, removemos os listeners — não há
+  // mais nada para marcar; manter listeners ativos só gera trabalho inútil
+  // em cada scroll/touch (jank / INP).
   const onAny = () => {
     markInteracted();
     markFirstVisitSeen();
+    // Após qualquer interação, os flags já estão setados em memória;
+    // desinstala para zerar custo no hot path de scroll.
+    window.removeEventListener('scroll', onAny);
+    window.removeEventListener('click', onAny);
+    window.removeEventListener('keydown', onAny);
+    window.removeEventListener('touchstart', onAny);
   };
 
-  window.addEventListener('scroll', onAny, { passive: true });
-  window.addEventListener('click', onAny, { passive: true });
-  window.addEventListener('keydown', onAny);
-  window.addEventListener('touchstart', onAny, { passive: true });
+  // Todos passivos (inclui keydown — não há preventDefault aqui).
+  const passive = { passive: true } as AddEventListenerOptions;
+  window.addEventListener('scroll', onAny, passive);
+  window.addEventListener('click', onAny, passive);
+  window.addEventListener('keydown', onAny, passive);
+  window.addEventListener('touchstart', onAny, passive);
 }
+
