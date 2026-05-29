@@ -591,3 +591,181 @@ const PlatformLimitsSection = ({ settings, onSaveText }: {
     </TooltipProvider>
   );
 };
+
+/* ====== Avatar Fallback — controle 100% admin ====== */
+const AVATAR_FALLBACK_KEYS = {
+  enabled: 'avatar_fallback_enabled',
+  mode: 'avatar_fallback_mode',
+  useServiceImage: 'avatar_fallback_use_service_image',
+  palette: 'avatar_fallback_palette',
+};
+
+const AVATAR_MODES: Array<{ value: 'portfolio' | 'initials' | 'icon'; label: string; desc: string }> = [
+  { value: 'portfolio', label: 'Portfólio / Serviço', desc: 'Usa uma imagem real do trabalho do profissional (recomendado).' },
+  { value: 'initials', label: 'Iniciais coloridas', desc: 'Mostra as iniciais do nome em um fundo da paleta abaixo.' },
+  { value: 'icon', label: 'Ícone neutro', desc: 'Silhueta padrão em um fundo da paleta abaixo.' },
+];
+
+const DEFAULT_PALETTE_CSV = '#1e3a8a,#0f766e,#7c2d12,#4338ca,#166534,#9a3412,#334155,#155e75,#854d0e,#6b21a8';
+
+const upsertSetting = async (key: string, value: string, label: string, description: string) => {
+  const { error } = await (supabase.rpc as any)('update_site_setting_audited', { p_key: key, p_value: value });
+  if (!error) return;
+  // Fallback: insert if missing
+  await (supabase.from('site_settings' as any) as any).insert({ key, value, label, description, is_public: true });
+};
+
+const AvatarFallbackSection = ({ settings, onToggle, onSaveText }: {
+  settings: any[];
+  onToggle: (key: string, currentValue: string) => Promise<void>;
+  onSaveText: (key: string, value: string) => Promise<void>;
+}) => {
+  const map = useMemo(() => {
+    const m: Record<string, string> = {};
+    settings.forEach((s: any) => { m[s.key] = s.value; });
+    return m;
+  }, [settings]);
+
+  const enabled = (map[AVATAR_FALLBACK_KEYS.enabled] ?? 'true') === 'true';
+  const useServiceImage = (map[AVATAR_FALLBACK_KEYS.useServiceImage] ?? 'true') === 'true';
+  const modeRaw = (map[AVATAR_FALLBACK_KEYS.mode] || 'portfolio') as 'portfolio' | 'initials' | 'icon';
+  const paletteCsv = map[AVATAR_FALLBACK_KEYS.palette] || DEFAULT_PALETTE_CSV;
+
+  const [localPalette, setLocalPalette] = useState(paletteCsv);
+  useEffect(() => { setLocalPalette(paletteCsv); }, [paletteCsv]);
+  const paletteChanged = localPalette.trim() !== paletteCsv.trim();
+
+  const palette = useMemo(() => (
+    localPalette.split(/[,\s]+/).map((c) => c.trim()).filter((c) => /^#?[0-9a-fA-F]{3,8}$/.test(c))
+      .map((bg) => ({ bg: bg.startsWith('#') ? bg : `#${bg}`, fg: '#ffffff' }))
+  ), [localPalette]);
+
+  // Preview: 3 amostras (Ana Silva, João Pereira, Maria Costa) com modo selecionado.
+  const samples = ['Ana Silva', 'João Pereira', 'Maria Costa', 'Carlos Souza'];
+  const previewUrls = samples.map((n) => resolveAvatarUrl({
+    name: n,
+    seed: n,
+    config: { enabled, mode: modeRaw, useServiceImage, palette },
+  }));
+
+  const handleSaveOrCreate = async (key: string, value: string, label: string, description: string) => {
+    if (map[key] === undefined) {
+      await upsertSetting(key, value, label, description);
+      toast.success('Configuração criada!');
+    } else {
+      await onSaveText(key, value);
+    }
+  };
+
+  return (
+    <div className="mt-6 rounded-xl border-2 border-accent/30 bg-accent/5 p-5">
+      <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+        <ImageIcon className="h-5 w-5 text-accent" /> Avatar — Fallback Inteligente
+      </h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        Define o que aparece como avatar quando o profissional não enviou foto própria. Todo controle é dinâmico e aplicado em tempo real.
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {/* Toggle: ativo */}
+        <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Fallback ativo</p>
+            <p className="text-xs text-muted-foreground">Quando desligado, todos os perfis sem foto usam o ícone neutro padrão.</p>
+          </div>
+          <Switch
+            checked={enabled}
+            onCheckedChange={async () => {
+              if (map[AVATAR_FALLBACK_KEYS.enabled] === undefined) {
+                await upsertSetting(AVATAR_FALLBACK_KEYS.enabled, enabled ? 'false' : 'true', 'Fallback de avatar ativo', '');
+              } else {
+                await onToggle(AVATAR_FALLBACK_KEYS.enabled, enabled ? 'true' : 'false');
+              }
+            }}
+          />
+        </div>
+
+        {/* Toggle: usar imagem do serviço */}
+        <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Usar imagem do serviço</p>
+            <p className="text-xs text-muted-foreground">Quando ativo, também aceita a capa do serviço (não só do portfólio) como fallback.</p>
+          </div>
+          <Switch
+            checked={useServiceImage}
+            onCheckedChange={async () => {
+              if (map[AVATAR_FALLBACK_KEYS.useServiceImage] === undefined) {
+                await upsertSetting(AVATAR_FALLBACK_KEYS.useServiceImage, useServiceImage ? 'false' : 'true', 'Usar imagem do serviço como avatar', '');
+              } else {
+                await onToggle(AVATAR_FALLBACK_KEYS.useServiceImage, useServiceImage ? 'true' : 'false');
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Modo */}
+      <div className="mt-3 rounded-lg border border-border bg-card p-3">
+        <p className="text-sm font-medium text-foreground mb-2">Modo do fallback</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {AVATAR_MODES.map((m) => {
+            const active = modeRaw === m.value;
+            return (
+              <button
+                type="button"
+                key={m.value}
+                onClick={() => handleSaveOrCreate(AVATAR_FALLBACK_KEYS.mode, m.value, 'Modo do fallback de avatar', m.desc)}
+                className={`text-left rounded-lg border p-3 transition-all ${active ? 'border-accent bg-accent/10 ring-2 ring-accent/30' : 'border-border bg-background hover:border-accent/50'}`}
+              >
+                <p className="text-sm font-bold text-foreground">{m.label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{m.desc}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Paleta */}
+      <div className="mt-3 rounded-lg border border-border bg-card p-3">
+        <p className="text-sm font-medium text-foreground">Paleta de cores (iniciais / ícone)</p>
+        <p className="text-[11px] text-muted-foreground mb-2">Cores HEX separadas por vírgula. A cor de cada profissional é escolhida deterministicamente pelo seu ID.</p>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {palette.map((c, i) => (
+            <span key={i} title={c.bg} className="h-6 w-6 rounded-full border border-border" style={{ backgroundColor: c.bg }} />
+          ))}
+          {palette.length === 0 && <span className="text-xs text-destructive">Paleta vazia — usando padrão.</span>}
+        </div>
+        <div className="flex gap-2">
+          <Input value={localPalette} onChange={(e) => setLocalPalette(e.target.value)} className="font-mono text-xs" />
+          {paletteChanged && (
+            <Button variant="accent" size="sm" onClick={() => handleSaveOrCreate(AVATAR_FALLBACK_KEYS.palette, localPalette, 'Paleta de cores das iniciais', 'CSV de cores HEX')}>
+              <Save className="mr-1 h-3 w-3" /> Salvar
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => setLocalPalette(DEFAULT_PALETTE_CSV)}>Restaurar padrão</Button>
+        </div>
+      </div>
+
+      {/* Preview ao vivo */}
+      <div className="mt-3 rounded-lg border border-border bg-card p-3">
+        <p className="text-sm font-medium text-foreground mb-2">Preview ao vivo</p>
+        <div className="flex flex-wrap gap-3">
+          {previewUrls.map((url, i) => (
+            <div key={i} className="flex flex-col items-center gap-1">
+              <img src={url} alt={`Preview ${samples[i]}`} className="h-16 w-16 rounded-xl border border-border" />
+              <span className="text-[10px] text-muted-foreground">{samples[i]}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-2">
+          {modeRaw === 'portfolio' && enabled
+            ? 'Modo Portfólio: profissionais sem foto verão a 1ª imagem do portfólio/serviço. Sem portfólio, caem para iniciais.'
+            : modeRaw === 'icon' || !enabled
+              ? 'Modo Ícone: silhueta neutra colorida.'
+              : 'Modo Iniciais: letras do nome em fundo colorido da paleta.'}
+        </p>
+      </div>
+    </div>
+  );
+};
+
