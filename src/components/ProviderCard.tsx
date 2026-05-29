@@ -10,6 +10,7 @@ import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
+import { useAvatarFallbackConfig } from '@/hooks/useAvatarFallbackConfig';
 import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { handleImageError, getOptimizedUrl } from '@/lib/imageResolver';
@@ -48,6 +49,7 @@ const MAX_BADGES_MOBILE = 3;
 
 const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', index = 0 }: ProviderCardProps) => {
   const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const avatarFallbackConfig = useAvatarFallbackConfig();
 
   const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
   const destaqueRequirePortfolio = useSettingValue('destaque_require_portfolio') !== 'false';
@@ -90,6 +92,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     serviceImage: provider.serviceImage,
     seed: provider.userId || provider.id,
     name: displayName,
+    config: avatarFallbackConfig,
   });
 
   // Hide repeated subtitles (avoid showing "Pedreiro" both as name + category).

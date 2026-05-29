@@ -15,6 +15,7 @@ import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import AdNativeCard from '@/components/ads/AdNativeCard';
 import { useSettingValue } from '@/hooks/useSiteSettings';
+import { useAvatarFallbackConfig } from '@/hooks/useAvatarFallbackConfig';
 import type { FeaturedProviderSort } from '@/hooks/useProviders';
 import CompanyCard from '@/components/cards/CompanyCard';
 
@@ -143,6 +144,7 @@ import {
 const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
   const impressionRef = useCardImpression(p.id, p.slug, 'featured');
   const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
+  const avatarFallbackConfig = useAvatarFallbackConfig();
   const { city: geoCity, state: geoState } = useGeoCity();
   const displayName = capitalizeName(
     resolveDisplayName({
@@ -158,6 +160,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
     serviceImage: p.serviceImage,
     seed: p.userId || p.id,
     name: displayName,
+    config: avatarFallbackConfig,
   });
   const rating = p.rating ?? 0;
   const reviewCount = p.reviewCount ?? 0;

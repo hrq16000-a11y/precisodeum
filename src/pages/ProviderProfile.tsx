@@ -66,6 +66,7 @@ import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { extractSpecialties } from '@/lib/specialtyExtractor';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useAvatarFallbackConfig } from '@/hooks/useAvatarFallbackConfig';
 import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
 import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
@@ -259,6 +260,7 @@ const ProviderProfile = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const siteSettings = useSiteSettings();
+  const avatarFallbackConfig = useAvatarFallbackConfig();
   const featureFlags = siteSettings.data?.flags ?? {};
   const settingValues = siteSettings.data?.values ?? {};
   const reviewsEnabled = featureFlags.reviews_enabled ?? false;
@@ -894,6 +896,7 @@ const ProviderProfile = () => {
           ...(portfolioRawUrls || []),
           pageSettings.cover_image_url || null,
         ],
+        config: avatarFallbackConfig,
       })
     : '';
   const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : initialsAvatar) : '';
