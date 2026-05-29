@@ -428,7 +428,7 @@ function TestimonialsCarousel() {
 
       {/* Navigation */}
       <div className="flex items-center justify-center gap-4 mt-6">
-        <Button variant="outline" size="icon" onClick={prev} className="rounded-full w-10 h-10">
+        <Button variant="outline" size="icon" onClick={prev} className="rounded-full w-10 h-10" aria-label="Depoimento anterior">
           <ChevronLeft className="w-4 h-4" />
         </Button>
 
@@ -437,14 +437,15 @@ function TestimonialsCarousel() {
             <button
               key={i}
               onClick={() => { setAutoplay(false); setCurrent(i); }}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                i === current ? 'w-8 bg-secondary' : 'w-2 bg-muted-foreground/20 hover:bg-muted-foreground/40'
+              aria-label={`Ir para depoimento ${i + 1}`}
+              className={`h-2 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                i === current ? 'w-8 bg-secondary' : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
               }`}
             />
           ))}
         </div>
 
-        <Button variant="outline" size="icon" onClick={next} className="rounded-full w-10 h-10">
+        <Button variant="outline" size="icon" onClick={next} className="rounded-full w-10 h-10" aria-label="Próximo depoimento">
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
