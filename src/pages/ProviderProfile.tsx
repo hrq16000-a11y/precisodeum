@@ -894,6 +894,7 @@ const ProviderProfile = () => {
           ...(portfolioRawUrls || []),
           pageSettings.cover_image_url || null,
         ],
+        config: avatarFallbackConfig,
       })
     : '';
   const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : initialsAvatar) : '';
