@@ -370,10 +370,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!isMounted) return;
         setSession(session);
         setUser(session?.user ?? null);
+        const shouldRefreshProfile = event === 'SIGNED_IN' || event === 'USER_UPDATED';
         if (session?.user) {
           // Background fetch — fetchProfile internamente descarta resultados
           // obsoletos via fetchGenerationRef, então múltiplos eventos rápidos
           // (SIGNED_IN → TOKEN_REFRESHED) só aplicam o último.
+          if (!shouldRefreshProfile) return;
           setTimeout(() => {
             if (!isMounted) return;
             try {
