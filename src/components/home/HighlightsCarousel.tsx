@@ -2,7 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { icons, ArrowRight } from 'lucide-react';
+// PR-A1: importar `icons` do lucide-react puxa o catálogo inteiro (~1500 SVGs)
+// e quebra o tree-shaking. Substituído por IconRenderer (resolve via
+// iconLibrary, que pina apenas ~250 ícones usados na plataforma).
+import { ArrowRight } from 'lucide-react';
+import { IconRenderer } from '@/components/ui/IconRenderer';
 import { trackEvent } from '@/lib/tracking';
 
 interface Highlight {
@@ -137,7 +141,8 @@ const HighlightsCarousel = () => {
   if (highlights.length === 0) return null;
 
   const h = highlights[current];
-  const IconComponent = h.icon ? (icons as Record<string, any>)[h.icon] : null;
+  // PR-A1: IconRenderer faz fallback seguro quando o nome não está no registry.
+  const hasIcon = !!h.icon;
   const color = h.theme_color || 'text-orange-500';
   const glowRgb = colorMap[color] || '249 115 22';
   const bgSoft = bgMap[color] || 'bg-orange-500/10';
@@ -158,12 +163,12 @@ const HighlightsCarousel = () => {
           <div className="p-6">
             <div className="flex items-center gap-3 mb-2">
               {/* Glow icon container */}
-              {IconComponent && (
+              {hasIcon && (
                 <div
                   className={`rounded-xl p-2.5 ${bgSoft} transition-shadow duration-300`}
                   style={{ boxShadow: `0 0 16px 2px rgb(${glowRgb} / 0.25)` }}
                 >
-                  <IconComponent size={20} className={color} />
+                  <IconRenderer name={h.icon} size={20} className={color} />
                 </div>
               )}
               <h3 className="font-display text-base font-bold text-foreground sm:text-lg">
