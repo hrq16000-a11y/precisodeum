@@ -1479,19 +1479,21 @@ const ProviderProfile = () => {
   };
 
   const renderServices = () => (
-    <ServicesList
-      key="services"
-      services={services}
-      whatsapp={effectiveWhatsApp}
-      providerName={name}
-      providerCity={provider.city}
-      ctaWhatsappText={pageSettings.cta_whatsapp_text}
-      accentBg={accentBg}
-      themeClasses={tc}
-      onImageClick={openServiceLightbox}
-      providerId={provider.id}
-    />
+    <Suspense fallback={<SectionSkeleton minH="min-h-64" />} key="services">
+      <ServicesSection
+        services={services}
+        whatsapp={effectiveWhatsApp}
+        providerName={name}
+        providerCity={provider.city}
+        ctaWhatsappText={pageSettings.cta_whatsapp_text}
+        accentBg={accentBg}
+        themeClasses={tc}
+        onImageClick={openServiceLightbox}
+        providerId={provider.id}
+      />
+    </Suspense>
   );
+
 
   const renderReviews = () => {
     if (!reviewsEnabled) return null;
