@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+import { buildFaqPage, buildBreadcrumbList } from '@/lib/seo-schemas';
 import { ArrowUpDown, Sparkles, Compass, Star, Award, GraduationCap, Trophy, Link2, Share2, ChevronRight, Info } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -101,37 +102,21 @@ const HelpSearchSortingPage = () => {
     canonical: `${SITE_BASE_URL}/ajuda/ordenacao-busca`,
   });
 
-  // FAQPage schema (mesmo conteúdo da UI — paridade total).
+  // FAQPage schema (mesmo conteúdo da UI — paridade total) via helper.
   useJsonLd(
-    {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: FAQ_ITEMS.map((item) => ({
-        '@type': 'Question',
-        name: item.q,
-        acceptedAnswer: { '@type': 'Answer', text: item.a },
-      })),
-    },
+    buildFaqPage(FAQ_ITEMS.map((it) => ({ question: it.q, answer: it.a }))),
     'json-ld-faq-search-sorting',
   );
 
   useJsonLd(
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_BASE_URL },
-        { '@type': 'ListItem', position: 2, name: 'Central de Ajuda', item: `${SITE_BASE_URL}/ajuda` },
-        {
-          '@type': 'ListItem',
-          position: 3,
-          name: 'Ordenação da busca',
-          item: `${SITE_BASE_URL}/ajuda/ordenacao-busca`,
-        },
-      ],
-    },
+    buildBreadcrumbList([
+      { name: 'Início', url: SITE_BASE_URL },
+      { name: 'Central de Ajuda', url: `${SITE_BASE_URL}/ajuda` },
+      { name: 'Ordenação da busca', url: `${SITE_BASE_URL}/ajuda/ordenacao-busca` },
+    ]),
     'json-ld-breadcrumb-search-sorting',
   );
+
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
