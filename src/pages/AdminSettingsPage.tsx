@@ -386,8 +386,8 @@ const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
     setLocalValues(init);
   }, [map]);
 
-  const avatarStyle = localValues['avatar_fallback_style'] || map['avatar_fallback_style'] || 'adventurer';
-  const previewUrl = `https://api.dicebear.com/9.x/${avatarStyle}/svg?seed=preview123`;
+
+
 
   return (
     <div className="mt-6 rounded-xl border-2 border-primary/30 bg-primary/5 p-5">
