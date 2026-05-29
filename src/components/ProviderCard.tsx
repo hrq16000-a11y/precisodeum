@@ -90,6 +90,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     serviceImage: provider.serviceImage,
     seed: provider.userId || provider.id,
     name: displayName,
+    config: avatarFallbackConfig,
   });
 
   // Hide repeated subtitles (avoid showing "Pedreiro" both as name + category).
