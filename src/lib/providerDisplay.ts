@@ -84,6 +84,19 @@ export function resolveDisplayName(input: ResolveDisplayNameInput): string {
   return input.city ? `Profissional em ${input.city}` : 'Profissional';
 }
 
+export type AvatarFallbackMode = 'portfolio' | 'initials' | 'icon';
+
+export interface AvatarFallbackConfigInput {
+  /** Master switch. When false, skips portfolio pool and goes straight to initials/icon. */
+  enabled?: boolean;
+  /** Visual strategy when no real avatar exists. Default: 'portfolio'. */
+  mode?: AvatarFallbackMode;
+  /** When false, the legacy single `serviceImage` is ignored in the pool. */
+  useServiceImage?: boolean;
+  /** Override the initials palette (admin-configurable). */
+  palette?: Array<{ bg: string; fg: string }>;
+}
+
 export interface ResolveAvatarInput {
   profileAvatarUrl?: string | null;
   providerPhotoUrl?: string | null;
@@ -97,6 +110,8 @@ export interface ResolveAvatarInput {
   seed?: string | null;
   /** Display name — used to derive initials for the professional fallback. */
   name?: string | null;
+  /** Admin-controlled fallback configuration (from site_settings). */
+  config?: AvatarFallbackConfigInput;
   /** @deprecated kept for backward-compat; no longer used (DiceBear removed). */
   fallbackStyle?: string;
 }
@@ -145,13 +160,31 @@ const isLikelyImage = (u?: string | null): u is string => {
   return true;
 };
 
+function buildInitialsAvatar(name: string | null | undefined, seedStr: string, palette: Array<{ bg: string; fg: string }>): string {
+  const pal = palette.length > 0 ? palette : INITIALS_PALETTE;
+  const color = pal[hashString(seedStr) % pal.length];
+  const initials = extractInitials(name, seedStr);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="${color.bg}"/><text x="50%" y="50%" dy=".1em" text-anchor="middle" dominant-baseline="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" font-size="88" font-weight="600" fill="${color.fg}" letter-spacing="-2">${initials}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function buildIconAvatar(seedStr: string, palette: Array<{ bg: string; fg: string }>): string {
+  const pal = palette.length > 0 ? palette : INITIALS_PALETTE;
+  const color = pal[hashString(seedStr) % pal.length];
+  // Neutral user silhouette on a colored circle.
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="${color.bg}"/><circle cx="100" cy="82" r="32" fill="${color.fg}" opacity="0.85"/><path d="M40 180c0-33 27-58 60-58s60 25 60 58" fill="${color.fg}" opacity="0.85"/></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 /**
  * Resolution priority for avatar:
  *  1. public_profiles.avatar_url (real selfie / official photo)
  *  2. providers.photo_url (uploaded by provider)
- *  3. A deterministically-picked image from portfolioImages / serviceImage
- *     (random-feeling but stable per provider)
- *  4. Professional initials SVG (deterministic color from seed)
+ *  3. (when enabled & mode='portfolio') deterministic pick from portfolio/service pool
+ *  4. Configured generated fallback (initials | icon).
+ *
+ * All steps after #2 are governed by `input.config` so the admin panel can
+ * fully control the visual strategy without touching code.
  */
 export function resolveAvatarUrl(input: ResolveAvatarInput): string {
   const profile = (input.profileAvatarUrl || '').trim();
@@ -159,27 +192,32 @@ export function resolveAvatarUrl(input: ResolveAvatarInput): string {
   const photo = (input.providerPhotoUrl || '').trim();
   if (photo) return photo;
 
+  const cfg = input.config || {};
+  const enabled = cfg.enabled !== false;
+  const mode: AvatarFallbackMode = cfg.mode || 'portfolio';
+  const useServiceImage = cfg.useServiceImage !== false;
+  const palette = cfg.palette && cfg.palette.length > 0 ? cfg.palette : INITIALS_PALETTE;
+
   const seedStr = String(input.seed || input.name || 'profissional');
 
-  // Build pool: explicit portfolio array first, then the legacy single serviceImage.
-  const pool: string[] = [];
-  if (Array.isArray(input.portfolioImages)) {
-    for (const u of input.portfolioImages) if (isLikelyImage(u)) pool.push(u as string);
+  if (enabled && mode === 'portfolio') {
+    const pool: string[] = [];
+    if (Array.isArray(input.portfolioImages)) {
+      for (const u of input.portfolioImages) if (isLikelyImage(u)) pool.push(u as string);
+    }
+    if (useServiceImage && isLikelyImage(input.serviceImage)) pool.push(input.serviceImage as string);
+    if (pool.length > 0) {
+      const idx = hashString(seedStr) % pool.length;
+      return pool[idx];
+    }
+    // No portfolio available — fall through to initials.
+    return buildInitialsAvatar(input.name, seedStr, palette);
   }
-  if (isLikelyImage(input.serviceImage)) pool.push(input.serviceImage as string);
 
-  if (pool.length > 0) {
-    // Deterministic pick: same provider always sees the same fallback image,
-    // but different providers get different ones — "random-feeling" in feeds.
-    const idx = hashString(seedStr) % pool.length;
-    return pool[idx];
-  }
-
-  const palette = INITIALS_PALETTE[hashString(seedStr) % INITIALS_PALETTE.length];
-  const initials = extractInitials(input.name, seedStr);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="${palette.bg}"/><text x="50%" y="50%" dy=".1em" text-anchor="middle" dominant-baseline="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" font-size="88" font-weight="600" fill="${palette.fg}" letter-spacing="-2">${initials}</text></svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  if (mode === 'icon') return buildIconAvatar(seedStr, palette);
+  return buildInitialsAvatar(input.name, seedStr, palette);
 }
+
 
 
 /** True when avatar comes from the user (not generated). Useful for badges. */
