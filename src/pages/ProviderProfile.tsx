@@ -41,6 +41,11 @@ const ImageLightbox = lazy(() => importWithRetry(() => import('@/components/Imag
 const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 const SponsorAdSlot = lazy(() => importWithRetry(() => import('@/components/ads/SponsorAdSlot')));
 const SeoEnhancementSection = lazy(() => importWithRetry(() => import('@/components/seo/SeoEnhancementSection')));
+// ── Code-split A7: heavy below-the-fold sections extracted to dedicated chunks
+const ServicesSection = lazy(() => importWithRetry(() => import('@/pages/provider-profile/sections/ServicesSection')));
+const RelatedProvidersSection = lazy(() => importWithRetry(() => import('@/pages/provider-profile/sections/RelatedProvidersSection')));
+import { SectionSkeleton } from '@/pages/provider-profile/sections/_skeleton';
+import { THEME_CLASSES, type ThemeConfig } from '@/pages/provider-profile/sections/theme';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
