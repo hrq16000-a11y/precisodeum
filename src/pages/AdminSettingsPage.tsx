@@ -639,8 +639,9 @@ const AvatarFallbackSection = ({ settings, onToggle, onSaveText }: {
 
   const enabled = (map[AVATAR_FALLBACK_KEYS.enabled] ?? 'true') === 'true';
   const useServiceImage = (map[AVATAR_FALLBACK_KEYS.useServiceImage] ?? 'true') === 'true';
-  const modeRaw = (map[AVATAR_FALLBACK_KEYS.mode] || 'portfolio') as 'portfolio' | 'initials' | 'icon';
+  const modeRaw = (map[AVATAR_FALLBACK_KEYS.mode] || 'portfolio') as 'portfolio' | 'initials' | 'icon' | 'boring';
   const paletteCsv = map[AVATAR_FALLBACK_KEYS.palette] || DEFAULT_PALETTE_CSV;
+  const boringVariant = (map[AVATAR_FALLBACK_KEYS.boringVariant] || 'marble') as 'marble' | 'beam' | 'pixel' | 'sunset' | 'ring' | 'bauhaus';
 
   const [localPalette, setLocalPalette] = useState(paletteCsv);
   useEffect(() => { setLocalPalette(paletteCsv); }, [paletteCsv]);
@@ -651,12 +652,12 @@ const AvatarFallbackSection = ({ settings, onToggle, onSaveText }: {
       .map((bg) => ({ bg: bg.startsWith('#') ? bg : `#${bg}`, fg: '#ffffff' }))
   ), [localPalette]);
 
-  // Preview: 3 amostras (Ana Silva, João Pereira, Maria Costa) com modo selecionado.
+  // Preview: 4 amostras (Ana Silva, João Pereira, Maria Costa, Carlos Souza).
   const samples = ['Ana Silva', 'João Pereira', 'Maria Costa', 'Carlos Souza'];
   const previewUrls = samples.map((n) => resolveAvatarUrl({
     name: n,
     seed: n,
-    config: { enabled, mode: modeRaw, useServiceImage, palette },
+    config: { enabled, mode: modeRaw, useServiceImage, palette, boringVariant },
   }));
 
   const handleSaveOrCreate = async (key: string, value: string, label: string, description: string) => {
