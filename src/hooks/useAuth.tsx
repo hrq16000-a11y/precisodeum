@@ -179,14 +179,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         }
+        const providerRows = Array.isArray(pvRows) ? (pvRows as any[]) : [];
         let derivedAccountType: string | null = null;
         let derivedPrimaryCategoryId: string | null = null;
-        if (Array.isArray(pvRows) && pvRows.length > 0) {
+        if (providerRows.length > 0) {
           derivedAccountType = String(
-            pvRows.find((row: any) => row?.account_type)?.account_type ?? pvRows[0]?.account_type ?? '',
+            providerRows.find((row: any) => row?.account_type)?.account_type ?? providerRows[0]?.account_type ?? '',
           ).trim() || null;
           derivedPrimaryCategoryId = String(
-            pvRows.find((row: any) => row?.category_id)?.category_id ?? pvRows[0]?.category_id ?? '',
+            providerRows.find((row: any) => row?.category_id)?.category_id ?? providerRows[0]?.category_id ?? '',
           ).trim() || null;
         }
         profileData = pData && typeof pData === 'object'
@@ -196,7 +197,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               primary_category_id: (pData as any)?.primary_category_id ?? derivedPrimaryCategoryId,
             }
           : pData;
-        providerRows = pvRows;
+        providerRows = providerRows;
         if (profileData) break;
       } catch (err: any) {
         lastErrorMessage = err?.message ?? String(err);
