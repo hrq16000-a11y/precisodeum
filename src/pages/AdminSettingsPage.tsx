@@ -793,11 +793,15 @@ const AvatarFallbackSection = ({ settings, onToggle, onSaveText }: {
           ))}
         </div>
         <p className="text-[11px] text-muted-foreground mt-2">
-          {modeRaw === 'portfolio' && enabled
-            ? 'Modo Portfólio: profissionais sem foto verão a 1ª imagem do portfólio/serviço. Sem portfólio, caem para iniciais.'
-            : modeRaw === 'icon' || !enabled
-              ? 'Modo Ícone: silhueta neutra colorida.'
-              : 'Modo Iniciais: letras do nome em fundo colorido da paleta.'}
+          {!enabled
+            ? 'Fallback desligado: todos os perfis sem foto usam iniciais simples.'
+            : modeRaw === 'portfolio'
+              ? 'Modo Portfólio: profissionais sem foto verão a 1ª imagem do portfólio/serviço. Sem portfólio, caem para iniciais.'
+              : modeRaw === 'boring'
+                ? `Modo Geométrico: padrão "${boringVariant}" único por profissional usando as cores da paleta.`
+                : modeRaw === 'icon'
+                  ? 'Modo Ícone: silhueta neutra colorida.'
+                  : 'Modo Iniciais: letras do nome em fundo colorido da paleta.'}
         </p>
       </div>
     </div>
