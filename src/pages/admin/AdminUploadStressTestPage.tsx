@@ -48,7 +48,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
-import jsPDF from 'jspdf';
+import type jsPDFType from 'jspdf';
 import {
   BarChart,
   Bar,
@@ -341,10 +341,11 @@ export default function AdminUploadStressTestPage() {
     }
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     setExporting(true);
     try {
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      const { default: jsPDF } = await import('jspdf');
+      const doc: jsPDFType = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
       const margin = 36;
       let y = margin;
 
