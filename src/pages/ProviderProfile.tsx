@@ -260,6 +260,7 @@ const ProviderProfile = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const siteSettings = useSiteSettings();
+  const avatarFallbackConfig = useAvatarFallbackConfig();
   const featureFlags = siteSettings.data?.flags ?? {};
   const settingValues = siteSettings.data?.values ?? {};
   const reviewsEnabled = featureFlags.reviews_enabled ?? false;
