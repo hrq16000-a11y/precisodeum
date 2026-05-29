@@ -41,6 +41,11 @@ const ImageLightbox = lazy(() => importWithRetry(() => import('@/components/Imag
 const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
 const SponsorAdSlot = lazy(() => importWithRetry(() => import('@/components/ads/SponsorAdSlot')));
 const SeoEnhancementSection = lazy(() => importWithRetry(() => import('@/components/seo/SeoEnhancementSection')));
+// ── Code-split A7: heavy below-the-fold sections extracted to dedicated chunks
+const ServicesSection = lazy(() => importWithRetry(() => import('@/pages/provider-profile/sections/ServicesSection')));
+const RelatedProvidersSection = lazy(() => importWithRetry(() => import('@/pages/provider-profile/sections/RelatedProvidersSection')));
+import { SectionSkeleton } from '@/pages/provider-profile/sections/_skeleton';
+import { THEME_CLASSES, type ThemeConfig } from '@/pages/provider-profile/sections/theme';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -164,19 +169,6 @@ const DEFAULT_SETTINGS: PageSettings = {
   theme: 'default',
 };
 
-interface ThemeConfig {
-  card: string;
-  section: string;
-  page: string;
-  heading: string;
-  button: string;
-  buttonOutline: string;
-  fontBody: string;
-  fontHeading: string;
-  badge: string;
-  input: string;
-}
-
 interface PortfolioAlbum {
   id: string;
   name: string;
@@ -212,56 +204,6 @@ export const invalidateProviderProfileCache = (slug?: string) => {
   }
 };
 
-const THEME_CLASSES: Record<string, ThemeConfig> = {
-  default: {
-    card: 'rounded-xl border border-border bg-card shadow-card',
-    section: 'rounded-xl border border-border bg-card p-6 shadow-card',
-    page: '',
-    heading: 'font-display',
-    button: 'rounded-md',
-    buttonOutline: 'rounded-md border border-input',
-    fontBody: 'font-sans',
-    fontHeading: "font-['Plus_Jakarta_Sans']",
-    badge: 'rounded-full',
-    input: 'rounded-md border border-input',
-  },
-  moderno: {
-    card: 'rounded-2xl border-0 bg-gradient-to-br from-card to-accent/5 shadow-lg',
-    section: 'rounded-2xl border-0 bg-gradient-to-br from-card to-accent/5 p-6 shadow-lg',
-    page: 'bg-gradient-to-b from-background to-accent/5',
-    heading: "font-['Space_Grotesk'] tracking-tight",
-    button: 'rounded-xl shadow-lg',
-    buttonOutline: 'rounded-xl border-2 border-primary/20',
-    fontBody: "font-['DM_Sans']",
-    fontHeading: "font-['Space_Grotesk']",
-    badge: 'rounded-xl',
-    input: 'rounded-xl border-0 bg-muted/50 shadow-inner',
-  },
-  classico: {
-    card: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 shadow-sm',
-    section: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 p-6 shadow-sm',
-    page: 'bg-amber-50/20',
-    heading: "font-['Playfair_Display'] italic",
-    button: 'rounded-lg border-2',
-    buttonOutline: 'rounded-lg border-2 border-amber-300/60',
-    fontBody: "font-['DM_Sans']",
-    fontHeading: "font-['Playfair_Display']",
-    badge: 'rounded-lg border border-amber-200/60',
-    input: 'rounded-lg border-2 border-amber-200/40',
-  },
-  minimalista: {
-    card: 'rounded-none border-0 border-b border-border/30 bg-transparent shadow-none',
-    section: 'rounded-none border-0 border-b border-border/30 bg-transparent p-6 shadow-none',
-    page: 'bg-background',
-    heading: "font-['Space_Grotesk'] font-light tracking-[0.2em] uppercase text-sm",
-    button: 'rounded-none border-b-2 border-foreground bg-transparent text-foreground shadow-none hover:bg-foreground hover:text-background',
-    buttonOutline: 'rounded-none border-b border-border/50',
-    fontBody: "font-['DM_Sans'] font-light",
-    fontHeading: "font-['Space_Grotesk']",
-    badge: 'rounded-none border-b border-border/30',
-    input: 'rounded-none border-0 border-b border-border/50 bg-transparent',
-  },
-};
 
 /* ── Animated Counter ── */
 const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
@@ -1537,19 +1479,21 @@ const ProviderProfile = () => {
   };
 
   const renderServices = () => (
-    <ServicesList
-      key="services"
-      services={services}
-      whatsapp={effectiveWhatsApp}
-      providerName={name}
-      providerCity={provider.city}
-      ctaWhatsappText={pageSettings.cta_whatsapp_text}
-      accentBg={accentBg}
-      themeClasses={tc}
-      onImageClick={openServiceLightbox}
-      providerId={provider.id}
-    />
+    <Suspense fallback={<SectionSkeleton minH="min-h-64" />} key="services">
+      <ServicesSection
+        services={services}
+        whatsapp={effectiveWhatsApp}
+        providerName={name}
+        providerCity={provider.city}
+        ctaWhatsappText={pageSettings.cta_whatsapp_text}
+        accentBg={accentBg}
+        themeClasses={tc}
+        onImageClick={openServiceLightbox}
+        providerId={provider.id}
+      />
+    </Suspense>
   );
+
 
   const renderReviews = () => {
     if (!reviewsEnabled) return null;
@@ -2069,89 +2013,18 @@ const ProviderProfile = () => {
             <TestimonialsCarousel reviews={reviews} />
           )}
 
-          {/* ── Related Providers ── */}
+          {/* ── Related Providers (lazy chunk) ── */}
           {relatedProviders.length > 0 && (
-            <motion.div className="mt-8" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
-              <div className="flex items-center gap-2 mb-5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
-                  <Users className="h-4 w-4 text-accent" />
-                </div>
-                <div>
-                  <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>
-                    {category ? `Outros profissionais de ${category}` : 'Profissionais Relacionados'}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">Veja mais opções na mesma área</p>
-                </div>
-              </div>
-              <motion.div className="grid grid-cols-2 gap-3 sm:grid-cols-3" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                {relatedProviders.map((rp: any) => {
-                  const rpName = rp.profiles?.full_name || rp.business_name || 'Profissional';
-                  const rpInitials = rpName.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
-                  const rpAvatar = avatarLarge(rp.profiles?.avatar_url || rp.photo_url);
-                  const rpCategory = (rp.categories as any)?.name || '';
-                  const rpCatIcon = (rp.categories as any)?.icon || '';
-                  return (
-                    <motion.div key={rp.id} variants={scaleIn} whileHover={{ y: -6 }} transition={{ duration: 0.25 }}>
-                      <Link
-                        to={`/profissional/${rp.slug}`}
-                        className={`group block p-4 transition-all hover:shadow-xl hover:border-accent/30 ${tc.card} relative overflow-hidden`}
-                      >
-                        {/* Subtle gradient on hover */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                        <div className="relative flex flex-col items-center text-center gap-2.5">
-                          <div className="relative">
-                            <Avatar className="h-16 w-16 rounded-xl ring-2 ring-border group-hover:ring-accent/30 transition-all shadow-md">
-                              <AvatarImage src={rpAvatar || undefined} alt={rpName} className="rounded-xl" />
-                              <AvatarFallback className="rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 border border-white/10 shadow-inner">
-                                <UserRound className="w-1/2 h-1/2 text-slate-300" />
-                              </AvatarFallback>
-                            </Avatar>
-                          </div>
-                          <div className="min-w-0 w-full">
-                            <p className="text-sm font-semibold text-foreground truncate">{rpName}</p>
-                            {rpCategory && (
-                              <p className="text-[11px] text-accent truncate flex items-center justify-center gap-0.5">
-                                <CategoryIcon icon={rpCatIcon} size={12} className="text-accent" /> {rpCategory}
-                              </p>
-                            )}
-                            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                              <MapPin className="inline h-3 w-3 mr-0.5" />{formatCityState(rp.city, rp.state)}
-                            </p>
-                            {rp.rating_avg > 0 && (
-                              <div className="flex items-center justify-center gap-1 mt-1.5">
-                                <Star className="h-3.5 w-3.5 fill-accent text-accent" />
-                                <span className="text-xs font-semibold text-foreground">{Number(rp.rating_avg).toFixed(1)}</span>
-                                {rp.review_count > 0 && (
-                                  <span className="text-[10px] text-muted-foreground">({rp.review_count})</span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-accent font-medium flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            Ver perfil <ArrowRight className="h-3 w-3" />
-                          </span>
-                        </div>
-                      </Link>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-
-              {/* Link to full category */}
-              {categorySlug && (
-                <motion.div className="mt-4 text-center" variants={fadeUp}>
-                  <Link
-                    to={`/categoria/${categorySlug}`}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
-                  >
-                    Ver todos os profissionais de {category}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </motion.div>
-              )}
-            </motion.div>
+            <Suspense fallback={<SectionSkeleton minH="min-h-72" />}>
+              <RelatedProvidersSection
+                relatedProviders={relatedProviders}
+                category={category}
+                categorySlug={categorySlug || undefined}
+                themeClasses={tc}
+              />
+            </Suspense>
           )}
+
 
           <Suspense fallback={null}><AdSlot slotSlug="profile-before-whatsapp" category={category} city={provider.city} state={provider.state} /></Suspense>
           <Suspense fallback={null}><AdSlot slotSlug="profile-footer" category={category} city={provider.city} state={provider.state} /></Suspense>
@@ -2468,184 +2341,10 @@ const ProviderProfile = () => {
   );
 };
 
-/* ── Service Detail Dialog ── */
-const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText, accentBg, onImageClick, providerId }: { service: any; open: boolean; onClose: () => void; whatsapp: string; ctaWhatsappText?: string; accentBg?: string; onImageClick?: (images: string[], index: number) => void; providerId?: string }) => (
-  <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-      <DialogHeader>
-        <DialogTitle className="text-lg font-bold">{service.service_name}</DialogTitle>
-      </DialogHeader>
-      {service.serviceImages?.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 md:grid md:grid-cols-2 md:overflow-visible md:snap-none" style={{ touchAction: 'pan-x' }}>
-          {service.serviceImages.map((img: any, idx: number) => (
-            <motion.div
-              key={img.id}
-              className="aspect-[4/3] min-w-[75%] flex-shrink-0 snap-center cursor-pointer overflow-hidden rounded-lg border border-border md:min-w-0"
-              onClick={() => onImageClick?.(service.serviceImages.map((i: any) => i.image_url), idx)}
-              whileHover={{ scale: 1.03 }}
-            >
-              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
-            </motion.div>
-          ))}
-        </div>
-      )}
-      {service.serviceCategories?.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {service.serviceCategories.map((cat: any, i: number) => (
-            <span key={i} className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
-              <CategoryIcon icon={cat.icon} size={12} className="text-accent" /> {cat.name}
-            </span>
-          ))}
-        </div>
-      )}
-      {service.description && <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>}
-      {/* Social links for service */}
-      {(service.instagram_url || service.facebook_url || service.youtube_url) && (
-        <div className="flex items-center gap-2">
-          {service.instagram_url && (
-            <a href={service.instagram_url} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all">
-              <Instagram className="h-4 w-4" />
-            </a>
-          )}
-          {service.facebook_url && (
-            <a href={service.facebook_url} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all">
-              <Facebook className="h-4 w-4" />
-            </a>
-          )}
-          {service.youtube_url && (
-            <a href={service.youtube_url} target="_blank" rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all">
-              <Youtube className="h-4 w-4" />
-            </a>
-          )}
-        </div>
-      )}
-      {/* YouTube embed */}
-      {service.youtube_url && isYouTubeUrl(service.youtube_url) && (
-        <div className="aspect-video rounded-lg overflow-hidden border border-border">
-          <iframe
-            src={getYouTubeEmbedUrl(service.youtube_url)}
-            title="YouTube video"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-          />
-        </div>
-      )}
-      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-        {service.price && <span className="inline-flex items-center gap-1 font-semibold text-foreground"><DollarSign className="h-3.5 w-3.5 text-accent" /> {service.price}</span>}
-        {service.service_area && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-accent" /> {formatLocationString(service.service_area)}</span>}
-        {service.working_hours && <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-accent" /> {service.working_hours}</span>}
-      </div>
-      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-        <Button variant="accent" className="w-full gap-2" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-          <a href={whatsappLink(whatsapp || '', `Olá! Vi o serviço "${service.service_name}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer" onClick={() => providerId && trackContactClick(providerId, 'whatsapp', window.location.pathname, service.service_name, 'servico')}>
-            <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
-          </a>
-        </Button>
-      </motion.div>
-    </DialogContent>
-  </Dialog>
-);
+/* ServicesList + ServiceDetailDialog foram extraídos para
+ * `src/pages/provider-profile/sections/ServicesSection.tsx` (lazy chunk). */
 
-/* ── Services List with popup ── */
-const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg, themeClasses, onImageClick, providerId }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string; themeClasses?: ThemeConfig; onImageClick?: (images: string[], index: number) => void; providerId?: string }) => {
-  const [selected, setSelected] = useState<any | null>(null);
-  const tc = themeClasses || THEME_CLASSES.default;
 
-  return (
-    <>
-      <motion.div className={`mt-6 ${tc.section} overflow-hidden`} variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.4 } } }} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
-            <Briefcase className="h-4 w-4 text-accent" />
-          </div>
-          <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Serviços oferecidos</h2>
-          {services.length > 0 && (
-            <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">
-              {services.length} {services.length === 1 ? 'serviço' : 'serviços'}
-            </span>
-          )}
-        </div>
-        <div className="mt-4 space-y-3">
-          {services.map((s: any, idx: number) => (
-            <motion.button
-              key={s.id}
-              onClick={() => setSelected(s)}
-              className="w-full text-left rounded-xl border border-border p-4 transition-all hover:border-accent/30 hover:shadow-md group"
-              initial={{ opacity: 0, x: -16 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.08, duration: 0.4 }}
-              whileHover={{ x: 4 }}
-            >
-              <div className="flex gap-3">
-                {s.serviceImages?.length > 0 && (
-                  <div className="shrink-0 h-20 w-20 overflow-hidden rounded-lg border border-border shadow-sm">
-                    <img
-                      src={serviceImageThumb(s.serviceImages[0].image_url)}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                      onError={handleImageError}
-                    />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">{s.service_name}</h3>
-                  {s.serviceCategories?.length > 0 && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {s.serviceCategories.map((cat: any, i: number) => (
-                        <span key={i} className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
-                          <CategoryIcon icon={cat.icon} size={10} className="text-accent" /> {cat.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {s.description && <p className="mt-1 line-clamp-2 text-xs text-foreground/70">{s.description}</p>}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    {s.price && <span className="inline-flex items-center gap-0.5 font-medium text-foreground"><DollarSign className="h-3 w-3 text-accent" /> {s.price}</span>}
-                    {s.service_area && <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3 text-accent" /> {formatLocationString(s.service_area)}</span>}
-                    {(s.instagram_url || s.facebook_url || s.youtube_url) && (
-                      <span className="flex items-center gap-1">
-                        {s.instagram_url && <Instagram className="h-3 w-3 text-accent" />}
-                        {s.facebook_url && <Facebook className="h-3 w-3 text-accent" />}
-                        {s.youtube_url && <Youtube className="h-3 w-3 text-accent" />}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity self-center shrink-0" />
-              </div>
-              {s.serviceImages?.length > 1 && (
-                <div className="mt-2 flex gap-1.5 overflow-hidden pl-[calc(5rem+0.75rem)]">
-                  {s.serviceImages.slice(1, 4).map((img: any) => (
-                    <div key={img.id} className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border">
-                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
-                    </div>
-                  ))}
-                  {s.serviceImages.length > 4 && (
-                    <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-muted text-[10px] font-medium text-muted-foreground">+{s.serviceImages.length - 4}</span>
-                  )}
-                </div>
-              )}
-            </motion.button>
-          ))}
-          {services.length === 0 && (
-            <div className="text-center py-6 space-y-2">
-              <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                <Briefcase className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado.</p>
-            </div>
-          )}
-        </div>
-      </motion.div>
-      {selected && (
-        <ServiceDetailDialog service={selected} open={!!selected} onClose={() => setSelected(null)} whatsapp={whatsapp} ctaWhatsappText={ctaWhatsappText} accentBg={accentBg} onImageClick={onImageClick} providerId={providerId} />
-      )}
-    </>
-  );
-};
 
 const ProviderProfileWithGuard = () => (
   <ErrorGuard componentName="ProviderProfile" fallbackRoute="/ajuda">
