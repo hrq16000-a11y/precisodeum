@@ -144,6 +144,7 @@ import {
 const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }: { provider: DbProvider }) {
   const impressionRef = useCardImpression(p.id, p.slug, 'featured');
   const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
+  const avatarFallbackConfig = useAvatarFallbackConfig();
   const { city: geoCity, state: geoState } = useGeoCity();
   const displayName = capitalizeName(
     resolveDisplayName({
@@ -159,6 +160,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
     serviceImage: p.serviceImage,
     seed: p.userId || p.id,
     name: displayName,
+    config: avatarFallbackConfig,
   });
   const rating = p.rating ?? 0;
   const reviewCount = p.reviewCount ?? 0;
