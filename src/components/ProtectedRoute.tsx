@@ -67,4 +67,34 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
   return <>{children}</>;
 };
 
+/**
+ * Audit-fix #8 — fallback com timeout para evitar spinner infinito quando
+ * o trigger handle_new_user falha ou demora demais a criar o profile.
+ * Após 6s, redireciona para /cadastro-inicial para o usuário não ficar preso.
+ */
+const ProfileLoadingFallback = () => {
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setTimedOut(true), 6000);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  if (timedOut) {
+    return <Navigate to="/cadastro-inicial" replace />;
+  }
+
+  return (
+    <div
+      className="flex min-h-screen items-center justify-center"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
+      <span className="sr-only">Carregando perfil</span>
+    </div>
+  );
+};
+
 export default ProtectedRoute;
+
