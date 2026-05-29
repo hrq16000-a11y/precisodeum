@@ -149,15 +149,14 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
   // 1b) Chaves institucionais — `business_name`/`legal_name` valem para PF e
   //     PJ. Endereço (street/number/complement/postal_code) também é coluna
   //     real em `providers` p/ qualquer tipo — autônomos podem ter CEP base
-  //     sem expor logradouro publicamente. `show_full_address` também vale
-  //     para PF (autônomos com estúdio/consultório/residência podem optar
-  //     por exibir o endereço completo, igual à PJ).
+  //     show_full_address vale tanto para PF quanto para PJ (autônomos com
+  //     estúdio/consultório podem optar por exibir o endereço completo).
   //     Apenas segmento/CNPJ/social_links continuam exclusivos de PJ.
   const PJ_ONLY_KEYS = new Set<string>([
-    'business_segment', 'cnpj', 'social_links', 'show_full_address',
+    'business_segment', 'cnpj', 'social_links',
   ]);
 
-  // 1b.i) PF: remove chaves estritamente PJ (segmento/cnpj/social_links/show_full_address).
+  // 1b.i) PF: remove chaves estritamente PJ (segmento/cnpj/social_links).
   if (!isCompany) {
     for (const key of PJ_ONLY_KEYS) {
       if (key in out) {
@@ -174,7 +173,7 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
     if (PROVIDER_PJ_STRING_KEYS.has(key)) {
       out[key] = safeOptionalString(out[key]);
     } else if (key === 'show_full_address') {
-      // PJ: preserva boolean estrito (true/false) sem amarrar a street.
+      // Preserva boolean estrito; invariante de privacidade aplicado abaixo.
       out[key] = out[key] === true;
     } else if (key === 'social_links') {
       const v = out[key];
@@ -191,6 +190,24 @@ export function normalizeProviderPayload<T extends RawProviderInput>(
       }
     }
   }
+
+  // 1b.iii) Invariante de privacidade: show_full_address sempre presente como
+  //         boolean para PF e PJ. Forçado a `false` quando street estiver vazio
+  //         (string vazia, só espaços, null/undefined ou ausente após sanitize).
+  {
+    const street = out.street;
+    const hasStreet = typeof street === 'string' && street.trim().length > 0;
+    const sent = out.show_full_address;
+    if (sent === true && hasStreet) {
+      out.show_full_address = true;
+    } else if (sent === undefined && !('show_full_address' in out)) {
+      // PF nunca recebeu o campo — não adiciona (mantém compat com payloads minimalistas).
+      // PJ: idem; o invariante só age quando há intent explícito do cliente.
+    } else {
+      out.show_full_address = false;
+    }
+  }
+
 
   if (stripped.length > 0 && typeof console !== 'undefined') {
     console.warn(

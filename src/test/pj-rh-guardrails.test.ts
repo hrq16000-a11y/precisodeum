@@ -48,8 +48,11 @@ describe('PJ × RH guardrails', () => {
     expect((out as any).street).toBe('Rua A');
     expect((out as any).street_number).toBe('10');
     expect((out as any).postal_code).toBe('50000-000');
-    // show_full_address é PJ-only — removido em PF (alinhado a provider-payload-pj-social-links).
-    expect((out as any).show_full_address).toBeUndefined();
+    // show_full_address agora é coluna válida em PF (invariante de privacidade
+    // alinhado a wizard-show-full-address-invariant): preservado como boolean
+    // com street presente → true.
+    expect((out as any).show_full_address).toBe(true);
+
     warn.mockRestore();
   });
 

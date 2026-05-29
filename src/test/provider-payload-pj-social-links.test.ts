@@ -50,22 +50,24 @@ describe('normalizeProviderPayload — PJ social_links & institucionais', () => 
     expect(safeOptionalString(null)).toBeNull();
   });
 
-  it('preserva show_full_address quando account_type=company (PJ)', () => {
+  it('PJ: força show_full_address=false quando não há street (invariante de privacidade)', () => {
     const out = normalizeProviderPayload({
       account_type: 'company',
       show_full_address: true,
     } as any);
-    expect(out.show_full_address).toBe(true);
+    // Mesmo enviando true, sem street o invariante força false.
+    expect(out.show_full_address).toBe(false);
   });
 
-  it('descarta show_full_address quando account_type não é company (PF)', () => {
+  it('PF: aplica o mesmo invariante (show_full_address=false sem street)', () => {
     const out = normalizeProviderPayload({
       account_type: 'autonomo',
       show_full_address: true,
     } as any);
-    // PF não tem essa coluna no schema institucional → removida silenciosamente
-    expect((out as any).show_full_address).toBeUndefined();
+    // show_full_address agora é coluna válida para PF também; sem street → false.
+    expect((out as any).show_full_address).toBe(false);
   });
+
 
   it('PJ: social_links só com chaves vazias é normalizado para null', () => {
     const out = normalizeProviderPayload({
