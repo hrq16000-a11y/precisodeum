@@ -4,7 +4,7 @@
  * via RPC `get_app_version_config` para forçar/sugerir atualizações sem novo
  * deploy do código (Remote Config "estilo Mercado Livre").
  */
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
 
 /**
  * Identificador único do build atual — injetado pelo Vite via
