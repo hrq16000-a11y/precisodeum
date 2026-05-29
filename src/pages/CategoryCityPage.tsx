@@ -26,8 +26,10 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ProviderCard from '@/components/ProviderCard';
+import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Button } from '@/components/ui/button';
+
 import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useCategoryProviders } from '@/hooks/useProviders';
@@ -197,8 +199,17 @@ export default function CategoryCityPage() {
             message="Verifique a URL ou volte para o diretório de categorias."
           />
         ) : isLoading ? (
-          <p className="text-sm text-muted-foreground">Carregando profissionais…</p>
+          // M1 · Skeleton estruturado em vez de spinner/texto genérico —
+          // o usuário já enxerga o formato final dos cards enquanto carrega.
+          <ul
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            aria-busy="true"
+            aria-label="Carregando profissionais"
+          >
+            <ProviderCardSkeleton count={6} />
+          </ul>
         ) : providers.length === 0 ? (
+
           <div className="rounded-xl border border-border bg-card p-6 text-center space-y-3">
             <Users className="mx-auto h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">

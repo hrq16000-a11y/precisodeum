@@ -485,7 +485,7 @@ export default function SponsorLandingPage() {
   const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm<SponsorForm>({
+  const { register, handleSubmit, formState: { errors }, setValue, setError } = useForm<SponsorForm>({
     resolver: zodResolver(sponsorSchema),
     defaultValues: { plan: 'pro' },
   });
@@ -514,12 +514,37 @@ export default function SponsorLandingPage() {
       }
       setSubmitted(true);
       toast.success('Interesse registrado com sucesso!');
-    } catch {
-      toast.error('Erro ao enviar. Tente novamente.');
+    } catch (err: any) {
+      // M6 · Mapeia erros conhecidos para o campo específico (em vez de
+      // toast genérico). Postgres 23505 = unique_violation; o "details"
+      // costuma trazer a coluna que conflitou.
+      const code: string = String(err?.code ?? '');
+      const msg: string = String(err?.message ?? '').toLowerCase();
+      const details: string = String(err?.details ?? '').toLowerCase();
+      const haystack = `${msg} ${details}`;
+
+      if (code === '23505' || haystack.includes('duplicate') || haystack.includes('already exists')) {
+        if (haystack.includes('cnpj')) {
+          setError('cnpj', { type: 'server', message: 'Este CNPJ já tem solicitação em análise.' }, { shouldFocus: true });
+        } else if (haystack.includes('email')) {
+          setError('email', { type: 'server', message: 'Já existe uma solicitação com este e-mail.' }, { shouldFocus: true });
+        } else {
+          toast.error('Já existe uma solicitação com esses dados.');
+        }
+      } else if (haystack.includes('cnpj')) {
+        setError('cnpj', { type: 'server', message: 'CNPJ inválido. Verifique e tente novamente.' }, { shouldFocus: true });
+      } else if (haystack.includes('email')) {
+        setError('email', { type: 'server', message: 'E-mail inválido. Verifique e tente novamente.' }, { shouldFocus: true });
+      } else if (haystack.includes('phone')) {
+        setError('phone', { type: 'server', message: 'Telefone inválido. Verifique e tente novamente.' }, { shouldFocus: true });
+      } else {
+        toast.error('Erro ao enviar. Tente novamente.');
+      }
     } finally {
       setSubmitting(false);
     }
   };
+
 
   const handleDownloadContract = () => {
     const blob = new Blob([contractText], { type: 'text/plain;charset=utf-8' });
