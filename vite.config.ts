@@ -56,16 +56,23 @@ export default defineConfig(({ mode }) => ({
             ) {
               return 'vendor-forms';
             }
+            if (id.includes('@radix-ui')) return 'vendor-radix';
             if (
-              id.includes('@radix-ui') ||
               id.includes('/cmdk/') ||
-              id.includes('embla-carousel') ||
               id.includes('/sonner/') ||
               id.includes('/clsx/') ||
-              id.includes('tailwind-merge')
+              id.includes('tailwind-merge') ||
+              id.includes('class-variance-authority') ||
+              id.includes('tailwindcss-animate') ||
+              id.includes('/vaul/') ||
+              id.includes('embla-carousel') ||
+              id.includes('react-day-picker') ||
+              id.includes('react-resizable-panels') ||
+              id.includes('input-otp')
             ) {
               return 'vendor-ui';
             }
+            if (id.includes('@dnd-kit')) return 'vendor-dnd';
             if (id.includes('@supabase') || id.includes('@tanstack/react-query')) {
               return 'vendor-data';
             }
@@ -74,6 +81,12 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
             if (id.includes('leaflet')) return 'vendor-maps';
             if (id.includes('date-fns')) return 'vendor-dates';
+            if (id.includes('dompurify')) return 'vendor-sanitize';
+            if (id.includes('react-helmet-async')) return 'vendor-helmet';
+            if (id.includes('@fingerprintjs')) return 'vendor-fp';
+            // jspdf / jspdf-autotable / canvas-confetti / jszip / sharp are
+            // loaded via dynamic import() in app code and will be split
+            // automatically by Rollup — do not force them into vendor.
             return 'vendor';
           }
         },
