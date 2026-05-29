@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { resolvePostLoginRoute } from '@/lib/onboardingAccess';
+import { resolvePostLoginRoute, shouldHandlePostLoginRedirect } from '@/lib/onboardingAccess';
 
 /**
  * After OAuth login (Google), o fluxo sempre passa por /cadastro-inicial.
@@ -40,6 +40,7 @@ const OAuthRedirectHandler = () => {
   useEffect(() => {
     if (loading || handledLocally.current) return;
     if (!user || !profile) return;
+    if (!shouldHandlePostLoginRedirect(location.pathname)) return;
     if (handledUsers.has(user.id)) {
       handledLocally.current = true;
       return;

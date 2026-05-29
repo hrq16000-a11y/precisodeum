@@ -55,6 +55,19 @@ export function getOnboardingReviewSection(search = ''): OnboardingReviewSection
   return (REVIEW_SECTION_VALUES as string[]).includes(raw) ? (raw as OnboardingReviewSection) : null;
 }
 
+const POST_LOGIN_REDIRECT_ENTRY_PATHS = new Set([
+  '/',
+  '/index',
+  '/login',
+  '/cadastro',
+  '/cadastro/rh',
+  '/cadastro-inicial',
+]);
+
+export function shouldHandlePostLoginRedirect(pathname: string) {
+  return POST_LOGIN_REDIRECT_ENTRY_PATHS.has(pathname);
+}
+
 export function isOnboardingCompletionGraceActive() {
   if (typeof window === 'undefined') return false;
   try {
