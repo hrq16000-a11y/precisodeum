@@ -13,17 +13,35 @@ export const useAdmin = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      navigate('/login');
+      // Audit-fix #1 — replace:true evita loop de back-button no /login
+      navigate('/login', { replace: true });
       setLoading(false);
       return;
     }
 
+    let cancelled = false;
     supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' })
-      .then(({ data }) => {
-        if (!data) navigate('/dashboard');
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        // Audit-fix #1 — em erro de RPC NÃO redireciona (evita ejetar admin real
+        // por falha transitória de rede). Apenas marca não-admin se data===false.
+        if (error) {
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
+        if (!data) navigate('/dashboard', { replace: true });
         setIsAdmin(!!data);
         setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setIsAdmin(false);
+        setLoading(false);
       });
+    return () => {
+      cancelled = true;
+    };
   }, [user, authLoading, navigate]);
 
   return { isAdmin, loading: loading || authLoading, user };
