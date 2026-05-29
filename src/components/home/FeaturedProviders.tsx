@@ -102,17 +102,17 @@ const FeaturedProviders = ({ providers, isLoading, isFetching, hasError, sortBy 
         ) : providers.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">Nenhum profissional em destaque ainda.</p>
         ) : (
-          <div className="grid justify-items-center gap-3 sm:gap-4 sm:grid-cols-2 sm:justify-items-stretch lg:grid-cols-3 [content-visibility:auto] [contain-intrinsic-size:1px_800px]">
+          <div className="grid justify-items-center gap-3 sm:gap-4 sm:grid-cols-2 sm:justify-items-stretch lg:grid-cols-3">
             {items.map((item, idx) => {
               if (item.type === 'ad') {
                 return (
-                  <div key={`ad-${item.adIndex}`} className="w-full max-w-[90%] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
+                  <div key={`ad-${item.adIndex}`} className="w-full max-w-[90%] min-h-[380px] sm:min-h-[360px] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
                     <AdNativeCard sponsorIndex={item.adIndex} className="h-full" />
                   </div>
                 );
               }
               return (
-                <div key={item.data.id} className="w-full max-w-[90%] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
+                <div key={item.data.id} className="w-full max-w-[90%] min-h-[380px] sm:min-h-[360px] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
                   {((item.data.accountType || '').toLowerCase() === 'company') ? (
                     <CompanyCard provider={item.data} trackingSource="featured" />
                   ) : (
