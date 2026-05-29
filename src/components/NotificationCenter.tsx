@@ -276,12 +276,9 @@ const NotificationDropdown = ({ onClose }: { onClose: () => void }) => {
             animate={{ opacity: 1, scale: 1 }}
             className="py-8 text-center"
           >
-            <motion.div
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <Bell className="mx-auto h-8 w-8 text-muted-foreground/40" />
-            </motion.div>
+            <div className="animate-float-y">
+              <Bell className="mx-auto h-8 w-8 text-muted-foreground/70" aria-hidden="true" />
+            </div>
             <p className="mt-2 text-sm text-muted-foreground">Nenhuma notificação</p>
             <p className="mt-0.5 text-xs text-muted-foreground/60">Você está em dia!</p>
           </motion.div>
