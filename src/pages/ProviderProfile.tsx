@@ -329,7 +329,7 @@ const ProviderProfile = () => {
 
       if (active) setLoading(true);
 
-      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, years_experience, ibge_code, latitude, longitude, created_at, updated_at, deleted_at, onboarding_progress, website, user_ref, meta_title, meta_description, contact_hours';
+      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, years_experience, ibge_code, latitude, longitude, created_at, website, meta_title, meta_description, contact_hours';
 
       let { data } = await supabase
         .from('providers')
@@ -386,13 +386,13 @@ const ProviderProfile = () => {
         const providerWithProfile = { ...data, profiles: profile, levelInfo, accTypeInfo };
 
         const [{ data: svc }, { data: rev }, { data: ps }] = await Promise.all([
-          supabase.from('services').select('*').eq('provider_id', data.id).limit(50),
+          supabase.from('services').select('id, provider_id, service_name, description, price, service_area, working_hours, instagram_url, facebook_url, youtube_url').eq('provider_id', data.id).limit(50),
           supabase.from('reviews')
-            .select('*, user_id')
+            .select('id, provider_id, user_id, rating, comment, created_at')
             .eq('provider_id', data.id)
             .order('created_at', { ascending: false })
             .limit(50),
-          supabase.from('provider_page_settings').select('*').eq('provider_id', data.id).maybeSingle(),
+          supabase.from('provider_page_settings').select('provider_id, sections_order, hidden_sections, headline, tagline, cta_text, cta_whatsapp_text, accent_color, cover_image_url, instagram_url, facebook_url, youtube_url, tiktok_url, theme').eq('provider_id', data.id).maybeSingle(),
         ]);
 
         if (ps) {
@@ -420,7 +420,7 @@ const ProviderProfile = () => {
               .select('service_id, category_id, categories(name, icon)')
               .in('service_id', svcIds),
             supabase.from('service_images')
-              .select('*')
+              .select('id, service_id, image_url, display_order')
               .in('service_id', svcIds)
               .order('display_order')
               .limit(200),
