@@ -129,6 +129,10 @@ const AdminSettingsPage = () => {
       {/* ====== Regras de Perfil / DESTAQUE Section ====== */}
       <ProfileRulesSection settings={settings} onToggle={toggleSetting} onSaveText={updateTextSetting} />
 
+      {/* ====== Avatar Fallback (controle 100% admin) ====== */}
+      <AvatarFallbackSection settings={settings} onToggle={toggleSetting} onSaveText={updateTextSetting} />
+
+
       {/* Boolean / Flags */}
       <h2 className="mt-6 font-display text-lg font-bold text-foreground">Feature Flags ({booleanSettings.length})</h2>
       <div className="mt-3 space-y-2">
