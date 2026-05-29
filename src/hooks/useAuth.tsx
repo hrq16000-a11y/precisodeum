@@ -127,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // sempre retentamos antes de exaurir o orçamento total.
         const queryPromise = Promise.all([
           supabase.from('profiles').select(PROFILE_AUTH_COLUMNS).eq('id', userId).maybeSingle(),
-          supabase.from('providers').select('*, categories(name, slug, icon)').eq('user_id', userId).order('created_at', { ascending: true }),
+          supabase.from('providers').select('id, user_id, city, state, latitude, longitude, description, category_id, account_type, created_at, categories(name, slug, icon)').eq('user_id', userId).order('created_at', { ascending: true }),
         ]);
         const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error(`fetchProfile attempt ${attemptsUsed} timed out after ${PER_ATTEMPT_TIMEOUT_MS}ms`)), PER_ATTEMPT_TIMEOUT_MS),
