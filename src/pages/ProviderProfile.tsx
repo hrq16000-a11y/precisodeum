@@ -66,6 +66,7 @@ import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { extractSpecialties } from '@/lib/specialtyExtractor';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useAvatarFallbackConfig } from '@/hooks/useAvatarFallbackConfig';
 import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
 import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
