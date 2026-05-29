@@ -886,7 +886,15 @@ const ProviderProfile = () => {
   const name = provider ? capitalizeName((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
   const hasOwnAvatar = !!(provider && ((provider.profiles as any)?.avatar_url || provider.photo_url));
   const initialsAvatar = provider
-    ? resolveAvatarUrl({ seed: provider.user_id || provider.id, name })
+    ? resolveAvatarUrl({
+        seed: provider.user_id || provider.id,
+        name,
+        // Pool de fallback: portfólio + capa, deterministicamente escolhido.
+        portfolioImages: [
+          ...(portfolioRawUrls || []),
+          pageSettings.cover_image_url || null,
+        ],
+      })
     : '';
   const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : initialsAvatar) : '';
   // Categoria principal — prioridade:
