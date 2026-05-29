@@ -598,12 +598,23 @@ const AVATAR_FALLBACK_KEYS = {
   mode: 'avatar_fallback_mode',
   useServiceImage: 'avatar_fallback_use_service_image',
   palette: 'avatar_fallback_palette',
+  boringVariant: 'avatar_fallback_boring_variant',
 };
 
-const AVATAR_MODES: Array<{ value: 'portfolio' | 'initials' | 'icon'; label: string; desc: string }> = [
+const AVATAR_MODES: Array<{ value: 'portfolio' | 'initials' | 'icon' | 'boring'; label: string; desc: string }> = [
   { value: 'portfolio', label: 'Portfólio / Serviço', desc: 'Usa uma imagem real do trabalho do profissional (recomendado).' },
+  { value: 'boring', label: 'Geométrico (Boring)', desc: 'Padrões geométricos elegantes e únicos por profissional.' },
   { value: 'initials', label: 'Iniciais coloridas', desc: 'Mostra as iniciais do nome em um fundo da paleta abaixo.' },
   { value: 'icon', label: 'Ícone neutro', desc: 'Silhueta padrão em um fundo da paleta abaixo.' },
+];
+
+const BORING_VARIANTS: Array<{ value: 'marble' | 'beam' | 'pixel' | 'sunset' | 'ring' | 'bauhaus'; label: string }> = [
+  { value: 'marble', label: 'Marble' },
+  { value: 'beam', label: 'Beam' },
+  { value: 'pixel', label: 'Pixel' },
+  { value: 'sunset', label: 'Sunset' },
+  { value: 'ring', label: 'Ring' },
+  { value: 'bauhaus', label: 'Bauhaus' },
 ];
 
 const DEFAULT_PALETTE_CSV = '#1e3a8a,#0f766e,#7c2d12,#4338ca,#166534,#9a3412,#334155,#155e75,#854d0e,#6b21a8';
