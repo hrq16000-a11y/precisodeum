@@ -157,7 +157,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
     providerPhotoUrl: p.photo,
     serviceImage: p.serviceImage,
     seed: p.userId || p.id,
-    fallbackStyle: avatarFallbackStyle,
+    name: displayName,
   });
   const rating = p.rating ?? 0;
   const reviewCount = p.reviewCount ?? 0;
