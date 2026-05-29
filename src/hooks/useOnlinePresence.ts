@@ -103,6 +103,8 @@ function resetHealthTimer() {
 }
 
 function ensureChannel() {
+  // M7 · Se havia um dispose agendado, cancela: estamos reaproveitando o canal.
+  if (disposeTimer) { clearTimeout(disposeTimer); disposeTimer = null; }
   if (channel) return channel;
   realtimeHealth = 'connecting';
   resetHealthTimer();
@@ -124,14 +126,21 @@ function ensureChannel() {
 
 function destroyChannel() {
   if (!channel) return;
-  supabase.removeChannel(channel);
-  channel = null;
-  onlineUsers = new Map();
-  if (healthTimer) { clearTimeout(healthTimer); healthTimer = null; }
-  realtimeHealth = 'connecting';
-  // Keep lastSeenMap so badges can still show "esteve online há Xm" briefly
-  notify();
+  // M7 · Adia removeChannel; cancela se um novo subscriber chegar na janela.
+  if (disposeTimer) clearTimeout(disposeTimer);
+  disposeTimer = setTimeout(() => {
+    disposeTimer = null;
+    if (subscriberCount > 0 || !channel) return;
+    try { supabase.removeChannel(channel); } catch { /* noop */ }
+    channel = null;
+    onlineUsers = new Map();
+    if (healthTimer) { clearTimeout(healthTimer); healthTimer = null; }
+    realtimeHealth = 'connecting';
+    // Mantém lastSeenMap para badges "esteve online há Xm"
+    notify();
+  }, CHANNEL_DISPOSE_DELAY_MS);
 }
+
 
 // ─── Visibility preference (per-user, persisted in localStorage) ─────
 const VISIBILITY_KEY = 'presence_visibility';
