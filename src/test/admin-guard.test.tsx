@@ -16,6 +16,8 @@ vi.mock('@/integrations/supabase/client', () => ({
 let authState: any = { user: null, loading: false };
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => authState,
+  useAuthIdentity: () => authState,
+  useAuthProfile: () => authState,
 }));
 
 const Allowed = () => <div>conteúdo-admin</div>;

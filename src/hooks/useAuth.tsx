@@ -38,27 +38,47 @@ const hasPersistedSupabaseSession = (): boolean => {
   return false;
 };
 
-interface AuthContextType {
+/**
+ * PR 4 (A3) — Split do "God-Provider":
+ *  - `AuthIdentityContext` carrega APENAS dados de sessão (estáveis, raros):
+ *    session, user, loading, signOut.
+ *  - `AuthProfileContext` carrega dados voláteis (profile, provider, flags
+ *    derivadas, refetchProfile). Consumers que só precisam saber "está
+ *    logado?" devem migrar para `useAuthIdentity()` e param de re-renderizar
+ *    quando o profile/provider muda.
+ *
+ * O hook legado `useAuth()` continua exportado e retorna a junção dos dois
+ * contextos (retrocompatibilidade total — nenhum consumer atual quebra).
+ */
+interface AuthIdentityContextType {
   session: Session | null;
   user: User | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+}
+
+interface AuthProfileContextType {
   profile: any | null;
   provider: any | null;
-  loading: boolean;
   /** True when the user exists but has never explicitly chosen a profile type (social login default) */
   needsTypeSelection: boolean;
-  signOut: () => Promise<void>;
   refetchProfile: () => Promise<any | null>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+interface AuthContextType extends AuthIdentityContextType, AuthProfileContextType {}
+
+const AuthIdentityContext = createContext<AuthIdentityContextType>({
   session: null,
   user: null,
+  loading: true,
+  signOut: async () => {},
+});
+
+const AuthProfileContext = createContext<AuthProfileContextType>({
   profile: null,
   provider: null,
-  loading: true,
   needsTypeSelection: false,
-  signOut: async () => {},
-  refetchProfile: async () => {},
+  refetchProfile: async () => null,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -441,23 +461,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Memoize the context value so consumers (~50+ across the app) don't re-render
-  // unless one of the actual primitives changes. Sem isso, qualquer parent
-  // re-render do AuthProvider cascateava re-render para todos os `useAuth()`.
-  const contextValue = useMemo<AuthContextType>(
-    () => ({ session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile }),
-    [session, user, profile, provider, loading, needsTypeSelection, signOut, refetchProfile],
+  // PR 4 (A3): dois valores memoizados independentes.
+  // - identityValue só muda quando session/user/loading/signOut mudam.
+  //   Consumers de `useAuthIdentity()` NÃO re-renderizam quando o profile
+  //   ou o provider são atualizados em background.
+  // - profileValue muda quando profile/provider/needsTypeSelection mudam.
+  const identityValue = useMemo<AuthIdentityContextType>(
+    () => ({ session, user, loading, signOut }),
+    [session, user, loading, signOut],
+  );
+  const profileValue = useMemo<AuthProfileContextType>(
+    () => ({ profile, provider, needsTypeSelection, refetchProfile }),
+    [profile, provider, needsTypeSelection, refetchProfile],
   );
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {/* AuthCompanion isola side-effects não-auth (presença é tratada no
-          DashboardLayout). Renderizado como irmão para não inflar o body do
-          provider nem o seu ciclo de re-render. */}
-      <AuthCompanion />
-      {children}
-    </AuthContext.Provider>
+    <AuthIdentityContext.Provider value={identityValue}>
+      <AuthProfileContext.Provider value={profileValue}>
+        {/* AuthCompanion isola side-effects não-auth (presença é tratada no
+            DashboardLayout). Renderizado como irmão para não inflar o body do
+            provider nem o seu ciclo de re-render. */}
+        <AuthCompanion />
+        {children}
+      </AuthProfileContext.Provider>
+    </AuthIdentityContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+/** Identidade da sessão apenas — não re-renderiza com mudanças de profile/provider. */
+export const useAuthIdentity = () => useContext(AuthIdentityContext);
+
+/** Profile + provider (dados voláteis de banco). */
+export const useAuthProfile = () => useContext(AuthProfileContext);
+
+/**
+ * Hook legado — retorna a junção dos dois contextos.
+ * Mantido por retrocompatibilidade; novos consumers que só precisam de
+ * `user`/`session`/`loading`/`signOut` devem usar `useAuthIdentity()`
+ * para evitar re-renders quando o profile/provider são atualizados.
+ */
+export const useAuth = (): AuthContextType => {
+  const identity = useContext(AuthIdentityContext);
+  const profile = useContext(AuthProfileContext);
+  // Junção shallow estável: só muda quando uma das duas refs muda.
+  return useMemo(() => ({ ...identity, ...profile }), [identity, profile]);
+};
