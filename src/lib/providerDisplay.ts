@@ -84,7 +84,9 @@ export function resolveDisplayName(input: ResolveDisplayNameInput): string {
   return input.city ? `Profissional em ${input.city}` : 'Profissional';
 }
 
-export type AvatarFallbackMode = 'portfolio' | 'initials' | 'icon';
+export type AvatarFallbackMode = 'portfolio' | 'initials' | 'icon' | 'boring';
+
+export type BoringFallbackVariant = 'marble' | 'beam' | 'pixel' | 'sunset' | 'ring' | 'bauhaus';
 
 export interface AvatarFallbackConfigInput {
   /** Master switch. When false, skips portfolio pool and goes straight to initials/icon. */
@@ -95,6 +97,8 @@ export interface AvatarFallbackConfigInput {
   useServiceImage?: boolean;
   /** Override the initials palette (admin-configurable). */
   palette?: Array<{ bg: string; fg: string }>;
+  /** Boring-avatars visual variant (only used when mode === 'boring'). */
+  boringVariant?: BoringFallbackVariant;
 }
 
 export interface ResolveAvatarInput {
