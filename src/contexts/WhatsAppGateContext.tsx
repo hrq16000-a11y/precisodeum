@@ -129,14 +129,22 @@ const WhatsAppGateDialogUI = ({ open, onOpenChange, onSuccessGoToLogin }: GateDi
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // M6 · Limpa estados anteriores antes de validar/submeter
+    setEmailError(null);
+    setPasswordError(null);
+    setNameError(null);
+
     if (!agreed) {
       toast({ title: 'Aceite as regras', description: 'É necessário concordar com as regras de atendimento.', variant: 'destructive' });
       return;
     }
-    if (!email || !password || (tab === 'signup' && !fullName)) {
-      toast({ title: 'Preencha todos os campos', variant: 'destructive' });
-      return;
-    }
+    // M6 · Validação client-side com erro inline (em vez de toast genérico)
+    let firstError = false;
+    if (tab === 'signup' && !fullName) { setNameError('Informe seu nome completo.'); firstError = true; }
+    if (!email) { setEmailError('Informe seu e-mail.'); firstError = firstError || true; }
+    if (!password) { setPasswordError('Informe sua senha.'); firstError = firstError || true; }
+    if (firstError) return;
+
     setSubmitting(true);
     try {
       if (tab === 'signup') {
@@ -155,11 +163,29 @@ const WhatsAppGateDialogUI = ({ open, onOpenChange, onSuccessGoToLogin }: GateDi
         if (error) throw error;
       }
     } catch (err: any) {
-      toast({ title: 'Não foi possível continuar', description: err?.message ?? 'Tente novamente.', variant: 'destructive' });
+      // M6 · Mapeia erros conhecidos da Supabase Auth para o campo correto.
+      // Caímos em toast apenas quando não há campo específico para atribuir.
+      const raw: string = String(err?.message ?? '').toLowerCase();
+      if (raw.includes('invalid login credentials') || raw.includes('invalid_credentials')) {
+        setPasswordError('E-mail ou senha incorretos.');
+      } else if (raw.includes('email not confirmed')) {
+        setEmailError('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
+      } else if (raw.includes('user already registered') || raw.includes('already registered') || raw.includes('user_already_exists')) {
+        setEmailError('Já existe uma conta com esse e-mail. Use a aba "Entrar".');
+      } else if (raw.includes('password') && (raw.includes('short') || raw.includes('weak') || raw.includes('characters'))) {
+        setPasswordError('Senha muito curta ou fraca. Use no mínimo 6 caracteres.');
+      } else if (raw.includes('valid email') || raw.includes('invalid email') || raw.includes('email_address_invalid')) {
+        setEmailError('E-mail inválido.');
+      } else if (raw.includes('rate limit') || raw.includes('too many')) {
+        toast({ title: 'Muitas tentativas', description: 'Aguarde alguns minutos e tente novamente.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Não foi possível continuar', description: err?.message ?? 'Tente novamente.', variant: 'destructive' });
+      }
     } finally {
       setSubmitting(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
