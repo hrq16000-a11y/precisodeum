@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, lazy, Suspense, useCallback, forwardRef } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import PrefetchLink from '@/components/PrefetchLink';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, ChevronRight, Radar } from 'lucide-react';
@@ -212,12 +213,12 @@ const Header = () => {
       );
     }
     return (
-      <Link key={item.id} to={item.url} className={`relative ${className} ${activeClass}`} onClick={onClick}>
+      <PrefetchLink key={item.id} to={item.url} className={`relative ${className} ${activeClass}`} onClick={onClick}>
         {item.label}
         {active && (
           <div className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-accent" />
         )}
-      </Link>
+      </PrefetchLink>
     );
   };
 
@@ -420,10 +421,10 @@ const Header = () => {
             <hr className="border-border my-1" />
             {user ? (
               <>
-                <Link to="/dashboard" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted animate-fade-in" style={{ animationDelay: '250ms', animationFillMode: 'both' }} onClick={() => setMobileOpen(false)}>
+                <PrefetchLink to="/dashboard" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted animate-fade-in" style={{ animationDelay: '250ms', animationFillMode: 'both' }} onClick={() => setMobileOpen(false)}>
                   <LayoutDashboard className="h-4 w-4 text-accent" />
                   Dashboard
-                </Link>
+                </PrefetchLink>
                 <button onClick={() => { handleSignOut(); setMobileOpen(false); }} className="flex items-center gap-2 w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-destructive/80 hover:bg-destructive/10 animate-fade-in" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
                   <LogOut className="h-4 w-4" />
                   Sair
