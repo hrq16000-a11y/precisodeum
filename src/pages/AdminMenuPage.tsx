@@ -251,15 +251,15 @@ const AdminMenuPage = () => {
                         <p className="text-xs text-muted-foreground truncate">{item.url}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => moveItem(item, -1)} disabled={idx === 0} className="h-7 w-7">
+                        <Button size="icon" variant="ghost" onClick={() => moveItem(item, -1)} disabled={idx === 0} className="h-7 w-7" aria-label="Mover para cima">
                           <span className="text-xs">↑</span>
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => moveItem(item, 1)} disabled={idx === group.items.length - 1} className="h-7 w-7">
+                        <Button size="icon" variant="ghost" onClick={() => moveItem(item, 1)} disabled={idx === group.items.length - 1} className="h-7 w-7" aria-label="Mover para baixo">
                           <span className="text-xs">↓</span>
                         </Button>
                         <Switch checked={item.active} onCheckedChange={() => handleToggle(item)} />
                         <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>Editar</Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDelete(item)} className="text-destructive">
+                        <Button size="icon" variant="ghost" onClick={() => handleDelete(item)} className="text-destructive" aria-label="Excluir item do menu">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
