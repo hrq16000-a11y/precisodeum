@@ -68,17 +68,9 @@ export default function HelpOnboardingPage() {
     canonical: `${SITE_BASE_URL}/ajuda/cadastro`,
   });
 
-  // FAQ Schema JSON-LD para rich snippets nas SERPs (Google FAQ rich result)
+  // FAQ Schema JSON-LD para rich snippets nas SERPs — via helper centralizado.
   const faqJsonLd = useMemo(
-    () => ({
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: faq.map((item) => ({
-        '@type': 'Question',
-        name: item.q,
-        acceptedAnswer: { '@type': 'Answer', text: item.a },
-      })),
-    }),
+    () => buildFaqPage(faq.map((it) => ({ question: it.q, answer: it.a }))),
     [],
   );
   useJsonLd(faqJsonLd);
