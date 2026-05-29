@@ -803,6 +803,7 @@ export const Phase4ExtrasB = ({ data, onChange, onFinish, onSkip, onBack, saving
     <motion.div {...wizardEnter} className={ws.container}>
       <button
         type="button"
+        data-testid="phase4-extras-b-back"
         onClick={() => (onBack ? onBack() : window.dispatchEvent(new CustomEvent('wizard:request-back', { detail: { phase: 'phase4_extras_b' } })))}
         className={ws.backBtn}
         aria-label="Voltar para a etapa anterior do cadastro"
