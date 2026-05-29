@@ -421,10 +421,10 @@ const Header = () => {
             <hr className="border-border my-1" />
             {user ? (
               <>
-                <Link to="/dashboard" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted animate-fade-in" style={{ animationDelay: '250ms', animationFillMode: 'both' }} onClick={() => setMobileOpen(false)}>
+                <PrefetchLink to="/dashboard" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted animate-fade-in" style={{ animationDelay: '250ms', animationFillMode: 'both' }} onClick={() => setMobileOpen(false)}>
                   <LayoutDashboard className="h-4 w-4 text-accent" />
                   Dashboard
-                </Link>
+                </PrefetchLink>
                 <button onClick={() => { handleSignOut(); setMobileOpen(false); }} className="flex items-center gap-2 w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-destructive/80 hover:bg-destructive/10 animate-fade-in" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
                   <LogOut className="h-4 w-4" />
                   Sair
