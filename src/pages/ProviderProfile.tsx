@@ -379,11 +379,11 @@ const ProviderProfile = () => {
         let levelInfo: any = null;
         let accTypeInfo: any = null;
         if (userProfile?.level_id) {
-          const { data: lv } = await supabase.from('user_levels').select('name, color').eq('id', userProfile.level_id).single();
+          const { data: lv } = await supabase.from('user_levels').select('name, color').eq('id', userProfile.level_id).maybeSingle();
           levelInfo = lv;
         }
         if (userProfile?.account_type_id) {
-          const { data: at } = await supabase.from('account_types').select('name, color').eq('id', userProfile.account_type_id).single();
+          const { data: at } = await supabase.from('account_types').select('name, color').eq('id', userProfile.account_type_id).maybeSingle();
           accTypeInfo = at;
         }
 
