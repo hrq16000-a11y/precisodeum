@@ -64,7 +64,7 @@ import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { extractSpecialties } from '@/lib/specialtyExtractor';
-import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
 import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
@@ -257,9 +257,13 @@ const TrustBadge = ({ icon: Icon, text, delay }: { icon: any; text: string; dela
 const ProviderProfile = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const siteSettings = useSiteSettings();
+  const featureFlags = siteSettings.data?.flags ?? {};
+  const settingValues = siteSettings.data?.values ?? {};
+  const reviewsEnabled = featureFlags.reviews_enabled ?? false;
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { requestWhatsApp } = useWhatsAppGate();
   const [provider, setProvider] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -871,12 +875,12 @@ const ProviderProfile = () => {
   }, [provider?.id]);
 
   // DESTAQUE criteria
-  const destaqueRequireAvatar = useSettingValue('destaque_require_avatar') !== 'false';
-  const destaqueRequirePortfolio = useSettingValue('destaque_require_portfolio') !== 'false';
-  const destaqueRequireServices = useSettingValue('destaque_require_services') !== 'false';
-  const destaqueMinServices = Number(useSettingValue('destaque_min_services')) || 1;
-  const destaqueMinPortfolio = Number(useSettingValue('destaque_min_portfolio')) || 1;
-  const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
+  const destaqueRequireAvatar = settingValues.destaque_require_avatar !== 'false';
+  const destaqueRequirePortfolio = settingValues.destaque_require_portfolio !== 'false';
+  const destaqueRequireServices = settingValues.destaque_require_services !== 'false';
+  const destaqueMinServices = Number(settingValues.destaque_min_services) || 1;
+  const destaqueMinPortfolio = Number(settingValues.destaque_min_portfolio) || 1;
+  const avatarFallbackStyle = settingValues.avatar_fallback_style || 'adventurer';
 
   const name = provider ? capitalizeName((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
   const hasOwnAvatar = !!(provider && ((provider.profiles as any)?.avatar_url || provider.photo_url));
@@ -1272,10 +1276,9 @@ const ProviderProfile = () => {
   const citySlug = provider.city?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
   const visibleSections = pageSettings.sections_order.filter(s => !pageSettings.hidden_sections.includes(s));
   const tc = THEME_CLASSES[pageSettings.theme] || THEME_CLASSES.default;
-  const { requestWhatsApp } = useWhatsAppGate();
 
   // FASE 2.6 — Variante CTA WhatsApp controlada por site_settings (admin).
-  const whatsappVariantRaw = useSettingValue('cta_whatsapp_variant');
+  const whatsappVariantRaw = settingValues.cta_whatsapp_variant || '';
   const whatsappVariant = resolveWhatsappVariant(whatsappVariantRaw);
   const whatsappCtaLabel = getWhatsappCtaLabel(whatsappVariant, pageSettings.cta_whatsapp_text);
 
