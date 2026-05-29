@@ -95,7 +95,7 @@ export const Phase2PhotosBlockedCard = ({
             className={
               phase2RetryStatus === 'running'
                 ? 'mx-auto mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-400/60 bg-amber-100/60 px-2.5 py-1 text-[11px] text-amber-900 dark:bg-amber-500/10 dark:text-amber-100'
-                : 'mx-auto mt-2 flex max-w-xs flex-col items-center gap-1.5 rounded-md border border-rose-400/60 bg-rose-50/80 p-2 text-[11px] text-rose-900 dark:bg-rose-500/10 dark:text-rose-100'
+                : 'mx-auto mt-2 flex max-w-xs flex-col items-center gap-1.5 rounded-md border border-bet-error-border bg-bet-error-soft p-2 text-[11px] text-bet-error'
             }
             role="status"
             aria-live="polite"
