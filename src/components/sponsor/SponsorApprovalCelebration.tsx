@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ArrowRight, X, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,8 @@ interface Props {
   userRef?: string | null;
 }
 
-function fireConfetti() {
+async function fireConfetti() {
+  const confetti = (await import('canvas-confetti')).default;
   const duration = 2500;
   const end = Date.now() + duration;
   const colors = ['#f97316', '#fbbf24', '#10b981', '#3b82f6', '#a855f7'];
@@ -26,6 +26,7 @@ function fireConfetti() {
   // initial burst
   confetti({ particleCount: 120, spread: 100, origin: { y: 0.6 }, colors });
 }
+
 
 const SponsorApprovalCelebration = ({
   sponsorId,
