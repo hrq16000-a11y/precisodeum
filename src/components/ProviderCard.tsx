@@ -271,7 +271,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                     {provider.communityVerified && (
                       <CommunityVerifiedBadge size="sm" />
                     )}
-                    {isTopProfessional && <TopProfessionalBadge size="sm" />}
+                    {isTopProfessional && hasOwnPhoto && <TopProfessionalBadge size="sm" />}
                   </span>
                 </h3>
                 {engTier.showCrown && (
