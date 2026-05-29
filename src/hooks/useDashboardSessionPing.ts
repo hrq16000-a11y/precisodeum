@@ -9,10 +9,10 @@
  */
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuthIdentity } from './useAuth';
 
 export function useDashboardSessionPing(route?: string) {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
 
   useEffect(() => {
     if (!user) return;

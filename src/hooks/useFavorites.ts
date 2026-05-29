@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 const LS_KEY = 'pdu_favorites_v1';
 
@@ -22,7 +22,7 @@ function writeLocal(ids: string[]) {
 }
 
 export function useFavorites() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 

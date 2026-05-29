@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import {
   Dialog,
   DialogContent,
@@ -245,7 +245,7 @@ const WhatsAppGateDialogUI = ({ open, onOpenChange, onSuccessGoToLogin }: GateDi
 };
 
 export const WhatsAppGateProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const navigate = useNavigate();
 
   // PR 3 (A4): Provider mantém APENAS estado global infrequente.

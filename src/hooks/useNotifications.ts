@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -26,7 +26,7 @@ export interface Notification {
 }
 
 export function useNotifications(options?: { limit?: number | null }) {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const queryClient = useQueryClient();
   // Truncation guard: null/undefined fall back to default 50.
   // Query never runs without an explicit .limit() — prevents silent 1000-row truncation.
@@ -149,7 +149,7 @@ export function useNotifications(options?: { limit?: number | null }) {
 
 // Push notification subscription
 export function usePushSubscription() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [permission, setPermission] = useState<NotificationPermission>(
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
