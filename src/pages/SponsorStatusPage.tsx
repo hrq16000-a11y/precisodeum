@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import confetti from 'canvas-confetti';
+
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -81,7 +81,8 @@ export default function SponsorStatusPage() {
   const [resubmitOpen, setResubmitOpen] = useState(false);
   const lastDocsStatusRef = useRef<string | null>(null);
 
-  const fireApprovalConfetti = () => {
+  const fireApprovalConfetti = async () => {
+    const confetti = (await import('canvas-confetti')).default;
     const colors = ['#10b981', '#3b82f6', '#f59e0b', '#a855f7'];
     confetti({ particleCount: 140, spread: 100, origin: { y: 0.6 }, colors });
     setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors }), 250);
