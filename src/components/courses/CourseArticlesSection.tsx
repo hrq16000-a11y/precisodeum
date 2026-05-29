@@ -35,7 +35,7 @@ const CourseArticlesSection = ({ articles }: { articles: CourseArticle[] }) => {
       <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
         <Link to={`/cursos/materias/${featured.slug}`} className="group overflow-hidden rounded-xl border border-accent/20 bg-card shadow-card transition-all hover:shadow-card-hover">
           {featured.cover_image_url ? (
-            <img src={featured.cover_image_url} alt={featured.title} className="aspect-video w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+            <img src={featured.cover_image_url} alt={featured.title} className="aspect-video w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" decoding="async" />
           ) : (
             <div className="flex aspect-video w-full items-center justify-center bg-muted/50">
               <Newspaper className="h-12 w-12 text-muted-foreground/40" />
@@ -60,7 +60,7 @@ const CourseArticlesSection = ({ articles }: { articles: CourseArticle[] }) => {
           {rest.map((article) => (
             <Link key={article.id} to={`/cursos/materias/${article.slug}`} className="group grid grid-cols-[112px_1fr] gap-3 rounded-xl border border-border bg-card p-3 transition-all hover:border-accent/30">
               {article.cover_image_url ? (
-                <img src={article.cover_image_url} alt={article.title} className="h-24 w-full rounded-lg object-cover" loading="lazy" />
+                <img src={article.cover_image_url} alt={article.title} className="h-24 w-full rounded-lg object-cover" loading="lazy" decoding="async" />
               ) : (
                 <div className="flex h-24 items-center justify-center rounded-lg bg-muted/50">
                   <Newspaper className="h-7 w-7 text-muted-foreground/40" />

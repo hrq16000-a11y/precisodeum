@@ -99,7 +99,10 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
               title={s.title}
             >
               {visualSrc ? (
-                <img src={visualSrc} alt={s.title} className="h-8 max-w-[140px] object-contain" loading="lazy" />
+                // PR-A6: decoding async libera o main thread durante o paint inicial.
+                <img src={visualSrc} alt={s.title} className="h-8 max-w-[140px] object-contain" loading="lazy" decoding="async" />
+
+
               ) : (
                 <span className="text-xs text-primary-foreground/50">{s.title}</span>
               )}

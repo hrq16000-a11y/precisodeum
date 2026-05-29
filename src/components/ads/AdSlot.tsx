@@ -204,7 +204,7 @@ const AdSlot = React.forwardRef<HTMLElement, AdSlotProps>(({ slotSlug, className
             title={s.title}
           >
             {s.image_url ? (
-              <img src={s.image_url} alt={s.title} className="h-8 max-w-[140px] object-contain" loading="lazy" />
+              <img src={s.image_url} alt={s.title} className="h-8 max-w-[140px] object-contain" loading="lazy" decoding="async" />
             ) : (
               <span className="text-xs text-muted-foreground">{s.title}</span>
             )}

@@ -38,10 +38,35 @@ const inspectForFreeze = async () => {
   });
 };
 
+/**
+ * PR-A5 — Performance: só inspeciona quando a aba está visível e usa
+ * requestIdleCallback para evitar contenção com a thread principal. Em
+ * background o navegador já throttla setInterval, mas o guard explícito
+ * elimina o trabalho de elementFromPoint/getComputedStyle (que força
+ * layout) em abas inativas, economizando CPU e bateria.
+ */
+type IdleCallbackHandle = number;
+type IdleRequestCallback = (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void;
+type IdleWindow = Window & {
+  requestIdleCallback?: (cb: IdleRequestCallback, opts?: { timeout: number }) => IdleCallbackHandle;
+};
+
+const scheduleIdle = (cb: () => void) => {
+  const w = window as IdleWindow;
+  if (typeof w.requestIdleCallback === 'function') {
+    w.requestIdleCallback(() => cb(), { timeout: 1500 });
+  } else {
+    // Fallback: macro task fora do hot path de input/scroll.
+    setTimeout(cb, 0);
+  }
+};
+
 export const initializeUiFreezeMonitor = () => {
   if (initialized || typeof window === 'undefined') return;
   initialized = true;
   window.setInterval(() => {
-    void inspectForFreeze();
+    // Gate por visibilidade: aba em background não precisa de monitor.
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+    scheduleIdle(() => { void inspectForFreeze(); });
   }, 5000);
 };

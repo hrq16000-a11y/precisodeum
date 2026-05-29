@@ -259,7 +259,7 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
           <a key={ad.id} href={ad.link_url || '#'} target="_blank" rel="noopener noreferrer sponsored"
             onClick={() => handleClick(ad)} className="opacity-60 transition-opacity hover:opacity-100" title={ad.title}>
             {ad.image_url ? (
-              <img src={ad.image_url} alt={ad.title} className="h-8 max-w-[140px] object-contain" loading="lazy" />
+              <img src={ad.image_url} alt={ad.title} className="h-8 max-w-[140px] object-contain" loading="lazy" decoding="async" />
             ) : (
               <span className="text-xs text-muted-foreground">{ad.title}</span>
             )}
@@ -301,7 +301,7 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
             <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
             {ad.image_url && (
               <div className="mt-2 rounded-lg overflow-hidden" style={{ aspectRatio: ar }}>
-                <img src={ad.image_url} alt={ad.title} className="h-full w-full object-cover" loading="lazy" />
+                <img src={ad.image_url} alt={ad.title} className="h-full w-full object-cover" loading="lazy" decoding="async" />
               </div>
             )}
             <p className="mt-2 text-sm font-medium text-foreground">{ad.title}</p>
@@ -328,7 +328,8 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
             {current.image_url ? (
               <img src={current.image_url} alt={current.title}
                 className="w-full rounded-[10px] object-cover object-center"
-                style={{ aspectRatio: ar }} width={1600} height={200} loading="lazy" />
+                style={{ aspectRatio: ar }} width={1600} height={200} loading="lazy" decoding="async" />
+
             ) : (
               <div className="flex items-center justify-center rounded-[10px] bg-card" style={{ aspectRatio: ar }}>
                 <span className="text-sm font-medium text-muted-foreground">{current.title}</span>
