@@ -58,15 +58,10 @@ const DashboardCompanyDataPage = () => {
   const [provider, setProvider] = useState<any>(null);
   const [form, setForm] = useState<CompanyForm>(initialForm);
 
-  // Guard: Apenas profissionais PJ
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate('/login', { replace: true }); return; }
-    if (profile && profile.profile_type !== 'provider') {
-      toast.error('Esta área é exclusiva para profissionais com perfil de empresa.');
-      navigate('/dashboard', { replace: true });
-    }
-  }, [authLoading, user, profile, navigate]);
+  // Guard de tipo: já garantido por ProtectedRoute allowedTypes={['provider']} na rota.
+  // Removido useEffect+navigate duplicado para evitar redirect espúrio durante
+  // estados transitórios de carregamento do profile (audit-fix #9).
+
 
   useEffect(() => {
     if (!user) return;
