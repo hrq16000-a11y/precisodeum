@@ -40,7 +40,7 @@ const PostCard = ({ post, highlight = false }: { post: any; highlight?: boolean 
       </div>
     ) : (
       <div className="flex aspect-video w-full items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
-        <Newspaper className="h-10 w-10 text-muted-foreground/40" />
+        <Newspaper className="h-10 w-10 text-muted-foreground/70" />
       </div>
     )}
     <div className="flex flex-1 flex-col p-4">
@@ -141,7 +141,7 @@ const BlogPage = () => {
           </div>
         ) : posts.length === 0 ? (
           <div className="py-16 text-center">
-            <Newspaper className="mx-auto h-12 w-12 text-muted-foreground/40" />
+            <Newspaper className="mx-auto h-12 w-12 text-muted-foreground/70" />
             <p className="mt-4 text-lg font-medium text-foreground">Nenhuma notícia publicada ainda</p>
             <p className="mt-1 text-sm text-muted-foreground">Em breve teremos novidades!</p>
           </div>

@@ -543,7 +543,7 @@ export default function CompanyProfile() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <Building2 className="h-14 w-14 text-muted-foreground/40" aria-hidden="true" />
+                    <Building2 className="h-14 w-14 text-muted-foreground/70" aria-hidden="true" />
                   )}
                 </div>
 

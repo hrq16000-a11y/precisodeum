@@ -145,7 +145,7 @@ const DashboardMetricsPage = () => {
               </div>
             ) : (
               <div className="flex h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-center">
-                <BarChart3 className="mb-3 h-10 w-10 text-muted-foreground/50" />
+                <BarChart3 className="mb-3 h-10 w-10 text-muted-foreground/70" />
                 <p className="font-semibold text-foreground">Sem dados neste período</p>
                 <p className="mt-1 max-w-sm text-sm text-muted-foreground">Compartilhe sua página pública para começar a registrar visualizações e contatos.</p>
               </div>

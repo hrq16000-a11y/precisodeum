@@ -109,7 +109,7 @@ export default function ReferralPointsEvolution() {
           </div>
         ) : chartData.length === 0 || (data?.total_points ?? 0) === 0 ? (
           <div className="flex h-full flex-col items-center justify-center rounded-lg border border-dashed border-border text-center">
-            <TrendingUp className="h-6 w-6 text-muted-foreground/50" />
+            <TrendingUp className="h-6 w-6 text-muted-foreground/70" />
             <p className="mt-1.5 text-sm font-medium text-foreground">Sem pontos creditados ainda</p>
             <p className="text-[11px] text-muted-foreground">
               Compartilhe seu link para ver o gráfico evoluir.

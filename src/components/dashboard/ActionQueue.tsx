@@ -120,7 +120,7 @@ const ActionQueue = ({ servicesCount: servicesOverride, portfolioAlbumsCount: al
 
   return (
     <div className="space-y-2">
-      <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 flex items-center gap-1.5">
+      <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 flex items-center gap-1.5">
         <AlertCircle className="h-3 w-3" />
         Ações pendentes ({actions.length})
       </h3>
@@ -148,7 +148,7 @@ const ActionQueue = ({ servicesCount: servicesOverride, portfolioAlbumsCount: al
                     <p className="text-xs font-semibold text-foreground truncate">{action.label}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{action.description}</p>
                   </div>
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-foreground transition-colors shrink-0" />
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/70 group-hover:text-foreground transition-colors shrink-0" />
                 </Link>
               </motion.div>
             );

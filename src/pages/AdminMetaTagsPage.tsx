@@ -202,11 +202,11 @@ const MetaSettingRow = ({ settingKey, label, description, value: initialValue, o
             className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 p-8 cursor-pointer hover:bg-muted/40 transition-colors"
             onClick={() => fileRef.current?.click()}
           >
-            <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+            <ImageIcon className="h-8 w-8 text-muted-foreground/70" />
             <p className="text-sm text-muted-foreground">
               {uploading ? 'Enviando...' : 'Clique para enviar imagem OG'}
             </p>
-            <p className="text-xs text-muted-foreground/60">Recomendado: 1200×630px, PNG ou JPG</p>
+            <p className="text-xs text-muted-foreground/70">Recomendado: 1200×630px, PNG ou JPG</p>
           </div>
         )}
 

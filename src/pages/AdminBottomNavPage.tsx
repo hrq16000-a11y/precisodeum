@@ -319,7 +319,7 @@ const AdminBottomNavPage = () => {
               <div className="space-y-2">
                 {items.map((item, idx) => (
                   <div key={item.id} className="flex items-center gap-2 rounded-lg border border-border p-2.5 bg-card">
-                    <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                    <GripVertical className="h-4 w-4 text-muted-foreground/70 shrink-0" />
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
                         <IconPreview name={item.icon} />

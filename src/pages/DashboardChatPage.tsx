@@ -33,7 +33,7 @@ const DashboardChatPage = () => {
       <DashboardLayout>
         <Card>
           <CardContent className="py-12 text-center">
-            <AlertTriangle className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
+            <AlertTriangle className="mx-auto h-10 w-10 text-muted-foreground/70 mb-3" />
             <p className="text-sm text-muted-foreground">O chat está desativado no momento.</p>
           </CardContent>
         </Card>

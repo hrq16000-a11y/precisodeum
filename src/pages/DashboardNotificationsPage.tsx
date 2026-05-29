@@ -287,7 +287,7 @@ const DashboardNotificationsPage = () => {
 
         {!isLoading && filteredNotifications.length === 0 && (
           <div className="rounded-xl border border-border bg-card p-10 text-center">
-            <Bell className="mx-auto h-8 w-8 text-muted-foreground/50" />
+            <Bell className="mx-auto h-8 w-8 text-muted-foreground/70" />
             <p className="mt-2 text-sm font-semibold text-foreground">Nenhuma notificação encontrada</p>
             <p className="mt-1 text-xs text-muted-foreground">Ajuste os filtros ou aguarde novas notificações.</p>
           </div>

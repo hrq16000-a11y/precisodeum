@@ -52,7 +52,7 @@ const Breadcrumbs = ({ items, className = '', variant = 'default' }: Breadcrumbs
             transition={{ delay: i * 0.05, duration: 0.2 }}
           >
             {i > 0 && (
-              <ChevronRight className={`h-3 w-3 flex-shrink-0 ${isHero ? 'text-white/40' : 'text-muted-foreground/40'}`} />
+              <ChevronRight className={`h-3 w-3 flex-shrink-0 ${isHero ? 'text-white/40' : 'text-muted-foreground/70'}`} />
             )}
             {i === 0 && (
               <Home className={`h-3 w-3 mr-0.5 ${isHero ? 'text-white/60' : ''}`} />

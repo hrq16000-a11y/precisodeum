@@ -95,7 +95,7 @@ const LeaderSponsor = memo(forwardRef<HTMLElement, Props>(({ sponsors, onClickTr
 
       <div className="flex items-center justify-between px-1 py-1 mt-1">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[7px] sm:text-[8px] font-semibold tracking-widest uppercase text-muted-foreground/50 shrink-0">
+          <span className="text-[7px] sm:text-[8px] font-semibold tracking-widest uppercase text-muted-foreground/70 shrink-0">
             Patrocinado
           </span>
           {(() => {
@@ -114,12 +114,12 @@ const LeaderSponsor = memo(forwardRef<HTMLElement, Props>(({ sponsors, onClickTr
             );
           })()}
           {current.short_description && (
-            <span className="hidden sm:inline text-[10px] text-muted-foreground/50 truncate">
+            <span className="hidden sm:inline text-[10px] text-muted-foreground/70 truncate">
               — {current.short_description}
             </span>
           )}
         </div>
-        <span className="flex items-center gap-1 text-[9px] text-muted-foreground/40 shrink-0">
+        <span className="flex items-center gap-1 text-[9px] text-muted-foreground/70 shrink-0">
           <ExternalLink className="h-2.5 w-2.5" />
         </span>
       </div>

@@ -516,7 +516,7 @@ const CourseDetailPage = () => {
                         </div>
                       ) : (
                         <div className="w-24 h-20 flex-shrink-0 rounded-lg bg-muted/50 flex items-center justify-center">
-                          <CategoryIcon icon={rc.icon} size={24} className="text-muted-foreground/40" />
+                          <CategoryIcon icon={rc.icon} size={24} className="text-muted-foreground/70" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">

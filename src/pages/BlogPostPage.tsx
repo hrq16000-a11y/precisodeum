@@ -145,7 +145,7 @@ const BlogPostPage = () => {
           </div>
         ) : !post ? (
           <div className="py-16 text-center">
-            <Newspaper className="mx-auto h-12 w-12 text-muted-foreground/40" />
+            <Newspaper className="mx-auto h-12 w-12 text-muted-foreground/70" />
             <p className="mt-4 text-lg font-medium text-foreground">Post não encontrado</p>
             <Button className="mt-4" asChild>
               <Link to="/blog">Ver todos os posts</Link>

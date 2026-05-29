@@ -229,7 +229,7 @@ const CoursesPage = () => {
             className="text-center py-20"
           >
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted/50 mb-4">
-              <GraduationCap className="h-8 w-8 text-muted-foreground/40" />
+              <GraduationCap className="h-8 w-8 text-muted-foreground/70" />
             </div>
             <p className="text-muted-foreground font-medium">Nenhum curso encontrado para esta busca.</p>
             <button

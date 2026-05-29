@@ -109,7 +109,7 @@ const GhostSlot: React.FC<{ locationKey: string; layout: string }> = ({ location
   const ar = ASPECT_RATIOS[layout] || ASPECT_RATIOS.banner;
   return (
     <div
-      className="flex items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/10 text-muted-foreground/50"
+      className="flex items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/10 text-muted-foreground/70"
       style={{ aspectRatio: ar === 'auto' ? undefined : ar, minHeight: layout === 'inline' ? 48 : 60 }}
     >
       <span className="text-xs font-mono select-none px-4 text-center">

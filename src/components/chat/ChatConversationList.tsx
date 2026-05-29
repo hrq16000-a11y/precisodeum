@@ -60,9 +60,9 @@ export default function ChatConversationList({ selectedId, onSelect }: Props) {
   if (conversations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-        <MessageSquare className="h-10 w-10 text-muted-foreground/40 mb-3" />
+        <MessageSquare className="h-10 w-10 text-muted-foreground/70 mb-3" />
         <p className="text-sm text-muted-foreground">Nenhuma conversa ainda</p>
-        <p className="text-xs text-muted-foreground/60 mt-1">Inicie uma conversa pelo perfil de um prestador</p>
+        <p className="text-xs text-muted-foreground/70 mt-1">Inicie uma conversa pelo perfil de um prestador</p>
       </div>
     );
   }
@@ -100,7 +100,7 @@ export default function ChatConversationList({ selectedId, onSelect }: Props) {
               </div>
               <p className="text-xs text-muted-foreground truncate mt-0.5">{conv.last_message_text || '...'}</p>
               {conv.last_message_at && (
-                <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                <p className="text-[10px] text-muted-foreground/70 mt-0.5">
                   {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ptBR })}
                 </p>
               )}

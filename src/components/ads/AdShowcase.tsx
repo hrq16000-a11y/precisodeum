@@ -85,7 +85,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
-                    <span className="text-2xl font-bold text-muted-foreground/50">{s.title}</span>
+                    <span className="text-2xl font-bold text-muted-foreground/70">{s.title}</span>
                   </div>
                 )}
                 {s.tier === 'premium' && (
@@ -105,7 +105,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
                     </p>
                   )}
                 </div>
-                <ExternalLink className="ml-2 h-3.5 w-3.5 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-accent" />
+                <ExternalLink className="ml-2 h-3.5 w-3.5 shrink-0 text-muted-foreground/70 transition-colors group-hover:text-accent" />
               </div>
             </a>
           ))}
@@ -159,7 +159,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
                         </p>
                       )}
                     </div>
-                    <ExternalLink className="ml-2 h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+                    <ExternalLink className="ml-2 h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                   </div>
                 </a>
                 {sponsors.length > 1 && (

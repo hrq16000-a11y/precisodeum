@@ -68,7 +68,7 @@ const DashboardTipOfDay = ({ servicesCount, portfolioCount, leadsCount, reviewCo
           >
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
-          <span className="text-[9px] text-muted-foreground/50 tabular-nums">{currentIndex + 1}/{tips.length}</span>
+          <span className="text-[9px] text-muted-foreground/70 tabular-nums">{currentIndex + 1}/{tips.length}</span>
           <button
             onClick={() => navigate(1)}
             className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-muted/60 text-muted-foreground transition-colors"
