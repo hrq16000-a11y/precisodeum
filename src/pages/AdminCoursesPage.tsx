@@ -182,7 +182,7 @@ const AdminCoursesPage = () => {
                 <Button size="sm" variant="ghost" asChild>
                   <a href={course.url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3.5 w-3.5" /></a>
                 </Button>
-                <Button size="icon" variant="ghost" onClick={() => handleDelete(course)} className="text-destructive">
+                <Button size="icon" variant="ghost" onClick={() => handleDelete(course)} className="text-destructive" aria-label="Excluir curso">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
