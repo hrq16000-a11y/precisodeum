@@ -47,9 +47,9 @@ const inspectForFreeze = async () => {
  */
 type IdleCallbackHandle = number;
 type IdleRequestCallback = (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void;
-interface IdleWindow extends Window {
+type IdleWindow = Window & {
   requestIdleCallback?: (cb: IdleRequestCallback, opts?: { timeout: number }) => IdleCallbackHandle;
-}
+};
 
 const scheduleIdle = (cb: () => void) => {
   const w = window as IdleWindow;
