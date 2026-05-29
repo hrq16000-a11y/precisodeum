@@ -737,6 +737,29 @@ const AvatarFallbackSection = ({ settings, onToggle, onSaveText }: {
         </div>
       </div>
 
+      {/* Variante Boring — só relevante quando modo = boring */}
+      {modeRaw === 'boring' && (
+        <div className="mt-3 rounded-lg border border-border bg-card p-3">
+          <p className="text-sm font-medium text-foreground mb-2">Variante geométrica</p>
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+            {BORING_VARIANTS.map((v) => {
+              const active = boringVariant === v.value;
+              return (
+                <button
+                  type="button"
+                  key={v.value}
+                  onClick={() => handleSaveOrCreate(AVATAR_FALLBACK_KEYS.boringVariant, v.value, 'Variante Boring Avatar', `Estilo ${v.label}`)}
+                  className={`text-sm rounded-lg border p-2 transition-all ${active ? 'border-accent bg-accent/10 ring-2 ring-accent/30 font-bold' : 'border-border bg-background hover:border-accent/50'}`}
+                >
+                  {v.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
       {/* Paleta */}
       <div className="mt-3 rounded-lg border border-border bg-card p-3">
         <p className="text-sm font-medium text-foreground">Paleta de cores (iniciais / ícone)</p>
