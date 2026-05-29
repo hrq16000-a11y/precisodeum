@@ -12,7 +12,8 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2, ShieldAlert } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+// PR 4 (A3): usa apenas identidade — não re-renderiza quando profile/provider mudam.
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
