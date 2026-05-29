@@ -31,6 +31,22 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+// Em jsdom o BroadcastChannel não elege líder de forma estável — forçamos true
+// para validar puramente o lock de idempotência (cross-tab é coberto em testes
+// dedicados).
+vi.mock('@/components/onboarding/wizard/phases/v2/crossTabSync', () => ({
+  isTabLeader: () => true,
+  broadcastDraftChange: () => {},
+}));
+
+// Telemetria e diagnostics são fail-soft no runtime — mockamos para não poluir.
+vi.mock('@/components/onboarding/wizard/phases/v2/telemetry', () => ({
+  trackOnboardingEvent: async () => {},
+}));
+vi.mock('@/components/onboarding/wizard/phases/v2/diagnostics', () => ({
+  recordWizardSupabaseCall: () => {},
+}));
+
 const sampleState: any = {
   phase: 'phase4_extras_b',
   profile: { city: 'Curitiba', state: 'PR', neighborhood: 'Centro' },

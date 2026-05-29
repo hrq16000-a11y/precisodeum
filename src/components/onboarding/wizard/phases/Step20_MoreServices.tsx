@@ -276,7 +276,7 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
           disabled={navigating !== null}
           onClick={() => void goTo('/dashboard')}
         >
-          Salvar e continuar depois →
+          Salvar para depois →
         </Button>
       </div>
     </div>
