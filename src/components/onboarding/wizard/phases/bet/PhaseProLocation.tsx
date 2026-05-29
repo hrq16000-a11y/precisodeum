@@ -569,11 +569,11 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
               type="button"
               onClick={handleUseGps}
               disabled={requestingGps}
-              aria-label="Tentar localização por GPS"
+              aria-label="Usar minha localização"
               className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-orange-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-orange-300"
             >
               <LocateFixed className={`h-3.5 w-3.5 ${requestingGps ? 'animate-pulse' : ''}`} />
-              {requestingGps ? 'Detectando…' : 'Usar GPS preciso'}
+              {requestingGps ? 'Detectando…' : 'Usar minha localização'}
             </button>
           )}
         </div>
