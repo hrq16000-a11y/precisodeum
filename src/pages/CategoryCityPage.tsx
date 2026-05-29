@@ -26,8 +26,10 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ProviderCard from '@/components/ProviderCard';
+import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Button } from '@/components/ui/button';
+
 import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useCategoryProviders } from '@/hooks/useProviders';
