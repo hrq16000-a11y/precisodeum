@@ -106,13 +106,13 @@ const FeaturedProviders = ({ providers, isLoading, isFetching, hasError, sortBy 
             {items.map((item, idx) => {
               if (item.type === 'ad') {
                 return (
-                  <div key={`ad-${item.adIndex}`} className="w-full max-w-[90%] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
+                  <div key={`ad-${item.adIndex}`} className="w-full max-w-[90%] min-h-[380px] sm:min-h-[360px] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
                     <AdNativeCard sponsorIndex={item.adIndex} className="h-full" />
                   </div>
                 );
               }
               return (
-                <div key={item.data.id} className="w-full max-w-[90%] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
+                <div key={item.data.id} className="w-full max-w-[90%] min-h-[380px] sm:min-h-[360px] animate-fade-in sm:max-w-none" style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}>
                   {((item.data.accountType || '').toLowerCase() === 'company') ? (
                     <CompanyCard provider={item.data} trackingSource="featured" />
                   ) : (
