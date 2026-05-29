@@ -218,6 +218,18 @@ export function resolveAvatarUrl(input: ResolveAvatarInput): string {
     return buildInitialsAvatar(input.name, seedStr, palette);
   }
 
+  if (mode === 'boring') {
+    // Lazy import keeps boring-avatars + react-dom/server out of bundles
+    // that never use this fallback mode.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { buildBoringAvatarDataUrl } = require('@/lib/boringAvatarSvg') as typeof import('@/lib/boringAvatarSvg');
+    return buildBoringAvatarDataUrl({
+      variant: cfg.boringVariant || 'marble',
+      seed: seedStr,
+      colors: palette.map((p) => p.bg),
+    });
+  }
+
   if (mode === 'icon') return buildIconAvatar(seedStr, palette);
   return buildInitialsAvatar(input.name, seedStr, palette);
 }
