@@ -244,27 +244,52 @@ const App = () => {
           <RoutePrefetcher />
           <ScrollToTop />
             <AuthProvider>
-            <AdDebugProvider>
-            <WhatsAppGateProvider>
-            <WhatsAppGateInterceptor />
-            <Suspense fallback={null}><OAuthRedirectHandler /></Suspense>
-            <Suspense fallback={null}><ImpersonationBanner /></Suspense>
-            <Suspense fallback={null}><GlobalExitIntentDialog /></Suspense>
-            <Suspense fallback={<PageFallback />}>
-              <LazyRouteBoundary>
-              <OnboardingGate>
-                <Routes>
-                  {publicRoutes}
-                  {dashboardRoutes}
-                  {adminRoutes}
-                  {sponsorRoutes}
-                </Routes>
-              </OnboardingGate>
-              </LazyRouteBoundary>
-            </Suspense>
-            <DeferredShell />
-            </WhatsAppGateProvider>
-            </AdDebugProvider>
+            {/* PR-A2: AdDebugProvider só monta em DEV. Em produção os consumidores
+                recebem os defaults seguros do createContext (xrayEnabled=false, noops),
+                eliminando a árvore de re-render e ~1170ms de bootstrap em produção. */}
+            {import.meta.env.DEV ? (
+              <AdDebugProvider>
+                <WhatsAppGateProvider>
+                <WhatsAppGateInterceptor />
+                <Suspense fallback={null}><OAuthRedirectHandler /></Suspense>
+                <Suspense fallback={null}><ImpersonationBanner /></Suspense>
+                <Suspense fallback={null}><GlobalExitIntentDialog /></Suspense>
+                <Suspense fallback={<PageFallback />}>
+                  <LazyRouteBoundary>
+                  <OnboardingGate>
+                    <Routes>
+                      {publicRoutes}
+                      {dashboardRoutes}
+                      {adminRoutes}
+                      {sponsorRoutes}
+                    </Routes>
+                  </OnboardingGate>
+                  </LazyRouteBoundary>
+                </Suspense>
+                <DeferredShell />
+                </WhatsAppGateProvider>
+              </AdDebugProvider>
+            ) : (
+              <WhatsAppGateProvider>
+              <WhatsAppGateInterceptor />
+              <Suspense fallback={null}><OAuthRedirectHandler /></Suspense>
+              <Suspense fallback={null}><ImpersonationBanner /></Suspense>
+              <Suspense fallback={null}><GlobalExitIntentDialog /></Suspense>
+              <Suspense fallback={<PageFallback />}>
+                <LazyRouteBoundary>
+                <OnboardingGate>
+                  <Routes>
+                    {publicRoutes}
+                    {dashboardRoutes}
+                    {adminRoutes}
+                    {sponsorRoutes}
+                  </Routes>
+                </OnboardingGate>
+                </LazyRouteBoundary>
+              </Suspense>
+              <DeferredShell />
+              </WhatsAppGateProvider>
+            )}
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
