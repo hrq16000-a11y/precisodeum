@@ -124,10 +124,24 @@ const tryAutomatedRecovery = async (reason: string, err?: unknown) => {
     return;
   }
 
+  // Esgotou as tentativas — mostra recuperação MANUAL com botões visíveis.
   setShellSupportState(
-    "Estamos finalizando a restauração automática em segundo plano.",
-    false,
+    "Não foi possível restaurar automaticamente. Toque em Recarregar agora para limpar o cache e tentar novamente.",
+    true,
   );
+  const btn = document.getElementById("app-shell-hard-reload") as HTMLButtonElement | null;
+  if (btn && !(btn as any).__bound) {
+    (btn as any).__bound = true;
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      btn.textContent = "Limpando…";
+      clearAutoHealAttempts();
+      try { localStorage.removeItem(DAILY_RESET_KEY); } catch { /* noop */ }
+      try { localStorage.removeItem("app_auto_force_reload_done_v"); } catch { /* noop */ }
+      await purgeAllCachesAndSWs();
+      forceFreshReload();
+    });
+  }
 };
 
 const resetCachesIfNeeded = async () => {
