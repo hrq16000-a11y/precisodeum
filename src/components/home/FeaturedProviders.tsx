@@ -102,7 +102,10 @@ const FeaturedProviders = ({ providers, isLoading, isFetching, hasError, sortBy 
         ) : providers.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">Nenhum profissional em destaque ainda.</p>
         ) : (
-          <div className="grid justify-items-center gap-3 sm:gap-4 sm:grid-cols-2 sm:justify-items-stretch lg:grid-cols-3 [content-visibility:auto] [contain-intrinsic-size:1px_800px]">
+          {/* CLS fix: removido content-visibility no grid (acima da dobra) — gerava reserva 1px→800px
+              que disparava layout shift quando os cards reais (~ 380px no mobile) entravam.
+              Cards individuais reservam altura via min-height próprio. */}
+          <div className="grid justify-items-center gap-3 sm:gap-4 sm:grid-cols-2 sm:justify-items-stretch lg:grid-cols-3">
             {items.map((item, idx) => {
               if (item.type === 'ad') {
                 return (
