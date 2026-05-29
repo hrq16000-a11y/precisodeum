@@ -120,9 +120,10 @@ describe('Wizard 360° — 4. Prevenção de dead-ends', () => {
     'utf8',
   );
 
-  it('expõe botão Voltar global em fases intermediárias', () => {
-    expect(shell).toMatch(/showGlobalBack/);
-    expect(shell).toMatch(/aria-label="Voltar para o passo anterior"/);
+  it('centraliza Voltar via WizardNav (sticky) — sem dead-ends', () => {
+    // Contrato oficial pós-PR 17: Voltar pertence ao Shell via WizardNav,
+    // fases intermediárias não duplicam o botão.
+    expect(shell).toMatch(/WizardNav|centralizad[ao]\s+no\s+WizardNav/i);
   });
 
   it('desabilita ExitIntentDialog nas celebrações (sem loop de pop-up)', () => {
