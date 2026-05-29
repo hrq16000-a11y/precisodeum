@@ -60,21 +60,13 @@ export function WizardNav({
         <motion.div
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.97 }}
-          animate={!nextDisabled && !saving ? {
-            boxShadow: [
-              '0 0 0 0 hsl(var(--accent) / 0)',
-              '0 0 0 6px hsl(var(--accent) / 0.18)',
-              '0 0 0 0 hsl(var(--accent) / 0)',
-            ],
-          } : {}}
-          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-          className="rounded-md"
+          className={`rounded-md ${!nextDisabled && !saving ? 'animate-ring-pulse-accent' : ''}`}
         >
           <Button
             type="button"
             onClick={onNext}
             disabled={nextDisabled || saving}
-            className="gap-1.5 bg-gradient-to-r from-accent to-primary text-primary-foreground"
+            className="gap-1.5 bg-gradient-to-r from-accent to-primary text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             aria-label={nextLabel}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
