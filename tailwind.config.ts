@@ -223,6 +223,18 @@ export default {
           "25%": { transform: "rotate(12deg)" },
           "75%": { transform: "rotate(-12deg)" },
         },
+        "glow-pulse-accent": {
+          "0%, 100%": { boxShadow: "0 3px 10px 0 hsl(var(--accent) / 0.25)" },
+          "50%": { boxShadow: "0 3px 16px 0 hsl(var(--accent) / 0.45)" },
+        },
+        "ring-pulse-accent": {
+          "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--accent) / 0)" },
+          "50%": { boxShadow: "0 0 0 6px hsl(var(--accent) / 0.18)" },
+        },
+        "float-y": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-4px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
