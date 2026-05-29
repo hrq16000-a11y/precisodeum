@@ -223,7 +223,27 @@
             return;
           }
 
-          setRecoveryState('Estamos finalizando a restauração automática internamente.', false);
+          // Esgotou as tentativas automáticas — mostra recuperação MANUAL
+          // com botões visíveis para o usuário sair do limbo.
+          setRecoveryState('Não foi possível restaurar automaticamente. Toque em Recarregar agora para limpar o cache e tentar novamente.', true);
+          var btn = document.getElementById('app-shell-hard-reload');
+          if (btn && !btn.__bound) {
+            btn.__bound = true;
+            btn.addEventListener('click', async function(){
+              btn.disabled = true;
+              btn.textContent = 'Limpando…';
+              setAttempts(0);
+              try { localStorage.removeItem('sw-killswitch-reset-day-v1'); } catch(e) {}
+              try { localStorage.removeItem('app_auto_force_reload_done_v'); } catch(e) {}
+              await clearRuntimeCaches();
+              try {
+                var url2 = new URL(location.href);
+                url2.searchParams.set('__fresh', Date.now());
+                location.replace(url2.toString());
+              } catch(e) { location.reload(); }
+            });
+          }
+          window.__appRecoveryInProgress = false;
         }
 
         window.__appShellTimer = setTimeout(function(){
