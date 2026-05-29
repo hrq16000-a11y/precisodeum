@@ -29,23 +29,26 @@ describe('PJ × RH guardrails', () => {
       phone: '81999999999',
       whatsapp: '81999999999',
       description: 'x',
-      // chaves PJ que NÃO devem chegar ao banco para PF:
+      // PJ-only (strictly): segment / cnpj / social_links — SEMPRE removidas em PF
+      business_segment: 'tecnologia',
+      cnpj: '00000000000000',
+      social_links: { instagram: 'foo' },
+      // Endereço institucional: PRESERVADO em PF (cpf-optional contract)
       street: 'Rua A',
       street_number: '10',
       complement: 'sala 1',
       postal_code: '50000-000',
       show_full_address: true,
-      business_segment: 'tecnologia',
-      cnpj: '00000000000000',
-      social_links: { instagram: 'foo' },
     });
-    expect((out as any).street).toBeUndefined();
-    expect((out as any).street_number).toBeUndefined();
-    expect((out as any).postal_code).toBeUndefined();
-    expect((out as any).show_full_address).toBeUndefined();
+    // PJ-only strictly removidas:
     expect((out as any).business_segment).toBeUndefined();
     expect((out as any).cnpj).toBeUndefined();
     expect((out as any).social_links).toBeUndefined();
+    // Endereço preservado (autônomo com estúdio/consultório/residência):
+    expect((out as any).street).toBe('Rua A');
+    expect((out as any).street_number).toBe('10');
+    expect((out as any).postal_code).toBe('50000-000');
+    expect((out as any).show_full_address).toBe(true);
     warn.mockRestore();
   });
 
