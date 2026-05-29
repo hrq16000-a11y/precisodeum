@@ -179,15 +179,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         }
-        const providerRows = Array.isArray(pvRows) ? (pvRows as any[]) : [];
+        const normalizedProviderRows = Array.isArray(pvRows) ? (pvRows as any[]) : [];
         let derivedAccountType: string | null = null;
         let derivedPrimaryCategoryId: string | null = null;
-        if (providerRows.length > 0) {
+        if (normalizedProviderRows.length > 0) {
           derivedAccountType = String(
-            providerRows.find((row: any) => row?.account_type)?.account_type ?? providerRows[0]?.account_type ?? '',
+            normalizedProviderRows.find((row: any) => row?.account_type)?.account_type ?? normalizedProviderRows[0]?.account_type ?? '',
           ).trim() || null;
           derivedPrimaryCategoryId = String(
-            providerRows.find((row: any) => row?.category_id)?.category_id ?? providerRows[0]?.category_id ?? '',
+            normalizedProviderRows.find((row: any) => row?.category_id)?.category_id ?? normalizedProviderRows[0]?.category_id ?? '',
           ).trim() || null;
         }
         profileData = pData && typeof pData === 'object'
@@ -197,7 +197,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               primary_category_id: (pData as any)?.primary_category_id ?? derivedPrimaryCategoryId,
             }
           : pData;
-        providerRows = providerRows;
+        providerRows = normalizedProviderRows;
         if (profileData) break;
       } catch (err: any) {
         lastErrorMessage = err?.message ?? String(err);
