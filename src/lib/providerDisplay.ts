@@ -88,10 +88,44 @@ export interface ResolveAvatarInput {
   profileAvatarUrl?: string | null;
   providerPhotoUrl?: string | null;
   serviceImage?: string | null;
-  /** Stable seed used by DiceBear when nothing else is available. */
+  /** Stable seed used to pick a consistent fallback color. */
   seed?: string | null;
-  /** Style for the generated DiceBear avatar — defaults to "adventurer". */
+  /** Display name — used to derive initials for the professional fallback. */
+  name?: string | null;
+  /** @deprecated kept for backward-compat; no longer used (DiceBear removed). */
   fallbackStyle?: string;
+}
+
+// Curated palette of professional, muted backgrounds for initials avatars.
+const INITIALS_PALETTE: Array<{ bg: string; fg: string }> = [
+  { bg: '#1e3a8a', fg: '#ffffff' },
+  { bg: '#0f766e', fg: '#ffffff' },
+  { bg: '#7c2d12', fg: '#ffffff' },
+  { bg: '#4338ca', fg: '#ffffff' },
+  { bg: '#166534', fg: '#ffffff' },
+  { bg: '#9a3412', fg: '#ffffff' },
+  { bg: '#334155', fg: '#ffffff' },
+  { bg: '#155e75', fg: '#ffffff' },
+  { bg: '#854d0e', fg: '#ffffff' },
+  { bg: '#6b21a8', fg: '#ffffff' },
+];
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function extractInitials(name?: string | null, seed?: string | null): string {
+  const src = (name || '').trim();
+  if (src) {
+    const parts = src.split(/\s+/).filter(Boolean)
+      .filter((w, i, arr) => i === 0 || i === arr.length - 1 || w[0] === w[0]?.toUpperCase());
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  const fallback = (seed || '').replace(/[^a-zA-Z0-9]/g, '');
+  return (fallback.slice(0, 2) || 'PR').toUpperCase();
 }
 
 /**
@@ -99,7 +133,7 @@ export interface ResolveAvatarInput {
  *  1. public_profiles.avatar_url (real selfie / official photo)
  *  2. providers.photo_url (uploaded by provider)
  *  3. service image (first service portfolio image)
- *  4. Generated DiceBear avatar (deterministic via seed)
+ *  4. Professional initials SVG (deterministic color from seed) — replaces DiceBear.
  */
 export function resolveAvatarUrl(input: ResolveAvatarInput): string {
   const profile = (input.profileAvatarUrl || '').trim();
@@ -108,9 +142,11 @@ export function resolveAvatarUrl(input: ResolveAvatarInput): string {
   if (photo) return photo;
   const svc = (input.serviceImage || '').trim();
   if (svc) return svc;
-  const style = input.fallbackStyle || 'adventurer';
-  const seed = encodeURIComponent(input.seed || 'profissional');
-  return `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}`;
+  const seed = String(input.seed || input.name || 'profissional');
+  const palette = INITIALS_PALETTE[hashString(seed) % INITIALS_PALETTE.length];
+  const initials = extractInitials(input.name, seed);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="${palette.bg}"/><text x="50%" y="50%" dy=".1em" text-anchor="middle" dominant-baseline="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" font-size="88" font-weight="600" fill="${palette.fg}" letter-spacing="-2">${initials}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
 /** True when avatar comes from the user (not generated). Useful for badges. */
