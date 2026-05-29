@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical, sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
 import { useSubmitGuard } from '@/hooks/useSubmitGuard';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
+import { resolveAvatarUrl } from '@/lib/providerDisplay';
 import { formatCityState, safeUF } from '@/lib/locationFormat';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
@@ -884,8 +885,10 @@ const ProviderProfile = () => {
 
   const name = provider ? capitalizeName((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
   const hasOwnAvatar = !!(provider && ((provider.profiles as any)?.avatar_url || provider.photo_url));
-  const diceBearAvatar = provider ? `https://api.dicebear.com/9.x/${avatarFallbackStyle}/svg?seed=${encodeURIComponent(provider.user_id || provider.id)}` : '';
-  const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : diceBearAvatar) : '';
+  const initialsAvatar = provider
+    ? resolveAvatarUrl({ seed: provider.user_id || provider.id, name })
+    : '';
+  const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : initialsAvatar) : '';
   // Categoria principal — prioridade:
   // 1) provider.categories (categoria principal cadastrada)
   // 2) Primeira categoria do primeiro serviço (fallback universal — corrige perfis

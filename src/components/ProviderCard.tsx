@@ -89,7 +89,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     providerPhotoUrl: provider.photo,
     serviceImage: provider.serviceImage,
     seed: provider.userId || provider.id,
-    fallbackStyle: avatarFallbackStyle,
+    name: displayName,
   });
 
   // Hide repeated subtitles (avoid showing "Pedreiro" both as name + category).
