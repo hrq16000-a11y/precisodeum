@@ -236,6 +236,13 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
             )}
           </div>
         )}
+
+        <AvatarCropDialog
+          open={!!cropFile}
+          file={cropFile}
+          onCancel={() => setCropFile(null)}
+          onConfirm={handleCropConfirm}
+        />
       </div>
     );
   }
