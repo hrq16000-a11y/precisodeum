@@ -48,11 +48,34 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            // Dynamic-only packages: return undefined so Rollup keeps them
+            // inside the on-demand chunk created by their dynamic import().
+            // Bundling them in any vendor-* chunk would pull ~1MB of jspdf
+            // graph (html2canvas, pako, canvg, core-js, fflate, fast-png,
+            // iobuffer, jspdf-autotable, jszip, canvas-confetti) into the
+            // initial page load.
+            if (
+              id.includes('/jspdf/') ||
+              id.includes('jspdf-autotable') ||
+              id.includes('html2canvas') ||
+              id.includes('/pako/') ||
+              id.includes('/canvg/') ||
+              id.includes('/core-js/') ||
+              id.includes('/fflate/') ||
+              id.includes('fast-png') ||
+              id.includes('/iobuffer/') ||
+              id.includes('/jszip/') ||
+              id.includes('canvas-confetti')
+            ) {
+              return undefined;
+            }
+
             if (
               id.includes('/react/') ||
               id.includes('react-dom') ||
               id.includes('/scheduler/') ||
-              id.includes('react-router')
+              id.includes('react-router') ||
+              id.includes('@remix-run/router')
             ) {
               return 'vendor-react';
             }
@@ -63,7 +86,7 @@ export default defineConfig(({ mode }) => ({
             ) {
               return 'vendor-forms';
             }
-            if (id.includes('@radix-ui')) return 'vendor-radix';
+            if (id.includes('@radix-ui') || id.includes('@floating-ui')) return 'vendor-radix';
             if (
               id.includes('/cmdk/') ||
               id.includes('/sonner/') ||
@@ -80,20 +103,33 @@ export default defineConfig(({ mode }) => ({
               return 'vendor-ui';
             }
             if (id.includes('@dnd-kit')) return 'vendor-dnd';
-            if (id.includes('@supabase') || id.includes('@tanstack/react-query')) {
+            if (id.includes('@supabase') || id.includes('@tanstack/')) {
               return 'vendor-data';
             }
-            if (id.includes('framer-motion')) return 'vendor-motion';
+            if (
+              id.includes('framer-motion') ||
+              id.includes('motion-dom') ||
+              id.includes('motion-utils')
+            ) {
+              return 'vendor-motion';
+            }
             if (id.includes('lucide-react')) return 'vendor-icons';
-            if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+            if (
+              id.includes('recharts') ||
+              id.includes('/d3-') ||
+              id.includes('/lodash') ||
+              id.includes('react-smooth') ||
+              id.includes('decimal.js-light') ||
+              id.includes('fast-equals') ||
+              id.includes('victory-vendor')
+            ) {
+              return 'vendor-charts';
+            }
             if (id.includes('leaflet')) return 'vendor-maps';
             if (id.includes('date-fns')) return 'vendor-dates';
             if (id.includes('dompurify')) return 'vendor-sanitize';
             if (id.includes('react-helmet-async')) return 'vendor-helmet';
             if (id.includes('@fingerprintjs')) return 'vendor-fp';
-            // jspdf / jspdf-autotable / canvas-confetti / jszip / sharp are
-            // loaded via dynamic import() in app code and will be split
-            // automatically by Rollup — do not force them into vendor.
             return 'vendor';
           }
         },
