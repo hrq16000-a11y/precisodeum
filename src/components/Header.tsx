@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, lazy, Suspense, useCallback, forwardRef } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import PrefetchLink from '@/components/PrefetchLink';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, ChevronRight, Radar } from 'lucide-react';
@@ -212,7 +213,7 @@ const Header = () => {
       );
     }
     return (
-      <Link key={item.id} to={item.url} className={`relative ${className} ${activeClass}`} onClick={onClick}>
+      <PrefetchLink key={item.id} to={item.url} className={`relative ${className} ${activeClass}`} onClick={onClick}>
         {item.label}
         {active && (
           <div className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-accent" />
