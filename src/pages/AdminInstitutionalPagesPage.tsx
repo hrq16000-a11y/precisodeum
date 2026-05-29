@@ -165,7 +165,7 @@ const AdminInstitutionalPagesPage = () => {
                   {page.published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => openEdit(page)}>Editar</Button>
-                <Button size="icon" variant="ghost" onClick={() => handleDelete(page)} className="text-destructive">
+                <Button size="icon" variant="ghost" onClick={() => handleDelete(page)} className="text-destructive" aria-label="Excluir página">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

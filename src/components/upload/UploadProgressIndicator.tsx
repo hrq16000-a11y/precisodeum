@@ -62,7 +62,7 @@ const StageIcon = ({ state }: { state: UploadStageState }) => {
   if (state === 'active') return <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />;
   if (state === 'done')   return <Check className="h-3.5 w-3.5 text-success" />;
   if (state === 'error')  return <X className="h-3.5 w-3.5 text-destructive" />;
-  return <Circle className="h-3.5 w-3.5 text-muted-foreground/40" />;
+  return <Circle className="h-3.5 w-3.5 text-muted-foreground/70" />;
 };
 
 export function UploadProgressIndicator({ stages, className = '' }: Props) {

@@ -223,6 +223,18 @@ export default {
           "25%": { transform: "rotate(12deg)" },
           "75%": { transform: "rotate(-12deg)" },
         },
+        "glow-pulse-accent": {
+          "0%, 100%": { boxShadow: "0 3px 10px 0 hsl(var(--accent) / 0.25)" },
+          "50%": { boxShadow: "0 3px 16px 0 hsl(var(--accent) / 0.45)" },
+        },
+        "ring-pulse-accent": {
+          "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--accent) / 0)" },
+          "50%": { boxShadow: "0 0 0 6px hsl(var(--accent) / 0.18)" },
+        },
+        "float-y": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-4px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -240,7 +252,11 @@ export default {
         "online-breath": "online-breath 2.4s ease-in-out infinite",
         "wizard-shimmer": "wizard-shimmer 240ms ease-out 1",
         "pulse-soft": "pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "pulse-soft-slow": "pulse-soft 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "wiggle-rotate": "wiggle-rotate 2s ease-in-out infinite",
+        "glow-pulse-accent": "glow-pulse-accent 2s ease-in-out infinite",
+        "ring-pulse-accent": "ring-pulse-accent 1.6s ease-in-out infinite",
+        "float-y": "float-y 2s ease-in-out infinite",
       },
     },
   },

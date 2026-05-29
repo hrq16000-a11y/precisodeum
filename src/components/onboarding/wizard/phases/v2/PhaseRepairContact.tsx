@@ -119,7 +119,7 @@ export const PhaseRepairContact = ({
           disabled={saving}
           aria-disabled={saving || !valid}
           data-testid="repair-save-btn"
-          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95"
+          className="group h-12 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 text-base font-bold text-white shadow-[0_0_24px_rgba(251,146,60,0.55)] hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
         >
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Salvar e voltar

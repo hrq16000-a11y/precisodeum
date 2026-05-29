@@ -76,7 +76,7 @@ const CompactSearch = forwardRef<HTMLFormElement, CompactSearchProps>(({ onSubmi
 
   return (
     <form ref={ref} onSubmit={handleSubmit} className="relative hidden md:block">
-      <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
+      <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/70" />
       <Input
         ref={inputRef}
         value={query}
@@ -385,7 +385,7 @@ const Header = () => {
                       onClick={() => setMobileOpen(false)}
                     >
                       <span className="flex items-center gap-2">{item.label}</span>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
                     </a>
                   ) : (
                     <Link
@@ -397,7 +397,7 @@ const Header = () => {
                       {active ? (
                         <span className="h-1.5 w-1.5 rounded-full bg-accent" />
                       ) : (
-                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
                       )}
                     </Link>
                   )}

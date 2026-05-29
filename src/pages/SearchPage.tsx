@@ -688,7 +688,7 @@ const SearchPage = () => {
             aria-pressed={onlineOnly}
           >
             <span className="inline-flex items-center gap-1.5">
-              <Circle className={`h-2 w-2 ${onlineOnly ? 'fill-emerald-500 text-emerald-500' : 'fill-muted-foreground/40 text-muted-foreground/40'}`} />
+              <Circle className={`h-2 w-2 ${onlineOnly ? 'fill-emerald-500 text-emerald-500' : 'fill-muted-foreground/40 text-muted-foreground/70'}`} />
               Online agora
             </span>
             <span className="text-[10px] font-semibold">{onlineOnly ? 'ATIVO' : 'OFF'}</span>
@@ -704,7 +704,7 @@ const SearchPage = () => {
             aria-pressed={activeTodayOnly}
           >
             <span className="inline-flex items-center gap-1.5">
-              <Circle className={`h-2 w-2 ${activeTodayOnly ? 'fill-amber-500 text-amber-500' : 'fill-muted-foreground/40 text-muted-foreground/40'}`} />
+              <Circle className={`h-2 w-2 ${activeTodayOnly ? 'fill-amber-500 text-amber-500' : 'fill-muted-foreground/40 text-muted-foreground/70'}`} />
               Ativo hoje
             </span>
             <span className="text-[10px] font-semibold">{activeTodayOnly ? 'ATIVO' : 'OFF'}</span>
@@ -765,7 +765,7 @@ const SearchPage = () => {
         <Label className="text-xs text-muted-foreground flex items-center justify-between">
           <span>Status</span>
           {realtimeHealth === 'connecting' && (
-            <span className="text-[10px] font-medium text-muted-foreground/60">conectando…</span>
+            <span className="text-[10px] font-medium text-muted-foreground/70">conectando…</span>
           )}
           {realtimeHealth === 'degraded' && (
             <span className="text-[10px] font-medium text-muted-foreground/70">tempo real indisponível</span>
@@ -797,7 +797,7 @@ const SearchPage = () => {
               </SelectItem>
               <SelectItem value="recently_offline">
                 <span className="inline-flex items-center gap-1.5">
-                  <Circle className="h-2 w-2 fill-muted-foreground/50 text-muted-foreground/50" /> Recentemente Offline
+                  <Circle className="h-2 w-2 fill-muted-foreground/50 text-muted-foreground/70" /> Recentemente Offline
                 </span>
               </SelectItem>
             </SelectContent>

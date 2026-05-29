@@ -116,9 +116,9 @@ const AdminCommunityPage = () => {
               </span>
             </div>
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" onClick={() => window.open(link.url, '_blank')}><ExternalLink className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => openEdit(link)}><Pencil className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(link.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => window.open(link.url, '_blank')} aria-label="Abrir link em nova aba"><ExternalLink className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => openEdit(link)} aria-label="Editar link"><Pencil className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(link.id)} aria-label="Excluir link"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
           </div>
         ))}

@@ -543,7 +543,7 @@ const JobsPage = () => {
             ) : displayJobs.length === 0 ? (
               <div className="mt-12 text-center sm:mt-16">
                 <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                  <Briefcase className="h-10 w-10 text-muted-foreground/50" />
+                  <Briefcase className="h-10 w-10 text-muted-foreground/70" />
                 </div>
                 <p className="text-lg font-semibold text-foreground">Nenhuma vaga encontrada</p>
                 <p className="mt-1 text-sm text-muted-foreground">Tente alterar os filtros ou seja o primeiro a publicar!</p>

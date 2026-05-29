@@ -696,7 +696,7 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
               Escolha por onde quer continuar:
             </p>
             <div className="mt-5 flex flex-col gap-2">
-              <Button asChild className="w-full gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(251,146,60,0.7)] hover:opacity-95">
+              <Button asChild className="w-full gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 font-semibold text-white shadow-[0_8px_24px_-8px_rgba(251,146,60,0.7)] hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2">
                 <Link to="/dashboard">
                   <LayoutDashboard className="h-4 w-4" /> Ir para o dashboard
                 </Link>

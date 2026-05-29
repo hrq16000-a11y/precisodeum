@@ -520,7 +520,7 @@ const DashboardPortfolioPage = () => {
               </div>
             ) : photos.length === 0 ? (
               <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 px-6 py-12 text-center">
-                <Camera className="h-12 w-12 text-muted-foreground/60 mx-auto mb-3" />
+                <Camera className="h-12 w-12 text-muted-foreground/70 mx-auto mb-3" />
                 <h3 className="font-display text-base font-bold text-foreground">Sem fotos neste álbum</h3>
                 <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-xs mx-auto">
                   Adicione fotos dos seus trabalhos para mostrar sua qualidade aos clientes.
@@ -729,7 +729,7 @@ const DashboardPortfolioPage = () => {
                       <LazyImage src={album.cover_image_url} alt={album.name} width={400} height={300} priority={i < 2} sizesPreset="card-wide" surface="portfolio-album-cover" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <ImagePlus className="h-10 w-10 text-muted-foreground/40" />
+                        <ImagePlus className="h-10 w-10 text-muted-foreground/70" />
                       </div>
                     )}
                     <div className="absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-xs font-medium text-foreground backdrop-blur-sm">

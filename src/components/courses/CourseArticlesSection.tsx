@@ -38,7 +38,7 @@ const CourseArticlesSection = ({ articles }: { articles: CourseArticle[] }) => {
             <img src={featured.cover_image_url} alt={featured.title} className="aspect-video w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" decoding="async" />
           ) : (
             <div className="flex aspect-video w-full items-center justify-center bg-muted/50">
-              <Newspaper className="h-12 w-12 text-muted-foreground/40" />
+              <Newspaper className="h-12 w-12 text-muted-foreground/70" />
             </div>
           )}
           <div className="p-5">
@@ -63,7 +63,7 @@ const CourseArticlesSection = ({ articles }: { articles: CourseArticle[] }) => {
                 <img src={article.cover_image_url} alt={article.title} className="h-24 w-full rounded-lg object-cover" loading="lazy" decoding="async" />
               ) : (
                 <div className="flex h-24 items-center justify-center rounded-lg bg-muted/50">
-                  <Newspaper className="h-7 w-7 text-muted-foreground/40" />
+                  <Newspaper className="h-7 w-7 text-muted-foreground/70" />
                 </div>
               )}
               <div className="min-w-0">

@@ -184,7 +184,7 @@ const CategoriesGrid = (_props: Props) => {
           </>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
-            <SearchX className="h-12 w-12 text-muted-foreground/40 mb-3" />
+            <SearchX className="h-12 w-12 text-muted-foreground/70 mb-3" />
             <p className="text-sm font-semibold text-muted-foreground">Nenhuma categoria encontrada</p>
           </div>
         )}

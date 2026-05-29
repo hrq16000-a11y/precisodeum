@@ -492,7 +492,7 @@ const AdminGamificationPage = () => {
                                 }}
                                 className={`inline-flex items-center justify-center h-6 w-6 rounded-md transition-colors ${
                                   v ? 'bg-primary/15 text-primary hover:bg-primary/25'
-                                    : 'bg-muted text-muted-foreground/40 hover:bg-muted/80'
+                                    : 'bg-muted text-muted-foreground/70 hover:bg-muted/80'
                                 }`}
                                 title={v ? 'Desbloqueado neste nível' : 'Não desbloqueia'}
                               >

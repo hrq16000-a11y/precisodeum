@@ -88,7 +88,7 @@ const RecentServices = ({ services }: Props) => {
                     </span>
                     {ago && (
                       <>
-                        <span className="text-muted-foreground/40">·</span>
+                        <span className="text-muted-foreground/70">·</span>
                         <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                           <Clock className="h-3 w-3" /> {ago}
                         </span>

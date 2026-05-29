@@ -81,7 +81,7 @@ const DashboardLeadDetailPage = () => {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <AlertTriangle className="mb-4 h-10 w-10 text-muted-foreground/40" />
+          <AlertTriangle className="mb-4 h-10 w-10 text-muted-foreground/70" />
           <p className="font-semibold text-foreground">Lead não encontrado</p>
           <p className="text-sm text-muted-foreground">Talvez ele tenha sido excluído ou não pertença ao seu perfil.</p>
           <Button className="mt-4" onClick={() => navigate('/dashboard/leads')} variant="outline"><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>

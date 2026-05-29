@@ -319,7 +319,7 @@ const AdminBottomNavPage = () => {
               <div className="space-y-2">
                 {items.map((item, idx) => (
                   <div key={item.id} className="flex items-center gap-2 rounded-lg border border-border p-2.5 bg-card">
-                    <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                    <GripVertical className="h-4 w-4 text-muted-foreground/70 shrink-0" />
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
                         <IconPreview name={item.icon} />
@@ -332,16 +332,16 @@ const AdminBottomNavPage = () => {
                     <div className="flex items-center gap-1 shrink-0">
                       {!item.is_active && <Badge variant="secondary" className="text-[9px]">Off</Badge>}
                       {item.requires_auth && <Badge variant="outline" className="text-[9px]">Auth</Badge>}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveItem(idx, -1)} disabled={idx === 0}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveItem(idx, -1)} disabled={idx === 0} aria-label="Mover para cima">
                         <ArrowUp className="h-3 w-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1} aria-label="Mover para baixo">
                         <ArrowDown className="h-3 w-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditItem(item); setShowDialog(true); }}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditItem(item); setShowDialog(true); }} aria-label="Editar item">
                         <Pencil className="h-3 w-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteItem.mutate(item.id)}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteItem.mutate(item.id)} aria-label="Excluir item">
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>

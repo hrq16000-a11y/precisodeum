@@ -157,7 +157,7 @@ const SponsorBannersPage = () => {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-40 bg-muted/30 rounded-xl border-2 border-dashed border-border">
-                  <Image className="w-10 h-10 text-muted-foreground/40 mb-2" />
+                  <Image className="w-10 h-10 text-muted-foreground/70 mb-2" />
                   <p className="text-sm text-muted-foreground">Nenhum banner cadastrado</p>
                 </div>
               )}

@@ -41,7 +41,7 @@ const ProfileCompleteness = ({ provider, profile, servicesCount, portfolioCount 
             {check.done ? (
               <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
             ) : (
-              <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
+              <Circle className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
             )}
             <span className={check.done ? 'text-muted-foreground line-through decoration-muted-foreground/30' : 'text-foreground font-medium'}>
               {check.label}

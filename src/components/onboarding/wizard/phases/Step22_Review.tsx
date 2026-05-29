@@ -520,7 +520,7 @@ const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
         <Button
           type="button"
           onClick={onFinalize}
-          className="flex-1 gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 font-semibold text-white"
+          className="flex-1 gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500 font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
         >
           Finalizar cadastro <ArrowRight className="h-4 w-4" />
         </Button>

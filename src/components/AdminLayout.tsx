@@ -420,15 +420,15 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 <Link to="/admin" className="hover:text-foreground transition-colors font-medium">Admin</Link>
                 {group && (
                   <>
-                    <span className="text-muted-foreground/40">/</span>
-                    <motion.span key={group.label} layoutId="admin-breadcrumb-group" className="text-muted-foreground/60">
+                    <span className="text-muted-foreground/70">/</span>
+                    <motion.span key={group.label} layoutId="admin-breadcrumb-group" className="text-muted-foreground/70">
                       {group.label}
                     </motion.span>
                   </>
                 )}
                 {current && (
                   <>
-                    <span className="text-muted-foreground/40">/</span>
+                    <span className="text-muted-foreground/70">/</span>
                     <motion.span key={current.label} layoutId="admin-breadcrumb-page" className="font-medium text-foreground">
                       {current.label}
                     </motion.span>
@@ -466,9 +466,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               return (
                 <nav className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Link to="/admin" className="hover:text-foreground transition-colors">Admin</Link>
-                  <span className="text-muted-foreground/40">/</span>
-                  <span className="text-muted-foreground/60">{group.label}</span>
-                  <span className="text-muted-foreground/40">/</span>
+                  <span className="text-muted-foreground/70">/</span>
+                  <span className="text-muted-foreground/70">{group.label}</span>
+                  <span className="text-muted-foreground/70">/</span>
                   <span className="font-medium text-foreground">{current.label}</span>
                 </nav>
               );

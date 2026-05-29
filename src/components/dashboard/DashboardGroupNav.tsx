@@ -70,11 +70,11 @@ const DashboardGroupNav = () => {
     <div className="mb-5 -mx-1">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 mb-2.5 px-1">
-        <Link to="/dashboard" className="text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+        <Link to="/dashboard" className="text-[10px] text-muted-foreground/70 hover:text-muted-foreground transition-colors">
           <Home className="h-3 w-3" />
         </Link>
         <ChevronRight className="h-3 w-3 text-muted-foreground/30" />
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
           {currentGroup.label}
         </span>
         <ChevronRight className="h-3 w-3 text-muted-foreground/30" />

@@ -318,7 +318,7 @@ const DashboardAnalytics = () => {
           </div>
         ) : (
           <div className="flex h-[160px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-center">
-            <MessageCircle className="mb-2 h-8 w-8 text-muted-foreground/50" />
+            <MessageCircle className="mb-2 h-8 w-8 text-muted-foreground/70" />
             <p className="text-sm font-semibold text-foreground">Sem cliques ainda</p>
             <p className="mt-1 max-w-xs text-xs text-muted-foreground">
               Seu gráfico aparecerá aqui assim que receber os primeiros cliques.
