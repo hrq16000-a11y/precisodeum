@@ -15,6 +15,7 @@ import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import AdNativeCard from '@/components/ads/AdNativeCard';
 import { useSettingValue } from '@/hooks/useSiteSettings';
+import { useAvatarFallbackConfig } from '@/hooks/useAvatarFallbackConfig';
 import type { FeaturedProviderSort } from '@/hooks/useProviders';
 import CompanyCard from '@/components/cards/CompanyCard';
 
