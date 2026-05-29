@@ -355,7 +355,9 @@ export const __presenceInternals = {
     realtimeHealth = 'connecting';
     onlineSetCache = null;
     recentlyOfflineCache = null;
+    if (disposeTimer) { clearTimeout(disposeTimer); disposeTimer = null; }
   },
+
   applyState(state: PresenceState, now: number = Date.now()) {
     const next = reducePresenceState(state, onlineUsers, now);
     onlineUsers.forEach((_, userId) => {
