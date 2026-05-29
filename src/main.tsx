@@ -5,8 +5,17 @@ import "./index.css";
 import { installConsentBridge } from "./lib/consentBridge";
 import { installWebVitalsPerRoute } from "./lib/webVitalsPerRoute";
 
+// installConsentBridge é leve mas precisa estar pronto cedo (gates de gtag/fbq antes de scripts de terceiros).
 installConsentBridge();
-installWebVitalsPerRoute();
+// webVitalsPerRoute apenas observa métricas — adiar para após o first paint reduz TBT/LCP em mobile.
+const __scheduleVitals = () => {
+  try { installWebVitalsPerRoute(); } catch { /* best-effort */ }
+};
+if (typeof window !== 'undefined' && typeof (window as any).requestIdleCallback === 'function') {
+  (window as any).requestIdleCallback(__scheduleVitals, { timeout: 2500 });
+} else {
+  setTimeout(__scheduleVitals, 1200);
+}
 
 const rootElement = document.getElementById("root");
 const shellElement = document.getElementById("app-shell");
