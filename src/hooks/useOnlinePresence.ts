@@ -23,6 +23,15 @@ let subscriberCount = 0;
 /** If Supabase presence does not sync within this window, mark realtime as degraded. */
 const REALTIME_HEALTH_TIMEOUT_MS = 12_000;
 let healthTimer: ReturnType<typeof setTimeout> | null = null;
+/**
+ * M7 · Defer real removeChannel para absorver o ciclo unmount→remount imediato
+ * do React StrictMode / navegação rápida (mesmo princípio do realtimeRegistry).
+ * Sem isso, trocar de rota cria/destrói o canal várias vezes/segundo, deixando
+ * sockets zumbis em voo e disparando reconexões → leak de memória + INP.
+ */
+const CHANNEL_DISPOSE_DELAY_MS = 75;
+let disposeTimer: ReturnType<typeof setTimeout> | null = null;
+
 
 function notify() {
   listeners.forEach((fn) => fn());
