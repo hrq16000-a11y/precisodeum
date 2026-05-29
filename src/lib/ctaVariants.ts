@@ -19,9 +19,11 @@ export const WHATSAPP_VARIANTS = {
 } as const;
 
 export const LEAD_VARIANTS = {
-  solicitar_orcamento: 'Solicitar orçamento',
-  pedir_proposta: 'Pedir proposta',
-  enviar_solicitacao: 'Enviar solicitação',
+  // Chave mantida para compat de telemetria/CRM; rótulo atualizado para
+  // alinhar com a diretriz "negociação direta e transparente" (sem leilão).
+  solicitar_orcamento: 'Falar com o profissional',
+  pedir_proposta: 'Conversar com o profissional',
+  enviar_solicitacao: 'Enviar mensagem',
   comecar_agora: 'Começar agora',
 } as const;
 
