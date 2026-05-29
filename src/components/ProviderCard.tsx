@@ -10,6 +10,7 @@ import StarRating from '@/components/StarRating';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { DbProvider } from '@/hooks/useProviders';
 import { useFeatureEnabled, useSettingValue } from '@/hooks/useSiteSettings';
+import { useAvatarFallbackConfig } from '@/hooks/useAvatarFallbackConfig';
 import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { handleImageError, getOptimizedUrl } from '@/lib/imageResolver';
