@@ -95,12 +95,10 @@ const LoginPage = () => {
     setEmailError(null);
     setPasswordError(null);
     const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail) {
-      setEmailError('Informe seu e-mail.');
-      return;
-    }
-    if (!password) {
-      setPasswordError('Informe sua senha.');
+    if (!trimmedEmail || !password) {
+      if (!trimmedEmail) setEmailError('Informe seu e-mail.');
+      if (!password) setPasswordError('Informe sua senha.');
+      toast.error('Preencha e-mail e senha para continuar.');
       return;
     }
     // Validação local antes de bater no servidor — evita mensagens genéricas
