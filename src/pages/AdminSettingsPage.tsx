@@ -360,7 +360,7 @@ const PROFILE_RULE_KEYS = [
   { key: 'incomplete_profile_hide_public', label: 'Ocultar perfis incompletos', type: 'boolean' },
   { key: 'incomplete_profile_auto_delete', label: 'Exclusão automática', type: 'boolean' },
   { key: 'incomplete_profile_days_limit', label: 'Prazo (dias)', type: 'number' },
-  { key: 'avatar_fallback_style', label: 'Estilo avatar gerado', type: 'select', options: ['adventurer', 'bottts', 'fun-emoji', 'thumbs', 'lorelei', 'avataaars', 'big-ears'] },
+  // Avatar fallback agora tem sua própria seção (AvatarFallbackSection) — removido daqui.
 ];
 
 const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
