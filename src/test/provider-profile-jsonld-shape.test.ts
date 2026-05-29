@@ -43,8 +43,9 @@ describe('ProviderProfile — JSON-LD shape (Rich Results)', () => {
   it('BreadcrumbList com ListItem position/name/item', () => {
     expect(SRC).toMatch(/'@type':\s*'BreadcrumbList'/);
     expect(SRC).toMatch(/'@type':\s*'ListItem'/);
+    // O 1º item é literal (Início); itens subsequentes usam contador dinâmico `pos++`.
     expect(SRC).toMatch(/position:\s*1/);
-    expect(SRC).toMatch(/position:\s*2/);
+    expect(SRC).toMatch(/position:\s*(?:2|pos\+\+|pos)/);
   });
 
   it('PostalAddress sem addressLocality duplicado e country=BR', () => {
