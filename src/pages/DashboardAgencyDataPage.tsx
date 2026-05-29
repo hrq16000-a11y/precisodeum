@@ -35,15 +35,10 @@ const DashboardAgencyDataPage = () => {
     name: '', description: '', whatsapp: '', email: '', website: '', city: '', state: '',
   });
 
-  // Guard: Apenas RH pode acessar
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate('/login', { replace: true }); return; }
-    if (profile && profile.profile_type !== 'rh') {
-      toast.error('Esta área é exclusiva para Agências de RH / Recrutamento');
-      navigate('/dashboard', { replace: true });
-    }
-  }, [authLoading, user, profile, navigate]);
+  // Guard de tipo: já garantido por ProtectedRoute allowedTypes={['rh']} na rota.
+  // Removido useEffect+navigate duplicado para evitar redirect espúrio durante
+  // estados transitórios de carregamento do profile (audit-fix #9).
+
 
   // Carrega agência
   useEffect(() => {
