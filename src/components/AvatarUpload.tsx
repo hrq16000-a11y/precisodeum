@@ -158,17 +158,24 @@ const AvatarUpload = forwardRef<HTMLDivElement, AvatarUploadProps>(
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.files?.[0];
+      // Reset input value so picking the same file again retriggers onChange.
+      if (fileRef.current) fileRef.current.value = '';
       if (!raw) return;
       const v = await validateImageFile(raw, {
-        maxSizeBytes: 5 * 1024 * 1024,
+        maxSizeBytes: 10 * 1024 * 1024,
         minDimension: 64,
-        maxDimension: 6000,
+        maxDimension: 8000,
       });
       if (!v.ok) {
         toast.error(v.message ?? 'Arquivo inválido');
         return;
       }
-      await runUpload(raw);
+      setCropFile(raw);
+    };
+
+    const handleCropConfirm = async (cropped: File) => {
+      setCropFile(null);
+      await runUpload(cropped);
     };
 
     const handleRetry = async () => {
