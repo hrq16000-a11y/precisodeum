@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, Users, Layout, Star, MessageSquare, Eye, TrendingUp, Camera, Megaphone } from 'lucide-react';
+import { Briefcase, User, Users, Layout } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
@@ -12,7 +12,7 @@ import { hasAnyContact } from '@/lib/profileResolvers';
 import LevelUpBanner from '@/components/dashboard/LevelUpBanner';
 import WelcomeHero from '@/components/dashboard/WelcomeHero';
 import QuickStatsBar from '@/components/dashboard/QuickStatsBar';
-import StatCardGrid from '@/components/dashboard/StatCardGrid';
+// StatCardGrid removido: agora vive em /dashboard/metricas
 import DashboardTipOfDay from '@/components/dashboard/DashboardTipOfDay';
 import LevelBenefits from '@/components/dashboard/LevelBenefits';
 import ShareProfileCard from '@/components/dashboard/ShareProfileCard';
@@ -35,8 +35,7 @@ import EmptyStateBanner from '@/components/dashboard/EmptyStateBanner';
 import DashboardSkeleton from '@/components/dashboard/DashboardSkeleton';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
-import DashboardAnalytics from '@/components/dashboard/DashboardAnalytics';
-import AdPerformanceWidget from '@/components/dashboard/AdPerformanceWidget';
+// DashboardAnalytics + AdPerformanceWidget movidos para /dashboard/metricas
 import { useProviderActivityHeartbeat } from '@/hooks/useProviderActivityHeartbeat';
 import { useLeadInteractionPing } from '@/hooks/useLeadInteractionPing';
 import ServiceCompletionCard from '@/components/dashboard/ServiceCompletionCard';
@@ -49,7 +48,8 @@ import EngagementLoop from '@/components/dashboard/EngagementLoop';
 import ExpertTipsWidget from '@/components/dashboard/ExpertTipsWidget';
 import DismissibleWidget from '@/components/dashboard/DismissibleWidget';
 import MissionCard from '@/components/dashboard/MissionCard';
-import ContactImpactWidget from '@/components/dashboard/ContactImpactWidget';
+// ContactImpactWidget movido para /dashboard/metricas
+import MetricsPreviewCard from '@/components/dashboard/MetricsPreviewCard';
 import OnlineStatusFeedback from '@/components/dashboard/OnlineStatusFeedback';
 import OnlineStatusToggle from '@/components/dashboard/OnlineStatusToggle';
 import DashboardPwaInstallNudge from '@/components/dashboard/DashboardPwaInstallNudge';
@@ -61,7 +61,7 @@ import { useMaturityTier } from '@/hooks/useMaturityTier';
 import { useFirstContactAutoMission } from '@/hooks/useFirstContactAutoMission';
 import UnifiedHealthScore from '@/components/dashboard/UnifiedHealthScore';
 import QuickActionsHero from '@/components/dashboard/QuickActionsHero';
-import ImpactSection from '@/components/dashboard/ImpactSection';
+// ImpactSection movido para /dashboard/metricas
 import { resolveEffectiveProfileType } from '@/lib/onboardingAccess';
 import { setOnboardingProgress } from '@/lib/onboardingProgressSync';
 import {
@@ -81,7 +81,7 @@ import SectionSkeleton from '@/pages/dashboard/sections/_skeleton';
 const ClientDashboardSection = lazy(() => import('@/pages/dashboard/sections/ClientDashboardSection'));
 const RhDashboardSection = lazy(() => import('@/pages/dashboard/sections/RhDashboardSection'));
 const ProviderInsightsCollapsible = lazy(() => import('@/pages/dashboard/sections/ProviderInsightsCollapsible'));
-const ProviderAnalyticsGrid = lazy(() => import('@/pages/dashboard/sections/ProviderAnalyticsGrid'));
+// ProviderAnalyticsGrid movido para /dashboard/metricas
 const ProviderQuickAccess = lazy(() => import('@/pages/dashboard/sections/ProviderQuickAccess'));
 const ProviderOnboardingStepper = lazy(() => import('@/pages/dashboard/sections/ProviderOnboardingStepper'));
 
@@ -438,14 +438,7 @@ const DashboardPage = () => {
   const showPortfolioEmptyBanner = servicesCount !== null && servicesCount > 0 && portfolioAlbumCount === 0;
   const anyEmptyBannerVisible = showServiceEmptyBanner || showPortfolioEmptyBanner;
 
-  const statCards = [
-    { icon: Briefcase, value: servicesCount ?? 0, label: servicesCount === 0 ? 'Nenhum serviço' : 'Serviços', gradient: 'from-amber-500/10 to-orange-600/5', iconColor: 'text-amber-500' },
-    { icon: MessageSquare, value: leadsCount, label: leadsCount === 0 ? 'Nenhum lead' : 'Leads', gradient: 'from-orange-500/10 to-orange-600/5', iconColor: 'text-orange-500' },
-    { icon: TrendingUp, value: viewsTotal, label: viewsTotal === 0 ? 'Sem visualizações' : 'Visualizações', gradient: 'from-emerald-500/10 to-emerald-600/5', iconColor: 'text-emerald-500' },
-    { icon: Star, value: provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0', label: !provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações' : `${reviewCount} avaliação${reviewCount !== 1 ? 'ões' : ''}`, gradient: 'from-amber-500/10 to-amber-600/5', iconColor: 'text-amber-500' },
-    { icon: Camera, value: portfolioCount, label: portfolioCount === 0 ? 'Sem fotos' : 'Portfólio', gradient: 'from-orange-500/10 to-emerald-600/5', iconColor: 'text-orange-500' },
-    { icon: Megaphone, value: jobsCount, label: jobsCount === 0 ? 'Nenhuma vaga' : 'Vagas', gradient: 'from-amber-500/10 to-orange-600/5', iconColor: 'text-amber-500' },
-  ];
+  // statCards foram movidos para /dashboard/metricas (DashboardMetricsPage).
 
   // Welcome banner contextual greeting
   const hour = new Date().getHours();
@@ -503,15 +496,14 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* 5) MÉTRICAS E INSIGHTS */}
-      <div className="mt-6">
-        <DashboardAnalytics />
-      </div>
-
-      {/* 5b) Desempenho do Anúncio */}
+      {/* 5) PRÉVIA DE MÉTRICAS — painel completo em /dashboard/metricas */}
       {provider?.id && (
-        <div className="mt-4">
-          <AdPerformanceWidget providerId={provider.id} hasPhoto={!!provider?.photo_url} />
+        <div className="mt-6">
+          <MetricsPreviewCard
+            viewsTotal={viewsTotal}
+            leadsCount={leadsCount}
+            contactClicks={(provider as any)?.contact_clicks_count ?? 0}
+          />
         </div>
       )}
 
@@ -544,10 +536,7 @@ const DashboardPage = () => {
         <IdentitySuggestionsWidget limit={2} />
       </div>
 
-      {/* Contador de Impacto Real (24h) */}
-      <div className="mt-4" data-tour="contact-impact">
-        <ContactImpactWidget />
-      </div>
+      {/* Contador de Impacto Real (24h) — movido para /dashboard/metricas */}
 
       {/* Ciclo de Fechamento */}
       <div className="mt-4">
@@ -652,33 +641,7 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Métricas finais */}
-      <div className="mt-6">
-        <ImpactSection
-          views={viewsTotal}
-          whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
-          leads={leadsCount}
-        />
-      </div>
-
-      {/* Stats com counters — só se houver dados reais */}
-      {(servicesCount ?? 0) + leadsCount + viewsTotal + portfolioCount + jobsCount + reviewCount > 0 && (
-        <div className="mt-5">
-          <StatCardGrid cards={statCards} />
-        </div>
-      )}
-
-      {/* Analytics Grid — lazy + gated por dados reais */}
-      {provider && (viewsTotal > 0 || leadsCount > 0) && (
-        <Suspense fallback={<SectionSkeleton minH="min-h-[360px]" />}>
-          <ProviderAnalyticsGrid
-            providerId={provider.id}
-            viewsTotal={viewsTotal}
-            leadsCount={leadsCount}
-            servicesCount={servicesCount ?? 0}
-          />
-        </Suspense>
-      )}
+      {/* Métricas finais, StatCardGrid e Analytics Grid — movidos para /dashboard/metricas */}
 
       {/* Dica do dia + Benefícios do nível */}
       {provider && (
