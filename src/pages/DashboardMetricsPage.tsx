@@ -38,13 +38,15 @@ const DashboardMetricsPage = () => {
   const [series, setSeries] = useState<LeadStatsDay[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Contadores agregados (movidos da home do Dashboard)
-  const [servicesCount, setServicesCount] = useState<number>(0);
-  const [leadsCount, setLeadsCount] = useState<number>(0);
-  const [jobsCount, setJobsCount] = useState<number>(0);
-  const [portfolioCount, setPortfolioCount] = useState<number>(0);
-  const [viewsTotal, setViewsTotal] = useState<number>(0);
-  const [reviewCount, setReviewCount] = useState<number>(0);
+  // Contadores agregados (movidos da home do Dashboard) — agora via hook compartilhado
+  const {
+    servicesCount,
+    leadsCount,
+    jobsCount,
+    portfolioCount,
+    viewsTotal,
+    reviewCount,
+  } = useProviderCounters();
 
   useEffect(() => {
     if (authLoading) return;
@@ -75,41 +77,7 @@ const DashboardMetricsPage = () => {
     return () => { active = false; };
   }, [authLoading, provider?.id]);
 
-  // Carrega contadores (services, leads, portfolio, reviews) — antes vivia na home
-  useEffect(() => {
-    if (!provider?.id) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const albumsRes = await supabase.from('portfolio_albums').select('id').eq('provider_id', provider.id);
-        const albumIds = (albumsRes.data || []).map((a) => a.id);
-        const [sRes, lRes, pRes, rRes] = await Promise.all([
-          supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
-          supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
-          albumIds.length > 0
-            ? supabase.from('portfolio_photos').select('id', { count: 'exact', head: true }).in('album_id', albumIds)
-            : Promise.resolve({ count: 0, error: null } as any),
-          supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
-        ]);
-        if (cancelled) return;
-        setServicesCount(sRes.count ?? 0);
-        setLeadsCount(lRes.count ?? 0);
-        setPortfolioCount((pRes as any).count ?? 0);
-        const totalViews = (sRes.data || []).reduce((acc: number, s: any) => acc + (s.view_count || 0), 0);
-        setViewsTotal(totalViews);
-        setReviewCount(rRes.count ?? 0);
-      } catch (err) {
-        console.error('[Metrics] Erro ao carregar contadores:', err);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [provider?.id]);
 
-  useEffect(() => {
-    if (!user?.id) return;
-    supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
-      .then(({ count }) => setJobsCount(count ?? 0));
-  }, [user?.id]);
 
   const chartData = useMemo(() => series.slice(-period).map((day) => ({
     ...day,
