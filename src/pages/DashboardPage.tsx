@@ -81,7 +81,7 @@ import SectionSkeleton from '@/pages/dashboard/sections/_skeleton';
 const ClientDashboardSection = lazy(() => import('@/pages/dashboard/sections/ClientDashboardSection'));
 const RhDashboardSection = lazy(() => import('@/pages/dashboard/sections/RhDashboardSection'));
 const ProviderInsightsCollapsible = lazy(() => import('@/pages/dashboard/sections/ProviderInsightsCollapsible'));
-const ProviderAnalyticsGrid = lazy(() => import('@/pages/dashboard/sections/ProviderAnalyticsGrid'));
+// ProviderAnalyticsGrid movido para /dashboard/metricas
 const ProviderQuickAccess = lazy(() => import('@/pages/dashboard/sections/ProviderQuickAccess'));
 const ProviderOnboardingStepper = lazy(() => import('@/pages/dashboard/sections/ProviderOnboardingStepper'));
 
