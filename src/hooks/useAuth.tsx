@@ -402,7 +402,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               console.error('[useAuth] fetchProfile threw:', err);
             }
           }, 0);
-          // log-user-access foi movido para o AuthCompanion (side-effect não-auth).
+          // log-user-access (telemetria de login) — disparado APENAS em
+          // SIGNED_IN para evitar duplicidade quando o token é refreshed.
+          if (event === 'SIGNED_IN') {
+            window.setTimeout(() => {
+              supabase.functions
+                .invoke('log-user-access', { body: { event_type: 'login', source: 'web' } })
+                .catch(() => { /* silent */ });
+            }, 500);
+          }
         } else {
           setProfile(null);
           setProvider(null);
