@@ -12,7 +12,7 @@ import { hasAnyContact } from '@/lib/profileResolvers';
 import LevelUpBanner from '@/components/dashboard/LevelUpBanner';
 import WelcomeHero from '@/components/dashboard/WelcomeHero';
 import QuickStatsBar from '@/components/dashboard/QuickStatsBar';
-import StatCardGrid from '@/components/dashboard/StatCardGrid';
+// StatCardGrid removido: agora vive em /dashboard/metricas
 import DashboardTipOfDay from '@/components/dashboard/DashboardTipOfDay';
 import LevelBenefits from '@/components/dashboard/LevelBenefits';
 import ShareProfileCard from '@/components/dashboard/ShareProfileCard';
