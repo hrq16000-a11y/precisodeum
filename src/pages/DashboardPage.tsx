@@ -37,6 +37,7 @@ import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingCheckl
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
 // DashboardAnalytics + AdPerformanceWidget movidos para /dashboard/metricas
 import { useProviderActivityHeartbeat } from '@/hooks/useProviderActivityHeartbeat';
+import { useProviderCounters } from '@/hooks/useProviderCounters';
 import { useLeadInteractionPing } from '@/hooks/useLeadInteractionPing';
 import ServiceCompletionCard from '@/components/dashboard/ServiceCompletionCard';
 import DailyPostCard from '@/components/dashboard/DailyPostCard';
