@@ -225,6 +225,10 @@ const DashboardPage = () => {
   const isClient = profileType === 'client';
   const isRH = profileType === 'rh';
 
+  // Layout configurável pelo admin (ordem/visibilidade de seções).
+  // Hook chamado incondicionalmente — usado apenas na branch provider.
+  const providerLayout = useDashboardLayout('provider');
+
   // profileDone: exige descrição, cidade E whatsapp (canal principal de contato).
   // Sem whatsapp, lead não chega — então não é "perfil completo".
   const hasWhatsapp = hasAnyContact(provider, profile);
