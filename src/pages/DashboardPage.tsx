@@ -35,8 +35,7 @@ import EmptyStateBanner from '@/components/dashboard/EmptyStateBanner';
 import DashboardSkeleton from '@/components/dashboard/DashboardSkeleton';
 import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedStatus';
-import DashboardAnalytics from '@/components/dashboard/DashboardAnalytics';
-import AdPerformanceWidget from '@/components/dashboard/AdPerformanceWidget';
+// DashboardAnalytics + AdPerformanceWidget movidos para /dashboard/metricas
 import { useProviderActivityHeartbeat } from '@/hooks/useProviderActivityHeartbeat';
 import { useLeadInteractionPing } from '@/hooks/useLeadInteractionPing';
 import ServiceCompletionCard from '@/components/dashboard/ServiceCompletionCard';
