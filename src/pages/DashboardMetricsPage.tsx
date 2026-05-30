@@ -9,14 +9,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProviderCounters } from '@/hooks/useProviderCounters';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
-import ContactImpactWidget from '@/components/dashboard/ContactImpactWidget';
-import DashboardAnalytics from '@/components/dashboard/DashboardAnalytics';
-import AdPerformanceWidget from '@/components/dashboard/AdPerformanceWidget';
-import ImpactSection from '@/components/dashboard/ImpactSection';
-import StatCardGrid from '@/components/dashboard/StatCardGrid';
+import SectionSkeleton from '@/pages/dashboard/sections/_skeleton';
 
-// Lazy: pesado (Recharts + múltiplos cards). Só monta quando há dados reais.
+// Lazy: Recharts + widgets pesados — só carregam quando a página renderiza.
+const ContactImpactWidget = lazy(() => import('@/components/dashboard/ContactImpactWidget'));
+const DashboardAnalytics = lazy(() => import('@/components/dashboard/DashboardAnalytics'));
+const AdPerformanceWidget = lazy(() => import('@/components/dashboard/AdPerformanceWidget'));
+const ImpactSection = lazy(() => import('@/components/dashboard/ImpactSection'));
+const StatCardGrid = lazy(() => import('@/components/dashboard/StatCardGrid'));
 const ProviderAnalyticsGrid = lazy(() => import('@/pages/dashboard/sections/ProviderAnalyticsGrid'));
+
 
 interface LeadStatsDay {
   label: string;
