@@ -845,13 +845,6 @@ export type Database = {
             foreignKeyName: "contact_clicks_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "contact_clicks_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
             referencedRelation: "lead_conversion_daily"
             referencedColumns: ["provider_id"]
           },
@@ -2405,13 +2398,6 @@ export type Database = {
             foreignKeyName: "lead_interactions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lead_interactions_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
             referencedRelation: "lead_conversion_daily"
             referencedColumns: ["provider_id"]
           },
@@ -2533,13 +2519,6 @@ export type Database = {
           user_ref?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "leads_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "leads_provider_id_fkey"
             columns: ["provider_id"]
@@ -2717,13 +2696,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "mission_completions_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "mission_completions_provider_id_fkey"
             columns: ["provider_id"]
@@ -3599,13 +3571,6 @@ export type Database = {
             foreignKeyName: "portfolio_albums_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "portfolio_albums_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
             referencedRelation: "lead_conversion_daily"
             referencedColumns: ["provider_id"]
           },
@@ -3994,13 +3959,6 @@ export type Database = {
             foreignKeyName: "provider_daily_stats_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "provider_daily_stats_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
             referencedRelation: "lead_conversion_daily"
             referencedColumns: ["provider_id"]
           },
@@ -4067,13 +4025,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "provider_dashboard_sessions_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "provider_dashboard_sessions_provider_id_fkey"
             columns: ["provider_id"]
@@ -4184,13 +4135,6 @@ export type Database = {
             foreignKeyName: "provider_geo_audit_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "provider_geo_audit_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
             referencedRelation: "lead_conversion_daily"
             referencedColumns: ["provider_id"]
           },
@@ -4251,13 +4195,6 @@ export type Database = {
           provider_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "provider_impressions_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "provider_impressions_provider_id_fkey"
             columns: ["provider_id"]
@@ -4334,13 +4271,6 @@ export type Database = {
           reason?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "provider_neighborhood_corrections_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "provider_neighborhood_corrections_provider_id_fkey"
             columns: ["provider_id"]
@@ -4447,13 +4377,6 @@ export type Database = {
           youtube_url?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "provider_page_settings_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: true
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "provider_page_settings_provider_id_fkey"
             columns: ["provider_id"]
@@ -5292,13 +5215,6 @@ export type Database = {
             foreignKeyName: "reviews_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reviews_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
             referencedRelation: "lead_conversion_daily"
             referencedColumns: ["provider_id"]
           },
@@ -5902,13 +5818,6 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "services_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "featured_providers_mv"
             referencedColumns: ["id"]
           },
           {
@@ -7170,13 +7079,6 @@ export type Database = {
             foreignKeyName: "subscriptions_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
             referencedRelation: "lead_conversion_daily"
             referencedColumns: ["provider_id"]
           },
@@ -8071,13 +7973,6 @@ export type Database = {
             foreignKeyName: "whatsapp_clicks_log_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
-            referencedRelation: "featured_providers_mv"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_clicks_log_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
             referencedRelation: "lead_conversion_daily"
             referencedColumns: ["provider_id"]
           },
@@ -8251,54 +8146,6 @@ export type Database = {
           user_ref?: string | null
         }
         Relationships: []
-      }
-      featured_providers_mv: {
-        Row: {
-          account_type: string | null
-          business_name: string | null
-          business_segment: string | null
-          category_icon: string | null
-          category_id: string | null
-          category_name: string | null
-          category_slug: string | null
-          city: string | null
-          complement: string | null
-          created_at: string | null
-          description: string | null
-          featured: boolean | null
-          id: string | null
-          latitude: number | null
-          longitude: number | null
-          neighborhood: string | null
-          phone: string | null
-          photo_url: string | null
-          plan: string | null
-          portfolio_album_count: number | null
-          portfolio_photo_count: number | null
-          postal_code: string | null
-          rating_avg: number | null
-          review_count: number | null
-          services_count: number | null
-          show_full_address: boolean | null
-          slug: string | null
-          social_links: Json | null
-          state: string | null
-          street: string | null
-          street_number: string | null
-          user_id: string | null
-          user_ref: string | null
-          whatsapp: string | null
-          years_experience: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "providers_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       lead_conversion_daily: {
         Row: {
@@ -8804,18 +8651,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      web_vitals_weekly_summary: {
-        Row: {
-          avg_value: number | null
-          day: string | null
-          metric: string | null
-          p75_value: number | null
-          p95_value: number | null
-          route: string | null
-          samples: number | null
-        }
-        Relationships: []
       }
     }
     Functions: {
@@ -9936,43 +9771,7 @@ export type Database = {
       }
       get_featured_providers: {
         Args: { _account_type?: string; _limit?: number }
-        Returns: {
-          account_type: string | null
-          business_name: string | null
-          business_segment: string | null
-          category_icon: string | null
-          category_id: string | null
-          category_name: string | null
-          category_slug: string | null
-          city: string | null
-          complement: string | null
-          created_at: string | null
-          description: string | null
-          featured: boolean | null
-          id: string | null
-          latitude: number | null
-          longitude: number | null
-          neighborhood: string | null
-          phone: string | null
-          photo_url: string | null
-          plan: string | null
-          portfolio_album_count: number | null
-          portfolio_photo_count: number | null
-          postal_code: string | null
-          rating_avg: number | null
-          review_count: number | null
-          services_count: number | null
-          show_full_address: boolean | null
-          slug: string | null
-          social_links: Json | null
-          state: string | null
-          street: string | null
-          street_number: string | null
-          user_id: string | null
-          user_ref: string | null
-          whatsapp: string | null
-          years_experience: number | null
-        }[]
+        Returns: unknown[]
         SetofOptions: {
           from: "*"
           to: "featured_providers_mv"
@@ -10291,6 +10090,16 @@ export type Database = {
       get_user_maturity_tier: { Args: { _user_id?: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
+      get_web_vitals_weekly_summary: {
+        Args: { _days?: number }
+        Returns: unknown[]
+        SetofOptions: {
+          from: "*"
+          to: "web_vitals_weekly_summary"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_weekly_summary: { Args: { _user_id: string }; Returns: Json }
       get_whatsapp_clicks_today: { Args: never; Returns: Json }
       has_role: {
