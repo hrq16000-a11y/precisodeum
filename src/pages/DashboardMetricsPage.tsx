@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { BarChart3, Eye, MessageCircle, Phone, TrendingUp } from 'lucide-react';
+import { BarChart3, Briefcase, Camera, Eye, Megaphone, MessageCircle, MessageSquare, Phone, Star, TrendingUp } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardGroupNav from '@/components/dashboard/DashboardGroupNav';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
+import ContactImpactWidget from '@/components/dashboard/ContactImpactWidget';
+import DashboardAnalytics from '@/components/dashboard/DashboardAnalytics';
+import AdPerformanceWidget from '@/components/dashboard/AdPerformanceWidget';
+import ImpactSection from '@/components/dashboard/ImpactSection';
+import StatCardGrid from '@/components/dashboard/StatCardGrid';
+
+// Lazy: pesado (Recharts + múltiplos cards). Só monta quando há dados reais.
+const ProviderAnalyticsGrid = lazy(() => import('@/pages/dashboard/sections/ProviderAnalyticsGrid'));
 
 interface LeadStatsDay {
   label: string;
@@ -24,10 +32,18 @@ const PERIODS = [
 ] as const;
 
 const DashboardMetricsPage = () => {
-  const { provider, loading: authLoading } = useAuth();
+  const { user, provider, loading: authLoading } = useAuth();
   const [period, setPeriod] = useState<(typeof PERIODS)[number]['value']>(30);
   const [series, setSeries] = useState<LeadStatsDay[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Contadores agregados (movidos da home do Dashboard)
+  const [servicesCount, setServicesCount] = useState<number>(0);
+  const [leadsCount, setLeadsCount] = useState<number>(0);
+  const [jobsCount, setJobsCount] = useState<number>(0);
+  const [portfolioCount, setPortfolioCount] = useState<number>(0);
+  const [viewsTotal, setViewsTotal] = useState<number>(0);
+  const [reviewCount, setReviewCount] = useState<number>(0);
 
   useEffect(() => {
     if (authLoading) return;
@@ -58,6 +74,42 @@ const DashboardMetricsPage = () => {
     return () => { active = false; };
   }, [authLoading, provider?.id]);
 
+  // Carrega contadores (services, leads, portfolio, reviews) — antes vivia na home
+  useEffect(() => {
+    if (!provider?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const albumsRes = await supabase.from('portfolio_albums').select('id').eq('provider_id', provider.id);
+        const albumIds = (albumsRes.data || []).map((a) => a.id);
+        const [sRes, lRes, pRes, rRes] = await Promise.all([
+          supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
+          supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
+          albumIds.length > 0
+            ? supabase.from('portfolio_photos').select('id', { count: 'exact', head: true }).in('album_id', albumIds)
+            : Promise.resolve({ count: 0, error: null } as any),
+          supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
+        ]);
+        if (cancelled) return;
+        setServicesCount(sRes.count ?? 0);
+        setLeadsCount(lRes.count ?? 0);
+        setPortfolioCount((pRes as any).count ?? 0);
+        const totalViews = (sRes.data || []).reduce((acc: number, s: any) => acc + (s.view_count || 0), 0);
+        setViewsTotal(totalViews);
+        setReviewCount(rRes.count ?? 0);
+      } catch (err) {
+        console.error('[Metrics] Erro ao carregar contadores:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [provider?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
+      .then(({ count }) => setJobsCount(count ?? 0));
+  }, [user?.id]);
+
   const chartData = useMemo(() => series.slice(-period).map((day) => ({
     ...day,
     contacts: day.whatsapp_clicks + day.phone_clicks,
@@ -73,6 +125,17 @@ const DashboardMetricsPage = () => {
   const conversion = totals.views > 0 ? Math.round((totals.contacts / totals.views) * 100) : 0;
   const hasData = totals.views > 0 || totals.contacts > 0;
 
+  const statCards = [
+    { icon: Briefcase, value: servicesCount, label: servicesCount === 0 ? 'Nenhum serviço' : 'Serviços', gradient: 'from-amber-500/10 to-orange-600/5', iconColor: 'text-amber-500' },
+    { icon: MessageSquare, value: leadsCount, label: leadsCount === 0 ? 'Nenhum lead' : 'Leads', gradient: 'from-orange-500/10 to-orange-600/5', iconColor: 'text-orange-500' },
+    { icon: TrendingUp, value: viewsTotal, label: viewsTotal === 0 ? 'Sem visualizações' : 'Visualizações', gradient: 'from-emerald-500/10 to-emerald-600/5', iconColor: 'text-emerald-500' },
+    { icon: Star, value: provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0', label: !provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações' : `${reviewCount} avaliação${reviewCount !== 1 ? 'ões' : ''}`, gradient: 'from-amber-500/10 to-amber-600/5', iconColor: 'text-amber-500' },
+    { icon: Camera, value: portfolioCount, label: portfolioCount === 0 ? 'Sem fotos' : 'Portfólio', gradient: 'from-orange-500/10 to-emerald-600/5', iconColor: 'text-orange-500' },
+    { icon: Megaphone, value: jobsCount, label: jobsCount === 0 ? 'Nenhuma vaga' : 'Vagas', gradient: 'from-amber-500/10 to-orange-600/5', iconColor: 'text-amber-500' },
+  ];
+
+  const hasAnyCounter = servicesCount + leadsCount + viewsTotal + portfolioCount + jobsCount + reviewCount > 0;
+
   return (
     <DashboardLayout>
       <DashboardGroupNav />
@@ -83,7 +146,7 @@ const DashboardMetricsPage = () => {
             <BarChart3 className="h-3.5 w-3.5" /> Métricas do perfil
           </div>
           <h1 className="font-display text-2xl font-bold text-foreground">Resultados por período</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Acompanhe visualizações e contatos gerados pela sua vitrine.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Acompanhe visualizações, contatos e desempenho da sua vitrine.</p>
         </div>
 
         <div className="flex rounded-xl border border-border bg-card p-1">
@@ -167,6 +230,47 @@ const DashboardMetricsPage = () => {
               </ResponsiveContainer>
             </div>
           </section>
+
+          {/* Contadores gerais (movidos da home) */}
+          {hasAnyCounter && (
+            <section className="mt-6">
+              <h2 className="mb-3 font-display text-lg font-bold text-foreground">Visão geral do perfil</h2>
+              <StatCardGrid cards={statCards as any} />
+            </section>
+          )}
+
+          {/* Impacto 24h + Impacto na rede */}
+          <section className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
+            <ContactImpactWidget />
+            <ImpactSection
+              views={viewsTotal}
+              whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
+              leads={leadsCount}
+            />
+          </section>
+
+          {/* Insights detalhados + desempenho do anúncio */}
+          <section className="mt-6">
+            <DashboardAnalytics />
+          </section>
+
+          {provider?.id && (
+            <section className="mt-4">
+              <AdPerformanceWidget providerId={provider.id} hasPhoto={!!provider?.photo_url} />
+            </section>
+          )}
+
+          {/* Analytics grid pesado — só com dados reais */}
+          {provider && (viewsTotal > 0 || leadsCount > 0) && (
+            <Suspense fallback={<Skeleton className="mt-6 h-[360px] rounded-xl" />}>
+              <ProviderAnalyticsGrid
+                providerId={provider.id}
+                viewsTotal={viewsTotal}
+                leadsCount={leadsCount}
+                servicesCount={servicesCount}
+              />
+            </Suspense>
+          )}
         </>
       )}
     </DashboardLayout>
