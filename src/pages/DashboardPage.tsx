@@ -503,15 +503,14 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* 5) MÉTRICAS E INSIGHTS */}
-      <div className="mt-6">
-        <DashboardAnalytics />
-      </div>
-
-      {/* 5b) Desempenho do Anúncio */}
+      {/* 5) PRÉVIA DE MÉTRICAS — painel completo em /dashboard/metricas */}
       {provider?.id && (
-        <div className="mt-4">
-          <AdPerformanceWidget providerId={provider.id} hasPhoto={!!provider?.photo_url} />
+        <div className="mt-6">
+          <MetricsPreviewCard
+            viewsTotal={viewsTotal}
+            leadsCount={leadsCount}
+            contactClicks={(provider as any)?.contact_clicks_count ?? 0}
+          />
         </div>
       )}
 
