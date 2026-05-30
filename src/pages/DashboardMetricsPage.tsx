@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useProviderCounters } from '@/hooks/useProviderCounters';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 import ContactImpactWidget from '@/components/dashboard/ContactImpactWidget';
 import DashboardAnalytics from '@/components/dashboard/DashboardAnalytics';
