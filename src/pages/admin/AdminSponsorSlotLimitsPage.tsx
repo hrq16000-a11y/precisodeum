@@ -70,7 +70,7 @@ const AdminSponsorSlotLimitsPage = () => {
         .order('context_type', { ascending: true })
         .order('context_value', { ascending: true });
       if (error) throw error;
-      return (data || []) as Row[];
+      return (data || []) as unknown as Row[];
     },
   });
 
@@ -204,7 +204,7 @@ const AdminSponsorSlotLimitsPage = () => {
         </div>
 
         {totalPages > 1 && (
-          <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
         )}
       </div>
 

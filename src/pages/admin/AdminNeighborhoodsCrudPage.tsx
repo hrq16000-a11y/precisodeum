@@ -62,7 +62,7 @@ const AdminNeighborhoodsCrudPage = () => {
         .select('id, name, slug, city_id, created_at')
         .order('name', { ascending: true });
       if (error) throw error;
-      return (data || []) as NeighborhoodRow[];
+      return (data || []) as unknown as NeighborhoodRow[];
     },
   });
 
@@ -76,7 +76,7 @@ const AdminNeighborhoodsCrudPage = () => {
         .order('name', { ascending: true })
         .limit(5000);
       if (error) throw error;
-      return (data || []) as CityRow[];
+      return (data || []) as unknown as CityRow[];
     },
   });
 
@@ -225,7 +225,7 @@ const AdminNeighborhoodsCrudPage = () => {
         </div>
 
         {totalPages > 1 && (
-          <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
         )}
       </div>
 

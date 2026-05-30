@@ -67,7 +67,7 @@ const AdminSubscriptionsPage = () => {
         .order('created_at', { ascending: false })
         .limit(5000);
       if (error) throw error;
-      return (data || []) as Sub[];
+      return (data || []) as unknown as Sub[];
     },
   });
 
@@ -79,7 +79,7 @@ const AdminSubscriptionsPage = () => {
         .from('account_types' as any)
         .select('*');
       if (error) return [] as AccountType[];
-      return (data || []) as AccountType[];
+      return (data || []) as unknown as AccountType[];
     },
   });
 
@@ -215,7 +215,7 @@ const AdminSubscriptionsPage = () => {
         </div>
 
         {totalPages > 1 && (
-          <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
         )}
       </div>
     </AdminLayout>
