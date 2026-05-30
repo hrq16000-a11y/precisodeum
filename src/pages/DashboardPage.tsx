@@ -38,6 +38,7 @@ import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedSta
 // DashboardAnalytics + AdPerformanceWidget movidos para /dashboard/metricas
 import { useProviderActivityHeartbeat } from '@/hooks/useProviderActivityHeartbeat';
 import { useProviderCounters } from '@/hooks/useProviderCounters';
+import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { useLeadInteractionPing } from '@/hooks/useLeadInteractionPing';
 import ServiceCompletionCard from '@/components/dashboard/ServiceCompletionCard';
 import DailyPostCard from '@/components/dashboard/DailyPostCard';
