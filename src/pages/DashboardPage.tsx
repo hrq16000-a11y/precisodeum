@@ -172,13 +172,21 @@ const DashboardPage = () => {
   const { currentLevel } = useEngagementLevel();
   const levelName = currentLevel?.name || legacyLevelName;
   const levelColor = currentLevel?.color || legacyLevelColor;
-  const [servicesCount, setServicesCount] = useState<number | null>(null);
-  const [leadsCount, setLeadsCount] = useState<number>(0);
-  const [jobsCount, setJobsCount] = useState<number>(0);
-  const [portfolioCount, setPortfolioCount] = useState<number>(0);
-  const [portfolioAlbumCount, setPortfolioAlbumCount] = useState<number>(0);
-  const [viewsTotal, setViewsTotal] = useState<number>(0);
-  const [reviewCount, setReviewCount] = useState<number>(0);
+  // Contadores compartilhados (cache 5min entre /dashboard e /dashboard/metricas)
+  const {
+    servicesCount: servicesCountRaw,
+    leadsCount,
+    jobsCount,
+    portfolioCount,
+    portfolioAlbumCount,
+    viewsTotal,
+    reviewCount,
+    isLoading: countersLoading,
+    error: countersError,
+    refetch: refetchCounters,
+  } = useProviderCounters();
+  // Mantém semântica anterior: servicesCount é null até carregar (usado por banners de "vazio")
+  const servicesCount: number | null = countersLoading ? null : servicesCountRaw;
   const [guideOpen, setGuideOpen] = useState(true);
 
   // Welcome celebration: triggered once when redirected from wizard with ?welcome=1
@@ -199,57 +207,16 @@ const DashboardPage = () => {
     }
   }, [loading, user, navigate]);
 
+  // Toast de erro de contadores (preserva UX original)
   useEffect(() => {
-    if (!provider) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        setStatsError(false);
-        const albumsRes = await supabase.from('portfolio_albums').select('id').eq('provider_id', provider.id);
-        if (albumsRes.error) throw albumsRes.error;
-        const albumIds = (albumsRes.data || []).map(a => a.id);
-        const [sRes, lRes, pRes, rRes] = await Promise.all([
-          supabase.from('services').select('id, view_count', { count: 'exact' }).eq('provider_id', provider.id),
-          supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
-          albumIds.length > 0
-            ? supabase.from('portfolio_photos').select('id', { count: 'exact', head: true }).in('album_id', albumIds)
-            : Promise.resolve({ count: 0, error: null } as any),
-          supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id),
-        ]);
-        if (sRes.error || lRes.error || (pRes as any).error || rRes.error) {
-          throw sRes.error || lRes.error || (pRes as any).error || rRes.error;
-        }
-        if (cancelled) return;
-        setPortfolioAlbumCount(albumIds.length);
-        setServicesCount(sRes.count ?? 0);
-        setLeadsCount(lRes.count ?? 0);
-        setPortfolioCount(pRes.count ?? 0);
-        const totalViews = (sRes.data || []).reduce((acc: number, s: any) => acc + (s.view_count || 0), 0);
-        setViewsTotal(totalViews);
-        setReviewCount(rRes.count ?? 0);
-        setStatsLoaded(true);
-      } catch (err) {
-        if (cancelled) return;
-        console.error('[Dashboard] Erro ao carregar contadores:', err);
-        setStatsError(true);
-        toast.error('Não foi possível carregar suas estatísticas', {
-          description: 'Verifique sua conexão e tente novamente.',
-          action: {
-            label: 'Recarregar',
-            onClick: () => setReloadKey(k => k + 1),
-          },
-          duration: 10000,
-        });
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [provider, reloadKey]);
+    if (!countersError) return;
+    toast.error('Não foi possível carregar suas estatísticas', {
+      description: 'Verifique sua conexão e tente novamente.',
+      action: { label: 'Recarregar', onClick: () => refetchCounters() },
+      duration: 10000,
+    });
+  }, [countersError, refetchCounters]);
 
-  useEffect(() => {
-    if (!user) return;
-    supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
-      .then(({ count }) => setJobsCount(count ?? 0));
-  }, [user]);
 
   const profileType = resolveEffectiveProfileType(profile, provider);
   const isClient = profileType === 'client';
