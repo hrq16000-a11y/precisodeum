@@ -173,6 +173,19 @@ export default function CadastroInicialPage() {
     return `/login?next=${encodeURIComponent(nextParam)}`;
   }, [loading, authSettled, user, params, location.pathname, location.search]);
 
+  // FIX 4: prestador que JÁ concluiu o onboarding nunca pode ficar preso
+  // aqui — redireciona direto para o dashboard (exceto em modo revisão
+  // explícito via ?mode=review ou ?section=).
+  const completedRedirect = useMemo(() => {
+    if (loading || !authSettled || !user || !profile) return null;
+    if (reviewMode || reviewSection) return null;
+    if ((profile as any)?.onboarding_completed === true) {
+      const next = params.get('next');
+      return next && next.startsWith('/') ? next : '/dashboard';
+    }
+    return null;
+  }, [loading, authSettled, user, profile, reviewMode, reviewSection, params]);
+
   // Side-effect ÚNICO de UX: ao logar de volta, se houver rascunho salvo,
   // avisar que o progresso foi recuperado. Dispara uma vez por aba.
   const welcomeShownRef = useRef(false);
