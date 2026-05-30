@@ -233,7 +233,7 @@ const DashboardPage = () => {
 
   // Refetch contadores ao voltar para a aba/janela do dashboard.
   useEffect(() => {
-    const trigger = () => setReloadKey((k) => k + 1);
+    const trigger = () => refetchCounters();
     const onVisibility = () => { if (document.visibilityState === 'visible') trigger(); };
     window.addEventListener('focus', trigger);
     document.addEventListener('visibilitychange', onVisibility);
