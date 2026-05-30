@@ -448,6 +448,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       window.clearTimeout(watchdog);
       window.removeEventListener('unhandledrejection', onUnhandledRejection);
       subscription.unsubscribe();
+      // FIX 1: cancela qualquer fetchProfile em voo no unmount.
+      try { inFlightAbortRef.current?.abort(); } catch { /* noop */ }
     };
   }, [fetchProfile]);
 
