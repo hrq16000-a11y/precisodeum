@@ -136,9 +136,8 @@ const DashboardPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
-  const [statsLoaded, setStatsLoaded] = useState(false);
-  const [, setStatsError] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
+  // statsLoaded/Error/reloadKey: derivados do hook compartilhado useProviderCounters (abaixo).
+
 
   const handleResetOnboarding = async () => {
     if (!user?.id) return;
