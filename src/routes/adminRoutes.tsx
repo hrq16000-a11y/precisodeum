@@ -128,10 +128,14 @@ export const adminRoutes = (
     <Route path="/admin/categorias" element={<AdminGuard><RouteErrorBoundary sectionName="AdminCategoriesPage"><AdminCategoriesPage /></RouteErrorBoundary></AdminGuard>} />
     <Route path="/admin/estatisticas" element={<AdminGuard><RouteErrorBoundary sectionName="AdminStatsPage"><AdminStatsPage /></RouteErrorBoundary></AdminGuard>} />
     <Route path="/admin/conversao" element={<AdminGuard><RouteErrorBoundary sectionName="AdminConversionMetricsPage"><AdminConversionMetricsPage /></RouteErrorBoundary></AdminGuard>} />
-    <Route path="/admin/onboarding-funnel" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingFunnelPage"><AdminOnboardingFunnelPage /></RouteErrorBoundary></AdminGuard>} />
-    <Route path="/admin/onboarding-stats" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingStatsPage"><AdminOnboardingStatsPage /></RouteErrorBoundary></AdminGuard>} />
-    <Route path="/admin/onboarding-regression" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingRegressionPage"><AdminOnboardingRegressionPage /></RouteErrorBoundary></AdminGuard>} />
-    <Route path="/admin/onboarding-ops" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingOpsPage"><AdminOnboardingOpsPage /></RouteErrorBoundary></AdminGuard>} />
+    {/* ETAPA 10 — Onboarding Ops Hub (umbrella com sub-tabs) */}
+    <Route path="/admin/onboarding-ops" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingHubPage"><AdminOnboardingHubPage /></RouteErrorBoundary></AdminGuard>} />
+    <Route path="/admin/onboarding-ops/:tab" element={<AdminGuard><RouteErrorBoundary sectionName="AdminOnboardingHubPage"><AdminOnboardingHubPage /></RouteErrorBoundary></AdminGuard>} />
+    {/* Aliases legados — redirecionam para a tab correta no hub */}
+    <Route path="/admin/onboarding-funnel" element={<Navigate to="/admin/onboarding-ops/funnel" replace />} />
+    <Route path="/admin/onboarding-stats" element={<Navigate to="/admin/onboarding-ops/stats" replace />} />
+    <Route path="/admin/onboarding-regression" element={<Navigate to="/admin/onboarding-ops/regression" replace />} />
+    <Route path="/admin/wizard-diagnostico" element={<Navigate to="/admin/onboarding-ops/wizard-debug" replace />} />
     <Route path="/admin/health-check" element={<AdminGuard><RouteErrorBoundary sectionName="AdminAuthHealthPage"><AdminAuthHealthPage /></RouteErrorBoundary></AdminGuard>} />
     <Route path="/admin/integridade" element={<AdminGuard><RouteErrorBoundary sectionName="AdminIntegrityReportsPage"><AdminIntegrityReportsPage /></RouteErrorBoundary></AdminGuard>} />
     <Route path="/admin/upload-stress-test" element={<AdminGuard><RouteErrorBoundary sectionName="AdminUploadStressTestPage"><AdminUploadStressTestPage /></RouteErrorBoundary></AdminGuard>} />
