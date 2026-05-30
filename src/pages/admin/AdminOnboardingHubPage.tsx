@@ -15,10 +15,10 @@ import { Skeleton } from '@/components/ui/skeleton';
  * dentro da tab "ops". A rota pública é `/admin/onboarding-ops/:tab?`.
  */
 const AdminOnboardingOpsPage = lazy(() => import('./AdminOnboardingOpsPage'));
-const AdminOnboardingFunnelPage = lazy(() => import('./AdminOnboardingFunnelPage'));
+const AdminOnboardingFunnelPage = lazy(() => import('../AdminOnboardingFunnelPage'));
 const AdminOnboardingStatsPage = lazy(() => import('./AdminOnboardingStatsPage'));
 const AdminOnboardingRegressionPage = lazy(() => import('./AdminOnboardingRegressionPage'));
-const AdminWizardDiagnosticsPage = lazy(() => import('./AdminWizardDiagnosticsPage'));
+const AdminWizardDiagnosticsPage = lazy(() => import('../AdminWizardDiagnosticsPage'));
 
 const TABS = [
   { value: 'ops', label: 'Ops (avançado)', icon: Telescope, Component: AdminOnboardingOpsPage },

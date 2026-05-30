@@ -15,7 +15,7 @@ const AdminSeoLandingsPage = lazy(() => import('./AdminSeoLandingsPage'));
 const AdminSeoRuntimeMetricsPage = lazy(() => import('./AdminSeoRuntimeMetricsPage'));
 const AdminSitemapAuditPage = lazy(() => import('./AdminSitemapAuditPage'));
 const AdminMetaTrackingQualityPage = lazy(() => import('./AdminMetaTrackingQualityPage'));
-const AdminMetaTagsPage = lazy(() => import('./AdminMetaTagsPage'));
+const AdminMetaTagsPage = lazy(() => import('../AdminMetaTagsPage'));
 const AdminBrokenLinksPage = lazy(() => import('./AdminBrokenLinksPage'));
 
 const TABS = [
