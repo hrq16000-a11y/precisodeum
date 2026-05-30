@@ -649,33 +649,7 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Métricas finais */}
-      <div className="mt-6">
-        <ImpactSection
-          views={viewsTotal}
-          whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
-          leads={leadsCount}
-        />
-      </div>
-
-      {/* Stats com counters — só se houver dados reais */}
-      {(servicesCount ?? 0) + leadsCount + viewsTotal + portfolioCount + jobsCount + reviewCount > 0 && (
-        <div className="mt-5">
-          <StatCardGrid cards={statCards} />
-        </div>
-      )}
-
-      {/* Analytics Grid — lazy + gated por dados reais */}
-      {provider && (viewsTotal > 0 || leadsCount > 0) && (
-        <Suspense fallback={<SectionSkeleton minH="min-h-[360px]" />}>
-          <ProviderAnalyticsGrid
-            providerId={provider.id}
-            viewsTotal={viewsTotal}
-            leadsCount={leadsCount}
-            servicesCount={servicesCount ?? 0}
-          />
-        </Suspense>
-      )}
+      {/* Métricas finais, StatCardGrid e Analytics Grid — movidos para /dashboard/metricas */}
 
       {/* Dica do dia + Benefícios do nível */}
       {provider && (
