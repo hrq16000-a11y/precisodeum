@@ -107,6 +107,9 @@ const AdminOnboardingFunnelPage = lazy(() => import("@/pages/AdminOnboardingFunn
 const AdminError500Page = lazy(() => import("@/pages/AdminError500Page"));
 const AdminBrokenLinksPage = lazy(() => import("@/pages/admin/AdminBrokenLinksPage"));
 const AdminCoursesPage = lazy(() => import("@/pages/AdminCoursesPage"));
+const AdminNeighborhoodsCrudPage = lazy(() => import("@/pages/admin/AdminNeighborhoodsCrudPage"));
+const AdminSponsorSlotLimitsPage = lazy(() => import("@/pages/admin/AdminSponsorSlotLimitsPage"));
+const AdminSubscriptionsPage = lazy(() => import("@/pages/admin/AdminSubscriptionsPage"));
 
 export const adminRoutes = (
   <>
@@ -205,5 +208,8 @@ export const adminRoutes = (
     <Route path="/admin/onboarding" element={<Navigate to="/admin/wizard-diagnostico" replace />} />
     <Route path="/admin/perfis-orfaos" element={<AdminOrphanProfilesPage />} />
     <Route path="/admin/cursos" element={<AdminCoursesPage />} />
+    <Route path="/admin/neighborhoods" element={<AdminGuard><RouteErrorBoundary sectionName="AdminNeighborhoodsCrudPage"><AdminNeighborhoodsCrudPage /></RouteErrorBoundary></AdminGuard>} />
+    <Route path="/admin/sponsor-slot-limits" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSponsorSlotLimitsPage"><AdminSponsorSlotLimitsPage /></RouteErrorBoundary></AdminGuard>} />
+    <Route path="/admin/subscriptions" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSubscriptionsPage"><AdminSubscriptionsPage /></RouteErrorBoundary></AdminGuard>} />
   </>
 );
