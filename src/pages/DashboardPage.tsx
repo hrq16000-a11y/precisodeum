@@ -61,7 +61,7 @@ import { useMaturityTier } from '@/hooks/useMaturityTier';
 import { useFirstContactAutoMission } from '@/hooks/useFirstContactAutoMission';
 import UnifiedHealthScore from '@/components/dashboard/UnifiedHealthScore';
 import QuickActionsHero from '@/components/dashboard/QuickActionsHero';
-import ImpactSection from '@/components/dashboard/ImpactSection';
+// ImpactSection movido para /dashboard/metricas
 import { resolveEffectiveProfileType } from '@/lib/onboardingAccess';
 import { setOnboardingProgress } from '@/lib/onboardingProgressSync';
 import {
