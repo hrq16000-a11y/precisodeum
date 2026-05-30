@@ -451,8 +451,10 @@ export default function CadastroInicialPage() {
     });
 
     if (draft.exists) {
+      // FIX 4: removida a promessa fictícia de "7 dias" (sem TTL real
+      // implementado). Mensagem agora é honesta sobre o que sabemos.
       toast.warning(
-        'Sua sessão expirou por segurança. Salvamos seu progresso — você tem 7 dias para retomar de onde parou.',
+        'Sua sessão expirou por segurança. Salvamos seu progresso para você retomar de onde parou.',
         { duration: 10000 },
       );
     } else {
@@ -464,6 +466,11 @@ export default function CadastroInicialPage() {
 
   if (loginRedirect) {
     return <Navigate to={loginRedirect} replace />;
+  }
+
+  // FIX 4: prestador com onboarding concluído nunca vê o wizard.
+  if (completedRedirect) {
+    return <Navigate to={completedRedirect} replace />;
   }
 
   // [FIX entrada instantânea] Removido skeleton bloqueante de auth.
