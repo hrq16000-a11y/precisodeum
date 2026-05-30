@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Briefcase, User, Users, Layout, Star, MessageSquare, Eye, TrendingUp, Camera, Megaphone } from 'lucide-react';
+import { Briefcase, User, Users, Layout } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
