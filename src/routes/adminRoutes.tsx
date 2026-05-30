@@ -48,6 +48,9 @@ const AdminProviderConversionPage = lazy(() => import("@/pages/AdminProviderConv
 const AdminSeoLandingsPage = lazy(() => import("@/pages/admin/AdminSeoLandingsPage"));
 const AdminSeoRuntimeMetricsPage = lazy(() => import("@/pages/admin/AdminSeoRuntimeMetricsPage"));
 const AdminPublicFunnelHealthPage = lazy(() => import("@/pages/admin/AdminPublicFunnelHealthPage"));
+// ETAPA 10 — Hubs com sub-tabs (SEO + Onboarding Ops)
+const AdminSeoPage = lazy(() => import("@/pages/admin/AdminSeoPage"));
+const AdminOnboardingHubPage = lazy(() => import("@/pages/admin/AdminOnboardingHubPage"));
 const AdminSponsorApprovalsPage = lazy(() => import("@/pages/AdminSponsorApprovalsPage"));
 const AdminPopularServicesPage = lazy(() => import("@/pages/AdminPopularServicesPage"));
 const AdminFaqPage = lazy(() => import("@/pages/AdminFaqPage"));
