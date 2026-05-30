@@ -75,8 +75,8 @@ const AdminMediaPage = () => {
   }, [page, entityFilter, mimeFilter, statusFilter, search]);
 
   const fetchStats = async () => {
-    const { count: totalCount } = await supabase.from('media').select('id', { count: 'exact', head: true });
-    const { count: activeCount } = await supabase.from('media').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    const { count: totalCount } = await supabase.from('media').select('id', { count: 'estimated', head: true });
+    const { count: activeCount } = await supabase.from('media').select('id', { count: 'estimated', head: true }).eq('is_active', true);
     
     // For size stats, sample recent 1000
     const { data } = await supabase.from('media').select('size_original, size_optimized').limit(1000);

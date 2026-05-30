@@ -50,7 +50,7 @@ const DashboardAnalytics = () => {
   const loadData = async (providerId: string) => {
     const [statsRes, leadsRes, clicksRes] = await Promise.all([
       (supabase.rpc as any)('get_lead_stats', { provider_id: providerId }),
-      supabase.from('leads').select('id', { count: 'exact', head: true }).eq('provider_id', providerId),
+      supabase.from('leads').select('id', { count: 'estimated', head: true }).eq('provider_id', providerId),
       supabase
         .from('contact_clicks')
         .select('id, contact_type, created_at')

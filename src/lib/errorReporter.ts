@@ -111,7 +111,7 @@ export async function getUnresolvedErrorCount(): Promise<number> {
   try {
     const { count } = await supabase
       .from('error_reports' as any)
-      .select('id', { count: 'exact', head: true })
+      .select('id', { count: 'estimated', head: true })
       .eq('resolved', false);
     return count || 0;
   } catch {

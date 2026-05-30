@@ -141,8 +141,8 @@ export const AdminGroupTabs = () => {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-      (supabase.from('jobs').select('id', { count: 'exact', head: true }) as any).eq('approval_status', 'pending'),
+      supabase.from('providers').select('id', { count: 'estimated', head: true }).eq('status', 'pending'),
+      (supabase.from('jobs').select('id', { count: 'estimated', head: true }) as any).eq('approval_status', 'pending'),
     ]).then(([p, j]) => setPendingCount((p.count ?? 0) + (j.count ?? 0)));
   }, []);
 

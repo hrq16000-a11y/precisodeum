@@ -41,11 +41,11 @@ const AdminKpiBar = () => {
       const days14ago = new Date(now.getTime() - 14 * 86400000).toISOString();
 
       const [usersNow, usersPrev, pendingNow, leadsNow, leadsPrev] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', days7ago),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', days14ago).lt('created_at', days7ago),
-        supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('leads').select('id', { count: 'exact', head: true }).gte('created_at', days7ago),
-        supabase.from('leads').select('id', { count: 'exact', head: true }).gte('created_at', days14ago).lt('created_at', days7ago),
+        supabase.from('profiles').select('id', { count: 'estimated', head: true }).gte('created_at', days7ago),
+        supabase.from('profiles').select('id', { count: 'estimated', head: true }).gte('created_at', days14ago).lt('created_at', days7ago),
+        supabase.from('providers').select('id', { count: 'estimated', head: true }).eq('status', 'pending'),
+        supabase.from('leads').select('id', { count: 'estimated', head: true }).gte('created_at', days7ago),
+        supabase.from('leads').select('id', { count: 'estimated', head: true }).gte('created_at', days14ago).lt('created_at', days7ago),
       ]);
 
       // Simple sparkline: fetch daily counts for last 7 days
@@ -56,9 +56,9 @@ const AdminKpiBar = () => {
         dayStart.setHours(0, 0, 0, 0);
         const dayEnd = new Date(dayStart.getTime() + 86400000);
         const [u, l] = await Promise.all([
-          supabase.from('profiles').select('id', { count: 'exact', head: true })
+          supabase.from('profiles').select('id', { count: 'estimated', head: true })
             .gte('created_at', dayStart.toISOString()).lt('created_at', dayEnd.toISOString()),
-          supabase.from('leads').select('id', { count: 'exact', head: true })
+          supabase.from('leads').select('id', { count: 'estimated', head: true })
             .gte('created_at', dayStart.toISOString()).lt('created_at', dayEnd.toISOString()),
         ]);
         dailyUsers.push(u.count ?? 0);

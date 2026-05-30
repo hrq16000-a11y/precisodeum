@@ -32,7 +32,7 @@ const AdminOverviewPage = () => {
     queryKey: ['overview-profiles-prev'],
     enabled: isAdmin,
     queryFn: async () => {
-      const { data } = await supabase.from('profiles').select('id', { count: 'exact', head: true })
+      const { data } = await supabase.from('profiles').select('id', { count: 'estimated', head: true })
         .gte('created_at', subDays(new Date(), 60).toISOString())
         .lt('created_at', subDays(new Date(), 30).toISOString());
       return data || [];

@@ -24,14 +24,14 @@ const RankingAlertWidget = () => {
       const queries: any[] = [
         supabase
           .from('providers')
-          .select('id', { count: 'exact', head: true })
+          .select('id', { count: 'estimated', head: true })
           .eq('city', provider.city)
           .eq('status', 'approved')
           .is('deleted_at', null)
           .then(),
         supabase
           .from('providers')
-          .select('id, profiles!inner(engagement_points)', { count: 'exact', head: true })
+          .select('id, profiles!inner(engagement_points)', { count: 'estimated', head: true })
           .eq('city', provider.city)
           .eq('status', 'approved')
           .is('deleted_at', null)
@@ -44,7 +44,7 @@ const RankingAlertWidget = () => {
         queries.push(
           supabase
             .from('providers')
-            .select('id', { count: 'exact', head: true })
+            .select('id', { count: 'estimated', head: true })
             .eq('city', provider.city)
             .eq('category_id', provider.category_id)
             .eq('status', 'approved')
@@ -52,7 +52,7 @@ const RankingAlertWidget = () => {
             .then(),
           supabase
             .from('providers')
-            .select('id, business_name, profiles!inner(engagement_points)', { count: 'exact', head: false })
+            .select('id, business_name, profiles!inner(engagement_points)', { count: 'estimated', head: false })
             .eq('city', provider.city)
             .eq('category_id', provider.category_id)
             .eq('status', 'approved')

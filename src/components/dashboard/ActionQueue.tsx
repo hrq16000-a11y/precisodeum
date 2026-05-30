@@ -45,7 +45,7 @@ const ActionQueue = ({ servicesCount: servicesOverride, portfolioAlbumsCount: al
 
       // 1. Unanswered leads
       const { count: newLeads } = await supabase.from('leads')
-        .select('id', { count: 'exact', head: true })
+        .select('id', { count: 'estimated', head: true })
         .eq('provider_id', provider.id).eq('status', 'new');
       if ((newLeads ?? 0) > 0) {
         pending.push({
@@ -74,7 +74,7 @@ const ActionQueue = ({ servicesCount: servicesOverride, portfolioAlbumsCount: al
 
       // 3. No portfolio (usa override se disponível — fonte unificada)
       const albumCount = albumsOverride ?? (await supabase.from('portfolio_albums')
-        .select('id', { count: 'exact', head: true })
+        .select('id', { count: 'estimated', head: true })
         .eq('provider_id', provider.id)).count ?? 0;
       if (albumCount === 0) {
         pending.push({

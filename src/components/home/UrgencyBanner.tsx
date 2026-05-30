@@ -23,7 +23,7 @@ const UrgencyBanner = memo(() => {
       since.setHours(since.getHours() - 24);
       const { count } = await supabase
         .from('leads')
-        .select('id', { count: 'exact', head: true })
+        .select('id', { count: 'estimated', head: true })
         .gte('created_at', since.toISOString());
       return count || 0;
     },

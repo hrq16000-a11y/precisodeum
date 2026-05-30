@@ -24,10 +24,10 @@ const AdminHealthMonitor = () => {
         categoriesRes,
         emptyCategories,
       ] = await Promise.all([
-        supabase.from('profiles').select('id, avatar_url, full_name', { count: 'exact' }),
-        supabase.from('providers').select('id, description, photo_url, category_id', { count: 'exact' }).eq('status', 'approved'),
-        supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('categories').select('id', { count: 'exact', head: true }),
+        supabase.from('profiles').select('id, avatar_url, full_name', { count: 'estimated' }),
+        supabase.from('providers').select('id, description, photo_url, category_id', { count: 'estimated' }).eq('status', 'approved'),
+        supabase.from('providers').select('id', { count: 'estimated', head: true }).eq('status', 'pending'),
+        supabase.from('categories').select('id', { count: 'estimated', head: true }),
         supabase.rpc('audit_user_ref_full' as any),
       ]);
 
