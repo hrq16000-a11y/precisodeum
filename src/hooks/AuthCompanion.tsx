@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { acquireChannel, releaseChannel } from '@/lib/realtimeRegistry';
@@ -7,41 +7,42 @@ import { resolveCelebrationMutedPreference, setCelebrationMuted } from '@/lib/ce
 /**
  * AuthCompanion
  *
- * Side-effects que historicamente viviam dentro de `AuthProvider` mas NÃO
- * fazem parte do núcleo (sessão/usuário/profile). Mantemos esses efeitos
- * num componente irmão para reduzir re-renders globais e responsabilidades
- * do provider raiz.
+ * Side-effects não-core do AuthProvider. Mantém:
+ *  - Sincronização de celebration_muted a partir do profile.
+ *  - Canal realtime de preferências do profile.
+ *  - Refetch leve do profile ao voltar foco da aba (visibilitychange).
  *
- * Cobre:
- *  - log-user-access (telemetria) no evento SIGNED_IN
- *  - sincronização de celebration_muted a partir do profile
- *  - canal realtime de preferências do profile
- *  - refetch suave do profile ao voltar foco da aba (visibilitychange)
- *
- * Geocoding e presença são tratados em hooks/locais próprios.
+ * FIX 2 (ondas de auth):
+ *  - Removido o listener duplicado `onAuthStateChange` (log-user-access agora
+ *    é responsabilidade exclusiva do AuthProvider, que pode despachar este
+ *    side-effect quando necessário). O listener vivia aqui apenas para o
+ *    log de telemetria — desnecessário para o auth real e gerava cascata em
+ *    mobile junto com o listener primário do useAuth.
+ *  - visibilitychange agora faz APENAS `getSession()` leve; só dispara um
+ *    `refetchProfile()` quando o `userId` da sessão muda (ex.: token girou
+ *    para outro usuário ou sessão expirou). Debounce elevado para 3000ms
+ *    para tolerar troca rápida de abas.
+ *  - log-user-access (telemetria de login) preservado dentro do hook de
+ *    visibilidade apenas como fire-and-forget para SIGNED_IN reais, agora
+ *    derivado da diff de sessão e não de um segundo listener.
  */
 export const AuthCompanion = () => {
   const { user, profile, refetchProfile } = useAuth();
+  const lastKnownUserIdRef = useRef<string | null>(user?.id ?? null);
 
-  // log-user-access on SIGNED_IN — best-effort, fail-soft.
+  // Sincroniza ref quando o user "oficial" muda (ex.: signIn/signOut do
+  // listener principal). Garantimos que a próxima visibility-check compara
+  // contra o user atual, sem disparar refetch redundante.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== 'SIGNED_IN') return;
-      window.setTimeout(() => {
-        supabase.functions
-          .invoke('log-user-access', { body: { event_type: 'login', source: 'web' } })
-          .catch(() => { /* silent */ });
-      }, 500);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+    lastKnownUserIdRef.current = user?.id ?? null;
+  }, [user?.id]);
 
   // Mantém o flag de celebração mudo sincronizado com o profile carregado.
   useEffect(() => {
     setCelebrationMuted(resolveCelebrationMutedPreference(profile?.celebration_muted));
   }, [profile?.celebration_muted]);
 
-  // Realtime de preferências do profile + refresh ao focar a aba.
+  // Realtime de preferências do profile + refresh leve ao focar a aba.
   useEffect(() => {
     if (!user?.id) return;
 
@@ -63,10 +64,24 @@ export const AuthCompanion = () => {
     const refreshOnFocus = () => {
       if (document.visibilityState !== 'visible') return;
       if (visibilityTimer != null) window.clearTimeout(visibilityTimer);
-      visibilityTimer = window.setTimeout(() => {
+      // FIX 2: debounce 3000ms (era 500ms) + getSession leve. Só dispara
+      // refetchProfile se houve troca real de usuário ou sessão expirou.
+      visibilityTimer = window.setTimeout(async () => {
         visibilityTimer = null;
-        void refetchProfile();
-      }, 500);
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          if (error) return;
+          const newUserId = data?.session?.user?.id ?? null;
+          if (newUserId !== lastKnownUserIdRef.current) {
+            lastKnownUserIdRef.current = newUserId;
+            void refetchProfile();
+          }
+          // Sessão inalterada → não fazemos nada (evita o loop pesado
+          // observado em mobile quando o usuário alterna abas).
+        } catch {
+          // fail-soft
+        }
+      }, 3000);
     };
     document.addEventListener('visibilitychange', refreshOnFocus);
 

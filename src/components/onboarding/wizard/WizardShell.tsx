@@ -581,20 +581,37 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
   }, [state.phase]);
 
   const finalizeUnifiedOnboarding = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) return { ok: false, error: 'no_user_id' as const };
     clearPersistedReviewPhase();
-    await finalizeOnboarding({
+    return finalizeOnboarding({
       userId: user.id,
       extraProfilePatch: { profile_type: 'provider' },
     });
   }, [user?.id]);
 
-  // Finaliza o onboarding e navega para o caminho informado. Garante que o
-  // OnboardingGate não rebata o usuário de volta para /cadastro-inicial.
+  // FIX 5: finaliza e SÓ navega quando a RPC retorna ok. Em caso de erro,
+  // exibe toast com retry explícito + log com contexto (userId, providerId).
   const finalizeAndNavigateTo = useCallback(async (path: string) => {
-    await finalizeUnifiedOnboarding();
+    const result = await finalizeUnifiedOnboarding();
+    if (!result || result.ok !== true) {
+      const providerId = (state.firstServiceId as any) ?? null;
+      console.error('[WizardShell] finalize_onboarding_atomic falhou', {
+        userId: user?.id,
+        providerId,
+        error: result?.error,
+      });
+      const { toast } = await import('sonner');
+      toast.error('Erro ao finalizar cadastro. Tente novamente.', {
+        duration: 8000,
+        action: {
+          label: 'Tentar de novo',
+          onClick: () => { void finalizeAndNavigateTo(path); },
+        },
+      });
+      return;
+    }
     navigate(path);
-  }, [finalizeUnifiedOnboarding, navigate]);
+  }, [finalizeUnifiedOnboarding, navigate, user?.id, state.firstServiceId]);
 
   return (
     <WizardModeContext.Provider value={{ mode: resolvedMode, isEditing: isReview }}>

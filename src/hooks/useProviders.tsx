@@ -1225,8 +1225,12 @@ export function filterAndRankProvidersGrouped(
 }
 
 export function useSearchProviders(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
+  // FIX 6: queryKey distinto deste hook (não compartilha cache com o grouped).
+  // Por ora a base ainda é a mesma query Supabase ampla — a migração para
+  // filtros server-side fica para validação manual posterior. O essencial:
+  // não há mais cache cruzado entre hooks com políticas de refetch diferentes.
   const baseQuery = useQuery({
-    queryKey: ['search-providers-base'],
+    queryKey: ['search-providers-flat', { state: state ?? '', minRating }],
     queryFn: async () => {
       return fetchProvidersWithProfiles(
         supabase
@@ -1255,8 +1259,10 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
 }
 
 export function useSearchProvidersGrouped(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
+  // FIX 6: queryKey distinto + estável (filtros server-side preservados
+  // entram aqui assim que a migração for validada manualmente).
   const baseQuery = useQuery({
-    queryKey: ['search-providers-base'],
+    queryKey: ['search-providers-grouped', { state: state ?? '', minRating }],
     queryFn: async () => {
       return fetchProvidersWithProfiles(
         supabase
@@ -1269,7 +1275,6 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
       );
     },
     // Cache /buscar: 15min stale + 60min gc + sem refetch ao remontar/focar.
-    // Reduz latência e custo em navegação cidade↔serviço↔CEP dentro da janela.
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
@@ -1282,17 +1287,25 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
     [baseQuery.data, query, city, categorySlug, minRating, state, userLat, userLon, radiusKm]
   );
 
-  // Fire-and-forget demand log for heatmap
+  // FIX 6: fire-and-forget demand log para heatmap, agora com debounce de
+  // 1500ms (não inserir a cada keystroke) e .catch silencioso para não
+  // poluir o console em caso de RLS/rede.
   useEffect(() => {
     if (!query && !categorySlug) return;
     if (userLat == null || userLon == null) return;
-    supabase.from('search_demand_logs').insert({
-      latitude: userLat,
-      longitude: userLon,
-      query: query || '',
-      category_slug: categorySlug || '',
-      city: city || '',
-    }).then(() => {});
+    const handle = window.setTimeout(() => {
+      supabase.from('search_demand_logs').insert({
+        latitude: userLat,
+        longitude: userLon,
+        query: query || '',
+        category_slug: categorySlug || '',
+        city: city || '',
+      }).then(
+        () => undefined,
+        (err) => console.warn('[useSearchProvidersGrouped] telemetry failed', err),
+      );
+    }, 1500);
+    return () => window.clearTimeout(handle);
   }, [query, categorySlug, city, userLat, userLon]);
 
   return {
