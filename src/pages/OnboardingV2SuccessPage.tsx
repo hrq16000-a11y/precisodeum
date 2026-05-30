@@ -117,7 +117,7 @@ const OnboardingV2SuccessPage = () => {
           try {
             const photoRes: any = await (supabase as any)
               .from('media')
-              .select('id', { count: 'exact', head: true })
+              .select('id', { count: 'estimated', head: true })
               .eq('owner_id', user.id)
               .eq('entity_type', 'service');
             if (alive) setHasPhotos(((photoRes?.count as number) || 0) > 0);
@@ -126,7 +126,7 @@ const OnboardingV2SuccessPage = () => {
           try {
             const albumRes: any = await (supabase as any)
               .from('portfolio_albums')
-              .select('id', { count: 'exact', head: true })
+              .select('id', { count: 'estimated', head: true })
               .eq('provider_id', prov.id);
             if (alive) setHasPortfolio(((albumRes?.count as number) || 0) > 0);
           } catch (e) { console.debug('[success] albums load failed', e); }

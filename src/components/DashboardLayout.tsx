@@ -60,7 +60,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   // Fetch unread notifications count
   useEffect(() => {
     if (!user) return;
-    supabase.from('notifications').select('id', { count: 'exact', head: true })
+    supabase.from('notifications').select('id', { count: 'estimated', head: true })
       .eq('user_id', user.id).eq('read', false)
       .then(({ count }) => setUnreadCount(count ?? 0));
   }, [user]);
@@ -72,7 +72,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     supabase.from('providers').select('id').eq('user_id', user.id).limit(1)
       .then(({ data: providers }) => {
         if (!providers?.[0]) return;
-        supabase.from('leads').select('id', { count: 'exact', head: true })
+        supabase.from('leads').select('id', { count: 'estimated', head: true })
           .eq('provider_id', providers[0].id).eq('status', 'new')
           .then(({ count }) => setPendingLeads(count ?? 0));
       });

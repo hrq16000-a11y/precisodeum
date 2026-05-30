@@ -29,11 +29,11 @@ const AdminFlashSummary = () => {
 
     (async () => {
       const [providers, leads, reviews, jobs, users] = await Promise.all([
-        supabase.from('providers').select('id', { count: 'exact', head: true }).gte('created_at', sinceISO),
-        supabase.from('leads').select('id', { count: 'exact', head: true }).gte('created_at', sinceISO),
-        supabase.from('reviews').select('id', { count: 'exact', head: true }).gte('created_at', sinceISO),
-        supabase.from('jobs').select('id', { count: 'exact', head: true }).gte('created_at', sinceISO),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', sinceISO),
+        supabase.from('providers').select('id', { count: 'estimated', head: true }).gte('created_at', sinceISO),
+        supabase.from('leads').select('id', { count: 'estimated', head: true }).gte('created_at', sinceISO),
+        supabase.from('reviews').select('id', { count: 'estimated', head: true }).gte('created_at', sinceISO),
+        supabase.from('jobs').select('id', { count: 'estimated', head: true }).gte('created_at', sinceISO),
+        supabase.from('profiles').select('id', { count: 'estimated', head: true }).gte('created_at', sinceISO),
       ]);
 
       const s: FlashStats = {

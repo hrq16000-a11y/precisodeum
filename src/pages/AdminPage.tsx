@@ -65,14 +65,14 @@ const AdminPage = () => {
     if (!isAdmin) return;
     const fetchAll = async () => {
       const [providers, pending, profiles, leads, reviews, categories, jobs, pendingJ, sponsors] = await Promise.all([
-        supabase.from('providers').select('id', { count: 'exact', head: true }),
-        supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('leads').select('id', { count: 'exact', head: true }),
-        supabase.from('reviews').select('id', { count: 'exact', head: true }),
-        supabase.from('categories').select('id', { count: 'exact', head: true }),
-        supabase.from('jobs').select('id', { count: 'exact', head: true }),
-        (supabase.from('jobs').select('id', { count: 'exact', head: true }) as any).eq('approval_status', 'pending'),
+        supabase.from('providers').select('id', { count: 'estimated', head: true }),
+        supabase.from('providers').select('id', { count: 'estimated', head: true }).eq('status', 'pending'),
+        supabase.from('profiles').select('id', { count: 'estimated', head: true }),
+        supabase.from('leads').select('id', { count: 'estimated', head: true }),
+        supabase.from('reviews').select('id', { count: 'estimated', head: true }),
+        supabase.from('categories').select('id', { count: 'estimated', head: true }),
+        supabase.from('jobs').select('id', { count: 'estimated', head: true }),
+        (supabase.from('jobs').select('id', { count: 'estimated', head: true }) as any).eq('approval_status', 'pending'),
         supabase.from('sponsors').select('impressions, clicks'),
       ]);
 

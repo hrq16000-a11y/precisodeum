@@ -132,9 +132,9 @@ const AdminMobileStats = () => {
   const [stats, setStats] = useState({ users: 0, providers: 0, leads: 0 });
   useEffect(() => {
     Promise.all([
-      supabase.from('profiles').select('id', { count: 'exact', head: true }),
-      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+      supabase.from('profiles').select('id', { count: 'estimated', head: true }),
+      supabase.from('providers').select('id', { count: 'estimated', head: true }).eq('status', 'pending'),
+      supabase.from('leads').select('id', { count: 'estimated', head: true }).eq('status', 'new'),
     ]).then(([u, p, l]) => setStats({ users: u.count ?? 0, providers: p.count ?? 0, leads: l.count ?? 0 }));
   }, []);
   return (
@@ -169,9 +169,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   // Fetch badge counts for sidebar items
   useEffect(() => {
     Promise.all([
-      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-      (supabase.from('jobs').select('id', { count: 'exact', head: true }) as any).eq('approval_status', 'pending'),
-      supabase.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+      supabase.from('providers').select('id', { count: 'estimated', head: true }).eq('status', 'pending'),
+      (supabase.from('jobs').select('id', { count: 'estimated', head: true }) as any).eq('approval_status', 'pending'),
+      supabase.from('leads').select('id', { count: 'estimated', head: true }).eq('status', 'new'),
     ]).then(([p, j, l]) => {
       setPendingBadges({
         '/admin/prestadores': p.count ?? 0,

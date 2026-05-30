@@ -77,9 +77,9 @@ const StatsCounter = () => {
     queryKey: ['home-stats-counter'],
     queryFn: async () => {
       const [providers, services, cities] = await Promise.all([
-        supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
-        supabase.from('services').select('id', { count: 'exact', head: true }),
-        supabase.from('cities').select('id', { count: 'exact', head: true }),
+        supabase.from('providers').select('id', { count: 'estimated', head: true }).eq('status', 'approved'),
+        supabase.from('services').select('id', { count: 'estimated', head: true }),
+        supabase.from('cities').select('id', { count: 'estimated', head: true }),
       ]);
       return {
         providers: providers.count || 0,

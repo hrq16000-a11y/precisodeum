@@ -21,7 +21,7 @@ const RankingStatus = () => {
       // Count approved providers in same city
       const { count: total } = await supabase
         .from('providers')
-        .select('id', { count: 'exact', head: true })
+        .select('id', { count: 'estimated', head: true })
         .eq('city', provider.city)
         .eq('status', 'approved')
         .is('deleted_at', null);
@@ -32,7 +32,7 @@ const RankingStatus = () => {
       const myPoints = profile?.engagement_points || 0;
       const { count: ahead } = await supabase
         .from('providers')
-        .select('id, profiles!inner(engagement_points)', { count: 'exact', head: true })
+        .select('id, profiles!inner(engagement_points)', { count: 'estimated', head: true })
         .eq('city', provider.city)
         .eq('status', 'approved')
         .is('deleted_at', null)

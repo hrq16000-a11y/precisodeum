@@ -86,14 +86,14 @@ export const Phase3Celebration = ({ serviceName, city, state, userId, onContinue
 
       const photoRes: any = await (supabase as any)
         .from('media')
-        .select('id', { count: 'exact', head: true })
+        .select('id', { count: 'estimated', head: true })
         .eq('owner_id', userId)
         .eq('entity_type', 'service');
       if (alive) setHasPhotos(((photoRes?.count as number) || 0) > 0);
 
       const albumRes: any = await (supabase as any)
         .from('portfolio_albums')
-        .select('id', { count: 'exact', head: true })
+        .select('id', { count: 'estimated', head: true })
         .eq('provider_id', prov.id);
       if (alive) setHasPortfolio(((albumRes?.count as number) || 0) > 0);
     })();
