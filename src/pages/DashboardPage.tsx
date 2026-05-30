@@ -439,14 +439,7 @@ const DashboardPage = () => {
   const showPortfolioEmptyBanner = servicesCount !== null && servicesCount > 0 && portfolioAlbumCount === 0;
   const anyEmptyBannerVisible = showServiceEmptyBanner || showPortfolioEmptyBanner;
 
-  const statCards = [
-    { icon: Briefcase, value: servicesCount ?? 0, label: servicesCount === 0 ? 'Nenhum serviço' : 'Serviços', gradient: 'from-amber-500/10 to-orange-600/5', iconColor: 'text-amber-500' },
-    { icon: MessageSquare, value: leadsCount, label: leadsCount === 0 ? 'Nenhum lead' : 'Leads', gradient: 'from-orange-500/10 to-orange-600/5', iconColor: 'text-orange-500' },
-    { icon: TrendingUp, value: viewsTotal, label: viewsTotal === 0 ? 'Sem visualizações' : 'Visualizações', gradient: 'from-emerald-500/10 to-emerald-600/5', iconColor: 'text-emerald-500' },
-    { icon: Star, value: provider?.rating_avg ? Number(provider.rating_avg).toFixed(1) : '0', label: !provider?.rating_avg || Number(provider.rating_avg) === 0 ? 'Sem avaliações' : `${reviewCount} avaliação${reviewCount !== 1 ? 'ões' : ''}`, gradient: 'from-amber-500/10 to-amber-600/5', iconColor: 'text-amber-500' },
-    { icon: Camera, value: portfolioCount, label: portfolioCount === 0 ? 'Sem fotos' : 'Portfólio', gradient: 'from-orange-500/10 to-emerald-600/5', iconColor: 'text-orange-500' },
-    { icon: Megaphone, value: jobsCount, label: jobsCount === 0 ? 'Nenhuma vaga' : 'Vagas', gradient: 'from-amber-500/10 to-orange-600/5', iconColor: 'text-amber-500' },
-  ];
+  // statCards foram movidos para /dashboard/metricas (DashboardMetricsPage).
 
   // Welcome banner contextual greeting
   const hour = new Date().getHours();
