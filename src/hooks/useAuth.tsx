@@ -97,21 +97,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // newer generation has started in the meantime (FIX #2 — race condition).
   const fetchGenerationRef = useRef(0);
 
+  // AbortController da execução em andamento — cancelado pelo cleanup do
+  // useEffect ou ao iniciar uma nova chamada (gera abort encadeado para
+  // não deixar requests Supabase pendurados no mobile).
+  const inFlightAbortRef = useRef<AbortController | null>(null);
+
   const fetchProfile = useCallback(async (userId: string, authUser?: User | null) => {
     // Generation guard: bumped on every call. If a newer call starts before this
     // one finishes, the older one's setState writes are silently discarded.
     const generation = ++fetchGenerationRef.current;
     const isStale = () => fetchGenerationRef.current !== generation;
-    // Retry/polling: o trigger handle_new_user pode levar alguns ms após o signup.
-    // Evita a race condition que deixa o usuário "preso" sem profile carregado.
+
+    // Cancela qualquer chamada anterior pendente — evita acumular fetches
+    // após visibilitychange/auth-state-change em sequência rápida.
+    try { inFlightAbortRef.current?.abort(); } catch { /* noop */ }
+    const ctrl = new AbortController();
+    inFlightAbortRef.current = ctrl;
+
+    // FIX 1: reduzido para no máximo ~6s totais (3 tentativas × 2s + 2 backoffs).
     let profileData: any = null;
     let providerRows: any[] | null = null;
-    const MAX_ATTEMPTS = 5;
-    const PER_ATTEMPT_TIMEOUT_MS = 6000;
+    const MAX_ATTEMPTS = 3;
+    const PER_ATTEMPT_TIMEOUT_MS = 2000;
     const startedAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     let attemptsUsed = 0;
     let lastErrorMessage: string | null = null;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      if (ctrl.signal.aborted) break;
       attemptsUsed = attempt + 1;
       // SEGURANÇA (PII): nunca usar select('*') aqui — colunas sensíveis
       // (tax_id, whatsapp, cpf, cnpj, phone, suspicious_ip, lat/long, postal_code,
@@ -128,29 +140,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         'service_radius, working_hours, working_hours_struct, latitude, longitude, account_type, ' +
         'status, onboarding_progress, lead_followup_hours, mission_answers, user_ref, cnpj, cpf';
       try {
-        // Per-attempt timeout: em mobile com rede ruim, requests do Supabase
-        // podem ficar penduradas indefinidamente. Promise.race garante que
-        // sempre retentamos antes de exaurir o orçamento total.
+        // Per-attempt timeout + abortSignal: cancela requests Supabase pendentes
+        // tanto pelo timeout interno quanto pelo abort externo (cleanup/refetch).
         const queryPromise = Promise.all([
-          supabase.from('profiles').select(PROFILE_AUTH_COLUMNS).eq('id', userId).maybeSingle(),
-          supabase.from('providers').select(PROVIDER_AUTH_COLUMNS).eq('user_id', userId).order('created_at', { ascending: true }),
+          supabase.from('profiles').select(PROFILE_AUTH_COLUMNS).eq('id', userId).abortSignal(ctrl.signal).maybeSingle(),
+          supabase.from('providers').select(PROVIDER_AUTH_COLUMNS).eq('user_id', userId).order('created_at', { ascending: true }).abortSignal(ctrl.signal),
         ]);
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`fetchProfile attempt ${attemptsUsed} timed out after ${PER_ATTEMPT_TIMEOUT_MS}ms`)), PER_ATTEMPT_TIMEOUT_MS),
-        );
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          const t = setTimeout(() => reject(new Error(`fetchProfile attempt ${attemptsUsed} timed out after ${PER_ATTEMPT_TIMEOUT_MS}ms`)), PER_ATTEMPT_TIMEOUT_MS);
+          ctrl.signal.addEventListener('abort', () => { clearTimeout(t); reject(new Error('aborted')); }, { once: true });
+        });
         let [{ data: pData, error: pErr }, { data: pvRows, error: pvErr }] = await Promise.race([queryPromise, timeoutPromise]);
         if (pErr) {
           lastErrorMessage = `profiles: ${pErr.message ?? String(pErr)} (code=${(pErr as any)?.code ?? 'n/a'})`;
           console.warn('[useAuth] profiles query error', { code: (pErr as any)?.code, message: pErr.message, details: (pErr as any)?.details, hint: (pErr as any)?.hint });
-          // Schema drift fallback: se uma coluna referenciada em PROFILE_AUTH_COLUMNS
-          // não existe mais no banco (PGRST204 / 42703 / "column ... does not exist"),
-          // refaz a query com o select mínimo absoluto. Isso impede que o Wizard
-          // fique travado em skeleton só porque o schema mudou.
           const code = String((pErr as any)?.code ?? '');
           const msg = String(pErr.message ?? '');
           if (code === '42703' || code === 'PGRST204' || /column .* does not exist/i.test(msg)) {
             console.warn('[useAuth] schema drift detectado — refazendo profiles com select mínimo');
-            const fb = await supabase.from('profiles').select('id, full_name, avatar_url, onboarding_completed').eq('id', userId).maybeSingle();
+            const fb = await supabase.from('profiles').select('id, full_name, avatar_url, onboarding_completed').eq('id', userId).abortSignal(ctrl.signal).maybeSingle();
             pData = fb.data as any;
             if (fb.error) {
               lastErrorMessage = `profiles(min): ${fb.error.message}`;
@@ -170,7 +178,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               .from('providers')
               .select('id, user_id, business_name, description, city, state, slug, status')
               .eq('user_id', userId)
-              .order('created_at', { ascending: true });
+              .order('created_at', { ascending: true })
+              .abortSignal(ctrl.signal);
             pvRows = fb.data as any[];
             if (fb.error) {
               lastErrorMessage = `providers(min): ${fb.error.message}`;
@@ -201,11 +210,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (profileData) break;
       } catch (err: any) {
         lastErrorMessage = err?.message ?? String(err);
+        if (ctrl.signal.aborted) break;
         console.warn(`[useAuth] fetchProfile attempt ${attemptsUsed} failed:`, err);
       }
-      // Backoff curto: 200ms, 400ms, 800ms, 1600ms (total ~3s + ~6s timeout * tentativas)
-      if (attempt < MAX_ATTEMPTS - 1) {
-        await new Promise(resolve => setTimeout(resolve, 200 * Math.pow(2, attempt)));
+      // FIX 1: backoff fixo 2s (total worst-case ~6s + 2 × 2s waits).
+      if (attempt < MAX_ATTEMPTS - 1 && !ctrl.signal.aborted) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
 
