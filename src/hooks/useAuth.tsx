@@ -294,13 +294,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refetchProfile = useCallback(async () => {
     if (!user) return null;
 
-    const { data: authData } = await supabase.auth.getUser();
-
-    const freshUser = authData.user ?? user;
+    // FIX 3: paraleliza getUser() + fetchProfile() em vez de esperar
+    // o getUser para então iniciar o fetchProfile. fetchProfile só usa
+    // authUser para o flag `profile_type_chosen` — se o getUser falhar,
+    // caímos no `user` atual sem bloquear o profile.
+    const [authRes, freshProfile] = await Promise.all([
+      supabase.auth.getUser().catch((err) => {
+        console.warn('[useAuth] refetchProfile: getUser falhou', err);
+        return { data: { user: null } } as any;
+      }),
+      fetchProfile(user.id, user),
+    ]);
+    const freshUser = authRes?.data?.user ?? user;
     if (freshUser !== user) setUser(freshUser);
-
-    // fetchProfile já recalcula needsTypeSelection com base no banco — não forçar false aqui.
-    const freshProfile = await fetchProfile(user.id, freshUser);
     return freshProfile ?? null;
   }, [user, fetchProfile]);
 
