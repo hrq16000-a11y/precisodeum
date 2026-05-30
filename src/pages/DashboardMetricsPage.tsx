@@ -33,7 +33,7 @@ const PERIODS = [
 ] as const;
 
 const DashboardMetricsPage = () => {
-  const { user, provider, loading: authLoading } = useAuth();
+  const { provider, loading: authLoading } = useAuth();
   const [period, setPeriod] = useState<(typeof PERIODS)[number]['value']>(30);
   const [series, setSeries] = useState<LeadStatsDay[]>([]);
   const [loading, setLoading] = useState(true);
