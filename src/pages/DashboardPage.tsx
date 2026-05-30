@@ -544,10 +544,7 @@ const DashboardPage = () => {
         <IdentitySuggestionsWidget limit={2} />
       </div>
 
-      {/* Contador de Impacto Real (24h) */}
-      <div className="mt-4" data-tour="contact-impact">
-        <ContactImpactWidget />
-      </div>
+      {/* Contador de Impacto Real (24h) — movido para /dashboard/metricas */}
 
       {/* Ciclo de Fechamento */}
       <div className="mt-4">
