@@ -173,10 +173,15 @@ function LayoutEditor({ type }: { type: DashboardProfileType }) {
         );
       if (error) throw error;
       await logAuditAction({
-        action: 'dashboard_layout_update',
+        action: 'setting_updated',
         resourceType: 'site_settings',
         resourceId: key,
-        metadata: { type, count: payload.length, visible_count: payload.filter((p) => p.visible).length },
+        metadata: {
+          scope: 'dashboard_layout',
+          type,
+          count: payload.length,
+          visible_count: payload.filter((p) => p.visible).length,
+        },
       });
     },
     onSuccess: () => {
