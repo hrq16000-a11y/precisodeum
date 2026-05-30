@@ -206,30 +206,41 @@ const DashboardMetricsPage = () => {
           {hasAnyCounter && (
             <section className="mt-6">
               <h2 className="mb-3 font-display text-lg font-bold text-foreground">Visão geral do perfil</h2>
-              <StatCardGrid cards={statCards as any} />
+              <Suspense fallback={<SectionSkeleton minH="min-h-[180px]" />}>
+                <StatCardGrid cards={statCards as any} />
+              </Suspense>
             </section>
           )}
 
           {/* Impacto 24h + Impacto na rede */}
           <section className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-            <ContactImpactWidget />
-            <ImpactSection
-              views={viewsTotal}
-              whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
-              leads={leadsCount}
-            />
+            <Suspense fallback={<SectionSkeleton minH="min-h-[220px]" />}>
+              <ContactImpactWidget />
+            </Suspense>
+            <Suspense fallback={<SectionSkeleton minH="min-h-[220px]" />}>
+              <ImpactSection
+                views={viewsTotal}
+                whatsappClicks={(provider as any)?.contact_clicks_count ?? 0}
+                leads={leadsCount}
+              />
+            </Suspense>
           </section>
 
           {/* Insights detalhados + desempenho do anúncio */}
           <section className="mt-6">
-            <DashboardAnalytics />
+            <Suspense fallback={<SectionSkeleton minH="min-h-[360px]" />}>
+              <DashboardAnalytics />
+            </Suspense>
           </section>
 
           {provider?.id && (
             <section className="mt-4">
-              <AdPerformanceWidget providerId={provider.id} hasPhoto={!!provider?.photo_url} />
+              <Suspense fallback={<SectionSkeleton minH="min-h-[200px]" />}>
+                <AdPerformanceWidget providerId={provider.id} hasPhoto={!!provider?.photo_url} />
+              </Suspense>
             </section>
           )}
+
 
           {/* Analytics grid pesado — só com dados reais */}
           {provider && (viewsTotal > 0 || leadsCount > 0) && (
