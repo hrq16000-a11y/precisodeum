@@ -174,9 +174,9 @@ function LayoutEditor({ type }: { type: DashboardProfileType }) {
       if (error) throw error;
       await logAuditAction({
         action: 'setting_updated',
-        resourceType: 'site_settings',
-        resourceId: key,
-        metadata: {
+        resource_type: 'site_settings',
+        resource_id: key,
+        details: {
           scope: 'dashboard_layout',
           type,
           count: payload.length,
