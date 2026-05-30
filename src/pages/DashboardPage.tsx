@@ -38,6 +38,7 @@ import CommunityVerifiedStatus from '@/components/dashboard/CommunityVerifiedSta
 // DashboardAnalytics + AdPerformanceWidget movidos para /dashboard/metricas
 import { useProviderActivityHeartbeat } from '@/hooks/useProviderActivityHeartbeat';
 import { useProviderCounters } from '@/hooks/useProviderCounters';
+import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { useLeadInteractionPing } from '@/hooks/useLeadInteractionPing';
 import ServiceCompletionCard from '@/components/dashboard/ServiceCompletionCard';
 import DailyPostCard from '@/components/dashboard/DailyPostCard';
@@ -223,6 +224,10 @@ const DashboardPage = () => {
   const profileType = resolveEffectiveProfileType(profile, provider);
   const isClient = profileType === 'client';
   const isRH = profileType === 'rh';
+
+  // Layout configurável pelo admin (ordem/visibilidade de seções).
+  // Hook chamado incondicionalmente — usado apenas na branch provider.
+  const providerLayout = useDashboardLayout('provider');
 
   // profileDone: exige descrição, cidade E whatsapp (canal principal de contato).
   // Sem whatsapp, lead não chega — então não é "perfil completo".
@@ -421,13 +426,11 @@ const DashboardPage = () => {
   const isCompanyProvider = profile?.profile_type === 'provider' && (provider as any)?.account_type === 'company';
   const showFullAddress = !!(provider as any)?.show_full_address;
 
-  return (
-    <DashboardLayout>
-      <div className="-mx-4 -my-6 bg-slate-50 px-4 py-6 dark:bg-background sm:-mx-6 sm:px-6">
-      {debugBar}
-      <RealtimeEngagementToast />
-      <LevelUpBanner />
-      {/* Enhanced Welcome Hero */}
+  // Registro de seções configuráveis do dashboard provider.
+  // O admin controla ordem/visibilidade via /admin/dashboard-layout
+  // (chave `dashboard_layout_provider` em site_settings).
+  const sectionRegistry: Record<string, () => JSX.Element | null> = {
+    welcome_hero: () => (
       <WelcomeHero
         greeting={greeting}
         name={profile?.full_name?.split(' ')[0] || 'Profissional'}
@@ -437,82 +440,56 @@ const DashboardPage = () => {
         memberSince={profile?.created_at}
         avatarUrl={profile?.avatar_url || undefined}
       />
-
-      {/* ===== ORDEM: AÇÕES ÚTEIS PRIMEIRO, MÉTRICAS DEPOIS ===== */}
-
-      {/* 1) Ações Rápidas no topo */}
-      <div className="mt-6">
-        <QuickActionsHero />
-      </div>
-
-      {/* 2) "Como funciona" — checklist de onboarding sincronizado */}
+    ),
+    quick_actions_hero: () => (
+      <div className="mt-6"><QuickActionsHero /></div>
+    ),
+    onboarding_completion_tracker: () => (
       <div className="mt-4">
         <OnboardingCompletionTracker
           servicesCount={servicesCount ?? 0}
           portfolioAlbumsCount={portfolioAlbumCount}
         />
       </div>
-
-      {/* 3) Score rápido de completude */}
+    ),
+    unified_health_score: () => (
       <div className="mt-4">
         <UnifiedHealthScore score={completenessPercent} remaining={remainingItems} />
       </div>
-
-      {/* 4) Obra do Dia */}
-      {provider?.id && (
-        <div className="mt-4">
-          <DailyPostCard />
-        </div>
-      )}
-
-      {/* 5) PRÉVIA DE MÉTRICAS — painel completo em /dashboard/metricas */}
-      {provider?.id && (
-        <div className="mt-6">
-          <MetricsPreviewCard
-            viewsTotal={viewsTotal}
-            leadsCount={leadsCount}
-            contactClicks={(provider as any)?.contact_clicks_count ?? 0}
-          />
-        </div>
-      )}
-
-      {/* Online Status Feedback */}
+    ),
+    daily_post_card: () => provider?.id ? (
+      <div className="mt-4"><DailyPostCard /></div>
+    ) : null,
+    metrics_preview: () => provider?.id ? (
+      <div className="mt-6">
+        <MetricsPreviewCard
+          viewsTotal={viewsTotal}
+          leadsCount={leadsCount}
+          contactClicks={(provider as any)?.contact_clicks_count ?? 0}
+        />
+      </div>
+    ) : null,
+    online_status_feedback: () => (
       <div className="mt-3 flex justify-end" data-tour="online-status">
         <OnlineStatusFeedback />
       </div>
-
-      {/* Seletor manual de visibilidade online (provider) */}
-      {provider?.id && (
-        <div className="mt-3" data-tour="online-toggle">
-          <OnlineStatusToggle />
-        </div>
-      )}
-
-      {/* Banner de instalação do App (mobile + provider) */}
-      {provider?.id && (
-        <div className="mt-3">
-          <DashboardPwaInstallNudge />
-        </div>
-      )}
-
-      {/* Cards de Missão Profissional */}
-      <div className="mt-4" data-tour="missions">
-        <MissionCard />
-      </div>
-
-      {/* Sugestões de identidade (governança) */}
-      <div className="mt-4">
-        <IdentitySuggestionsWidget limit={2} />
-      </div>
-
-      {/* Contador de Impacto Real (24h) — movido para /dashboard/metricas */}
-
-      {/* Ciclo de Fechamento */}
-      <div className="mt-4">
-        <ServiceCompletionCard />
-      </div>
-
-      {/* Engagement Loop */}
+    ),
+    online_status_toggle: () => provider?.id ? (
+      <div className="mt-3" data-tour="online-toggle"><OnlineStatusToggle /></div>
+    ) : null,
+    pwa_install_nudge: () => provider?.id ? (
+      <div className="mt-3"><DashboardPwaInstallNudge /></div>
+    ) : null,
+    mission_card: () => (
+      <div className="mt-4" data-tour="missions"><MissionCard /></div>
+    ),
+    identity_suggestions: () => (
+      <div className="mt-4"><IdentitySuggestionsWidget limit={2} /></div>
+    ),
+    service_completion_card: () => (
+      <div className="mt-4"><ServiceCompletionCard /></div>
+    ),
+    engagement_loop: () => (
       <div className="mt-4">
         <EngagementLoop
           servicesCount={servicesCount ?? 0}
@@ -520,112 +497,96 @@ const DashboardPage = () => {
           unifiedPct={completenessPercent}
         />
       </div>
-
-      {/* Banners persistentes de alta prioridade */}
-      {showServiceEmptyBanner && (
-        <div className="mt-4">
-          <EmptyStateBanner variant="service" />
-        </div>
-      )}
-      {showPortfolioEmptyBanner && (
-        <div className="mt-4">
-          <EmptyStateBanner variant="portfolio" />
-        </div>
-      )}
-
-      {/* CTA único inteligente */}
-      {(() => {
-        if (allChecklistDone) return null;
-        if (anyEmptyBannerVisible && remainingItems <= 1) return null;
-
-        if (remainingItems <= 1) {
-          return (
-            <div className="mt-4">
-              <SmartNextStepCTA
+    ),
+    empty_banners: () => (
+      <>
+        {showServiceEmptyBanner && (
+          <div className="mt-4"><EmptyStateBanner variant="service" /></div>
+        )}
+        {showPortfolioEmptyBanner && (
+          <div className="mt-4"><EmptyStateBanner variant="portfolio" /></div>
+        )}
+      </>
+    ),
+    smart_cta_or_checklist: () => {
+      if (allChecklistDone) return null;
+      if (anyEmptyBannerVisible && remainingItems <= 1) return null;
+      if (remainingItems <= 1) {
+        return (
+          <div className="mt-4">
+            <SmartNextStepCTA
+              servicesCount={servicesCount ?? 0}
+              portfolioAlbumsCount={portfolioAlbumCount}
+            />
+          </div>
+        );
+      }
+      return (
+        <>
+          <IncompleteLocationAlert provider={provider as any} />
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <DismissibleWidget widgetKey="first_lead_checklist">
+              <FirstLeadChecklist
                 servicesCount={servicesCount ?? 0}
                 portfolioAlbumsCount={portfolioAlbumCount}
               />
-            </div>
-          );
-        }
-        return (
-          <>
-            <IncompleteLocationAlert provider={provider as any} />
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <DismissibleWidget widgetKey="first_lead_checklist">
-                <FirstLeadChecklist
-                  servicesCount={servicesCount ?? 0}
-                  portfolioAlbumsCount={portfolioAlbumCount}
-                />
-              </DismissibleWidget>
-              <DismissibleWidget widgetKey="profile_location_checklist">
-                <ProfileLocationChecklist provider={provider as any} />
-              </DismissibleWidget>
-              <CommunityVerifiedStatus />
-            </div>
-          </>
-        );
-      })()}
-
-      {/* Dica de especialista */}
-      {provider && (
-        <div className="mt-4">
-          <DismissibleWidget widgetKey="expert_tips">
-            <ExpertTipsWidget />
-          </DismissibleWidget>
-        </div>
-      )}
-
-      {/* Lembrete de follow-up de leads em aberto */}
+            </DismissibleWidget>
+            <DismissibleWidget widgetKey="profile_location_checklist">
+              <ProfileLocationChecklist provider={provider as any} />
+            </DismissibleWidget>
+            <CommunityVerifiedStatus />
+          </div>
+        </>
+      );
+    },
+    expert_tips: () => provider ? (
       <div className="mt-4">
-        <LeadFollowupWidget />
+        <DismissibleWidget widgetKey="expert_tips">
+          <ExpertTipsWidget />
+        </DismissibleWidget>
       </div>
-
-      {/* INSIGHTS SECUNDÁRIOS — lazy: bloco colapsável com widgets pesados */}
+    ) : null,
+    lead_followup: () => (
+      <div className="mt-4"><LeadFollowupWidget /></div>
+    ),
+    insights_collapsible: () => (
       <Suspense fallback={<SectionSkeleton minH="min-h-16" />}>
         <ProviderInsightsCollapsible avatarUrl={profile?.avatar_url} />
       </Suspense>
-
-      {/* Share Profile Card & QR Code */}
-      {provider?.slug && (
-        <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2" data-tour="share">
-          <ShareProfileCard />
-          <QrCodeCard />
-          <StorageQuotaWidget />
-        </div>
-      )}
-
-      {/* Courses promotion */}
-      <div className="mt-4">
-        <CoursesBanner />
+    ),
+    share_profile_card: () => provider?.slug ? (
+      <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2" data-tour="share">
+        <ShareProfileCard />
+        <QrCodeCard />
+        <StorageQuotaWidget />
       </div>
-
+    ) : null,
+    courses_banner: () => (
+      <div className="mt-4"><CoursesBanner /></div>
+    ),
+    quick_stats_bar: () => (
       <QuickStatsBar pendingLeads={pendingLeads} providerSlug={provider?.slug} />
-
-      {/* Action Queue */}
+    ),
+    action_queue: () => (
       <div className="mt-4">
         <ActionQueue
           servicesCount={servicesCount ?? 0}
           portfolioAlbumsCount={portfolioAlbumCount}
         />
       </div>
-
-      {/* Métricas finais, StatCardGrid e Analytics Grid — movidos para /dashboard/metricas */}
-
-      {/* Dica do dia + Benefícios do nível */}
-      {provider && (
-        <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <DashboardTipOfDay
-            servicesCount={servicesCount ?? 0}
-            portfolioCount={portfolioCount}
-            leadsCount={leadsCount}
-            reviewCount={reviewCount}
-          />
-          <LevelBenefits />
-        </div>
-      )}
-
-      {/* Quick Access — lazy: abaixo da dobra, atalhos de navegação */}
+    ),
+    tip_and_benefits: () => provider ? (
+      <div className="mt-6 grid gap-4 grid-cols-1 lg:grid-cols-2">
+        <DashboardTipOfDay
+          servicesCount={servicesCount ?? 0}
+          portfolioCount={portfolioCount}
+          leadsCount={leadsCount}
+          reviewCount={reviewCount}
+        />
+        <LevelBenefits />
+      </div>
+    ) : null,
+    quick_access: () => (
       <Suspense fallback={<SectionSkeleton minH="min-h-[280px]" />}>
         <ProviderQuickAccess
           servicesCount={servicesCount}
@@ -636,8 +597,8 @@ const DashboardPage = () => {
           levelName={(profile as any)?.levelInfo?.name ?? null}
         />
       </Suspense>
-
-      {/* Onboarding Stepper — lazy: bloco visual final "Como funciona" */}
+    ),
+    onboarding_stepper: () => (
       <Suspense fallback={<SectionSkeleton minH="min-h-[180px]" />}>
         <ProviderOnboardingStepper
           steps={providerSteps}
@@ -646,26 +607,33 @@ const DashboardPage = () => {
           onToggle={() => setGuideOpen(!guideOpen)}
         />
       </Suspense>
+    ),
+    missed_opportunities: () => provider?.id ? (
+      <div className="mt-6"><MissedOpportunitiesWidget /></div>
+    ) : null,
+    referral_invite: () => provider?.id ? (
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <ReferralInviteCard />
+      </div>
+    ) : null,
+    our_story_banner: () => <OurStoryBanner variant="compact" />,
+  };
 
-      {/* Lote 4 — Frescor & Inteligência */}
-      {provider?.id && (
-        <>
-          <div className="mt-6">
-            <MissedOpportunitiesWidget />
-          </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <ReferralInviteCard />
-          </div>
-        </>
-      )}
+  return (
+    <DashboardLayout>
+      <div className="-mx-4 -my-6 bg-slate-50 px-4 py-6 dark:bg-background sm:-mx-6 sm:px-6">
+        {debugBar}
+        <RealtimeEngagementToast />
+        <LevelUpBanner />
 
-      {/* Nossa história — referência à luta */}
-      <OurStoryBanner variant="compact" />
+        {providerLayout.orderedIds.map((id) => {
+          const render = sectionRegistry[id];
+          if (!render) return null;
+          return <div key={id}>{render()}</div>;
+        })}
 
-      <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
-
-      {/* Tour guiado de 3 passos para tier "novato" */}
-      <DashboardTour />
+        <NextStepPrompt open={welcomeOpen} onClose={() => setWelcomeOpen(false)} context="welcome" providerSlug={provider?.slug ?? null} />
+        <DashboardTour />
       </div>
     </DashboardLayout>
   );
