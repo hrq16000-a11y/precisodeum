@@ -48,7 +48,7 @@ import EngagementLoop from '@/components/dashboard/EngagementLoop';
 import ExpertTipsWidget from '@/components/dashboard/ExpertTipsWidget';
 import DismissibleWidget from '@/components/dashboard/DismissibleWidget';
 import MissionCard from '@/components/dashboard/MissionCard';
-import ContactImpactWidget from '@/components/dashboard/ContactImpactWidget';
+// ContactImpactWidget movido para /dashboard/metricas
 import MetricsPreviewCard from '@/components/dashboard/MetricsPreviewCard';
 import OnlineStatusFeedback from '@/components/dashboard/OnlineStatusFeedback';
 import OnlineStatusToggle from '@/components/dashboard/OnlineStatusToggle';
