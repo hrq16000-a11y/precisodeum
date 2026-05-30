@@ -187,7 +187,9 @@ const DashboardPage = () => {
   } = useProviderCounters();
   // Mantém semântica anterior: servicesCount é null até carregar (usado por banners de "vazio")
   const servicesCount: number | null = countersLoading ? null : servicesCountRaw;
+  const statsLoaded = !countersLoading && !countersError;
   const [guideOpen, setGuideOpen] = useState(true);
+
 
   // Welcome celebration: triggered once when redirected from wizard with ?welcome=1
   useEffect(() => {
