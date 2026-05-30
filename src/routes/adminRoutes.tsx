@@ -142,11 +142,14 @@ export const adminRoutes = (
     <Route path="/admin/db-performance" element={<AdminGuard><RouteErrorBoundary sectionName="AdminDbPerformancePage"><AdminDbPerformancePage /></RouteErrorBoundary></AdminGuard>} />
     <Route path="/admin/load-tests" element={<AdminGuard><RouteErrorBoundary sectionName="AdminLoadTestsPage"><AdminLoadTestsPage /></RouteErrorBoundary></AdminGuard>} />
     <Route path="/admin/caixa-notificacoes" element={<AdminGuard><RouteErrorBoundary sectionName="AdminInboxPage"><AdminInboxPage /></RouteErrorBoundary></AdminGuard>} />
-    <Route path="/admin/sitemap-audit" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSitemapAuditPage"><AdminSitemapAuditPage /></RouteErrorBoundary></AdminGuard>} />
+    <Route path="/admin/sitemap-audit" element={<Navigate to="/admin/seo/sitemap" replace />} />
     <Route path="/admin/busca-ordenacao" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSearchSortingPage"><AdminSearchSortingPage /></RouteErrorBoundary></AdminGuard>} />
-    <Route path="/admin/meta-tracking-quality" element={<AdminGuard><RouteErrorBoundary sectionName="AdminMetaTrackingQualityPage"><AdminMetaTrackingQualityPage /></RouteErrorBoundary></AdminGuard>} />
+    <Route path="/admin/meta-tracking-quality" element={<Navigate to="/admin/seo/meta-tracking" replace />} />
     <Route path="/admin/erros-500" element={<AdminError500Page />} />
-    <Route path="/admin/links-quebrados" element={<AdminGuard><RouteErrorBoundary sectionName="AdminBrokenLinksPage"><AdminBrokenLinksPage /></RouteErrorBoundary></AdminGuard>} />
+    <Route path="/admin/links-quebrados" element={<Navigate to="/admin/seo/broken-links" replace />} />
+    {/* ETAPA 10 — SEO Hub (umbrella com sub-tabs) */}
+    <Route path="/admin/seo" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSeoPage"><AdminSeoPage /></RouteErrorBoundary></AdminGuard>} />
+    <Route path="/admin/seo/:tab" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSeoPage"><AdminSeoPage /></RouteErrorBoundary></AdminGuard>} />
     <Route path="/admin/cidades" element={<AdminCitiesPage />} />
     <Route path="/admin/configuracoes" element={<AdminSettingsPage />} />
     <Route path="/admin/patrocinadores" element={<AdminSponsorsPage />} />
@@ -154,13 +157,13 @@ export const adminRoutes = (
     <Route path="/admin/sponsor-change-requests" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSponsorChangeRequestsPage"><AdminSponsorChangeRequestsPage /></RouteErrorBoundary></AdminGuard>} />
     <Route path="/admin/sponsor-billing" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSponsorBillingPage"><AdminSponsorBillingPage /></RouteErrorBoundary></AdminGuard>} />
     <Route path="/admin/provider-conversion" element={<AdminGuard><RouteErrorBoundary sectionName="AdminProviderConversionPage"><AdminProviderConversionPage /></RouteErrorBoundary></AdminGuard>} />
-    <Route path="/admin/seo-landings" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSeoLandingsPage"><AdminSeoLandingsPage /></RouteErrorBoundary></AdminGuard>} />
-    <Route path="/admin/seo-runtime" element={<AdminGuard><RouteErrorBoundary sectionName="AdminSeoRuntimeMetricsPage"><AdminSeoRuntimeMetricsPage /></RouteErrorBoundary></AdminGuard>} />
+    <Route path="/admin/seo-landings" element={<Navigate to="/admin/seo/landings" replace />} />
+    <Route path="/admin/seo-runtime" element={<Navigate to="/admin/seo/runtime" replace />} />
     <Route path="/admin/funil-health" element={<AdminGuard><RouteErrorBoundary sectionName="AdminPublicFunnelHealthPage"><AdminPublicFunnelHealthPage /></RouteErrorBoundary></AdminGuard>} />
     <Route path="/admin/patrocinadores/aprovacoes" element={<AdminSponsorApprovalsPage />} />
     <Route path="/admin/servicos-populares" element={<AdminPopularServicesPage />} />
     <Route path="/admin/faq" element={<AdminFaqPage />} />
-    <Route path="/admin/metatags" element={<AdminMetaTagsPage />} />
+    <Route path="/admin/metatags" element={<Navigate to="/admin/seo/metatags" replace />} />
     <Route path="/admin/destaques" element={<AdminHighlightsPage />} />
     <Route path="/admin/comunidade" element={<AdminCommunityPage />} />
     <Route path="/admin/vagas" element={<AdminJobsPage />} />
@@ -189,7 +192,7 @@ export const adminRoutes = (
     <Route path="/admin/menus" element={<AdminMenuPage />} />
     <Route path="/admin/como-funciona" element={<AdminHomeStepsPage />} />
     <Route path="/admin/home-rotacao" element={<AdminHomeRotationPage />} />
-    <Route path="/admin/wizard-diagnostico" element={<AdminWizardDiagnosticsPage />} />
+    {/* /admin/wizard-diagnostico aliased above via /admin/onboarding-ops/wizard-debug (ETAPA 10) */}
     <Route path="/admin/depoimentos" element={<AdminTestimonialsPage />} />
     <Route path="/admin/cta-blocos" element={<AdminCtaBlocksPage />} />
     <Route path="/admin/secoes-home" element={<AdminHomeSectionsPage />} />
