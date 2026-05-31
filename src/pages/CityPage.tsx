@@ -108,7 +108,8 @@ const CityPage = () => {
         .limit(200);
 
 
-      const userIds = [...new Set((provs || []).map((p) => p.user_id))];
+      const provRows = (provs as any[] | null) || [];
+      const userIds = [...new Set(provRows.map((p: any) => p.user_id))];
       let profileMap: Record<string, any> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
@@ -118,7 +119,7 @@ const CityPage = () => {
         (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
       }
 
-      const providers = (provs || []).map((p) => ({
+      const providers = provRows.map((p: any) => ({
         id: p.id,
         userId: p.user_id,
         createdAt: p.created_at || null,
