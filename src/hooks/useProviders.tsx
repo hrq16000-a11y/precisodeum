@@ -1304,9 +1304,9 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
   // para evitar cache cruzado entre buscas distintas. Cidade fica fora pois é
   // resolvida client-side (acentos + grouped local/nearby/outOfState).
   const baseQuery = useQuery({
-    queryKey: ['search-providers-flat', { categorySlug: categorySlug ?? '', state: state ?? '', minRating }],
+    queryKey: ['search-providers-flat', { categorySlug: categorySlug ?? '', state: state ?? '', minRating, city: city ?? '' }],
     queryFn: async () => {
-      const q = await buildSearchQuery({ categorySlug, state, minRating });
+      const q = await buildSearchQuery({ categorySlug, state, minRating, city });
       return fetchProvidersWithProfiles(q);
     },
     staleTime: 1000 * 60 * 15,
@@ -1329,9 +1329,9 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
   // Onda 5: queryKey idêntico em estrutura ao flat, mas com prefixo distinto
   // (cache isolado) + filtros server-side reais via buildSearchQuery.
   const baseQuery = useQuery({
-    queryKey: ['search-providers-grouped', { categorySlug: categorySlug ?? '', state: state ?? '', minRating }],
+    queryKey: ['search-providers-grouped', { categorySlug: categorySlug ?? '', state: state ?? '', minRating, city: city ?? '' }],
     queryFn: async () => {
-      const q = await buildSearchQuery({ categorySlug, state, minRating });
+      const q = await buildSearchQuery({ categorySlug, state, minRating, city });
       return fetchProvidersWithProfiles(q);
     },
     // Cache /buscar: 15min stale + 60min gc + sem refetch ao remontar/focar.
@@ -1376,9 +1376,9 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
 
 export function useSearchAuditComparison(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
   const baseQuery = useQuery({
-    queryKey: ['search-audit-base', { categorySlug: categorySlug ?? '', state: state ?? '', minRating }],
+    queryKey: ['search-audit-base', { categorySlug: categorySlug ?? '', state: state ?? '', minRating, city: city ?? '' }],
     queryFn: async () => {
-      const q = await buildSearchQuery({ categorySlug, state, minRating });
+      const q = await buildSearchQuery({ categorySlug, state, minRating, city });
       return fetchProvidersWithProfiles(q);
     },
     staleTime: 1000 * 60 * 15,
