@@ -20,10 +20,11 @@ const FaqSection = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('faqs' as any)
-        .select('*')
+        .select('id, question, answer')
         .eq('active', true);
       return (data || []) as any[];
     },
+    staleTime: 1000 * 60 * 10,
   });
 
   const randomizedFaqs = useMemo(() => {

@@ -67,7 +67,7 @@ const HowItWorksSection = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('home_steps' as any)
-        .select('*')
+        .select('id')
         .eq('active', true)
         .order('display_order');
       return (data || []) as unknown as HomeStep[];

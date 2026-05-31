@@ -7,7 +7,7 @@ export function useSiteSettings() {
     queryFn: async () => {
       const { data } = await supabase
         .from('site_settings' as any)
-        .select('*')
+        .select('key, value')
         .order('key')
         .limit(200);
       const map: Record<string, boolean> = {};

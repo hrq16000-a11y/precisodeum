@@ -64,7 +64,7 @@ const HighlightsCarousel = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('highlights' as any)
-        .select('*')
+        .select('id, title, description, image_url, link_url, icon, theme_color, button_text, start_date, end_date, click_count')
         .eq('active', true)
         .order('display_order');
       return (data || []) as unknown as Highlight[];

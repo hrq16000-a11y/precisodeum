@@ -28,7 +28,7 @@ export function useHeroBanners() {
     queryFn: async () => {
       const { data } = await (supabase
         .from('hero_banners' as any)
-        .select('*')
+        .select('id, title, subtitle, cta_text, cta_link, image_url, overlay_opacity, text_alignment, animation_type, animation_duration, animation_delay, display_order, active, start_date, end_date, target_device, target_city, target_state')
         .eq('active', true)
         .order('display_order') as any);
 
