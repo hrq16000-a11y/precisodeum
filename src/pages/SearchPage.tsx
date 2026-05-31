@@ -13,6 +13,7 @@ import GeoFallbackNotice from '@/components/GeoFallbackNotice';
 import GeoPromptBanner from '@/components/GeoPromptBanner';
 import PaginationControls from '@/components/PaginationControls';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
+import SearchEmptyState from '@/components/SearchEmptyState';
 import PriceEstimateWidget from '@/components/home/PriceEstimateWidget';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
@@ -365,8 +366,36 @@ const SearchPage = () => {
     setOnlineOnly(false);
     setAcceptingOnly(false);
     setActiveTodayOnly(false);
+    setSelectedState('');
     setPage(1);
-  }, []);
+    // FIX 3 (Onda 4): limpar TODOS os params da URL exceto `q` (termo de busca).
+    const next = new URLSearchParams();
+    const q = searchParams.get('q');
+    if (q) next.set('q', q);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  /**
+   * FIX 3 (Onda 4) — sincronização bidirecional filtros ↔ URL.
+   * Reflete os filtros ativos na query string para suportar share, botão
+   * Voltar do browser e indexação SEO. `replace` evita poluir histórico.
+   */
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    const sync = (key: string, value: string) => {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    };
+    sync('categoria', selectedCategory);
+    sync('cidade', selectedCity);
+    sync('uf', selectedState);
+    sync('bairro', selectedNeighborhood);
+    sync('rating', minRating > 0 ? String(minRating) : '');
+    const current = searchParams.toString();
+    const target = next.toString();
+    if (current !== target) setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory, selectedCity, selectedState, selectedNeighborhood, minRating]);
 
   // Unique cities & neighborhoods from results for autocomplete
   const availableCities = useMemo(() => {
