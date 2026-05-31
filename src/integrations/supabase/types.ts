@@ -4460,6 +4460,7 @@ export type Database = {
           category_custom: string | null
           category_id: string | null
           city: string
+          city_normalized: string | null
           cnpj: string | null
           community_verified: boolean
           community_verified_at: string | null
@@ -4542,6 +4543,7 @@ export type Database = {
           category_custom?: string | null
           category_id?: string | null
           city?: string
+          city_normalized?: string | null
           cnpj?: string | null
           community_verified?: boolean
           community_verified_at?: string | null
@@ -4624,6 +4626,7 @@ export type Database = {
           category_custom?: string | null
           category_id?: string | null
           city?: string
+          city_normalized?: string | null
           cnpj?: string | null
           community_verified?: boolean
           community_verified_at?: string | null

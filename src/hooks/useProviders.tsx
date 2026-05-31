@@ -884,10 +884,16 @@ async function resolveCategoryId(slug: string): Promise<string | null> {
  * (GeoEngine + grouped local/nearby/outOfState) cuida disso sem perder
  * resultados de cidades com nome acentuado.
  */
+/** Normaliza cidade para `ilike` contra providers.city_normalized
+ *  (lowercase + sem acentos, MANTÉM espaços — diferente de `normalize()`). */
+const normalizeCityForQuery = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
 async function buildSearchQuery(opts: {
   categorySlug?: string;
   state?: string;
   minRating?: number;
+  city?: string;
 }) {
   let q = supabase
     .from('providers')
@@ -908,6 +914,13 @@ async function buildSearchQuery(opts: {
   }
   if (opts.minRating && opts.minRating > 0) {
     q = q.gte('rating_avg', opts.minRating);
+  }
+  if (opts.city && opts.city.trim()) {
+    // Server-side via coluna gerada `city_normalized` + índice idx_providers_city_normalized
+    const cityNorm = normalizeCityForQuery(opts.city);
+    if (cityNorm) {
+      q = q.ilike('city_normalized', `${cityNorm}%`);
+    }
   }
 
   return q
@@ -1291,9 +1304,9 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
   // para evitar cache cruzado entre buscas distintas. Cidade fica fora pois é
   // resolvida client-side (acentos + grouped local/nearby/outOfState).
   const baseQuery = useQuery({
-    queryKey: ['search-providers-flat', { categorySlug: categorySlug ?? '', state: state ?? '', minRating }],
+    queryKey: ['search-providers-flat', { categorySlug: categorySlug ?? '', state: state ?? '', minRating, city: city ?? '' }],
     queryFn: async () => {
-      const q = await buildSearchQuery({ categorySlug, state, minRating });
+      const q = await buildSearchQuery({ categorySlug, state, minRating, city });
       return fetchProvidersWithProfiles(q);
     },
     staleTime: 1000 * 60 * 15,
@@ -1316,9 +1329,9 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
   // Onda 5: queryKey idêntico em estrutura ao flat, mas com prefixo distinto
   // (cache isolado) + filtros server-side reais via buildSearchQuery.
   const baseQuery = useQuery({
-    queryKey: ['search-providers-grouped', { categorySlug: categorySlug ?? '', state: state ?? '', minRating }],
+    queryKey: ['search-providers-grouped', { categorySlug: categorySlug ?? '', state: state ?? '', minRating, city: city ?? '' }],
     queryFn: async () => {
-      const q = await buildSearchQuery({ categorySlug, state, minRating });
+      const q = await buildSearchQuery({ categorySlug, state, minRating, city });
       return fetchProvidersWithProfiles(q);
     },
     // Cache /buscar: 15min stale + 60min gc + sem refetch ao remontar/focar.
@@ -1363,9 +1376,9 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
 
 export function useSearchAuditComparison(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
   const baseQuery = useQuery({
-    queryKey: ['search-audit-base', { categorySlug: categorySlug ?? '', state: state ?? '', minRating }],
+    queryKey: ['search-audit-base', { categorySlug: categorySlug ?? '', state: state ?? '', minRating, city: city ?? '' }],
     queryFn: async () => {
-      const q = await buildSearchQuery({ categorySlug, state, minRating });
+      const q = await buildSearchQuery({ categorySlug, state, minRating, city });
       return fetchProvidersWithProfiles(q);
     },
     staleTime: 1000 * 60 * 15,
