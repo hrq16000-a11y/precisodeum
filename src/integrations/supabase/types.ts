@@ -10109,6 +10109,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      immutable_unaccent: { Args: { "": string }; Returns: string }
       increment_highlight_clicks: {
         Args: { highlight_id: string }
         Returns: undefined
