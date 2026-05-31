@@ -37,7 +37,6 @@ export async function generatePrerenderRoutes() {
       .select('slug, city, city_normalized, categories(slug)')
       .eq('status', 'approved')
       .not('city', 'is', null)
-      .not('slug', 'is', null)
       .limit(5000),
   ]);
 
@@ -45,7 +44,7 @@ export async function generatePrerenderRoutes() {
     if (result.error) console.warn(`[prerender] Aviso em ${name}:`, result.error.message);
   }
 
-  const providers = providerResult.data ?? [];
+  const providers = (providerResult.data ?? []).filter(p => p.slug && p.city);
 
   const categoriaRoutes = [...new Set((catResult.data ?? []).map(c => `/categoria/${c.slug}`))];
 
