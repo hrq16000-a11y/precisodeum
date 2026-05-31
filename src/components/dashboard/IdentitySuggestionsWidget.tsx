@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserCog, Check, X, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -34,7 +34,7 @@ interface Props {
 }
 
 const IdentitySuggestionsWidget = ({ className = '', limit, hideViewAllLink = false }: Props) => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [items, setItems] = useState<IdentitySuggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);

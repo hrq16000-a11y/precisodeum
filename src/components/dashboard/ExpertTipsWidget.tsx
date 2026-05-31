@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Lightbulb, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getExpertTips } from '@/lib/expertTips';
 
@@ -10,7 +10,7 @@ import { getExpertTips } from '@/lib/expertTips';
  * Fica visível por padrão; pode ser dispensado pelo wrapper DismissibleWidget.
  */
 const ExpertTipsWidget = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [categoryName, setCategoryName] = useState<string | null>(null);
   const [tipIndex, setTipIndex] = useState(0);
   const tips = getExpertTips(categoryName);

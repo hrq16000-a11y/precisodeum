@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 
 /**
@@ -18,7 +18,7 @@ import { Card } from '@/components/ui/card';
  *   não renderiza, evitando ruído visual no dashboard de clientes.
  */
 const CategoryBenchmarkWidget = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
 
   const { data } = useQuery({
     queryKey: ['category-benchmark', user?.id],

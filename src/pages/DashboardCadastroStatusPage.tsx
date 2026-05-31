@@ -23,7 +23,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -57,7 +57,7 @@ const formatDateTime = (iso: string) =>
   }).format(new Date(iso));
 
 const DashboardCadastroStatusPage = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   useSeoHead({
     title: 'Status do cadastro — Precisodeum',
     description: 'Acompanhe os eventos e diagnósticos do seu cadastro.',

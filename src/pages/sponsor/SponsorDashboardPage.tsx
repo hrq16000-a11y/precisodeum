@@ -1,7 +1,7 @@
 import { useMemo, useCallback, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useSponsorAuth } from '@/hooks/useSponsorAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,7 +27,7 @@ import { toast } from 'sonner';
 
 const SponsorDashboardPage = () => {
   const { sponsor, sponsorContact, subscription, hasActivePlan, loading, refetch } = useSponsorAuth();
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const location = useLocation();
   const [refreshingSubscription, setRefreshingSubscription] = useState(false);
 

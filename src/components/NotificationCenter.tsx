@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, CheckCheck, Trash2, ExternalLink, Settings, BellRing, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications, usePushSubscription, type Notification } from '@/hooks/useNotifications';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -116,7 +116,7 @@ const NotificationItem = ({
 );
 
 export const NotificationBell = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useChatEligibility } from '@/hooks/useChatEligibility';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export default function ChatMessageView({ conversationId, onBack }: Props) {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { settings } = useChatEligibility();
   const qc = useQueryClient();
   const [text, setText] = useState('');

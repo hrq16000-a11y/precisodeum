@@ -5,7 +5,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianG
 import { TrendingUp, Loader2, Trophy, ArrowRight } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 type Period = 7 | 30 | 90;
 
@@ -30,7 +30,7 @@ const PERIOD_LABEL: Record<Period, string> = {
 };
 
 export default function ReferralPointsEvolution() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [period, setPeriod] = useState<Period>(30);
 
   const { data, isLoading } = useQuery({

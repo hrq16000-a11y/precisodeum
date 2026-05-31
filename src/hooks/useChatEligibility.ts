@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 export interface ChatSettings {
   id: string;
@@ -15,7 +15,7 @@ export interface ChatSettings {
 }
 
 export function useChatEligibility() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
 
   const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ['chat-settings'],

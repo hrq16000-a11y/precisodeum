@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function ChatConversationList({ selectedId, onSelect }: Props) {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
 
   const { data: conversations = [], isLoading } = useQuery({
     queryKey: ['chat-conversations', user?.id],

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 export type SupportTicket = {
   id: string;
@@ -42,7 +42,7 @@ export function userRemainingMessages(ticket: SupportTicket | null | undefined):
 }
 
 export function useMyTicket() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   return useQuery({
     queryKey: ['support-ticket', user?.id],
     enabled: !!user?.id,
@@ -76,7 +76,7 @@ export function useTicketMessages(ticketId: string | null | undefined) {
 }
 
 export function useOpenOrCreateTicket() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (subject?: string) => {
@@ -103,7 +103,7 @@ export function useOpenOrCreateTicket() {
 }
 
 export function useSendUserMessage() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ ticketId, content }: { ticketId: string; content: string }) => {

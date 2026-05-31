@@ -17,7 +17,7 @@ import {
   TrendingUp,
   Loader2,
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import DashboardLayout from '@/components/DashboardLayout';
 import GlassCard from '@/components/ui/GlassCard';
@@ -79,7 +79,7 @@ type FilterKey = 'all' | 'pending' | 'qualified' | 'rewarded';
 const PAGE_SIZE = 8;
 
 export default function DashboardReferralsPage() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [copied, setCopied] = useState(false);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [page, setPage] = useState(1);

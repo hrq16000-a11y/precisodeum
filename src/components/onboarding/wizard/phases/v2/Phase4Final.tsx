@@ -25,7 +25,7 @@ import { celebrate, CELEBRATION_IDS } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';
 import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
 import AvatarUpload from '@/components/AvatarUpload';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { getSocialAvatarUrl } from '@/lib/avatarUtils';
 import { generateUniqueAvatar, generateAvatarVariants } from '@/lib/avatarGenerator';
 import { toast } from 'sonner';
@@ -49,7 +49,7 @@ interface AvatarProps {
 
 export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, saving, userId }: AvatarProps) => {
   const focusAvatar = useFocusFieldFromReview('avatar_url');
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const socialUrl = getSocialAvatarUrl(user);
 
   // Categoria selecionada → personaliza o avatar gerado.

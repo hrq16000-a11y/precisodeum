@@ -11,7 +11,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { Card } from '@/components/ui/card';
@@ -43,7 +43,7 @@ const fmt = (iso: string) =>
   new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso));
 
 const AdminInboxPage = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { isAdmin, loading: adminLoading } = useAdmin();
   useSeoHead({
     title: 'Caixa de notificações — Admin',

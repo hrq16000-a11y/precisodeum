@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, MessageCircle, MapPin, Clock, Inbox, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { whatsappLink } from '@/lib/whatsapp';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -31,7 +31,7 @@ interface OpenLeadInvite {
 }
 
 const DashboardOpenLeadsPage = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [items, setItems] = useState<OpenLeadInvite[]>([]);
   const [loading, setLoading] = useState(true);
 

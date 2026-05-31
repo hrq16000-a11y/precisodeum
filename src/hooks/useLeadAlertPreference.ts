@@ -11,7 +11,7 @@
  */
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export type LeadAlertMode = 'off' | 'sound' | 'toast' | 'both';
@@ -29,7 +29,7 @@ const clampInterval = (n: unknown): number => {
 };
 
 export function useLeadAlertPreference() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [mode, setModeState] = useState<LeadAlertMode>(() => {
     const cached = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_MODE) : null;
     return (cached as LeadAlertMode) || DEFAULT_MODE;

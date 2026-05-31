@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useEngagementLevel } from '@/hooks/useEngagementLevel';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { Sparkles, X, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 const STORAGE_KEY = 'pdu_last_level_seen';
 
 const LevelUpBanner = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { currentLevel } = useEngagementLevel();
   const [dismissed, setDismissed] = useState(false);
   const [previousName, setPreviousName] = useState<string | null>(null);

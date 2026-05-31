@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { BadgeCheck, CheckCircle2, Circle, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Status {
@@ -17,7 +17,7 @@ interface Status {
  * Painel do dashboard mostrando os 3 requisitos do selo Verificado pela Comunidade.
  */
 const CommunityVerifiedStatus = ({ className = '' }: { className?: string }) => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
 
   const { data: status, isLoading } = useQuery({
     queryKey: ['community-verified-status', user?.id],

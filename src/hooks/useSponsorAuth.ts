@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { hasSponsorFeatureAccess, isSponsorSubscriptionActive, type SponsorSubscription } from '@/lib/sponsorAccess';
 
@@ -52,7 +52,7 @@ interface SponsorData {
 }
 
 export function useSponsorAuth(redirectIfNot = true) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthIdentity();
   const [sponsorContact, setSponsorContact] = useState<SponsorContact | null>(null);
   const [sponsor, setSponsor] = useState<SponsorData | null>(null);
   const [subscription, setSubscription] = useState<SponsorSubscription | null>(null);

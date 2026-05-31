@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Activity, Sparkles, ChevronRight, Camera, FileText, Briefcase, Image, Phone, Star, Zap, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 const ICONS: Record<string, any> = {
   Camera, FileText, Briefcase, Image, Phone, Star, Zap, TrendingUp,
@@ -23,7 +23,7 @@ interface HealthData {
 }
 
 const ProfileHealthScore = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({

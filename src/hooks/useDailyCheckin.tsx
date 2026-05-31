@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 interface CheckinState {
@@ -15,7 +15,7 @@ interface CheckinState {
  * - register() chama a RPC `register_daily_checkin` no banco.
  */
 export const useDailyCheckin = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [state, setState] = useState<CheckinState>({ streak: 0, doneToday: false, loading: true });
 
   const refresh = useCallback(async () => {

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export type LeadStatus = 'new' | 'contacted' | 'scheduled' | 'completed' | 'lost';
@@ -128,7 +128,7 @@ export function useUpdateLeadStatus() {
 }
 
 export function useFollowupWindow(providerId: string | undefined, currentValue: number | undefined) {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (hours: FollowupWindow) => {

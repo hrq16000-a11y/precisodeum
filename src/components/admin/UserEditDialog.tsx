@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { isValidFullName, shouldEnforceFullName, FULL_NAME_INVALID_MESSAGE } from '@/lib/validation/fullNameValidation';
 import { normalizePhoneBR, isValidPhoneBR, shouldEnforcePhone, PHONE_INVALID_MESSAGE } from '@/lib/validation/phoneNormalization';
 
@@ -39,7 +39,7 @@ interface UserEditDialogProps {
 }
 
 const UserEditDialog = ({ user, onClose, onSaved }: UserEditDialogProps) => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser } = useAuthIdentity();
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentStaffRole, setCurrentStaffRole] = useState<string>('none');
 

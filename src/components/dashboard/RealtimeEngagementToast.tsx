@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,7 +28,7 @@ const REFERRAL_REASON: Record<string, string> = {
 };
 
 const RealtimeEngagementToast = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const navigate = useNavigate();
   const lastIdRef = useRef<string | null>(null);
 

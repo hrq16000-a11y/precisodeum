@@ -5,7 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useNotifications, type Notification } from '@/hooks/useNotifications';
 
 const typeIconMap: Record<string, React.ComponentType<any>> = {
@@ -101,7 +101,7 @@ const NotificationRow = ({
 const PAGE_SIZE = 20;
 
 const DashboardNotificationsPage = () => {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthIdentity();
   const navigate = useNavigate();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } = useNotifications({ limit: 200 });
   const [selectedType, setSelectedType] = useState<string>('all');

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Users, Copy, Check, Share2, Gift, Loader2, Trophy, ArrowRight } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import GlassCard from '@/components/ui/GlassCard';
@@ -36,7 +36,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 };
 
 export default function ReferralInviteCard() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
   const seenRewardedIdsRef = useRef<Set<string> | null>(null);

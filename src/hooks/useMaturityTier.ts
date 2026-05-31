@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 export type MaturityTier = 'novato' | 'explorador' | 'ativo' | 'veterano';
 
@@ -30,7 +30,7 @@ const TIER_RANK: Record<MaturityTier, number> = {
  *   if (isAtLeast('ativo')) <UpsellCta />
  */
 export function useMaturityTier() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [data, setData] = useState<MaturityData | null>(null);
   const [loading, setLoading] = useState(false);
 

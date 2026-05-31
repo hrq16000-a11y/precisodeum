@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 export interface ContactImpact {
   total_views: number;
@@ -14,7 +14,7 @@ export interface ContactImpact {
  * Usa a RPC `get_contact_impact_24h` (criada no Lote 1 do Motor de Visibilidade).
  */
 export function useContactImpact() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
 
   return useQuery<ContactImpact>({
     queryKey: ['contact-impact-24h', user?.id],

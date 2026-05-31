@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useWhatsappQuota } from '@/hooks/useWhatsappQuota';
 import { useDebounce } from '@/hooks/useDebounce';
 import {
@@ -64,7 +64,7 @@ function formatDate(d: string) {
 }
 
 const DashboardClientContactsPage = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const quotaQ = useWhatsappQuota(true);
   const [params, setParams] = useSearchParams();
 
