@@ -852,11 +852,15 @@ function matchesGeoContextCompat(
 export { normalizeCityName, matchesGeoContextCompat as matchesGeoContext };
 
 const MIN_LOCAL_RESULTS = 3;
-// Onda 5: teto generoso para garantir que cidades pequenas (Pinhais, etc.)
-// sempre apareçam, mesmo quando capitais lotam o topo do ranking.
+// SEARCH_RESULT_LIMIT: teto atual de 800 registros por busca.
+// Ranking final (local/nearby/outOfState) acontece client-side nesse conjunto.
+// Filtros server-side (categoria/UF/rating/cidade prefix) reduzem antes do limit.
 // Provider count aprovado ~260 hoje → 800 dá folga 3x sem custo perceptível.
-// Os filtros server-side (categoria/UF/rating) reduzem o conjunto antes do limit.
+// Revisitar quando base de providers aprovados ultrapassar ~600 ativos
+// ou quando buscas amplas (ex: "pintor" em SP) começarem a omitir resultados.
+// Próximo passo: cursor/range por grupo em filterAndRankProvidersGrouped.
 const SEARCH_RESULT_LIMIT = 800;
+
 
 /**
  * Resolve `categoryId` a partir do slug, com cache em memória de 5min.
