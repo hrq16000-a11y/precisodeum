@@ -98,6 +98,7 @@ const AdminCoverageMapPage = lazy(() => import("@/pages/AdminCoverageMapPage"));
 const AdminSeoAuditPage = lazy(() => import("@/pages/AdminSeoAuditPage"));
 const AdminLocationDebugPage = lazy(() => import("@/pages/AdminLocationDebugPage"));
 const AdminLocationSeoAuditPage = lazy(() => import("@/pages/AdminLocationSeoAuditPage"));
+const AdminLocalizacoesPage = lazy(() => import("@/pages/AdminLocalizacoesPage"));
 const AdminSearchAuditPage = lazy(() => import("@/pages/AdminSearchAuditPage"));
 const AdminHomeRotationPage = lazy(() => import("@/pages/AdminHomeRotationPage"));
 const AdminOverviewPage = lazy(() => import("@/pages/AdminOverviewPage"));
@@ -122,6 +123,7 @@ export const adminRoutes = (
     <Route path="/admin" element={guarded("AdminPage", <AdminPage />)} />
     <Route path="/admin/prestadores" element={guarded("AdminProvidersPage", <AdminProvidersPage />)} />
     <Route path="/admin/bairro-default" element={guarded("AdminDefaultNeighborhoodPage", <AdminDefaultNeighborhoodPage />)} />
+    <Route path="/admin/localizacoes" element={guarded("AdminLocalizacoesPage", <AdminLocalizacoesPage />)} />
     <Route path="/admin/service-area-corrections" element={guarded("AdminServiceAreaCorrectionsPage", <AdminServiceAreaCorrectionsPage />)} />
     <Route path="/admin/kill-switch-blocks" element={guarded("AdminKillSwitchBlocksPage", <AdminKillSwitchBlocksPage />)} />
     <Route path="/admin/avaliacoes" element={guarded("AdminReviewsPage", <AdminReviewsPage />)} />
