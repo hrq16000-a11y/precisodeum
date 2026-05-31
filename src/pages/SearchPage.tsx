@@ -1569,61 +1569,64 @@ const SearchPage = () => {
                 )}
 
                 {totalDisplay === 0 && (
-                  <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                      <Search className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-display text-base font-semibold text-foreground">
-                      Nenhum profissional encontrado
-                      {effectiveCity ? ` em ${effectiveCity}` : ''}
-                    </h3>
-                    <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-                      {activeFilterCount > 0
-                        ? 'Tente remover alguns filtros ou ampliar a busca para a região vizinha.'
-                        : 'Tente buscar por outra cidade próxima ou outra categoria.'}
-                    </p>
-                    <div className="mt-4 flex flex-wrap justify-center gap-2">
-                      {activeFilterCount > 0 && (
+                  searchError ? (
+                    /* FIX 1B (Onda 4) — Variante de erro de rede */
+                    <SearchEmptyState variant="error" onRetry={() => refetch()} />
+                  ) : activeFilterCount > 0 ? (
+                    /* Filtros ativos sem resultado — manter CTA "limpar filtros" */
+                    <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
+                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                        <Search className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-display text-base font-semibold text-foreground">
+                        Nenhum profissional encontrado{effectiveCity ? ` em ${effectiveCity}` : ''}
+                      </h3>
+                      <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                        Tente remover alguns filtros ou ampliar a busca para a região vizinha.
+                      </p>
+                      <div className="mt-4 flex flex-wrap justify-center gap-2">
                         <Button size="sm" variant="outline" onClick={clearAllFilters} className="rounded-full">
                           <X className="mr-1.5 h-3.5 w-3.5" /> Limpar filtros
                         </Button>
-                      )}
-                      {effectiveCity && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="rounded-full"
-                          onClick={() => {
-                            setSelectedCity('');
-                            setSelectedNeighborhood('');
-                            setPage(1);
-                            const next = new URLSearchParams(searchParams);
-                            next.delete('cidade');
-                            next.delete('bairro');
-                            setSearchParams(next, { replace: true });
-                          }}
-                        >
-                          <MapPin className="mr-1.5 h-3.5 w-3.5" /> Buscar na região vizinha
-                        </Button>
-                      )}
-                      {selectedCategory && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="rounded-full"
-                          onClick={() => {
-                            setSelectedCategory('');
-                            setPage(1);
-                            const next = new URLSearchParams(searchParams);
-                            next.delete('categoria');
-                            setSearchParams(next, { replace: true });
-                          }}
-                        >
-                          <RefreshCcw className="mr-1.5 h-3.5 w-3.5" /> Ver todas as categorias
-                        </Button>
-                      )}
+                        {effectiveCity && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full"
+                            onClick={() => {
+                              setSelectedCity('');
+                              setSelectedNeighborhood('');
+                              setPage(1);
+                            }}
+                          >
+                            <MapPin className="mr-1.5 h-3.5 w-3.5" /> Buscar na região vizinha
+                          </Button>
+                        )}
+                        {selectedCategory && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full"
+                            onClick={() => {
+                              setSelectedCategory('');
+                              setPage(1);
+                            }}
+                          >
+                            <RefreshCcw className="mr-1.5 h-3.5 w-3.5" /> Ver todas as categorias
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    /* FIX 1A (Onda 4) — Funil "Seja o Mestre" */
+                    <SearchEmptyState
+                      variant="results"
+                      city={effectiveCity || undefined}
+                      categorySlug={selectedCategory || undefined}
+                      categoryName={seoCategory || undefined}
+                      query={query || undefined}
+                    />
+                  )
                 )}
 
                 {/* "Pergunte e Compare" — sem leilão */}
