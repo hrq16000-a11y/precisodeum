@@ -326,7 +326,7 @@ const CityPage = () => {
   const description = `Encontre os melhores profissionais em ${formatCityState(city!.name, city!.state, ', ') || city!.name}. Compare avaliações e entre em contato.`;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col" data-seo-ready={!isLoading && !isError && !!city ? 'true' : undefined}>
       <Header />
 
       <div className="container py-3">
