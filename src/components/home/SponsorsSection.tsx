@@ -28,8 +28,11 @@ const SponsorCard = memo(({ sponsor, onClickTrack }: { sponsor: any; onClickTrac
         <img
           src={visualSrc}
           alt={sponsor.title}
+          width={300}
+          height={180}
           className="max-h-full max-w-full object-contain"
           loading="lazy"
+          decoding="async"
           onError={handleImageError}
         />
       </div>

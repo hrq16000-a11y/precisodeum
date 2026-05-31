@@ -92,12 +92,21 @@ const CityPage = () => {
       if (!city) return null;
 
 
+      // PERF: ilike com prefixo (usa índice b-tree); colunas explícitas (evita select *
+      // que trazia campos pesados); limit defensivo para cidades grandes (SP/RJ).
+      const PROVIDER_CITY_COLUMNS =
+        'id, user_id, business_name, slug, city, state, neighborhood, latitude, longitude, ' +
+        'rating_avg, review_count, photo_url, description, phone, whatsapp, years_experience, ' +
+        'featured, services_count, portfolio_album_count, portfolio_photo_count, created_at, ' +
+        'account_type, categories(name, slug, icon)';
       const { data: provs } = await supabase
         .from('providers')
-        .select('*, categories(name, slug, icon)')
+        .select(PROVIDER_CITY_COLUMNS)
         .eq('status', 'approved')
-        .ilike('city', `%${city.name}%`)
-        .order('rating_avg', { ascending: false });
+        .ilike('city', `${city.name}%`)
+        .order('rating_avg', { ascending: false })
+        .limit(200);
+
 
       const userIds = [...new Set((provs || []).map((p) => p.user_id))];
       let profileMap: Record<string, any> = {};
