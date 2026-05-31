@@ -12,22 +12,51 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, '../dist');
 const PORT = 4173;
 const CONCURRENCY = 2;
-const TIMEOUT = 15_000;
-const READY_SELECTOR = '#root > *';
+const TIMEOUT_STATIC = 10_000;
+const TIMEOUT_DYNAMIC = 15_000;
+// Título do shell em index.html — usado como sentinela: enquanto document.title
+// ainda for este valor, react-helmet-async ainda não injetou o título real.
+const SHELL_TITLE = 'Preciso de um — Profissionais qualificados no Brasil';
+
+// Rotas cujo título pode legitimamente ser igual ao shell (Home, listas
+// genéricas). Para elas, basta esperar o React montar.
+const STATIC_ROUTES = ['/', '/categorias', '/cidades', '/buscar', '/ajuda', '/sobre', '/contato', '/blog'];
+
+function isStaticRoute(route) {
+  return STATIC_ROUTES.some(s => route === s || route.startsWith(s + '/'));
+}
 
 async function renderRoute(browser, baseUrl, route) {
+  const staticRoute = isStaticRoute(route);
+  const timeout = staticRoute ? TIMEOUT_STATIC : TIMEOUT_DYNAMIC;
+
   const page = await browser.newPage();
   await page.route('**/*.{png,jpg,jpeg,gif,webp,mp4,woff,woff2}', r => r.abort());
-  // Bloquear WebSockets (Supabase Realtime) — sem isso 'networkidle' nunca
-  // dispararia e o prerender travaria indefinidamente.
+  // Bloquear WebSockets (Supabase Realtime) — sem isso o prerender trava.
   await page.route('wss://**', r => r.abort());
   await page.route('ws://**', r => r.abort());
 
   try {
-    // 'domcontentloaded' + waitForSelector('#root > *') é suficiente para
-    // capturar o HTML hidratado sem depender de network idle (impossível em SPA).
-    await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: TIMEOUT });
-    await page.waitForSelector(READY_SELECTOR, { timeout: TIMEOUT });
+    await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout });
+
+    if (staticRoute) {
+      // Para rotas estáticas: apenas garantir que o React montou.
+      await page.waitForSelector('#root > *', { timeout });
+    } else {
+      // Para rotas dinâmicas: aguardar Helmet injetar título específico
+      // (diferente do shell) E o React ter montado conteúdo.
+      await page.waitForFunction(
+        (shellTitle) => {
+          const title = document.title || '';
+          const hasRealTitle = title.length > 0 && title !== shellTitle;
+          const hasContent = !!document.querySelector('#root > *');
+          return hasRealTitle && hasContent;
+        },
+        SHELL_TITLE,
+        { timeout },
+      );
+    }
+
     const html = await page.content();
 
     const filePath = route === '/'
@@ -45,8 +74,9 @@ async function renderRoute(browser, baseUrl, route) {
 }
 
 async function renderRouteWithTimeout(browser, baseUrl, route) {
+  const hardLimit = (isStaticRoute(route) ? TIMEOUT_STATIC : TIMEOUT_DYNAMIC) + 2_000;
   const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error(`hard-timeout após ${TIMEOUT + 2000}ms`)), TIMEOUT + 2_000)
+    setTimeout(() => reject(new Error(`hard-timeout após ${hardLimit}ms`)), hardLimit),
   );
   return Promise.race([
     renderRoute(browser, baseUrl, route),
