@@ -11,16 +11,22 @@ import { generatePrerenderRoutes } from './generate-prerender-routes.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, '../dist');
 const PORT = 4173;
-const CONCURRENCY = 4;
-const TIMEOUT = 25_000;
+const CONCURRENCY = 2;
+const TIMEOUT = 15_000;
 const READY_SELECTOR = '#root > *';
 
 async function renderRoute(browser, baseUrl, route) {
   const page = await browser.newPage();
   await page.route('**/*.{png,jpg,jpeg,gif,webp,mp4,woff,woff2}', r => r.abort());
+  // Bloquear WebSockets (Supabase Realtime) — sem isso 'networkidle' nunca
+  // dispararia e o prerender travaria indefinidamente.
+  await page.route('wss://**', r => r.abort());
+  await page.route('ws://**', r => r.abort());
 
   try {
-    await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle', timeout: TIMEOUT });
+    // 'domcontentloaded' + waitForSelector('#root > *') é suficiente para
+    // capturar o HTML hidratado sem depender de network idle (impossível em SPA).
+    await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: TIMEOUT });
     await page.waitForSelector(READY_SELECTOR, { timeout: TIMEOUT });
     const html = await page.content();
 
@@ -34,8 +40,20 @@ async function renderRoute(browser, baseUrl, route) {
   } catch (err) {
     process.stdout.write(`  ✗ ${route}: ${err.message}\n`);
   } finally {
-    await page.close();
+    await page.close().catch(() => {});
   }
+}
+
+async function renderRouteWithTimeout(browser, baseUrl, route) {
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`hard-timeout após ${TIMEOUT + 2000}ms`)), TIMEOUT + 2_000)
+  );
+  return Promise.race([
+    renderRoute(browser, baseUrl, route),
+    timeoutPromise,
+  ]).catch(err => {
+    process.stdout.write(`  ✗ ${route}: ${err.message}\n`);
+  });
 }
 
 async function main() {
@@ -45,7 +63,7 @@ async function main() {
   const baseUrl = `http://localhost:${PORT}`;
   const routes = await generatePrerenderRoutes();
 
-  console.log(`\n[prerender] Iniciando: ${routes.length} rotas | concorrência: ${CONCURRENCY}\n`);
+  process.stdout.write(`\n[prerender] Iniciando: ${routes.length} rotas | concorrência: ${CONCURRENCY}\n\n`);
 
   const browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH ?? '/bin/chromium-browser',
@@ -55,9 +73,9 @@ async function main() {
   let done = 0;
   for (let i = 0; i < routes.length; i += CONCURRENCY) {
     const batch = routes.slice(i, i + CONCURRENCY);
-    await Promise.all(batch.map(r => renderRoute(browser, baseUrl, r)));
+    await Promise.all(batch.map(r => renderRouteWithTimeout(browser, baseUrl, r)));
     done += batch.length;
-    console.log(`  [${done}/${routes.length}]`);
+    process.stdout.write(`  [${done}/${routes.length}] concluídos\n`);
   }
 
   await browser.close();
