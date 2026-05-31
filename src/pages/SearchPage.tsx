@@ -462,9 +462,27 @@ const SearchPage = () => {
 
   useSeoHead({ title: seoTitle, description: seoDesc, canonical: canonicalUrl, noindex, prevUrl, nextUrl });
 
-  const paginatedLocal = filteredLocal.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
-  const paginatedNearby = filteredNearby;
-  const paginatedOutOfState = showOutOfState ? filteredOutOfState : [];
+  // PERF/UX FIX 7: paginação respeita totalDisplay (local + nearby + outOfState).
+  // Distribui sequencialmente entre os grupos para não renderizar nearby/outOfState
+  // completos em toda página (o que estourava DOM em buscas grandes).
+  const localPageCount = Math.ceil(filteredLocal.length / ITEMS_PER_PAGE);
+  const nearbyPageCount = Math.ceil(filteredNearby.length / ITEMS_PER_PAGE);
+  const outOfStatePool = showOutOfState ? filteredOutOfState : [];
+  let paginatedLocal: typeof filteredLocal = [];
+  let paginatedNearby: typeof filteredNearby = [];
+  let paginatedOutOfState: typeof filteredOutOfState = [];
+  if (page <= localPageCount) {
+    const offset = (page - 1) * ITEMS_PER_PAGE;
+    paginatedLocal = filteredLocal.slice(offset, offset + ITEMS_PER_PAGE);
+  } else if (page <= localPageCount + nearbyPageCount) {
+    const nearbyPage = page - localPageCount - 1;
+    const offset = nearbyPage * ITEMS_PER_PAGE;
+    paginatedNearby = filteredNearby.slice(offset, offset + ITEMS_PER_PAGE);
+  } else {
+    const outPage = page - localPageCount - nearbyPageCount - 1;
+    const offset = outPage * ITEMS_PER_PAGE;
+    paginatedOutOfState = outOfStatePool.slice(offset, offset + ITEMS_PER_PAGE);
+  }
 
   // JSON-LD ItemList — reflete APENAS os itens visíveis na página atual.
   // Inclui propriedades adicionais (aggregateRating + offers.availability)
