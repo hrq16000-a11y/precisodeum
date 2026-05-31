@@ -12,6 +12,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoPromptBanner from '@/components/GeoPromptBanner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
