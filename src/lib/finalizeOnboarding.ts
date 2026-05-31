@@ -130,6 +130,15 @@ export async function finalizeOnboarding(
     return { ok: false, error };
   }
 
+  // Onda 2 · FIX 5: limpa flags transientes do onboarding para que um
+  // re-cadastro (ou outra conta no mesmo dispositivo) não herde estado sujo.
+  try {
+    window.sessionStorage.removeItem('onboarding_welcome_back_shown');
+    window.sessionStorage.removeItem('cadastro_self_heal_attempted');
+    window.localStorage.removeItem('onboarding_welcome_back_shown');
+    window.localStorage.removeItem('cadastro_self_heal_attempted');
+  } catch { /* noop */ }
+
   // Sinaliza o checklist do dashboard.
   try { window.dispatchEvent(new CustomEvent('onboarding-progress-changed')); } catch { /* noop */ }
 

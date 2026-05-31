@@ -78,6 +78,11 @@ export const UNIFIED_PHASE_ORDER: UnifiedPhase[] = [
 export const PROVIDER_WIZARD_PHASE_ORDER: UnifiedPhase[] = [
   'triage_identity',
   'triage_who',
+  // Onda 2 · FIX 4: triage_client_city incluído na régua para que o handler
+  // de Voltar do WizardShell (`indexOf`) ache a fase quando o usuário
+  // (intent=client) está nela. Providers nunca pousam aqui — passam direto
+  // de triage_who → triage_pro_kind, então não há regressão de progresso.
+  'triage_client_city',
   'triage_pro_kind',
   'triage_pro_document',
   'triage_pro_location',
