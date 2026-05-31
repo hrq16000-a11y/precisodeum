@@ -32,49 +32,51 @@ interface WizardNavProps {
 export function WizardNav({
   onBack,
   onNext,
-  nextLabel = 'Avançar',
+  nextLabel = 'Continuar',
   hideBack = false,
   showNext = false,
   nextDisabled = false,
   saving = false,
 }: WizardNavProps) {
+  // Nunca remover botões do DOM — preserva espaço e evita layout shift.
+  const backHiddenCls = hideBack ? 'invisible pointer-events-none' : '';
+  const nextVisible = showNext && !!onNext;
+  const nextHiddenCls = !nextVisible ? 'invisible pointer-events-none' : '';
   return (
     <div className="sticky bottom-0 left-0 right-0 z-50 mx-auto flex w-full max-w-md items-center justify-between gap-3 border-t border-border bg-background px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
-      {!hideBack ? (
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onBack}
+        className={`gap-1.5 text-muted-foreground hover:text-foreground ${backHiddenCls}`}
+        aria-label="Voltar para o passo anterior"
+        aria-hidden={hideBack || undefined}
+        tabIndex={hideBack ? -1 : 0}
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar
+      </Button>
+
+      <motion.div
+        whileHover={nextVisible ? { scale: 1.04 } : undefined}
+        whileTap={nextVisible ? { scale: 0.97 } : undefined}
+        className={`rounded-md ${nextVisible && !nextDisabled && !saving ? 'animate-ring-pulse-accent' : ''} ${nextHiddenCls}`}
+      >
         <Button
           type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="gap-1.5 text-muted-foreground hover:text-foreground"
-          aria-label="Voltar para o passo anterior"
+          onClick={onNext}
+          disabled={nextDisabled || saving || !nextVisible}
+          className="gap-1.5 bg-gradient-to-r from-accent to-primary text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-label={nextLabel}
+          aria-hidden={!nextVisible || undefined}
+          tabIndex={!nextVisible ? -1 : 0}
         >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {nextLabel}
+          {!saving && <ArrowRight className="h-4 w-4" />}
         </Button>
-      ) : (
-        <span aria-hidden className="h-9" />
-      )}
-
-      {showNext && onNext && (
-        <motion.div
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
-          className={`rounded-md ${!nextDisabled && !saving ? 'animate-ring-pulse-accent' : ''}`}
-        >
-          <Button
-            type="button"
-            onClick={onNext}
-            disabled={nextDisabled || saving}
-            className="gap-1.5 bg-gradient-to-r from-accent to-primary text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-label={nextLabel}
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {nextLabel}
-            {!saving && <ArrowRight className="h-4 w-4" />}
-          </Button>
-        </motion.div>
-      )}
+      </motion.div>
     </div>
   );
 }

@@ -123,8 +123,10 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
 
     if (Object.keys(patchObj).length > 0) {
       patch(patchObj);
-      // eslint-disable-next-line no-console
-      console.info('[loc-persist] auto-fill (progressive)', { ...patchObj, geo_source: geo.source });
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.info('[loc-persist] auto-fill (progressive)', { ...patchObj, geo_source: geo.source });
+      }
     }
   }, [
     geo.city, geo.state, geo.neighborhood, geo.neighborhoodSource,
@@ -233,16 +235,18 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
       // backend fará a normalização final via sync_cidade trigger. Coordenadas só por GPS.
       location_source: 'cep',
     });
-    // eslint-disable-next-line no-console
-    console.info('[loc-persist] cep', {
-      cep: norm,
-      city: r.city,
-      state: r.state,
-      neighborhood: willFillFromCep ? cleanNeighborhood : state.neighborhood,
-      neighborhood_source: willFillFromCep ? 'cep' : state.neighborhood_source,
-      location_source: 'cep',
-      precise: false,
-    });
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.info('[loc-persist] cep', {
+        cep: norm,
+        city: r.city,
+        state: r.state,
+        neighborhood: willFillFromCep ? cleanNeighborhood : state.neighborhood,
+        neighborhood_source: willFillFromCep ? 'cep' : state.neighborhood_source,
+        location_source: 'cep',
+        precise: false,
+      });
+    }
     if (r.city && r.state) awardCityOnce();
   }
 
@@ -276,16 +280,18 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
         patch(patchObj);
         setGpsAccuracy(acc);
         awardCityOnce();
-        // eslint-disable-next-line no-console
-        console.info('[loc-persist] gps', {
-          city: result.city,
-          state: result.state,
-          neighborhood: willFillFromGps ? cleanNeighborhood : currentNeighborhood,
-          neighborhood_source: willFillFromGps ? 'gps' : state.neighborhood_source,
-          location_source: 'gps',
-          gps_accuracy_m: acc,
-          precise: acc != null && acc <= 100,
-        });
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.info('[loc-persist] gps', {
+            city: result.city,
+            state: result.state,
+            neighborhood: willFillFromGps ? cleanNeighborhood : currentNeighborhood,
+            neighborhood_source: willFillFromGps ? 'gps' : state.neighborhood_source,
+            location_source: 'gps',
+            gps_accuracy_m: acc,
+            precise: acc != null && acc <= 100,
+          });
+        }
         trackGpsAttempt({
           phase: 'pro_location',
           userId: user?.id || null,
