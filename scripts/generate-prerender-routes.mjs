@@ -34,7 +34,7 @@ export async function generatePrerenderRoutes() {
 
     supabase
       .from('providers')
-      .select('slug, city, city_normalized, categories(slug)')
+      .select('slug, city, categories(slug)')
       .eq('status', 'approved')
       .not('city', 'is', null)
       .limit(5000),
