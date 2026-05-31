@@ -43,19 +43,19 @@ async function renderRoute(browser, baseUrl, route) {
       // Para rotas estáticas: apenas garantir que o React montou.
       await page.waitForSelector('#root > *', { timeout });
     } else {
-      // Para rotas dinâmicas: aguardar Helmet injetar título específico
-      // (diferente do shell) E o React ter montado conteúdo.
+      // Para rotas dinâmicas: aguardar o componente da página marcar
+      // data-seo-ready="true" — sinal explícito de que os dados reais
+      // hidrataram e o react-helmet-async já injetou o título correto.
       await page.waitForFunction(
-        (shellTitle) => {
-          const title = document.title || '';
-          const hasRealTitle = title.length > 0 && title !== shellTitle;
+        () => {
+          const el = document.querySelector('[data-seo-ready="true"]');
           const hasContent = !!document.querySelector('#root > *');
-          return hasRealTitle && hasContent;
+          return !!el && hasContent;
         },
-        SHELL_TITLE,
         { timeout },
       );
     }
+
 
     const html = await page.content();
 
