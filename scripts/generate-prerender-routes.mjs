@@ -25,12 +25,9 @@ const slugify = (str) =>
      .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
 export async function generatePrerenderRoutes() {
-  const catResult = await supabase
-    .from('categories')
-    .select('slug')
-    .is('deleted_at', null)
-    .not('slug', 'is', null);
-
+  // Buscamos apenas providers ativos — categorias e cidades são DERIVADAS
+  // desse mesmo dataset. Evita gerar páginas-sombra de categorias sem
+  // prestador (conteúdo ralo → sinal negativo de SEO).
   const providerResult = await supabase
     .from('providers')
     .select('slug, city, categories(slug)')
@@ -38,13 +35,18 @@ export async function generatePrerenderRoutes() {
     .not('city', 'is', null)
     .limit(5000);
 
-  for (const [name, result] of Object.entries({ catResult, providerResult })) {
-    if (result.error) console.warn(`[prerender] Aviso em ${name}:`, result.error.message);
+  if (providerResult.error) {
+    console.warn(`[prerender] Aviso em providerResult:`, providerResult.error.message);
   }
 
   const providers = (providerResult.data ?? []).filter(p => p.slug && p.city);
 
-  const categoriaRoutes = [...new Set((catResult.data ?? []).map(c => `/categoria/${c.slug}`))];
+  const categoriaRoutes = [...new Set(
+    providers
+      .map(p => p.categories?.slug)
+      .filter(Boolean)
+      .map(slug => `/categoria/${slug}`)
+  )];
 
   const cidadeRoutes = [...new Set(
     providers.map(p => `/cidade/${slugify(p.city)}`)

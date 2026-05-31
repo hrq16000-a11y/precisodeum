@@ -1,0 +1,1 @@
+GRANT SELECT (city_normalized) ON public.providers TO anon, authenticated;
