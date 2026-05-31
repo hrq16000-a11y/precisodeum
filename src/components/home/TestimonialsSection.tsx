@@ -20,7 +20,7 @@ const TestimonialsSection = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('home_testimonials' as any)
-        .select('*')
+        .select('id, name, city, text, rating')
         .eq('active', true)
         .order('display_order');
       return (data || []) as unknown as Array<{ id: string; name: string; city: string; text: string; rating: number }>;

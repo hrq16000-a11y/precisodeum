@@ -27,7 +27,7 @@ const CtaSection = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('home_cta_blocks' as any)
-        .select('*')
+        .select('id, title, subtitle, button_text, button_link, icon, variant, section')
         .eq('active', true)
         .order('display_order');
       return (data || []) as unknown as CtaBlock[];
