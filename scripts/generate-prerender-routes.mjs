@@ -25,20 +25,18 @@ const slugify = (str) =>
      .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
 export async function generatePrerenderRoutes() {
-  const [catResult, providerResult] = await Promise.all([
-    supabase
-      .from('categories')
-      .select('slug')
-      .is('deleted_at', null)
-      .not('slug', 'is', null),
+  const catResult = await supabase
+    .from('categories')
+    .select('slug')
+    .is('deleted_at', null)
+    .not('slug', 'is', null);
 
-    supabase
-      .from('providers')
-      .select('slug, city, categories(slug)')
-      .eq('status', 'approved')
-      .not('city', 'is', null)
-      .limit(5000),
-  ]);
+  const providerResult = await supabase
+    .from('providers')
+    .select('slug, city, categories(slug)')
+    .eq('status', 'approved')
+    .not('city', 'is', null)
+    .limit(5000);
 
   for (const [name, result] of Object.entries({ catResult, providerResult })) {
     if (result.error) console.warn(`[prerender] Aviso em ${name}:`, result.error.message);
