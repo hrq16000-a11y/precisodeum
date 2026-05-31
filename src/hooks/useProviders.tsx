@@ -884,10 +884,16 @@ async function resolveCategoryId(slug: string): Promise<string | null> {
  * (GeoEngine + grouped local/nearby/outOfState) cuida disso sem perder
  * resultados de cidades com nome acentuado.
  */
+/** Normaliza cidade para `ilike` contra providers.city_normalized
+ *  (lowercase + sem acentos, MANTÉM espaços — diferente de `normalize()`). */
+const normalizeCityForQuery = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
 async function buildSearchQuery(opts: {
   categorySlug?: string;
   state?: string;
   minRating?: number;
+  city?: string;
 }) {
   let q = supabase
     .from('providers')
@@ -908,6 +914,13 @@ async function buildSearchQuery(opts: {
   }
   if (opts.minRating && opts.minRating > 0) {
     q = q.gte('rating_avg', opts.minRating);
+  }
+  if (opts.city && opts.city.trim()) {
+    // Server-side via coluna gerada `city_normalized` + índice idx_providers_city_normalized
+    const cityNorm = normalizeCityForQuery(opts.city);
+    if (cityNorm) {
+      q = q.ilike('city_normalized', `${cityNorm}%`);
+    }
   }
 
   return q
