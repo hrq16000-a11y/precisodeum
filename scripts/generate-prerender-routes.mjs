@@ -25,7 +25,6 @@ const slugify = (str) =>
      .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
 export async function generatePrerenderRoutes() {
-  const catResult = await supabase
   // Buscamos apenas providers ativos — categorias e cidades são DERIVADAS
   // desse mesmo dataset. Evita gerar páginas-sombra de categorias sem
   // prestador (conteúdo ralo → sinal negativo de SEO).
