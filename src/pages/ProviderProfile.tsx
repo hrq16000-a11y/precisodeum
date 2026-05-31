@@ -1587,7 +1587,7 @@ const ProviderProfile = () => {
   };
 
   return (
-    <div className={`flex min-h-screen flex-col ${tc.page} ${tc.fontBody}`} style={accentStyle}>
+    <div className={`flex min-h-screen flex-col ${tc.page} ${tc.fontBody}`} style={accentStyle} data-seo-ready={!loading && !!provider ? 'true' : undefined}>
       <SeoMeta
         title={seoTitle}
         description={seoDescription}

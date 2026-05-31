@@ -14,9 +14,6 @@ const PORT = 4173;
 const CONCURRENCY = 2;
 const TIMEOUT_STATIC = 10_000;
 const TIMEOUT_DYNAMIC = 15_000;
-// Título do shell em index.html — usado como sentinela: enquanto document.title
-// ainda for este valor, react-helmet-async ainda não injetou o título real.
-const SHELL_TITLE = 'Preciso de um — Profissionais qualificados no Brasil';
 
 // Rotas cujo título pode legitimamente ser igual ao shell (Home, listas
 // genéricas). Para elas, basta esperar o React montar.
@@ -43,19 +40,19 @@ async function renderRoute(browser, baseUrl, route) {
       // Para rotas estáticas: apenas garantir que o React montou.
       await page.waitForSelector('#root > *', { timeout });
     } else {
-      // Para rotas dinâmicas: aguardar Helmet injetar título específico
-      // (diferente do shell) E o React ter montado conteúdo.
+      // Para rotas dinâmicas: aguardar o componente da página marcar
+      // data-seo-ready="true" — sinal explícito de que os dados reais
+      // hidrataram e o react-helmet-async já injetou o título correto.
       await page.waitForFunction(
-        (shellTitle) => {
-          const title = document.title || '';
-          const hasRealTitle = title.length > 0 && title !== shellTitle;
+        () => {
+          const el = document.querySelector('[data-seo-ready="true"]');
           const hasContent = !!document.querySelector('#root > *');
-          return hasRealTitle && hasContent;
+          return !!el && hasContent;
         },
-        SHELL_TITLE,
         { timeout },
       );
     }
+
 
     const html = await page.content();
 
