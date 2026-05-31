@@ -276,6 +276,14 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       const serviceSeed = bootstrap?.service ?? currentState.service;
 
       resumeBootstrapRef.current = true;
+      // Onda 2 · FIX 6: log de diagnóstico de bootstrap — facilita auditar
+      // se providerId está sendo REUSADO (do bootstrap/provider/lookup) ou
+      // se o V2 criará um novo dentro do MainOrchestrator.
+      if (providerId) {
+        console.info('[WizardShell] bootstrap: reusing providerId', providerId);
+      } else {
+        console.info('[WizardShell] bootstrap: creating new provider (none found)');
+      }
       // Em revisão, preserva a última fase renderizável visitada após
       // refresh / volta de rota — `?section=` na URL ainda tem prioridade
       // (deep-link explícito do Dashboard Assistant). Isso evita que o
@@ -283,11 +291,24 @@ export default function WizardShell({ mode, reviewMode = false, reviewSection = 
       // da régua.
       const explicitSection = reviewSection ?? getOnboardingReviewSection(window.location.search);
       const persistedReviewPhase = isReview ? readPersistedReviewPhase(true) : null;
-      const resolvedReviewPhase: UnifiedPhase | null = isReview
+      let resolvedReviewPhase: UnifiedPhase | null = isReview
         ? (explicitSection
             ? resolveReviewStartPhase(explicitSection)
             : (persistedReviewPhase ?? resolveReviewStartPhase(null)))
         : null;
+
+      // Onda 2 · FIX 2: gate de skip via URL. Em modo new_signup, se a
+      // section apontar para uma fase além da triagem mas o bootstrap não
+      // tem providerId NEM firstServiceId, ignora silenciosamente o
+      // parâmetro e força a Step 1 — submissão pulando steps falharia.
+      if (!isReview && explicitSection) {
+        const target = resolveReviewStartPhase(explicitSection);
+        const isPastTriage = !String(target).startsWith('triage_');
+        if (isPastTriage && !providerId && !existingService?.id) {
+          console.warn('[WizardShell] Tentativa de skip via URL sem bootstrap completo', explicitSection);
+          resolvedReviewPhase = 'triage_identity';
+        }
+      }
 
       // Em revisão abrindo numa fase de TRIAGEM (Steps 1–6), o BetModeShell
       // hidrata seu estado de localStorage no initializer do useReducer.
