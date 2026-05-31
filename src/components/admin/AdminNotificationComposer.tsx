@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Send, Image, Video, Users, Loader2, X } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { compressImage } from '@/lib/compressImage';
 
 const TARGET_OPTIONS = [
@@ -28,7 +28,7 @@ const TYPE_OPTIONS = [
 ];
 
 const AdminNotificationComposer = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const qc = useQueryClient();
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');

@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSettingValue, useSiteSettings } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useCategoriesInRegion } from '@/hooks/useCategoriesInRegion';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 interface CategoryItem {
   id: string;
@@ -126,7 +126,7 @@ const CategoryCard = ({ cat }: { cat: CategoryItem }) => (
 
 const CategoriesGrid = (_props: Props) => {
   const geo = useGeoCity();
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { data, isLoading } = useCategoriesInRegion(geo.city, geo.state);
 
   const items = data?.items || [];

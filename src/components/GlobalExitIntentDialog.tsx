@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, UserPlus, Search, X, Sparkles } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { markSupportContacted, shouldSuppressExitIntent } from '@/lib/conversionFunnel';
 import { trackExitIntent, markPendingExitConversion } from '@/lib/exitIntentTelemetry';
@@ -216,7 +216,7 @@ function buildCopy(ctx: CopyContext): ExitCopy {
 
 export default function GlobalExitIntentDialog() {
   const { pathname } = useLocation();
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const geo = useGeoCity() as any;
   const city: string | null = geo?.city ?? null;
   const state: string | null = geo?.state ?? null;

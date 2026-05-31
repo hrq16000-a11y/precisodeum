@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { fetchRemoteDraft } from '@/components/onboarding/wizard/phases/v2/useOnboardingV2RemoteDraft';
 import { computeOnboardingProgress, buildWhatsappContextMessage } from '@/lib/onboardingProgress';
@@ -35,7 +35,7 @@ import type { OnboardingState } from '@/components/onboarding/wizard/phases/v2/t
 const SUPPORT_WHATSAPP = '5541997452053';
 
 export default function RecoveryOnboardingPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthIdentity();
   const navigate = useNavigate();
   const [draft, setDraft] = useState<{
     state: Pick<OnboardingState, 'profile' | 'service' | 'phase' | 'firstServiceId'>;

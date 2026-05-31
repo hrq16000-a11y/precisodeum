@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 export type WhatsappQuota = {
   used_today: number;
@@ -17,7 +17,7 @@ const QUOTA_KEY = ['whatsapp-quota-today'] as const;
 
 /** Reads daily quota for the current user via RPC `get_whatsapp_clicks_today`. */
 export function useWhatsappQuota(enabled = true) {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   return useQuery<WhatsappQuota>({
     queryKey: QUOTA_KEY,
     enabled: enabled && !!user,

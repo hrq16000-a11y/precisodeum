@@ -18,7 +18,7 @@ import { responsiveImageSrcSet } from '@/lib/imageOptimizer';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
 import { OnlineBadge } from '@/components/OnlineBadge';
 import ActivitySignalBadge from '@/components/ActivitySignalBadge';
@@ -58,7 +58,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const destaqueMinPortfolio = Number(useSettingValue('destaque_min_portfolio')) || 1;
   const avatarFallbackStyle = useSettingValue('avatar_fallback_style') || 'adventurer';
 
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { city: geoCity, state: geoState } = useGeoCity();
   const isOnline = useIsProviderOnline(provider.userId);
   const { data: activity } = useProviderActivity(provider.userId);

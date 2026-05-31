@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Flame } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { playHornBeep } from '@/lib/soundFx';
 
 /**
@@ -16,7 +16,7 @@ import { playHornBeep } from '@/lib/soundFx';
  * Throttle de 30s entre toasts para evitar spam em rajadas.
  */
 export function useLeadInteractionPing() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const lastToastAtRef = useRef<number>(0);
   const prefsRef = useRef<{ ping: boolean; sound: boolean }>({ ping: true, sound: true });
 

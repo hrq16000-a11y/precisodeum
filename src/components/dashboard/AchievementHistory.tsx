@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Briefcase, Image as ImageIcon, User, Sparkles, Star, ExternalLink, Share2, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 
@@ -53,7 +53,7 @@ interface AchievementHistoryProps {
 }
 
 const AchievementHistory = ({ providerSlug, levelName }: AchievementHistoryProps = {}) => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [items, setItems] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
 

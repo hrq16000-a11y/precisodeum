@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wifi } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
 
 /**
@@ -14,7 +14,7 @@ import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
  * Widget IMUTÁVEL — não é dispensável (alinhado com a regra `online_status`).
  */
 const OnlineStatusFeedback = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const isOnline = useIsProviderOnline(user?.id);
   const celebratedRef = useRef(false);
 

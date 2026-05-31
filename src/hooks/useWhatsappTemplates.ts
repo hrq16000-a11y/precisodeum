@@ -8,7 +8,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export interface WhatsappTemplate {
@@ -37,7 +37,7 @@ export function renderTemplate(
 }
 
 export function useWhatsappTemplates() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   return useQuery({
     queryKey: ['whatsapp-templates', user?.id],
     enabled: !!user?.id,
@@ -55,7 +55,7 @@ export function useWhatsappTemplates() {
 }
 
 export function useSaveWhatsappTemplate() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { id?: string; title: string; content: string }) => {
@@ -84,7 +84,7 @@ export function useSaveWhatsappTemplate() {
 }
 
 export function useDeleteWhatsappTemplate() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 interface StorageQuota {
   usedMB: number;
@@ -10,7 +10,7 @@ interface StorageQuota {
 }
 
 export const useStorageQuota = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
 
   return useQuery<StorageQuota>({
     queryKey: ['storage-quota', user?.id],

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 /** Widgets que NUNCA podem ser dispensados (espelha o backend). */
 export const IMMUTABLE_WIDGETS = ['online_status', 'presence', 'availability'] as const;
@@ -22,7 +22,7 @@ export interface DashboardState {
  * Widgets IMUTÁVEIS (online_status/presence/availability) jamais são tratados como dispensáveis.
  */
 export function useDashboardState() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [state, setState] = useState<DashboardState | null>(null);
   const [loading, setLoading] = useState(false);
   const visitRegisteredRef = useRef(false);

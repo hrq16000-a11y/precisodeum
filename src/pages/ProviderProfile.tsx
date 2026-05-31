@@ -4,7 +4,7 @@ import { handleImageError } from '@/lib/imageResolver';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench, Info, UserRound } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import WorkingHoursDisplay from '@/components/profile/WorkingHoursDisplay';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical, sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
 import { useSubmitGuard } from '@/hooks/useSubmitGuard';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
@@ -257,7 +257,7 @@ const TrustBadge = ({ icon: Icon, text, delay }: { icon: any; text: string; dela
 );
 
 const ProviderProfile = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const isMobile = useIsMobile();
   const siteSettings = useSiteSettings();
   const avatarFallbackConfig = useAvatarFallbackConfig();

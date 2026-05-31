@@ -18,7 +18,7 @@ import {
   trackPwaEvent,
   PWA_OPEN_INSTALL_MODAL_EVENT,
 } from '@/hooks/usePwaInstall';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { canTriggerMarketingPopup } from '@/lib/popupGuards';
 
 const PwaInstallBanner = () => {
@@ -35,7 +35,7 @@ const PwaInstallBanner = () => {
     incrementImpressions,
   } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthIdentity();
 
   // Auto-show respecting ALL settings + scroll 50% OR delay trigger
   useEffect(() => {

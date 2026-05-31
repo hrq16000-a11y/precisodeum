@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { cn } from '@/lib/utils';
@@ -45,7 +45,7 @@ const initials = (name?: string | null) =>
   (name || 'P').split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
 const DashboardRankingPage = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [period, setPeriod] = useState<Period>(30);
 
   useSeoHead({

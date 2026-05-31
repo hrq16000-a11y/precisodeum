@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Search, LayoutGrid, User, Plus, Bell, Heart, Star, Settings, MessageCircle, Briefcase, MapPin, Grid, Menu, Bookmark, ShoppingBag, Zap, type LucideIcon } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBottomNav, type BottomNavItem, type BottomNavConfig } from '@/hooks/useBottomNav';
@@ -66,7 +66,7 @@ const NavItem = ({ icon: Icon, label, isActive, onClick, badge }: { icon: React.
 const FallbackNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { unreadCount } = useNotifications();
 
   const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/sponsor-panel'];
@@ -124,7 +124,7 @@ const DynamicNavItem = ({ item, isActive, navigate, user }: { item: BottomNavIte
 const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomNavItem[] }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { unreadCount } = useNotifications();
 
   const hiddenPaths = config.hidden_paths || [];

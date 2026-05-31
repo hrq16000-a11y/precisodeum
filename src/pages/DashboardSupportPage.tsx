@@ -25,11 +25,11 @@ import {
   buildAutoMessage,
   type SupportContext,
 } from '@/lib/supportContext';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 const DashboardSupportPage = () => {
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { data: ticket, isLoading } = useMyTicket();
   const openTicket = useOpenOrCreateTicket();
   const send = useSendUserMessage();

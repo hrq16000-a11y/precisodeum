@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LifeBuoy, Send, Loader2, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 /**
  * Card de "Abrir um ticket" para usar dentro da Central de Ajuda.
@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
  *   e insere a 1ª mensagem; depois redireciona para /dashboard/suporte.
  */
 export default function OpenSupportTicketCard() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const navigate = useNavigate();
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');

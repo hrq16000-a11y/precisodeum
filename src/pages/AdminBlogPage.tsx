@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
 import BulkActionsBar from '@/components/admin/BulkActionsBar';
@@ -29,7 +29,7 @@ const emptyForm = { title: '', slug: '', content: '', excerpt: '', cover_image_u
 const autoSlug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 const AdminBlogPage = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthIdentity();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const blogEnabled = useFeatureEnabled('module_blog');
   const navigate = useNavigate();

@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthIdentity } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useSeoHead, SITE_BASE_URL } from "@/hooks/useSeoHead";
 import Header from "@/components/Header";
@@ -60,7 +60,7 @@ const DashboardConsentAuditPage = () => {
     canonical: `${SITE_BASE_URL}/dashboard/auditoria-consentimentos`,
   });
 
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [rows, setRows] = useState<ConsentLogRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);

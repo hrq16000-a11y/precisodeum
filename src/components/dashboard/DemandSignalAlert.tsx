@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useEngagementPoints } from '@/hooks/useEngagementPoints';
 import { getEngagementTier } from '@/lib/engagementTiers';
@@ -14,7 +14,7 @@ interface Signal {
 }
 
 const DemandSignalAlert = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { data: points = 0 } = useEngagementPoints(user?.id);
   const tier = getEngagementTier(points);
   const [signals, setSignals] = useState<Signal[]>([]);

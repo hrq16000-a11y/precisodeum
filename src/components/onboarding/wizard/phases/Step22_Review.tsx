@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export type ReviewSection =
@@ -128,7 +128,7 @@ function readLocalDraftSnapshot(): Snapshot | null {
 }
 
 const Step22_Review = ({ onBack, onFinalize, onEdit }: Step22Props) => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [snap, setSnap] = useState<Snapshot | null>(null);

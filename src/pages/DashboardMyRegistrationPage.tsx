@@ -22,7 +22,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { toast } from 'sonner';
@@ -109,7 +109,7 @@ export default function DashboardMyRegistrationPage() {
     noindex: true,
   });
 
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const navigate = useNavigate();
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(true);

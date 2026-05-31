@@ -29,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
 import SponsorImage, { shapeLabelPt, type BannerShape } from '@/components/SponsorImage';
 import { format, differenceInDays } from 'date-fns';
@@ -158,7 +158,7 @@ function exportSponsorsCsv(sponsors: Sponsor[], metricsMap: Map<string, { imp: n
 }
 
 const AdminSponsorsPage = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthIdentity();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();

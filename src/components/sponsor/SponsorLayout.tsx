@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings, Shield, Globe, CreditCard, Pencil, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { useSponsorAuth, type SponsorPermissionKey } from '@/hooks/useSponsorAuth';
 import Logo from '@/components/Logo';
@@ -24,7 +24,7 @@ const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPe
 const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut } = useAuthIdentity();
   const { hasSponsorPermission, hasActivePlan, isAdmin, subscription } = useSponsorAuth(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 

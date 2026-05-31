@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { CheckCircle2, Clock, FileText, Image as ImageIcon, Loader2, ShieldCheck, XCircle, AlertCircle, ArrowLeft, Link2, RefreshCw, Sparkles, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import SponsorDocsUploadModal from '@/components/sponsor/SponsorDocsUploadModal';
 import SponsorStatusTimeline from '@/components/sponsor/SponsorStatusTimeline';
@@ -67,7 +67,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default function SponsorStatusPage() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [params, setParams] = useSearchParams();
   const initialId = params.get('id') || '';
   const [leadId, setLeadId] = useState<string>(initialId);

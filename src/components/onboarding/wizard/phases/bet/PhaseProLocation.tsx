@@ -17,7 +17,7 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { toast } from 'sonner';
 import CepSuggestionCard from './CepSuggestionCard';
 import { startGpsTimer, trackGpsAttempt, mapGeolocationError } from '@/lib/locationTelemetry';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { sanitizeNeighborhood } from '@/lib/geoReverseGeocode';
 import { validateBaseCityVsServiceArea, hasBlockingBaseCityIssue } from '@/lib/locationConsistency';
 import { recordMyGeoEvent } from '@/lib/providerGeoAudit';
@@ -246,7 +246,7 @@ export default function PhaseProLocation({ state, patch, finish, awardReward }: 
     if (r.city && r.state) awardCityOnce();
   }
 
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
 
   async function handleUseGps() {
     if (requestingGps) return;
