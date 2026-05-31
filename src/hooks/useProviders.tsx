@@ -852,11 +852,15 @@ function matchesGeoContextCompat(
 export { normalizeCityName, matchesGeoContextCompat as matchesGeoContext };
 
 const MIN_LOCAL_RESULTS = 3;
-// Onda 5: teto generoso para garantir que cidades pequenas (Pinhais, etc.)
-// sempre apareçam, mesmo quando capitais lotam o topo do ranking.
+// SEARCH_RESULT_LIMIT: teto atual de 800 registros por busca.
+// Ranking final (local/nearby/outOfState) acontece client-side nesse conjunto.
+// Filtros server-side (categoria/UF/rating/cidade prefix) reduzem antes do limit.
 // Provider count aprovado ~260 hoje → 800 dá folga 3x sem custo perceptível.
-// Os filtros server-side (categoria/UF/rating) reduzem o conjunto antes do limit.
+// Revisitar quando base de providers aprovados ultrapassar ~600 ativos
+// ou quando buscas amplas (ex: "pintor" em SP) começarem a omitir resultados.
+// Próximo passo: cursor/range por grupo em filterAndRankProvidersGrouped.
 const SEARCH_RESULT_LIMIT = 800;
+
 
 /**
  * Resolve `categoryId` a partir do slug, com cache em memória de 5min.
@@ -878,16 +882,20 @@ async function resolveCategoryId(slug: string): Promise<string | null> {
 }
 
 /**
- * Monta a query base de busca aplicando filtros server-side seguros
- * (categoria por id, UF exata, rating mínimo). Cidade NÃO é filtrada
- * server-side porque `.ilike` não desacentua — o ranking client-side
- * (GeoEngine + grouped local/nearby/outOfState) cuida disso sem perder
- * resultados de cidades com nome acentuado.
+ * Monta a query base de busca aplicando filtros server-side seguros:
+ *  - categoria por id (.eq)
+ *  - UF exata (.eq, uppercased)
+ *  - rating mínimo (.gte rating_avg)
+ *  - cidade via `city_normalized` (.ilike prefix-match, desacentuado)
+ *
+ * O agrupamento local/nearby/outOfState ainda é client-side via GeoEngine
+ * em cima desse conjunto reduzido (até SEARCH_RESULT_LIMIT).
  */
 /** Normaliza cidade para `ilike` contra providers.city_normalized
  *  (lowercase + sem acentos, MANTÉM espaços — diferente de `normalize()`). */
 const normalizeCityForQuery = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
 
 async function buildSearchQuery(opts: {
   categorySlug?: string;
