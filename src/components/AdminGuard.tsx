@@ -10,6 +10,14 @@
  *  4. Usuários comuns são redirecionados para /dashboard com toast
  *
  * NUNCA confie em flag client-side ou localStorage para gating de admin.
+ *
+ * --- Telemetria de desenvolvimento ---
+ * `__adminGuardTelemetry` mantém um contador por user.id de quantas vezes a
+ * RPC `has_role` foi realmente executada no ciclo de vida da aba. Como o
+ * React Query reaproveita o resultado via `staleTime`, esse contador deve
+ * permanecer em 1 por usuário durante toda a navegação intra-/admin/*.
+ * Em DEV, cada execução é logada no console com o contador atualizado.
+ * O objeto é exportado para que testes possam inspecioná-lo.
  */
 import { useEffect, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
@@ -26,6 +34,22 @@ interface AdminGuardProps {
   denyToast?: string;
 }
 
+/**
+ * Telemetria leve e exportável. NÃO contém PII (apenas o user id, que já é
+ * conhecido pela sessão autenticada). Útil em testes e para auditoria em DEV.
+ */
+export const __adminGuardTelemetry = {
+  /** Quantas vezes a RPC `has_role` foi DE FATO executada por user.id. */
+  rpcCallsByUser: new Map<string, number>(),
+  /** Soma total de execuções no ciclo de vida da aba. */
+  totalRpcCalls: 0,
+  /** Reseta a telemetria — usado por testes. */
+  reset() {
+    this.rpcCallsByUser.clear();
+    this.totalRpcCalls = 0;
+  },
+};
+
 const AdminGuard = ({ children, denyToast }: AdminGuardProps) => {
   const { user, loading: authLoading } = useAuthIdentity();
   const location = useLocation();
@@ -34,8 +58,19 @@ const AdminGuard = ({ children, denyToast }: AdminGuardProps) => {
     queryKey: ['admin-role-check', user?.id ?? null],
     enabled: !!user && !authLoading,
     queryFn: async () => {
+      const uid = user!.id;
+      const prev = __adminGuardTelemetry.rpcCallsByUser.get(uid) ?? 0;
+      __adminGuardTelemetry.rpcCallsByUser.set(uid, prev + 1);
+      __adminGuardTelemetry.totalRpcCalls += 1;
+      if (import.meta.env?.DEV) {
+        // eslint-disable-next-line no-console
+        console.debug(
+          `[AdminGuard] has_role RPC executada (user=${uid}, total nesta aba=${prev + 1}). ` +
+            'Reaproveitamentos via cache não incrementam este contador.',
+        );
+      }
       const { data, error } = await supabase.rpc('has_role', {
-        _user_id: user!.id,
+        _user_id: uid,
         _role: 'admin',
       });
       if (error) throw error;
