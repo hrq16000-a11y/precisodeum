@@ -56,7 +56,7 @@ const stagger = {
 const CategoryPage = () => {
   const { slug } = useParams();
   const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, setRadius, requestPreciseLocation } = useGeoCity();
-  const { data, isLoading } = useCategoryProviders(slug || '');
+  const { data, isLoading, isError, refetch } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
   
   const [showOutOfState, setShowOutOfState] = useState(false);
@@ -266,6 +266,24 @@ const CategoryPage = () => {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <ProviderCardSkeleton count={6} />
           </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  /* FIX 2 (Onda 4) — Estado explícito de erro de rede. */
+  if (isError) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <div className="container flex flex-1 flex-col items-center justify-center gap-4 py-20 text-center">
+          <p className="text-lg text-muted-foreground">
+            Erro ao carregar categoria. Verifique sua conexão.
+          </p>
+          <Button onClick={() => refetch()} variant="outline" className="rounded-full">
+            Tentar novamente
+          </Button>
         </div>
         <Footer />
       </div>
