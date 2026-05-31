@@ -303,7 +303,7 @@ const CategoryPage = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col" data-seo-ready={!isLoading && !isError && !!category ? 'true' : undefined}>
       <SeoMeta
         title={dynamicTitle}
         description={dynamicDescription}
