@@ -852,7 +852,69 @@ function matchesGeoContextCompat(
 export { normalizeCityName, matchesGeoContextCompat as matchesGeoContext };
 
 const MIN_LOCAL_RESULTS = 3;
-const SEARCH_RESULT_LIMIT = 96;
+// Onda 5: teto generoso para garantir que cidades pequenas (Pinhais, etc.)
+// sempre apareçam, mesmo quando capitais lotam o topo do ranking.
+// Provider count aprovado ~260 hoje → 800 dá folga 3x sem custo perceptível.
+// Os filtros server-side (categoria/UF/rating) reduzem o conjunto antes do limit.
+const SEARCH_RESULT_LIMIT = 800;
+
+/**
+ * Resolve `categoryId` a partir do slug, com cache em memória de 5min.
+ * Evita 1 round-trip extra a cada keystroke da SearchPage.
+ */
+const __categoryIdCache = new Map<string, { id: string | null; ts: number }>();
+async function resolveCategoryId(slug: string): Promise<string | null> {
+  if (!slug) return null;
+  const cached = __categoryIdCache.get(slug);
+  if (cached && Date.now() - cached.ts < 5 * 60 * 1000) return cached.id;
+  const { data } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+  const id = (data?.id as string | undefined) ?? null;
+  __categoryIdCache.set(slug, { id, ts: Date.now() });
+  return id;
+}
+
+/**
+ * Monta a query base de busca aplicando filtros server-side seguros
+ * (categoria por id, UF exata, rating mínimo). Cidade NÃO é filtrada
+ * server-side porque `.ilike` não desacentua — o ranking client-side
+ * (GeoEngine + grouped local/nearby/outOfState) cuida disso sem perder
+ * resultados de cidades com nome acentuado.
+ */
+async function buildSearchQuery(opts: {
+  categorySlug?: string;
+  state?: string;
+  minRating?: number;
+}) {
+  let q = supabase
+    .from('providers')
+    .select(providerSelect)
+    .eq('status', 'approved');
+
+  if (opts.categorySlug) {
+    const catId = await resolveCategoryId(opts.categorySlug);
+    if (catId) {
+      q = q.eq('category_id', catId);
+    } else {
+      // slug inválido → força 0 resultados em vez de retornar todo o banco
+      q = q.eq('category_id', '00000000-0000-0000-0000-000000000000');
+    }
+  }
+  if (opts.state) {
+    q = q.eq('state', opts.state.toUpperCase());
+  }
+  if (opts.minRating && opts.minRating > 0) {
+    q = q.gte('rating_avg', opts.minRating);
+  }
+
+  return q
+    .order('rating_avg', { ascending: false })
+    .order('review_count', { ascending: false })
+    .limit(SEARCH_RESULT_LIMIT);
+}
 
 // Re-export para retrocompatibilidade interna; lógica agora vive em src/lib/searchNormalization.
 function expandSearchTerms(rawQuery: string): string[] {
@@ -1225,22 +1287,14 @@ export function filterAndRankProvidersGrouped(
 }
 
 export function useSearchProviders(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
-  // FIX 6: queryKey distinto deste hook (não compartilha cache com o grouped).
-  // Por ora a base ainda é a mesma query Supabase ampla — a migração para
-  // filtros server-side fica para validação manual posterior. O essencial:
-  // não há mais cache cruzado entre hooks com políticas de refetch diferentes.
+  // Onda 5: queryKey inclui todos os filtros server-side (categoria, UF, rating)
+  // para evitar cache cruzado entre buscas distintas. Cidade fica fora pois é
+  // resolvida client-side (acentos + grouped local/nearby/outOfState).
   const baseQuery = useQuery({
-    queryKey: ['search-providers-flat', { state: state ?? '', minRating }],
+    queryKey: ['search-providers-flat', { categorySlug: categorySlug ?? '', state: state ?? '', minRating }],
     queryFn: async () => {
-      return fetchProvidersWithProfiles(
-        supabase
-        .from('providers')
-        .select(providerSelect)
-        .eq('status', 'approved')
-        .order('rating_avg', { ascending: false })
-        .order('review_count', { ascending: false })
-        .limit(SEARCH_RESULT_LIMIT)
-      );
+      const q = await buildSearchQuery({ categorySlug, state, minRating });
+      return fetchProvidersWithProfiles(q);
     },
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 60,
@@ -1259,20 +1313,13 @@ export function useSearchProviders(query: string, city: string, categorySlug: st
 }
 
 export function useSearchProvidersGrouped(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
-  // FIX 6: queryKey distinto + estável (filtros server-side preservados
-  // entram aqui assim que a migração for validada manualmente).
+  // Onda 5: queryKey idêntico em estrutura ao flat, mas com prefixo distinto
+  // (cache isolado) + filtros server-side reais via buildSearchQuery.
   const baseQuery = useQuery({
-    queryKey: ['search-providers-grouped', { state: state ?? '', minRating }],
+    queryKey: ['search-providers-grouped', { categorySlug: categorySlug ?? '', state: state ?? '', minRating }],
     queryFn: async () => {
-      return fetchProvidersWithProfiles(
-        supabase
-        .from('providers')
-        .select(providerSelect)
-        .eq('status', 'approved')
-        .order('rating_avg', { ascending: false })
-        .order('review_count', { ascending: false })
-        .limit(SEARCH_RESULT_LIMIT)
-      );
+      const q = await buildSearchQuery({ categorySlug, state, minRating });
+      return fetchProvidersWithProfiles(q);
     },
     // Cache /buscar: 15min stale + 60min gc + sem refetch ao remontar/focar.
     staleTime: 1000 * 60 * 15,
@@ -1316,16 +1363,11 @@ export function useSearchProvidersGrouped(query: string, city: string, categoryS
 
 export function useSearchAuditComparison(query: string, city: string, categorySlug: string, minRating: number, state?: string, userLat?: number | null, userLon?: number | null, radiusKm?: number) {
   const baseQuery = useQuery({
-    queryKey: ['search-audit-base'],
-    queryFn: async () => fetchProvidersWithProfiles(
-      supabase
-        .from('providers')
-        .select(providerSelect)
-        .eq('status', 'approved')
-        .order('rating_avg', { ascending: false })
-        .order('review_count', { ascending: false })
-        .limit(SEARCH_RESULT_LIMIT)
-    ),
+    queryKey: ['search-audit-base', { categorySlug: categorySlug ?? '', state: state ?? '', minRating }],
+    queryFn: async () => {
+      const q = await buildSearchQuery({ categorySlug, state, minRating });
+      return fetchProvidersWithProfiles(q);
+    },
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
