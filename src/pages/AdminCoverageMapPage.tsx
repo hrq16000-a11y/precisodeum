@@ -96,6 +96,7 @@ const AdminCoverageMapPage = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => { setLat(String(pos.coords.latitude)); setLng(String(pos.coords.longitude)); },
       () => toast.error('Não foi possível obter sua localização'),
+      { timeout: 8000, maximumAge: 60000 },
     );
   };
 
