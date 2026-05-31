@@ -136,7 +136,10 @@ export default function CategoryCityPage() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div
+      className="min-h-screen flex flex-col bg-background"
+      data-seo-ready={!isLoading && !!category && cityKnown ? 'true' : undefined}
+    >
       <SeoMeta title={title} description={description} canonical={canonical} noindex={seoNoindex} />
       <Header />
 
