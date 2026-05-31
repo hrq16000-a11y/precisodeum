@@ -31,6 +31,7 @@ import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Button } from '@/components/ui/button';
 
 import { SeoMeta } from '@/components/SeoMeta';
+import { DEFAULT_SOCIAL_IMAGE_URL } from '@/lib/siteAssets';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useCategoryProviders } from '@/hooks/useProviders';
 import { isKnownCity, preloadCitiesIndex } from '@/lib/citiesIndex';
@@ -140,7 +141,7 @@ export default function CategoryCityPage() {
       className="min-h-screen flex flex-col bg-background"
       data-seo-ready={!isLoading && !!category && cityKnown ? 'true' : undefined}
     >
-      <SeoMeta title={title} description={description} canonical={canonical} noindex={seoNoindex} />
+      <SeoMeta title={title} description={description} canonical={canonical} noindex={seoNoindex} ogImage={DEFAULT_SOCIAL_IMAGE_URL} />
       <Header />
 
       <main className="flex-1 mx-auto w-full max-w-screen-xl px-4 py-6 space-y-6">
