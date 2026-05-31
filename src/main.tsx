@@ -383,3 +383,42 @@ import('./lib/globalErrorMonitor')
   .then((m) => m.installGlobalErrorMonitor())
   .catch((err) => console.warn('[bootstrap] globalErrorMonitor skip', err));
 void bootstrap();
+
+// ─── Service Worker registration ─────────────────────────────────────────
+// Critérios:
+//  • Só em produção (`import.meta.env.PROD`).
+//  • Nunca em iframe nem em hosts de preview da Lovable — evita SW preso
+//    servindo shell antigo no editor (regra Core: "Disable SW in preview environments").
+//  • `updateViaCache: 'none'` força revalidação do script do SW a cada navegação.
+(() => {
+  try {
+    if (!('serviceWorker' in navigator)) return;
+    if (!(import.meta as any).env?.PROD) return;
+
+    const inIframe = (() => {
+      try { return window.self !== window.top; } catch { return true; }
+    })();
+    const host = window.location.hostname;
+    const isPreviewHost =
+      host.includes('id-preview--') ||
+      host.endsWith('lovableproject.com') ||
+      host.endsWith('lovable.app');
+
+    if (inIframe || isPreviewHost) {
+      // Garante limpeza caso um SW anterior tenha ficado registrado aqui.
+      navigator.serviceWorker.getRegistrations()
+        .then((regs) => regs.forEach((r) => r.unregister().catch(() => {})))
+        .catch(() => {});
+      return;
+    }
+
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/', updateViaCache: 'none' })
+        .catch((err) => console.warn('[sw] registration failed', err));
+    });
+  } catch (err) {
+    console.warn('[sw] registration guard error', err);
+  }
+})();
+
