@@ -1587,7 +1587,12 @@ const ProviderProfile = () => {
   };
 
   return (
+    // data-seo-ready: ProviderProfile usa estado local (`useState`) com try/catch manual
+    // — não há flag de erro de React Query no escopo. O early-return `if (loading)` em
+    // 1239 e o fallback de "provider não encontrado" garantem que provider só estará
+    // presente após fetch bem-sucedido. Por isso !loading && !!provider é suficiente.
     <div className={`flex min-h-screen flex-col ${tc.page} ${tc.fontBody}`} style={accentStyle} data-seo-ready={!loading && !!provider ? 'true' : undefined}>
+
       <SeoMeta
         title={seoTitle}
         description={seoDescription}
