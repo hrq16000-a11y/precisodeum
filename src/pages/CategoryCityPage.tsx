@@ -31,6 +31,7 @@ import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Button } from '@/components/ui/button';
 
 import { SeoMeta } from '@/components/SeoMeta';
+import { DEFAULT_SOCIAL_IMAGE_URL } from '@/lib/siteAssets';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { useCategoryProviders } from '@/hooks/useProviders';
 import { isKnownCity, preloadCitiesIndex } from '@/lib/citiesIndex';
