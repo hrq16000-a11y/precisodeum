@@ -14,9 +14,6 @@ const PORT = 4173;
 const CONCURRENCY = 2;
 const TIMEOUT_STATIC = 10_000;
 const TIMEOUT_DYNAMIC = 15_000;
-// Título do shell em index.html — usado como sentinela: enquanto document.title
-// ainda for este valor, react-helmet-async ainda não injetou o título real.
-const SHELL_TITLE = 'Preciso de um — Profissionais qualificados no Brasil';
 
 // Rotas cujo título pode legitimamente ser igual ao shell (Home, listas
 // genéricas). Para elas, basta esperar o React montar.
