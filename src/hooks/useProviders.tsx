@@ -878,16 +878,20 @@ async function resolveCategoryId(slug: string): Promise<string | null> {
 }
 
 /**
- * Monta a query base de busca aplicando filtros server-side seguros
- * (categoria por id, UF exata, rating mínimo). Cidade NÃO é filtrada
- * server-side porque `.ilike` não desacentua — o ranking client-side
- * (GeoEngine + grouped local/nearby/outOfState) cuida disso sem perder
- * resultados de cidades com nome acentuado.
+ * Monta a query base de busca aplicando filtros server-side seguros:
+ *  - categoria por id (.eq)
+ *  - UF exata (.eq, uppercased)
+ *  - rating mínimo (.gte rating_avg)
+ *  - cidade via `city_normalized` (.ilike prefix-match, desacentuado)
+ *
+ * O agrupamento local/nearby/outOfState ainda é client-side via GeoEngine
+ * em cima desse conjunto reduzido (até SEARCH_RESULT_LIMIT).
  */
 /** Normaliza cidade para `ilike` contra providers.city_normalized
  *  (lowercase + sem acentos, MANTÉM espaços — diferente de `normalize()`). */
 const normalizeCityForQuery = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
 
 async function buildSearchQuery(opts: {
   categorySlug?: string;
