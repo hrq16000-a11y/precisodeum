@@ -98,6 +98,7 @@ const AdminCoverageMapPage = lazy(() => import("@/pages/AdminCoverageMapPage"));
 const AdminSeoAuditPage = lazy(() => import("@/pages/AdminSeoAuditPage"));
 const AdminLocationDebugPage = lazy(() => import("@/pages/AdminLocationDebugPage"));
 const AdminLocationSeoAuditPage = lazy(() => import("@/pages/AdminLocationSeoAuditPage"));
+const AdminLocalizacoesPage = lazy(() => import("@/pages/AdminLocalizacoesPage"));
 const AdminSearchAuditPage = lazy(() => import("@/pages/AdminSearchAuditPage"));
 const AdminHomeRotationPage = lazy(() => import("@/pages/AdminHomeRotationPage"));
 const AdminOverviewPage = lazy(() => import("@/pages/AdminOverviewPage"));
