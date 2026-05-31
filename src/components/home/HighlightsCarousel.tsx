@@ -193,25 +193,30 @@ const HighlightsCarousel = () => {
             )}
           </div>
 
-          {/* Progress pills */}
+          {/* Progress pills — WCAG 2.5.5: área de toque mínima 44×44px via wrapper. */}
           {highlights.length > 1 && (
-            <div className="flex justify-center gap-1.5 pb-4">
+            <div className="flex justify-center gap-1.5 pb-2">
               {highlights.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => goTo(i)}
-                  className="relative h-2 rounded-full bg-gray-200 overflow-hidden transition-all"
-                  style={{ width: i === current ? '2rem' : '0.5rem' }}
+                  aria-label={`Ir para destaque ${i + 1}`}
+                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center p-3"
                 >
-                  {i === current && (
-                    <span
-                      key={progressKey}
-                      className="absolute inset-0 rounded-full bg-orange-500"
-                      style={{
-                        animation: paused ? 'none' : `progress-fill ${INTERVAL}ms linear forwards`,
-                      }}
-                    />
-                  )}
+                  <span
+                    className="relative h-2 rounded-full bg-gray-200 overflow-hidden transition-all"
+                    style={{ width: i === current ? '2rem' : '0.5rem' }}
+                  >
+                    {i === current && (
+                      <span
+                        key={progressKey}
+                        className="absolute inset-0 rounded-full bg-orange-500"
+                        style={{
+                          animation: paused ? 'none' : `progress-fill ${INTERVAL}ms linear forwards`,
+                        }}
+                      />
+                    )}
+                  </span>
                 </button>
               ))}
             </div>

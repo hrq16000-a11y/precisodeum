@@ -12,6 +12,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoPromptBanner from '@/components/GeoPromptBanner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
@@ -60,7 +61,7 @@ const CityPage = () => {
     );
   }, [slug]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['city-page', slug],
     queryFn: async () => {
       // 1) Match exato pelo slug fornecido na URL
@@ -287,6 +288,24 @@ const CityPage = () => {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64 rounded-xl" />)}
           </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  /* FIX 2 (Onda 4) — Estado explícito de erro de rede. */
+  if (isError) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <div className="container flex flex-1 flex-col items-center justify-center gap-4 py-20 text-center">
+          <p className="text-lg text-muted-foreground">
+            Erro ao carregar cidade. Verifique sua conexão.
+          </p>
+          <Button onClick={() => refetch()} variant="outline" className="rounded-full">
+            Tentar novamente
+          </Button>
         </div>
         <Footer />
       </div>

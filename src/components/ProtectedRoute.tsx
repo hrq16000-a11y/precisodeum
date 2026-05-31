@@ -70,17 +70,28 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
 /**
  * Audit-fix #8 — fallback com timeout para evitar spinner infinito quando
  * o trigger handle_new_user falha ou demora demais a criar o profile.
- * Após 6s, redireciona para /cadastro-inicial para o usuário não ficar preso.
+ *
+ * Onda 4 / FIX 7: após 6s redirecionamos para /login (preservando `from`)
+ * em vez de /cadastro-inicial — usuários já cadastrados que perderam sessão
+ * voltam para o login e, após autenticar, retornam à página de origem.
+ * Só vão a /cadastro-inicial se realmente não tiverem `onboarding_completed`.
  */
 const ProfileLoadingFallback = () => {
   const [timedOut, setTimedOut] = useState(false);
+  const location = useLocation();
   useEffect(() => {
     const t = window.setTimeout(() => setTimedOut(true), 6000);
     return () => window.clearTimeout(t);
   }, []);
 
   if (timedOut) {
-    return <Navigate to="/cadastro-inicial" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    );
   }
 
   return (

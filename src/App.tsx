@@ -2,7 +2,7 @@ import { lazy as reactLazy, Suspense, useEffect, useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Navigate, useLocation } from "react-router-dom";
 const Sonner = reactLazy(() => importWithRetry(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster }))));
-const Toaster = reactLazy(() => importWithRetry(() => import("@/components/ui/toaster").then(m => ({ default: m.Toaster }))));
+// FIX 6 (Onda 4): Radix `<Toaster />` removido — `@/hooks/use-toast` agora encaminha a Sonner.
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdDebugProvider } from "@/contexts/AdDebugContext";
@@ -62,7 +62,6 @@ const DeferredShell = () => {
   return (
     <Suspense fallback={null}>
       <CurtainReveal />
-      <Toaster />
       <Sonner />
       <AppVersionGate />
       <ScrollProgressBar />

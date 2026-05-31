@@ -151,7 +151,7 @@ export function useSponsorsBySlot(
       _slot_slug: position,
       _event_type: 'impression',
       _page_path: getPagePath(),
-    } as any).then(() => {});
+    } as any).then(() => {}, (err) => { /* FIX 8 (Onda 4): silent catch — telemetria nunca quebra UI */ console.warn('[sponsor:impression] failed', err); });
   }, [position, query.data]);
 
   const trackClick = useCallback((id: string) => {
@@ -165,7 +165,7 @@ export function useSponsorsBySlot(
       _slot_slug: position,
       _event_type: 'click',
       _page_path: getPagePath(),
-    } as any).then(() => {});
+    } as any).then(() => {}, (err) => { console.warn('[sponsor:click] failed', err); });
   }, [position, query.data]);
 
   return {
