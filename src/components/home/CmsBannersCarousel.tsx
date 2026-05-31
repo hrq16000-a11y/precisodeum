@@ -24,13 +24,21 @@ const CmsBannersCarousel = () => {
     'items-center text-center';
 
   return (
-    <section className="relative overflow-hidden py-10 md:py-16">
+    <section
+      className="relative overflow-hidden py-10 md:py-16"
+      style={{ aspectRatio: '16 / 9', minHeight: 220 }}
+    >
       {banner.image_url && (
         <img
           src={banner.image_url}
           alt=""
+          width={1600}
+          height={900}
           className="absolute inset-0 h-full w-full object-cover object-center"
-          loading="lazy"
+          // FIX CWV: o primeiro banner é o LCP candidato — eager + alta prioridade.
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
         />
       )}
       <div
@@ -39,6 +47,7 @@ const CmsBannersCarousel = () => {
           background: `linear-gradient(135deg, hsl(var(--primary) / ${overlayOpacity}) 0%, hsl(var(--primary) / ${Math.max(overlayOpacity - 0.15, 0.4)}) 100%)`,
         }}
       />
+
 
       <div className={`container relative z-10 flex flex-col ${alignClass}`}>
         <div key={banner.id} className="animate-fade-in">

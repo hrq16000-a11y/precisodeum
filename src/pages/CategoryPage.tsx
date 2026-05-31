@@ -229,9 +229,27 @@ const CategoryPage = () => {
   useJsonLd(itemListLd);
   useJsonLd(collectionLd);
 
-  const paginatedLocal = localProviders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
-  const paginatedNearby = nearbyProviders;
-  const paginatedOutOfState = showOutOfState ? outOfStateProviders : [];
+  // PERF/UX FIX 7: paginação sequencial entre grupos (local → nearby → outOfState)
+  // para que totalDisplay (= soma dos 3) bata com as páginas reais e o DOM não
+  // renderize nearby/outOfState completos em todas as páginas.
+  const localPageCount = Math.ceil(localProviders.length / ITEMS_PER_PAGE);
+  const nearbyPageCount = Math.ceil(nearbyProviders.length / ITEMS_PER_PAGE);
+  const outOfStatePool = showOutOfState ? outOfStateProviders : [];
+  let paginatedLocal: typeof localProviders = [];
+  let paginatedNearby: typeof nearbyProviders = [];
+  let paginatedOutOfState: typeof outOfStateProviders = [];
+  if (page <= localPageCount) {
+    const offset = (page - 1) * ITEMS_PER_PAGE;
+    paginatedLocal = localProviders.slice(offset, offset + ITEMS_PER_PAGE);
+  } else if (page <= localPageCount + nearbyPageCount) {
+    const nearbyPage = page - localPageCount - 1;
+    const offset = nearbyPage * ITEMS_PER_PAGE;
+    paginatedNearby = nearbyProviders.slice(offset, offset + ITEMS_PER_PAGE);
+  } else {
+    const outPage = page - localPageCount - nearbyPageCount - 1;
+    const offset = outPage * ITEMS_PER_PAGE;
+    paginatedOutOfState = outOfStatePool.slice(offset, offset + ITEMS_PER_PAGE);
+  }
 
   if (isLoading) {
     return (
