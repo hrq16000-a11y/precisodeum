@@ -5,6 +5,10 @@ import { setCelebrationMuted } from '@/lib/celebrate';
 import { reportError } from '@/lib/errorReporter';
 import { queryClient } from '@/lib/queryClient';
 import { AuthCompanion } from '@/hooks/AuthCompanion';
+import type { Database } from '@/integrations/supabase/types';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type Provider = Database['public']['Tables']['providers']['Row'];
 
 /**
  * Detecta de forma síncrona se há um token de sessão Supabase persistido
@@ -58,8 +62,8 @@ interface AuthIdentityContextType {
 }
 
 interface AuthProfileContextType {
-  profile: any | null;
-  provider: any | null;
+  profile: Profile | null;
+  provider: Provider | null;
   /** True when the user exists but has never explicitly chosen a profile type (social login default) */
   needsTypeSelection: boolean;
   refetchProfile: () => Promise<any | null>;
@@ -84,8 +88,8 @@ const AuthProfileContext = createContext<AuthProfileContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
-  const [provider, setProvider] = useState<any | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [provider, setProvider] = useState<Provider | null>(null);
   // Loading inteligente: só inicia em `true` quando há token persistido a
   // restaurar — evita o flash de redirect para /login no refresh de rotas
   // privadas (race entre primeiro render e getSession()).
@@ -115,8 +119,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     inFlightAbortRef.current = ctrl;
 
     // FIX 1: reduzido para no máximo ~6s totais (3 tentativas × 2s + 2 backoffs).
-    let profileData: any = null;
-    let providerRows: any[] | null = null;
+    let profileData: Profile | null = null;
+    let providerRows: Provider[] | null = null;
     const MAX_ATTEMPTS = 3;
     const PER_ATTEMPT_TIMEOUT_MS = 2000;
     const startedAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -193,10 +197,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         let derivedPrimaryCategoryId: string | null = null;
         if (normalizedProviderRows.length > 0) {
           derivedAccountType = String(
-            normalizedProviderRows.find((row: any) => row?.account_type)?.account_type ?? normalizedProviderRows[0]?.account_type ?? '',
+            normalizedProviderRows.find((row: Provider) => row?.account_type)?.account_type ?? normalizedProviderRows[0]?.account_type ?? '',
           ).trim() || null;
           derivedPrimaryCategoryId = String(
-            normalizedProviderRows.find((row: any) => row?.category_id)?.category_id ?? normalizedProviderRows[0]?.category_id ?? '',
+            normalizedProviderRows.find((row: Provider) => row?.category_id)?.category_id ?? normalizedProviderRows[0]?.category_id ?? '',
           ).trim() || null;
         }
         profileData = pData && typeof pData === 'object'
@@ -208,8 +212,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           : pData;
         providerRows = normalizedProviderRows;
         if (profileData) break;
-      } catch (err: any) {
-        lastErrorMessage = err?.message ?? String(err);
+      } catch (err: unknown) {
+        lastErrorMessage = (err as Error)?.message ?? String(err);
         if (ctrl.signal.aborted) break;
         console.warn(`[useAuth] fetchProfile attempt ${attemptsUsed} failed:`, err);
       }
