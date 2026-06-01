@@ -43,7 +43,7 @@ const FeaturedJobs = () => {
       const sinceIso = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
       const { data } = await (supabase
         .from('jobs')
-        .select('id, title, city, state, opportunity_type, slug, whatsapp, description, job_type, work_model, created_at, categories(name, icon)') as any)
+        .select('id, title, city, state, opportunity_type, slug, description, job_type, work_model, created_at, categories(name, icon)') as any)
         .eq('status', 'active')
         .eq('approval_status', 'approved')
         .gte('created_at', sinceIso)
