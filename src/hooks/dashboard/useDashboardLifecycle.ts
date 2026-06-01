@@ -20,7 +20,7 @@ import { useReferralCapture } from '@/hooks/useReferralCapture';
 
 interface UseDashboardLifecycleArgs {
   user: { id?: string } | null | undefined;
-  provider: { id?: string; onboarding_progress?: Record<string, any> } | null | undefined;
+  provider: { id?: string; onboarding_progress?: unknown } | null | undefined;
   loading: boolean;
   refetchProfile: () => Promise<unknown> | unknown;
   refetchCounters: () => unknown;
