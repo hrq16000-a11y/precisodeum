@@ -3,7 +3,6 @@ import { Megaphone, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdDebug } from '@/contexts/AdDebugContext';
 import SponsorImage from '@/components/SponsorImage';
