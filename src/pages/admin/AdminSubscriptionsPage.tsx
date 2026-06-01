@@ -61,6 +61,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const AdminSubscriptionsPage = () => {
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const qc = useQueryClient();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -68,6 +69,10 @@ const AdminSubscriptionsPage = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
+
+  const [cancelTarget, setCancelTarget] = useState<Sub | null>(null);
+  const [extendTarget, setExtendTarget] = useState<Sub | null>(null);
+  const [extendDays, setExtendDays] = useState<number>(30);
 
   const { data: subs = [], isLoading } = useQuery({
     queryKey: ['admin-subscriptions'],
@@ -82,6 +87,74 @@ const AdminSubscriptionsPage = () => {
       return (data || []) as unknown as Sub[];
     },
   });
+
+  const providerIds = useMemo(() => Array.from(new Set(subs.map((s) => s.provider_id))), [subs]);
+
+  const { data: providerNames = new Map<string, string>() } = useQuery({
+    queryKey: ['admin-subscriptions-provider-names', providerIds.length],
+    enabled: isAdmin && providerIds.length > 0,
+    queryFn: async () => {
+      const m = new Map<string, string>();
+      const { data: provs } = await supabase
+        .from('providers' as any)
+        .select('id, business_name')
+        .in('id', providerIds);
+      (provs as any[] | null)?.forEach((p) => { if (p.business_name) m.set(p.id, p.business_name); });
+      const missing = providerIds.filter((id) => !m.has(id));
+      if (missing.length) {
+        const { data: profs } = await supabase
+          .from('profiles' as any)
+          .select('id, full_name')
+          .in('id', missing);
+        (profs as any[] | null)?.forEach((p) => { if (p.full_name) m.set(p.id, p.full_name); });
+      }
+      return m;
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: async (sub: Sub) => {
+      const { error } = await supabase
+        .from('subscriptions' as any)
+        .update({ status: 'canceled' } as any)
+        .eq('id', sub.id);
+      if (error) throw error;
+      await logAuditAction({ action: 'cancel', resource_type: 'subscription', resource_id: sub.id, details: { previous_status: sub.status } });
+      return sub.id;
+    },
+    onSuccess: (id) => {
+      qc.setQueryData<Sub[]>(['admin-subscriptions'], (prev) =>
+        (prev || []).map((s) => (s.id === id ? { ...s, status: 'canceled' } : s))
+      );
+      toast.success('Assinatura cancelada');
+      setCancelTarget(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao cancelar'),
+  });
+
+  const extendMutation = useMutation({
+    mutationFn: async ({ sub, days }: { sub: Sub; days: number }) => {
+      const base = sub.ends_at ? new Date(sub.ends_at) : new Date();
+      const next = new Date(base.getTime() + days * 86_400_000);
+      const newEnd = next.toISOString();
+      const { error } = await supabase
+        .from('subscriptions' as any)
+        .update({ ends_at: newEnd } as any)
+        .eq('id', sub.id);
+      if (error) throw error;
+      await logAuditAction({ action: 'extend', resource_type: 'subscription', resource_id: sub.id, details: { days, new_ends_at: newEnd } });
+      return { id: sub.id, newEnd };
+    },
+    onSuccess: ({ id, newEnd }) => {
+      qc.setQueryData<Sub[]>(['admin-subscriptions'], (prev) =>
+        (prev || []).map((s) => (s.id === id ? { ...s, ends_at: newEnd } : s))
+      );
+      toast.success(`Assinatura estendida até ${new Date(newEnd).toLocaleDateString('pt-BR')}`);
+      setExtendTarget(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao estender'),
+  });
+
 
   const { data: accountTypes = [] } = useQuery({
     queryKey: ['admin-subscriptions-account-types'],
