@@ -185,7 +185,19 @@ const AdminSeoGscPage = () => {
               <Button
                 size="sm"
                 disabled={!!busy}
-                onClick={() => run("Verificação solicitada", "verify", { site }, () => loadStatus())}
+                onClick={() =>
+                  run("Verificação solicitada", "verify", { site }, async () => {
+                    await loadStatus();
+                    // Auto-submeter sitemap após verificação bem-sucedida.
+                    try {
+                      await callGsc("add", { site });
+                      await callGsc("submit-sitemap", { site, sitemap: sitemapUrl });
+                      toast.success("Sitemap enviado automaticamente após verificação");
+                    } catch {
+                      /* silent — usuário pode reenviar manualmente */
+                    }
+                  })
+                }
               >
                 {busy === "verify" ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <ShieldCheck className="h-4 w-4 mr-1.5" />}
                 Verificar posse
