@@ -208,10 +208,25 @@ const AdminSponsorSlotLimitsPage = () => {
               {rows.length} regra(s) — sem deleção (histórico preservado)
             </p>
           </div>
-          <Button size="sm" onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-1" /> Novo limite
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4 mr-1" /> Atualizar
+            </Button>
+            <Button size="sm" onClick={openCreate}>
+              <Plus className="h-4 w-4 mr-1" /> Novo limite
+            </Button>
+          </div>
         </div>
+
+        {shouldShowOrphanWarning && (
+          <div className="flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950/30 p-3 text-sm">
+            <AlertTriangle className="h-4 w-4 mt-0.5 text-yellow-700 dark:text-yellow-400 shrink-0" />
+            <p className="text-yellow-900 dark:text-yellow-200">
+              Atenção: sponsors ativos sem cidade/categoria vinculada não são
+              contabilizados nos slots específicos — aparecem apenas no slot global.
+            </p>
+          </div>
+        )}
 
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
