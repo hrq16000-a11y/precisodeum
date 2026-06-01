@@ -7,14 +7,15 @@ import { queryClient } from '@/lib/queryClient';
 import { AuthCompanion } from '@/hooks/AuthCompanion';
 import type { Database } from '@/integrations/supabase/types';
 
-type ProfileRow = Database['public']['Tables']['profiles']['Row'];
-// Profile expõe campos derivados (account_type/primary_category_id) que não
-// vivem mais na tabela profiles — são reconstruídos a partir de providers.
-type Profile = ProfileRow & {
-  account_type?: string | null;
-  primary_category_id?: string | null;
-};
+type Profile = Database['public']['Tables']['profiles']['Row'];
 type Provider = Database['public']['Tables']['providers']['Row'];
+// Tipo estendido para o estado interno: agrega campos derivados
+// (account_type/primary_category_id) reconstruídos a partir de providers.
+// Profile "puro" continua sendo a fonte para o contexto público.
+type ProfileWithDerived = Profile & {
+  account_type: string | null;
+  primary_category_id: string | null;
+};
 
 /**
  * Detecta de forma síncrona se há um token de sessão Supabase persistido
@@ -125,7 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     inFlightAbortRef.current = ctrl;
 
     // FIX 1: reduzido para no máximo ~6s totais (3 tentativas × 2s + 2 backoffs).
-    let profileData: Profile | null = null;
+    let profileData: ProfileWithDerived | null = null;
     let providerRows: Provider[] | null = null;
     const MAX_ATTEMPTS = 3;
     const PER_ATTEMPT_TIMEOUT_MS = 2000;
@@ -214,8 +215,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               ...(pData as Record<string, unknown>),
               account_type: (pData as any)?.account_type ?? derivedAccountType,
               primary_category_id: (pData as any)?.primary_category_id ?? derivedPrimaryCategoryId,
-            } as Profile)
-          : (pData as unknown as Profile | null);
+            } as unknown as ProfileWithDerived)
+          : (pData as unknown as ProfileWithDerived | null);
         providerRows = normalizedProviderRows;
         if (profileData) break;
       } catch (err: unknown) {
