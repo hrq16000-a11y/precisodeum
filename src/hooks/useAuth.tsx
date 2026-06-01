@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     inFlightAbortRef.current = ctrl;
 
     // FIX 1: reduzido para no máximo ~6s totais (3 tentativas × 2s + 2 backoffs).
-    let profileData: Profile | null = null;
+    let profileData: ProfileWithDerived | null = null;
     let providerRows: Provider[] | null = null;
     const MAX_ATTEMPTS = 3;
     const PER_ATTEMPT_TIMEOUT_MS = 2000;
