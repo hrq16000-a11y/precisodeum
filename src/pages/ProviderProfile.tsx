@@ -1176,13 +1176,24 @@ const ProviderProfile = () => {
 
   const [isSubmittingLead, handleLeadSubmit] = useSubmitGuard(async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validação Zod ANTES de qualquer concatenação de ctxBlock ou montagem de payload.
+    const parsed = leadSubmitSchema.safeParse({
+      name: leadForm.name,
+      phone: leadForm.phone,
+      message: leadForm.message,
+      service: leadForm.service,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message || 'Dados inválidos');
+      return;
+    }
     // Validação do telefone antes do INSERT (reusa whatsapp.ts).
     const phoneCheck = validateWhatsapp(leadForm.phone);
     if (!phoneCheck.valid) {
       toast.error(phoneCheck.message);
       return;
     }
-    const phoneSanitized = sanitizePhone(leadForm.phone);
+    const phoneSanitized = parsed.data.phone;
     // Anexa contexto (cidade/UF + origem) ao final da mensagem para o provider ver
     // de onde veio o lead, sem depender de novas colunas no banco.
     const ctxParts: string[] = [];
