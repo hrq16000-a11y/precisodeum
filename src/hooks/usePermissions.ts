@@ -95,8 +95,8 @@ export const usePermissions = (): UsePermissionsReturn => {
     }
 
     // Read profile-level permissions
-    const pp = (profile.permissions as unknown as ProfilePermissions) || DEFAULT_PROFILE_PERMISSIONS;
-    setProfilePermissions({ ...DEFAULT_PROFILE_PERMISSIONS, ...pp });
+    setProfilePermissions(toProfilePermissions(profile.permissions));
+
 
     const fetchData = async () => {
       const levelPromise = profile.level_id
