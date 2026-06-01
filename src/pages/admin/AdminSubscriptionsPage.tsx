@@ -119,7 +119,7 @@ const AdminSubscriptionsPage = () => {
         .update({ status: 'canceled' } as any)
         .eq('id', sub.id);
       if (error) throw error;
-      await logAuditAction({ action: 'cancel', resource_type: 'subscription', resource_id: sub.id, details: { previous_status: sub.status } });
+      await logAuditAction({ action: 'subscription_changed', resource_type: 'subscription', resource_id: sub.id, details: { previous_status: sub.status } });
       return sub.id;
     },
     onSuccess: (id) => {
@@ -142,7 +142,7 @@ const AdminSubscriptionsPage = () => {
         .update({ ends_at: newEnd } as any)
         .eq('id', sub.id);
       if (error) throw error;
-      await logAuditAction({ action: 'extend', resource_type: 'subscription', resource_id: sub.id, details: { days, new_ends_at: newEnd } });
+      await logAuditAction({ action: 'subscription_changed', resource_type: 'subscription', resource_id: sub.id, details: { days, new_ends_at: newEnd } });
       return { id: sub.id, newEnd };
     },
     onSuccess: ({ id, newEnd }) => {
