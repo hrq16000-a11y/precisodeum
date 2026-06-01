@@ -9915,6 +9915,13 @@ export type Database = {
         Args: { _lat: number; _lng: number }
         Returns: string
       }
+      get_open_lead_client_contact: {
+        Args: { _response_id: string }
+        Returns: {
+          client_name: string
+          client_whatsapp: string
+        }[]
+      }
       get_pinned_sponsor_for_search: {
         Args: { _category_slug?: string; _city?: string; _state?: string }
         Returns: {
