@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { useAdDebug } from '@/contexts/AdDebugContext';
 import SponsorImage from '@/components/SponsorImage';
 import { Skeleton } from '@/components/ui/skeleton';
