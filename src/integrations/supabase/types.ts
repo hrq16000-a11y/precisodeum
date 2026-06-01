@@ -1567,6 +1567,45 @@ export type Database = {
         }
         Relationships: []
       }
+      gsc_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          error: string | null
+          id: number
+          ok: boolean
+          response: Json | null
+          site: string | null
+          sitemap: string | null
+          status: number | null
+          triggered_by: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          error?: string | null
+          id?: number
+          ok?: boolean
+          response?: Json | null
+          site?: string | null
+          sitemap?: string | null
+          status?: number | null
+          triggered_by?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          error?: string | null
+          id?: number
+          ok?: boolean
+          response?: Json | null
+          site?: string | null
+          sitemap?: string | null
+          status?: number | null
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       health_check_history: {
         Row: {
           created_at: string
