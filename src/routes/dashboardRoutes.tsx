@@ -9,6 +9,7 @@ import { importWithRetry } from "@/lib/lazyWithRetry";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorGuard from "@/components/ErrorGuard";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
+import DashboardRouteGuard from "@/components/dashboard/DashboardRouteGuard";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
