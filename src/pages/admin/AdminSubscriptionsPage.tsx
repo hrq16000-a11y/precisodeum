@@ -9,22 +9,34 @@
  * pagamento — este painel é apenas observabilidade.
  */
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from '@/components/ui/table';
-import { CreditCard, Search } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { CreditCard, Search, Ban, CalendarPlus } from 'lucide-react';
 import PaginationControls from '@/components/PaginationControls';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
+import { logAuditAction } from '@/hooks/useAuditLog';
+import { toast } from 'sonner';
 
 const PAGE_SIZE = 20;
+
 
 type Sub = {
   id: string;
@@ -49,6 +61,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const AdminSubscriptionsPage = () => {
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const qc = useQueryClient();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -56,6 +69,10 @@ const AdminSubscriptionsPage = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
+
+  const [cancelTarget, setCancelTarget] = useState<Sub | null>(null);
+  const [extendTarget, setExtendTarget] = useState<Sub | null>(null);
+  const [extendDays, setExtendDays] = useState<number>(30);
 
   const { data: subs = [], isLoading } = useQuery({
     queryKey: ['admin-subscriptions'],
@@ -70,6 +87,74 @@ const AdminSubscriptionsPage = () => {
       return (data || []) as unknown as Sub[];
     },
   });
+
+  const providerIds = useMemo(() => Array.from(new Set(subs.map((s) => s.provider_id))), [subs]);
+
+  const { data: providerNames = new Map<string, string>() } = useQuery({
+    queryKey: ['admin-subscriptions-provider-names', providerIds.length],
+    enabled: isAdmin && providerIds.length > 0,
+    queryFn: async () => {
+      const m = new Map<string, string>();
+      const { data: provs } = await supabase
+        .from('providers' as any)
+        .select('id, business_name')
+        .in('id', providerIds);
+      (provs as any[] | null)?.forEach((p) => { if (p.business_name) m.set(p.id, p.business_name); });
+      const missing = providerIds.filter((id) => !m.has(id));
+      if (missing.length) {
+        const { data: profs } = await supabase
+          .from('profiles' as any)
+          .select('id, full_name')
+          .in('id', missing);
+        (profs as any[] | null)?.forEach((p) => { if (p.full_name) m.set(p.id, p.full_name); });
+      }
+      return m;
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: async (sub: Sub) => {
+      const { error } = await supabase
+        .from('subscriptions' as any)
+        .update({ status: 'canceled' } as any)
+        .eq('id', sub.id);
+      if (error) throw error;
+      await logAuditAction({ action: 'subscription_changed', resource_type: 'subscription', resource_id: sub.id, details: { previous_status: sub.status } });
+      return sub.id;
+    },
+    onSuccess: (id) => {
+      qc.setQueryData<Sub[]>(['admin-subscriptions'], (prev) =>
+        (prev || []).map((s) => (s.id === id ? { ...s, status: 'canceled' } : s))
+      );
+      toast.success('Assinatura cancelada');
+      setCancelTarget(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao cancelar'),
+  });
+
+  const extendMutation = useMutation({
+    mutationFn: async ({ sub, days }: { sub: Sub; days: number }) => {
+      const base = sub.ends_at ? new Date(sub.ends_at) : new Date();
+      const next = new Date(base.getTime() + days * 86_400_000);
+      const newEnd = next.toISOString();
+      const { error } = await supabase
+        .from('subscriptions' as any)
+        .update({ ends_at: newEnd } as any)
+        .eq('id', sub.id);
+      if (error) throw error;
+      await logAuditAction({ action: 'subscription_changed', resource_type: 'subscription', resource_id: sub.id, details: { days, new_ends_at: newEnd } });
+      return { id: sub.id, newEnd };
+    },
+    onSuccess: ({ id, newEnd }) => {
+      qc.setQueryData<Sub[]>(['admin-subscriptions'], (prev) =>
+        (prev || []).map((s) => (s.id === id ? { ...s, ends_at: newEnd } : s))
+      );
+      toast.success(`Assinatura estendida até ${new Date(newEnd).toLocaleDateString('pt-BR')}`);
+      setExtendTarget(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao estender'),
+  });
+
 
   const { data: accountTypes = [] } = useQuery({
     queryKey: ['admin-subscriptions-account-types'],
@@ -186,29 +271,50 @@ const AdminSubscriptionsPage = () => {
                 <TableHead>Início</TableHead>
                 <TableHead>Expira em</TableHead>
                 <TableHead>Criado em</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
               ) : paginated.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhuma assinatura</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhuma assinatura</TableCell></TableRow>
               ) : (
-                paginated.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-mono text-xs">{s.provider_id?.slice(0, 8)}…</TableCell>
-                    <TableCell><Badge variant="outline">{s.plan}</Badge></TableCell>
-                    <TableCell>
-                      <Badge className={`text-[10px] ${STATUS_COLORS[s.status] || 'bg-muted'}`}>{s.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {s.account_type_id ? (accountTypeLabel.get(s.account_type_id) || '—') : '—'}
-                    </TableCell>
-                    <TableCell className="text-xs">{s.starts_at ? new Date(s.starts_at).toLocaleDateString('pt-BR') : '—'}</TableCell>
-                    <TableCell className="text-xs">{s.ends_at ? new Date(s.ends_at).toLocaleDateString('pt-BR') : '—'}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString('pt-BR')}</TableCell>
-                  </TableRow>
-                ))
+                paginated.map((s) => {
+                  const canCancel = s.status === 'active' || s.status === 'trialing';
+                  const name = providerNames.get(s.provider_id);
+                  return (
+                    <TableRow key={s.id}>
+                      <TableCell className="text-xs">
+                        {name ? <span className="font-medium">{name}</span> : <span className="font-mono">{s.provider_id?.slice(0, 8)}…</span>}
+                      </TableCell>
+                      <TableCell><Badge variant="outline">{s.plan}</Badge></TableCell>
+                      <TableCell>
+                        <Badge className={`text-[10px] ${STATUS_COLORS[s.status] || 'bg-muted'}`}>{s.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {s.account_type_id ? (accountTypeLabel.get(s.account_type_id) || '—') : '—'}
+                      </TableCell>
+                      <TableCell className="text-xs">{s.starts_at ? new Date(s.starts_at).toLocaleDateString('pt-BR') : '—'}</TableCell>
+                      <TableCell className="text-xs">{s.ends_at ? new Date(s.ends_at).toLocaleDateString('pt-BR') : '—'}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          {canCancel && (
+                            <Button size="icon" variant="ghost" aria-label="Cancelar"
+                              onClick={() => setCancelTarget(s)}>
+                              <Ban className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                          <Button size="icon" variant="ghost" aria-label="Estender"
+                            onClick={() => { setExtendTarget(s); setExtendDays(30); }}>
+                            <CalendarPlus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -218,8 +324,77 @@ const AdminSubscriptionsPage = () => {
           <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
         )}
       </div>
+
+      {/* Cancelar */}
+      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar assinatura</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cancelar assinatura de{' '}
+              <strong>
+                {cancelTarget ? (providerNames.get(cancelTarget.provider_id) || cancelTarget.provider_id) : ''}
+              </strong>
+              ? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); if (cancelTarget) cancelMutation.mutate(cancelTarget); }}
+              disabled={cancelMutation.isPending}
+            >
+              {cancelMutation.isPending ? 'Cancelando...' : 'Confirmar cancelamento'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Estender */}
+      <Dialog open={!!extendTarget} onOpenChange={(o) => !o && setExtendTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Estender assinatura</DialogTitle>
+            <DialogDescription>
+              {extendTarget ? (providerNames.get(extendTarget.provider_id) || extendTarget.provider_id) : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Estender por quantos dias?</Label>
+              <Input
+                type="number" min={1} max={365}
+                value={extendDays}
+                onChange={(e) => setExtendDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
+              />
+            </div>
+            {extendTarget && (
+              <p className="text-sm text-muted-foreground">
+                Nova data de expiração:{' '}
+                <strong className="text-foreground">
+                  {new Date(
+                    (extendTarget.ends_at ? new Date(extendTarget.ends_at).getTime() : Date.now())
+                    + extendDays * 86_400_000
+                  ).toLocaleDateString('pt-BR')}
+                </strong>
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExtendTarget(null)}>Cancelar</Button>
+            <Button
+              onClick={() => extendTarget && extendMutation.mutate({ sub: extendTarget, days: extendDays })}
+              disabled={extendMutation.isPending || extendDays < 1 || extendDays > 365}
+            >
+              {extendMutation.isPending ? 'Estendendo...' : 'Confirmar extensão'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
 
 export default AdminSubscriptionsPage;
+
