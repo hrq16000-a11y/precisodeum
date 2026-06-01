@@ -75,6 +75,66 @@ const AdminSponsorSlotLimitsPage = () => {
     },
   });
 
+  const { data: activeSponsors, isLoading: sponsorsLoading } = useQuery({
+    queryKey: ['admin-sponsor-slot-limits:active-sponsors'],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('sponsors' as any)
+        .select('position, linked_city, linked_category, plan')
+        .eq('active', true)
+        .is('deleted_at', null)
+        .eq('status', 'active')
+        .or(`start_date.is.null,start_date.lte.${today}`)
+        .or(`end_date.is.null,end_date.gte.${today}`);
+      if (error) throw error;
+      return (data || []) as Array<{
+        position: string | null;
+        linked_city: string | null;
+        linked_category: string | null;
+        plan: string | null;
+      }>;
+    },
+  });
+
+  const computeOccupied = (row: Row): number | null => {
+    if (!activeSponsors) return null;
+    const isDefault = row.context_value === '_default';
+    switch (row.context_type) {
+      case 'global':
+        return activeSponsors.length;
+      case 'city':
+        return activeSponsors.filter((s) =>
+          isDefault ? !s.linked_city : s.linked_city === row.context_value).length;
+      case 'category':
+        return activeSponsors.filter((s) =>
+          isDefault ? !s.linked_category : s.linked_category === row.context_value).length;
+      case 'position':
+        return activeSponsors.filter((s) => s.position === row.context_value).length;
+      case 'plan':
+        return activeSponsors.filter((s) => s.plan === row.context_value).length;
+      default:
+        return 0;
+    }
+  };
+
+  const shouldShowOrphanWarning = useMemo(() => {
+    if (!activeSponsors || activeSponsors.length === 0) return false;
+    const cityCategoryRows = rows.filter(
+      (r) => r.context_type === 'city' || r.context_type === 'category');
+    if (cityCategoryRows.length === 0) return false;
+    const sumOccupied = cityCategoryRows.reduce(
+      (acc, r) => acc + (computeOccupied(r) ?? 0), 0);
+    return sumOccupied === 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, activeSponsors]);
+
+  const handleRefresh = () => {
+    qc.invalidateQueries({ queryKey: ['admin-sponsor-slot-limits'] });
+    qc.invalidateQueries({ queryKey: ['admin-sponsor-slot-limits:active-sponsors'] });
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
