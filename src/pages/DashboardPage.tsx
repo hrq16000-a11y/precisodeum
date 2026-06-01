@@ -42,7 +42,7 @@ const DashboardPage = () => {
   const portfolioDone = portfolioCount > 0;
 
   const { navigate, welcomeOpen, setWelcomeOpen, handleResetOnboarding } = useDashboardLifecycle({
-    user, provider, loading, refetchProfile, refetchCounters,
+    user, provider: provider as unknown as { id?: string; onboarding_progress?: Record<string, any> } | null, loading, refetchProfile, refetchCounters,
     countersError, statsLoaded, profileDone, servicesDone, portfolioDone,
   });
 
