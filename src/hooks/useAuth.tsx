@@ -7,7 +7,13 @@ import { queryClient } from '@/lib/queryClient';
 import { AuthCompanion } from '@/hooks/AuthCompanion';
 import type { Database } from '@/integrations/supabase/types';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+// Profile expõe campos derivados (account_type/primary_category_id) que não
+// vivem mais na tabela profiles — são reconstruídos a partir de providers.
+type Profile = ProfileRow & {
+  account_type?: string | null;
+  primary_category_id?: string | null;
+};
 type Provider = Database['public']['Tables']['providers']['Row'];
 
 /**
