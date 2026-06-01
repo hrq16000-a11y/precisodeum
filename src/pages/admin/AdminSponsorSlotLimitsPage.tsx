@@ -89,7 +89,7 @@ const AdminSponsorSlotLimitsPage = () => {
         .or(`start_date.is.null,start_date.lte.${today}`)
         .or(`end_date.is.null,end_date.gte.${today}`);
       if (error) throw error;
-      return (data || []) as Array<{
+      return ((data || []) as unknown) as Array<{
         position: string | null;
         linked_city: string | null;
         linked_category: string | null;
