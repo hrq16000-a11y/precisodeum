@@ -210,12 +210,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           ).trim() || null;
         }
         profileData = pData && typeof pData === 'object'
-          ? {
+          ? ({
               ...(pData as Record<string, unknown>),
               account_type: (pData as any)?.account_type ?? derivedAccountType,
               primary_category_id: (pData as any)?.primary_category_id ?? derivedPrimaryCategoryId,
-            }
-          : pData;
+            } as Profile)
+          : (pData as Profile | null);
         providerRows = normalizedProviderRows;
         if (profileData) break;
       } catch (err: unknown) {
