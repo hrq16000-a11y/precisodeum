@@ -271,29 +271,50 @@ const AdminSubscriptionsPage = () => {
                 <TableHead>Início</TableHead>
                 <TableHead>Expira em</TableHead>
                 <TableHead>Criado em</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
               ) : paginated.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhuma assinatura</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhuma assinatura</TableCell></TableRow>
               ) : (
-                paginated.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-mono text-xs">{s.provider_id?.slice(0, 8)}…</TableCell>
-                    <TableCell><Badge variant="outline">{s.plan}</Badge></TableCell>
-                    <TableCell>
-                      <Badge className={`text-[10px] ${STATUS_COLORS[s.status] || 'bg-muted'}`}>{s.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {s.account_type_id ? (accountTypeLabel.get(s.account_type_id) || '—') : '—'}
-                    </TableCell>
-                    <TableCell className="text-xs">{s.starts_at ? new Date(s.starts_at).toLocaleDateString('pt-BR') : '—'}</TableCell>
-                    <TableCell className="text-xs">{s.ends_at ? new Date(s.ends_at).toLocaleDateString('pt-BR') : '—'}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString('pt-BR')}</TableCell>
-                  </TableRow>
-                ))
+                paginated.map((s) => {
+                  const canCancel = s.status === 'active' || s.status === 'trialing';
+                  const name = providerNames.get(s.provider_id);
+                  return (
+                    <TableRow key={s.id}>
+                      <TableCell className="text-xs">
+                        {name ? <span className="font-medium">{name}</span> : <span className="font-mono">{s.provider_id?.slice(0, 8)}…</span>}
+                      </TableCell>
+                      <TableCell><Badge variant="outline">{s.plan}</Badge></TableCell>
+                      <TableCell>
+                        <Badge className={`text-[10px] ${STATUS_COLORS[s.status] || 'bg-muted'}`}>{s.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {s.account_type_id ? (accountTypeLabel.get(s.account_type_id) || '—') : '—'}
+                      </TableCell>
+                      <TableCell className="text-xs">{s.starts_at ? new Date(s.starts_at).toLocaleDateString('pt-BR') : '—'}</TableCell>
+                      <TableCell className="text-xs">{s.ends_at ? new Date(s.ends_at).toLocaleDateString('pt-BR') : '—'}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          {canCancel && (
+                            <Button size="icon" variant="ghost" aria-label="Cancelar"
+                              onClick={() => setCancelTarget(s)}>
+                              <Ban className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                          <Button size="icon" variant="ghost" aria-label="Estender"
+                            onClick={() => { setExtendTarget(s); setExtendDays(30); }}>
+                            <CalendarPlus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -303,8 +324,77 @@ const AdminSubscriptionsPage = () => {
           <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />
         )}
       </div>
+
+      {/* Cancelar */}
+      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar assinatura</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cancelar assinatura de{' '}
+              <strong>
+                {cancelTarget ? (providerNames.get(cancelTarget.provider_id) || cancelTarget.provider_id) : ''}
+              </strong>
+              ? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); if (cancelTarget) cancelMutation.mutate(cancelTarget); }}
+              disabled={cancelMutation.isPending}
+            >
+              {cancelMutation.isPending ? 'Cancelando...' : 'Confirmar cancelamento'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Estender */}
+      <Dialog open={!!extendTarget} onOpenChange={(o) => !o && setExtendTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Estender assinatura</DialogTitle>
+            <DialogDescription>
+              {extendTarget ? (providerNames.get(extendTarget.provider_id) || extendTarget.provider_id) : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Estender por quantos dias?</Label>
+              <Input
+                type="number" min={1} max={365}
+                value={extendDays}
+                onChange={(e) => setExtendDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
+              />
+            </div>
+            {extendTarget && (
+              <p className="text-sm text-muted-foreground">
+                Nova data de expiração:{' '}
+                <strong className="text-foreground">
+                  {new Date(
+                    (extendTarget.ends_at ? new Date(extendTarget.ends_at).getTime() : Date.now())
+                    + extendDays * 86_400_000
+                  ).toLocaleDateString('pt-BR')}
+                </strong>
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExtendTarget(null)}>Cancelar</Button>
+            <Button
+              onClick={() => extendTarget && extendMutation.mutate({ sub: extendTarget, days: extendDays })}
+              disabled={extendMutation.isPending || extendDays < 1 || extendDays > 365}
+            >
+              {extendMutation.isPending ? 'Estendendo...' : 'Confirmar extensão'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
 
 export default AdminSubscriptionsPage;
+
