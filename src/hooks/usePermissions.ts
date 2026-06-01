@@ -112,11 +112,9 @@ export const usePermissions = (): UsePermissionsReturn => {
       if (levelRes.data) {
         setLevelName(levelRes.data.name || '');
         setLevelColor(levelRes.data.color || '');
-        const perms = (profile.permissions as unknown as UserPermissions) || DEFAULT_PERMISSIONS;
-        setPermissions({ ...DEFAULT_PERMISSIONS, ...perms });
+        setPermissions(toUserPermissions(profile.permissions));
       } else {
-        const perms = (profile.permissions as unknown as UserPermissions) || DEFAULT_PERMISSIONS;
-        setPermissions({ ...DEFAULT_PERMISSIONS, ...perms });
+        setPermissions(toUserPermissions(profile.permissions));
         setLevelName('');
         setLevelColor('');
       }
