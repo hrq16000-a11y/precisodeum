@@ -164,7 +164,31 @@ const resetCachesIfNeeded = async () => {
 
   if (alreadyResetToday) return false;
 
-  const { hadAny } = await purgeAllCachesAndSWs();
+  // NÃO desregistra o Service Worker — public/sw.js gerencia seu próprio
+  // ciclo de vida via CACHE_VERSION + evento ACTIVATE. Desregistrar aqui
+  // anulava o critério PWA installable uma vez por dia.
+  // Limpa apenas caches que NÃO pertencem ao SW (pdu-*) — esses são
+  // resíduos de versões antigas do app ou de outros mecanismos.
+  let hadAny = false;
+  try {
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      const legacyNames = cacheNames.filter((name) => !name.startsWith("pdu-"));
+      if (legacyNames.length > 0) hadAny = true;
+      await Promise.all(legacyNames.map((name) => caches.delete(name).catch(() => false)));
+    }
+  } catch {
+    // best-effort
+  }
+
+  // Notifica o SW para verificar se há nova versão do sw.js no servidor.
+  // Substitui o antigo unregister() — comportamento correto quando o app
+  // detecta que está desatualizado.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready
+      .then((reg) => reg.update())
+      .catch(() => {});
+  }
 
   try {
     localStorage.setItem(DAILY_RESET_KEY, CURRENT_DAY_KEY);
