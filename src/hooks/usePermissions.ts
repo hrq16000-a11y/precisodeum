@@ -155,3 +155,15 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/admin/auditoria': 'view_reports',
   '/admin/auditoria-rls': 'view_reports',
 };
+
+// Map dashboard paths to required profile permissions
+export const DASHBOARD_ROUTE_PERMISSIONS: Record<string, keyof ProfilePermissions> = {
+  '/dashboard/leads': 'leads',
+  '/dashboard/servicos': 'services',
+  '/dashboard/minha-pagina': 'my_page',
+  '/dashboard/vagas': 'jobs',
+  '/dashboard/comunidade': 'community',
+  '/dashboard/avaliacoes': 'reviews',
+  '/dashboard/plano': 'plan',
+  '/dashboard/patrocinio': 'sponsor_panel',
+};
