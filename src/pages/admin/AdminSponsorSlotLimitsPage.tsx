@@ -24,7 +24,8 @@ import {
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from '@/components/ui/table';
-import { Search, Plus, Pencil, LayoutGrid } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Search, Plus, Pencil, LayoutGrid, RefreshCw, Info, AlertTriangle } from 'lucide-react';
 import PaginationControls from '@/components/PaginationControls';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
