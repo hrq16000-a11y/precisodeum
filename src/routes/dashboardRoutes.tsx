@@ -9,6 +9,7 @@ import { importWithRetry } from "@/lib/lazyWithRetry";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorGuard from "@/components/ErrorGuard";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
+import DashboardRouteGuard from "@/components/dashboard/DashboardRouteGuard";
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
@@ -52,21 +53,21 @@ export const dashboardRoutes = (
     <Route path="/onboarding-v2/sucesso" element={<ProtectedRoute><OnboardingV2SuccessPage /></ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
     <Route path="/dashboard/perfil" element={<ProtectedRoute><ErrorGuard componentName="DashboardProfilePage"><DashboardProfilePage /></ErrorGuard></ProtectedRoute>} />
-    <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardServicesPage"><DashboardServicesPage /></ErrorGuard></ProtectedRoute>} />
+    <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRouteGuard requiredPermission="services"><ErrorGuard componentName="DashboardServicesPage"><DashboardServicesPage /></ErrorGuard></DashboardRouteGuard></ProtectedRoute>} />
     <Route path="/dashboard/status" element={<ProtectedRoute allowedTypes={['provider']}><DashboardOnboardingStatusPage /></ProtectedRoute>} />
     <Route path="/dashboard/portfolio" element={<ProtectedRoute allowedTypes={['provider']}><ErrorGuard componentName="DashboardPortfolioPage"><DashboardPortfolioPage /></ErrorGuard></ProtectedRoute>} />
-    <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReviewsPage /></ProtectedRoute>} />
-    <Route path="/dashboard/leads" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadsPage /></ProtectedRoute>} />
-    <Route path="/dashboard/leads/:leadId" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadDetailPage /></ProtectedRoute>} />
+    <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRouteGuard requiredPermission="reviews"><DashboardReviewsPage /></DashboardRouteGuard></ProtectedRoute>} />
+    <Route path="/dashboard/leads" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRouteGuard requiredPermission="leads"><DashboardLeadsPage /></DashboardRouteGuard></ProtectedRoute>} />
+    <Route path="/dashboard/leads/:leadId" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRouteGuard requiredPermission="leads"><DashboardLeadDetailPage /></DashboardRouteGuard></ProtectedRoute>} />
     <Route path="/dashboard/notificacoes/preferencias" element={<ProtectedRoute><DashboardNotificationPreferencesPage /></ProtectedRoute>} />
     <Route path="/dashboard/metricas" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMetricsPage /></ProtectedRoute>} />
-    <Route path="/dashboard/leads-abertos" element={<ProtectedRoute allowedTypes={['provider']}><DashboardOpenLeadsPage /></ProtectedRoute>} />
-    <Route path="/dashboard/plano" element={<ProtectedRoute allowedTypes={['provider']}><DashboardPlanPage /></ProtectedRoute>} />
-    <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMyPagePage /></ProtectedRoute>} />
-    <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
+    <Route path="/dashboard/leads-abertos" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRouteGuard requiredPermission="leads"><DashboardOpenLeadsPage /></DashboardRouteGuard></ProtectedRoute>} />
+    <Route path="/dashboard/plano" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRouteGuard requiredPermission="plan"><DashboardPlanPage /></DashboardRouteGuard></ProtectedRoute>} />
+    <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardRouteGuard requiredPermission="my_page"><DashboardMyPagePage /></DashboardRouteGuard></ProtectedRoute>} />
+    <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardRouteGuard requiredPermission="jobs"><DashboardJobsPage /></DashboardRouteGuard></ProtectedRoute>} />
     <Route path="/dashboard/agencia" element={<ProtectedRoute allowedTypes={['rh']}><DashboardAgencyDataPage /></ProtectedRoute>} />
     <Route path="/dashboard/empresa" element={<ProtectedRoute allowedTypes={['provider']}><DashboardCompanyDataPage /></ProtectedRoute>} />
-    <Route path="/dashboard/comunidade" element={<ProtectedRoute><DashboardCommunityPage /></ProtectedRoute>} />
+    <Route path="/dashboard/comunidade" element={<ProtectedRoute><DashboardRouteGuard requiredPermission="community"><DashboardCommunityPage /></DashboardRouteGuard></ProtectedRoute>} />
     <Route path="/dashboard/notificacoes" element={<ProtectedRoute><DashboardNotificationsPage /></ProtectedRoute>} />
     <Route path="/dashboard/privacidade" element={<ProtectedRoute><DashboardPrivacyPage /></ProtectedRoute>} />
     <Route path="/dashboard/auditoria-consentimentos" element={<ProtectedRoute><DashboardConsentAuditPage /></ProtectedRoute>} />

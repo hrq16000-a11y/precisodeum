@@ -6,6 +6,22 @@ import CategoryIcon from '@/components/CategoryIcon';
 import WorkingHoursDisplay from '@/components/profile/WorkingHoursDisplay';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical, sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
+import { z } from 'zod';
+
+const leadSubmitSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Nome deve ter pelo menos 2 caracteres')
+    .max(100, 'Nome muito longo'),
+  phone: z
+    .string()
+    .min(10, 'Telefone inválido')
+    .max(20, 'Telefone inválido')
+    .transform((val) => sanitizePhone(val)),
+  message: z.string().max(1000, 'Mensagem muito longa').optional(),
+  service: z.string().optional(),
+});
 import { useSubmitGuard } from '@/hooks/useSubmitGuard';
 import { formatLocationString, capitalizeName } from '@/lib/normalize';
 import { resolveAvatarUrl } from '@/lib/providerDisplay';
@@ -1160,13 +1176,24 @@ const ProviderProfile = () => {
 
   const [isSubmittingLead, handleLeadSubmit] = useSubmitGuard(async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validação Zod ANTES de qualquer concatenação de ctxBlock ou montagem de payload.
+    const parsed = leadSubmitSchema.safeParse({
+      name: leadForm.name,
+      phone: leadForm.phone,
+      message: leadForm.message,
+      service: leadForm.service,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message || 'Dados inválidos');
+      return;
+    }
     // Validação do telefone antes do INSERT (reusa whatsapp.ts).
     const phoneCheck = validateWhatsapp(leadForm.phone);
     if (!phoneCheck.valid) {
       toast.error(phoneCheck.message);
       return;
     }
-    const phoneSanitized = sanitizePhone(leadForm.phone);
+    const phoneSanitized = parsed.data.phone;
     // Anexa contexto (cidade/UF + origem) ao final da mensagem para o provider ver
     // de onde veio o lead, sem depender de novas colunas no banco.
     const ctxParts: string[] = [];

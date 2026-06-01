@@ -52,6 +52,14 @@ const DEFAULT_PROFILE_PERMISSIONS: ProfilePermissions = {
   sponsor_panel: true,
 };
 
+function toProfilePermissions(json: unknown): ProfilePermissions {
+  return { ...DEFAULT_PROFILE_PERMISSIONS, ...((json as Partial<ProfilePermissions>) ?? {}) };
+}
+
+function toUserPermissions(json: unknown): UserPermissions {
+  return { ...DEFAULT_PERMISSIONS, ...((json as Partial<UserPermissions>) ?? {}) };
+}
+
 interface UsePermissionsReturn {
   permissions: UserPermissions;
   profilePermissions: ProfilePermissions;
@@ -87,8 +95,8 @@ export const usePermissions = (): UsePermissionsReturn => {
     }
 
     // Read profile-level permissions
-    const pp = (profile.permissions as unknown as ProfilePermissions) || DEFAULT_PROFILE_PERMISSIONS;
-    setProfilePermissions({ ...DEFAULT_PROFILE_PERMISSIONS, ...pp });
+    setProfilePermissions(toProfilePermissions(profile.permissions));
+
 
     const fetchData = async () => {
       const levelPromise = profile.level_id
@@ -104,11 +112,9 @@ export const usePermissions = (): UsePermissionsReturn => {
       if (levelRes.data) {
         setLevelName(levelRes.data.name || '');
         setLevelColor(levelRes.data.color || '');
-        const perms = (profile.permissions as unknown as UserPermissions) || DEFAULT_PERMISSIONS;
-        setPermissions({ ...DEFAULT_PERMISSIONS, ...perms });
+        setPermissions(toUserPermissions(profile.permissions));
       } else {
-        const perms = (profile.permissions as unknown as UserPermissions) || DEFAULT_PERMISSIONS;
-        setPermissions({ ...DEFAULT_PERMISSIONS, ...perms });
+        setPermissions(toUserPermissions(profile.permissions));
         setLevelName('');
         setLevelColor('');
       }
@@ -148,4 +154,16 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/admin/estatisticas': 'view_reports',
   '/admin/auditoria': 'view_reports',
   '/admin/auditoria-rls': 'view_reports',
+};
+
+// Map dashboard paths to required profile permissions
+export const DASHBOARD_ROUTE_PERMISSIONS: Record<string, keyof ProfilePermissions> = {
+  '/dashboard/leads': 'leads',
+  '/dashboard/servicos': 'services',
+  '/dashboard/minha-pagina': 'my_page',
+  '/dashboard/vagas': 'jobs',
+  '/dashboard/comunidade': 'community',
+  '/dashboard/avaliacoes': 'reviews',
+  '/dashboard/plano': 'plan',
+  '/dashboard/patrocinio': 'sponsor_panel',
 };
