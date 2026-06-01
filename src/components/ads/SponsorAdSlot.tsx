@@ -3,7 +3,7 @@ import { Megaphone, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeoCity } from '@/hooks/useGeoCity';
-import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdDebug } from '@/contexts/AdDebugContext';
 import SponsorImage from '@/components/SponsorImage';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -186,8 +186,7 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
 }) => {
   const { city: geoCity, state: geoState } = useGeoCity();
   const { xrayEnabled, simulatedCity, simulatedState } = useAdDebug();
-  const { profile } = useAuth();
-  const isAdmin = profile?.role === 'admin';
+  const { isAdmin } = useIsAdmin();
 
   // Use simulated location if admin has set one, otherwise real geo
   const effectiveCity = (isAdmin && simulatedCity) ? simulatedCity : geoCity;

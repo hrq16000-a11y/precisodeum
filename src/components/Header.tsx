@@ -8,6 +8,7 @@ import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, C
 import { Switch } from '@/components/ui/switch';
 import { useAdDebug } from '@/contexts/AdDebugContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useGeoCity } from '@/hooks/useGeoCity';
 const LazyNotificationBell = lazy(() => importWithRetry(() => import('@/components/NotificationCenter').then(m => ({ default: m.NotificationBell }))));
@@ -96,6 +97,7 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, signOut, loading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const { city: geoCity, temp: geoTemp } = useGeoCity();
   const headerRef = useRef<HTMLElement>(null);
@@ -446,7 +448,7 @@ const Header = () => {
       )}
 
       {/* Admin X-Ray Toolbar */}
-      {profile?.role === 'admin' && <AdminAdToolbar />}
+      {isAdmin && <AdminAdToolbar />}
     </header>
   );
 };

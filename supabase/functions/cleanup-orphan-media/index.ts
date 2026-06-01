@@ -31,9 +31,8 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers: corsHeaders });
       }
     } else {
-      // Permite chamada de cron com secret
-      const url = new URL(req.url);
-      const cronSecret = url.searchParams.get('secret');
+      // Cron call: secret only via header (URL query strings leak in access logs)
+      const cronSecret = req.headers.get('x-cron-secret');
       if (!cronSecret || cronSecret !== Deno.env.get('CRON_SECRET')) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
       }

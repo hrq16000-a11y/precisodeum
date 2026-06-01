@@ -11,8 +11,9 @@
  * - Header `x-cron-secret` ausente ou diferente: 401 unauthorized.
  * - Match exato: retorna null (autorizado).
  *
- * Aceita também `?secret=` na query string como fallback compatível
- * com schedulers legados (pg_cron antigo, GitHub Actions etc.).
+ * SECURITY: o segredo NUNCA é aceito via query string (`?secret=`) porque
+ * URLs vazam em logs de acesso / CDN / proxies. Schedulers legados devem
+ * ser atualizados para enviar o header `x-cron-secret`.
  */
 export function validateCronRequest(req: Request): Response | null {
   const cronSecret = Deno.env.get("CRON_SECRET");
@@ -26,14 +27,8 @@ export function validateCronRequest(req: Request): Response | null {
   }
 
   const headerSecret = req.headers.get("x-cron-secret");
-  let querySecret: string | null = null;
-  try {
-    querySecret = new URL(req.url).searchParams.get("secret");
-  } catch {
-    /* ignore */
-  }
 
-  if (headerSecret !== cronSecret && querySecret !== cronSecret) {
+  if (headerSecret !== cronSecret) {
     console.warn("[cronAuth] unauthorized cron call rejected");
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
