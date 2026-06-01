@@ -52,6 +52,14 @@ const DEFAULT_PROFILE_PERMISSIONS: ProfilePermissions = {
   sponsor_panel: true,
 };
 
+function toProfilePermissions(json: unknown): ProfilePermissions {
+  return { ...DEFAULT_PROFILE_PERMISSIONS, ...((json as Partial<ProfilePermissions>) ?? {}) };
+}
+
+function toUserPermissions(json: unknown): UserPermissions {
+  return { ...DEFAULT_PERMISSIONS, ...((json as Partial<UserPermissions>) ?? {}) };
+}
+
 interface UsePermissionsReturn {
   permissions: UserPermissions;
   profilePermissions: ProfilePermissions;
