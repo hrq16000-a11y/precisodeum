@@ -7,7 +7,13 @@ import { queryClient } from '@/lib/queryClient';
 import { AuthCompanion } from '@/hooks/AuthCompanion';
 import type { Database } from '@/integrations/supabase/types';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+// Profile expõe campos derivados (account_type/primary_category_id) que não
+// vivem mais na tabela profiles — são reconstruídos a partir de providers.
+type Profile = ProfileRow & {
+  account_type?: string | null;
+  primary_category_id?: string | null;
+};
 type Provider = Database['public']['Tables']['providers']['Row'];
 
 /**
@@ -204,12 +210,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           ).trim() || null;
         }
         profileData = pData && typeof pData === 'object'
-          ? {
+          ? ({
               ...(pData as Record<string, unknown>),
               account_type: (pData as any)?.account_type ?? derivedAccountType,
               primary_category_id: (pData as any)?.primary_category_id ?? derivedPrimaryCategoryId,
-            }
-          : pData;
+            } as Profile)
+          : (pData as unknown as Profile | null);
         providerRows = normalizedProviderRows;
         if (profileData) break;
       } catch (err: unknown) {
