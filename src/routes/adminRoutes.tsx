@@ -117,6 +117,9 @@ const AdminNeighborhoodsCrudPage = lazy(() => import("@/pages/admin/AdminNeighbo
 const AdminSponsorSlotLimitsPage = lazy(() => import("@/pages/admin/AdminSponsorSlotLimitsPage"));
 const AdminSubscriptionsPage = lazy(() => import("@/pages/admin/AdminSubscriptionsPage"));
 const AdminDashboardLayoutPage = lazy(() => import("@/pages/admin/AdminDashboardLayoutPage"));
+const AdminSponsorPlansPage = lazy(() => import("@/pages/admin/AdminSponsorPlansPage"));
+const AdminSponsorCampaignsPage = lazy(() => import("@/pages/admin/AdminSponsorCampaignsPage"));
+const AdminSponsorContractsPage = lazy(() => import("@/pages/admin/AdminSponsorContractsPage"));
 
 export const adminRoutes = (
   <>
@@ -223,5 +226,8 @@ export const adminRoutes = (
     <Route path="/admin/sponsor-slot-limits" element={guarded("AdminSponsorSlotLimitsPage", <AdminSponsorSlotLimitsPage />)} />
     <Route path="/admin/subscriptions" element={guarded("AdminSubscriptionsPage", <AdminSubscriptionsPage />)} />
     <Route path="/admin/dashboard-layout" element={guarded("AdminDashboardLayoutPage", <AdminDashboardLayoutPage />)} />
+    <Route path="/admin/sponsor-plans" element={guarded("AdminSponsorPlansPage", <AdminSponsorPlansPage />)} />
+    <Route path="/admin/sponsor-campaigns" element={guarded("AdminSponsorCampaignsPage", <AdminSponsorCampaignsPage />)} />
+    <Route path="/admin/sponsor-contracts" element={guarded("AdminSponsorContractsPage", <AdminSponsorContractsPage />)} />
   </>
 );
