@@ -187,7 +187,6 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
 }) => {
   const { city: geoCity, state: geoState } = useGeoCity();
   const { xrayEnabled, simulatedCity, simulatedState } = useAdDebug();
-  const { profile } = useAuth();
   const { isAdmin } = useIsAdmin();
 
   // Use simulated location if admin has set one, otherwise real geo
