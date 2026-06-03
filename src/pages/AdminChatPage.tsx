@@ -17,6 +17,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminSupportTicketsPanel from '@/components/admin/AdminSupportTicketsPanel';
+import { logAuditAction } from '@/hooks/useAuditLog';
 
 const PROFILE_TYPES = [
   { key: 'provider', label: 'Profissional' },
