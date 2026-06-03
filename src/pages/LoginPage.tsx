@@ -293,7 +293,9 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = async (forceFreshChooser = false) => {
-    if (from) sessionStorage.setItem('auth_redirect', from);
+    // Sanitiza `from` antes de persistir para evitar open redirect via location.state.
+    const safeFrom = sanitizeNextPath(from, '');
+    if (safeFrom) sessionStorage.setItem('auth_redirect', safeFrom);
     setGoogleError(null);
     setGoogleState('loading');
     setLoading(true);
