@@ -66,9 +66,10 @@ const SponsorDashboardPage = () => {
     queryKey: ['sponsor-campaigns', sponsor?.id],
     enabled: !!sponsor?.id,
     queryFn: async () => {
+      // TODO: audit columns — UI consome apenas id/name/status; created_at usado no order.
       const { data } = await supabase
         .from('sponsor_campaigns')
-        .select('*')
+        .select('id, name, status, created_at')
         .eq('sponsor_id', sponsor!.id)
         .order('created_at', { ascending: false });
       return (data || []) as any[];
@@ -79,9 +80,10 @@ const SponsorDashboardPage = () => {
     queryKey: ['sponsor-contracts', sponsor?.id],
     enabled: !!sponsor?.id,
     queryFn: async () => {
+      // TODO: audit columns — UI consome id/contract_number/status.
       const { data } = await supabase
         .from('sponsor_contracts' as any)
-        .select('*')
+        .select('id, contract_number, status')
         .eq('sponsor_id', sponsor!.id);
       return (data || []) as any[];
     },
@@ -91,9 +93,10 @@ const SponsorDashboardPage = () => {
     queryKey: ['sponsor-notifications-unread', sponsor?.id],
     enabled: !!sponsor?.id,
     queryFn: async () => {
+      // TODO: audit columns — UI usa apenas a contagem (.length).
       const { data } = await supabase
         .from('sponsor_notifications' as any)
-        .select('*')
+        .select('id')
         .eq('sponsor_id', sponsor!.id)
         .eq('read', false)
         .order('created_at', { ascending: false });
