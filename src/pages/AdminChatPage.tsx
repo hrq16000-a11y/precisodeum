@@ -136,6 +136,7 @@ const AdminChatPage = () => {
     mutationFn: async (id: string) => {
       const { error } = await (supabase.from('chat_conversations' as any).delete().eq('id', id) as any);
       if (error) throw error;
+      await logAuditAction({ action: 'delete', resource_type: 'chat_conversation', resource_id: id });
     },
     onSuccess: () => {
       toast.success('Conversa removida');
@@ -148,6 +149,7 @@ const AdminChatPage = () => {
     mutationFn: async (messageId: string) => {
       const { error } = await (supabase.from('chat_messages' as any).delete().eq('id', messageId) as any);
       if (error) throw error;
+      await logAuditAction({ action: 'delete', resource_type: 'chat_message', resource_id: messageId });
     },
     onSuccess: () => {
       toast.success('Mensagem removida');
