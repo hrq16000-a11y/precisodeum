@@ -24,9 +24,9 @@ function consumePostLoginIntent(): string | null {
     // Limpa imediatamente: intenção é one-shot.
     window.sessionStorage.removeItem('auth_redirect');
     if (!value) return null;
-    // Aceita só caminhos internos (defesa contra open redirect).
-    if (!value.startsWith('/') || value.startsWith('//')) return null;
-    return value;
+    // Aceita apenas rotas internas declaradas no router (defesa contra open redirect).
+    const safe = safeInternalPath(value, '');
+    return safe || null;
   } catch {
     return null;
   }
