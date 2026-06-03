@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { resolvePostLoginRoute, shouldHandlePostLoginRedirect } from '@/lib/onboardingAccess';
+import { safeInternalPath } from '@/lib/routeValidator';
 
 /**
  * After OAuth login (Google), o fluxo sempre passa por /cadastro-inicial.
