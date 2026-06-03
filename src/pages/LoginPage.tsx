@@ -10,6 +10,7 @@ import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { resolvePostLoginRoute } from '@/lib/onboardingAccess';
+import { sanitizeNextPath } from '@/lib/authRedirect';
 import PasswordInput from '@/components/auth/PasswordInput';
 import { getDeviceFingerprint } from '@/lib/deviceFingerprint';
 import { isValidEmail, EMAIL_INVALID_MESSAGE } from '@/lib/validation/emailValidation';
