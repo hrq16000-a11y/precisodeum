@@ -10,6 +10,7 @@ import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { resolvePostLoginRoute } from '@/lib/onboardingAccess';
+import { sanitizeNextPath } from '@/lib/authRedirect';
 import PasswordInput from '@/components/auth/PasswordInput';
 import { getDeviceFingerprint } from '@/lib/deviceFingerprint';
 import { isValidEmail, EMAIL_INVALID_MESSAGE } from '@/lib/validation/emailValidation';
@@ -292,7 +293,9 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = async (forceFreshChooser = false) => {
-    if (from) sessionStorage.setItem('auth_redirect', from);
+    // Sanitiza `from` antes de persistir para evitar open redirect via location.state.
+    const safeFrom = sanitizeNextPath(from, '');
+    if (safeFrom) sessionStorage.setItem('auth_redirect', safeFrom);
     setGoogleError(null);
     setGoogleState('loading');
     setLoading(true);
