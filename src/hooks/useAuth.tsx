@@ -179,9 +179,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         let [{ data: pData, error: pErr }, { data: pvRows, error: pvErr }] = await Promise.race([queryPromise, timeoutPromise]);
         if (pErr) {
-          lastErrorMessage = `profiles: ${pErr.message ?? String(pErr)} (code=${(pErr as any)?.code ?? 'n/a'})`;
-          console.warn('[useAuth] profiles query error', { code: (pErr as any)?.code, message: pErr.message, details: (pErr as any)?.details, hint: (pErr as any)?.hint });
-          const code = String((pErr as any)?.code ?? '');
+          const pCode = hasCode(pErr) ? pErr.code : '';
+          lastErrorMessage = `profiles: ${pErr.message ?? String(pErr)} (code=${pCode || 'n/a'})`;
+          console.warn('[useAuth] profiles query error', { code: pCode, message: pErr.message, details: hasDetails(pErr) ? pErr.details : undefined, hint: hasHint(pErr) ? pErr.hint : undefined });
+          const code = pCode;
+
           const msg = String(pErr.message ?? '');
           if (code === '42703' || code === 'PGRST204' || /column .* does not exist/i.test(msg)) {
             console.warn('[useAuth] schema drift detectado — refazendo profiles com select mínimo');
