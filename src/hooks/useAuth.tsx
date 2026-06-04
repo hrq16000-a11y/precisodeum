@@ -50,6 +50,22 @@ const hasPersistedSupabaseSession = (): boolean => {
 };
 
 /**
+ * Type guard para erros estruturados do PostgREST/Supabase, que carregam
+ * `code` (ex: '42703', 'PGRST204'). Mantido no topo do módulo — não justifica
+ * arquivo separado.
+ */
+function hasCode(e: unknown): e is { code: string } {
+  return typeof e === 'object' && e !== null && 'code' in e && typeof (e as { code: unknown }).code === 'string';
+}
+function hasDetails(e: unknown): e is { details: string | null } {
+  return typeof e === 'object' && e !== null && 'details' in e;
+}
+function hasHint(e: unknown): e is { hint: string | null } {
+  return typeof e === 'object' && e !== null && 'hint' in e;
+}
+
+
+/**
  * PR 4 (A3) — Split do "God-Provider":
  *  - `AuthIdentityContext` carrega APENAS dados de sessão (estáveis, raros):
  *    session, user, loading, signOut.
