@@ -72,20 +72,21 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
         });
       }
 
-      const rows = (data || []) as any[];
+      const rows = (data || []) as NearbyProviderRow[];
 
       // Enriquecimento: nome real + avatar real do profile (a RPC não retorna).
-      const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+      const userIds = [...new Set(rows.map((r) => r.user_id).filter((id): id is string => !!id))];
       const profileMap: Record<string, { name: string | null; avatar: string | null }> = {};
       if (userIds.length > 0) {
         const { data: profs } = await supabase
           .from('public_profiles' as any)
           .select('id, full_name, avatar_url')
           .in('id', userIds);
-        (profs as any[] | null)?.forEach((p) => {
+        (profs as PublicProfileRow[] | null)?.forEach((p) => {
           profileMap[p.id] = { name: p.full_name || null, avatar: p.avatar_url || null };
         });
       }
+
 
       // Bloqueio de "nomes" genéricos vazados em business_name
       const _norm = (s: string) =>
