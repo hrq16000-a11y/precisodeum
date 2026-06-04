@@ -30,7 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ADMIN_PAGE_SIZE } from '@/lib/constants';
 import { useDebounce } from '@/hooks/useDebounce';
-import { logAuditAction } from '@/lib/audit';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 interface ErrorReport {
   id: string;
@@ -162,8 +162,9 @@ const AdminErrorReportsPage = () => {
   ]), [kpis, alertActive]);
 
   return (
-    <AdminLayout title="Monitoramento de Erros">
+    <AdminLayout>
       <div className="space-y-4">
+        <h1 className="text-2xl font-bold">Monitoramento de Erros</h1>
         {/* Banner de alerta */}
         {alertActive && (
           <Card className="border-destructive bg-destructive/10">
