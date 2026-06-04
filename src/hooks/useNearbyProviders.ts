@@ -1,10 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { DbProvider } from '@/hooks/useProviders';
+import type { Database } from '@/integrations/supabase/types';
 import { logCoverageSearch } from '@/lib/coverageLog';
 import { useOnlineUsersMap } from '@/hooks/useOnlinePresence';
 
+type ProviderRow = Database['public']['Tables']['providers']['Row'];
+// Shape devolvido por nearby_providers RPC: ProviderRow + colunas derivadas
+// (distance_m, rating_avg, review_count, category_name/slug/icon, is_online,
+// visibility_score, activity_signal, services_count, portfolio_*_count).
+// Tipado como Partial para tolerar diferença entre RPC e Row puro.
+type NearbyProviderRow = Partial<ProviderRow> & {
+  id: string;
+  user_id: string | null;
+  distance_m?: number | null;
+  rating_avg?: number | null;
+  review_count?: number | null;
+  category_name?: string | null;
+  category_slug?: string | null;
+  category_icon?: string | null;
+  is_online?: boolean | null;
+  visibility_score?: number | null;
+  activity_signal?: string | null;
+  services_count?: number | null;
+  portfolio_album_count?: number | null;
+  portfolio_photo_count?: number | null;
+};
+type PublicProfileRow = { id: string; full_name: string | null; avatar_url: string | null };
+
 import { useMemo } from 'react';
+
 
 interface NearbyParams {
   lat: number | null | undefined;
