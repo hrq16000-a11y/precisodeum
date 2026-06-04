@@ -54,7 +54,12 @@ function hasImage(s: { image_url?: string | null; logo_url?: string | null }): b
 function getPagePath(): string {
   try {
     return window.location.pathname;
-  } catch {
+  } catch (err) {
+    // Fallback estruturado (SSR/contextos sem window). Mantemos retorno '/'
+    // para não quebrar o caller, mas avisamos em dev para não engolir surpresas.
+    if (import.meta.env?.DEV) {
+      console.warn('[useSponsors:getPagePath] window indisponível, fallback "/"', err);
+    }
     return '/';
   }
 }
