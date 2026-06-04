@@ -135,7 +135,7 @@ const AdminErrorReportsPage = () => {
       .update({ resolved: true, resolved_at: new Date().toISOString() })
       .eq('id', id);
     if (error) { toast.error('Erro ao resolver'); return; }
-    await logAuditAction({ action: 'resolve', target_table: 'error_reports', target_id: id }).catch(() => {});
+    await logAuditAction({ action: 'update', target_table: 'error_reports', target_id: id }).catch(() => {});
     toast.success('Erro marcado como resolvido');
     setRows(prev => prev.filter(r => r.id !== id));
     void fetchKpis();
