@@ -30,7 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ADMIN_PAGE_SIZE } from '@/lib/constants';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useAuditLog } from '@/hooks/useAuditLog';
+import { logAuditAction } from '@/hooks/useAuditLog';
 
 interface ErrorReport {
   id: string;
