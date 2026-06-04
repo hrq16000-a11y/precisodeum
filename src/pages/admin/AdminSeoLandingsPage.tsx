@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import { ADMIN_PAGE_SIZE } from '@/lib/constants';
 
 interface LandingRow {
   path: string;
@@ -45,7 +46,7 @@ export default function AdminSeoLandingsPage() {
         .select('action, details, created_at')
         .eq('resource_type', 'public_funnel')
         .gte('created_at', since)
-        .limit(5000);
+        .limit(2000);
 
       if (!mounted) return;
       if (error || !data) {
@@ -169,7 +170,7 @@ export default function AdminSeoLandingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-1 text-sm max-h-80 overflow-auto">
-                {indexable.slice(0, 30).map((r) => (
+                {indexable.slice(0, ADMIN_PAGE_SIZE).map((r) => (
                   <div key={r.path} className="truncate text-muted-foreground">
                     {r.path} · {r.views}v
                   </div>
@@ -184,7 +185,7 @@ export default function AdminSeoLandingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-1 text-sm max-h-80 overflow-auto">
-                {thin.slice(0, 50).map((r) => (
+                {thin.slice(0, ADMIN_PAGE_SIZE).map((r) => (
                   <div key={r.path} className="truncate text-muted-foreground">{r.path}</div>
                 ))}
                 {!thin.length && <p className="text-muted-foreground">Nenhuma.</p>}
@@ -198,7 +199,7 @@ export default function AdminSeoLandingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-1 text-sm max-h-80 overflow-auto">
-                {noClicks.slice(0, 50).map((r) => (
+                {noClicks.slice(0, ADMIN_PAGE_SIZE).map((r) => (
                   <div key={r.path} className="truncate text-muted-foreground">{r.path} · {r.views}v</div>
                 ))}
                 {!noClicks.length && <p className="text-muted-foreground">Nenhuma.</p>}
@@ -212,7 +213,7 @@ export default function AdminSeoLandingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-1 text-sm md:grid-cols-2 lg:grid-cols-3">
-                {high.slice(0, 60).map((r) => (
+                {high.slice(0, ADMIN_PAGE_SIZE).map((r) => (
                   <div key={r.path} className="flex items-center justify-between gap-2">
                     <span className="truncate">{r.path}</span>
                     <span className="tabular-nums text-foreground">{(r.ctr * 100).toFixed(1)}%</span>
@@ -232,7 +233,7 @@ export default function AdminSeoLandingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-1 text-sm md:grid-cols-2 lg:grid-cols-3">
-                {highTrafficLowConv.slice(0, 30).map((r) => (
+                {highTrafficLowConv.slice(0, ADMIN_PAGE_SIZE).map((r) => (
                   <div key={r.path} className="flex items-center justify-between gap-2">
                     <span className="truncate">{r.path}</span>
                     <span className="tabular-nums text-muted-foreground">
