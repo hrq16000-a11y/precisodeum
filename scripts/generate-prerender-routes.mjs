@@ -41,6 +41,14 @@ export async function generatePrerenderRoutes() {
 
   const providers = (providerResult.data ?? []).filter(p => p.slug && p.city);
 
+  if (providers.length === 5000) {
+    console.warn(
+      '[PRERENDER WARNING] Provider list truncated at 5000. ' +
+      'Routes beyond this cap are NOT being prerendered. ' +
+      'Implement pagination via .range() loop in this script.'
+    );
+  }
+
   const categoriaRoutes = [...new Set(
     providers
       .map(p => p.categories?.slug)

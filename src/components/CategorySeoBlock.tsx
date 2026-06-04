@@ -212,8 +212,6 @@ const CategorySeoBlock = ({ categorySlug, categoryName, city, state, providersCo
           </div>
         )}
 
-        {/* Canonical/SEO context for crawlers */}
-        <link rel="canonical" href={`${SITE_BASE_URL}/categoria/${categorySlug}`} />
       </div>
     </section>
   );

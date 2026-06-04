@@ -272,7 +272,7 @@ const CitySeoBlock = ({ citySlug, cityName, state, providersCount, featuredProvi
           </div>
         </div>
 
-        <link rel="canonical" href={`${SITE_BASE_URL}/cidade/${citySlug}`} />
+        
       </div>
     </section>
   );
