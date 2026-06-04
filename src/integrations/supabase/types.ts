@@ -10155,6 +10155,28 @@ export type Database = {
       get_user_maturity_tier: { Args: { _user_id?: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
+      get_web_vitals_alerts: {
+        Args: { _hours?: number }
+        Returns: {
+          metric: string
+          p75: number
+          route: string
+          samples: number
+          severity: string
+          threshold: number
+        }[]
+      }
+      get_web_vitals_p75: {
+        Args: { _hours?: number }
+        Returns: {
+          metric: string
+          p75: number
+          p95: number
+          poor_count: number
+          route: string
+          samples: number
+        }[]
+      }
       get_web_vitals_weekly_summary: {
         Args: { _days?: number }
         Returns: unknown[]

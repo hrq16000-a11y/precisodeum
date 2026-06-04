@@ -112,6 +112,7 @@ const AdminApprovalSettingsPage = lazy(() => import("@/pages/AdminApprovalSettin
 const AdminOrphanProfilesPage = lazy(() => import("@/pages/AdminOrphanProfilesPage"));
 const AdminConversionMetricsPage = lazy(() => import("@/pages/AdminConversionMetricsPage"));
 const AdminError500Page = lazy(() => import("@/pages/AdminError500Page"));
+const AdminErrorReportsPage = lazy(() => import("@/pages/admin/AdminErrorReportsPage"));
 const AdminCoursesPage = lazy(() => import("@/pages/AdminCoursesPage"));
 const AdminNeighborhoodsCrudPage = lazy(() => import("@/pages/admin/AdminNeighborhoodsCrudPage"));
 const AdminSponsorSlotLimitsPage = lazy(() => import("@/pages/admin/AdminSponsorSlotLimitsPage"));
@@ -151,6 +152,7 @@ export const adminRoutes = (
     <Route path="/admin/busca-ordenacao" element={guarded("AdminSearchSortingPage", <AdminSearchSortingPage />)} />
     <Route path="/admin/meta-tracking-quality" element={<Navigate to="/admin/seo/meta-tracking" replace />} />
     <Route path="/admin/erros-500" element={guarded("AdminError500Page", <AdminError500Page />)} />
+    <Route path="/admin/erros" element={guarded("AdminErrorReportsPage", <AdminErrorReportsPage />)} />
     <Route path="/admin/links-quebrados" element={<Navigate to="/admin/seo/broken-links" replace />} />
     <Route path="/admin/seo" element={guarded("AdminSeoPage", <AdminSeoPage />)} />
     <Route path="/admin/seo/:tab" element={guarded("AdminSeoPage", <AdminSeoPage />)} />

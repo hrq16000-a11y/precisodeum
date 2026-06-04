@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, ShieldCheck, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard, Search as SearchIcon, ChevronDown, Star, Rocket, Receipt, UserPlus, Bell, MessageSquare, Pin } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, ShieldCheck, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard, Search as SearchIcon, ChevronDown, Star, Rocket, Receipt, UserPlus, Bell, MessageSquare, Pin, AlertTriangle } from 'lucide-react';
 import AdminGroupNav, { AdminGroupTabs } from '@/components/admin/AdminGroupNav';
 import PreviewBuildNotice from '@/components/admin/PreviewBuildNotice';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -95,6 +95,7 @@ const menuGroups = [
       { label: 'Solicitações Sponsor', icon: BarChart3, path: '/admin/sponsor-change-requests' },
       { label: 'Funil de Cadastro', icon: BarChart3, path: '/admin/onboarding-funnel' },
       { label: 'Métricas de Conversão', icon: Target, path: '/admin/conversao' },
+      { label: 'Monitoramento de Erros', icon: AlertTriangle, path: '/admin/erros' },
       { label: 'Alertas Erro 500', icon: Shield, path: '/admin/erros-500' },
     ],
   },
