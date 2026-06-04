@@ -34,8 +34,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAdmin } from '@/hooks/useAdmin';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { toast } from 'sonner';
+import { ADMIN_PAGE_SIZE } from '@/lib/constants';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = ADMIN_PAGE_SIZE;
 
 
 type Sub = {

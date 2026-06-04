@@ -26,6 +26,8 @@ import {
 import { useAdmin } from '@/hooks/useAdmin';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { toast } from 'sonner';
+import PaginationControls from '@/components/PaginationControls';
+import { ADMIN_PAGE_SIZE } from '@/lib/constants';
 
 interface Row {
   id: string;
@@ -80,6 +82,7 @@ const AdminIntegrityReportsPage = () => {
   const [dateFrom, setDateFrom] = useState(daysAgoIso(30));
   const [dateTo, setDateTo] = useState(todayIso());
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
   // Modal de detalhe
   const [selected, setSelected] = useState<Row | null>(null);
@@ -112,6 +115,9 @@ const AdminIntegrityReportsPage = () => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [severity, dateFrom, dateTo]);
+
+  // Reset paginação quando os filtros mudam
+  useEffect(() => { setPage(1); }, [severity, dateFrom, dateTo, search]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return rows;
@@ -263,7 +269,7 @@ const AdminIntegrityReportsPage = () => {
         </Card>
       ) : (
         <div className="space-y-2">
-          {filtered.map((r) => {
+          {filtered.slice((page - 1) * ADMIN_PAGE_SIZE, page * ADMIN_PAGE_SIZE).map((r) => {
             const isCritical = r.scope === 'critical_alert';
             return (
               <Card key={r.id} className={`p-3 ${isCritical ? 'border-destructive/40 bg-destructive/5' : ''}`}>
@@ -307,6 +313,12 @@ const AdminIntegrityReportsPage = () => {
               </Card>
             );
           })}
+          <PaginationControls
+            currentPage={page}
+            totalItems={filtered.length}
+            itemsPerPage={ADMIN_PAGE_SIZE}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

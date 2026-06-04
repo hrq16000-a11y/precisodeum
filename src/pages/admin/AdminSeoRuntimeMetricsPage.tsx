@@ -15,6 +15,12 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download } from 'lucide-react';
+import PaginationControls from '@/components/PaginationControls';
+
+// Override local justificado: dashboard de métricas por rota × dia tem
+// granularidade naturalmente maior; ADMIN_PAGE_SIZE=50 não cabe a UX aqui.
+// Ver docs em src/lib/constants.ts.
+const PAGE_SIZE = 100;
 
 interface WindowMetrics {
   lcpP75: number | null;
@@ -175,6 +181,8 @@ export default function AdminSeoRuntimeMetricsPage() {
     noindex: true,
   });
 
+  const [page, setPage] = useState(1);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -213,6 +221,14 @@ export default function AdminSeoRuntimeMetricsPage() {
         ? rows.filter((r) => r.route.toLowerCase().includes(q.toLowerCase()))
         : rows,
     [rows, q],
+  );
+
+  // Reset paginação quando filtros/janelas mudam
+  useEffect(() => { setPage(1); }, [q, aStart, aEnd, bStart, bEnd]);
+
+  const paginated = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page],
   );
 
   const handleExportCsv = () => {
@@ -370,7 +386,7 @@ export default function AdminSeoRuntimeMetricsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.slice(0, 200).map((r) => (
+                  {paginated.map((r) => (
                     <tr key={r.route} className="border-t border-border">
                       <td className="py-2 pr-2 font-mono text-xs">{r.route}</td>
                       <td className="py-2 border-l border-border">{r.a.lcpP75 ?? '—'}</td>
@@ -398,6 +414,12 @@ export default function AdminSeoRuntimeMetricsPage() {
                 </p>
               )}
             </div>
+            <PaginationControls
+              currentPage={page}
+              totalItems={filtered.length}
+              itemsPerPage={PAGE_SIZE}
+              onPageChange={setPage}
+            />
             <p className="mt-4 text-xs text-muted-foreground">
               LCP/CLS menor = melhor (verde). CTR maior = melhor (verde).
               Dica DEV: <code>window.__SEO_RUNTIME_DEBUG</code> mostra render_ms,
