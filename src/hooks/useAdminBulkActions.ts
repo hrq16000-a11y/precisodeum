@@ -9,6 +9,27 @@ interface BulkConfig {
   onComplete?: () => void;
 }
 
+/**
+ * Discriminated union of all bulk update payloads.
+ * Add a new shape here when introducing a new bulk action.
+ * Never use `as any` to bypass this — add the shape instead.
+ *
+ * Current call sites (audited):
+ * - blog_posts → { published }
+ * - sponsors   → { active }
+ * - providers  → { status: 'approved' | 'rejected' }
+ * - leads      → { status: 'contacted' | 'converted' }
+ * - jobs       → { approval_status: 'approved' }
+ *              | { approval_status: 'rejected', status: 'inactive' }
+ */
+export type BulkUpdatePayload =
+  | { published: boolean }
+  | { active: boolean }
+  | { status: 'approved' | 'rejected' | 'contacted' | 'converted' }
+  | { approval_status: 'approved' }
+  | { approval_status: 'rejected'; status: 'inactive' };
+
+
 export const useAdminBulkActions = ({ table, resourceType, onComplete }: BulkConfig) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
