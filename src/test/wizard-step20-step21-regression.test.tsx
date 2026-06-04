@@ -160,7 +160,7 @@ describe('Step21_PortfolioAlbums — contrato de props e feedback de erro', () =
       expect(screen.getByText('Reformas residenciais')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: /Concluir/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Continuar/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Pular/i })).toBeInTheDocument();
   });
 

@@ -383,7 +383,7 @@ const Step21_PortfolioAlbums = ({ onBack, onContinue, onSkip, onGoToPath }: Step
           <SkipForward className="h-4 w-4" /> Pular
         </Button>
         <Button type="button" onClick={onContinue} className="flex-1 gap-2">
-          Concluir <ArrowRight className="h-4 w-4" />
+          Continuar <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
       <div className="flex items-center gap-2 pt-1">
