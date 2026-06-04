@@ -10,7 +10,7 @@
     "assets:pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "prebuild": "npm run assets:logo",
     "build": "vite build",
-    "postbuild": "node --env-file=.env scripts/prerender.mjs",
+    "postbuild": "node -e \"if(!process.env.PRERENDER){console.log('[postbuild] prerender skipped (set PRERENDER=1 to enable)');process.exit(0)}\" && node --env-file=.env scripts/prerender.mjs",
     "prerender": "node --env-file=.env scripts/prerender.mjs",
     "prerender:list": "node --env-file=.env scripts/generate-prerender-routes.mjs --list",
     "prebuild:dev": "npm run assets:logo",
