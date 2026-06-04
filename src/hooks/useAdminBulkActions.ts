@@ -101,15 +101,20 @@ export const useAdminBulkActions = ({ table, resourceType, onComplete }: BulkCon
     setBulkLoading(false);
   }, [selectedIds, table, resourceType, onComplete, clearSelection]);
 
-  const bulkUpdate = useCallback(async (updates: Record<string, unknown>) => {
+  const bulkUpdate = useCallback(async (updates: BulkUpdatePayload) => {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     const ids = Array.from(selectedIds);
 
+    // `table as any` / `updates as any`: required by Supabase's generic client typing.
+    // `table` is a runtime string (AdminTrashPage passes it dynamically) and the
+    // discriminated `BulkUpdatePayload` does not narrow to the per-table Row type.
+    // The safety boundary is BulkUpdatePayload above — do NOT widen these casts.
     const { error } = await supabase
       .from(table as any)
       .update(updates as any)
       .in('id', ids);
+
 
     if (error) {
       toast.error('Erro ao atualizar: ' + error.message);
