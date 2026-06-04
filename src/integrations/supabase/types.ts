@@ -9765,6 +9765,13 @@ export type Database = {
       }
       get_admin_sponsor_roi: { Args: { _days?: number }; Returns: Json }
       get_app_version_config: { Args: never; Returns: Json }
+      get_categories_with_provider_count: {
+        Args: never
+        Returns: {
+          category_id: string
+          count: number
+        }[]
+      }
       get_community_feed: {
         Args: { _limit?: number }
         Returns: {
@@ -9828,6 +9835,15 @@ export type Database = {
           level_color: string
           level_icon: string
           level_name: string
+        }[]
+      }
+      get_geo_categories: {
+        Args: never
+        Returns: {
+          avg_lat: number
+          avg_lng: number
+          category_id: string
+          count: number
         }[]
       }
       get_home_bootstrap: { Args: never; Returns: Json }
