@@ -63,6 +63,10 @@ import {
   ZAxis,
 } from 'recharts';
 
+if (!import.meta.env.DEV) {
+  throw new Error('Esta página está disponível apenas em ambiente de desenvolvimento.');
+}
+
 interface AggregateRow {
   scenario: string;
   total: number;
