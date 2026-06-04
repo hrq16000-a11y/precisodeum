@@ -686,16 +686,17 @@ export function useCategoriesWithCount() {
   return useQuery({
     queryKey: ['categories-with-count'],
     queryFn: async () => {
-      const [catsRes, provsRes] = await Promise.all([
+      const [catsRes, countsRes] = await Promise.all([
         supabase.from('categories').select('id, name, slug, icon, parent_id').is('deleted_at', null).order('name'),
-        supabase.from('providers').select('category_id').eq('status', 'approved').limit(1000),
+        supabase.rpc('get_categories_with_provider_count'),
       ]);
 
       if (catsRes.error) throw catsRes.error;
+      if (countsRes.error) throw countsRes.error;
 
       const countMap: Record<string, number> = {};
-      (provsRes.data || []).forEach((p) => {
-        if (p.category_id) countMap[p.category_id] = (countMap[p.category_id] || 0) + 1;
+      ((countsRes.data || []) as { category_id: string; count: number }[]).forEach((row) => {
+        if (row.category_id) countMap[row.category_id] = Number(row.count) || 0;
       });
 
       return (catsRes.data || []).map((c) => ({
