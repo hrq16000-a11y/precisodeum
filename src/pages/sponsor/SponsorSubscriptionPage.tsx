@@ -11,6 +11,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowUpRight, ArrowDownRight, CreditCard, Receipt, AlertTriangle, CheckCircle2, ExternalLink, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import type { Database, Json } from '@/integrations/supabase/types';
+
+// Sem arquivo de tipos novo — único consumer. Reaproveita Row do schema gerado.
+type SponsorSubscriptionRow = Database['public']['Tables']['sponsor_subscriptions']['Row'];
 
 type Plan = {
   id: string;
@@ -19,7 +23,7 @@ type Plan = {
   price_monthly: number | null;
   max_slots: number | null;
   max_impressions: number | null;
-  features: any;
+  features: Json | null;
   display_order: number | null;
 };
 
@@ -38,10 +42,11 @@ type Payment = {
 };
 
 type UsageResponse = {
-  subscription: any | null;
+  subscription: SponsorSubscriptionRow | null;
   usage: { active_campaigns: number; impressions_this_month: number };
   limits: { max_slots: number; max_impressions: number };
 };
+
 
 const formatBRL = (n: number | null | undefined) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(n ?? 0));

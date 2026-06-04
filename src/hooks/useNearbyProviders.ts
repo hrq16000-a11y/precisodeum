@@ -1,10 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { DbProvider } from '@/hooks/useProviders';
+import type { Database } from '@/integrations/supabase/types';
 import { logCoverageSearch } from '@/lib/coverageLog';
 import { useOnlineUsersMap } from '@/hooks/useOnlinePresence';
 
+type ProviderRow = Database['public']['Tables']['providers']['Row'];
+// Shape devolvido por nearby_providers RPC: ProviderRow + colunas derivadas
+// (distance_m, rating_avg, review_count, category_name/slug/icon, is_online,
+// visibility_score, activity_signal, services_count, portfolio_*_count).
+// Tipado como Partial para tolerar diferença entre RPC e Row puro.
+type NearbyProviderRow = Partial<ProviderRow> & {
+  id: string;
+  user_id: string | null;
+  distance_m?: number | null;
+  rating_avg?: number | null;
+  review_count?: number | null;
+  category_name?: string | null;
+  category_slug?: string | null;
+  category_icon?: string | null;
+  is_online?: boolean | null;
+  visibility_score?: number | null;
+  activity_signal?: string | null;
+  services_count?: number | null;
+  portfolio_album_count?: number | null;
+  portfolio_photo_count?: number | null;
+};
+type PublicProfileRow = { id: string; full_name: string | null; avatar_url: string | null };
+
 import { useMemo } from 'react';
+
 
 interface NearbyParams {
   lat: number | null | undefined;
@@ -47,20 +72,21 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
         });
       }
 
-      const rows = (data || []) as any[];
+      const rows = (data || []) as NearbyProviderRow[];
 
       // Enriquecimento: nome real + avatar real do profile (a RPC não retorna).
-      const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+      const userIds = [...new Set(rows.map((r) => r.user_id).filter((id): id is string => !!id))];
       const profileMap: Record<string, { name: string | null; avatar: string | null }> = {};
       if (userIds.length > 0) {
         const { data: profs } = await supabase
           .from('public_profiles' as any)
           .select('id, full_name, avatar_url')
           .in('id', userIds);
-        (profs as any[] | null)?.forEach((p) => {
+        (profs as unknown as PublicProfileRow[] | null)?.forEach((p) => {
           profileMap[p.id] = { name: p.full_name || null, avatar: p.avatar_url || null };
         });
       }
+
 
       // Bloqueio de "nomes" genéricos vazados em business_name
       const _norm = (s: string) =>
@@ -77,7 +103,7 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
         return !n || GENERIC.has(n);
       };
 
-      return rows.map((p: any): DbProvider & { distanceKm: number; isOnline: boolean; visibilityScore: number; activitySignal: 'em_alta' | 'responde_rapido' | 'ativo_recente' | null } => {
+      return rows.map((p: NearbyProviderRow): DbProvider & { distanceKm: number; isOnline: boolean; visibilityScore: number; activitySignal: 'em_alta' | 'responde_rapido' | 'ativo_recente' | null } => {
         const profile = profileMap[p.user_id];
         const fullName = profile?.name?.trim() || '';
         const businessName = (p.business_name || '').trim();

@@ -50,6 +50,22 @@ const hasPersistedSupabaseSession = (): boolean => {
 };
 
 /**
+ * Type guard para erros estruturados do PostgREST/Supabase, que carregam
+ * `code` (ex: '42703', 'PGRST204'). Mantido no topo do módulo — não justifica
+ * arquivo separado.
+ */
+function hasCode(e: unknown): e is { code: string } {
+  return typeof e === 'object' && e !== null && 'code' in e && typeof (e as { code: unknown }).code === 'string';
+}
+function hasDetails(e: unknown): e is { details: string | null } {
+  return typeof e === 'object' && e !== null && 'details' in e;
+}
+function hasHint(e: unknown): e is { hint: string | null } {
+  return typeof e === 'object' && e !== null && 'hint' in e;
+}
+
+
+/**
  * PR 4 (A3) — Split do "God-Provider":
  *  - `AuthIdentityContext` carrega APENAS dados de sessão (estáveis, raros):
  *    session, user, loading, signOut.
@@ -163,9 +179,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         let [{ data: pData, error: pErr }, { data: pvRows, error: pvErr }] = await Promise.race([queryPromise, timeoutPromise]);
         if (pErr) {
-          lastErrorMessage = `profiles: ${pErr.message ?? String(pErr)} (code=${(pErr as any)?.code ?? 'n/a'})`;
-          console.warn('[useAuth] profiles query error', { code: (pErr as any)?.code, message: pErr.message, details: (pErr as any)?.details, hint: (pErr as any)?.hint });
-          const code = String((pErr as any)?.code ?? '');
+          const pCode = hasCode(pErr) ? pErr.code : '';
+          lastErrorMessage = `profiles: ${pErr.message ?? String(pErr)} (code=${pCode || 'n/a'})`;
+          console.warn('[useAuth] profiles query error', { code: pCode, message: pErr.message, details: hasDetails(pErr) ? pErr.details : undefined, hint: hasHint(pErr) ? pErr.hint : undefined });
+          const code = pCode;
+
           const msg = String(pErr.message ?? '');
           if (code === '42703' || code === 'PGRST204' || /column .* does not exist/i.test(msg)) {
             console.warn('[useAuth] schema drift detectado — refazendo profiles com select mínimo');
@@ -179,9 +197,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
         if (pvErr) {
-          lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)} (code=${(pvErr as any)?.code ?? 'n/a'})`;
-          console.warn('[useAuth] providers query error', { code: (pvErr as any)?.code, message: pvErr.message });
-          const code = String((pvErr as any)?.code ?? '');
+          const pvCode = hasCode(pvErr) ? pvErr.code : '';
+          lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)} (code=${pvCode || 'n/a'})`;
+          console.warn('[useAuth] providers query error', { code: pvCode, message: pvErr.message });
+          const code = pvCode;
+
           const msg = String(pvErr.message ?? '');
           if (code === '42703' || code === 'PGRST204' || /column .* does not exist/i.test(msg)) {
             console.warn('[useAuth] schema drift detectado — refazendo providers com select mínimo');

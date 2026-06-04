@@ -28,23 +28,29 @@ export function useCategoriesInRegion(city?: string | null, state?: string | nul
       if (catsRes.error) throw catsRes.error;
       const cats = catsRes.data || [];
 
-      const buildMap = async (
-        filter?: (q: any) => any
-      ): Promise<Record<string, number>> => {
-        let q: any = supabase
+      type ProviderRegionRow = { category_id: string | null; city: string | null; state: string | null };
+
+      const buildBaseQuery = () =>
+        supabase
           .from('providers')
           .select('category_id, city, state')
           .eq('status', 'approved')
           .limit(500);
+
+      const buildMap = async (
+        filter?: (q: ReturnType<typeof buildBaseQuery>) => ReturnType<typeof buildBaseQuery>
+      ): Promise<Record<string, number>> => {
+        let q = buildBaseQuery();
         if (filter) q = filter(q);
         const { data, error } = await q;
         if (error) throw error;
         const map: Record<string, number> = {};
-        (data || []).forEach((p: any) => {
+        ((data || []) as ProviderRegionRow[]).forEach((p) => {
           if (p.category_id) map[p.category_id] = (map[p.category_id] || 0) + 1;
         });
         return map;
       };
+
 
       let scope: 'city' | 'state' | 'global' = 'global';
       let countMap: Record<string, number> = {};
