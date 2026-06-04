@@ -82,7 +82,7 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
           .from('public_profiles' as any)
           .select('id, full_name, avatar_url')
           .in('id', userIds);
-        (profs as PublicProfileRow[] | null)?.forEach((p) => {
+        (profs as unknown as PublicProfileRow[] | null)?.forEach((p) => {
           profileMap[p.id] = { name: p.full_name || null, avatar: p.avatar_url || null };
         });
       }
