@@ -8,7 +8,7 @@
     "assets:logo": "node scripts/generate-logo-webp.mjs",
     "assets:logo:upload": "node scripts/generate-logo-webp.mjs --upload",
     "assets:pwa-icons": "node scripts/generate-pwa-icons.mjs",
-    "prebuild": "npm run assets:logo",
+    "prebuild": "node scripts/sync-sw-version.mjs && npm run assets:logo",
     "build": "vite build",
     "postbuild": "node -e \"if(!process.env.PRERENDER){console.log('[postbuild] prerender skipped (set PRERENDER=1 to enable)');process.exit(0)}\" && node --env-file=.env scripts/prerender.mjs",
     "prerender": "node --env-file=.env scripts/prerender.mjs",
