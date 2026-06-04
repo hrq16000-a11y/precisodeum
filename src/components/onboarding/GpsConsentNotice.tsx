@@ -49,13 +49,13 @@ export default function GpsConsentNotice({
         <li className="flex items-start gap-2">
           <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" aria-hidden />
           <span>
-            <strong>Aproximada</strong> (IP / GPS &gt; 100 m): UF, cidade-base e bairro provável.
+            <strong>Aproximada</strong>: UF, cidade-base e bairro provável.
           </span>
         </li>
         <li className="flex items-start gap-2">
           <Crosshair className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-bet-green-fg" aria-hidden />
           <span>
-            <strong>Precisa</strong> (GPS ≤ 100 m): UF, cidade-base, bairro confiável e
+            <strong>Precisa</strong>: UF, cidade-base, bairro confiável e
             coordenadas (para distância no ranking).
           </span>
         </li>
