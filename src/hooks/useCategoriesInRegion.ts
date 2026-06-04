@@ -35,7 +35,7 @@ export function useCategoriesInRegion(city?: string | null, state?: string | nul
           .from('providers')
           .select('category_id, city, state')
           .eq('status', 'approved')
-          .limit(2000);
+          .limit(500);
         if (filter) q = filter(q);
         const { data, error } = await q;
         if (error) throw error;

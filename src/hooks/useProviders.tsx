@@ -686,16 +686,17 @@ export function useCategoriesWithCount() {
   return useQuery({
     queryKey: ['categories-with-count'],
     queryFn: async () => {
-      const [catsRes, provsRes] = await Promise.all([
+      const [catsRes, countsRes] = await Promise.all([
         supabase.from('categories').select('id, name, slug, icon, parent_id').is('deleted_at', null).order('name'),
-        supabase.from('providers').select('category_id').eq('status', 'approved').limit(1000),
+        supabase.rpc('get_categories_with_provider_count'),
       ]);
 
       if (catsRes.error) throw catsRes.error;
+      if (countsRes.error) throw countsRes.error;
 
       const countMap: Record<string, number> = {};
-      (provsRes.data || []).forEach((p) => {
-        if (p.category_id) countMap[p.category_id] = (countMap[p.category_id] || 0) + 1;
+      ((countsRes.data || []) as { category_id: string; count: number }[]).forEach((row) => {
+        if (row.category_id) countMap[row.category_id] = Number(row.count) || 0;
       });
 
       return (catsRes.data || []).map((c) => ({
@@ -1435,39 +1436,48 @@ export function useGeoCategories(userLat?: number | null, userLon?: number | nul
   return useQuery({
     queryKey: ['geo-categories', userLat ?? 'none', userLon ?? 'none'],
     queryFn: async () => {
-      // Fetch categories + providers with coords in parallel
-      const [catsRes, provsRes] = await Promise.all([
+      // Fetch categories + per-category aggregate (count + centroid) in parallel.
+      // Uses RPC get_geo_categories to avoid client-side truncation as base grows.
+      const [catsRes, geoRes] = await Promise.all([
         supabase.from('categories').select('id, name, slug, icon'),
-        supabase.from('providers').select('category_id, latitude, longitude').eq('status', 'approved').limit(1000),
+        supabase.rpc('get_geo_categories'),
       ]);
       if (catsRes.error) throw catsRes.error;
+      if (geoRes.error) throw geoRes.error;
 
       const cats = catsRes.data || [];
-      const provs = provsRes.data || [];
+      const geoRows = (geoRes.data || []) as {
+        category_id: string;
+        count: number;
+        avg_lat: number | null;
+        avg_lng: number | null;
+      }[];
 
-      // Build map: category_id -> { count, coords[] }
-      const catMap: Record<string, { count: number; coords: { latitude: number; longitude: number }[] }> = {};
-      provs.forEach((p: any) => {
-        if (!p.category_id) return;
-        if (!catMap[p.category_id]) catMap[p.category_id] = { count: 0, coords: [] };
-        catMap[p.category_id].count++;
-        if (Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) {
-          catMap[p.category_id].coords.push({ latitude: p.latitude, longitude: p.longitude });
-        }
+      // Build map: category_id -> { count, centroid }
+      const catMap: Record<string, { count: number; lat: number | null; lng: number | null }> = {};
+      geoRows.forEach((row) => {
+        if (!row.category_id) return;
+        catMap[row.category_id] = {
+          count: Number(row.count) || 0,
+          lat: row.avg_lat,
+          lng: row.avg_lng,
+        };
       });
 
       // Only categories with providers
       let result = cats
-        .filter((c) => catMap[c.id]?.count > 0)
+        .filter((c) => (catMap[c.id]?.count ?? 0) > 0)
         .map((c) => {
           const info = catMap[c.id];
           let minDistance = Infinity;
 
-          if (userLat != null && userLon != null && Number.isFinite(userLat) && Number.isFinite(userLon)) {
-            info.coords.forEach((coord) => {
-              const dist = calculateDistanceKmSimple(userLat, userLon, coord.latitude, coord.longitude);
-              if (dist < minDistance) minDistance = dist;
-            });
+          if (
+            userLat != null && userLon != null &&
+            Number.isFinite(userLat) && Number.isFinite(userLon) &&
+            info.lat != null && info.lng != null &&
+            Number.isFinite(info.lat) && Number.isFinite(info.lng)
+          ) {
+            minDistance = calculateDistanceKmSimple(userLat, userLon, info.lat, info.lng);
           }
 
           return { ...c, providerCount: info.count, minDistance };
