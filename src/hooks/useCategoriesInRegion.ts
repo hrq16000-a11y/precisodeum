@@ -29,7 +29,7 @@ export function useCategoriesInRegion(city?: string | null, state?: string | nul
       const cats = catsRes.data || [];
 
       type ProviderRegionRow = { category_id: string | null; city: string | null; state: string | null };
-      type RegionQuery = ReturnType<typeof supabase.from<'providers'>> extends never ? never : ReturnType<typeof buildBaseQuery>;
+
       const buildBaseQuery = () =>
         supabase
           .from('providers')
