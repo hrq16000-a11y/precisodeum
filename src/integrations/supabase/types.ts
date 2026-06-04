@@ -7988,6 +7988,48 @@ export type Database = {
         }
         Relationships: []
       }
+      web_vitals_samples: {
+        Row: {
+          app_version: string | null
+          connection: string | null
+          created_at: string
+          device: string | null
+          id: string
+          metric: string
+          navigation_type: string | null
+          rating: string | null
+          route: string
+          user_id: string | null
+          value: number
+        }
+        Insert: {
+          app_version?: string | null
+          connection?: string | null
+          created_at?: string
+          device?: string | null
+          id?: string
+          metric: string
+          navigation_type?: string | null
+          rating?: string | null
+          route: string
+          user_id?: string | null
+          value: number
+        }
+        Update: {
+          app_version?: string | null
+          connection?: string | null
+          created_at?: string
+          device?: string | null
+          id?: string
+          metric?: string
+          navigation_type?: string | null
+          rating?: string | null
+          route?: string
+          user_id?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
       whatsapp_clicks_log: {
         Row: {
           clicked_at: string
@@ -9585,6 +9627,7 @@ export type Database = {
             Returns: Json
           }
       claim_sponsor_lead: { Args: { _lead_id: string }; Returns: Json }
+      cleanup_web_vitals_samples: { Args: never; Returns: undefined }
       close_presence_session: { Args: never; Returns: Json }
       compare_onboarding_release_snapshots: {
         Args: { _a: string; _b: string }
@@ -10155,6 +10198,28 @@ export type Database = {
       get_user_maturity_tier: { Args: { _user_id?: string }; Returns: Json }
       get_user_sponsor_id: { Args: { _user_id: string }; Returns: string }
       get_user_storage_usage: { Args: { _user_ref: string }; Returns: number }
+      get_web_vitals_alerts: {
+        Args: { _hours?: number }
+        Returns: {
+          metric: string
+          p75: number
+          route: string
+          samples: number
+          severity: string
+          threshold: number
+        }[]
+      }
+      get_web_vitals_p75: {
+        Args: { _hours?: number }
+        Returns: {
+          metric: string
+          p75: number
+          p95: number
+          poor_count: number
+          route: string
+          samples: number
+        }[]
+      }
       get_web_vitals_weekly_summary: {
         Args: { _days?: number }
         Returns: unknown[]
