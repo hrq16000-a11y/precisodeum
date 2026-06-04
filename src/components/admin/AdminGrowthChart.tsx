@@ -16,9 +16,23 @@ const AdminGrowthChart = () => {
       const d14 = new Date(now);
       d14.setDate(d14.getDate() - 14);
 
+      // Cap defensivo: o gráfico só agrega 14 dias; em cenário extremo
+      // (>50k linhas/14d) preferimos truncar a fazer fetch-all sem limite.
+      // Ordenamos desc para garantir que os mais recentes entram primeiro.
+      const ROW_CAP = 50000;
       const [profilesRes, leadsRes] = await Promise.all([
-        supabase.from('profiles').select('created_at').gte('created_at', d14.toISOString()),
-        supabase.from('leads').select('created_at').gte('created_at', d14.toISOString()),
+        supabase
+          .from('profiles')
+          .select('created_at')
+          .gte('created_at', d14.toISOString())
+          .order('created_at', { ascending: false })
+          .limit(ROW_CAP),
+        supabase
+          .from('leads')
+          .select('created_at')
+          .gte('created_at', d14.toISOString())
+          .order('created_at', { ascending: false })
+          .limit(ROW_CAP),
       ]);
 
       const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
