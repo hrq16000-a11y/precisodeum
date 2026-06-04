@@ -29,6 +29,10 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { METRIC_DEFINITIONS, type Severity } from '@/lib/onboarding/regressionDetector';
 
+if (!import.meta.env.DEV) {
+  throw new Error('Esta página está disponível apenas em ambiente de desenvolvimento.');
+}
+
 const SEVERITY_VARIANT: Record<Severity, string> = {
   low: 'bg-slate-200 text-slate-800',
   medium: 'bg-amber-200 text-amber-900',
