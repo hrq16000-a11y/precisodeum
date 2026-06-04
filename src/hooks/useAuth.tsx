@@ -197,9 +197,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
         if (pvErr) {
-          lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)} (code=${(pvErr as any)?.code ?? 'n/a'})`;
-          console.warn('[useAuth] providers query error', { code: (pvErr as any)?.code, message: pvErr.message });
-          const code = String((pvErr as any)?.code ?? '');
+          const pvCode = hasCode(pvErr) ? pvErr.code : '';
+          lastErrorMessage = `providers: ${pvErr.message ?? String(pvErr)} (code=${pvCode || 'n/a'})`;
+          console.warn('[useAuth] providers query error', { code: pvCode, message: pvErr.message });
+          const code = pvCode;
+
           const msg = String(pvErr.message ?? '');
           if (code === '42703' || code === 'PGRST204' || /column .* does not exist/i.test(msg)) {
             console.warn('[useAuth] schema drift detectado — refazendo providers com select mínimo');
