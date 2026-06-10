@@ -5297,6 +5297,54 @@ export type Database = {
           },
         ]
       }
+      rls_drift_alerts: {
+        Row: {
+          acknowledged: boolean
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          after_state: Json | null
+          before_state: Json | null
+          category: string
+          detected_at: string
+          id: string
+          notes: string | null
+          object_kind: string
+          object_name: string
+          role_name: string | null
+          severity: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          after_state?: Json | null
+          before_state?: Json | null
+          category: string
+          detected_at?: string
+          id?: string
+          notes?: string | null
+          object_kind: string
+          object_name: string
+          role_name?: string | null
+          severity?: string
+        }
+        Update: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          after_state?: Json | null
+          before_state?: Json | null
+          category?: string
+          detected_at?: string
+          id?: string
+          notes?: string | null
+          object_kind?: string
+          object_name?: string
+          role_name?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
       rls_policy_snapshots: {
         Row: {
           captured_at: string
@@ -9561,6 +9609,12 @@ export type Database = {
         Returns: number
       }
       calculate_user_level: { Args: { _user_id: string }; Returns: string }
+      capture_rls_drift: {
+        Args: never
+        Returns: {
+          new_alerts: number
+        }[]
+      }
       check_and_log_whatsapp_click: {
         Args: { p_provider_id: string }
         Returns: Json
