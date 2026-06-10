@@ -1,0 +1,31 @@
+name: Security Headers Check
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Daily at 05:00 UTC — catches drifts even without code changes.
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL to check (overrides default)"
+        required: false
+        default: ""
+
+jobs:
+  check:
+    name: Verify security headers on key routes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run security headers check
+        env:
+          BASE_URL: ${{ github.event.inputs.base_url || 'https://precisodeum.com.br' }}
+        run: node scripts/check-security-headers.mjs

@@ -58,6 +58,7 @@ const AdminPublicFunnelHealthPage = lazy(() => import("@/pages/admin/AdminPublic
 const AdminSeoPage = lazy(() => import("@/pages/admin/AdminSeoPage"));
 const AdminOnboardingHubPage = lazy(() => import("@/pages/admin/AdminOnboardingHubPage"));
 const AdminSponsorApprovalsPage = lazy(() => import("@/pages/AdminSponsorApprovalsPage"));
+const AdminSecurityFindingsPage = lazy(() => import("@/pages/admin/AdminSecurityFindingsPage"));
 const AdminPopularServicesPage = lazy(() => import("@/pages/AdminPopularServicesPage"));
 const AdminFaqPage = lazy(() => import("@/pages/AdminFaqPage"));
 const AdminJobsPage = lazy(() => import("@/pages/AdminJobsPage"));
@@ -231,5 +232,6 @@ export const adminRoutes = (
     <Route path="/admin/sponsor-plans" element={guarded("AdminSponsorPlansPage", <AdminSponsorPlansPage />)} />
     <Route path="/admin/sponsor-campaigns" element={guarded("AdminSponsorCampaignsPage", <AdminSponsorCampaignsPage />)} />
     <Route path="/admin/sponsor-contracts" element={guarded("AdminSponsorContractsPage", <AdminSponsorContractsPage />)} />
+    <Route path="/admin/security-findings" element={guarded("AdminSecurityFindingsPage", <AdminSecurityFindingsPage />)} />
   </>
 );
