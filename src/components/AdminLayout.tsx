@@ -441,7 +441,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex items-center gap-2">
             <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">← Ver site</Link>
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="h-7 w-7 rounded-lg object-cover border border-border" />
+              <img src={profile.avatar_url} alt={`Avatar de ${profile?.full_name ?? 'administrador'}`} className="h-7 w-7 rounded-lg object-cover border border-border" />
             ) : (
               <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
                 {(profile?.full_name || 'A')[0].toUpperCase()}

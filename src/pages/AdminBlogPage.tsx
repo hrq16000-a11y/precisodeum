@@ -228,7 +228,7 @@ const AdminBlogPage = () => {
             <div key={p.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
               <div className="flex items-start gap-3">
                 <SelectionCheckbox checked={bulk.selectedIds.has(p.id)} onCheckedChange={() => bulk.toggleSelection(p.id)} />
-                {p.cover_image_url && <img src={p.cover_image_url} alt="" className="h-12 w-12 rounded-lg object-cover shrink-0" />}
+                {p.cover_image_url && <img src={p.cover_image_url} alt={`Imagem de capa de ${p.title}`} className="h-12 w-12 rounded-lg object-cover shrink-0" />}
                 <div className="flex-1 min-w-0">
                   <span className="font-medium text-foreground text-sm line-clamp-2">{p.title}</span>
                   <p className="text-[10px] text-muted-foreground">/{p.slug}</p>
@@ -283,7 +283,7 @@ const AdminBlogPage = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {p.cover_image_url && <img src={p.cover_image_url} alt="" className="h-8 w-8 rounded object-cover" />}
+                      {p.cover_image_url && <img src={p.cover_image_url} alt={`Imagem de capa de ${p.title}`} className="h-8 w-8 rounded object-cover" />}
                       <div className="min-w-0">
                         <span className="font-medium text-foreground line-clamp-1">{p.title}</span>
                         <p className="text-[10px] text-muted-foreground">/{p.slug}</p>
