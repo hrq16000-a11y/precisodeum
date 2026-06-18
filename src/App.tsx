@@ -228,7 +228,9 @@ const App = () => {
     if ((window as any).__DAILY_PURGE_TRIGGERED__) {
       delete (window as any).__DAILY_PURGE_TRIGGERED__;
       queryClient.invalidateQueries();
-      console.log('[Cache] React Query invalidated (daily purge).');
+      if (import.meta.env.DEV) {
+        console.debug('[Cache] React Query invalidated (daily purge).');
+      }
     }
 
     return undefined;
