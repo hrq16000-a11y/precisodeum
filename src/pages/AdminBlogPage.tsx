@@ -28,6 +28,21 @@ const PAGE_SIZE = 20;
 const emptyForm = { title: '', slug: '', content: '', excerpt: '', cover_image_url: '', author_name: 'Equipe Preciso de um', published: false, featured: false, source_url: '' };
 const autoSlug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
+interface BlogPostRow {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  cover_image_url: string | null;
+  author_name: string;
+  published: boolean;
+  featured: boolean;
+  source_url: string | null;
+  created_at: string;
+  deleted_at: string | null;
+}
+
 const AdminBlogPage = () => {
   const { user, loading: authLoading } = useAuthIdentity();
   const { isAdmin, loading: adminLoading } = useAdmin();
@@ -59,17 +74,17 @@ const AdminBlogPage = () => {
     onComplete: () => queryClient.invalidateQueries({ queryKey: ['admin-blog-posts'] }),
   });
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return posts;
+  const filtered = useMemo<BlogPostRow[]>(() => {
+    if (!search.trim()) return posts as BlogPostRow[];
     const q = search.toLowerCase();
-    return posts.filter((p: any) => (p.title || '').toLowerCase().includes(q) || (p.slug || '').toLowerCase().includes(q));
+    return (posts as BlogPostRow[]).filter((p) => (p.title || '').toLowerCase().includes(q) || (p.slug || '').toLowerCase().includes(q));
   }, [posts, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const allPageIds = paginated.map((p: any) => p.id);
-  const allSelected = paginated.length > 0 && paginated.every((p: any) => bulk.selectedIds.has(p.id));
+  const allPageIds = paginated.map((p) => p.id);
+  const allSelected = paginated.length > 0 && paginated.every((p) => bulk.selectedIds.has(p.id));
 
   const handleSelectAll = () => {
     if (allSelected) bulk.clearSelection();
@@ -110,7 +125,7 @@ const AdminBlogPage = () => {
 
   const closeDialog = () => { setDialogOpen(false); setEditingId(null); setForm(emptyForm); };
 
-  const openEdit = (p: any) => {
+  const openEdit = (p: BlogPostRow) => {
     setEditingId(p.id);
     setForm({ title: p.title, slug: p.slug, content: p.content, excerpt: p.excerpt, cover_image_url: p.cover_image_url || '', author_name: p.author_name, published: p.published, featured: p.featured, source_url: p.source_url || '' });
     setDialogOpen(true);
@@ -125,8 +140,9 @@ const AdminBlogPage = () => {
       toast({ title: `RSS importado: ${data.imported} novos, ${data.skipped} já existentes` });
       queryClient.invalidateQueries({ queryKey: ['admin-blog-posts'] });
       setRssUrl('');
-    } catch (err: any) {
-      toast({ title: 'Erro ao importar RSS: ' + (err.message || ''), variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      toast({ title: 'Erro ao importar RSS: ' + message, variant: 'destructive' });
     } finally { setRssLoading(false); }
   };
 
