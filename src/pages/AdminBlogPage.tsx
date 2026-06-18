@@ -240,7 +240,7 @@ const AdminBlogPage = () => {
         ) : paginated.length === 0 ? (
           <p className="p-6 text-center text-muted-foreground">Nenhum post encontrado.</p>
         ) : (
-          paginated.map((p: any) => (
+          paginated.map((p) => (
             <div key={p.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
               <div className="flex items-start gap-3">
                 <SelectionCheckbox checked={bulk.selectedIds.has(p.id)} onCheckedChange={() => bulk.toggleSelection(p.id)} />
@@ -292,7 +292,7 @@ const AdminBlogPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginated.map((p: any) => (
+              {paginated.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
                     <SelectionCheckbox checked={bulk.selectedIds.has(p.id)} onCheckedChange={() => bulk.toggleSelection(p.id)} />
