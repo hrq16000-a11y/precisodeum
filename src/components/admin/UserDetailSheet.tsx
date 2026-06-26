@@ -1335,7 +1335,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                               {imgs.map((img: any) => (
                                 <div key={img.id} className="relative group rounded-md overflow-hidden aspect-square">
-                                  <img src={img.image_url} alt="" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
+                                  <img src={img.image_url} alt="Imagem do serviço" className="h-full w-full object-cover" loading="lazy" decoding="async" onError={handleImageError} />
                                   <button onClick={() => deleteServiceImage(img)}
                                     className="absolute inset-0 bg-destructive/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <Trash2 className="h-4 w-4 text-white" />

@@ -168,6 +168,7 @@ const HeroBanner = () => {
         <img
           src={nextImage}
           alt=""
+          aria-hidden="true"
           width={1920}
           height={768}
           loading="eager"

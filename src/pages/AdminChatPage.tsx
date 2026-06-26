@@ -396,7 +396,7 @@ const AdminChatPage = () => {
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
                         </div>
-                        {msg.image_url && <img src={msg.image_url} alt="" className="rounded max-h-32 object-cover mb-1" />}
+                        {msg.image_url && <img src={msg.image_url} alt="Imagem enviada na mensagem" loading="lazy" decoding="async" className="rounded max-h-32 object-cover mb-1" />}
                         <p className="text-sm">{msg.content}</p>
                       </div>
                     );

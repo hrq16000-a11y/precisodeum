@@ -582,7 +582,7 @@ const JobsPage = () => {
                         {/* Icon */}
                         <div className="hidden shrink-0 sm:block">
                           {job.cover_image_url ? (
-                            <img src={job.cover_image_url} alt="" className="h-14 w-14 rounded-lg object-cover" loading="lazy" />
+                            <img src={job.cover_image_url} alt={`Capa da vaga ${job.title || ''}`.trim()} className="h-14 w-14 rounded-lg object-cover" loading="lazy" decoding="async" />
                           ) : (
                             <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted">
                               <CategoryIcon icon={(job.categories as any)?.icon || 'Briefcase'} size={24} className="text-muted-foreground" />

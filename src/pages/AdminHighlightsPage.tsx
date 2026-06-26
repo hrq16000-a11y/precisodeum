@@ -139,7 +139,7 @@ const AdminHighlightsPage = () => {
         {highlights.map((h: any) => (
           <div key={h.id} className="rounded-xl border border-border bg-card p-3 shadow-card">
             <div className="flex items-start gap-3">
-              {h.image_url && <img src={h.image_url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />}
+              {h.image_url && <img src={h.image_url} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-10 w-10 rounded object-cover shrink-0" />}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full shrink-0 ${h.active ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />

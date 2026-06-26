@@ -179,7 +179,7 @@ const AdminHeroBannersPage = () => {
                 </button>
               </div>
               {b.image_url && (
-                <img src={b.image_url} alt="" className="h-14 w-20 rounded-lg object-cover shrink-0" />
+                <img src={b.image_url} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-14 w-20 rounded-lg object-cover shrink-0" />
               )}
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-bold text-foreground truncate">{b.title || '(Sem título)'}</h3>
@@ -220,7 +220,7 @@ const AdminHeroBannersPage = () => {
           <div className="w-full max-w-3xl rounded-xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="relative py-16 md:py-24">
               {previewBanner.image_url && (
-                <img src={previewBanner.image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <img src={previewBanner.image_url} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
               )}
               <div className="absolute inset-0" style={{ backgroundColor: `rgba(249, 115, 22, ${previewBanner.overlay_opacity})` }} />
               <div className={`relative z-10 px-6 text-${previewBanner.text_alignment}`}>

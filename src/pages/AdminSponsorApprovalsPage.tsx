@@ -444,6 +444,9 @@ export default function AdminSponsorApprovalsPage() {
                                     <img
                                       src={s.image_url || s.logo_url || ''}
                                       alt=""
+                                      aria-hidden="true"
+                                      loading="lazy"
+                                      decoding="async"
                                       className="h-9 w-14 rounded object-cover"
                                     />
                                   )}
