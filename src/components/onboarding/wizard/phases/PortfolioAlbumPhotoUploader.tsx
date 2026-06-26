@@ -176,9 +176,10 @@ export default function PortfolioAlbumPhotoUploader({
             >
               <img
                 src={p.image_url}
-                alt=""
+                alt="Foto do álbum"
                 className="h-full w-full object-cover"
                 loading="lazy"
+                decoding="async"
               />
               <button
                 type="button"

@@ -192,7 +192,7 @@ export default function ChatMessageView({ conversationId, onBack }: Props) {
                     : 'bg-muted text-foreground rounded-bl-md'
                 }`}>
                   {msg.image_url && (
-                    <img src={msg.image_url} alt="" loading="lazy" decoding="async" className="rounded-lg mb-1 max-h-40 object-cover" />
+                    <img src={msg.image_url} alt="Imagem enviada na conversa" loading="lazy" decoding="async" className="rounded-lg mb-1 max-h-40 object-cover" />
                   )}
                   {msg.content && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
                   <p className={`text-[9px] mt-1 ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground/60'}`}>
@@ -209,7 +209,7 @@ export default function ChatMessageView({ conversationId, onBack }: Props) {
       {imagePreview && (
         <div className="px-3 pb-1">
           <div className="relative w-fit">
-            <img src={imagePreview} alt="" className="h-16 rounded-md object-cover" />
+            <img src={imagePreview} alt="Pré-visualização da imagem a enviar" aria-hidden="true" className="h-16 rounded-md object-cover" />
             <button onClick={() => { setImageFile(null); setImagePreview(''); }} className="absolute -top-1 -right-1 bg-destructive rounded-full p-0.5 text-destructive-foreground">
               <X className="h-3 w-3" />
             </button>

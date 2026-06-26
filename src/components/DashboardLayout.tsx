@@ -136,6 +136,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         >
           <Logo
             linkTo=""
+            priority
             className="drop-shadow-sm"
           />
         </Link>
@@ -171,7 +172,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className={`fixed inset-y-0 left-0 z-40 w-60 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 shrink-0 items-center justify-between px-5 border-b border-sidebar-border">
           <Link to="/" aria-label="Ir para a página inicial" className="flex min-w-0 flex-1 items-center overflow-hidden pr-3">
-            <Logo linkTo="" variant="white" />
+            <Logo linkTo="" variant="white" priority />
           </Link>
           <Link to="/" className="text-[9px] text-sidebar-foreground/30 hover:text-sidebar-foreground/50 transition-colors font-medium">← Site</Link>
         </div>
@@ -186,7 +187,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex items-center gap-2.5">
             {profile?.avatar_url ? (
               <div className="relative shrink-0">
-                <img src={profile.avatar_url} alt="" loading="lazy" decoding="async" className="h-9 w-9 rounded-xl object-cover border border-sidebar-border/50" />
+                <img src={profile.avatar_url} alt={`Foto de ${profile?.full_name || 'usuário'}`} loading="lazy" decoding="async" className="h-9 w-9 rounded-xl object-cover border border-sidebar-border/50" />
                 <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border-2 border-sidebar" />
                 </span>

@@ -243,8 +243,10 @@ const ServicesSection = ({
                     <img
                       src={serviceImageThumb(s.serviceImages[0].image_url)}
                       alt=""
+                      aria-hidden="true"
                       className="h-full w-full object-cover"
                       loading="lazy"
+                      decoding="async"
                       onError={handleImageError}
                     />
                   </div>
@@ -279,7 +281,7 @@ const ServicesSection = ({
                 <div className="mt-2 flex gap-1.5 overflow-hidden pl-[calc(5rem+0.75rem)]">
                   {s.serviceImages.slice(1, 4).map((img: any) => (
                     <div key={img.id} className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border">
-                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
+                      <img src={serviceImageThumb(img.image_url)} alt="" aria-hidden="true" className="h-full w-full object-cover" loading="lazy" decoding="async" onError={handleImageError} />
                     </div>
                   ))}
                   {s.serviceImages.length > 4 && (

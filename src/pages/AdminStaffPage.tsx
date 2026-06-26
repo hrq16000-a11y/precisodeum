@@ -280,7 +280,7 @@ const AdminStaffPage = () => {
                         <div key={m.id} className="flex flex-wrap items-center gap-3 p-4 hover:bg-muted/30">
                           <div className="h-10 w-10 rounded-full overflow-hidden bg-muted flex items-center justify-center shrink-0">
                             {m.avatar_url ? (
-                              <img src={m.avatar_url} alt="" className="h-full w-full object-cover" />
+                              <img src={m.avatar_url} alt={`Avatar de ${m.full_name || 'membro da equipe'}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                             ) : (
                               <Users className="h-5 w-5 text-muted-foreground" />
                             )}

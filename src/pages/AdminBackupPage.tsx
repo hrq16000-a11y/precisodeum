@@ -1567,7 +1567,7 @@ const StorageBackupSection = () => {
                                         onCheckedChange={() => toggleFileSelection(f)}
                                         className="shrink-0"
                                       />
-                                      <img src={f.url} alt="" className="h-8 w-8 rounded object-cover shrink-0 border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
+                                      <img src={f.url} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-8 w-8 rounded object-cover shrink-0 border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
                                       <span className="truncate text-foreground">{f.name}</span>
                                       <span className="text-muted-foreground shrink-0">{f.size > 1024 * 1024 ? `${(f.size / 1024 / 1024).toFixed(1)}MB` : `${Math.round(f.size / 1024)}KB`}</span>
                                     </div>

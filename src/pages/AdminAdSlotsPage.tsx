@@ -735,7 +735,7 @@ const AdminAdSlotsPage = () => {
                                   {slotAssigns.slice(0, 3).map((a: any) => {
                                     const img = getSponsorImage(a.sponsor_id);
                                     return img ? (
-                                      <img key={a.id} src={img} alt="" className="h-7 w-7 rounded-full border-2 border-background object-cover" />
+                                      <img key={a.id} src={img} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-7 w-7 rounded-full border-2 border-background object-cover" />
                                     ) : (
                                       <div key={a.id} className="h-7 w-7 rounded-full border-2 border-background bg-muted flex items-center justify-center text-[9px] font-bold text-muted-foreground">
                                         {getSponsorTitle(a.sponsor_id).charAt(0)}
@@ -853,7 +853,7 @@ const AdminAdSlotsPage = () => {
                               >
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70 hover:text-muted-foreground transition-colors" />
-                                  {sponsorImg && <img src={sponsorImg} alt="" className="h-6 w-6 rounded object-cover" />}
+                                  {sponsorImg && <img src={sponsorImg} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-6 w-6 rounded object-cover" />}
                                   <span className="text-sm font-medium">{getSponsorTitle(a.sponsor_id)}</span>
                                   <Badge variant={a.active ? 'default' : 'secondary'} className="text-[10px]">
                                     {a.active ? 'Ativo' : 'Inativo'}
@@ -930,7 +930,7 @@ const AdminAdSlotsPage = () => {
                         <TableRow key={key}>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              {sponsorImg && <img src={sponsorImg} alt="" className="h-6 w-6 rounded object-cover" />}
+                              {sponsorImg && <img src={sponsorImg} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-6 w-6 rounded object-cover" />}
                               <span className="font-medium text-sm">{getSponsorTitle(sponsorId)}</span>
                             </div>
                           </TableCell>

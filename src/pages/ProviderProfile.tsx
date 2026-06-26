@@ -2192,9 +2192,10 @@ const ProviderProfile = () => {
               {avatarUrl && (
                 <img
                   src={avatarUrl}
-                  alt=""
+                  alt={`Foto de ${name}`}
                   className="h-8 w-8 shrink-0 rounded-full object-cover"
                   loading="lazy"
+                  decoding="async"
                 />
               )}
               <span className="truncate font-display text-sm font-semibold text-foreground">

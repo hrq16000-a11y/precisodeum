@@ -364,8 +364,9 @@ function Section({ title, icon, rows, loading, emptyText, showDate }: SectionPro
                   {p?.photo_url ? (
                     <img
                       src={p.photo_url}
-                      alt=""
+                      alt={`Foto de ${p?.business_name || 'profissional'}`}
                       loading="lazy"
+                      decoding="async"
                       className="h-10 w-10 rounded-full object-cover bg-muted shrink-0"
                     />
                   ) : (

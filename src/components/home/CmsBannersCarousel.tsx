@@ -32,6 +32,7 @@ const CmsBannersCarousel = () => {
         <img
           src={banner.image_url}
           alt=""
+          aria-hidden="true"
           width={1600}
           height={900}
           className="absolute inset-0 h-full w-full object-cover object-center"
