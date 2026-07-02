@@ -500,6 +500,10 @@ export default function CompanyProfile() {
   if (error || !company) {
     return (
       <>
+        <Helmet>
+          <title>Empresa não encontrada | Preciso de um</title>
+          <meta name="robots" content="noindex, follow" />
+        </Helmet>
         <Header />
         <main className="container py-16 text-center">
           <Building2 className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
@@ -515,6 +519,7 @@ export default function CompanyProfile() {
       </>
     );
   }
+
 
   const isCompany = (company.account_type || '').toLowerCase() === 'company';
 
