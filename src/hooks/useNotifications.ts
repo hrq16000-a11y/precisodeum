@@ -113,11 +113,11 @@ export function useNotifications(options?: { limit?: number | null }) {
 
   const markAllAsRead = useMutation({
     mutationFn: async () => {
-      if (!user?.id) return;
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
-        .eq('user_id', user.id)
+      if (!user?.id) return;
+      .eq('user_id', user.id)
         .eq('read', false);
       if (error) throw error;
     },
