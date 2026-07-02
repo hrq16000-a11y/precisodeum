@@ -63,8 +63,10 @@ async function renderRoute(browser, baseUrl, route) {
     mkdirSync(dirname(filePath), { recursive: true });
     writeFileSync(filePath, html, 'utf-8');
     process.stdout.write(`  ✓ ${route}\n`);
+    return { route, ok: true, bytes: Buffer.byteLength(html, 'utf-8') };
   } catch (err) {
     process.stdout.write(`  ✗ ${route}: ${err.message}\n`);
+    return { route, ok: false, error: err.message };
   } finally {
     await page.close().catch(() => {});
   }
@@ -80,6 +82,7 @@ async function renderRouteWithTimeout(browser, baseUrl, route) {
     timeoutPromise,
   ]).catch(err => {
     process.stdout.write(`  ✗ ${route}: ${err.message}\n`);
+    return { route, ok: false, error: err.message };
   });
 }
 
@@ -97,17 +100,32 @@ async function main() {
     args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
   });
 
+  const results = [];
   let done = 0;
   for (let i = 0; i < routes.length; i += CONCURRENCY) {
     const batch = routes.slice(i, i + CONCURRENCY);
-    await Promise.all(batch.map(r => renderRouteWithTimeout(browser, baseUrl, r)));
+    const batchResults = await Promise.all(batch.map(r => renderRouteWithTimeout(browser, baseUrl, r)));
+    results.push(...batchResults.filter(Boolean));
     done += batch.length;
     process.stdout.write(`  [${done}/${routes.length}] concluídos\n`);
   }
 
   await browser.close();
   server.httpServer.close();
-  console.log(`\n[prerender] Concluído. ${routes.length} arquivos HTML em dist/\n`);
+
+  const ok = results.filter(r => r.ok);
+  const failed = results.filter(r => !r.ok);
+  const report = {
+    generated_at: new Date().toISOString(),
+    total: routes.length,
+    ok: ok.length,
+    failed: failed.length,
+    bytes_total: ok.reduce((s, r) => s + (r.bytes || 0), 0),
+    failures: failed.map(r => ({ route: r.route, error: r.error })),
+    routes_ok: ok.map(r => r.route),
+  };
+  writeFileSync(join(DIST, 'prerender-report.json'), JSON.stringify(report, null, 2), 'utf-8');
+  console.log(`\n[prerender] Concluído. ok=${ok.length} fail=${failed.length} → dist/prerender-report.json\n`);
 }
 
 main().catch(err => {
