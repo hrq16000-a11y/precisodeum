@@ -60,9 +60,12 @@ describe('Critical page imports', () => {
 // ── 3. Utilitários core ─────────────────────────────────────────────
 describe('Core utilities stability', () => {
   it('sanitizeSlug works correctly', async () => {
-    const { sanitizeSlug } = await import('@/lib/slugify');
+    const { sanitizeSlug, generateProviderSlug, buildProviderSlugCandidates } = await import('@/lib/slugify');
     expect(sanitizeSlug('Olá Mundo')).toBe('ola-mundo');
     expect(sanitizeSlug('  São Paulo  ')).toBe('sao-paulo');
+    expect(generateProviderSlug('João Silva', 'JS Reformas', 'São Paulo')).toBe('joao-silva-js-reformas-sao-paulo');
+    expect(generateProviderSlug('', 'JS Reformas', 'São Paulo')).toBe('js-reformas-sao-paulo');
+    expect(buildProviderSlugCandidates('Jo%C3%A3o--Silva')).toContain('joao-silva');
   });
 
   it('cn utility merges classes', async () => {

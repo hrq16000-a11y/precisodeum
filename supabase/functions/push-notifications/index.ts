@@ -13,6 +13,7 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") || "";
   const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") || "";
 
@@ -36,6 +37,29 @@ Deno.serve(async (req) => {
       }
 
       const supabase = createClient(supabaseUrl, serviceRoleKey);
+      const token = authHeader.slice("Bearer ".length);
+      let authorized = token === serviceRoleKey;
+
+      if (!authorized) {
+        const callerClient = createClient(supabaseUrl, anonKey, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data: { user } } = await callerClient.auth.getUser();
+        if (user) {
+          const { data: isAdmin } = await supabase.rpc("has_role", {
+            _user_id: user.id,
+            _role: "admin",
+          });
+          authorized = !!isAdmin;
+        }
+      }
+
+      if (!authorized) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       const { user_id, title, message, type = "system", link } = await req.json();
 

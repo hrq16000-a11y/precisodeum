@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   /** Profile types allowed to access this route */
   allowedTypes?: string[];
   /** If true, requires authentication */
@@ -55,7 +55,7 @@ const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: Protecte
     if (!allowedTypes.includes(profileType)) return null;
   }
 
-  return <>{children}</>;
+  return children ? <>{children}</> : <Outlet />;
 };
 
 export default ProtectedRoute;

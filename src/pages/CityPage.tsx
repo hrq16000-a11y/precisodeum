@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -11,33 +11,46 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 
 const ITEMS_PER_PAGE = 12;
 
 const CityPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
     queryKey: ['city-page', slug],
     queryFn: async () => {
-      const { data: city } = await supabase
-        .from('cities')
-        .select('*')
-        .eq('slug', slug)
-        .maybeSingle();
+      const [{ data: city }, { data: aliasCity }] = await Promise.all([
+        supabase
+          .from('cities')
+          .select('*')
+          .eq('slug', slug)
+          .maybeSingle(),
+        supabase
+          .from('city_slug_aliases' as any)
+          .select('city_id')
+          .eq('slug', slug)
+          .maybeSingle(),
+      ]);
 
-      if (!city) return null;
+      const resolvedCity = city || (aliasCity?.city_id
+        ? (await supabase.from('cities').select('*').eq('id', aliasCity.city_id).maybeSingle()).data
+        : null);
+
+      if (!resolvedCity) return null;
 
       const { data: provs } = await supabase
         .from('providers')
         .select('*, categories(name, slug, icon)')
         .eq('status', 'approved')
-        .ilike('city', `%${city.name}%`)
+        .ilike('city', `%${resolvedCity.name}%`)
         .order('rating_avg', { ascending: false });
 
       const userIds = [...new Set((provs || []).map((p) => p.user_id))];
-      let profileMap: Record<string, string> = {};
+      const profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from('public_profiles' as any)
@@ -68,21 +81,26 @@ const CityPage = () => {
         featured: p.featured,
       }));
 
-      return { city, providers };
+      return { city: resolvedCity, providers };
     },
     enabled: !!slug,
   });
 
-  const { data: allCategories = [] } = useQuery({
-    queryKey: ['categories-for-links'],
-    queryFn: async () => {
-      const { data } = await supabase.from('categories').select('name, slug').order('name');
-      return data || [];
-    },
-  });
-
   const city = data?.city;
   const providers = data?.providers || [];
+  const coveredCategories = useMemo(() => {
+    const categoryMap = new Map<string, { name: string; slug: string }>();
+    providers.forEach((provider) => {
+      if (!provider.categorySlug || !provider.category) return;
+      if (!categoryMap.has(provider.categorySlug)) {
+        categoryMap.set(provider.categorySlug, {
+          name: provider.category,
+          slug: provider.categorySlug,
+        });
+      }
+    });
+    return Array.from(categoryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [providers]);
 
   useSeoHead({
     title: city ? `Profissionais em ${city.name} - ${city.state}` : 'Cidade',
@@ -90,9 +108,30 @@ const CityPage = () => {
       ? `Encontre os melhores profissionais em ${city.name}, ${city.state}. ${providers.length} cadastrados com avaliações verificadas.`
       : 'Encontre profissionais na sua cidade.',
     canonical: slug ? `${SITE_BASE_URL}/cidade/${slug}` : undefined,
+    noindex: !!city && providers.length === 0,
   });
+  const itemListLd = useMemo(() => {
+    if (!city || providers.length === 0) return null;
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: `Profissionais em ${city.name}`,
+      itemListElement: providers.slice(0, 12).map((provider, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${SITE_BASE_URL}/profissional/${provider.slug}`,
+        name: provider.name,
+      })),
+    };
+  }, [city, providers]);
+  useJsonLd(itemListLd);
 
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  if (city?.slug && slug && city.slug !== slug) {
+    navigate(`/cidade/${city.slug}`, { replace: true });
+  }
 
   if (isLoading) {
     return (
@@ -169,7 +208,7 @@ const CityPage = () => {
             Serviços em {city!.name}
           </h2>
           <div className="mt-4 flex flex-wrap gap-2">
-            {allCategories.map((cat) => (
+            {coveredCategories.map((cat) => (
               <Link
                 key={cat.slug}
                 to={`/${cat.slug}-${city!.slug}`}

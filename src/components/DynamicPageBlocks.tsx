@@ -15,7 +15,7 @@ const DynamicPageBlocks = ({ pageSlug, city, category, campaign }: DynamicPageBl
   useEffect(() => {
     const fetchBlocks = async () => {
       const now = new Date().toISOString();
-      let query = supabase
+      const query = supabase
         .from('page_blocks')
         .select('*')
         .eq('page_slug', pageSlug)

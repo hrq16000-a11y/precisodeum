@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ImagePlus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
@@ -20,18 +20,18 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
   const [images, setImages] = useState<ServiceImage[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     const { data } = await supabase
       .from('service_images')
       .select('*')
       .eq('service_id', serviceId)
       .order('display_order');
     if (data) setImages(data);
-  };
+  }, [serviceId]);
 
   useEffect(() => {
-    fetchImages();
-  }, [serviceId]);
+    void fetchImages();
+  }, [fetchImages]);
 
   /** Get user_ref for media table */
   const getUserRef = async (): Promise<string | null> => {
@@ -131,7 +131,9 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
         .from('media')
         .update({ is_active: false })
         .eq('public_url', img.image_url);
-    } catch {}
+    } catch {
+      // The media registry is auxiliary; storage deletion must still succeed.
+    }
 
     toast.success('Imagem removida');
     fetchImages();

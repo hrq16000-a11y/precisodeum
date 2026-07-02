@@ -60,7 +60,7 @@ const AdminPwaPage = () => {
     if (settings && !form) {
       setForm(settings);
     }
-  }, [settings]);
+  }, [settings, form]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: Partial<PwaSettings>) => {

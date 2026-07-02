@@ -140,7 +140,12 @@ const SearchPage = () => {
     : seoCity
       ? `Encontre profissionais confiáveis em ${seoCity}. Compare avaliações e solicite orçamentos.`
       : 'Busque e encontre profissionais confiáveis perto de você na maior plataforma de serviços do Brasil.';
-  useSeoHead({ title: seoTitle, description: seoDesc, canonical: `${SITE_BASE_URL}/buscar` });
+  useSeoHead({
+    title: seoTitle,
+    description: seoDesc,
+    canonical: `${SITE_BASE_URL}/buscar`,
+    noindex: true,
+  });
 
   const paginatedResults = fullyFiltered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 

@@ -23,10 +23,14 @@ function safeGet(key: string): string | null {
 function safeSet(key: string, value: string) {
   try {
     localStorage.setItem(key, value);
-  } catch {}
+  } catch {
+    // Storage can be unavailable in private browsing or restricted contexts.
+  }
   try {
     sessionStorage.setItem(key, value);
-  } catch {}
+  } catch {
+    // Geolocation remains usable in memory when browser storage is blocked.
+  }
 }
 
 async function fetchGeoFromEdge(): Promise<{ city: string | null; state: string | null; temp: number | null }> {

@@ -14,7 +14,6 @@ import { Plus, Pencil, Trash2, Eye, Rss, Loader2, Search } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
@@ -30,7 +29,6 @@ const autoSlug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u030
 const AdminBlogPage = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -40,8 +38,7 @@ const AdminBlogPage = () => {
   const [rssLoading, setRssLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-
-  if (!authLoading && !adminLoading && (!user || !isAdmin)) { navigate('/'); return null; }
+  const canLoadAdminData = !authLoading && !adminLoading && !!user && isAdmin;
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['admin-blog-posts'],
@@ -49,6 +46,7 @@ const AdminBlogPage = () => {
       const { data } = await supabase.from('blog_posts').select('*').is('deleted_at', null).order('created_at', { ascending: false });
       return data || [];
     },
+    enabled: canLoadAdminData,
   });
 
   const bulk = useAdminBulkActions({
@@ -127,6 +125,8 @@ const AdminBlogPage = () => {
       toast({ title: 'Erro ao importar RSS: ' + (err.message || ''), variant: 'destructive' });
     } finally { setRssLoading(false); }
   };
+
+  if (!canLoadAdminData) return null;
 
   return (
     <AdminLayout>

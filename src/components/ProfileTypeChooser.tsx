@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { generateProviderSlug } from '@/lib/slugify';
 
 const TYPES = [
   {
@@ -70,7 +71,7 @@ const ProfileTypeChooser = () => {
           .limit(1);
         if (!existing || existing.length === 0) {
           const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'profissional';
-          const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          const slug = generateProviderSlug(name);
           await supabase.from('providers').insert({
             user_id: user.id,
             slug,

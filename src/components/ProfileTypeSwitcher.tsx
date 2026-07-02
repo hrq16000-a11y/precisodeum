@@ -4,6 +4,7 @@ import { User, Briefcase, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { generateProviderSlug } from '@/lib/slugify';
 
 const TYPES = [
   { value: 'client', label: 'Cliente', icon: User, color: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
@@ -37,7 +38,7 @@ const ProfileTypeSwitcher = () => {
           .limit(1);
         if (!existing || existing.length === 0) {
           const name = profile?.full_name || user.email?.split('@')[0] || 'profissional';
-          const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          const slug = generateProviderSlug(name);
           await supabase.from('providers').insert({
             user_id: user.id,
             slug,

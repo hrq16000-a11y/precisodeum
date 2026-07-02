@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { User, Briefcase, Building2, ArrowRight, ArrowLeft, CheckCircle2, Search } from 'lucide-react';
+import { generateProviderSlug } from '@/lib/slugify';
 
 const ACCOUNT_TYPES = [
   {
@@ -140,7 +141,7 @@ const SignupPage = () => {
       } as any).eq('id', data.user.id);
 
       if (accountType === 'provider') {
-        const slug = `${form.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${form.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+        const slug = generateProviderSlug(form.fullName, form.businessName, form.city);
         await supabase.from('providers').insert({
           user_id: data.user.id,
           business_name: form.businessName || null,

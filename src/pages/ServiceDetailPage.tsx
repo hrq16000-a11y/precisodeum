@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { serviceImageThumb } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
 import { useQuery } from '@tanstack/react-query';
@@ -10,11 +10,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MessageCircle, MapPin, ChevronRight, Clock, Globe } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { whatsappLink } from '@/lib/whatsapp';
 
 const ServiceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
     queryKey: ['service-detail', id],
@@ -43,11 +44,20 @@ const ServiceDetailPage = () => {
   const city = svc?.provider?.city || '';
   const state = svc?.provider?.state || '';
   const provSlug = svc?.provider?.slug || svc?.provider?.id || '';
+  const shouldNoindex = !!svc && !svc.provider;
+  const canonicalServiceUrl = svc?.slug ? `${SITE_BASE_URL}/servico-detalhe/${svc.slug}` : id ? `${SITE_BASE_URL}/servico-detalhe/${id}` : undefined;
+
+  useEffect(() => {
+    if (svc && id && svc.slug && svc.slug !== id) {
+      navigate(`/servico-detalhe/${svc.slug}`, { replace: true });
+    }
+  }, [svc, id, navigate]);
 
   useSeoHead({
     title: svc ? `${svc.service_name} em ${city} – ${providerName}` : 'Serviço',
     description: svc ? `${svc.service_name} em ${city}-${state}. ${svc.description?.slice(0, 120)}` : '',
-    canonical: id ? `${SITE_BASE_URL}/servico-detalhe/${id}` : undefined,
+    canonical: canonicalServiceUrl,
+    noindex: shouldNoindex,
   });
 
   const ld = useMemo(() => svc ? ({
@@ -56,14 +66,30 @@ const ServiceDetailPage = () => {
     name: svc.service_name,
     description: svc.description,
     areaServed: { '@type': 'City', name: city },
-    provider: {
-      '@type': 'LocalBusiness',
-      name: providerName,
-      url: `${SITE_BASE_URL}/profissional/${provSlug}`,
-    },
+    ...(svc.provider ? {
+      provider: {
+        '@type': 'LocalBusiness',
+        name: providerName,
+        url: `${SITE_BASE_URL}/profissional/${provSlug}`,
+      },
+    } : {}),
   }) : null, [svc, city, providerName, provSlug]);
 
   useJsonLd(ld);
+  const breadcrumbLd = useMemo(() => {
+    if (!svc) return null;
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
+        ...(svc.categories?.slug ? [{ '@type': 'ListItem', position: 2, name: svc.categories.name, item: `${SITE_BASE_URL}/categoria/${svc.categories.slug}` }] : []),
+        { '@type': 'ListItem', position: svc.categories?.slug ? 3 : 2, name: svc.service_name, item: canonicalServiceUrl || `${SITE_BASE_URL}/servico-detalhe/${id}` },
+      ],
+    };
+  }, [svc, id, canonicalServiceUrl]);
+  useJsonLd(breadcrumbLd);
 
   if (isLoading) {
     return (
@@ -143,7 +169,6 @@ const ServiceDetailPage = () => {
               </div>
             </div>
 
-            {/* Sidebar */}
             <aside className="w-full lg:w-80">
               <div className="sticky top-20 rounded-xl border border-border bg-card p-6 shadow-card">
                 <h3 className="font-display text-base font-bold text-foreground">Profissional</h3>

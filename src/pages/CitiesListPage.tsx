@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 
 const CitiesListPage = () => {
   const [search, setSearch] = useState('');
@@ -51,6 +52,21 @@ const CitiesListPage = () => {
       (c) => c.name.toLowerCase().includes(q) || c.state.toLowerCase().includes(q)
     );
   }, [cities, search]);
+  useJsonLd(cities.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Cidades com Profissionais',
+    url: `${SITE_BASE_URL}/cidades`,
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: cities.slice(0, 30).map((city, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${SITE_BASE_URL}/cidade/${city.slug}`,
+        name: city.name,
+      })),
+    },
+  } : null);
 
   // Group by state
   const grouped = useMemo(() => {

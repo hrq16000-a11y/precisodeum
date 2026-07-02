@@ -62,6 +62,11 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+    const ownsPath = (path: string) => path.split("/")[0] === user.id;
     const contentType = req.headers.get("content-type") || "";
 
     if (contentType.includes("application/json")) {
@@ -73,6 +78,10 @@ Deno.serve(async (req) => {
 
       if (!path || isInvalidStoragePath(path)) {
         return jsonResponse({ error: "Invalid file path" }, 400);
+      }
+
+      if (!isAdmin && !ownsPath(path)) {
+        return jsonResponse({ error: "Forbidden path" }, 403);
       }
 
       const { data: existingFile, error: downloadError } = await supabase.storage
@@ -117,6 +126,10 @@ Deno.serve(async (req) => {
 
     if (folder && isInvalidStoragePath(folder)) {
       return jsonResponse({ error: "Invalid folder path" }, 400);
+    }
+
+    if (!isAdmin && (!folder || !ownsPath(folder))) {
+      return jsonResponse({ error: "Forbidden folder" }, 403);
     }
 
     if (!file) {

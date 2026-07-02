@@ -3,11 +3,11 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, GripVertical, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { sanitizeSlug } from '@/lib/slugify';
 
 interface PopularService {
   id: string;
@@ -23,7 +23,15 @@ interface PopularService {
 }
 
 const emptyService: Omit<PopularService, 'id'> = {
-  name: '', slug: '', category_name: '', category_slug: '', min_price: 0, icon: '🔧', description: '', display_order: 0, active: true,
+  name: '',
+  slug: '',
+  category_name: '',
+  category_slug: '',
+  min_price: 0,
+  icon: '🔧',
+  description: '',
+  display_order: 0,
+  active: true,
 };
 
 const AdminPopularServicesPage = () => {
@@ -37,31 +45,45 @@ const AdminPopularServicesPage = () => {
     if (data) setServices(data as any);
   };
 
-  useEffect(() => { if (isAdmin) fetch(); }, [isAdmin]);
+  useEffect(() => {
+    if (isAdmin) fetch();
+  }, [isAdmin]);
 
-  const generateSlug = (name: string) => name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const generateSlug = (name: string) => sanitizeSlug(name);
 
   const handleSave = async () => {
-    if (!editing?.name) { toast.error('Nome é obrigatório'); return; }
-    const slug = editing.slug || generateSlug(editing.name);
+    if (!editing?.name) {
+      toast.error('Nome é obrigatório');
+      return;
+    }
+    const slug = sanitizeSlug(editing.slug || editing.name);
     const payload = { ...editing, slug };
 
     if (isNew) {
       const { error } = await (supabase.from('popular_services' as any) as any).insert([payload]);
-      if (error) { toast.error(error.message); return; }
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
       toast.success('Serviço criado!');
     } else {
       const { error } = await (supabase.from('popular_services' as any) as any).update(payload).eq('id', editing.id);
-      if (error) { toast.error(error.message); return; }
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
       toast.success('Serviço atualizado!');
     }
-    setEditing(null); setIsNew(false); fetch();
+    setEditing(null);
+    setIsNew(false);
+    fetch();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir este serviço?')) return;
     await (supabase.from('popular_services' as any) as any).delete().eq('id', id);
-    toast.success('Excluído'); fetch();
+    toast.success('Excluído');
+    fetch();
   };
 
   if (loading) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
@@ -83,9 +105,9 @@ const AdminPopularServicesPage = () => {
           <h3 className="font-display font-bold text-foreground">{isNew ? 'Novo Serviço' : 'Editar Serviço'}</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <Input placeholder="Nome do serviço" value={editing.name || ''} onChange={e => setEditing({ ...editing, name: e.target.value, slug: generateSlug(e.target.value) })} />
-            <Input placeholder="Slug" value={editing.slug || ''} onChange={e => setEditing({ ...editing, slug: e.target.value })} />
+            <Input placeholder="Slug" value={editing.slug || ''} onChange={e => setEditing({ ...editing, slug: sanitizeSlug(e.target.value) })} />
             <Input placeholder="Categoria" value={editing.category_name || ''} onChange={e => setEditing({ ...editing, category_name: e.target.value })} />
-            <Input placeholder="Slug da categoria" value={editing.category_slug || ''} onChange={e => setEditing({ ...editing, category_slug: e.target.value })} />
+            <Input placeholder="Slug da categoria" value={editing.category_slug || ''} onChange={e => setEditing({ ...editing, category_slug: sanitizeSlug(e.target.value) })} />
             <Input type="number" placeholder="Preço mínimo (R$)" value={editing.min_price || 0} onChange={e => setEditing({ ...editing, min_price: Number(e.target.value) })} />
             <Input placeholder="Ícone (emoji)" value={editing.icon || ''} onChange={e => setEditing({ ...editing, icon: e.target.value })} />
             <Input type="number" placeholder="Ordem" value={editing.display_order || 0} onChange={e => setEditing({ ...editing, display_order: Number(e.target.value) })} />

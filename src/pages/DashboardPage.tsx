@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
+import { openSafeUrlInNewTab } from '@/lib/safeNavigation';
 
 const DashboardPage = () => {
   const { user, profile, provider, loading } = useAuth();
@@ -215,7 +216,7 @@ const DashboardPage = () => {
       number: '4',
       title: 'Entre no grupo do WhatsApp',
       description: 'Participe do nosso grupo exclusivo para profissionais e receba dicas.',
-      action: () => whatsappGroupUrl && window.open(whatsappGroupUrl, '_blank'),
+      action: () => whatsappGroupUrl && openSafeUrlInNewTab(whatsappGroupUrl),
       actionLabel: 'Entrar no Grupo',
       icon: Users,
       done: false,

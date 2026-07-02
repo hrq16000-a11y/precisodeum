@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 
 const INITIAL = 12;
 const MORE = 12;
@@ -25,6 +26,21 @@ const CategoriesListPage = () => {
   const filtered = search.trim()
     ? categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     : categories;
+  useJsonLd(categories.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Categorias de Serviços',
+    url: `${SITE_BASE_URL}/categorias`,
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: categories.slice(0, 24).map((cat, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${SITE_BASE_URL}/categoria/${cat.slug}`,
+        name: cat.name,
+      })),
+    },
+  } : null);
 
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;

@@ -7,6 +7,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications, type Notification } from '@/hooks/useNotifications';
+import { openSafeUrlInNewTab, resolveSafeNavigationTarget } from '@/lib/safeNavigation';
 
 const typeIcons: Record<string, string> = {
   lead: '📩',
@@ -112,11 +113,10 @@ const DashboardNotificationsPage = () => {
   }, [notifications, selectedType]);
 
   const handleNavigate = (link: string) => {
-    if (link.startsWith('http')) {
-      window.open(link, '_blank');
-    } else {
-      navigate(link);
-    }
+    const target = resolveSafeNavigationTarget(link);
+    if (!target) return;
+    if (target.internalPath) navigate(target.internalPath);
+    else openSafeUrlInNewTab(target.href);
   };
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;

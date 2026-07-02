@@ -1,5 +1,5 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProviderCard from '@/components/ProviderCard';
@@ -19,12 +19,25 @@ const ITEMS_PER_PAGE = 12;
 
 const CategoryPage = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { city: geoCity, state: geoState } = useGeoCity();
   const { data, isLoading } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
 
   const category = data?.category;
-  const allProviders = data?.providers || [];
+  const allProviders = useMemo(() => data?.providers || [], [data?.providers]);
+  const availableCities = useMemo(() => {
+    const cityMap = new Map<string, { city: string; state: string }>();
+    allProviders.forEach((provider) => {
+      const cityName = provider.city?.trim();
+      if (!cityName) return;
+      const key = cityName.toLowerCase();
+      if (!cityMap.has(key)) {
+        cityMap.set(key, { city: cityName, state: provider.state || '' });
+      }
+    });
+    return Array.from(cityMap.values()).slice(0, 12);
+  }, [allProviders]);
 
   // Filter by geo city first, then fallback
   const { displayProviders, isFallback, expansionLevel } = useMemo(() => {
@@ -59,6 +72,7 @@ const CategoryPage = () => {
       ? `Encontre os melhores profissionais de ${category.name}. ${displayProviders.length} cadastrados com avaliações verificadas.`
       : 'Encontre profissionais por categoria.',
     canonical: slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined,
+    noindex: !!category && displayProviders.length === 0,
   });
 
   const breadcrumbLd = useMemo(() => category ? ({
@@ -69,10 +83,30 @@ const CategoryPage = () => {
       { '@type': 'ListItem', position: 2, name: category.name },
     ],
   }) : null, [category]);
+  const itemListLd = useMemo(() => {
+    if (!category || displayProviders.length === 0) return null;
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: `${category.name} no Preciso de um`,
+      itemListElement: displayProviders.slice(0, 12).map((provider, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${SITE_BASE_URL}/profissional/${provider.slug}`,
+        name: provider.name,
+      })),
+    };
+  }, [category, displayProviders]);
 
   useJsonLd(breadcrumbLd);
+  useJsonLd(itemListLd);
 
   const paginatedProviders = displayProviders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  if (category?.slug && slug && category.slug !== slug) {
+    navigate(`/categoria/${category.slug}`, { replace: true });
+  }
 
   if (isLoading) {
     return (
@@ -145,6 +179,39 @@ const CategoryPage = () => {
           />
         )}
         <PaginationControls currentPage={page} totalItems={displayProviders.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
+
+        {category && availableCities.length > 0 && (
+          <section className="mt-10 rounded-xl border border-border bg-card p-6 shadow-card">
+            <h2 className="font-display text-xl font-bold text-foreground">
+              {category.name} em cidades com profissionais cadastrados
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Navegue pelas cidades onde já existe cobertura real de profissionais desta categoria.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {availableCities.map(({ city, state }) => {
+                const citySlug = city
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .toLowerCase()
+                  .replace(/[_\s]+/g, '-')
+                  .replace(/[^a-z0-9-]/g, '')
+                  .replace(/-{2,}/g, '-')
+                  .replace(/^-+|-+$/g, '');
+
+                return (
+                  <Link
+                    key={`${city}-${state}`}
+                    to={`/${category.slug}-${citySlug}`}
+                    className="rounded-full border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  >
+                    {category.name} em {city}{state ? ` - ${state}` : ''}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
       <Footer />
     </div>

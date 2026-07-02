@@ -14,7 +14,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Plus, Pencil, Trash2, ExternalLink, CalendarIcon, Eye, MousePointerClick, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
 import SponsorImage, { shapeLabelPt, type BannerShape } from '@/components/SponsorImage';
@@ -74,23 +73,15 @@ const idealSizes: Record<string, { width: number; height: number; label: string 
 const AdminSponsorsPage = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [detectedShape, setDetectedShape] = useState<{ width: number; height: number; shape: BannerShape } | null>(null);
-
-  const loading = authLoading || adminLoading;
-
-  if (!loading && (!user || !isAdmin)) {
-    navigate('/');
-    return null;
-  }
-
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const canLoadAdminData = !authLoading && !adminLoading && !!user && isAdmin;
 
   const { data: sponsors = [], isLoading } = useQuery({
     queryKey: ['admin-sponsors'],
@@ -103,6 +94,7 @@ const AdminSponsorsPage = () => {
       if (error) throw error;
       return (data || []) as Sponsor[];
     },
+    enabled: canLoadAdminData,
   });
 
   const bulk = useAdminBulkActions({
@@ -197,6 +189,8 @@ const AdminSponsorsPage = () => {
     featured: 'Destaque',
     footer: 'Rodapé',
   };
+
+  if (!canLoadAdminData) return null;
 
   return (
     <AdminLayout>

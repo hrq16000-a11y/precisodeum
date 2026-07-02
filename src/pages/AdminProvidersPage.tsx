@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,7 @@ const AdminProvidersPage = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  const fetchProviders = async () => {
+  const fetchProviders = useCallback(async () => {
     let query = supabase
       .from('providers')
       .select('*, categories(name)')
@@ -49,9 +49,9 @@ const AdminProvidersPage = () => {
       ...p,
       profiles: profileMap.get(p.user_id) || null,
     })));
-  };
+  }, [filter]);
 
-  useEffect(() => { if (isAdmin) fetchProviders(); }, [isAdmin, filter]);
+  useEffect(() => { if (isAdmin) void fetchProviders(); }, [isAdmin, fetchProviders]);
 
   const bulk = useAdminBulkActions({
     table: 'providers',

@@ -62,4 +62,28 @@ describe('Route registry integrity', () => {
     // This test acts as a regression guard
     expect(PROTECTED_ROUTES.length).toBeGreaterThanOrEqual(33);
   });
+
+  it('grouped protected routes render their nested outlet', async () => {
+    const fs = await import('fs');
+    const protectedRouteContent = fs.readFileSync('src/components/ProtectedRoute.tsx', 'utf-8');
+
+    expect(protectedRouteContent).toContain('children?: React.ReactNode');
+    expect(protectedRouteContent).toContain('<Outlet />');
+  });
+
+  it('all dashboard entry routes require authentication at router level', async () => {
+    const fs = await import('fs');
+    const appContent = fs.readFileSync('src/App.tsx', 'utf-8');
+    const dashboardRoutes = [
+      '/dashboard',
+      '/dashboard/perfil',
+      '/dashboard/comunidade',
+      '/dashboard/notificacoes',
+    ];
+
+    for (const route of dashboardRoutes) {
+      const routeLine = appContent.split('\n').find((line) => line.includes(`path="${route}"`));
+      expect(routeLine, `Route "${route}" must exist`).toContain('<ProtectedRoute>');
+    }
+  });
 });

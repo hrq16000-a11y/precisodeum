@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { sanitizeSlug } from '@/lib/slugify';
+import { buildProviderSlugCandidates } from '@/lib/slugify';
 import { toast } from 'sonner';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
@@ -84,6 +84,48 @@ interface ProviderProfileSnapshot {
 
 const PROVIDER_PROFILE_CACHE_TTL = 1000 * 60 * 15;
 const providerProfileCache = new Map<string, { ts: number; snapshot: ProviderProfileSnapshot }>();
+type ProviderSlugAliasRow = { provider_id: string; slug: string };
+
+async function resolveProviderBySlug(slug: string) {
+  const candidates = buildProviderSlugCandidates(slug);
+
+  for (const candidate of candidates) {
+    const { data } = await supabase
+      .from('providers')
+      .select('*, categories(name, slug, icon)')
+      .eq('slug', candidate)
+      .maybeSingle();
+
+    if (data) {
+      return { provider: data, matchedSlug: candidate, resolvedByAlias: false };
+    }
+  }
+
+  if (candidates.length === 0) {
+    return { provider: null, matchedSlug: null, resolvedByAlias: false };
+  }
+
+  const aliasQuery = await supabase
+    .from('provider_slug_aliases' as any)
+    .select('provider_id, slug')
+    .in('slug', candidates)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const aliasRow = aliasQuery.data as unknown as ProviderSlugAliasRow | null;
+
+  if (!aliasRow?.provider_id) {
+    return { provider: null, matchedSlug: null, resolvedByAlias: false };
+  }
+
+  const { data: provider } = await supabase
+    .from('providers')
+    .select('*, categories(name, slug, icon)')
+    .eq('id', aliasRow.provider_id)
+    .maybeSingle();
+
+  return { provider: provider ?? null, matchedSlug: aliasRow.slug ?? null, resolvedByAlias: true };
+}
 
 const THEME_CLASSES: Record<string, ThemeConfig> = {
   default: {
@@ -182,28 +224,12 @@ const ProviderProfile = () => {
 
       if (active) setLoading(true);
 
-      // Try exact match first
-      let { data } = await supabase
-        .from('providers')
-        .select('*, categories(name, slug, icon)')
-        .eq('slug', slug)
-        .maybeSingle();
+      const resolved = await resolveProviderBySlug(slug);
+      const data = resolved.provider;
 
-      // If not found, try sanitized version of the URL slug
-      if (!data && slug) {
-        const sanitized = sanitizeSlug(slug);
-        if (sanitized !== slug) {
-          const { data: fallback } = await supabase
-            .from('providers')
-            .select('*, categories(name, slug, icon)')
-            .eq('slug', sanitized)
-            .maybeSingle();
-          if (fallback) {
-            // Redirect to the canonical URL (301-style client redirect)
-            navigate(`/profissional/${fallback.slug}`, { replace: true });
-            return;
-          }
-        }
+      if (data && data.slug && data.slug !== slug) {
+        navigate(`/profissional/${data.slug}`, { replace: true });
+        return;
       }
 
       if (data) {
@@ -344,7 +370,7 @@ const ProviderProfile = () => {
     description: provider
       ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}.`
       : 'Encontre profissionais na plataforma.',
-    canonical: slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined,
+    canonical: provider?.slug ? `${SITE_BASE_URL}/profissional/${provider.slug}` : undefined,
   });
 
   const breadcrumbLd = useMemo(() => provider ? ({
@@ -368,8 +394,8 @@ const ProviderProfile = () => {
     ...(provider.review_count > 0 ? {
       aggregateRating: { '@type': 'AggregateRating', ratingValue: Number(provider.rating_avg).toFixed(1), reviewCount: provider.review_count, bestRating: 5 },
     } : {}),
-    url: `${SITE_BASE_URL}/profissional/${slug}`,
-  }) : null, [provider, name, avatarUrl, slug]);
+    url: provider?.slug ? `${SITE_BASE_URL}/profissional/${provider.slug}` : undefined,
+  }) : null, [provider, name, avatarUrl]);
 
   useJsonLd(breadcrumbLd);
   useJsonLd(localBusinessLd);

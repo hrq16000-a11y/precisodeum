@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { logAuditAction } from '@/hooks/useAuditLog';
+import { sanitizeSlug } from '@/lib/slugify';
 
 const emptyPage = {
   slug: '',
@@ -65,12 +66,19 @@ const AdminInstitutionalPagesPage = () => {
 
   const handleSave = async () => {
     if (!editPage) return;
-    if (!editPage.slug.trim()) { toast.error('Slug é obrigatório'); return; }
-    if (!editPage.title.trim()) { toast.error('Título é obrigatório'); return; }
+    const slug = sanitizeSlug(editPage.slug || editPage.title);
+    if (!slug) {
+      toast.error('Slug é obrigatório');
+      return;
+    }
+    if (!editPage.title.trim()) {
+      toast.error('Título é obrigatório');
+      return;
+    }
     setSaving(true);
 
     const payload = {
-      slug: editPage.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''),
+      slug,
       title: editPage.title,
       content: editPage.content,
       meta_title: editPage.meta_title,
@@ -177,7 +185,6 @@ const AdminInstitutionalPagesPage = () => {
         )}
       </div>
 
-      {/* Edit/Create Dialog */}
       <Dialog open={!!editPage} onOpenChange={open => !open && setEditPage(null)}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -187,12 +194,12 @@ const AdminInstitutionalPagesPage = () => {
             <div className="space-y-4">
               <div>
                 <Label>Slug (URL)</Label>
-                <Input value={editPage.slug} onChange={e => setEditPage({ ...editPage, slug: e.target.value })} placeholder="ex: sobre-nos" />
+                <Input value={editPage.slug} onChange={e => setEditPage({ ...editPage, slug: sanitizeSlug(e.target.value) })} placeholder="ex: sobre-nos" />
                 <p className="text-[10px] text-muted-foreground mt-1">Acessível em /p/{editPage.slug || 'slug'}</p>
               </div>
               <div>
                 <Label>Título</Label>
-                <Input value={editPage.title} onChange={e => setEditPage({ ...editPage, title: e.target.value })} />
+                <Input value={editPage.title} onChange={e => setEditPage({ ...editPage, title: e.target.value, slug: editPage.slug || sanitizeSlug(e.target.value) })} />
               </div>
               <div>
                 <Label>Conteúdo (HTML/Markdown)</Label>

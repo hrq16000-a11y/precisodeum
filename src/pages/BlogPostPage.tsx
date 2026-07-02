@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, ArrowLeft, ExternalLink, User, Newspaper } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 
 /** Strip HTML tags and decode common entities */
 function stripHtmlTags(rawHtml: string): string {
@@ -70,8 +72,31 @@ const BlogPostPage = () => {
   useSeoHead({
     title: post?.title ? `${post.title} | Preciso de um` : 'Blog | Preciso de um',
     description: post?.excerpt || 'Confira as últimas notícias e dicas do Preciso de um.',
-    canonical: `${SITE_BASE_URL}/blog/${slug}`,
+    canonical: post?.slug ? `${SITE_BASE_URL}/blog/${post.slug}` : `${SITE_BASE_URL}/blog/${slug}`,
   });
+
+  useEffect(() => {
+    if (post && slug && post.slug && post.slug !== slug) {
+      window.location.replace(`/blog/${post.slug}`);
+    }
+  }, [post, slug]);
+
+  useJsonLd(post ? {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt || stripHtmlTags(post.content).slice(0, 160),
+    datePublished: post.created_at,
+    dateModified: post.updated_at || post.created_at,
+    url: `${SITE_BASE_URL}/blog/${post.slug}`,
+    image: post.cover_image_url || undefined,
+    author: post.author_name ? { '@type': 'Person', name: post.author_name } : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Preciso de um',
+      logo: { '@type': 'ImageObject', url: `${SITE_BASE_URL}/favicon.ico` },
+    },
+  } : null);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

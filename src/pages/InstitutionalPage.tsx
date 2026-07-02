@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,6 +7,7 @@ import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
 const InstitutionalPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [page, setPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,6 +22,9 @@ const InstitutionalPage = () => {
       .then(({ data }) => {
         setPage(data);
         setLoading(false);
+        if (data?.slug && slug && data.slug !== slug) {
+          navigate(`/p/${data.slug}`, { replace: true });
+        }
       });
   }, [slug]);
 

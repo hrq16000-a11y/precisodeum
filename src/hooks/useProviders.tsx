@@ -370,24 +370,37 @@ export function useCategoryProviders(categorySlug: string) {
   return useQuery({
     queryKey: ['category-providers', categorySlug],
     queryFn: async () => {
-      const { data: cat } = await supabase
-        .from('categories')
-        .select('id, name, slug, icon')
-        .eq('slug', categorySlug)
-        .maybeSingle();
+      const normalizedSlug = categorySlug?.trim();
+      const [{ data: cat }, { data: aliasCat }] = await Promise.all([
+        supabase
+          .from('categories')
+          .select('id, name, slug, icon')
+          .eq('slug', normalizedSlug)
+          .maybeSingle(),
+        supabase
+          .from('category_slug_aliases' as any)
+          .select('category_id')
+          .eq('slug', normalizedSlug)
+          .maybeSingle(),
+      ]);
 
-      if (!cat) return { category: null, providers: [] };
+      const categoryId = (cat as any)?.id || (aliasCat as any)?.category_id;
+      if (!categoryId) return { category: null, providers: [] };
+
+      const { data: resolvedCategory } = (cat as any)?.id
+        ? { data: cat }
+        : await supabase.from('categories').select('id, name, slug, icon').eq('id', categoryId).maybeSingle();
 
       const providers = await fetchProvidersWithProfiles(
         supabase
           .from('providers')
           .select(providerSelect)
           .eq('status', 'approved')
-          .eq('category_id', cat.id)
+          .eq('category_id', categoryId)
           .order('rating_avg', { ascending: false })
       );
 
-      return { category: cat, providers };
+      return { category: resolvedCategory || cat, providers };
     },
     enabled: !!categorySlug,
   });

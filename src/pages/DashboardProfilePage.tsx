@@ -111,6 +111,7 @@ const DashboardProfilePage = () => {
       }
 
       if (provider) {
+        const slug = generateProviderSlug(form.full_name, form.business_name, form.city);
         const { error: providerError } = await supabase.from('providers').update({
           business_name: form.business_name || null,
           description: form.description,
@@ -121,6 +122,7 @@ const DashboardProfilePage = () => {
           website: form.website || null,
           years_experience: form.years_experience,
           category_id: form.category_id || null,
+          slug,
         }).eq('id', provider.id);
 
         if (providerError) {
@@ -138,6 +140,7 @@ const DashboardProfilePage = () => {
 
         if (existingProviders && existingProviders.length > 0) {
           // Update existing instead of creating duplicate
+          const slug = generateProviderSlug(form.full_name, form.business_name, form.city);
           const { error: updateError } = await supabase.from('providers').update({
             business_name: form.business_name || null,
             description: form.description,
@@ -147,6 +150,7 @@ const DashboardProfilePage = () => {
             phone: finalPhone,
             whatsapp: finalWhatsapp,
             category_id: form.category_id || null,
+            slug,
           }).eq('id', existingProviders[0].id);
 
           if (updateError) {
@@ -155,7 +159,7 @@ const DashboardProfilePage = () => {
             return;
           }
         } else {
-          const slug = generateProviderSlug(form.full_name, form.city);
+          const slug = generateProviderSlug(form.full_name, form.business_name, form.city);
           const { error: insertError } = await supabase.from('providers').insert({
             user_id: user.id,
             business_name: form.business_name || null,

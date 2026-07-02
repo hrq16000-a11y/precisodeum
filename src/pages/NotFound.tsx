@@ -4,9 +4,17 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Search, Briefcase, UserPlus } from "lucide-react";
+import { useSeoHead, SITE_BASE_URL } from "@/hooks/useSeoHead";
 
 const NotFound = () => {
   const location = useLocation();
+
+  useSeoHead({
+    title: 'Página não encontrada',
+    description: 'A página que você procura não existe ou foi removida.',
+    canonical: `${SITE_BASE_URL}/`,
+    noindex: true,
+  });
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
@@ -16,7 +24,7 @@ const NotFound = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <div className="flex flex-1 items-center justify-center px-4 py-16">
-        <div className="text-center max-w-md">
+        <div className="max-w-md text-center">
           <h1 className="font-display text-5xl font-bold text-primary">404</h1>
           <p className="mt-3 text-lg font-semibold text-foreground">Página não encontrada</p>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -42,16 +50,19 @@ const NotFound = () => {
           <div className="mt-8 rounded-xl border border-border bg-muted/50 p-4">
             <p className="text-sm font-medium text-foreground">Sugestões</p>
             <div className="mt-2 flex flex-wrap justify-center gap-2">
-              <Link to="/blog" className="rounded-full bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground border border-border">
+              <Link to="/" className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground">
+                Início
+              </Link>
+              <Link to="/blog" className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground">
                 Notícias
               </Link>
-              <Link to="/categorias" className="rounded-full bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground border border-border">
+              <Link to="/categorias" className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground">
                 Categorias
               </Link>
-              <Link to="/cidades" className="rounded-full bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground border border-border">
+              <Link to="/cidades" className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground">
                 Cidades
               </Link>
-              <Link to="/faq" className="rounded-full bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground border border-border">
+              <Link to="/faq" className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground">
                 FAQ
               </Link>
             </div>

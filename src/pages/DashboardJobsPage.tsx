@@ -12,6 +12,7 @@ import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp } from '@/lib/whatsapp
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { openSafeUrlInNewTab } from '@/lib/safeNavigation';
 
 const OPPORTUNITY_TYPES = [
   { value: 'servico', label: 'Serviço' },
@@ -344,7 +345,7 @@ const DashboardJobsPage = () => {
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" onClick={() => copyUrl(job)} title="Copiar link"><Copy className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => handleDuplicate(job)} title="Duplicar vaga"><CopyPlus className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => window.open(`/vaga/${job.slug || job.id}`, '_blank')}><ExternalLink className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => openSafeUrlInNewTab(`/vaga/${job.slug || job.id}`)}><ExternalLink className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(job)}><Pencil className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => handleDelete(job.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
               </div>
@@ -515,7 +516,7 @@ const DashboardJobsPage = () => {
                 value={form.cover_image_url}
                 onChange={(url) => setForm(prev => ({ ...prev, cover_image_url: url }))}
                 bucket="service-images"
-                folder="jobs"
+                folder={user ? `${user.id}/jobs` : ''}
                 label="Imagem de capa"
               />
               {editingId && (

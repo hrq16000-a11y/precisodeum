@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAdmin } from '@/hooks/useAdmin';
+import { openSafeUrlInNewTab } from '@/lib/safeNavigation';
 
 const emptyForm = { title: '', description: '', url: '', icon: '🔗', display_order: 0, active: true };
 
@@ -115,7 +116,7 @@ const AdminCommunityPage = () => {
               </span>
             </div>
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" onClick={() => window.open(link.url, '_blank')}><ExternalLink className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => openSafeUrlInNewTab(link.url)}><ExternalLink className="h-4 w-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => openEdit(link)}><Pencil className="h-4 w-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(link.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>

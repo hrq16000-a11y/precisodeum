@@ -68,7 +68,7 @@ const AdminMediaPage = () => {
     setLoading(false);
   }, [page, entityFilter, mimeFilter, statusFilter, search]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     const { count: totalCount } = await supabase.from('media').select('id', { count: 'exact', head: true });
     const { count: activeCount } = await supabase.from('media').select('id', { count: 'exact', head: true }).eq('is_active', true);
     
@@ -83,9 +83,9 @@ const AdminMediaPage = () => {
       totalSize,
       oversized,
     });
-  };
+  }, []);
 
-  const syncStorage = async () => {
+  const syncStorage = useCallback(async () => {
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('sync-storage-media');
@@ -104,21 +104,21 @@ const AdminMediaPage = () => {
     } finally {
       setSyncing(false);
     }
-  };
+  }, [fetchMedia, fetchStats]);
 
   // Auto-sync on first load
   useEffect(() => {
     if (isAdmin && !syncDone) {
-      syncStorage();
+      void syncStorage();
     }
-  }, [isAdmin]);
+  }, [isAdmin, syncDone, syncStorage]);
 
   useEffect(() => {
     if (isAdmin && syncDone) {
-      fetchMedia();
-      fetchStats();
+      void fetchMedia();
+      void fetchStats();
     }
-  }, [isAdmin, syncDone, page, entityFilter, mimeFilter, statusFilter]);
+  }, [isAdmin, syncDone, fetchMedia, fetchStats]);
 
   const handleSearch = () => { setPage(1); fetchMedia(); };
 

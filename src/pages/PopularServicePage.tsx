@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
@@ -24,7 +24,7 @@ const PopularServicePage = () => {
         .select('*')
         .eq('slug', slug)
         .eq('active', true)
-        .single();
+        .maybeSingle();
       return data as any;
     },
     enabled: !!slug,
@@ -97,8 +97,14 @@ const PopularServicePage = () => {
 
   const title = service ? `${service.name} - A partir de R$ ${Number(service.min_price).toFixed(2).replace('.', ',')}` : 'Carregando...';
   const desc = service?.description || '';
+  const shouldNoindex = !!service && providers.length === 0 && !provsLoading;
 
-  useSeoHead({ title, description: desc, canonical: `${SITE_BASE_URL}/servico/${slug}` });
+  useSeoHead({
+    title,
+    description: desc,
+    canonical: `${SITE_BASE_URL}/servico/${slug}`,
+    noindex: shouldNoindex,
+  });
   useJsonLd(service ? {
     '@context': 'https://schema.org',
     '@type': 'Service',
@@ -107,6 +113,22 @@ const PopularServicePage = () => {
     provider: { '@type': 'Organization', name: 'Preciso de um' },
     offers: { '@type': 'Offer', priceCurrency: 'BRL', price: service.min_price, priceSpecification: { '@type': 'UnitPriceSpecification', priceCurrency: 'BRL', price: service.min_price, unitText: 'A partir de' } },
   } : null);
+  const itemListLd = useMemo(() => {
+    if (!service || providers.length === 0) return null;
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: `Profissionais de ${service.name}`,
+      itemListElement: providers.slice(0, 12).map((provider: any, index: number) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${SITE_BASE_URL}/profissional/${provider.slug}`,
+        name: provider.name,
+      })),
+    };
+  }, [service, providers]);
+  useJsonLd(itemListLd);
 
   if (serviceLoading) {
     return (

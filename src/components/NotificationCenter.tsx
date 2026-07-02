@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { openSafeUrlInNewTab, resolveSafeNavigationTarget } from '@/lib/safeNavigation';
 
 const typeIcons: Record<string, string> = {
   lead: '📩',
@@ -125,11 +126,10 @@ const NotificationDropdown = ({ onClose }: { onClose: () => void }) => {
 
   const handleNavigate = (link: string) => {
     onClose();
-    if (link.startsWith('http')) {
-      window.open(link, '_blank');
-    } else {
-      navigate(link);
-    }
+    const target = resolveSafeNavigationTarget(link);
+    if (!target) return;
+    if (target.internalPath) navigate(target.internalPath);
+    else openSafeUrlInNewTab(target.href);
   };
 
   if (showSettings) {

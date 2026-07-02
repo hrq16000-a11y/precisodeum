@@ -176,16 +176,16 @@ const App = () => {
                 <Route path="/cadastro" element={<SignupPage />} />
                 <Route path="/vagas" element={<JobsPage />} />
                 <Route path="/vaga/:slug" element={<JobDetailPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/dashboard/perfil" element={<DashboardProfilePage />} />
+                <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                <Route path="/dashboard/perfil" element={<ProtectedRoute><DashboardProfilePage /></ProtectedRoute>} />
                 <Route path="/dashboard/servicos" element={<ProtectedRoute allowedTypes={['provider']}><DashboardServicesPage /></ProtectedRoute>} />
                 <Route path="/dashboard/avaliacoes" element={<ProtectedRoute allowedTypes={['provider']}><DashboardReviewsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/leads" element={<ProtectedRoute allowedTypes={['provider']}><DashboardLeadsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/plano" element={<ProtectedRoute allowedTypes={['provider']}><DashboardPlanPage /></ProtectedRoute>} />
                 <Route path="/dashboard/minha-pagina" element={<ProtectedRoute allowedTypes={['provider']}><DashboardMyPagePage /></ProtectedRoute>} />
                 <Route path="/dashboard/vagas" element={<ProtectedRoute allowedTypes={['provider', 'rh']}><DashboardJobsPage /></ProtectedRoute>} />
-                <Route path="/dashboard/comunidade" element={<DashboardCommunityPage />} />
-                <Route path="/dashboard/notificacoes" element={<DashboardNotificationsPage />} />
+                <Route path="/dashboard/comunidade" element={<ProtectedRoute><DashboardCommunityPage /></ProtectedRoute>} />
+                <Route path="/dashboard/notificacoes" element={<ProtectedRoute><DashboardNotificationsPage /></ProtectedRoute>} />
                 
                 {/* Admin Routes — Protected at router level */}
                 <Route element={<ProtectedRoute allowedTypes={['admin']} />}>

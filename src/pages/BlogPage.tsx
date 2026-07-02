@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, ArrowRight, Sparkles, Newspaper, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useJsonLd } from '@/hooks/useJsonLd';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -91,6 +92,24 @@ const BlogPage = () => {
   const highlights = useMemo(() => shuffle(posts).slice(0, Math.min(6, posts.length)), [posts]);
   const highlightIds = new Set(highlights.map((h) => h.id));
   const rest = posts.filter((p) => !highlightIds.has(p.id));
+  const blogListLd = useMemo(() => {
+    if (posts.length === 0) return null;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Blog',
+      name: 'Notícias | Preciso de um',
+      url: `${SITE_BASE_URL}/blog`,
+      blogPost: posts.slice(0, 12).map((post) => ({
+        '@type': 'BlogPosting',
+        headline: post.title,
+        url: `${SITE_BASE_URL}/blog/${post.slug}`,
+        datePublished: post.created_at,
+        author: post.author_name ? { '@type': 'Person', name: post.author_name } : undefined,
+      })),
+    };
+  }, [posts]);
+
+  useJsonLd(blogListLd);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

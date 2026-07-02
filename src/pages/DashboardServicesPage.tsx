@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -52,7 +52,7 @@ const DashboardServicesPage = () => {
     });
   }, []);
 
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     if (!provider) return;
     const { data } = await supabase
       .from('services')
@@ -76,11 +76,11 @@ const DashboardServicesPage = () => {
 
       setServices(data.map(s => ({ ...s, serviceCategories: catMap[s.id] || [] })));
     }
-  };
+  }, [provider]);
 
   useEffect(() => {
-    if (provider) fetchServices();
-  }, [provider]);
+    if (provider) void fetchServices();
+  }, [provider, fetchServices]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

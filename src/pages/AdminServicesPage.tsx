@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +26,7 @@ const AdminServicesPage = () => {
   const [page, setPage] = useState(1);
   const [editService, setEditService] = useState<any | null>(null);
 
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     let query = supabase
       .from('services')
       .select('*, providers(business_name, slug, user_id), categories(name)')
@@ -37,11 +37,11 @@ const AdminServicesPage = () => {
 
     const { data } = await query;
     setServices(data || []);
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
-    if (isAdmin) fetchServices();
-  }, [isAdmin, statusFilter]);
+    if (isAdmin) void fetchServices();
+  }, [isAdmin, fetchServices]);
 
   const bulk = useAdminBulkActions({
     table: 'services',

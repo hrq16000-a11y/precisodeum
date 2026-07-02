@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,7 +46,7 @@ const AdminAuditLogPage = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     let query = supabase
       .from('audit_log' as any)
       .select('*', { count: 'exact' })
@@ -70,11 +70,11 @@ const AdminAuditLogPage = () => {
         .in('id', userIds);
       setProfiles(new Map((profileData || []).map(p => [p.id, p.full_name])));
     }
-  };
+  }, [page, filterAction, filterResource]);
 
   useEffect(() => {
-    if (isAdmin) fetchLogs();
-  }, [isAdmin, page, filterAction, filterResource]);
+    if (isAdmin) void fetchLogs();
+  }, [isAdmin, fetchLogs]);
 
   if (loading) return <AdminLayout><p className="text-muted-foreground p-4">Carregando...</p></AdminLayout>;
 

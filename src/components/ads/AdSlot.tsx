@@ -38,7 +38,7 @@ function useSlotSponsors(slotSlug: string, category?: string, city?: string, sta
 
       // Get assignments
       const now = new Date().toISOString().split('T')[0];
-      let query = supabase
+      const query = supabase
         .from('ad_slot_assignments' as any)
         .select('sponsor_id, priority, target_category, target_city, target_state')
         .eq('slot_id', (slot as any).id)

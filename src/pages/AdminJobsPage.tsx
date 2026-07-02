@@ -13,6 +13,7 @@ import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
+import { openSafeUrlInNewTab } from '@/lib/safeNavigation';
 
 const PAGE_SIZE = 20;
 
@@ -186,7 +187,7 @@ const AdminJobsPage = () => {
                     </Button>
                   </>
                 )}
-                <Button variant="ghost" size="icon" onClick={() => window.open(`/vaga/${job.slug || job.id}`, '_blank')}><ExternalLink className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => openSafeUrlInNewTab(`/vaga/${job.slug || job.id}`)}><ExternalLink className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(job)}><Pencil className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => handleDelete(job.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
               </div>

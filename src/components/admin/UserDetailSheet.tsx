@@ -30,23 +30,26 @@ const UserDetailSheet = ({ user, isAdmin, onClose }: UserDetailSheetProps) => {
 
   useEffect(() => {
     if (!user) return;
+    let active = true;
     setTab('profile');
     setPageSettings(null);
     setProviderId(null);
 
     // Fetch services via provider
     supabase.from('providers').select('id').eq('user_id', user.id).then(({ data: provs }) => {
+      if (!active) return;
       if (!provs?.length) { setServices([]); setLeads([]); setProviderId(null); return; }
       const pid = provs[0].id;
       setProviderId(pid);
       const providerIds = provs.map(p => p.id);
       supabase.from('services').select('id, service_name, created_at, deleted_at').in('provider_id', providerIds).order('created_at', { ascending: false }).limit(50)
-        .then(({ data }) => setServices(data || []));
+        .then(({ data }) => { if (active) setServices(data || []); });
       supabase.from('leads').select('id, client_name, status, created_at, service_needed').in('provider_id', providerIds).order('created_at', { ascending: false }).limit(50)
-        .then(({ data }) => setLeads(data || []));
+        .then(({ data }) => { if (active) setLeads(data || []); });
       // Fetch page settings
       supabase.from('provider_page_settings').select('*').eq('provider_id', pid).maybeSingle()
         .then(({ data }) => {
+          if (!active) return;
           setPageSettings(data);
           if (data) setSettingsForm({ headline: data.headline || '', tagline: data.tagline || '', cta_text: data.cta_text || '', theme: data.theme || 'default', accent_color: data.accent_color || '' });
         });
@@ -56,15 +59,17 @@ const UserDetailSheet = ({ user, isAdmin, onClose }: UserDetailSheetProps) => {
     if (user.user_ref) {
       supabase.from('media').select('id, original_name, public_url, entity_type, mime_type, created_at, is_active')
         .eq('user_ref', user.user_ref).order('created_at', { ascending: false }).limit(50)
-        .then(({ data }) => setMedia(data || []));
+        .then(({ data }) => { if (active) setMedia(data || []); });
     } else {
       setMedia([]);
     }
 
     // Fetch audit logs for this user
     supabase.from('audit_log').select('*').eq('resource_id', user.id).eq('resource_type', 'user').order('created_at', { ascending: false }).limit(50)
-      .then(({ data }) => setAuditLogs(data || []));
-  }, [user?.id]);
+      .then(({ data }) => { if (active) setAuditLogs(data || []); });
+
+    return () => { active = false; };
+  }, [user]);
 
   const savePageSettings = async () => {
     if (!providerId) return;

@@ -23,9 +23,9 @@ Deno.serve(async (req) => {
     { data: providers },
     { data: services },
   ] = await Promise.all([
-    supabase.from('categories').select('slug, created_at'),
+    supabase.from('categories').select('id, slug, created_at'),
     supabase.from('cities').select('slug, created_at'),
-    supabase.from('providers').select('slug, updated_at').eq('status', 'approved').not('slug', 'is', null),
+    supabase.from('providers').select('slug, updated_at, category_id, city').eq('status', 'approved').not('slug', 'is', null),
     supabase.from('services').select('id, created_at, provider_id'),
   ]);
 
@@ -36,6 +36,11 @@ Deno.serve(async (req) => {
 
   // 2. Static pages
   urls += url(siteUrl, '/buscar', today, 'daily', '0.8');
+  urls += url(siteUrl, '/categorias', today, 'weekly', '0.7');
+  urls += url(siteUrl, '/cidades', today, 'weekly', '0.7');
+  urls += url(siteUrl, '/vagas', today, 'daily', '0.7');
+  urls += url(siteUrl, '/blog', today, 'daily', '0.6');
+  urls += url(siteUrl, '/faq', today, 'monthly', '0.4');
   urls += url(siteUrl, '/sobre', today, 'monthly', '0.3');
 
   // 3. Categories - priority 0.9
@@ -53,11 +58,21 @@ Deno.serve(async (req) => {
     urls += url(siteUrl, `/cidade/${city.slug}`, lastmod(city.created_at), 'weekly', '0.8');
   }
 
-  // 6. SEO programmatic pages: category + city
-  for (const cat of categories || []) {
-    for (const city of cities || []) {
-      urls += url(siteUrl, `/${cat.slug}-${city.slug}`, today, 'weekly', '0.6');
-    }
+  const categoryById = new Map((categories || []).map((cat) => [cat.id, cat.slug]));
+  const citySlugSet = new Set((cities || []).map((city) => city.slug));
+  const seoLandingPaths = new Set<string>();
+
+  for (const provider of providers || []) {
+    const categorySlug = provider.category_id ? categoryById.get(provider.category_id) : null;
+    const citySlug = slugify(provider.city || '');
+
+    if (!categorySlug || !citySlug || !citySlugSet.has(citySlug)) continue;
+    seoLandingPaths.add(`/${categorySlug}-${citySlug}`);
+  }
+
+  // 6. SEO programmatic pages with real provider coverage only
+  for (const path of seoLandingPaths) {
+    urls += url(siteUrl, path, today, 'weekly', '0.6');
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -83,6 +98,17 @@ function lastmod(date: string): string {
 
 function escapeXml(s: string): string {
   return s.replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]!));
+}
+
+function slugify(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function url(base: string, path: string, lastmod: string, changefreq: string, priority: string): string {

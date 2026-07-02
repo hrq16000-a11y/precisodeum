@@ -1080,7 +1080,9 @@ const StorageBackupSection = () => {
               zipFilename = msg.filename;
               zipBase64 = msg.data;
             }
-          } catch {}
+          } catch {
+            // Ignore incomplete stream chunks; the remaining buffer is parsed next.
+          }
         }
       }
 

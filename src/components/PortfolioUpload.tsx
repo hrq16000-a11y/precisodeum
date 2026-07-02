@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -15,7 +15,7 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
 
   const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
 
-  const loadImages = async () => {
+  const loadImages = useCallback(async () => {
     const { data } = await supabase.storage.from('portfolio').list(`${userId}`, { limit: 20 });
     if (data) {
       setImages(
@@ -27,11 +27,11 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
           }))
       );
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
-    loadImages();
-  }, [userId]);
+    void loadImages();
+  }, [loadImages]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -85,6 +85,8 @@ const PortfolioUpload = ({ userId, providerId }: PortfolioUploadProps) => {
             <div key={img.name} className="group relative aspect-square overflow-hidden rounded-lg border border-border">
               <img src={img.url} alt="Portfolio" className="h-full w-full object-cover" />
               <button
+                type="button"
+                aria-label={`Remover ${img.name} do portfólio`}
                 onClick={() => handleDelete(img.name)}
                 className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
               >

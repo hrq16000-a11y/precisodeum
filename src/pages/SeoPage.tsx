@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
@@ -13,43 +13,97 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 const ITEMS_PER_PAGE = 12;
 
-const parseSeoSlug = async (slug: string) => {
-  const { data: categories } = await supabase.from('categories').select('name, slug').order('name');
-  if (!categories) return null;
+type SeoParsedSlug = {
+  categorySlug: string;
+  categoryName: string;
+  city: string;
+  citySlug: string;
+  neighborhood: string;
+};
+
+const normalizeSlugLabel = (value: string) =>
+  value
+    .split('-')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+const parseSeoSlug = async (slug: string): Promise<SeoParsedSlug | null> => {
+  const [{ data: categories }, { data: cities }] = await Promise.all([
+    supabase.from('categories').select('name, slug').order('name'),
+    supabase.from('cities').select('name, slug').order('slug'),
+  ]);
+  if (!categories || !cities) return null;
 
   const categoryMap: Record<string, string> = {};
   categories.forEach((c) => { categoryMap[c.slug] = c.name; });
 
   const categorySlugs = Object.keys(categoryMap).sort((a, b) => b.length - a.length);
+  const sortedCities = [...cities].sort((a, b) => b.slug.length - a.slug.length);
 
   for (const catSlug of categorySlugs) {
-    if (slug.startsWith(catSlug + '-')) {
-      const rest = slug.slice(catSlug.length + 1);
-      const { data: cities } = await supabase.from('cities').select('name, slug').order('slug');
-      
-      if (cities) {
-        const sortedCities = [...cities].sort((a, b) => b.slug.length - a.slug.length);
-        for (const city of sortedCities) {
-          if (rest.startsWith(city.slug + '-')) {
-            const neighborhoodPart = rest.slice(city.slug.length + 1);
-            const neighborhood = neighborhoodPart.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-            return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: city.name, citySlug: city.slug, neighborhood };
-          }
-          if (rest === city.slug) {
-            return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: city.name, citySlug: city.slug, neighborhood: '' };
-          }
-        }
-      }
-
-      const city = rest.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city, citySlug: rest, neighborhood: '' };
-    }
     if (slug === catSlug) {
       return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: '', citySlug: '', neighborhood: '' };
     }
+
+    if (!slug.startsWith(`${catSlug}-`)) continue;
+
+    const rest = slug.slice(catSlug.length + 1);
+
+    for (const city of sortedCities) {
+      if (rest === city.slug) {
+        return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: city.name, citySlug: city.slug, neighborhood: '' };
+      }
+
+      if (!rest.startsWith(`${city.slug}-`)) continue;
+
+      const neighborhoodPart = rest.slice(city.slug.length + 1).replace(/^-+|-+$/g, '');
+      if (!neighborhoodPart || neighborhoodPart.length < 3) {
+        return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: city.name, citySlug: city.slug, neighborhood: '' };
+      }
+
+      return {
+        categorySlug: catSlug,
+        categoryName: categoryMap[catSlug],
+        city: city.name,
+        citySlug: city.slug,
+        neighborhood: normalizeSlugLabel(neighborhoodPart),
+      };
+    }
   }
+
   return null;
 };
+
+async function resolveCityBySlug(slug: string) {
+  const { data: city } = await supabase.from('cities').select('id, name, slug, state').eq('slug', slug).maybeSingle();
+  if (city) return city;
+
+  const { data: alias } = await supabase
+    .from('city_slug_aliases' as any)
+    .select('city_id')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (!alias?.city_id) return null;
+  const { data: resolved } = await supabase.from('cities').select('id, name, slug, state').eq('id', alias.city_id).maybeSingle();
+  return resolved || null;
+}
+
+async function resolveCategoryBySlug(slug: string) {
+  const { data: category } = await supabase.from('categories').select('id, name, slug, icon').eq('slug', slug).maybeSingle();
+  if (category) return category;
+
+  const { data: alias } = await supabase
+    .from('category_slug_aliases' as any)
+    .select('category_id')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (!alias?.category_id) return null;
+  const { data: resolved } = await supabase.from('categories').select('id, name, slug, icon').eq('id', alias.category_id).maybeSingle();
+  return resolved || null;
+}
 
 const SeoPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -59,8 +113,50 @@ const SeoPage = () => {
     queryKey: ['seo-page', slug],
     queryFn: async () => {
       if (!slug) return null;
+      const cityAlias = await resolveCityBySlug(slug);
+      if (cityAlias) {
+        const { data: provs } = await supabase
+          .from('providers')
+          .select('*, categories(name, slug, icon)')
+          .eq('status', 'approved')
+          .ilike('city', `%${cityAlias.name}%`)
+          .order('rating_avg', { ascending: false });
+
+        const userIds = [...new Set((provs || []).map((p) => p.user_id))];
+        const profileMap: Record<string, string> = {};
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase.from('public_profiles' as any).select('id, full_name').in('id', userIds) as { data: { id: string; full_name: string }[] | null };
+          (profiles || []).forEach((p: any) => { profileMap[p.id] = p.full_name; });
+        }
+
+        const providers = (provs || []).map((p) => ({
+          id: p.id,
+          name: profileMap[p.user_id] || p.business_name || 'Profissional',
+          businessName: p.business_name || undefined,
+          category: (p.categories as any)?.name || '',
+          categorySlug: (p.categories as any)?.slug || '',
+          categoryIcon: (p.categories as any)?.icon || '🔧',
+          city: p.city, state: p.state, neighborhood: p.neighborhood,
+          rating: Number(p.rating_avg) || 0, reviewCount: p.review_count || 0,
+          photo: p.photo_url || '', description: p.description,
+          phone: p.phone, whatsapp: p.whatsapp,
+          yearsExperience: p.years_experience, plan: p.plan,
+          slug: p.slug || p.id, featured: p.featured,
+        }));
+
+        const { data: allCategories } = await supabase.from('categories').select('name, slug').order('name');
+        const { data: topCities } = await supabase.from('cities').select('name, slug').order('name').limit(10);
+
+        return { parsed: { categorySlug: '', categoryName: '', city: cityAlias.name, citySlug: cityAlias.slug, neighborhood: '' }, providers, allCategories: allCategories || [], topCities: topCities || [] };
+      }
+
       const parsed = await parseSeoSlug(slug);
       if (!parsed) return null;
+      const categoryAlias = await resolveCategoryBySlug(parsed.categorySlug);
+      if (categoryAlias && categoryAlias.slug !== parsed.categorySlug) {
+        parsed.categorySlug = categoryAlias.slug;
+        parsed.categoryName = categoryAlias.name;
+      }
 
       let query = supabase
         .from('providers')
@@ -68,7 +164,7 @@ const SeoPage = () => {
         .eq('status', 'approved');
 
       if (parsed.categorySlug) {
-        const { data: cat } = await supabase.from('categories').select('id').eq('slug', parsed.categorySlug).single();
+        const { data: cat } = await supabase.from('categories').select('id').eq('slug', parsed.categorySlug).maybeSingle();
         if (cat) query = query.eq('category_id', cat.id);
       }
       if (parsed.city) query = query.ilike('city', `%${parsed.city}%`);
@@ -114,11 +210,23 @@ const SeoPage = () => {
     ? `Encontre os melhores profissionais de ${parsed?.categoryName} em ${locationLabel}. Veja avaliações e solicite orçamentos.`
     : `Encontre os melhores profissionais de ${parsed?.categoryName}. Veja avaliações e solicite orçamentos.`;
   const isNotFound = !isLoading && !data;
+  const shouldNoindex = isNotFound || providers.length === 0;
+  const canonicalSlug = useMemo(() => {
+    if (!parsed) return undefined;
+    if (parsed.neighborhood) {
+      return `${parsed.categorySlug}-${parsed.citySlug}-${parsed.neighborhood.toLowerCase().replace(/\s+/g, '-')}`;
+    }
+    if (parsed.citySlug) {
+      return `${parsed.categorySlug}-${parsed.citySlug}`;
+    }
+    return parsed.categorySlug;
+  }, [parsed]);
 
   useSeoHead({
     title: isNotFound ? 'Página não encontrada' : seoTitle || 'Buscar',
     description: isNotFound ? 'A página que você procura não existe.' : seoDesc || 'Encontre profissionais na plataforma.',
-    canonical: !isNotFound && slug ? `${SITE_BASE_URL}/${slug}` : undefined,
+    canonical: !shouldNoindex && canonicalSlug ? `${SITE_BASE_URL}/${canonicalSlug}` : undefined,
+    noindex: shouldNoindex,
   });
 
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);

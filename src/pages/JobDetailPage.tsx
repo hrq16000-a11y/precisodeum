@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { MapPin, Clock, Phone, MessageCircle, Briefcase, ArrowLeft, Copy, CheckCircle2, DollarSign, Gift, ClipboardList, ShieldCheck } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { whatsappLink } from '@/lib/whatsapp';
 
@@ -21,6 +21,7 @@ const renderList = (text: string) => {
 
 const JobDetailPage = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
 
   const { data: job, isLoading } = useQuery({
     queryKey: ['job-detail', slug],
@@ -33,11 +34,20 @@ const JobDetailPage = () => {
   });
 
   const pageUrl = `${SITE_BASE_URL}/vaga/${slug}`;
+  const canonicalJobUrl = job ? `${SITE_BASE_URL}/vaga/${job.slug}` : pageUrl;
+  const shouldNoindex = !!job && job.status !== 'active';
+
+  useEffect(() => {
+    if (job && slug && job.slug && job.slug !== slug) {
+      navigate(`/vaga/${job.slug}`, { replace: true });
+    }
+  }, [job, slug, navigate]);
 
   useSeoHead({
     title: job ? `${job.title} - Vaga em ${job.city || 'Brasil'}` : 'Vaga',
     description: job ? `${job.title} em ${job.city}-${job.state}. ${(job.description || '').slice(0, 120)}` : 'Vaga de serviço.',
-    canonical: pageUrl,
+    canonical: canonicalJobUrl,
+    noindex: shouldNoindex,
   });
 
   const jobLd = useMemo(() => job ? ({
