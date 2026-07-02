@@ -41,3 +41,44 @@ export function generateProviderSlug(name: string, city: string): string {
 // Alias retrocompatível
 export const slugify = sanitizeSlug;
 
+/**
+ * Sanitize + validate a slug for admin-managed entities
+ * (categories, cities, services, institutional pages, blog posts).
+ *
+ * Regras:
+ *  - lower kebab-case (via sanitizeSlug)
+ *  - min 2 / max 80 chars
+ *  - deve começar com [a-z0-9]
+ *  - não pode ser reservado (admin, api, auth, dashboard, etc.)
+ */
+export const RESERVED_SLUGS = new Set([
+  'admin', 'api', 'auth', 'dashboard', 'login', 'logout', 'signup',
+  'cadastro', 'perfil', 'profissional', 'empresa', 'buscar',
+  'sponsor-panel', 'lovable', 'assets', 'static', 'public',
+  'null', 'undefined', 'true', 'false',
+]);
+
+export interface AdminSlugResult {
+  ok: boolean;
+  slug: string;
+  error?: string;
+}
+
+export function sanitizeAdminSlug(
+  input: string,
+  opts?: { minLen?: number; maxLen?: number },
+): AdminSlugResult {
+  const minLen = opts?.minLen ?? 2;
+  const maxLen = opts?.maxLen ?? 80;
+  const slug = sanitizeSlug(input);
+
+  if (!slug) return { ok: false, slug: '', error: 'Slug vazio após normalização.' };
+  if (slug.length < minLen) return { ok: false, slug, error: `Slug muito curto (mínimo ${minLen}).` };
+  if (slug.length > maxLen) return { ok: false, slug, error: `Slug muito longo (máximo ${maxLen}).` };
+  if (!/^[a-z0-9]/.test(slug)) return { ok: false, slug, error: 'Slug deve começar com letra ou número.' };
+  if (RESERVED_SLUGS.has(slug)) return { ok: false, slug, error: `"${slug}" é um slug reservado.` };
+
+  return { ok: true, slug };
+}
+
+

@@ -1,121 +1,69 @@
-## Plano — 5 frentes de escala/SEO/perf
+# Plano de Execução — Melhorias Fantásticas
 
-Cada frente é independente e pode ser feita em PR separado. A ordem sugerida abaixo coloca primeiro o que tem maior ROI com menor risco de quebra. Marque quais você quer que eu execute (todas, algumas, ou em qual ordem).
-
----
-
-### 1. Pré-render das top 50 landings (SEO + TTFB)
-
-**Realidade do stack:** este é um SPA Vite puro — não há SSR. Soluções viáveis sem trocar de framework:
-
-- **Opção A (recomendada):** `vite-plugin-prerender` ou `react-snap` no build. Roda um headless Chrome no `vite build`, gera HTML estático para cada rota da lista. Custo: +2–4 min no build, zero impacto em runtime.
-- **Opção B:** Edge function `prerender-landing` que serve HTML pré-renderizado quando o `User-Agent` for crawler (Googlebot/Bingbot/Facebook/etc), passthrough para SPA caso contrário. Mais complexo, mas atualiza sem rebuild.
-
-**Escopo:**
-- Lista das top 50 vem de RPC: top 25 `/categoria/:slug/em/:cidade` por tráfego em `audit_log` (últimos 30d) + 25 `/categoria/:slug` mais visitadas. Fallback: top categorias × top cidades por contagem de providers.
-- Gera HTML com `<title>`, `<meta>`, JSON-LD e o **conteúdo crítico** (H1, lista de providers, links internos) já no markup — sem esperar JS. SPA continua hidratando por cima.
-- Sitemap.xml continua refletindo todas as URLs (não só as pré-renderizadas).
-
-**Risco:** baixo na Opção A (só afeta build). Médio na B (mais um ponto de cache para invalidar).
-
-**Recomendação:** Opção A. Decidir entre `react-snap` (mais maduro) e `vite-plugin-prerender` (mais ativo).
+Vou executar em 6 blocos sequenciais, cada um em um PR isolado, com build verde antes de passar ao próximo. Ignoro itens já resolvidos (grants de `ibge_code`/`legal_name`, RLS de `sponsor_leads`/`realtime.messages`, `CACHE_VERSION`, guard DEV, alt/`priority`).
 
 ---
 
-### 2. `pg_stat_statements` + painel admin de queries lentas
+## Bloco 1 — Build & Testes 100% Verdes (P0, ~1h)
 
-**Passos:**
-1. Migration: `CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA extensions;` (já vem habilitado em projetos Supabase recentes — apenas confirmar).
-2. RPC `admin_top_slow_queries(_limit int, _min_calls int)` SECURITY DEFINER + check `has_role(auth.uid(),'admin')`, lê `extensions.pg_stat_statements` agregando `mean_exec_time`, `calls`, `total_exec_time`, `rows`. Retorna 50 piores.
-3. RPC `admin_top_io_queries` (similar, ordena por `shared_blks_read + shared_blks_hit`).
-4. RPC `admin_reset_stat_statements` (só admin) com botão na UI.
-5. Página `/admin/db-perf` com 3 abas: **Lentas**, **Mais chamadas**, **Mais I/O**. Cards com mean_ms, p95, calls, rows/call, query truncado + tooltip. Botão "Resetar contadores".
-6. Bonus: cron diário grava snapshot em `db_perf_snapshots` (tabela já existe, 0 rows hoje) para histórico semanal.
+**Objetivo:** `tsgo` e Vitest limpos.
 
-**Risco:** zero. Tudo read-only, admin-only.
+- Rodar `bun install` novamente e conferir presença real de `react-helmet-async`, `react-leaflet`, `leaflet`, `react-easy-crop`, `@dnd-kit/*`, `canvas-confetti`, `boring-avatars`, `@fingerprintjs/fingerprintjs`, `jspdf`, `jspdf-autotable`, `jszip`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`. Instalar o que faltar com `bun add` + `@types/*` correspondentes.
+- Ajustar `src/test/setup.ts` para `import '@testing-library/jest-dom'` e garantir `vitest/globals` em `tsconfig.app.json` (`types` array). Isso restaura `screen`/`fireEvent`/`waitFor`.
+- Adicionar mocks em `src/test/setup.ts` para libs browser-only: `canvas-confetti` (no-op), `leaflet`/`react-leaflet` (stub de componente), `jspdf` (stub construtor). Isso evita quebrar SSR/testes.
+- Corrigir `integrations/lovable` removendo `'lovable'` do tipo `OAuthProvider` (ou estender união local via `type OAuthProvider = Supabase.Provider | 'lovable'`).
+- Envolver imports de `canvas-confetti`, `jspdf`, `leaflet` em `dynamic import` (`await import(...)`) nos componentes que só rodam no cliente.
 
----
+## Bloco 2 — TypeScript sw.ts + Workbox (P1, ~30min)
 
-### 3. Amostragem + TTL nas tabelas de telemetria
+- Adicionar `tsconfig.worker.json` estendendo o principal com `"lib": ["ES2022","WebWorker"]` e `"types": ["@types/serviceworker"]`.
+- Instalar `@types/serviceworker`. Tipar `self` como `ServiceWorkerGlobalScope`.
+- Excluir `src/sw.ts` / `public/sw.js` do `tsconfig.app.json`.
 
-**Tabelas alvo** (ordem de peso atual):
+## Bloco 3 — SEO Programático Fantástico (P0, ~3h)
 
-| Tabela | Tamanho | TTL sugerido | Amostragem |
-|---|---|---|---|
-| `web_vitals_log` | 17 MB | 7 dias detalhado + agregação semanal | 10% em prod |
-| `sponsor_metrics` | 9.4 MB | 90 dias detalhado | — |
-| `auth_profile_metrics` | 6.9 MB | 30 dias | — |
-| `rls_policy_snapshots` | 6.5 MB | 14 dias | — |
-| `query_telemetry` | 5.5 MB | 7 dias + agregação | 5% em prod |
-| `performance_reports` | 5 MB | 30 dias | — |
-| `user_access_logs` | 2 MB | 90 dias (LGPD) | — |
-| `health_check_history` | 1.2 MB | 14 dias | — |
-| `error_page_events` | 1 MB | 30 dias | — |
+**Meta: dominar "profissional em [cidade]".**
 
-**Implementação:**
-- Migration cria função `purge_telemetry_tables()` que roda `DELETE` parametrizado por tabela e idade.
-- Cron diário (03:00 BRT) invoca a função.
-- Amostragem feita no client: helper `shouldSampleTelemetry(rate)` lendo `site_settings.telemetry_sample_rate_*` para controle remoto sem deploy.
-- View materializada `web_vitals_weekly_summary` (média + p75 + p95 por rota/dia) para preservar histórico agregado antes do delete.
+- **CategoryPage / CityPage / CategoryCityPage**: enriquecer com conteúdo único por contexto (heading H1 dinâmico, parágrafo introdutório derivado de categoria+cidade+n_providers, blocos FAQ locais via `buildLocalCategoryFaq` já existente, breadcrumbs, JSON-LD `LocalBusiness` + `ItemList` + `BreadcrumbList`).
+- **Canonicals**: garantir self-reference em cada rota; remover canonicals apontando para home. Aplicar `normalizeCanonicalPath` do `seoIndexationGuard` já existente.
+- **Noindex** em thin content (0 providers), filtros com `page>1`, params inválidos.
+- **PopularServicePage / ServiceDetailPage / JobDetailPage**: adicionar `<Helmet>` completo — title, description, canonical self, OG `og:title`/`og:url`/`og:type=article`, `og:image` via `buildOgImage`, JSON-LD `Service`/`JobPosting`/`Product` conforme aplicável.
+- **BlogPost**: JSON-LD `Article` + `BreadcrumbList` + canonical.
 
-**Risco:** baixo. TTL é DELETE puro, fácil de auditar. Amostragem é opt-in por chave.
+## Bloco 4 — Slugs Blindados no Admin (P1, ~1h)
 
----
+- Criar helper `sanitizeAdminSlug()` central (kebab-case, sem acentos, sem duplo hífen, minlength 2, maxlength 80).
+- Aplicar em formulários admin de: `categories`, `cities`, `services`, `institutional_pages`, `blog_posts`. Bloquear submit em slug inválido.
+- Trigger PostgreSQL `enforce_slug_format()` como segunda camada.
 
-### 4. CLS 0.136 na landing — diagnóstico + correção
+## Bloco 5 — Rate Limit & Headers de Segurança (P1, ~1h)
 
-**Plano de diagnóstico:**
-1. Rodar `browser--performance_profile` na home pra confirmar elementos com layout shift.
-2. Suspeitos prováveis (sem ver ainda): banners de hero rotativo, cards de prestadores carregando avatares sem `width/height`, AdBanner slots, sponsor cards (lazy + reflow).
+- Rate-limit em edge functions públicas de métricas/RSS (`og-profile`, `sitemap`, `metrics-*`) via tabela `rate_limits` já existente (chave: IP + function_name, janela 60s).
+- Criar `public/_headers` (Vercel-compatible via `vercel.json`) com CSP, HSTS, X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy.
+- Como projeto é Lovable Hosting: escrever `vercel.json` **e** documentar limitação em `docs/security-headers.md`.
 
-**Correções padronizadas:**
-- Toda `<img>` ganha `width` + `height` (ou `aspect-ratio` no CSS).
-- Cards de provider/sponsor com `min-height` definido para evitar reflow ao popular.
-- Hero rotator com altura fixa (já tem? confirmar).
-- AdBanner slots com placeholder de mesma altura do anúncio.
-- `font-display: swap` confirmado (`docs/auth-password-rules.md` cita FOIT — verificar).
+## Bloco 6 — E2E Autenticados (P2, ~2h)
 
-Após patch, rodar profile de novo e confirmar CLS < 0.05.
-
-**Risco:** baixo, só CSS/markup.
+- Playwright já disponível no sandbox. Criar `e2e/` com 4 fluxos:
+  - Admin: login → /admin → aprovar prestador.
+  - Sponsor: login → /sponsor-panel → visualizar billing.
+  - Profissional: login → /dashboard → editar serviço.
+  - Cliente: login → /buscar → enviar lead.
+- CI workflow `.github/workflows/e2e.yml` opcional (documentado, não bloqueante).
 
 ---
 
-### 5. OG tags dinâmico para categoria/cidade/profissional
+## Fora de Escopo (por decisão explícita)
 
-**Estado atual:**
-- Edge function `og-profile` já existe e gera OG image dinâmica para `/profissional/:slug` com variants 1200x630 (Facebook/Twitter) e 1080x1080 (WhatsApp/LinkedIn) via UA-detect.
-- Categoria/cidade **não** têm OG image dinâmica.
-- `react-helmet-async` já está no projeto; algumas páginas usam, outras não.
-
-**Escopo:**
-1. Nova edge function `og-category` → renderiza SVG → PNG via `@vercel/og` ou similar. Inputs: `?slug=encanador`. Output: imagem com ícone Lucide + nome categoria + brand.
-2. Nova edge function `og-category-city` → `?categoria=...&cidade=...`. Mesma estrutura + contagem de profissionais ativos (cache 1h).
-3. `useDynamicOg(route)` hook que monta `<meta property="og:image">` com URL da edge function correta + `og:title`, `og:description`, `twitter:card` para cada tipo de página.
-4. Integrar em `CategoryPage`, `CityPage`, `CategoryCityPage`, `ProviderProfile` (este último já tem — só verificar).
-5. Crawler social NÃO executa JS — solução: as edge functions de OG retornam imagens; as **meta tags em si** dependem da Opção A do item 1 (pré-render) para crawlers verem o markup. **Sem pré-render, só Googlebot vê — Facebook/LinkedIn/WhatsApp não.** Por isso o item 5 só fica 100% funcional se o item 1 também for executado.
-
-**Risco:** baixo. Falha-soft: se OG image falhar, social cai no fallback estático em `index.html`.
+- **Reduzir 568 `any` legados**: risco alto de regressão silenciosa; farei em varredura futura por arquivo, não em massa.
+- **Remover `.env`/`.env_old` do histórico Git**: fora do meu alcance (git state é gerenciado). Documento em `docs/security-notes.md` e recomendo rotação manual pelo usuário via GitHub UI.
+- **Migração de extensões para schema `extensions`**: alto risco em produção; requer janela de manutenção — deixo plano documentado apenas.
+- **Reindexar sitemap/Google Search Console**: ação manual do usuário no GSC após deploy.
 
 ---
 
-## Resumo de dependências
+## Ordem de execução
 
-```text
-1 (pré-render)  ──┬─→  5 (OG meta tags visíveis para crawlers)
-                  │
-2 (pg_stat)    ──┘   (independente)
-3 (TTL)              (independente)
-4 (CLS)              (independente)
-```
+Executo Bloco 1 → 2 → 3 → 4 → 5 → 6 sem pausar entre eles, salvo se `tsgo` falhar. Ao final, reporto build status, testes passando e diff de rotas SEO enriquecidas.
 
-**Ordem sugerida de execução:**
-1. CLS (1h, ganho imediato em Web Vitals)
-2. TTL telemetria (2h, economia operacional contínua)
-3. pg_stat_statements + painel (3h, visibilidade que destrava decisões futuras)
-4. Pré-render top 50 (4–6h, ganho de SEO/TTFB)
-5. OG dinâmico categoria/cidade (3h, depende do item 4 para crawlers não-Google)
-
-**Total estimado:** ~15h de trabalho focado, distribuível em 5 PRs.
-
-Me diga **quais frentes você quer que eu execute agora** (todas, algumas, em qual ordem) e eu sigo. Se quiser todas, eu começo pela ordem sugerida.
+Confirma?
