@@ -34,10 +34,11 @@ export function useNotifications(options?: { limit?: number | null }) {
     queryKey: ['notifications', user?.id, limit],
     enabled: !!user?.id,
     queryFn: async () => {
+      if (!user?.id) return [];
       let query = supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', user!.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       if (limit !== null) {
         query = query.limit(limit);
@@ -115,7 +116,8 @@ export function useNotifications(options?: { limit?: number | null }) {
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
-        .eq('user_id', user!.id)
+      if (!user?.id) return;
+      .eq('user_id', user.id)
         .eq('read', false);
       if (error) throw error;
     },
@@ -191,11 +193,12 @@ export function usePushSubscription() {
 
       const subJson = subscription.toJSON();
       
+      if (!subJson.endpoint || !subJson.keys?.p256dh || !subJson.keys?.auth) return false;
       await supabase.from('push_subscriptions').upsert({
         user_id: user.id,
-        endpoint: subJson.endpoint!,
-        p256dh: subJson.keys!.p256dh,
-        auth: subJson.keys!.auth,
+        endpoint: subJson.endpoint,
+        p256dh: subJson.keys.p256dh,
+        auth: subJson.keys.auth,
       }, { onConflict: 'user_id,endpoint' });
 
       setIsSubscribed(true);

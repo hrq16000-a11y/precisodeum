@@ -129,7 +129,7 @@ const CityPage = () => {
 
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  if (city?.slug && slug && city.slug !== slug) {
+  if (city && slug && city.slug !== slug) {
     navigate(`/cidade/${city.slug}`, { replace: true });
   }
 
@@ -163,8 +163,9 @@ const CityPage = () => {
     );
   }
 
-  const title = `Profissionais em ${city!.name} - ${city!.state}`;
-  const description = `Encontre os melhores profissionais em ${city!.name}, ${city!.state}. Compare avaliações e entre em contato.`;
+  if (!city) return null;
+  const title = `Profissionais em ${city.name} - ${city.state}`;
+  const description = `Encontre os melhores profissionais em ${city.name}, ${city.state}. Compare avaliações e entre em contato.`;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -173,7 +174,7 @@ const CityPage = () => {
       <nav className="container py-3 text-sm text-muted-foreground">
         <Link to="/" className="hover:text-foreground">Início</Link>
         <ChevronRight className="mx-1 inline h-3 w-3" />
-        <span className="text-foreground">{city!.name}</span>
+        <span className="text-foreground">{city.name}</span>
       </nav>
 
       <section className="bg-hero py-12">
@@ -188,7 +189,7 @@ const CityPage = () => {
 
       <div className="container py-8">
         <p className="mb-6 text-sm text-muted-foreground">
-          {providers.length} profissional(is) encontrado(s) em {city!.name}
+          {providers.length} profissional(is) encontrado(s) em {city.name}
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {paginatedProviders.map((p) => <ProviderCard key={p.id} provider={p} />)}
@@ -196,7 +197,7 @@ const CityPage = () => {
         {providers.length === 0 && (
           <EmptyStateFallback
             title="Nenhum profissional encontrado"
-            message={`Ainda não temos profissionais em ${city!.name}. Seja o primeiro!`}
+            message={`Ainda não temos profissionais em ${city.name}. Seja o primeiro!`}
           />
         )}
         <PaginationControls currentPage={page} totalItems={providers.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
@@ -205,22 +206,22 @@ const CityPage = () => {
       <section className="bg-muted/50 py-12">
         <div className="container max-w-4xl">
           <h2 className="font-display text-xl font-bold text-foreground">
-            Serviços em {city!.name}
+            Serviços em {city.name}
           </h2>
           <div className="mt-4 flex flex-wrap gap-2">
             {coveredCategories.map((cat) => (
               <Link
                 key={cat.slug}
-                to={`/${cat.slug}-${city!.slug}`}
+                to={`/${cat.slug}-${city.slug}`}
                 className="rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
-                {cat.name} em {city!.name}
+                {cat.name} em {city.name}
               </Link>
             ))}
           </div>
           <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
             <p>
-              Encontre profissionais qualificados em {city!.name}, {city!.state}.
+              Encontre profissionais qualificados em {city.name}, {city.state}.
               Nossa plataforma conecta você com os melhores prestadores de serviço da região,
               todos avaliados por clientes reais.
             </p>

@@ -18,7 +18,9 @@ const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) =
   useEffect(() => {
     if (sponsor && !tracked.current.has(sponsor.id)) {
       tracked.current.add(sponsor.id);
-      supabase.rpc('increment_sponsor_impression', { sponsor_id: sponsor.id } as any).then(() => {});
+        supabase.rpc('increment_sponsor_impression', { sponsor_id: sponsor.id } as any).catch((err) => {
+          console.error('Sponsor impression tracking error:', err);
+        });
     }
   }, [sponsor]);
 
@@ -30,7 +32,9 @@ const AdNativeCard = ({ sponsorIndex = 0, className = '' }: AdNativeCardProps) =
       target="_blank"
       rel="noopener noreferrer"
       onClick={() => {
-        supabase.rpc('increment_sponsor_click', { sponsor_id: sponsor.id } as any).then(() => {});
+        supabase.rpc('increment_sponsor_click', { sponsor_id: sponsor.id } as any).catch((err) => {
+          console.error('Sponsor click tracking error:', err);
+        });
       }}
       className={`group min-w-0 overflow-hidden rounded-xl border border-accent/20 bg-accent/5 p-4 shadow-card transition-all hover:shadow-lg hover:border-accent/40 ${className}`}
     >

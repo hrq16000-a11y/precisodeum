@@ -23,7 +23,9 @@ const SponsorsSection = ({ sponsors }: Props) => {
     visibleSponsors.forEach(s => {
       if (!tracked.current.has(s.id)) {
         tracked.current.add(s.id);
-        supabase.rpc('increment_sponsor_impression', { sponsor_id: s.id } as any).then(() => {});
+          supabase.rpc('increment_sponsor_impression', { sponsor_id: s.id } as any).catch((err) => {
+            console.error('Sponsor impression tracking error:', err);
+          });
       }
     });
   }, [visibleSponsors]);
@@ -40,7 +42,11 @@ const SponsorsSection = ({ sponsors }: Props) => {
               href={sponsor.link_url || '#'}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => supabase.rpc('increment_sponsor_click', { sponsor_id: sponsor.id } as any)}
+              onClick={() => {
+                supabase.rpc('increment_sponsor_click', { sponsor_id: sponsor.id } as any).catch((err) => {
+                  console.error('Sponsor click tracking error:', err);
+                });
+              }}
               className="group rounded-2xl shadow-card transition-all hover:shadow-lg hover:scale-[1.02]"
             >
               {sponsor.image_url ? (

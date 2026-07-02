@@ -261,6 +261,7 @@ const SeoPage = () => {
     );
   }
 
+  if (!parsed) return null;
   const { allCategories, topCities } = data;
 
   return (
@@ -270,17 +271,17 @@ const SeoPage = () => {
       <nav className="container py-3 text-sm text-muted-foreground">
         <Link to="/" className="hover:text-foreground">Início</Link>
         <ChevronRight className="mx-1 inline h-3 w-3" />
-        <Link to={`/categoria/${parsed!.categorySlug}`} className="hover:text-foreground">{parsed!.categoryName}</Link>
-        {parsed!.city && (
+        <Link to={`/categoria/${parsed.categorySlug}`} className="hover:text-foreground">{parsed.categoryName}</Link>
+        {parsed.city && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/cidade/${parsed!.citySlug}`} className="hover:text-foreground">{parsed!.city}</Link>
+            <Link to={`/cidade/${parsed.citySlug}`} className="hover:text-foreground">{parsed.city}</Link>
           </>
         )}
-        {parsed!.neighborhood && (
+        {parsed.neighborhood && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <span className="text-foreground">{parsed!.neighborhood}</span>
+            <span className="text-foreground">{parsed.neighborhood}</span>
           </>
         )}
       </nav>
@@ -312,12 +313,12 @@ const SeoPage = () => {
       <section className="bg-muted/50 py-12">
         <div className="container max-w-4xl">
           <h2 className="font-display text-xl font-bold text-foreground">
-            Encontre {parsed!.categoryName}{parsed!.city ? ` em ${parsed!.city}` : ''}
+            Encontre {parsed.categoryName}{parsed.city ? ` em ${parsed.city}` : ''}
           </h2>
           <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
             <p>
-              Precisa de um {parsed!.categoryName?.toLowerCase()}? Nossa plataforma conecta você com profissionais
-              qualificados{parsed!.city ? ` em ${parsed!.city}` : ' em todo o Brasil'}.
+              Precisa de um {parsed.categoryName?.toLowerCase()}? Nossa plataforma conecta você com profissionais
+              qualificados{parsed.city ? ` em ${parsed.city}` : ' em todo o Brasil'}.
             </p>
           </div>
 

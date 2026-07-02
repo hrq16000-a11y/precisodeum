@@ -11,10 +11,14 @@ interface AdBannerProps {
 }
 
 function trackImpression(id: string) {
-  supabase.rpc('increment_sponsor_impression', { sponsor_id: id } as any).then(() => {});
+  supabase.rpc('increment_sponsor_impression', { sponsor_id: id } as any).catch((err) => {
+    console.error('Sponsor impression tracking error:', err);
+  });
 }
 function trackClick(id: string) {
-  supabase.rpc('increment_sponsor_click', { sponsor_id: id } as any).then(() => {});
+  supabase.rpc('increment_sponsor_click', { sponsor_id: id } as any).catch((err) => {
+    console.error('Sponsor click tracking error:', err);
+  });
 }
 
 const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBannerProps) => {
