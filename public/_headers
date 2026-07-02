@@ -24,3 +24,10 @@
 
 /sitemap.xml
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+# ─── Security headers (best-effort; Lovable hosting ignora, ativos em Vercel/Netlify) ───
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
