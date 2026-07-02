@@ -77,7 +77,7 @@ const SeoPage = () => {
       const { data: provs } = await query.order('rating_avg', { ascending: false });
 
       const userIds = [...new Set((provs || []).map((p) => p.user_id))];
-      let profileMap: Record<string, string> = {};
+      const profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase.from('public_profiles' as any).select('id, full_name').in('id', userIds) as { data: { id: string; full_name: string }[] | null };
         (profiles || []).forEach((p: any) => { profileMap[p.id] = p.full_name; });
@@ -113,11 +113,12 @@ const SeoPage = () => {
   const seoDesc = locationLabel
     ? `Encontre os melhores profissionais de ${parsed?.categoryName} em ${locationLabel}. Veja avaliações e solicite orçamentos.`
     : `Encontre os melhores profissionais de ${parsed?.categoryName}. Veja avaliações e solicite orçamentos.`;
+  const isNotFound = !isLoading && !data;
 
   useSeoHead({
-    title: seoTitle || 'Buscar',
-    description: seoDesc || 'Encontre profissionais na plataforma.',
-    canonical: slug ? `${SITE_BASE_URL}/${slug}` : undefined,
+    title: isNotFound ? 'Página não encontrada' : seoTitle || 'Buscar',
+    description: isNotFound ? 'A página que você procura não existe.' : seoDesc || 'Encontre profissionais na plataforma.',
+    canonical: !isNotFound && slug ? `${SITE_BASE_URL}/${slug}` : undefined,
   });
 
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);

@@ -98,7 +98,7 @@ const JobsPage = () => {
     queryKey: ['jobs-cities'],
     queryFn: async () => {
       const { data } = await supabase.from('cities').select('name').order('name').limit(50);
-      return (data || []).map((c: any) => c.name);
+      return [...new Set((data || []).map((city) => city.name).filter(Boolean))];
     },
   });
 

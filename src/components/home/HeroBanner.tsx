@@ -108,7 +108,6 @@ const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
           key={bgImage}
           src={bgImage}
           alt=""
-          fetchPriority="high"
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover object-center scale-105"
           initial={{ opacity: 0 }}
