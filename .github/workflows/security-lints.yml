@@ -1,0 +1,23 @@
+name: Security Lints
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "scripts/lint-tax-id-access.mjs"
+      - ".github/workflows/security-lints.yml"
+
+jobs:
+  tax-id-access:
+    name: Forbid direct tax_id reads outside secure RPC
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run tax_id access guardrail
+        run: node scripts/lint-tax-id-access.mjs

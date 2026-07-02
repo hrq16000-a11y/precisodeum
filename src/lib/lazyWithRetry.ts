@@ -14,6 +14,16 @@ const prefetchCache = new Map<string, Promise<unknown>>();
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+const forceFreshReload = () => {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('__fresh', String(Date.now()));
+    window.location.replace(url.toString());
+  } catch {
+    window.location.reload();
+  }
+};
+
 const isDynamicImportError = (error: unknown) => {
   if (!(error instanceof Error)) return false;
   const message = error.message.toLowerCase();
@@ -31,6 +41,17 @@ async function runImportWithRetry<T>(loader: Loader<T>): Promise<T> {
       const shouldRetry = isDynamicImportError(error) && attempt < MAX_IMPORT_RETRIES - 1;
       if (!shouldRetry) break;
       await sleep(BASE_RETRY_DELAY_MS * 2 ** attempt);
+    }
+  }
+
+  // Last resort: if all retries failed due to stale module URLs, reload once
+  if (isDynamicImportError(lastError)) {
+    const reloadKey = 'lazy_reload_ts';
+    const lastReload = sessionStorage.getItem(reloadKey);
+    const now = Date.now();
+    if (!lastReload || now - Number(lastReload) > 10_000) {
+      sessionStorage.setItem(reloadKey, String(now));
+      forceFreshReload();
     }
   }
 

@@ -1,6 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useCallback, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+
+/**
+ * DEPRECATED (Soft Deprecation): Platform is 100% free for professionals.
+ * This hook now returns "unlimited/allowed" for everything.
+ * Kept for backward compatibility with dashboard pages.
+ */
 
 interface AccountModel {
   account_tier: string | null;
@@ -23,129 +28,47 @@ interface UseAccountLimitsReturn {
   model: AccountModel | null;
   limits: AccountLimits | null;
   loading: boolean;
-  /** Current number of services the user has */
   currentServices: number;
-  /** Current number of leads the user has */
   currentLeads: number;
-  /** Whether the user can create a new service right now */
   canCreateService: boolean;
-  /** Whether the user can receive more leads */
   canReceiveMoreLeads: boolean;
-  /** Remaining service slots (null = unlimited) */
   remainingServices: number | null;
-  /** Remaining lead slots (null = unlimited) */
   remainingLeads: number | null;
   refetch: () => Promise<void>;
 }
 
 export const useAccountLimits = (): UseAccountLimitsReturn => {
   const { profile } = useAuth();
-  const userRef = profile?.user_ref;
 
-  const [model, setModel] = useState<AccountModel | null>(null);
-  const [limits, setLimits] = useState<AccountLimits | null>(null);
-  const [currentServices, setCurrentServices] = useState(0);
-  const [currentLeads, setCurrentLeads] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const model: AccountModel = {
+    account_tier: 'free',
+    is_premium: true, // Everyone is "premium" in the free model
+    is_provider: profile?.profile_type === 'provider',
+    is_rh: profile?.profile_type === 'rh',
+    profile_type: profile?.profile_type ?? 'client',
+    plan: 'community',
+  };
 
-  const fetchData = useCallback(async () => {
-    if (!userRef) {
-      setLoading(false);
-      return;
-    }
+  const limits: AccountLimits = {
+    max_services: null, // null = unlimited
+    max_leads: null,
+    can_create_services: true,
+    can_receive_leads: true,
+    account_tier: 'community',
+  };
 
-    setLoading(true);
-
-    const [modelRes, limitsRes] = await Promise.all([
-      supabase
-        .from('account_model_view')
-        .select('*')
-        .eq('user_ref', userRef)
-        .maybeSingle(),
-      supabase
-        .from('account_limits_view')
-        .select('*')
-        .eq('user_ref', userRef)
-        .maybeSingle(),
-    ]);
-
-    if (modelRes.data) {
-      setModel({
-        account_tier: modelRes.data.account_tier,
-        is_premium: modelRes.data.is_premium ?? false,
-        is_provider: modelRes.data.is_provider ?? false,
-        is_rh: modelRes.data.is_rh ?? false,
-        profile_type: modelRes.data.profile_type,
-        plan: modelRes.data.plan,
-      });
-    }
-
-    if (limitsRes.data) {
-      setLimits({
-        max_services: limitsRes.data.max_services,
-        max_leads: limitsRes.data.max_leads,
-        can_create_services: limitsRes.data.can_create_services ?? false,
-        can_receive_leads: limitsRes.data.can_receive_leads ?? false,
-        account_tier: limitsRes.data.account_tier,
-      });
-
-    }
-
-    // Fetch current counts from actual tables
-    const [svcRes, leadRes] = await Promise.all([
-      supabase
-        .from('services')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_ref', userRef)
-        .is('deleted_at', null),
-      supabase
-        .from('leads')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_ref', userRef),
-    ]);
-    setCurrentServices(svcRes.count ?? 0);
-    setCurrentLeads(leadRes.count ?? 0);
-
-    setLoading(false);
-  }, [userRef]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Derived values
-  // -1 = unlimited, 0 = no access, positive = exact limit
-  const isUnlimitedServices = limits?.max_services === -1 || limits?.max_services === null;
-  const isUnlimitedLeads = limits?.max_leads === -1 || limits?.max_leads === null;
-
-  const canCreateService = !!limits?.can_create_services && (
-    isUnlimitedServices
-      ? true
-      : (limits?.max_services ?? 0) > 0 && currentServices < (limits?.max_services ?? 0)
-  );
-
-  const canReceiveMoreLeads = !!limits?.can_receive_leads && (
-    isUnlimitedLeads
-      ? true
-      : (limits?.max_leads ?? 0) > 0 && currentLeads < (limits?.max_leads ?? 0)
-  );
-
-  const remainingServices = isUnlimitedServices ? null
-    : (limits?.max_services ?? 0) > 0 ? Math.max(0, (limits.max_services ?? 0) - currentServices) : 0;
-
-  const remainingLeads = isUnlimitedLeads ? null
-    : (limits?.max_leads ?? 0) > 0 ? Math.max(0, (limits.max_leads ?? 0) - currentLeads) : 0;
+  const refetch = useCallback(async () => {}, []);
 
   return {
     model,
     limits,
-    loading,
-    currentServices,
-    currentLeads,
-    canCreateService,
-    canReceiveMoreLeads,
-    remainingServices,
-    remainingLeads,
-    refetch: fetchData,
+    loading: false,
+    currentServices: 0,
+    currentLeads: 0,
+    canCreateService: true,
+    canReceiveMoreLeads: true,
+    remainingServices: null, // null = unlimited
+    remainingLeads: null,
+    refetch,
   };
 };

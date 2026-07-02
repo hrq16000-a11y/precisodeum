@@ -83,7 +83,7 @@ const ThemePreview = ({ theme, accentColor, headline, tagline, ctaText, ctaWhats
       {/* Mini cover */}
       {coverImageUrl ? (
         <div className="relative w-full h-20 overflow-hidden">
-          <img src={coverImageUrl} alt="" className="h-full w-full object-cover" />
+          <img src={coverImageUrl} alt="" aria-hidden="true" loading="lazy" decoding="async" width={400} height={120} className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="absolute bottom-2 left-3 text-white">
             <p className={`${tc.fontHeading} text-xs font-bold drop-shadow`}>{headline || 'Sua headline aqui'}</p>
@@ -157,7 +157,7 @@ const ThemePreview = ({ theme, accentColor, headline, tagline, ctaText, ctaWhats
 
         {/* Lead form mini */}
         <div className={`${tc.section}`}>
-          <h3 className={`${tc.heading} text-[10px] font-bold text-foreground`}>{ctaText || 'Solicitar Orçamento'}</h3>
+          <h3 className={`${tc.heading} text-[10px] font-bold text-foreground`}>{ctaText || 'Falar com o profissional'}</h3>
           <div className="mt-1 space-y-1">
             <div className={`${tc.input} h-5 bg-background px-1.5 text-[8px] text-muted-foreground flex items-center`}>Seu nome</div>
             <div className={`${tc.input} h-5 bg-background px-1.5 text-[8px] text-muted-foreground flex items-center`}>Seu telefone</div>

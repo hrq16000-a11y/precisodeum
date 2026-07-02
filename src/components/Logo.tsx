@@ -1,18 +1,17 @@
 import { Link } from 'react-router-dom';
-import { useSettingValue } from '@/hooks/useSiteSettings';
-
-const DEFAULT_LOGO_URL = '/lovable-uploads/logo-transparent.png';
+import { DEFAULT_LOGO_PNG_SRCSET, DEFAULT_LOGO_SRCSET, DEFAULT_LOGO_URL } from '@/lib/siteAssets';
+import { handleBrandImageError } from '@/lib/imageResolver';
 
 interface LogoProps {
   variant?: 'default' | 'white' | 'dark';
   className?: string;
   linkTo?: string;
-  height?: string;
+  priority?: boolean;
+  sizes?: string;
 }
 
-const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-9 md:h-10' }: LogoProps) => {
-  const logoUrl = useSettingValue('logo_url');
-  const logo = logoUrl || DEFAULT_LOGO_URL;
+const Logo = ({ variant = 'default', className = '', linkTo = '/', priority = false, sizes = '(max-width: 639px) 155px, 133px' }: LogoProps) => {
+  const logo = DEFAULT_LOGO_URL;
 
   const filterClass = variant === 'white'
     ? 'brightness-0 invert'
@@ -21,13 +20,24 @@ const Logo = ({ variant = 'default', className = '', linkTo = '/', height = 'h-9
     : '';
 
   const img = (
-    <img
-      src={logo}
-      alt="Preciso de um - Profissionais Confiáveis Perto de Você"
-      className={`${height} ${filterClass} ${className}`}
-      width="111"
-      height="40"
-    />
+    <picture>
+      <source type="image/webp" srcSet={DEFAULT_LOGO_SRCSET} sizes={sizes} />
+      <img
+        src={logo}
+        srcSet={DEFAULT_LOGO_PNG_SRCSET}
+        sizes={sizes}
+        alt="Preciso de um Profissional"
+        className={`block h-14 min-h-14 max-h-14 aspect-[111/40] w-auto max-w-full shrink-0 object-contain sm:h-12 sm:min-h-12 sm:max-h-12 ${filterClass} ${className}`}
+        width="710"
+        height="209"
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        // PR 7: fetchpriority é DOM attr nativo; React 18 não reconhece a versão
+        // camelCase e emite warning. Passamos via spread em lowercase.
+        {...({ fetchpriority: priority ? 'high' : 'auto' } as Record<string, string>)}
+        onError={(e) => handleBrandImageError(e, 'logo')}
+      />
+    </picture>
   );
 
   if (!linkTo) return img;

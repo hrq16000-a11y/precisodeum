@@ -1,0 +1,1 @@
+UPDATE public.sponsors SET image_url = 'https://qaftogrqeyymewoofexc.supabase.co/storage/v1/object/public/sponsors/emporio-lelecute-banner.jpg' WHERE company_name ILIKE '%lelecute%' AND position = 'hero-top';

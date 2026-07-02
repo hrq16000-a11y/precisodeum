@@ -4,7 +4,7 @@ const SITEMAP_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sitemap`;
 
 const SitemapRedirect = () => {
   useEffect(() => {
-    window.location.replace(SITEMAP_URL);
+    window.location.replace(`${SITEMAP_URL}${window.location.search || ''}`);
   }, []);
   return null;
 };

@@ -2,16 +2,14 @@
  * PWA Install Banner — Popup modal central
  *
  * BLINDADO: Este componente é o ÚNICO popup de instalação.
- * Ele aparece automaticamente quando o app NÃO está instalado.
- * Pode ser reaberto via PWA_OPEN_INSTALL_MODAL_EVENT de qualquer CTA.
+ * Respeita TODAS as configurações da tabela pwa_install_settings:
+ * - enabled, show_delay_seconds, min_visits, max_impressions
+ * - dismiss_cooldown_days, show_on_mobile/desktop
+ * - show_for_logged_in/visitors, show_floating_banner
  *
- * REGRAS:
- * - Aparece SEMPRE (se não instalado), sem condição de beforeinstallprompt
- * - Fechar NUNCA trava a interface (closeModal limpa estado antes do await)
- * - Sem restrição por dispositivo
- * - Sem mensagens técnicas
+ * Pode ser reaberto via PWA_OPEN_INSTALL_MODAL_EVENT de qualquer CTA.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,37 +18,105 @@ import {
   trackPwaEvent,
   PWA_OPEN_INSTALL_MODAL_EVENT,
 } from '@/hooks/usePwaInstall';
+import { useAuthIdentity } from '@/hooks/useAuth';
+import { canTriggerMarketingPopup } from '@/lib/popupGuards';
 
 const PwaInstallBanner = () => {
   const [show, setShow] = useState(false);
   const [source, setSource] = useState<string>('banner');
-  const { isStandalone, install } = usePwaInstallPrompt();
+  const autoShownRef = useRef(false);
+  const {
+    canInstall,
+    isStandalone,
+    install,
+    isDismissed,
+    getVisitCount,
+    getImpressionCount,
+    incrementImpressions,
+  } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
+  const { user, loading: authLoading } = useAuthIdentity();
 
-  // Auto-show on mount (if not standalone)
+  // Auto-show respecting ALL settings + scroll 50% OR delay trigger
   useEffect(() => {
-    if (isStandalone) return;
+    if (isStandalone || autoShownRef.current || authLoading) return;
+    if (!canInstall) return;
+    if (!settings) return;
 
-    const timer = setTimeout(() => {
+    // Global kill switch
+    if (!settings.enabled) return;
+
+    // show_floating_banner controls the auto-popup
+    if (!settings.show_floating_banner) return;
+
+    // Device check
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    if (isMobile && !settings.show_on_mobile) return;
+    if (!isMobile && !settings.show_on_desktop) return;
+
+    // Auth check
+    const isLoggedIn = !!user;
+    if (isLoggedIn && !settings.show_for_logged_in) return;
+    if (!isLoggedIn && !settings.show_for_visitors) return;
+
+    // Dismiss cooldown
+    if (isDismissed(settings.dismiss_cooldown_days)) return;
+
+    // Min visits
+    const visits = getVisitCount();
+    if (visits < settings.min_visits) return;
+
+    // Max impressions (0 = unlimited)
+    const impressions = getImpressionCount();
+    if (settings.max_impressions > 0 && impressions >= settings.max_impressions) return;
+
+    const triggerShow = () => {
+      if (autoShownRef.current) return;
+      // Guard universal: respeita scroll/tempo/interação por device + 1ª visita.
+      if (!canTriggerMarketingPopup(mountedAt)) return;
+      // Honra também o show_delay_seconds como atraso mínimo configurável.
+      if (Date.now() - mountedAt < minDelayMs) return;
+      autoShownRef.current = true;
       setSource('banner');
       setShow(true);
+      incrementImpressions();
       trackPwaEvent('impression', 'banner');
-    }, 800);
+    };
 
-    return () => clearTimeout(timer);
-  }, [isStandalone]);
+    const minDelayMs = (settings.show_delay_seconds || 5) * 1000;
+    const mountedAt = Date.now();
 
-  // Listen for manual open from CTAs (homepage section, footer button, etc.)
+    const onScroll = () => triggerShow();
+    const interval = window.setInterval(triggerShow, 1500);
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.clearInterval(interval);
+    };
+
+  }, [
+    canInstall, isStandalone, settings, authLoading, user,
+    isDismissed, getVisitCount, getImpressionCount, incrementImpressions,
+  ]);
+
+  // Listen for manual open from CTAs (homepage section, footer button,
+  // wizard celebration, etc). Aceita inclusive quando `canInstall` é false:
+  // navegadores sem `beforeinstallprompt` (ex.: Safari/iOS) ainda precisam
+  // ver instruções claras de instalação manual.
   useEffect(() => {
     const onManualOpen = (evt: Event) => {
+      if (isStandalone) return;
       const detail = (evt as CustomEvent).detail;
       setSource(detail?.source || 'banner');
       setShow(true);
+      trackPwaEvent('impression', detail?.source || 'manual');
     };
 
     window.addEventListener(PWA_OPEN_INSTALL_MODAL_EVENT, onManualOpen);
     return () => window.removeEventListener(PWA_OPEN_INSTALL_MODAL_EVENT, onManualOpen);
-  }, []);
+  }, [isStandalone]);
 
   // CRITICAL: close modal FIRST, then do async work
   const handleInstall = async () => {
@@ -60,6 +126,8 @@ const PwaInstallBanner = () => {
 
   const handleDismiss = () => {
     setShow(false);
+    // Persist dismiss with cooldown
+    localStorage.setItem('pwa_install_dismissed_v2', String(Date.now()));
     trackPwaEvent('dismissed', source);
   };
 
@@ -69,6 +137,12 @@ const PwaInstallBanner = () => {
   const subtitleText = settings?.subtitle || 'Acesse mais rápido direto da tela inicial';
   const ctaText = settings?.cta_text || 'Instalar';
   const dismissText = settings?.dismiss_text || 'Agora não';
+
+  // Quando o navegador não expõe `beforeinstallprompt`, mostramos instruções
+  // genéricas de instalação manual (passo a passo do menu do navegador).
+  // Não há detecção de plataforma — o texto serve para Safari/iOS e qualquer
+  // outro navegador sem suporte ao prompt nativo.
+  const showManualSteps = !canInstall;
 
   return (
     <div
@@ -104,17 +178,43 @@ const PwaInstallBanner = () => {
           </button>
         </div>
 
-        {/* Install CTA */}
-        <div className="mt-5">
-          <Button
-            size="lg"
-            className="w-full bg-accent text-base font-bold text-accent-foreground shadow-lg hover:bg-accent/90"
-            onClick={handleInstall}
-          >
-            <Download className="mr-2 h-5 w-5" />
-            {ctaText}
-          </Button>
-        </div>
+        {showManualSteps ? (
+          // Fluxo manual — sem prompt nativo. Mostra passo-a-passo curto e
+          // mantém um botão "Entendi" como ação direta para fechar sem travar.
+          <div className="mt-5 space-y-4" data-testid="pwa-manual-steps">
+            <ol className="space-y-2 rounded-xl border border-border bg-muted/40 p-3 text-sm text-foreground">
+              <li>
+                <strong>1.</strong> Toque no botão <strong>Compartilhar</strong> do seu navegador.
+              </li>
+              <li>
+                <strong>2.</strong> Escolha <strong>Adicionar à Tela de Início</strong>.
+              </li>
+              <li>
+                <strong>3.</strong> Confirme em <strong>Adicionar</strong> — pronto, o app aparece como ícone.
+              </li>
+            </ol>
+            <Button
+              size="lg"
+              className="w-full bg-accent text-base font-bold text-accent-foreground shadow-lg hover:bg-accent/90"
+              onClick={handleDismiss}
+              aria-label="Entendi como instalar"
+            >
+              Entendi
+            </Button>
+          </div>
+        ) : (
+          // Fluxo nativo — `beforeinstallprompt` disponível.
+          <div className="mt-5">
+            <Button
+              size="lg"
+              className="w-full bg-accent text-base font-bold text-accent-foreground shadow-lg hover:bg-accent/90"
+              onClick={handleInstall}
+            >
+              <Download className="mr-2 h-5 w-5" />
+              {ctaText}
+            </Button>
+          </div>
+        )}
 
         {/* Dismiss link */}
         <button

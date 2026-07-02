@@ -5,6 +5,7 @@ const corsHeaders = {
 
 type GeoResult = {
   city: string | null;
+  state: string | null;
   lat: number | null;
   lon: number | null;
 };
@@ -39,6 +40,7 @@ async function geoFromIpApi(ip: string | null): Promise<GeoResult> {
 
   return {
     city: data?.city || null,
+    state: data?.region || null,
     lat: typeof data?.latitude === 'number' ? data.latitude : null,
     lon: typeof data?.longitude === 'number' ? data.longitude : null,
   };
@@ -53,26 +55,16 @@ async function geoFromIpWho(ip: string | null): Promise<GeoResult> {
 
   return {
     city: data?.city || null,
+    state: data?.region || null,
     lat: typeof data?.latitude === 'number' ? data.latitude : null,
     lon: typeof data?.longitude === 'number' ? data.longitude : null,
   };
 }
 
-async function geoFromFreeIpApi(ip: string | null): Promise<GeoResult> {
-  const endpoint = ip ? `https://freeipapi.com/api/json/${ip}` : 'https://freeipapi.com/api/json';
-  const res = await fetchWithTimeout(endpoint);
-  if (!res.ok) throw new Error(`freeipapi ${res.status}`);
-  const data = await res.json();
-
-  return {
-    city: data?.cityName || null,
-    lat: typeof data?.latitude === 'number' ? data.latitude : null,
-    lon: typeof data?.longitude === 'number' ? data.longitude : null,
-  };
-}
+// freeipapi removed — causes CORS issues
 
 async function fetchGeo(ip: string | null): Promise<GeoResult> {
-  const providers = [geoFromIpApi, geoFromIpWho, geoFromFreeIpApi];
+  const providers = [geoFromIpApi, geoFromIpWho];
 
   for (const provider of providers) {
     try {
@@ -118,6 +110,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         city: geo.city,
+        state: geo.state,
         temp,
       }),
       {

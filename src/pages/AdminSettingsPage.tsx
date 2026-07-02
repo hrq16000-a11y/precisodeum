@@ -1,15 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Settings, Save } from 'lucide-react';
+import { Settings, Save, Plus, Trash2, X, Crown, FolderSync, Loader2, Info, AlertTriangle, Trophy, ImageIcon } from 'lucide-react';
+import { resolveAvatarUrl } from '@/lib/providerDisplay';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import ImageUploadField from '@/components/ImageUploadField';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const AdminSettingsPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [settings, setSettings] = useState<any[]>([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newSetting, setNewSetting] = useState({ key: '', label: '', description: '', value: '', type: 'text' });
+  const [search, setSearch] = useState('');
 
   const fetchSettings = async () => {
     const { data } = await supabase
@@ -26,10 +36,10 @@ const AdminSettingsPage = () => {
 
   const toggleSetting = async (key: string, currentValue: string) => {
     const newValue = currentValue === 'true' ? 'false' : 'true';
-    const { error } = await (supabase
-      .from('site_settings' as any) as any)
-      .update({ value: newValue, updated_at: new Date().toISOString() })
-      .eq('key', key);
+    const { error } = await (supabase.rpc as any)('update_site_setting_audited', {
+      p_key: key,
+      p_value: newValue,
+    });
     if (error) {
       toast.error('Erro ao atualizar: ' + error.message);
     } else {
@@ -39,10 +49,10 @@ const AdminSettingsPage = () => {
   };
 
   const updateTextSetting = async (key: string, newValue: string) => {
-    const { error } = await (supabase
-      .from('site_settings' as any) as any)
-      .update({ value: newValue, updated_at: new Date().toISOString() })
-      .eq('key', key);
+    const { error } = await (supabase.rpc as any)('update_site_setting_audited', {
+      p_key: key,
+      p_value: newValue,
+    });
     if (error) {
       toast.error('Erro ao atualizar: ' + error.message);
     } else {
@@ -51,65 +61,173 @@ const AdminSettingsPage = () => {
     }
   };
 
+  const deleteSetting = async (key: string) => {
+    if (!confirm(`Excluir a configuração "${key}"?`)) return;
+    const { error } = await (supabase.from('site_settings' as any) as any).delete().eq('key', key);
+    if (error) toast.error('Erro: ' + error.message);
+    else { toast.success('Excluída!'); fetchSettings(); }
+  };
+
+  const createSetting = async () => {
+    if (!newSetting.key || !newSetting.label) { toast.error('Chave e label são obrigatórios'); return; }
+    const value = newSetting.type === 'boolean' ? 'false' : newSetting.value || '';
+    const { error } = await (supabase.from('site_settings' as any) as any).insert({
+      key: newSetting.key,
+      label: newSetting.label,
+      description: newSetting.description,
+      value,
+      is_public: false,
+    });
+    if (error) toast.error('Erro: ' + error.message);
+    else {
+      toast.success('Configuração criada!');
+      setShowCreate(false);
+      setNewSetting({ key: '', label: '', description: '', value: '', type: 'text' });
+      fetchSettings();
+    }
+  };
+
   if (loading) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
 
-  const booleanSettings = settings.filter((s: any) => s.value === 'true' || s.value === 'false');
-  const textSettings = settings.filter((s: any) => s.value !== 'true' && s.value !== 'false');
+  const filtered = settings.filter((s: any) =>
+    !search || s.key.includes(search.toLowerCase()) || s.label?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const booleanSettings = filtered.filter((s: any) => s.value === 'true' || s.value === 'false');
+  const textSettings = filtered.filter((s: any) => s.value !== 'true' && s.value !== 'false' && !s.key.startsWith('gamification_'));
 
   return (
     <AdminLayout>
-      <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-        <Settings className="h-6 w-6" /> Configurações do Site
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">Habilite ou desabilite funcionalidades do site</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+            <Settings className="h-6 w-6" /> Configurações do Site
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {settings.length} configurações · {booleanSettings.length} flags · {textSettings.length} textos
+          </p>
+        </div>
+        <Button variant="accent" size="sm" onClick={() => setShowCreate(true)}>
+          <Plus className="mr-1 h-4 w-4" /> Nova Configuração
+        </Button>
+      </div>
 
-      <div className="mt-6 space-y-3">
+      <Input
+        placeholder="Buscar por chave ou label..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="mt-4 max-w-sm"
+      />
+
+      {/* 'Selo Verificado' removed — destaque agora é exclusivamente o Ranking de Gamificação (vide /admin/rankings) */}
+
+      {/* ====== Gestão de Gamificação ====== */}
+      <GamificationManagementSection settings={settings} onSaveText={updateTextSetting} />
+
+      {/* ====== Limites da Plataforma (Portfólio) ====== */}
+      <PlatformLimitsSection settings={settings} onSaveText={updateTextSetting} />
+
+      {/* ====== Regras de Perfil / DESTAQUE Section ====== */}
+      <ProfileRulesSection settings={settings} onToggle={toggleSetting} onSaveText={updateTextSetting} />
+
+      {/* ====== Avatar Fallback (controle 100% admin) ====== */}
+      <AvatarFallbackSection settings={settings} onToggle={toggleSetting} onSaveText={updateTextSetting} />
+
+
+      {/* Boolean / Flags */}
+      <h2 className="mt-6 font-display text-lg font-bold text-foreground">Feature Flags ({booleanSettings.length})</h2>
+      <div className="mt-3 space-y-2">
         {booleanSettings.map((s: any) => (
-          <div key={s.key} className="flex items-center justify-between rounded-xl border border-border bg-card p-5 shadow-card">
-            <div>
+          <div key={s.key} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-card">
+            <div className="flex-1 min-w-0 mr-4">
               <h3 className="text-sm font-bold text-foreground">{s.label}</h3>
               <p className="text-xs text-muted-foreground">{s.description}</p>
+              <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">{s.key}</p>
             </div>
-            <button
-              onClick={() => toggleSetting(s.key, s.value)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                s.value === 'true' ? 'bg-accent' : 'bg-muted'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-card shadow transition-transform ${
-                  s.value === 'true' ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Switch checked={s.value === 'true'} onCheckedChange={() => toggleSetting(s.key, s.value)} />
+              <Button variant="ghost" size="sm" onClick={() => deleteSetting(s.key)}>
+                <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </div>
           </div>
         ))}
       </div>
 
+      {/* Text / Image settings */}
       {textSettings.length > 0 && (
         <>
-          <h2 className="mt-8 font-display text-lg font-bold text-foreground">Configurações de texto e imagens</h2>
+          <h2 className="mt-8 font-display text-lg font-bold text-foreground">Textos e Imagens ({textSettings.length})</h2>
           <div className="mt-3 space-y-3">
             {textSettings.map((s: any) => (
-              <TextSettingRow key={s.key} setting={s} onSave={updateTextSetting} />
+              <TextSettingRow key={s.key} setting={s} onSave={updateTextSetting} onDelete={deleteSetting} />
             ))}
           </div>
         </>
       )}
+
+      {/* Create Dialog */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova Configuração</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Tipo</Label>
+              <Select value={newSetting.type} onValueChange={(v) => setNewSetting(p => ({ ...p, type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="boolean">Flag (true/false)</SelectItem>
+                  <SelectItem value="text">Texto</SelectItem>
+                  <SelectItem value="image">Imagem</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Chave (snake_case)</Label>
+              <Input value={newSetting.key} onChange={(e) => setNewSetting(p => ({ ...p, key: e.target.value.toLowerCase().replace(/\s+/g, '_') }))} placeholder="ex: module_chat" />
+            </div>
+            <div>
+              <Label>Label</Label>
+              <Input value={newSetting.label} onChange={(e) => setNewSetting(p => ({ ...p, label: e.target.value }))} placeholder="ex: Módulo de Chat" />
+            </div>
+            <div>
+              <Label>Descrição</Label>
+              <Input value={newSetting.description} onChange={(e) => setNewSetting(p => ({ ...p, description: e.target.value }))} placeholder="Opcional" />
+            </div>
+            {newSetting.type === 'text' && (
+              <div>
+                <Label>Valor inicial</Label>
+                <Input value={newSetting.value} onChange={(e) => setNewSetting(p => ({ ...p, value: e.target.value }))} />
+              </div>
+            )}
+            <Button variant="accent" className="w-full" onClick={createSetting}>
+              <Plus className="mr-1 h-4 w-4" /> Criar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
 
-const TextSettingRow = ({ setting, onSave }: { setting: any; onSave: (key: string, value: string) => Promise<void> }) => {
+const TextSettingRow = ({ setting, onSave, onDelete }: { setting: any; onSave: (key: string, value: string) => Promise<void>; onDelete: (key: string) => Promise<void> }) => {
   const [value, setValue] = useState(setting.value);
   const changed = value !== setting.value;
   const isImageSetting = setting.key.includes('logo') || setting.key.includes('image') || setting.key.includes('banner') || setting.key.includes('icon');
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card space-y-2">
-      <div>
-        <h3 className="text-sm font-bold text-foreground">{setting.label}</h3>
-        <p className="text-xs text-muted-foreground">{setting.description}</p>
+    <div className="rounded-xl border border-border bg-card p-4 shadow-card space-y-2">
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-foreground">{setting.label}</h3>
+          <p className="text-xs text-muted-foreground">{setting.description}</p>
+          <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">{setting.key}</p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => onDelete(setting.key)}>
+          <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+        </Button>
       </div>
       {isImageSetting ? (
         <ImageUploadField
@@ -122,11 +240,7 @@ const TextSettingRow = ({ setting, onSave }: { setting: any; onSave: (key: strin
         />
       ) : (
         <div className="flex gap-2">
-          <input
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-          />
+          <Input value={value} onChange={(e) => setValue(e.target.value)} className="flex-1" />
           {changed && (
             <Button variant="accent" size="sm" onClick={() => onSave(setting.key, value)}>
               <Save className="mr-1 h-3 w-3" /> Salvar
@@ -138,4 +252,559 @@ const TextSettingRow = ({ setting, onSave }: { setting: any; onSave: (key: strin
   );
 };
 
+/* 'VerifiedBadgeSection' removed — sistema de selo agora é regido pelo Ranking de Gamificação (vide /admin/rankings). */
+
 export default AdminSettingsPage;
+
+const GAMIFICATION_SETTING_KEYS = [
+  { key: 'gamification_multiplier', label: 'Multiplicador global', defaultValue: '1', step: '0.1', min: '0.1' },
+  { key: 'gamification_level_bronze', label: 'Bronze', defaultValue: '0', step: '1', min: '0' },
+  { key: 'gamification_level_prata', label: 'Prata', defaultValue: '120', step: '1', min: '0' },
+  { key: 'gamification_level_ouro', label: 'Ouro', defaultValue: '260', step: '1', min: '0' },
+  { key: 'gamification_level_diamante', label: 'Diamante', defaultValue: '400', step: '1', min: '0' },
+  { key: 'gamification_level_mestre', label: 'Mestre', defaultValue: '500', step: '1', min: '0' },
+];
+
+const GamificationManagementSection = ({ settings, onSaveText }: {
+  settings: any[];
+  onSaveText: (key: string, value: string) => Promise<void>;
+}) => {
+  const map = useMemo(() => {
+    const m: Record<string, string> = {};
+    settings.forEach((s: any) => { m[s.key] = s.value; });
+    return m;
+  }, [settings]);
+  const [local, setLocal] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    GAMIFICATION_SETTING_KEYS.forEach((item) => { init[item.key] = map[item.key] ?? item.defaultValue; });
+    setLocal(init);
+  }, [map]);
+
+  const save = async (key: string) => {
+    const meta = GAMIFICATION_SETTING_KEYS.find((item) => item.key === key)!;
+    const raw = local[key] ?? meta.defaultValue;
+    const value = key === 'gamification_multiplier' ? String(Math.max(0.1, Number(raw) || 1)) : String(Math.max(0, Math.round(Number(raw) || 0)));
+    if (map[key] === undefined) {
+      const { error } = await (supabase.from('site_settings' as any) as any).insert({
+        key,
+        label: meta.label,
+        description: key === 'gamification_multiplier' ? 'Multiplicador visual dos pontos exibidos.' : `Limite base da estação ${meta.label}.`,
+        value,
+        is_public: true,
+      });
+      if (error) toast.error('Erro: ' + error.message);
+      else toast.success('Configuração criada!');
+      return;
+    }
+    await onSaveText(key, value);
+    if (key.startsWith('gamification_level_')) {
+      const levelName = meta.label;
+      await supabase
+        .from('gamification_levels')
+        .update({ min_points: Number(value), updated_at: new Date().toISOString() } as any)
+        .ilike('name', levelName);
+    }
+  };
+
+  const multiplier = Number(local.gamification_multiplier || map.gamification_multiplier || 1) || 1;
+
+  return (
+    <div className="mt-6 rounded-xl border-2 border-accent/30 bg-accent/5 p-5">
+      <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+        <Trophy className="h-5 w-5 text-accent" /> Gestão de Gamificação
+      </h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Controle a economia de pontos, o multiplicador visual e os limites das estações sem alterar o mérito real dos profissionais.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {GAMIFICATION_SETTING_KEYS.map((item) => {
+          const value = local[item.key] ?? map[item.key] ?? item.defaultValue;
+          const changed = String(value) !== String(map[item.key] ?? item.defaultValue);
+          const preview = item.key === 'gamification_multiplier' ? null : Math.round(Number(value || 0) * multiplier);
+          return (
+            <div key={item.key} className="rounded-lg border border-border bg-card p-3">
+              <Label className="text-sm font-medium text-foreground">{item.label}</Label>
+              <div className="mt-2 flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={item.min}
+                  step={item.step}
+                  value={value}
+                  onChange={(e) => setLocal((prev) => ({ ...prev, [item.key]: e.target.value }))}
+                  className="text-center"
+                />
+                {changed && (
+                  <Button variant="accent" size="sm" onClick={() => save(item.key)}>
+                    <Save className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+              {preview !== null && <p className="mt-1 text-[10px] text-muted-foreground">Exibição atual: {preview.toLocaleString('pt-BR')} pts</p>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+/* ====== Regras de Perfil / DESTAQUE — Painel Agrupado ====== */
+const PROFILE_RULE_KEYS = [
+  { key: 'destaque_require_avatar', label: 'DESTAQUE: Exigir avatar', type: 'boolean' },
+  { key: 'destaque_require_portfolio', label: 'DESTAQUE: Exigir portfólio', type: 'boolean' },
+  { key: 'destaque_require_services', label: 'DESTAQUE: Exigir serviços', type: 'boolean' },
+  { key: 'destaque_require_description', label: 'DESTAQUE: Exigir descrição', type: 'boolean' },
+  { key: 'destaque_min_services', label: 'DESTAQUE: Mín. serviços', type: 'number' },
+  { key: 'destaque_min_portfolio', label: 'DESTAQUE: Mín. álbuns', type: 'number' },
+  { key: 'incomplete_profile_hide_public', label: 'Ocultar perfis incompletos', type: 'boolean' },
+  { key: 'incomplete_profile_auto_delete', label: 'Exclusão automática', type: 'boolean' },
+  { key: 'incomplete_profile_days_limit', label: 'Prazo (dias)', type: 'number' },
+  // Avatar fallback agora tem sua própria seção (AvatarFallbackSection) — removido daqui.
+];
+
+const ProfileRulesSection = ({ settings, onToggle, onSaveText }: {
+  settings: any[];
+  onToggle: (key: string, currentValue: string) => Promise<void>;
+  onSaveText: (key: string, value: string) => Promise<void>;
+}) => {
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<any>(null);
+  const map = useMemo(() => {
+    const m: Record<string, string> = {};
+    settings.forEach((s: any) => { m[s.key] = s.value; });
+    return m;
+  }, [settings]);
+
+  const [localValues, setLocalValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    PROFILE_RULE_KEYS.forEach(b => {
+      if (b.type === 'number' || b.type === 'select') init[b.key] = map[b.key] || '';
+    });
+    setLocalValues(init);
+  }, [map]);
+
+
+
+
+  return (
+    <div className="mt-6 rounded-xl border-2 border-primary/30 bg-primary/5 p-5">
+      <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+        <Crown className="h-5 w-5 text-accent" /> Regras de Perfil e Selo DESTAQUE
+      </h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        Configure os critérios para o selo DESTAQUE, política de perfis incompletos e estilo de avatar automático.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {PROFILE_RULE_KEYS.map(({ key, label, type }) => {
+          const val = map[key];
+          if (type === 'boolean') {
+            return (
+              <div key={key} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                <span className="text-sm font-medium text-foreground">{label}</span>
+                <Switch checked={val === 'true'} onCheckedChange={() => onToggle(key, val || 'false')} />
+              </div>
+            );
+          }
+          return (
+            <div key={key} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+              <span className="text-sm font-medium text-foreground flex-1">{label}</span>
+              <Input
+                type="number"
+                min={0}
+                className="w-20 text-center"
+                value={localValues[key] ?? val ?? '0'}
+                onChange={(e) => setLocalValues(p => ({ ...p, [key]: e.target.value }))}
+              />
+              {(localValues[key] ?? '') !== (val ?? '') && (
+                <Button variant="accent" size="sm" onClick={() => onSaveText(key, localValues[key])}>
+                  <Save className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* Migration button */}
+      <div className="mt-4 rounded-lg border border-border bg-card p-4">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
+          <FolderSync className="h-4 w-4 text-accent" /> Migração de Portfólio Legado
+        </h3>
+        <p className="text-xs text-muted-foreground mb-3">
+          Cria álbuns "Meus Trabalhos" para profissionais que têm fotos no storage mas nenhum álbum criado. Vincula fotos existentes ao sistema de álbuns.
+        </p>
+        {migrationResult && (
+          <div className="mb-3 rounded-md border border-accent/30 bg-accent/5 p-3 text-xs">
+            <p className="font-medium text-foreground">Resultado da migração:</p>
+            <ul className="mt-1 space-y-0.5 text-muted-foreground">
+              <li>Profissionais com fotos: <strong>{migrationResult.totalUsersWithMedia}</strong></li>
+              <li>Álbuns criados: <strong>{migrationResult.albumsCreated}</strong></li>
+              <li>Fotos vinculadas: <strong>{migrationResult.photosLinked}</strong></li>
+              <li>Providers atualizados: <strong>{migrationResult.providersUpdated}</strong></li>
+            </ul>
+            {migrationResult.errors?.length > 0 && (
+              <p className="mt-1 text-destructive">{migrationResult.errors.length} erros</p>
+            )}
+          </div>
+        )}
+        <Button
+          variant="accent"
+          size="sm"
+          disabled={migrating}
+          onClick={async () => {
+            setMigrating(true);
+            setMigrationResult(null);
+            try {
+              const { data, error } = await supabase.functions.invoke('migrate-portfolio-albums', { method: 'POST' });
+              if (error) throw error;
+              setMigrationResult(data);
+              toast.success(`Migração concluída: ${data.albumsCreated} álbuns, ${data.photosLinked} fotos`);
+            } catch (e: any) {
+              toast.error('Erro na migração: ' + e.message);
+            } finally {
+              setMigrating(false);
+            }
+          }}
+        >
+          {migrating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FolderSync className="mr-1 h-4 w-4" />}
+          {migrating ? 'Migrando...' : 'Migrar Fotos Legadas'}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+/* ====== Limites da Plataforma (Portfólio) ====== */
+const PLATFORM_LIMIT_KEYS: { key: string; label: string; description: string; defaultValue: string; tip: string }[] = [
+  {
+    key: 'portfolio_max_albums',
+    label: 'Máx. álbuns por profissional',
+    description: 'Quantos álbuns cada profissional pode criar no portfólio.',
+    defaultValue: '4',
+    tip: 'Aumentar este valor permite que profissionais organizem mais categorias de trabalho, mas pode tornar a página de perfil mais longa de navegar. Recomendado: 4-8.',
+  },
+  {
+    key: 'portfolio_max_photos_per_album',
+    label: 'Máx. fotos por álbum',
+    description: 'Quantas fotos cabem em cada álbum.',
+    defaultValue: '20',
+    tip: 'Aumentar o limite de fotos pode impactar o tempo de carregamento das páginas de perfil e o consumo de armazenamento. Recomendado: 15-30 fotos por álbum.',
+  },
+];
+
+const PlatformLimitsSection = ({ settings, onSaveText }: {
+  settings: any[];
+  onSaveText: (key: string, value: string) => Promise<void>;
+}) => {
+  const map = useMemo(() => {
+    const m: Record<string, string> = {};
+    settings.forEach((s: any) => { m[s.key] = s.value; });
+    return m;
+  }, [settings]);
+
+  const [local, setLocal] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    PLATFORM_LIMIT_KEYS.forEach(b => { init[b.key] = map[b.key] ?? b.defaultValue; });
+    setLocal(init);
+  }, [map]);
+
+  const handleSave = async (key: string) => {
+    const value = String(Number(local[key] || '0'));
+    if (Number(value) <= 0) { toast.error('Valor inválido'); return; }
+    // If setting doesn't exist yet, insert it; otherwise update via onSaveText
+    if (map[key] === undefined) {
+      const meta = PLATFORM_LIMIT_KEYS.find(p => p.key === key)!;
+      const { error } = await (supabase.from('site_settings' as any) as any).insert({
+        key, label: meta.label, description: meta.description, value, is_public: false,
+      });
+      if (error) toast.error('Erro: ' + error.message);
+      else toast.success('Limite criado!');
+    } else {
+      await onSaveText(key, value);
+    }
+  };
+
+  return (
+    <TooltipProvider delayDuration={150}>
+      <div className="mt-6 rounded-xl border-2 border-accent/30 bg-accent/5 p-5">
+        <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+          <Settings className="h-5 w-5 text-accent" /> Limites da Plataforma
+        </h2>
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 text-[11px] text-amber-700 dark:text-amber-400">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <p>
+            <strong>Atenção:</strong> alterar limites afeta todos os profissionais imediatamente. Aumentar o número de fotos pode impactar o tempo de carregamento das páginas de perfil.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {PLATFORM_LIMIT_KEYS.map(({ key, label, description, defaultValue, tip }) => {
+            const stored = map[key];
+            const value = local[key] ?? stored ?? defaultValue;
+            const changed = String(value) !== String(stored ?? defaultValue);
+            return (
+              <div key={key} className="rounded-lg border border-border bg-card p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                      {label}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="text-muted-foreground hover:text-accent">
+                            <Info className="h-3.5 w-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs text-xs">
+                          {tip}
+                        </TooltipContent>
+                      </Tooltip>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">{description}</p>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    className="w-24 text-center"
+                    value={value}
+                    onChange={(e) => setLocal(p => ({ ...p, [key]: e.target.value }))}
+                  />
+                  {changed && (
+                    <Button variant="accent" size="sm" onClick={() => handleSave(key)}>
+                      <Save className="mr-1 h-3 w-3" /> Salvar
+                    </Button>
+                  )}
+                  {stored === undefined && (
+                    <span className="text-[10px] text-muted-foreground">(usando padrão: {defaultValue})</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+};
+
+/* ====== Avatar Fallback — controle 100% admin ====== */
+const AVATAR_FALLBACK_KEYS = {
+  enabled: 'avatar_fallback_enabled',
+  mode: 'avatar_fallback_mode',
+  useServiceImage: 'avatar_fallback_use_service_image',
+  palette: 'avatar_fallback_palette',
+  boringVariant: 'avatar_fallback_boring_variant',
+};
+
+const AVATAR_MODES: Array<{ value: 'portfolio' | 'initials' | 'icon' | 'boring'; label: string; desc: string }> = [
+  { value: 'portfolio', label: 'Portfólio / Serviço', desc: 'Usa uma imagem real do trabalho do profissional (recomendado).' },
+  { value: 'boring', label: 'Geométrico (Boring)', desc: 'Padrões geométricos elegantes e únicos por profissional.' },
+  { value: 'initials', label: 'Iniciais coloridas', desc: 'Mostra as iniciais do nome em um fundo da paleta abaixo.' },
+  { value: 'icon', label: 'Ícone neutro', desc: 'Silhueta padrão em um fundo da paleta abaixo.' },
+];
+
+const BORING_VARIANTS: Array<{ value: 'marble' | 'beam' | 'pixel' | 'sunset' | 'ring' | 'bauhaus'; label: string }> = [
+  { value: 'marble', label: 'Marble' },
+  { value: 'beam', label: 'Beam' },
+  { value: 'pixel', label: 'Pixel' },
+  { value: 'sunset', label: 'Sunset' },
+  { value: 'ring', label: 'Ring' },
+  { value: 'bauhaus', label: 'Bauhaus' },
+];
+
+const DEFAULT_PALETTE_CSV = '#1e3a8a,#0f766e,#7c2d12,#4338ca,#166534,#9a3412,#334155,#155e75,#854d0e,#6b21a8';
+
+const upsertSetting = async (key: string, value: string, label: string, description: string) => {
+  const { error } = await (supabase.rpc as any)('update_site_setting_audited', { p_key: key, p_value: value });
+  if (!error) return;
+  // Fallback: insert if missing
+  await (supabase.from('site_settings' as any) as any).insert({ key, value, label, description, is_public: true });
+};
+
+const AvatarFallbackSection = ({ settings, onToggle, onSaveText }: {
+  settings: any[];
+  onToggle: (key: string, currentValue: string) => Promise<void>;
+  onSaveText: (key: string, value: string) => Promise<void>;
+}) => {
+  const map = useMemo(() => {
+    const m: Record<string, string> = {};
+    settings.forEach((s: any) => { m[s.key] = s.value; });
+    return m;
+  }, [settings]);
+
+  const enabled = (map[AVATAR_FALLBACK_KEYS.enabled] ?? 'true') === 'true';
+  const useServiceImage = (map[AVATAR_FALLBACK_KEYS.useServiceImage] ?? 'true') === 'true';
+  const modeRaw = (map[AVATAR_FALLBACK_KEYS.mode] || 'portfolio') as 'portfolio' | 'initials' | 'icon' | 'boring';
+  const paletteCsv = map[AVATAR_FALLBACK_KEYS.palette] || DEFAULT_PALETTE_CSV;
+  const boringVariant = (map[AVATAR_FALLBACK_KEYS.boringVariant] || 'marble') as 'marble' | 'beam' | 'pixel' | 'sunset' | 'ring' | 'bauhaus';
+
+  const [localPalette, setLocalPalette] = useState(paletteCsv);
+  useEffect(() => { setLocalPalette(paletteCsv); }, [paletteCsv]);
+  const paletteChanged = localPalette.trim() !== paletteCsv.trim();
+
+  const palette = useMemo(() => (
+    localPalette.split(/[,\s]+/).map((c) => c.trim()).filter((c) => /^#?[0-9a-fA-F]{3,8}$/.test(c))
+      .map((bg) => ({ bg: bg.startsWith('#') ? bg : `#${bg}`, fg: '#ffffff' }))
+  ), [localPalette]);
+
+  // Preview: 4 amostras (Ana Silva, João Pereira, Maria Costa, Carlos Souza).
+  const samples = ['Ana Silva', 'João Pereira', 'Maria Costa', 'Carlos Souza'];
+  const previewUrls = samples.map((n) => resolveAvatarUrl({
+    name: n,
+    seed: n,
+    config: { enabled, mode: modeRaw, useServiceImage, palette, boringVariant },
+  }));
+
+  const handleSaveOrCreate = async (key: string, value: string, label: string, description: string) => {
+    if (map[key] === undefined) {
+      await upsertSetting(key, value, label, description);
+      toast.success('Configuração criada!');
+    } else {
+      await onSaveText(key, value);
+    }
+  };
+
+  return (
+    <div className="mt-6 rounded-xl border-2 border-accent/30 bg-accent/5 p-5">
+      <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+        <ImageIcon className="h-5 w-5 text-accent" /> Avatar — Fallback Inteligente
+      </h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        Define o que aparece como avatar quando o profissional não enviou foto própria. Todo controle é dinâmico e aplicado em tempo real.
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {/* Toggle: ativo */}
+        <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Fallback ativo</p>
+            <p className="text-xs text-muted-foreground">Quando desligado, todos os perfis sem foto usam o ícone neutro padrão.</p>
+          </div>
+          <Switch
+            checked={enabled}
+            onCheckedChange={async () => {
+              if (map[AVATAR_FALLBACK_KEYS.enabled] === undefined) {
+                await upsertSetting(AVATAR_FALLBACK_KEYS.enabled, enabled ? 'false' : 'true', 'Fallback de avatar ativo', '');
+              } else {
+                await onToggle(AVATAR_FALLBACK_KEYS.enabled, enabled ? 'true' : 'false');
+              }
+            }}
+          />
+        </div>
+
+        {/* Toggle: usar imagem do serviço */}
+        <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Usar imagem do serviço</p>
+            <p className="text-xs text-muted-foreground">Quando ativo, também aceita a capa do serviço (não só do portfólio) como fallback.</p>
+          </div>
+          <Switch
+            checked={useServiceImage}
+            onCheckedChange={async () => {
+              if (map[AVATAR_FALLBACK_KEYS.useServiceImage] === undefined) {
+                await upsertSetting(AVATAR_FALLBACK_KEYS.useServiceImage, useServiceImage ? 'false' : 'true', 'Usar imagem do serviço como avatar', '');
+              } else {
+                await onToggle(AVATAR_FALLBACK_KEYS.useServiceImage, useServiceImage ? 'true' : 'false');
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Modo */}
+      <div className="mt-3 rounded-lg border border-border bg-card p-3">
+        <p className="text-sm font-medium text-foreground mb-2">Modo do fallback</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {AVATAR_MODES.map((m) => {
+            const active = modeRaw === m.value;
+            return (
+              <button
+                type="button"
+                key={m.value}
+                onClick={() => handleSaveOrCreate(AVATAR_FALLBACK_KEYS.mode, m.value, 'Modo do fallback de avatar', m.desc)}
+                className={`text-left rounded-lg border p-3 transition-all ${active ? 'border-accent bg-accent/10 ring-2 ring-accent/30' : 'border-border bg-background hover:border-accent/50'}`}
+              >
+                <p className="text-sm font-bold text-foreground">{m.label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{m.desc}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Variante Boring — só relevante quando modo = boring */}
+      {modeRaw === 'boring' && (
+        <div className="mt-3 rounded-lg border border-border bg-card p-3">
+          <p className="text-sm font-medium text-foreground mb-2">Variante geométrica</p>
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+            {BORING_VARIANTS.map((v) => {
+              const active = boringVariant === v.value;
+              return (
+                <button
+                  type="button"
+                  key={v.value}
+                  onClick={() => handleSaveOrCreate(AVATAR_FALLBACK_KEYS.boringVariant, v.value, 'Variante Boring Avatar', `Estilo ${v.label}`)}
+                  className={`text-sm rounded-lg border p-2 transition-all ${active ? 'border-accent bg-accent/10 ring-2 ring-accent/30 font-bold' : 'border-border bg-background hover:border-accent/50'}`}
+                >
+                  {v.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
+      {/* Paleta */}
+      <div className="mt-3 rounded-lg border border-border bg-card p-3">
+        <p className="text-sm font-medium text-foreground">Paleta de cores (iniciais / ícone)</p>
+        <p className="text-[11px] text-muted-foreground mb-2">Cores HEX separadas por vírgula. A cor de cada profissional é escolhida deterministicamente pelo seu ID.</p>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {palette.map((c, i) => (
+            <span key={i} title={c.bg} className="h-6 w-6 rounded-full border border-border" style={{ backgroundColor: c.bg }} />
+          ))}
+          {palette.length === 0 && <span className="text-xs text-destructive">Paleta vazia — usando padrão.</span>}
+        </div>
+        <div className="flex gap-2">
+          <Input value={localPalette} onChange={(e) => setLocalPalette(e.target.value)} className="font-mono text-xs" />
+          {paletteChanged && (
+            <Button variant="accent" size="sm" onClick={() => handleSaveOrCreate(AVATAR_FALLBACK_KEYS.palette, localPalette, 'Paleta de cores das iniciais', 'CSV de cores HEX')}>
+              <Save className="mr-1 h-3 w-3" /> Salvar
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => setLocalPalette(DEFAULT_PALETTE_CSV)}>Restaurar padrão</Button>
+        </div>
+      </div>
+
+      {/* Preview ao vivo */}
+      <div className="mt-3 rounded-lg border border-border bg-card p-3">
+        <p className="text-sm font-medium text-foreground mb-2">Preview ao vivo</p>
+        <div className="flex flex-wrap gap-3">
+          {previewUrls.map((url, i) => (
+            <div key={i} className="flex flex-col items-center gap-1">
+              <img src={url} alt={`Preview ${samples[i]}`} className="h-16 w-16 rounded-xl border border-border" />
+              <span className="text-[10px] text-muted-foreground">{samples[i]}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-2">
+          {!enabled
+            ? 'Fallback desligado: todos os perfis sem foto usam iniciais simples.'
+            : modeRaw === 'portfolio'
+              ? 'Modo Portfólio: profissionais sem foto verão a 1ª imagem do portfólio/serviço. Sem portfólio, caem para iniciais.'
+              : modeRaw === 'boring'
+                ? `Modo Geométrico: padrão "${boringVariant}" único por profissional usando as cores da paleta.`
+                : modeRaw === 'icon'
+                  ? 'Modo Ícone: silhueta neutra colorida.'
+                  : 'Modo Iniciais: letras do nome em fundo colorido da paleta.'}
+        </p>
+      </div>
+    </div>
+  );
+};
+

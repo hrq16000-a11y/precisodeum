@@ -1,43 +1,171 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import CategoryIcon from '@/components/CategoryIcon';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { trackAction } from '@/lib/errorReporter';
+import { showSaveError } from '@/components/SaveErrorToast';
 import AvatarUpload from '@/components/AvatarUpload';
-import PortfolioUpload from '@/components/PortfolioUpload';
+import { getInitials, getSocialAvatarUrl } from '@/lib/avatarUtils';
+import { setUserAvatar } from '@/lib/avatarSync';
 import PhoneMaskedInput from '@/components/PhoneMaskedInput';
 import ProfileTypeSwitcher from '@/components/ProfileTypeSwitcher';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp, toCanonical } from '@/lib/whatsapp';
+import { normalizeProviderPayload } from '@/lib/providerPayload';
+import { isValidFullName, shouldEnforceFullName, FULL_NAME_INVALID_MESSAGE } from '@/lib/validation/fullNameValidation';
+import { isValidPhoneBR, shouldEnforcePhone, PHONE_INVALID_MESSAGE } from '@/lib/validation/phoneNormalization';
+import { maybeLogContactOwnershipConflict } from '@/lib/contactOwnership';
+import { buildDashboardProfileOperation, logOperationBuildFailure } from '@/lib/operations';
+import { logAuditAction } from '@/hooks/useAuditLog';
+import { buildOnboardingChecklist, checklistStats } from '@/lib/onboardingChecklist';
 import { generateProviderSlug } from '@/lib/slugify';
+import { invalidateProviderProfileCache } from '@/pages/ProviderProfile';
+import VerificationStatusBadge from '@/components/profile/VerificationStatusBadge';
+import { fetchAllMunicipalities, geocodeCity, reverseGeocode, normalize, type CityResult } from '@/lib/geoUtils';
+import { useQuery } from '@tanstack/react-query';
+import { Search, LocateFixed, Loader2, MapPin, CheckCircle2, User, Briefcase, Globe, HelpCircle, Eye } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+
+const fadeIn = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+};
 
 const DashboardProfilePage = () => {
   const { user, profile, provider, loading, refetchProfile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('pessoal');
+  const whatsappInputRef = useRef<HTMLInputElement | null>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
+  const cityInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Foco automático vindo dos CTAs do dashboard (?focus=contact|location|description|avatar)
+  useEffect(() => {
+    const focus = searchParams.get('focus');
+    if (!focus) return;
+    // Mapeamento focus → tab + ref
+    const mapping: Record<string, { tab: string; ref?: React.RefObject<HTMLElement | null> }> = {
+      contact: { tab: 'pessoal', ref: whatsappInputRef as any },
+      avatar: { tab: 'pessoal' },
+      description: { tab: 'profissional', ref: descriptionRef as any },
+      location: { tab: 'localizacao', ref: cityInputRef as any },
+    };
+    const target = mapping[focus];
+    if (!target) return;
+    setActiveTab(target.tab);
+    // Aguarda render da tab antes de focar
+    const timer = window.setTimeout(() => {
+      target.ref?.current?.focus();
+      target.ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
+    // Limpa o param para não re-disparar em navegações futuras
+    const next = new URLSearchParams(searchParams);
+    next.delete('focus');
+    setSearchParams(next, { replace: true });
+    return () => window.clearTimeout(timer);
+  }, [searchParams, setSearchParams]);
+
+  // City selector state
+  const [citySearch, setCitySearch] = useState('');
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [allCities, setAllCities] = useState<CityResult[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Category selector state
+  const [categorySearch, setCategorySearch] = useState('');
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+
   const [form, setForm] = useState({
     full_name: '', phone: '', business_name: '', description: '',
     city: '', state: '', neighborhood: '', whatsapp: '', website: '',
-    years_experience: 0, category_id: '',
+    years_experience: 0, category_id: '', category_name: '', category_custom: '',
+    cnpj: '', cpf: '', birth_date: '', ibge_code: '', working_hours: '',
+    latitude: null as number | null, longitude: null as number | null,
+    account_kind: '' as '' | 'autonomo' | 'empresa',
   });
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
   }, [loading, user, navigate]);
 
-  useEffect(() => {
-    supabase.from('categories').select('*').order('name').then(({ data }) => {
-      if (data) setCategories(data);
-    });
-  }, []);
+  // Load categories
+  const { data: categories = [] } = useQuery({
+    queryKey: ['profile-categories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('categories').select('id, name, icon, parent_id').is('deleted_at', null).order('name');
+      return data || [];
+    },
+  });
 
+  const macroCategories = useMemo(() => categories.filter((c: any) => !c.parent_id), [categories]);
+  const subsByParent = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    categories.forEach((c: any) => { if (c.parent_id) (map[c.parent_id] ??= []).push(c); });
+    return map;
+  }, [categories]);
+
+  const filteredCategoryTree = useMemo(() => {
+    if (!categorySearch.trim()) {
+      return macroCategories.map((m: any) => ({ macro: m, subs: subsByParent[m.id] || [] }));
+    }
+    const q = normalize(categorySearch);
+    const results: { macro: any; subs: any[] }[] = [];
+    for (const macro of macroCategories) {
+      const macroName = normalize(macro.name);
+      const subs = (subsByParent[macro.id] || []).filter((s: any) => normalize(s.name).includes(q));
+      if (macroName.includes(q) || subs.length > 0) {
+        results.push({ macro, subs: macroName.includes(q) ? subsByParent[macro.id] || [] : subs });
+      }
+    }
+    return results;
+  }, [categorySearch, macroCategories, subsByParent]);
+
+  // City filtering
+  const filteredCities = useMemo(() => {
+    if (!citySearch.trim()) return allCities.slice(0, 10);
+    const q = normalize(citySearch);
+    const terms = q.split(/\s+/).filter(Boolean);
+    return allCities
+      .filter((c) => {
+        const cityNorm = normalize(c.name);
+        const stateNorm = normalize(c.state);
+        return terms.every((t) => cityNorm.includes(t) || stateNorm.includes(t));
+      })
+      .slice(0, 10);
+  }, [citySearch, allCities]);
+
+  const loadCities = useCallback(() => {
+    if (allCities.length > 0) return;
+    setCitiesLoading(true);
+    fetchAllMunicipalities().then((cities) => {
+      setAllCities(cities);
+      setCitiesLoading(false);
+    });
+  }, [allCities.length]);
+
+  // Pre-populate form from profile/provider
   useEffect(() => {
     if (profile) {
       setForm(prev => ({ ...prev, full_name: profile.full_name || '', phone: profile.phone || '' }));
     }
     if (provider) {
+      const catName = categories.find((c: any) => c.id === provider.category_id)?.name || '';
+      const inferredKind: '' | 'autonomo' | 'empresa' =
+        (provider as any).cnpj ? 'empresa' :
+        ((provider as any).account_kind === 'empresa' || (provider as any).account_kind === 'autonomo') ? (provider as any).account_kind :
+        provider.business_name ? 'empresa' : '';
       setForm(prev => ({
         ...prev,
         business_name: provider.business_name || '',
@@ -48,10 +176,25 @@ const DashboardProfilePage = () => {
         whatsapp: provider.whatsapp || '',
         website: provider.website || '',
         years_experience: provider.years_experience || 0,
+        working_hours: (provider as any).working_hours || '',
         category_id: provider.category_id || '',
+        category_name: catName,
+        category_custom: (provider as any).category_custom || '',
+        cnpj: (provider as any).cnpj || '',
+        cpf: (provider as any).cpf || '',
+        birth_date: (provider as any).birth_date || '',
+        ibge_code: (provider as any).ibge_code || '',
+        latitude: provider.latitude ?? null,
+        longitude: provider.longitude ?? null,
+        account_kind: inferredKind,
       }));
+      if (provider.city) {
+        setCitySearch(provider.state ? `${provider.city}, ${provider.state}` : provider.city);
+      }
+      if (catName) setCategorySearch(catName);
+      else if ((provider as any).category_custom) setCategorySearch((provider as any).category_custom);
     }
-  }, [profile, provider]);
+  }, [profile, provider, categories]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -62,250 +205,783 @@ const DashboardProfilePage = () => {
     setForm(prev => ({ ...prev, [name]: rawValue }));
   };
 
+  const handleCategorySelect = (cat: any) => {
+    setForm(prev => ({ ...prev, category_id: cat.id, category_name: cat.name, category_custom: '' }));
+    setCategorySearch(cat.name);
+    setShowCategorySuggestions(false);
+  };
+
+  const handleCitySelect = async (c: CityResult) => {
+    setForm(prev => ({ ...prev, city: c.name, state: c.state, ibge_code: c.ibgeCode }));
+    setCitySearch(`${c.name}, ${c.state}`);
+    setShowCitySuggestions(false);
+    const { latitude, longitude } = await geocodeCity(c.name, c.state);
+    setForm(prev => ({ ...prev, latitude, longitude }));
+  };
+
+  const handleAutoLocate = async () => {
+    setLocating(true);
+    loadCities();
+    try {
+      if (!navigator?.geolocation) { setLocating(false); return; }
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const { city: detectedCity, state: detectedState } = await reverseGeocode(lat, lon);
+          if (detectedCity) {
+            const cities = await fetchAllMunicipalities();
+            const normalizedDetected = normalize(detectedCity);
+            const match = cities.find(c => normalize(c.name) === normalizedDetected && (
+              !detectedState || normalize(c.state) === normalize(detectedState) ||
+              detectedState.toLowerCase().includes(c.state.toLowerCase())
+            ));
+            if (match) {
+              setForm(prev => ({ ...prev, city: match.name, state: match.state, ibge_code: match.ibgeCode, latitude: lat, longitude: lon }));
+              setCitySearch(`${match.name}, ${match.state}`);
+            } else {
+              setForm(prev => ({ ...prev, city: detectedCity, state: detectedState, ibge_code: '', latitude: lat, longitude: lon }));
+              setCitySearch(`${detectedCity}, ${detectedState}`);
+            }
+          }
+          setLocating(false);
+        },
+        () => { setLocating(false); toast.error('Não foi possível detectar sua localização'); },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
+      );
+    } catch { setLocating(false); }
+  };
+
   const handleSave = async () => {
     if (!user) return;
-
-    // Validate required fields
+    setNameError(null);
+    setWhatsappError(null);
     if (!form.full_name.trim()) {
+      setNameError('Nome completo é obrigatório');
       toast.error('Nome completo é obrigatório');
       return;
     }
-    if (!form.city.trim()) {
-      toast.error('Cidade é obrigatória');
+    if (shouldEnforceFullName(form.full_name, profile?.full_name) && !isValidFullName(form.full_name)) {
+      setNameError(FULL_NAME_INVALID_MESSAGE);
+      toast.error(FULL_NAME_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'name_validation_blocked',
+        resource_type: 'user',
+        resource_id: user.id,
+        details: {
+          target_user_id: user.id,
+          length: form.full_name.trim().length,
+          parts: form.full_name.trim().split(/\s+/).filter(Boolean).length,
+          source: 'dashboard_profile_page',
+        },
+      }).catch(() => undefined);
       return;
     }
-    if (!form.state.trim()) {
-      toast.error('Estado é obrigatório');
+    // Telefone fixo é opcional — só valida se preenchido (WhatsApp já cobre contato)
+    const phoneDigits = form.phone.replace(/\D/g, '');
+    if (phoneDigits.length > 0 && phoneDigits.length < 10) { toast.error('Telefone deve ter 10 ou 11 dígitos (ou deixe vazio)'); return; }
+    if (!form.city.trim() || !form.state.trim()) { toast.error('Selecione sua cidade na lista'); return; }
+    if (!form.category_id && !form.category_custom) { toast.error('Selecione uma categoria ou digite "Outro"'); return; }
+    // Fase 1.3: enforce de WhatsApp canônico apenas se mudou
+    if (form.whatsapp.trim() && shouldEnforcePhone(form.whatsapp, profile?.whatsapp) && !isValidPhoneBR(form.whatsapp)) {
+      setWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
       return;
     }
-    if (!form.phone.trim() && !form.whatsapp.trim()) {
-      toast.error('Informe pelo menos um telefone ou WhatsApp');
-      return;
-    }
-
-    // Sanitize to canonical format (55DDDNUMBER)
     const finalWhatsapp = autoFillWhatsApp(form.whatsapp, form.phone);
-    if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) {
-      toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)');
-      return;
-    }
-    const finalPhone = toCanonical(form.phone);
-    if (form.phone.trim() && !finalPhone) {
-      toast.error('Número de telefone inválido (deve ter 10 ou 11 dígitos)');
-      return;
-    }
+    if (finalWhatsapp && !isValidWhatsApp(finalWhatsapp)) { toast.error('Número de WhatsApp inválido (deve ter 10 ou 11 dígitos)'); return; }
+    const finalPhone = toCanonical(form.phone) ?? '';
+    if (form.phone.trim() && !finalPhone) { toast.error('Número de telefone inválido (deve ter 10 ou 11 dígitos)'); return; }
+    const cnpjDigits = form.cnpj.replace(/\D/g, '');
+    if (cnpjDigits && cnpjDigits.length !== 14) { toast.error('CNPJ deve ter 14 dígitos'); return; }
+    const cpfDigits = form.cpf.replace(/\D/g, '');
+    if (cpfDigits && cpfDigits.length !== 11) { toast.error('CPF deve ter 11 dígitos'); return; }
 
-    setSaving(true);
-
-    try {
-      const { error: profileError } = await supabase.from('profiles').update({
-        full_name: form.full_name,
+    // FASE 1.6.8 — pre-atomic operation boundary.
+    {
+      const op = buildDashboardProfileOperation({
+        userId: user.id,
+        profileType: (profile as any)?.profile_type,
+        fullName: form.full_name,
+        whatsapp: form.whatsapp,
         phone: form.phone,
-        email: user.email || '',
-      }).eq('id', user.id);
-
-      if (profileError) {
-        toast.error('Erro ao salvar perfil: ' + profileError.message);
-        setSaving(false);
+        city: form.city,
+        state: form.state,
+        hasCategory: !!(form.category_id || form.category_custom),
+        accountKind: form.account_kind,
+        cpfDigits, cnpjDigits,
+      });
+      if (!op.ok) {
+        await logOperationBuildFailure('dashboard_profile_page', op as any);
+        // Já houve toast/erros de validação acima; só registra observabilidade.
         return;
       }
+    }
+    setSaving(true);
+    let { latitude, longitude } = form;
+    if (form.city && (latitude == null || longitude == null)) {
+      try { const coords = await geocodeCity(form.city, form.state); latitude = coords.latitude; longitude = coords.longitude; } catch {}
+    }
 
-      if (provider) {
-        const slug = generateProviderSlug(form.full_name, form.business_name, form.city);
-        const { error: providerError } = await supabase.from('providers').update({
-          business_name: form.business_name || null,
-          description: form.description,
-          city: form.city,
-          state: form.state,
-          neighborhood: form.neighborhood,
-          whatsapp: finalWhatsapp,
+    // Fase 1.4 — hardening leve de consistência profiles+providers.
+    // Rastreamos cada etapa para que:
+    //   a) toast de sucesso só apareça se TUDO salvar;
+    //   b) falhas parciais sejam logadas em audit (sem dados sensíveis);
+    //   c) a mensagem ao usuário seja sempre amigável (sem stack/SQL).
+    // Quando migrarmos para uma RPC transacional real, basta substituir o
+    // bloco entre os marcadores [SYNC-BEGIN]/[SYNC-END].
+    //
+    // Fase 1.6.6 — ownership semântico (não mutante):
+    //   Provider accounts own provider contact fields (providers.phone/whatsapp).
+    //   Profile contact fields remain compatibility mirrors.
+    //   Detectamos divergência ANTES do save e emitimos audit
+    //   `contact_ownership_conflict` (sem PII) para preparar consolidação futura.
+    try {
+      const ownerType = (profile as any)?.profile_type;
+      await maybeLogContactOwnershipConflict({
+        source: 'dashboard_profile_page',
+        profileType: ownerType,
+        field: 'whatsapp',
+        profileValue: (profile as any)?.whatsapp,
+        providerValue: (provider as any)?.whatsapp,
+      });
+      await maybeLogContactOwnershipConflict({
+        source: 'dashboard_profile_page',
+        profileType: ownerType,
+        field: 'phone',
+        profileValue: (profile as any)?.phone,
+        providerValue: (provider as any)?.phone,
+      });
+    } catch { /* fail-soft */ }
+    let profileUpdated = false;
+    let providerUpdated = false;
+    let failedStep: 'profile' | 'provider' | null = null;
+    let failureMessage: string | null = null;
+    let failureErrorRaw: string | null = null;
+
+    try {
+      trackAction('profile_save_start', 'Salvando dados do perfil');
+
+      // [SYNC-BEGIN]
+      const { error: profileError } = await supabase.from('profiles').update({
+        full_name: form.full_name, phone: form.phone, email: user.email || '',
+      }).eq('id', user.id);
+      if (profileError) {
+        failedStep = 'profile';
+        failureMessage = 'Não foi possível salvar todas as informações. Tente novamente.';
+        failureErrorRaw = profileError.message;
+      } else {
+        profileUpdated = true;
+
+        const isAutonomo = form.account_kind === 'autonomo';
+        const finalCnpj = isAutonomo ? null : (cnpjDigits || null);
+        const finalCpf = isAutonomo ? (cpfDigits || null) : null;
+        const finalBusinessName = isAutonomo ? null : (form.business_name || null);
+
+        const providerPayload = normalizeProviderPayload({
+          business_name: finalBusinessName,
+          description: form.description ?? '',
+          city: form.city ?? '',
+          state: form.state ?? '',
+          neighborhood: form.neighborhood || null,
+          whatsapp: finalWhatsapp ?? '',
+          phone: finalPhone ?? '',
           website: form.website || null,
           years_experience: form.years_experience,
+          working_hours: form.working_hours || null,
           category_id: form.category_id || null,
-          slug,
-        }).eq('id', provider.id);
+          category_custom: form.category_custom || null,
+          cnpj: finalCnpj, cpf: finalCpf,
+          birth_date: form.birth_date || null,
+          ibge_code: form.ibge_code || null,
+          latitude, longitude,
+        });
 
-        if (providerError) {
-          toast.error('Erro ao salvar dados profissionais: ' + providerError.message);
-          setSaving(false);
-          return;
-        }
-      } else {
-        // Check if a provider already exists (may have been missed by initial load)
-        const { data: existingProviders } = await supabase
-          .from('providers')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1);
-
-        if (existingProviders && existingProviders.length > 0) {
-          // Update existing instead of creating duplicate
-          const slug = generateProviderSlug(form.full_name, form.business_name, form.city);
-          const { error: updateError } = await supabase.from('providers').update({
-            business_name: form.business_name || null,
-            description: form.description,
-            city: form.city,
-            state: form.state,
-            neighborhood: form.neighborhood,
-            phone: finalPhone,
-            whatsapp: finalWhatsapp,
-            category_id: form.category_id || null,
-            slug,
-          }).eq('id', existingProviders[0].id);
-
-          if (updateError) {
-            toast.error('Erro ao atualizar perfil profissional: ' + updateError.message);
-            setSaving(false);
-            return;
+        const ensureUniqueSlug = async (base: string, ignoreId?: string): Promise<string> => {
+          const tryOne = async (candidate: string) => {
+            let q = supabase.from('providers').select('id', { head: true, count: 'exact' }).eq('slug', candidate);
+            if (ignoreId) q = q.neq('id', ignoreId);
+            const { count } = await q;
+            return (count ?? 0) === 0;
+          };
+          if (await tryOne(base)) return base;
+          for (let i = 0; i < 5; i++) {
+            const suffix = Math.random().toString(36).slice(2, 6);
+            const cand = `${base}-${suffix}`;
+            if (await tryOne(cand)) return cand;
           }
+          return base;
+        };
+
+        const slugsToInvalidate = new Set<string>();
+        let providerSaveError: { message: string } | null = null;
+
+        if (provider) {
+          const nameChanged = (provider as any).business_name !== finalBusinessName ||
+            (profile?.full_name || '') !== form.full_name;
+          const cityChanged = (provider as any).city !== form.city;
+          const updatePayload: any = { ...providerPayload };
+          const previousSlug = (provider as any).slug as string | null;
+          if (previousSlug) slugsToInvalidate.add(previousSlug);
+          if (nameChanged || cityChanged) {
+            const newSlug = generateProviderSlug(form.full_name, form.city);
+            if (newSlug && newSlug !== previousSlug) {
+              updatePayload.slug = await ensureUniqueSlug(newSlug, (provider as any).id);
+              slugsToInvalidate.add(updatePayload.slug);
+            }
+          }
+          const { error } = await supabase.from('providers').update(updatePayload).eq('id', provider.id);
+          if (error) providerSaveError = error;
         } else {
-          const slug = generateProviderSlug(form.full_name, form.business_name, form.city);
-          const { error: insertError } = await supabase.from('providers').insert({
-            user_id: user.id,
-            business_name: form.business_name || null,
-            description: form.description,
-            city: form.city,
-            state: form.state,
-            neighborhood: form.neighborhood,
-            phone: finalPhone,
-            whatsapp: finalWhatsapp,
-            category_id: form.category_id || null,
-            slug,
-            status: 'pending',
-          });
-
-          if (insertError) {
-            toast.error('Erro ao criar perfil profissional: ' + insertError.message);
-            setSaving(false);
-            return;
+          const { data: existing } = await supabase.from('providers').select('id, slug').eq('user_id', user.id).limit(1);
+          if (existing && existing.length > 0) {
+            const updatePayload: any = normalizeProviderPayload({ ...providerPayload, phone: finalPhone ?? '' });
+            if (existing[0].slug) slugsToInvalidate.add(existing[0].slug);
+            const newSlug = generateProviderSlug(form.full_name, form.city);
+            if (newSlug && newSlug !== existing[0].slug) {
+              updatePayload.slug = await ensureUniqueSlug(newSlug, existing[0].id);
+              slugsToInvalidate.add(updatePayload.slug);
+            }
+            const { error } = await supabase.from('providers').update(updatePayload).eq('id', existing[0].id);
+            if (error) providerSaveError = error;
+          } else {
+            const baseSlug = generateProviderSlug(form.full_name, form.city);
+            const slug = await ensureUniqueSlug(baseSlug);
+            slugsToInvalidate.add(slug);
+            const insertPayload = normalizeProviderPayload({ ...providerPayload, user_id: user.id, phone: finalPhone ?? '', slug, status: 'pending' });
+            const { error } = await supabase.from('providers').insert(insertPayload as any);
+            if (error) providerSaveError = error;
           }
         }
+
+        if (providerSaveError) {
+          failedStep = 'provider';
+          failureMessage = 'Não foi possível salvar todas as informações. Tente novamente.';
+          failureErrorRaw = providerSaveError.message;
+        } else {
+          providerUpdated = true;
+          slugsToInvalidate.forEach((s) => invalidateProviderProfileCache(s));
+        }
+      }
+      // [SYNC-END]
+
+      if (failedStep) {
+        // Log de auditoria sem dados sensíveis para futura observabilidade.
+        logAuditAction({
+          action: 'profile_provider_sync_failed',
+          resource_type: 'user',
+          resource_id: user.id,
+          details: {
+            profile_updated: profileUpdated,
+            provider_updated: providerUpdated,
+            failed_step: failedStep,
+            source: 'dashboard_profile_page',
+          },
+        }).catch(() => undefined);
+        await showSaveError({
+          actionContext: failedStep === 'profile' ? 'Salvar perfil pessoal' : 'Salvar dados profissionais',
+          componentName: 'DashboardProfilePage',
+          errorMessage: failureMessage || 'Não foi possível salvar todas as informações. Tente novamente.',
+          retryFn: handleSave,
+        });
+        // mensagem técnica fica apenas no errorReporter (já enviado por showSaveError)
+        void failureErrorRaw;
+        return; // sem toast de sucesso, sem refetch otimista
       }
 
       await refetchProfile();
+      trackAction('profile_save_success', 'Perfil salvo com sucesso');
       toast.success('Perfil salvo com sucesso!');
     } catch (err: any) {
-      toast.error('Erro inesperado: ' + (err.message || 'Tente novamente.'));
-    } finally {
-      setSaving(false);
-    }
+      // Falha inesperada: também conta como sync incompleta se profile foi salvo.
+      if (profileUpdated && !providerUpdated) {
+        logAuditAction({
+          action: 'profile_provider_sync_failed',
+          resource_type: 'user',
+          resource_id: user.id,
+          details: {
+            profile_updated: true,
+            provider_updated: false,
+            failed_step: 'provider',
+            source: 'dashboard_profile_page',
+            unexpected: true,
+          },
+        }).catch(() => undefined);
+      }
+      await showSaveError({
+        actionContext: 'Salvar perfil (erro inesperado)',
+        componentName: 'DashboardProfilePage',
+        errorMessage: 'Não foi possível salvar todas as informações. Tente novamente.',
+        errorStack: err.stack,
+        retryFn: handleSave,
+      });
+    } finally { setSaving(false); }
   };
 
-  const initials = form.full_name.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
+  const initials = getInitials(form.full_name);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+  useEffect(() => { if (profile?.avatar_url) setAvatarUrl(profile.avatar_url); }, [profile]);
 
+  // One-shot Google/social avatar sync — only if profile has no avatar yet.
+  const socialAvatarSyncedRef = useRef(false);
   useEffect(() => {
-    if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
-  }, [profile]);
+    if (socialAvatarSyncedRef.current) return;
+    if (!user?.id || !profile) return;
+    if (profile.avatar_url || avatarUrl) { socialAvatarSyncedRef.current = true; return; }
+    const socialUrl = getSocialAvatarUrl(user);
+    if (!socialUrl) return;
+    socialAvatarSyncedRef.current = true;
+    setAvatarUrl(socialUrl);
+    (async () => {
+      try {
+        // Fase 1.6.4 — Canonical avatar write boundary (one-shot social sync).
+        await setUserAvatar({
+          userId: user.id,
+          url: socialUrl,
+          source: 'social_avatar_oneshot',
+          silent: true,
+        });
+        refetchProfile?.();
+      } catch (err) {
+        console.warn('[profile] failed to persist social avatar', err);
+      }
+    })();
+  }, [user, profile, avatarUrl, refetchProfile]);
+
+  // Profile completeness — usa a ÚNICA fonte da verdade (mesma engine do
+  // Dashboard/ProfileCompleteness/FirstLeadChecklist/OnboardingGate).
+  // Regra oficial: contato = whatsapp OU phone (NÃO ambos).
+  const completeness = useMemo(() => {
+    const items = buildOnboardingChecklist({
+      profile: { ...profile, avatar_url: avatarUrl || profile?.avatar_url },
+      provider: provider ? {
+        ...provider,
+        whatsapp: form.whatsapp || provider.whatsapp,
+        phone: form.phone || (provider as any).phone,
+        city: form.city || provider.city,
+        state: form.state || provider.state,
+        description: form.description || provider.description,
+        photo_url: avatarUrl || (provider as any).photo_url,
+      } : undefined,
+    });
+    return checklistStats(items).pct;
+  }, [profile, provider, form, avatarUrl]);
+
+  const displayName = form.full_name || 'Usuário';
 
   if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
 
+  const inputCls = 'w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all';
+  const labelCls = 'mb-1.5 block text-sm font-medium text-foreground';
+
   return (
     <DashboardLayout>
-      <h1 className="font-display text-2xl font-bold text-foreground">Meu Perfil</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Edite suas informações profissionais</p>
-
-      <div className="mt-6 max-w-2xl space-y-6">
-        {/* Avatar upload */}
-        <div className="rounded-xl border border-border bg-card p-6 shadow-card flex items-center gap-6">
-          <AvatarUpload userId={user!.id} currentUrl={avatarUrl} initials={initials} onUploaded={setAvatarUrl} />
+      <motion.div initial="hidden" animate="visible" variants={fadeIn} className="max-w-3xl">
+        {/* Header with help link */}
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-display text-lg font-bold text-foreground">Foto de Perfil</h2>
-            <p className="text-sm text-muted-foreground">Clique no ícone da câmera para alterar (max 2MB)</p>
+            <h1 className="font-display text-2xl font-bold text-foreground">Meu Perfil</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Edite suas informações profissionais</p>
           </div>
+          <Link to="/ajuda" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-accent hover:border-accent/30 transition-colors">
+            <HelpCircle className="h-3.5 w-3.5" /> Precisa de ajuda?
+          </Link>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
-          <h2 className="font-display text-lg font-bold text-foreground">Dados Pessoais</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Nome completo</label>
-              <input name="full_name" value={form.full_name} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Telefone</label>
-              <PhoneMaskedInput name="phone" value={form.phone} onChange={handlePhoneChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
+        {/* Progress bar */}
+        <motion.div
+          className="mt-5 rounded-xl border border-border bg-card p-4 shadow-sm"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-foreground">Completude do perfil</span>
+            <span className={`text-xs font-bold ${completeness === 100 ? 'text-emerald-500' : 'text-accent'}`}>{completeness}%</span>
           </div>
-        </div>
+          <Progress value={completeness} className="h-2" />
+          {completeness < 100 && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Complete seu perfil para ter mais visibilidade e atrair mais clientes.
+            </p>
+          )}
+        </motion.div>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
-          <h2 className="font-display text-lg font-bold text-foreground">Dados Profissionais</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Nome do negócio</label>
-              <input name="business_name" value={form.business_name} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Categoria</label>
-              <select name="category_id" value={form.category_id} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
-                <option value="">Selecione...</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Cidade</label>
-              <input name="city" value={form.city} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Estado</label>
-              <input name="state" value={form.state} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Bairro</label>
-              <input name="neighborhood" value={form.neighborhood} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">WhatsApp</label>
-              <PhoneMaskedInput name="whatsapp" value={form.whatsapp} onChange={handlePhoneChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-              {!form.whatsapp && form.phone && (
-                <button
-                  type="button"
-                  onClick={() => setForm(prev => ({ ...prev, whatsapp: prev.phone }))}
-                  className="mt-1 text-xs text-accent hover:underline"
+        {/* Avatar + Preview */}
+        <motion.div
+          className="mt-5 rounded-xl border border-border bg-card p-5 shadow-sm"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <div className="flex items-center gap-5">
+            <AvatarUpload userId={user!.id} currentUrl={avatarUrl} initials={initials} onUploaded={setAvatarUrl} />
+            <div className="flex-1 min-w-0">
+              <h2 className="font-display text-lg font-bold text-foreground truncate">{displayName}</h2>
+              <p className="text-xs text-muted-foreground">
+                {form.category_name || form.category_custom || 'Profissional'} {form.city && `• ${form.city}`}
+              </p>
+              {provider?.slug && (
+                <Link
+                  to={`/profissional/${provider.slug}`}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
                 >
-                  Copiar do telefone
-                </button>
+                  <Eye className="h-3 w-3" /> Ver perfil público
+                </Link>
               )}
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Website</label>
-              <input name="website" value={form.website} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Anos de experiência</label>
-              <input name="years_experience" type="number" value={form.years_experience} onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Descrição profissional</label>
-            <textarea name="description" rows={4} value={form.description} onChange={handleChange}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-          </div>
-        </div>
+        </motion.div>
 
-        {/* Portfolio */}
-        {provider && user && (
-          <PortfolioUpload userId={user.id} providerId={provider.id} />
-        )}
+        {/* Tabs */}
+        <motion.div
+          className="mt-5"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full grid grid-cols-3 h-11">
+              <TabsTrigger value="pessoal" className="gap-1.5 text-xs sm:text-sm">
+                <User className="h-3.5 w-3.5" /> Pessoal
+              </TabsTrigger>
+              <TabsTrigger value="profissional" className="gap-1.5 text-xs sm:text-sm">
+                <Briefcase className="h-3.5 w-3.5" /> Profissional
+              </TabsTrigger>
+              <TabsTrigger value="localizacao" className="gap-1.5 text-xs sm:text-sm">
+                <MapPin className="h-3.5 w-3.5" /> Localização
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab: Pessoal */}
+            <TabsContent value="pessoal">
+              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelCls} htmlFor="profile-full-name">Nome completo *</label>
+                    <input
+                      id="profile-full-name"
+                      name="full_name"
+                      value={form.full_name}
+                      onChange={(e) => { handleChange(e); if (nameError) setNameError(null); }}
+                      className={inputCls}
+                      aria-invalid={!!nameError}
+                      aria-describedby={nameError ? 'profile-full-name-error' : undefined}
+                    />
+                    {nameError && (
+                      <p id="profile-full-name-error" data-testid="profile-full-name-error" className="mt-1 text-xs text-destructive">
+                        {nameError}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className={labelCls}>Telefone fixo (opcional)</label>
+                    <PhoneMaskedInput name="phone" value={form.phone} onChange={handlePhoneChange} className={inputCls} />
+                    <p className="mt-1 text-[11px] text-muted-foreground">Seu WhatsApp já é suficiente para receber contatos.</p>
+                  </div>
+                  <div>
+                    <label className={labelCls}>WhatsApp</label>
+                    <PhoneMaskedInput
+                      ref={whatsappInputRef}
+                      name="whatsapp"
+                      value={form.whatsapp}
+                      onChange={(n, v) => { handlePhoneChange(n, v); if (whatsappError) setWhatsappError(null); }}
+                      className={inputCls}
+                    />
+                    {whatsappError && (
+                      <p id="profile-whatsapp-error" data-testid="profile-whatsapp-error" className="mt-1 text-xs text-destructive">
+                        {whatsappError}
+                      </p>
+                    )}
+                    {!form.whatsapp && form.phone && (
+                      <button type="button" onClick={() => setForm(prev => ({ ...prev, whatsapp: prev.phone }))} className="mt-1 text-xs text-accent hover:underline">
+                        Copiar do telefone
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    <label className={labelCls}>Website</label>
+                    <input name="website" value={form.website} onChange={handleChange} placeholder="https://" className={inputCls} />
+                  </div>
+                </div>
+              </motion.div>
+            </TabsContent>
+
+            {/* Tab: Profissional */}
+            <TabsContent value="profissional">
+              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
+                {/* Pergunta inicial: Autônomo ou Empresa? */}
+                <div className="rounded-xl border-2 border-accent/30 bg-accent/5 p-4">
+                  <div className="flex items-start gap-2 mb-3">
+                    <HelpCircle className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Você atua como Profissional Autônomo ou Empresa?</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Isso ajuda a personalizar seu perfil e os campos exibidos.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, account_kind: 'autonomo', cnpj: '', business_name: '' }))}
+                      className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left transition-all ${
+                        form.account_kind === 'autonomo'
+                          ? 'border-accent bg-accent/15 shadow-sm'
+                          : 'border-border bg-card hover:border-accent/50'
+                      }`}
+                    >
+                      <User className={`h-4 w-4 shrink-0 ${form.account_kind === 'autonomo' ? 'text-accent' : 'text-muted-foreground'}`} />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Autônomo</p>
+                        <p className="text-[10px] text-muted-foreground">Profissional individual (sem CNPJ)</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, account_kind: 'empresa' }))}
+                      className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left transition-all ${
+                        form.account_kind === 'empresa'
+                          ? 'border-accent bg-accent/15 shadow-sm'
+                          : 'border-border bg-card hover:border-accent/50'
+                      }`}
+                    >
+                      <Briefcase className={`h-4 w-4 shrink-0 ${form.account_kind === 'empresa' ? 'text-accent' : 'text-muted-foreground'}`} />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Empresa</p>
+                        <p className="text-[10px] text-muted-foreground">Possui CNPJ e nome fantasia</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {form.account_kind === 'empresa' && (
+                    <div>
+                      <label className={labelCls}>Nome do negócio</label>
+                      <input name="business_name" value={form.business_name} onChange={handleChange} className={inputCls} />
+                    </div>
+                  )}
+
+                  {/* Hierarchical category picker */}
+                  <div className="relative">
+                    <label className={labelCls}>Categoria principal *</label>
+                    {(form.category_name || form.category_custom) && (
+                      <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
+                        {form.category_name || form.category_custom}
+                        <button type="button" onClick={() => {
+                          setForm(prev => ({ ...prev, category_id: '', category_name: '', category_custom: '' }));
+                          setCategorySearch('');
+                        }} className="ml-0.5 hover:text-destructive">✕</button>
+                      </div>
+                    )}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <input
+                        type="text" value={categorySearch}
+                        onChange={(e) => { setCategorySearch(e.target.value); setShowCategorySuggestions(true); if (!e.target.value) setForm(prev => ({ ...prev, category_id: '', category_name: '', category_custom: '' })); }}
+                        onFocus={() => setShowCategorySuggestions(true)}
+                        placeholder="Digite para buscar..."
+                        className={`${inputCls} pl-9`}
+                      />
+                    </div>
+                    {showCategorySuggestions && (
+                      <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-56 overflow-y-auto">
+                        {filteredCategoryTree.length > 0 ? (
+                          filteredCategoryTree.map(({ macro, subs }) => (
+                            <div key={macro.id}>
+                              {subs.length > 0 ? (
+                                <>
+                                  <div className="sticky top-0 bg-muted/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                                     <CategoryIcon icon={macro.icon} size={12} className="text-muted-foreground" /> {macro.name}
+                                  </div>
+                                  {subs.map((sub: any) => (
+                                    <button key={sub.id} type="button" onClick={() => handleCategorySelect(sub)}
+                                      className={`w-full pl-6 pr-3 py-2 text-left text-sm hover:bg-muted transition-colors ${form.category_id === sub.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}>
+                                      <CategoryIcon icon={sub.icon} size={12} className="text-current" /> {sub.name}
+                                    </button>
+                                  ))}
+                                </>
+                              ) : (
+                                <button type="button" onClick={() => handleCategorySelect(macro)}
+                                  className={`w-full px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${form.category_id === macro.id ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}>
+                                  <CategoryIcon icon={macro.icon} size={14} className="text-current" /> {macro.name}
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        ) : categorySearch.trim() ? (
+                          <div className="px-3 py-3 text-center text-xs text-muted-foreground">Nenhuma categoria encontrada</div>
+                        ) : null}
+                        <button type="button" onClick={() => {
+                          const customVal = categorySearch.trim() || 'Outro';
+                          setForm(prev => ({ ...prev, category_id: '', category_name: '', category_custom: customVal }));
+                          setCategorySearch(customVal);
+                          setShowCategorySuggestions(false);
+                        }} className="w-full border-t border-border px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted transition-colors">
+                          Outro {categorySearch.trim() ? `("${categorySearch.trim()}")` : ''}
+                        </button>
+                      </div>
+                    )}
+                    {showCategorySuggestions && (
+                      <div className="fixed inset-0 z-10" onClick={() => setShowCategorySuggestions(false)} />
+                    )}
+                  </div>
+
+                  <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">
+                      Status da verificação de identidade
+                    </p>
+                    <VerificationStatusBadge userId={user?.id} showHistory />
+                  </div>
+
+                  {form.account_kind === 'autonomo' && (
+                    <div>
+                      <label className={labelCls}>CPF <span className="text-muted-foreground font-normal">(opcional · pontua engajamento)</span></label>
+                      <input type="text" inputMode="numeric" value={form.cpf} onChange={(e) => {
+                        let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+                        if (v.length > 9) v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                        else if (v.length > 6) v = v.replace(/^(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                        else if (v.length > 3) v = v.replace(/^(\d{3})(\d{1,3})/, '$1.$2');
+                        setForm(prev => ({ ...prev, cpf: v }));
+                      }} placeholder="000.000.000-00" className={inputCls} />
+                      <p className="mt-1 text-[11px] text-muted-foreground">Não exibido publicamente. Aumenta sua pontuação de confiança.</p>
+                    </div>
+                  )}
+
+                  {form.account_kind === 'autonomo' && (
+                    <div>
+                      <label className={labelCls}>Data de nascimento <span className="text-muted-foreground font-normal">(opcional · pontua engajamento)</span></label>
+                      <input
+                        type="date"
+                        value={form.birth_date}
+                        max={new Date().toISOString().slice(0, 10)}
+                        min="1900-01-01"
+                        onChange={(e) => setForm(prev => ({ ...prev, birth_date: e.target.value }))}
+                        className={inputCls}
+                      />
+                      <p className="mt-1 text-[11px] text-muted-foreground">Não exibida publicamente. Reforça a autenticidade do seu perfil.</p>
+                    </div>
+                  )}
+
+                  {form.account_kind === 'empresa' && (
+                    <div>
+                      <label className={labelCls}>CNPJ <span className="text-muted-foreground font-normal">(opcional)</span></label>
+                      <input type="text" value={form.cnpj} onChange={(e) => {
+                        let v = e.target.value.replace(/\D/g, '').slice(0, 14);
+                        if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
+                        else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
+                        else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                        else if (v.length > 2) v = v.replace(/^(\d{2})(\d{1,3})/, '$1.$2');
+                        setForm(prev => ({ ...prev, cnpj: v }));
+                      }} placeholder="00.000.000/0000-00" className={inputCls} />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className={labelCls}>Anos de experiência</label>
+                    <input name="years_experience" type="number" value={form.years_experience} onChange={handleChange} className={inputCls} />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>Horário de atendimento</label>
+                    <input
+                      name="working_hours"
+                      value={form.working_hours}
+                      onChange={handleChange}
+                      placeholder="Ex: Seg–Sex 8h–18h · Sáb 8h–12h"
+                      className={inputCls}
+                    />
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Aparece no seu perfil público e ajuda clientes a saber quando podem te chamar.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelCls}>Descrição profissional</label>
+                  <textarea ref={descriptionRef} name="description" rows={4} value={form.description} onChange={handleChange} className={`${inputCls} resize-none`} />
+                </div>
+              </motion.div>
+            </TabsContent>
+
+            {/* Tab: Localização */}
+            <TabsContent value="localizacao">
+              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
+                <div>
+                  <label className={labelCls}>Cidade *</label>
+                  <button type="button" onClick={handleAutoLocate} disabled={locating}
+                    className="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/10 disabled:opacity-50">
+                    {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
+                    {locating ? 'Detectando...' : '📍 Usar minha localização'}
+                  </button>
+                  <div className="relative" ref={cityDropdownRef}>
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <input type="text" value={citySearch}
+                      onChange={(e) => { setCitySearch(e.target.value); setShowCitySuggestions(true); loadCities(); setForm(prev => ({ ...prev, city: '', state: '', latitude: null, longitude: null })); }}
+                      onFocus={() => { setShowCitySuggestions(true); loadCities(); }}
+                      placeholder="Digite sua cidade..."
+                      className={`${inputCls} pl-9`}
+                    />
+                    {showCitySuggestions && (
+                      <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg max-h-48 overflow-y-auto">
+                        {citiesLoading && (
+                          <div className="flex items-center justify-center gap-2 px-3 py-3">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Carregando municípios...</span>
+                          </div>
+                        )}
+                        {!citiesLoading && filteredCities.length === 0 && citySearch.trim() && (
+                          <p className="px-3 py-2 text-xs text-muted-foreground">Nenhuma cidade encontrada</p>
+                        )}
+                        {!citiesLoading && filteredCities.map((c, i) => (
+                          <button key={`${c.name}-${c.state}-${i}`} type="button" onClick={() => handleCitySelect(c)}
+                            className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors ${form.city === c.name && form.state === c.state ? 'bg-accent/10 text-accent font-medium' : 'text-foreground'}`}>
+                            <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            <span className="flex-1 truncate">{c.name}</span>
+                            <span className="text-xs text-muted-foreground">{c.state}</span>
+                            {form.city === c.name && form.state === c.state && <CheckCircle2 className="h-3.5 w-3.5 text-accent" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {showCitySuggestions && (
+                      <div className="fixed inset-0 z-10" onClick={() => setShowCitySuggestions(false)} />
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelCls}>Estado</label>
+                    <input type="text" value={form.state} readOnly placeholder="Auto-preenchido"
+                      className={`${inputCls} bg-muted/50 cursor-not-allowed uppercase`} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Bairro</label>
+                    <input name="neighborhood" value={form.neighborhood} onChange={handleChange} className={inputCls} />
+                  </div>
+                </div>
+              </motion.div>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
 
         {/* Account type switcher */}
-        <ProfileTypeSwitcher />
+        <div className="mt-5">
+          <ProfileTypeSwitcher />
+        </div>
 
-        <Button variant="accent" onClick={handleSave} disabled={saving}>
-          {saving ? 'Salvando...' : 'Salvar Perfil'}
-        </Button>
-      </div>
+        {/* Save button */}
+        <motion.div
+          className="mt-5 flex gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Button variant="accent" onClick={handleSave} disabled={saving} className="flex-1 sm:flex-none sm:min-w-[180px]">
+            {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : 'Salvar Perfil'}
+          </Button>
+        </motion.div>
+      </motion.div>
     </DashboardLayout>
   );
 };

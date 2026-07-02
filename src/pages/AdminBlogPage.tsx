@@ -10,11 +10,13 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Eye, Rss, Loader2, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Rss, Loader2, Search, AlertTriangle, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
-import { useAuth } from '@/hooks/useAuth';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { useNavigate } from 'react-router-dom';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
 import BulkActionsBar from '@/components/admin/BulkActionsBar';
@@ -26,9 +28,26 @@ const PAGE_SIZE = 20;
 const emptyForm = { title: '', slug: '', content: '', excerpt: '', cover_image_url: '', author_name: 'Equipe Preciso de um', published: false, featured: false, source_url: '' };
 const autoSlug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
+interface BlogPostRow {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  cover_image_url: string | null;
+  author_name: string;
+  published: boolean;
+  featured: boolean;
+  source_url: string | null;
+  created_at: string;
+  deleted_at: string | null;
+}
+
 const AdminBlogPage = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthIdentity();
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const blogEnabled = useFeatureEnabled('module_blog');
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -38,7 +57,8 @@ const AdminBlogPage = () => {
   const [rssLoading, setRssLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const canLoadAdminData = !authLoading && !adminLoading && !!user && isAdmin;
+
+  if (!authLoading && !adminLoading && (!user || !isAdmin)) { navigate('/'); return null; }
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['admin-blog-posts'],
@@ -46,7 +66,6 @@ const AdminBlogPage = () => {
       const { data } = await supabase.from('blog_posts').select('*').is('deleted_at', null).order('created_at', { ascending: false });
       return data || [];
     },
-    enabled: canLoadAdminData,
   });
 
   const bulk = useAdminBulkActions({
@@ -55,17 +74,17 @@ const AdminBlogPage = () => {
     onComplete: () => queryClient.invalidateQueries({ queryKey: ['admin-blog-posts'] }),
   });
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return posts;
+  const filtered = useMemo<BlogPostRow[]>(() => {
+    if (!search.trim()) return posts as BlogPostRow[];
     const q = search.toLowerCase();
-    return posts.filter((p: any) => (p.title || '').toLowerCase().includes(q) || (p.slug || '').toLowerCase().includes(q));
+    return (posts as BlogPostRow[]).filter((p) => (p.title || '').toLowerCase().includes(q) || (p.slug || '').toLowerCase().includes(q));
   }, [posts, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const allPageIds = paginated.map((p: any) => p.id);
-  const allSelected = paginated.length > 0 && paginated.every((p: any) => bulk.selectedIds.has(p.id));
+  const allPageIds = paginated.map((p) => p.id);
+  const allSelected = paginated.length > 0 && paginated.every((p) => bulk.selectedIds.has(p.id));
 
   const handleSelectAll = () => {
     if (allSelected) bulk.clearSelection();
@@ -106,7 +125,7 @@ const AdminBlogPage = () => {
 
   const closeDialog = () => { setDialogOpen(false); setEditingId(null); setForm(emptyForm); };
 
-  const openEdit = (p: any) => {
+  const openEdit = (p: BlogPostRow) => {
     setEditingId(p.id);
     setForm({ title: p.title, slug: p.slug, content: p.content, excerpt: p.excerpt, cover_image_url: p.cover_image_url || '', author_name: p.author_name, published: p.published, featured: p.featured, source_url: p.source_url || '' });
     setDialogOpen(true);
@@ -121,15 +140,26 @@ const AdminBlogPage = () => {
       toast({ title: `RSS importado: ${data.imported} novos, ${data.skipped} já existentes` });
       queryClient.invalidateQueries({ queryKey: ['admin-blog-posts'] });
       setRssUrl('');
-    } catch (err: any) {
-      toast({ title: 'Erro ao importar RSS: ' + (err.message || ''), variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      toast({ title: 'Erro ao importar RSS: ' + message, variant: 'destructive' });
     } finally { setRssLoading(false); }
   };
 
-  if (!canLoadAdminData) return null;
-
   return (
     <AdminLayout>
+      {!blogEnabled && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Módulo Blog desabilitado</p>
+            <p className="text-xs text-amber-700 dark:text-amber-300">O blog está invisível para os visitantes. Você pode habilitá-lo em Módulos do Sistema.</p>
+          </div>
+          <Button variant="outline" size="sm" className="shrink-0 gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-100" onClick={() => navigate('/admin/modulos')}>
+            <ToggleRight className="h-4 w-4" /> Habilitar
+          </Button>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Blog / Notícias</h1>
@@ -149,7 +179,7 @@ const AdminBlogPage = () => {
               <div><Label>Resumo</Label><Textarea value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} rows={2} /></div>
               <div><Label>Conteúdo</Label><Textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={10} /></div>
               <div><Label>Imagem de Capa</Label><ImageUploadField value={form.cover_image_url} onChange={(url) => setForm({ ...form, cover_image_url: url })} bucket="service-images" folder="blog" /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div><Label>Autor</Label><Input value={form.author_name} onChange={(e) => setForm({ ...form, author_name: e.target.value })} /></div>
                 <div><Label>URL Fonte (opcional)</Label><Input value={form.source_url} onChange={(e) => setForm({ ...form, source_url: e.target.value })} placeholder="https://..." /></div>
               </div>
@@ -203,7 +233,42 @@ const AdminBlogPage = () => {
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-border bg-card">
+      {/* Mobile cards */}
+      <div className="mt-4 space-y-3 sm:hidden">
+        {isLoading ? (
+          <p className="p-6 text-muted-foreground">Carregando...</p>
+        ) : paginated.length === 0 ? (
+          <p className="p-6 text-center text-muted-foreground">Nenhum post encontrado.</p>
+        ) : (
+          paginated.map((p) => (
+            <div key={p.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <SelectionCheckbox checked={bulk.selectedIds.has(p.id)} onCheckedChange={() => bulk.toggleSelection(p.id)} />
+                {p.cover_image_url && <img src={p.cover_image_url} alt={`Imagem de capa de ${p.title}`} className="h-12 w-12 rounded-lg object-cover shrink-0" />}
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-foreground text-sm line-clamp-2">{p.title}</span>
+                  <p className="text-[10px] text-muted-foreground">/{p.slug}</p>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.published ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                      {p.published ? 'Publicado' : 'Rascunho'}
+                    </span>
+                    {p.featured && <span title="Destaque">⭐</span>}
+                    <span className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1 shrink-0">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild><Link to={`/blog/${p.slug}`} target="_blank"><Eye className="h-4 w-4" /></Link></Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleSoftDelete(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="mt-4 rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
         {isLoading ? (
           <p className="p-6 text-muted-foreground">Carregando...</p>
         ) : paginated.length === 0 ? (
@@ -221,20 +286,20 @@ const AdminBlogPage = () => {
                 </TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden sm:table-cell">Fonte</TableHead>
-                <TableHead className="hidden sm:table-cell">Data</TableHead>
+                <TableHead>Fonte</TableHead>
+                <TableHead>Data</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginated.map((p: any) => (
+              {paginated.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
                     <SelectionCheckbox checked={bulk.selectedIds.has(p.id)} onCheckedChange={() => bulk.toggleSelection(p.id)} />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {p.cover_image_url && <img src={p.cover_image_url} alt="" className="h-8 w-8 rounded object-cover" />}
+                      {p.cover_image_url && <img src={p.cover_image_url} alt={`Imagem de capa de ${p.title}`} className="h-8 w-8 rounded object-cover" />}
                       <div className="min-w-0">
                         <span className="font-medium text-foreground line-clamp-1">{p.title}</span>
                         <p className="text-[10px] text-muted-foreground">/{p.slug}</p>
@@ -249,10 +314,10 @@ const AdminBlogPage = () => {
                       {p.featured && <span title="Destaque">⭐</span>}
                     </div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-muted-foreground">
                     {p.source_url ? <span title={p.source_url}>Externa</span> : 'Original'}
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString('pt-BR')}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="sm" asChild><Link to={`/blog/${p.slug}`} target="_blank"><Eye className="h-4 w-4" /></Link></Button>

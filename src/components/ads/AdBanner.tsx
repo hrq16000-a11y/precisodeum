@@ -1,7 +1,9 @@
-import { useSponsorsByPosition } from '@/components/SponsorAd';
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import SponsorImage from '@/components/SponsorImage';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { useSponsorsBySlot } from '@/hooks/useSponsors';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
+import { sponsorInternalHref } from '@/lib/sponsorLink';
 
 interface AdBannerProps {
   position: string;
@@ -10,21 +12,14 @@ interface AdBannerProps {
   sticky?: boolean;
 }
 
-function trackImpression(id: string) {
-  supabase.rpc('increment_sponsor_impression', { sponsor_id: id } as any).catch((err) => {
-    console.error('Sponsor impression tracking error:', err);
-  });
-}
-function trackClick(id: string) {
-  supabase.rpc('increment_sponsor_click', { sponsor_id: id } as any).catch((err) => {
-    console.error('Sponsor click tracking error:', err);
-  });
-}
-
-const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBannerProps) => {
-  const { data: sponsors = [] } = useSponsorsByPosition(position);
+const AdBanner = React.forwardRef<HTMLDivElement, AdBannerProps>(({ position, className = '', maxWidth, sticky = false }, ref) => {
+  const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot(position);
+  const config = getPositionConfig(position);
+  const sponsors = useMemo(
+    () => rankAndOptimise(rawSponsors, { maxItems: config.maxItems }),
+    [rawSponsors, config.maxItems],
+  );
   const [idx, setIdx] = useState(0);
-  const tracked = useRef(new Set<string>());
   const touchStart = useRef<number | null>(null);
 
   useEffect(() => {
@@ -35,11 +30,11 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
 
   useEffect(() => {
     const s = sponsors[idx];
-    if (s && !tracked.current.has(s.id)) {
-      tracked.current.add(s.id);
+    if (s) {
       trackImpression(s.id);
+      recordImpression(s.id);
     }
-  }, [sponsors, idx]);
+  }, [sponsors, idx, trackImpression]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStart.current = e.touches[0].clientX;
@@ -66,7 +61,7 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="relative rounded-2xl bg-muted/10 shadow-card">
+      <div className="relative rounded-2xl bg-muted/10 shadow-card overflow-hidden">
         <span className="absolute left-2 top-1.5 z-20 rounded-md bg-background/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/60 backdrop-blur-sm">
           Anúncio
         </span>
@@ -78,13 +73,34 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
           className="block transition-opacity hover:opacity-95"
         >
           {current.image_url ? (
-            <SponsorImage src={current.image_url} alt={current.title} />
+            <img
+              src={current.image_url}
+              alt={current.title}
+              className="w-full object-cover object-center"
+              style={{ aspectRatio: '8/1', borderRadius: 10 }}
+              width={1600}
+              height={200}
+              loading="lazy"
+            />
           ) : (
-            <div className="flex items-center justify-center bg-muted/20 p-4 min-h-[60px]">
+            <div className="flex items-center justify-center bg-muted/20 p-4" style={{ aspectRatio: '8/1' }}>
               <span className="text-sm font-medium text-muted-foreground">{current.title}</span>
             </div>
           )}
         </a>
+        {(() => {
+          const internalHref = sponsorInternalHref((current as any).slug);
+          return internalHref ? (
+            <div className="absolute left-2 bottom-1.5 z-20">
+              <Link
+                to={internalHref}
+                className="rounded-md bg-background/70 px-1.5 py-0.5 text-[9px] font-medium text-foreground/70 backdrop-blur-sm hover:text-accent hover:underline"
+              >
+                {current.title}
+              </Link>
+            </div>
+          ) : null;
+        })()}
         {sponsors.length > 1 && (
           <div className="absolute bottom-1.5 right-2 z-20 flex gap-0.5">
             {sponsors.map((_, i) => (
@@ -99,6 +115,8 @@ const AdBanner = ({ position, className = '', maxWidth, sticky = false }: AdBann
       </div>
     </div>
   );
-};
+});
+
+AdBanner.displayName = 'AdBanner';
 
 export default AdBanner;

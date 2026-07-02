@@ -1,149 +1,178 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, Plus, User, Bell, Menu } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useState, useEffect, useRef } from 'react';
+import { Home, Search, LayoutGrid, User, Plus, Bell, Heart, Star, Settings, MessageCircle, Briefcase, MapPin, Grid, Menu, Bookmark, ShoppingBag, Zap, type LucideIcon } from 'lucide-react';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useBottomNav, type BottomNavItem, type BottomNavConfig } from '@/hooks/useBottomNav';
 
-const MobileBottomNav = () => {
+const ICON_MAP: Record<string, LucideIcon> = {
+  Home, Search, LayoutGrid, User, Plus, Bell, Heart, Star, Settings,
+  MessageCircle, Briefcase, MapPin, Grid, Menu, Bookmark, ShoppingBag, Zap,
+};
+const getIcon = (name: string): React.ElementType => ICON_MAP[name] || Home;
+
+// ── FAB button (central "Criar") — maior para 60+ ──
+const FabButton = ({ onClick, icon: Icon, label }: { onClick: () => void; icon: React.ElementType; label: string }) => (
+  <motion.button
+    onClick={onClick}
+    aria-label={label}
+    className="relative flex flex-col items-center justify-center w-14 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-md"
+    whileTap={{ scale: 0.85 }}
+  >
+    <div
+      className="relative -mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent/80 shadow-md shadow-accent/25 animate-glow-pulse-accent transition-transform hover:scale-110"
+    >
+      <Icon className="h-5 w-5 text-accent-foreground" />
+    </div>
+    <span className="mt-0.5 text-[10px] font-semibold text-accent leading-tight">{label}</span>
+  </motion.button>
+);
+
+// ── Regular nav item — ícones e fontes maiores p/ acessibilidade ──
+const NavItem = ({ icon: Icon, label, isActive, onClick, badge }: { icon: React.ElementType; label: string; isActive: boolean; onClick: () => void; badge?: number }) => (
+  <motion.button
+    onClick={onClick}
+    aria-label={label}
+    className="relative flex flex-col items-center justify-center w-14 py-1 transition-colors text-muted-foreground"
+    whileTap={{ scale: 0.85 }}
+  >
+    <AnimatePresence>
+      {isActive && (
+        <motion.div layoutId="mobile-nav-bg" className="absolute top-0 h-9 w-9 rounded-lg bg-accent/10" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 25 }} />
+      )}
+    </AnimatePresence>
+    {isActive && (
+      <motion.div layoutId="mobile-nav-indicator" className="absolute -top-1 h-0.5 w-7 rounded-full bg-accent" transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
+    )}
+    <motion.div className="relative z-10 flex h-7 w-7 items-center justify-center" animate={isActive ? { scale: 1.05 } : { scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+      <Icon className={`h-[22px] w-[22px] transition-colors duration-200 ${isActive ? 'text-accent' : ''}`} strokeWidth={2} />
+      {badge && badge > 0 && (
+        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-0.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
+          {badge > 9 ? '9+' : badge}
+        </motion.span>
+      )}
+    </motion.div>
+    <AnimatePresence>
+      {isActive ? (
+        <motion.span initial={{ opacity: 0, y: 2 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 2 }} className="text-[10px] font-bold text-accent leading-tight mt-0.5">{label}</motion.span>
+      ) : (
+        <span className="text-[10px] font-medium leading-tight mt-0.5">{label}</span>
+      )}
+    </AnimatePresence>
+  </motion.button>
+);
+
+// ── Fallback (hardcoded) ──
+const FallbackNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
-  const [showMenu, setShowMenu] = useState(false);
+  const { user } = useAuthIdentity();
   const { unreadCount } = useNotifications();
-  const menuRef = useRef<HTMLDivElement>(null);
 
-  const profileType = profile?.profile_type || 'client';
-  const isProvider = profileType === 'provider';
-  const isRH = profileType === 'rh';
-
-  // Close menu on route change
-  useEffect(() => {
-    setShowMenu(false);
-  }, [location.pathname]);
-
-  // Close menu on ESC
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showMenu) setShowMenu(false);
-    };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [showMenu]);
-
-  // Close menu on click outside
-  useEffect(() => {
-    if (!showMenu) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showMenu]);
-
-  // Don't show on admin, login, signup, or dashboard (has its own nav)
-  const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/dashboard', '/sponsor-panel'];
+  const hiddenPaths = ['/admin', '/login', '/cadastro', '/reset-password', '/sponsor-panel'];
   const shouldHide = hiddenPaths.some(p => location.pathname.startsWith(p));
   if (shouldHide) return null;
 
-  const handleCreate = () => {
-    if (!user) { navigate('/cadastro'); return; }
-    if (isProvider) { navigate('/dashboard/servicos'); }
-    else if (isRH) { navigate('/dashboard/vagas'); }
-    else { navigate('/cadastro'); }
-  };
-
-  const items = [
-    { icon: Home, label: 'Início', path: '/', active: location.pathname === '/' || location.pathname === '/index' },
-    { icon: Search, label: 'Buscar', path: '/buscar', active: location.pathname === '/buscar' },
-    { icon: Plus, label: 'Criar', action: handleCreate, isCreate: true },
-    { icon: User, label: 'Perfil', path: user ? '/dashboard' : '/login', active: location.pathname.startsWith('/dashboard') },
-    { icon: Menu, label: 'Menu', action: () => setShowMenu(!showMenu) },
-  ];
+  const handleCriar = () => navigate(user ? '/dashboard/servicos' : '/login');
 
   return (
     <>
-      {/* Spacer */}
       <div className="h-16 md:hidden" />
-
       <nav
-        ref={menuRef}
-        className="fixed bottom-0 left-0 right-0 border-t border-border/60 bg-card/95 backdrop-blur-lg supports-[backdrop-filter]:bg-card/85 md:hidden"
+        className="fixed bottom-0 left-0 right-0 border-t border-border/40 bg-card/90 backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 md:hidden"
         style={{ zIndex: 1000, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="flex items-center justify-around px-1 py-0.5">
-          {items.map((item, i) => {
-            const Icon = item.icon;
-            const isActive = item.active;
-
-            if (item.isCreate) {
-              return (
-                <button
-                  key={i}
-                  onClick={item.action}
-                  className="flex flex-col items-center justify-center -mt-3"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md">
-                    <Plus className="h-4 w-4" />
-                  </div>
-                  <span className="mt-0.5 text-[9px] font-semibold text-accent">Criar</span>
-                </button>
-              );
-            }
-
-            // Show badge on Menu icon for unread notifications
-            const showBadge = item.label === 'Menu' && unreadCount > 0;
-
-            return (
-              <button
-                key={i}
-                onClick={() => {
-                  if (item.action) { item.action(); }
-                  else if (item.path) { navigate(item.path); }
-                }}
-                className={`relative flex flex-col items-center justify-center px-2 py-0.5 transition-colors ${
-                  isActive ? 'text-accent' : 'text-muted-foreground'
-                }`}
-              >
-                <Icon className="h-[17px] w-[17px]" />
-                {showBadge && (
-                  <span className="absolute -right-0.5 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-destructive px-0.5 text-[8px] font-bold text-destructive-foreground">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-                <span className="mt-0.5 text-[9px] font-medium">{item.label}</span>
-              </button>
-            );
-          })}
+        <div className="flex items-center justify-around gap-1 px-2 py-1">
+          <NavItem icon={Home} label="Início" isActive={location.pathname === '/' || location.pathname === '/index'} onClick={() => navigate('/')} />
+          <NavItem icon={Search} label="Buscar" isActive={location.pathname === '/buscar'} onClick={() => navigate('/buscar')} />
+          <FabButton icon={Plus} label="Criar" onClick={handleCriar} />
+          <NavItem icon={MessageCircle} label="Chat" isActive={location.pathname.startsWith('/dashboard/chat')} onClick={() => navigate(user ? '/dashboard/chat' : '/login')} />
+          <NavItem icon={User} label="Perfil" isActive={location.pathname.startsWith('/dashboard') && !location.pathname.startsWith('/dashboard/chat')} onClick={() => navigate(user ? '/dashboard' : '/login')} badge={unreadCount} />
         </div>
-
-        {/* Quick menu */}
-        {showMenu && (
-          <div className="absolute bottom-full left-0 right-0 z-50 mb-1 mx-3 rounded-xl border border-border bg-card p-3 shadow-lg animate-in slide-in-from-bottom-2 duration-200">
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: 'Vagas', path: '/vagas' },
-                { label: 'Notícias', path: '/blog' },
-                { label: 'Como Funciona', path: '/sobre' },
-                { label: 'FAQ', path: '/faq' },
-                { label: 'Categorias', path: '/categorias' },
-                { label: 'Cidades', path: '/cidades' },
-              ].map(link => (
-                <button
-                  key={link.path}
-                  onClick={() => { navigate(link.path); setShowMenu(false); }}
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted text-left"
-                >
-                  {link.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </nav>
     </>
   );
+};
+
+// ── Dynamic nav item ──
+const DynamicNavItem = ({ item, isActive, navigate, user }: { item: BottomNavItem; isActive: boolean; navigate: (path: string) => void; user: any }) => {
+  const Icon = getIcon(item.icon);
+
+  const handleClick = () => {
+    if (item.requires_auth && !user) { navigate('/login'); return; }
+    if (item.action_type === 'external') { window.open(item.external_url || item.route_path, '_blank'); return; }
+    navigate(item.route_path);
+  };
+
+  // FAB style for "large" items
+  if (item.size === 'large') {
+    return <FabButton icon={Icon} label={item.label} onClick={handleClick} />;
+  }
+
+  return (
+    <NavItem
+      icon={Icon}
+      label={item.label}
+      isActive={isActive}
+      onClick={handleClick}
+      badge={item.badge ? parseInt(item.badge) || 0 : 0}
+    />
+  );
+};
+
+// ── Dynamic nav bar ──
+const DynamicNav = ({ config, items }: { config: BottomNavConfig; items: BottomNavItem[] }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuthIdentity();
+  const { unreadCount } = useNotifications();
+
+  const hiddenPaths = config.hidden_paths || [];
+  const shouldHide = hiddenPaths.some((p: string) => location.pathname.startsWith(p));
+  if (shouldHide) return null;
+
+  const navStyle: React.CSSProperties = {
+    zIndex: 1000,
+    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+    ...(config.background_color ? { backgroundColor: config.background_color } : {}),
+    ...(config.border_color ? { borderColor: config.border_color } : {}),
+  };
+
+  const navClasses = [
+    'fixed bottom-0 left-0 right-0 border-t',
+    config.mobile_only ? 'md:hidden' : '',
+    !config.background_color ? 'bg-card/90' : '',
+    !config.border_color ? 'border-border/40' : '',
+    config.blur ? 'backdrop-blur-xl supports-[backdrop-filter]:bg-card/80' : '',
+    config.shadow ? 'shadow-lg' : '',
+  ].filter(Boolean).join(' ');
+
+  return (
+    <>
+      <div className={`h-12 ${config.mobile_only ? 'md:hidden' : ''}`} />
+      <nav className={navClasses} style={navStyle}>
+        <div className="flex items-center justify-around px-1 py-1 h-full">
+          {items.map((item) => {
+            const isActive = item.action_type === 'route' && item.size !== 'large' && (
+              location.pathname === item.route_path ||
+              (item.route_path === '/' && location.pathname === '/index') ||
+              (item.route_path !== '/' && location.pathname.startsWith(item.route_path))
+            );
+            const dynamicBadge = item.requires_auth && unreadCount > 0 && item.size !== 'large'
+              ? { ...item, badge: unreadCount > 9 ? '9+' : String(unreadCount) }
+              : item;
+            return <DynamicNavItem key={item.id} item={dynamicBadge} isActive={isActive} navigate={navigate} user={user} />;
+          })}
+        </div>
+      </nav>
+    </>
+  );
+};
+
+const MobileBottomNav = () => {
+  const { config, items, useFallback } = useBottomNav();
+  if (useFallback) return <FallbackNav />;
+  return <DynamicNav config={config!} items={items} />;
 };
 
 export default MobileBottomNav;

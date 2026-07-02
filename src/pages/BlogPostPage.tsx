@@ -1,14 +1,17 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarDays, ArrowLeft, ExternalLink, User, Newspaper } from 'lucide-react';
+import { CalendarDays, ExternalLink, User, Newspaper } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { Navigate } from 'react-router-dom';
+import DiscoverPreviewSection from '@/components/courses/DiscoverPreviewSection';
 
 /** Strip HTML tags and decode common entities */
 function stripHtmlTags(rawHtml: string): string {
@@ -39,6 +42,7 @@ function stripHtmlTags(rawHtml: string): string {
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const blogEnabled = useFeatureEnabled('module_blog');
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['blog-post', slug],
@@ -69,46 +73,66 @@ const BlogPostPage = () => {
     enabled: !!slug,
   });
 
-  useSeoHead({
-    title: post?.title ? `${post.title} | Preciso de um` : 'Blog | Preciso de um',
-    description: post?.excerpt || 'Confira as últimas notícias e dicas do Preciso de um.',
-    canonical: post?.slug ? `${SITE_BASE_URL}/blog/${post.slug}` : `${SITE_BASE_URL}/blog/${slug}`,
+  const { data: discoverPreviews = [] } = useQuery({
+    queryKey: ['blog-discover-previews', post?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('blog_discover_previews' as any)
+        .select('id, variant_name, title_variant, description_variant, image_variant_url')
+        .eq('post_id', post!.id)
+        .eq('ready_for_publish', true)
+        .order('variant_name');
+      return data || [];
+    },
+    enabled: !!post?.id,
   });
 
-  useEffect(() => {
-    if (post && slug && post.slug && post.slug !== slug) {
-      window.location.replace(`/blog/${post.slug}`);
-    }
-  }, [post, slug]);
+  useSeoHead({
+    title: post?.title ? `${post.title} | Preciso de um` : 'Blog | Preciso de um',
+    description: post?.excerpt || 'Confira as ultimas noticias e dicas do Preciso de um.',
+    canonical: `${SITE_BASE_URL}/blog/${slug}`,
+    ogImage: post?.cover_image_url || undefined,
+    ogType: 'article',
+    articlePublishedTime: post?.created_at,
+    articleModifiedTime: post?.updated_at,
+    articleAuthor: post?.author_name,
+  });
 
   useJsonLd(post ? {
     '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
+    '@type': 'Article',
     headline: post.title,
-    description: post.excerpt || stripHtmlTags(post.content).slice(0, 160),
+    description: post.excerpt,
+    image: post.cover_image_url ? [post.cover_image_url] : undefined,
     datePublished: post.created_at,
-    dateModified: post.updated_at || post.created_at,
-    url: `${SITE_BASE_URL}/blog/${post.slug}`,
-    image: post.cover_image_url || undefined,
-    author: post.author_name ? { '@type': 'Person', name: post.author_name } : undefined,
-    publisher: {
-      '@type': 'Organization',
-      name: 'Preciso de um',
-      logo: { '@type': 'ImageObject', url: `${SITE_BASE_URL}/favicon.ico` },
-    },
+    dateModified: post.updated_at,
+    author: { '@type': 'Organization', name: post.author_name || 'Preciso de um' },
+    publisher: { '@type': 'Organization', name: 'Preciso de um', url: SITE_BASE_URL },
+    mainEntityOfPage: `${SITE_BASE_URL}${window.location.pathname}`,
   } : null);
+
+  useJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Preciso de um',
+    url: SITE_BASE_URL,
+  });
+
+  if (!blogEnabled) return <Navigate to="/" replace />;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
 
       <main className="container max-w-3xl flex-1 px-4 py-6 sm:py-8">
-        {/* Back button */}
-        <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2">
-          <Link to="/blog">
-            <ArrowLeft className="mr-1 h-4 w-4" /> Voltar ao Blog
-          </Link>
-        </Button>
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: 'Blog', url: '/blog' },
+            ...(post ? [{ label: post.title }] : []),
+          ]}
+          className="mb-4"
+        />
 
         {isLoading ? (
           <div className="space-y-4">
@@ -121,7 +145,7 @@ const BlogPostPage = () => {
           </div>
         ) : !post ? (
           <div className="py-16 text-center">
-            <Newspaper className="mx-auto h-12 w-12 text-muted-foreground/40" />
+            <Newspaper className="mx-auto h-12 w-12 text-muted-foreground/70" />
             <p className="mt-4 text-lg font-medium text-foreground">Post não encontrado</p>
             <Button className="mt-4" asChild>
               <Link to="/blog">Ver todos os posts</Link>
@@ -197,9 +221,9 @@ const BlogPostPage = () => {
 
             {/* Source link at bottom */}
             {post.source_url && (
-              <div className="rounded-lg border border-border bg-muted/50 p-4">
+            <div className="rounded-lg border border-border bg-muted/50 p-4">
                 <p className="text-sm text-muted-foreground">
-                  📰 Fonte original:{' '}
+                  Fonte original:{' '}
                   <a
                     href={post.source_url}
                     target="_blank"
@@ -211,6 +235,8 @@ const BlogPostPage = () => {
                 </p>
               </div>
             )}
+
+            <DiscoverPreviewSection previews={discoverPreviews as any[]} />
           </article>
         )}
 

@@ -1,24 +1,448 @@
 import { createRoot } from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
+import { installConsentBridge } from "./lib/consentBridge";
+import { installWebVitalsPerRoute } from "./lib/webVitalsPerRoute";
 
-// Guard: unregister service workers in preview/iframe contexts
-const isInIframe = (() => {
+// installConsentBridge é leve mas precisa estar pronto cedo (gates de gtag/fbq antes de scripts de terceiros).
+installConsentBridge();
+// webVitalsPerRoute apenas observa métricas — adiar para após o first paint reduz TBT/LCP em mobile.
+const __scheduleVitals = () => {
+  try { installWebVitalsPerRoute(); } catch { /* best-effort */ }
+};
+if (typeof window !== 'undefined' && typeof (window as any).requestIdleCallback === 'function') {
+  (window as any).requestIdleCallback(__scheduleVitals, { timeout: 2500 });
+} else {
+  setTimeout(__scheduleVitals, 1200);
+}
+
+const rootElement = document.getElementById("root");
+const shellElement = document.getElementById("app-shell");
+
+(window as Window & { __appMainLoaded?: boolean }).__appMainLoaded = true;
+
+const AUTO_HEAL_KEY = "__bootstrap_autoheal_attempt_v2";
+const MAX_AUTO_HEAL_ATTEMPTS = 1;
+const DAILY_RESET_KEY = "sw-killswitch-reset-day-v1";
+const VERSION_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+const CURRENT_BUILD_ID = (import.meta as any).env?.VITE_BUILD_ID
+  || document.querySelector<HTMLScriptElement>('script[type="module"][src*="/assets/"]')?.src
+  || '';
+const CURRENT_DAY_KEY = new Date().toISOString().slice(0, 10);
+
+const preloadCriticalAssets = () => {
+  const head = document.head;
+  if (!head) return;
+  for (const href of ['/hero-cat-instalacoes.webp', '/lovable-uploads/logo-brand-380.webp']) {
+    if (document.querySelector(`link[rel="preload"][href="${href}"]`)) continue;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = href;
+    if (href.endsWith('.webp')) link.type = 'image/webp';
+    head.appendChild(link);
+  }
+};
+
+const getAutoHealAttempts = () => {
   try {
-    return window.self !== window.top;
-  } catch (e) {
+    return Number(sessionStorage.getItem(AUTO_HEAL_KEY) || "0") || 0;
+  } catch {
+    return 0;
+  }
+};
+
+const setAutoHealAttempts = (value: number) => {
+  try {
+    if (value <= 0) sessionStorage.removeItem(AUTO_HEAL_KEY);
+    else sessionStorage.setItem(AUTO_HEAL_KEY, String(value));
+  } catch {
+    // best-effort
+  }
+};
+
+const clearAutoHealAttempts = () => setAutoHealAttempts(0);
+const markAutoHealAttempt = () => setAutoHealAttempts(getAutoHealAttempts() + 1);
+
+const forceFreshReload = () => {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("__fresh", String(Date.now()));
+    window.location.replace(url.toString());
+  } catch {
+    window.location.reload();
+  }
+};
+
+const removeShell = () => {
+  requestAnimationFrame(() => {
+    shellElement?.remove();
+  });
+};
+
+const deferWork = (fn: () => void) => {
+  if ("requestIdleCallback" in window) {
+    (window as Window & { requestIdleCallback: (callback: () => void) => number }).requestIdleCallback(fn);
+  } else {
+    globalThis.setTimeout(fn, 300);
+  }
+};
+
+const setShellSupportState = (message: string, showSupport = false) => {
+  const recovery = document.getElementById("app-shell-recovery");
+  const title = document.getElementById("app-shell-recovery-title");
+  const msg = document.getElementById("app-shell-recovery-msg");
+  const actions = document.getElementById("app-shell-actions");
+
+  if (recovery) (recovery as HTMLElement).style.display = "block";
+  if (title) title.textContent = showSupport
+    ? "Precisamos de ajuda para concluir a restauração"
+    : "Estamos restaurando o aplicativo";
+  if (msg) msg.textContent = message;
+  if (actions) (actions as HTMLElement).style.display = showSupport ? "flex" : "none";
+};
+
+const purgeAllCachesAndSWs = async (): Promise<{ hadAny: boolean }> => {
+  let hadAny = false;
+  try {
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      if (registrations.length > 0) hadAny = true;
+      await Promise.all(registrations.map((registration) => registration.unregister().catch(() => false)));
+    }
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      if (cacheNames.length > 0) hadAny = true;
+      await Promise.all(cacheNames.map((name) => caches.delete(name).catch(() => false)));
+    }
+  } catch {
+    // best-effort
+  }
+  return { hadAny };
+};
+
+const tryAutomatedRecovery = async (reason: string, err?: unknown) => {
+  console.error(`[bootstrap] auto-heal triggered: ${reason}`, err);
+
+  const attempts = getAutoHealAttempts();
+  if (attempts < MAX_AUTO_HEAL_ATTEMPTS) {
+    markAutoHealAttempt();
+    await purgeAllCachesAndSWs();
+    forceFreshReload();
+    return;
+  }
+
+  // Esgotou as tentativas — mostra recuperação MANUAL com botões visíveis.
+  setShellSupportState(
+    "Não foi possível restaurar automaticamente. Toque em Recarregar agora para limpar o cache e tentar novamente.",
+    true,
+  );
+  const btn = document.getElementById("app-shell-hard-reload") as HTMLButtonElement | null;
+  if (btn && !(btn as any).__bound) {
+    (btn as any).__bound = true;
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      btn.textContent = "Limpando…";
+      clearAutoHealAttempts();
+      try { localStorage.removeItem(DAILY_RESET_KEY); } catch { /* noop */ }
+      try { localStorage.removeItem("app_auto_force_reload_done_v"); } catch { /* noop */ }
+      await purgeAllCachesAndSWs();
+      forceFreshReload();
+    });
+  }
+};
+
+const resetCachesIfNeeded = async () => {
+  const alreadyResetToday = (() => {
+    try {
+      return localStorage.getItem(DAILY_RESET_KEY) === CURRENT_DAY_KEY;
+    } catch {
+      return false;
+    }
+  })();
+
+  if (alreadyResetToday) return false;
+
+  // NÃO desregistra o Service Worker — public/sw.js gerencia seu próprio
+  // ciclo de vida via CACHE_VERSION + evento ACTIVATE. Desregistrar aqui
+  // anulava o critério PWA installable uma vez por dia.
+  // Limpa apenas caches que NÃO pertencem ao SW (pdu-*) — esses são
+  // resíduos de versões antigas do app ou de outros mecanismos.
+  let hadAny = false;
+  try {
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      const legacyNames = cacheNames.filter((name) => !name.startsWith("pdu-"));
+      if (legacyNames.length > 0) hadAny = true;
+      await Promise.all(legacyNames.map((name) => caches.delete(name).catch(() => false)));
+    }
+  } catch {
+    // best-effort
+  }
+
+  // Notifica o SW para verificar se há nova versão do sw.js no servidor.
+  // Substitui o antigo unregister() — comportamento correto quando o app
+  // detecta que está desatualizado.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready
+      .then((reg) => reg.update())
+      .catch(() => {});
+  }
+
+  try {
+    localStorage.setItem(DAILY_RESET_KEY, CURRENT_DAY_KEY);
+  } catch {
+    // best-effort
+  }
+
+  if (hadAny) {
+    forceFreshReload();
     return true;
+  }
+
+  return false;
+};
+
+const showVersionUpdateToast = () => {
+  // Toast persistente — usa o sonner já carregado pelo App via DeferredShell.
+  // Se o sonner ainda não montou, faz fallback para um banner DOM puro.
+  const triggerReload = () => {
+    try {
+      // Limpa caches de SW antes de recarregar para garantir bundle novo
+      void purgeAllCachesAndSWs().finally(() => {
+        window.location.reload();
+      });
+    } catch {
+      window.location.reload();
+    }
+  };
+
+  // Tenta sonner primeiro
+  import('sonner').then(({ toast }) => {
+    toast('Uma nova versão está disponível', {
+      description: 'Atualize para receber as últimas melhorias do Preciso de Um.',
+      duration: Infinity,
+      id: 'app-version-update',
+      action: { label: 'Atualizar agora', onClick: triggerReload },
+    });
+  }).catch(() => {
+    // Fallback: banner DOM persistente no topo
+    if (document.getElementById('app-version-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'app-version-banner';
+    banner.setAttribute('role', 'alert');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483646;background:hsl(var(--accent,210 90% 55%));color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
+    banner.innerHTML = '<span>Uma nova versão do Preciso de Um está disponível.</span>';
+    const btn = document.createElement('button');
+    btn.textContent = 'Atualizar agora';
+    btn.style.cssText = 'background:#fff;color:#111;border:0;padding:6px 14px;border-radius:6px;font-weight:600;cursor:pointer;';
+    btn.addEventListener('click', triggerReload);
+    banner.appendChild(btn);
+    document.body.appendChild(banner);
+  });
+};
+
+const startVersionWatcher = () => {
+  if (!CURRENT_BUILD_ID) return;
+
+  let promptedForBuild: string | null = null;
+
+  const check = async () => {
+    try {
+      const res = await fetch(window.location.origin + "/?v=" + Date.now(), {
+        cache: "no-store",
+        headers: { "cache-control": "no-cache" },
+      });
+      if (!res.ok) return;
+      const html = await res.text();
+      const match = html.match(/\/assets\/index-[A-Za-z0-9_-]+\.js/);
+      const remoteBuild = match?.[0];
+      if (remoteBuild && !CURRENT_BUILD_ID.includes(remoteBuild) && promptedForBuild !== remoteBuild) {
+        promptedForBuild = remoteBuild;
+        // Mudança crítica: NÃO recarrega automaticamente para preservar
+        // progresso do usuário (ex: Wizard, formulários). Mostra toast/banner
+        // persistente com botão explícito de "Atualizar agora".
+        showVersionUpdateToast();
+      }
+    } catch {
+      // offline / falha de rede — ignora
+    }
+  };
+
+  setInterval(check, VERSION_CHECK_INTERVAL_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") check();
+  });
+};
+
+const installBootstrapGuards = () => {
+  window.addEventListener("error", (event) => {
+    if (!event.error && !event.message) return;
+
+    const message = String(event.message || "").toLowerCase();
+
+    if (
+      message.includes("dynamically imported module")
+      || message.includes("module script")
+    ) {
+      void tryAutomatedRecovery("window-error", event.error || event.message);
+    }
+  }, true);
+
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = event.reason;
+    const message = String(reason instanceof Error ? reason.message : reason || "").toLowerCase();
+
+    // Ignora falhas de módulos não-críticos (telemetria/animações/ads ranking)
+    const isNonCritical =
+      message.includes("performancetelemetry")
+      || message.includes("deferred-animations")
+      || message.includes("sponsorranking");
+
+    if (
+      !isNonCritical
+      && (message.includes("dynamically imported module") || message.includes("module script"))
+    ) {
+      event.preventDefault?.();
+      void tryAutomatedRecovery("unhandledrejection", reason);
+    }
+  });
+};
+
+const bootstrap = () => {
+  try {
+    if (!rootElement) throw new Error("Elemento root ausente.");
+    preloadCriticalAssets();
+
+    if ((window as any).__appShellTimer) {
+      clearTimeout((window as any).__appShellTimer);
+      delete (window as any).__appShellTimer;
+    }
+
+    const env = (import.meta as any).env || {};
+    if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_PUBLISHABLE_KEY) {
+      throw new Error("Configuração do backend ausente.");
+    }
+
+    createRoot(rootElement).render(<HelmetProvider><App /></HelmetProvider>);
+
+    clearAutoHealAttempts();
+    removeShell();
+
+    deferWork(() => {
+      void resetCachesIfNeeded().catch((err) => {
+        console.error("[bootstrap] background cache reset failed", err);
+      });
+    });
+
+    deferWork(() => {
+      // Imports não críticos: falhas aqui NÃO devem disparar auto-heal/reload.
+      import("./lib/performanceTelemetry")
+        .then((module) => module.installPerformanceTelemetry())
+        .catch((err) => console.warn("[bootstrap] performanceTelemetry skip", err));
+      import("./lib/webVitalsMonitor")
+        .then((module) => module.startWebVitalsMonitor())
+        .catch((err) => console.warn("[bootstrap] webVitalsMonitor skip", err));
+      import("@/styles/deferred-animations.css")
+        .catch((err) => console.warn("[bootstrap] deferred-animations skip", err));
+      import("@/lib/sponsorRanking")
+        .then((module) => module.cleanupFrequencyData())
+        .catch((err) => console.warn("[bootstrap] sponsorRanking skip", err));
+      startVersionWatcher();
+    });
+
+    deferWork(() => {
+      const revealImage = (img: HTMLImageElement) => {
+        if (img.complete && img.naturalWidth > 0) {
+          img.classList.add("img-revealed");
+        } else {
+          img.addEventListener("load", () => img.classList.add("img-revealed"), { once: true });
+          img.addEventListener("error", () => img.classList.add("img-revealed"), { once: true });
+        }
+      };
+
+      const imgObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              revealImage(entry.target as HTMLImageElement);
+              imgObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { rootMargin: "200px" },
+      );
+
+      const observeLazyImages = () => {
+        document.querySelectorAll<HTMLImageElement>('img[loading="lazy"]:not(.img-revealed)').forEach((img) => {
+          imgObserver.observe(img);
+        });
+      };
+
+      let debounceId: number | undefined;
+      const root = document.getElementById("root");
+      if (!root) return;
+
+      const bodyObserver = new MutationObserver(() => {
+        if (debounceId) return;
+        debounceId = requestAnimationFrame(() => {
+          observeLazyImages();
+          debounceId = undefined;
+        });
+      });
+
+      bodyObserver.observe(root, { childList: true, subtree: true });
+      observeLazyImages();
+    });
+  } catch (err) {
+    void tryAutomatedRecovery("bootstrap-sync-error", err);
+  }
+};
+
+installBootstrapGuards();
+// Global error monitor — captura window.onerror + unhandledrejection
+// e reporta para `error_reports` (complementa o ErrorGuard React).
+import('./lib/globalErrorMonitor')
+  .then((m) => m.installGlobalErrorMonitor())
+  .catch((err) => console.warn('[bootstrap] globalErrorMonitor skip', err));
+void bootstrap();
+
+// ─── Service Worker registration ─────────────────────────────────────────
+// Critérios:
+//  • Só em produção (`import.meta.env.PROD`).
+//  • Nunca em iframe nem em hosts de preview da Lovable — evita SW preso
+//    servindo shell antigo no editor (regra Core: "Disable SW in preview environments").
+//  • `updateViaCache: 'none'` força revalidação do script do SW a cada navegação.
+(() => {
+  try {
+    if (!('serviceWorker' in navigator)) return;
+    if (!(import.meta as any).env?.PROD) return;
+
+    const inIframe = (() => {
+      try { return window.self !== window.top; } catch { return true; }
+    })();
+    const host = window.location.hostname;
+    const isPreviewHost =
+      host.includes('id-preview--') ||
+      host.endsWith('lovableproject.com') ||
+      host.endsWith('lovable.app');
+
+    if (inIframe || isPreviewHost) {
+      // Garante limpeza caso um SW anterior tenha ficado registrado aqui.
+      navigator.serviceWorker.getRegistrations()
+        .then((regs) => regs.forEach((r) => r.unregister().catch(() => {})))
+        .catch(() => {});
+      return;
+    }
+
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/', updateViaCache: 'none' })
+        .catch((err) => console.warn('[sw] registration failed', err));
+    });
+  } catch (err) {
+    console.warn('[sw] registration guard error', err);
   }
 })();
 
-const isPreviewHost =
-  window.location.hostname.includes("id-preview--") ||
-  window.location.hostname.includes("lovableproject.com");
-
-if (isPreviewHost || isInIframe) {
-  navigator.serviceWorker?.getRegistrations().then((registrations) => {
-    registrations.forEach((r) => r.unregister());
-  });
-}
-
-createRoot(document.getElementById("root")!).render(<App />);

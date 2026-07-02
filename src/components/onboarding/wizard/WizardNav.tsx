@@ -1,0 +1,84 @@
+/**
+ * WizardNav — barra de navegação inferior global do wizard unificado.
+ *
+ * - Botão "Voltar" visível em TODO passo (oculto apenas no primeiro e
+ *   na celebração final).
+ * - Botão "Avançar" opcional com animação de pulso/brilho para reforço
+ *   visual. Quando o passo gerencia seu próprio CTA principal (caso da
+ *   maioria dos steps atuais), passe `showNext={false}` e use apenas o
+ *   Voltar.
+ *
+ * Este componente NÃO toca no reducer — apenas dispara callbacks. A
+ * orquestração de fase (dispatch GO_TO/NEXT) continua no shell.
+ */
+import { motion } from 'framer-motion';
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+interface WizardNavProps {
+  onBack?: () => void;
+  onNext?: () => void;
+  /** Texto do botão avançar. Default: "Avançar". */
+  nextLabel?: string;
+  /** Esconde o Voltar (use no primeiro passo / celebração). */
+  hideBack?: boolean;
+  /** Esconde o Avançar (default true — a maioria dos steps tem CTA próprio). */
+  showNext?: boolean;
+  /** Desabilita o avançar (validação pendente). */
+  nextDisabled?: boolean;
+  saving?: boolean;
+}
+
+export function WizardNav({
+  onBack,
+  onNext,
+  nextLabel = 'Continuar',
+  hideBack = false,
+  showNext = false,
+  nextDisabled = false,
+  saving = false,
+}: WizardNavProps) {
+  // Nunca remover botões do DOM — preserva espaço e evita layout shift.
+  const backHiddenCls = hideBack ? 'invisible pointer-events-none' : '';
+  const nextVisible = showNext && !!onNext;
+  const nextHiddenCls = !nextVisible ? 'invisible pointer-events-none' : '';
+  return (
+    <div className="sticky bottom-0 left-0 right-0 z-50 mx-auto flex w-full max-w-md items-center justify-between gap-3 border-t border-border bg-background px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onBack}
+        className={`gap-1.5 text-muted-foreground hover:text-foreground ${backHiddenCls}`}
+        aria-label="Voltar para o passo anterior"
+        aria-hidden={hideBack || undefined}
+        tabIndex={hideBack ? -1 : 0}
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar
+      </Button>
+
+      <motion.div
+        whileHover={nextVisible ? { scale: 1.04 } : undefined}
+        whileTap={nextVisible ? { scale: 0.97 } : undefined}
+        className={`rounded-md ${nextVisible && !nextDisabled && !saving ? 'animate-ring-pulse-accent' : ''} ${nextHiddenCls}`}
+      >
+        <Button
+          type="button"
+          onClick={onNext}
+          disabled={nextDisabled || saving || !nextVisible}
+          className="gap-1.5 bg-gradient-to-r from-accent to-primary text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-label={nextLabel}
+          aria-hidden={!nextVisible || undefined}
+          tabIndex={!nextVisible ? -1 : 0}
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {nextLabel}
+          {!saving && <ArrowRight className="h-4 w-4" />}
+        </Button>
+      </motion.div>
+    </div>
+  );
+}
+
+export default WizardNav;

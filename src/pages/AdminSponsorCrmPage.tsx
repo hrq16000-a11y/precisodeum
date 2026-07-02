@@ -12,13 +12,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { format, differenceInDays } from 'date-fns';
 import {
   Megaphone, Users, FileText, StickyNote, AlertTriangle, Eye, MousePointerClick,
-  Plus, Trash2, Search, Filter, Calendar, TrendingUp, ArrowRight
+  Plus, Trash2, Search, Filter, Calendar, TrendingUp, ArrowRight, Settings2, Download
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -37,10 +38,13 @@ const AdminSponsorCrmPage = () => {
   // Auth check moved after all hooks (below)
 
   // ─── Data Queries ─────────────────────────────────────────────────
+  // Allowlist explícita: a interface Sponsor define o conjunto mínimo necessário.
   const { data: sponsors = [] } = useQuery({
     queryKey: ['admin-sponsors'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsors').select('*').order('display_order');
+      const { data } = await supabase.from('sponsors')
+        .select('id, title, active, tier, position, impressions, clicks, start_date, end_date, image_url, link_url, display_order, created_at')
+        .order('display_order');
       return (data || []) as Sponsor[];
     },
   });
@@ -48,7 +52,9 @@ const AdminSponsorCrmPage = () => {
   const { data: contacts = [] } = useQuery({
     queryKey: ['admin-sponsor-contacts'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_contacts' as any).select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_contacts' as any)
+        .select('id, sponsor_id, user_id, contact_name, email, phone, permissions, created_at')
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
@@ -56,7 +62,9 @@ const AdminSponsorCrmPage = () => {
   const { data: campaigns = [] } = useQuery({
     queryKey: ['admin-sponsor-campaigns'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_campaigns' as any).select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_campaigns' as any)
+        .select('id, sponsor_id, name, status, start_date, end_date, budget, created_at')
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
@@ -64,7 +72,9 @@ const AdminSponsorCrmPage = () => {
   const { data: contracts = [] } = useQuery({
     queryKey: ['admin-sponsor-contracts'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_contracts' as any).select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_contracts' as any)
+        .select('id, sponsor_id, contract_number, status, start_date, end_date, value, created_at')
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
@@ -72,7 +82,9 @@ const AdminSponsorCrmPage = () => {
   const { data: notes = [] } = useQuery({
     queryKey: ['admin-sponsor-notes'],
     queryFn: async () => {
-      const { data } = await supabase.from('sponsor_notes' as any).select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('sponsor_notes' as any)
+        .select('id, sponsor_id, content, created_at')
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
@@ -126,6 +138,18 @@ const AdminSponsorCrmPage = () => {
 
   const [noteDialog, setNoteDialog] = useState(false);
   const [noteForm, setNoteForm] = useState({ sponsor_id: '', content: '' });
+
+  const [permDialog, setPermDialog] = useState(false);
+  const [permContact, setPermContact] = useState<any>(null);
+
+  const PERM_LABELS: Record<string, string> = {
+    banners: 'Meus Banners',
+    campanhas: 'Campanhas',
+    metricas: 'Métricas',
+    contratos: 'Contratos',
+    notificacoes: 'Notificações',
+    dados: 'Meus Dados',
+  };
 
   // ─── Mutations ────────────────────────────────────────────────────
   const linkMutation = useMutation({
@@ -248,7 +272,19 @@ const AdminSponsorCrmPage = () => {
     },
   });
 
-  // ─── Sponsor select helper ───────────────────────────────────────
+  const updatePermMutation = useMutation({
+    mutationFn: async ({ id, permissions }: { id: string; permissions: any }) => {
+      const { error } = await supabase.from('sponsor_contacts' as any).update({ permissions } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-sponsor-contacts'] });
+      toast.success('Permissões atualizadas!');
+    },
+    onError: () => toast.error('Erro ao atualizar permissões'),
+  });
+
+
   const SponsorSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger><SelectValue placeholder="Selecionar patrocinador" /></SelectTrigger>
@@ -262,16 +298,110 @@ const AdminSponsorCrmPage = () => {
 
   const getSponsorTitle = (id: string) => sponsors.find(s => s.id === id)?.title || id;
 
-  if (adminLoading) return <AdminLayout><div className="h-8 w-1/3 animate-pulse rounded-lg bg-muted" /></AdminLayout>;
-  if (!isAdmin) { navigate('/'); return null; }
+  // ─── CRM Export ────────────────────────────────────────────────────
+  const handleCrmExport = async () => {
+    try {
+      // Fetch engagement metrics
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, engagement_points, profile_type, status, created_at');
+
+      const { data: leadsData } = await supabase
+        .from('leads')
+        .select('id, created_at, provider_id')
+        .gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString());
+
+      const { data: providersData } = await supabase
+        .from('providers')
+        .select('id, city, state, services_count, status')
+        .eq('status', 'approved')
+        .is('deleted_at', null);
+
+      const profiles = profilesData || [];
+      const leads = leadsData || [];
+      const providers = providersData || [];
+
+      // Calculate tier distribution
+      const tierDist = { basic: 0, engaged: 0, featured: 0 };
+      profiles.forEach((p: any) => {
+        const pts = p.engagement_points || 0;
+        if (pts >= 70) tierDist.featured++;
+        else if (pts >= 30) tierDist.engaged++;
+        else tierDist.basic++;
+      });
+
+      // Services by state
+      const stateServices: Record<string, number> = {};
+      providers.forEach((p: any) => {
+        const st = p.state || 'N/A';
+        stateServices[st] = (stateServices[st] || 0) + (p.services_count || 0);
+      });
+
+      // Build CSV
+      const lines = [
+        'RELATÓRIO CRM - MÉTRICAS DE ENGAJAMENTO PARA PATROCINADORES',
+        `Data: ${new Date().toLocaleDateString('pt-BR')}`,
+        '',
+        '=== DISTRIBUIÇÃO POR NÍVEL DE ENGAJAMENTO ===',
+        `Básico (0-29 pts),${tierDist.basic}`,
+        `Engajado (30-69 pts),${tierDist.engaged}`,
+        `Destaque (70+ pts),${tierDist.featured}`,
+        `Total de Usuários,${profiles.length}`,
+        '',
+        '=== LEADS GERADOS (ÚLTIMOS 30 DIAS) ===',
+        `Total de Leads,${leads.length}`,
+        '',
+        '=== SERVIÇOS ATIVOS POR ESTADO ===',
+        'Estado,Serviços Ativos',
+        ...Object.entries(stateServices)
+          .sort((a, b) => b[1] - a[1])
+          .map(([state, count]) => `${state},${count}`),
+        '',
+        '=== PROFISSIONAIS ATIVOS POR ESTADO ===',
+        'Estado,Profissionais',
+        ...Object.entries(
+          providers.reduce((acc: Record<string, number>, p: any) => {
+            const st = p.state || 'N/A';
+            acc[st] = (acc[st] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>)
+        )
+          .sort((a, b) => b[1] - a[1])
+          .map(([state, count]) => `${state},${count}`),
+        '',
+        '=== PATROCINADORES ===',
+        'Nome,Tier,Impressões,Cliques,CTR%,Status',
+        ...sponsors.map(s => {
+          const ctr = s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(1) : '0.0';
+          return `"${s.title}",${s.tier},${s.impressions},${s.clicks},${ctr}%,${s.active ? 'Ativo' : 'Inativo'}`;
+        }),
+      ];
+
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-crm-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relatório exportado com sucesso!');
+    } catch (err: any) {
+      toast.error('Erro ao exportar: ' + (err.message || 'Falha'));
+    }
+  };
 
   // ─── Render ───────────────────────────────────────────────────────
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">CRM Patrocinadores</h1>
-          <p className="text-sm text-muted-foreground">Gestão completa de relacionamento comercial</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">CRM Patrocinadores</h1>
+            <p className="text-sm text-muted-foreground">Gestão completa de relacionamento comercial</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={handleCrmExport} className="gap-1.5">
+            <Download className="h-4 w-4" /> Exportar Relatório
+          </Button>
         </div>
 
         {/* Alerts */}
@@ -389,8 +519,52 @@ const AdminSponsorCrmPage = () => {
               </Select>
             </div>
 
-            {/* Table */}
-            <div className="rounded-xl border border-border bg-card overflow-x-auto">
+            {/* Mobile cards */}
+            <div className="space-y-3 sm:hidden">
+              {filteredSponsors.map(s => {
+                const expired = s.end_date && new Date(s.end_date) < new Date();
+                const ctr = s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(1) : '0.0';
+                const hasContact = contacts.some((c: any) => c.sponsor_id === s.id);
+                return (
+                  <div key={s.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-foreground text-sm">{s.title}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <Badge variant="outline" className="capitalize text-[10px]">{s.tier}</Badge>
+                          <Badge variant={expired ? 'destructive' : s.active ? 'default' : 'secondary'} className="text-[10px]">
+                            {expired ? 'Expirado' : s.active ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                          {hasContact && <Badge variant="outline" className="text-[10px] text-accent">Vinculado</Badge>}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                          <span>{s.start_date ? format(new Date(s.start_date), 'dd/MM/yy') : '—'} → {s.end_date ? format(new Date(s.end_date), 'dd/MM/yy') : '∞'}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{s.impressions.toLocaleString('pt-BR')}</span>
+                          <span className="flex items-center gap-1"><MousePointerClick className="h-3 w-3" />{s.clicks.toLocaleString('pt-BR')}</span>
+                          <span>CTR: {ctr}%</span>
+                        </div>
+                      </div>
+                      {!hasContact && (
+                        <Button variant="ghost" size="sm" className="text-xs shrink-0" onClick={() => {
+                          setLinkForm(p => ({ ...p, sponsor_id: s.id }));
+                          setLinkDialog(true);
+                        }}>
+                          <Plus className="h-3 w-3 mr-1" /> Vincular
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredSponsors.length === 0 && (
+                <p className="text-center py-8 text-muted-foreground">Nenhum patrocinador encontrado.</p>
+              )}
+            </div>
+
+            {/* Desktop table */}
+            <div className="rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -453,7 +627,31 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Vínculos Patrocinador ↔ Usuário</h2>
               <Button size="sm" onClick={() => setLinkDialog(true)}><Plus className="h-4 w-4 mr-1" /> Vincular</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card">
+            {/* Mobile cards */}
+            <div className="space-y-3 sm:hidden">
+              {contacts.map((c: any) => (
+                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground text-sm">{getSponsorTitle(c.sponsor_id)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{c.contact_name || '—'} • {c.company_name || '—'}</p>
+                      <p className="text-xs text-muted-foreground">{c.email || '—'} • {c.phone || '—'}</p>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setPermContact(c); setPermDialog(true); }}>
+                        <Settings2 className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => unlinkMutation.mutate(c.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {contacts.length === 0 && <p className="text-center py-8 text-muted-foreground">Nenhum vínculo.</p>}
+            </div>
+            {/* Desktop table */}
+            <div className="rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -462,6 +660,7 @@ const AdminSponsorCrmPage = () => {
                     <TableHead>Empresa</TableHead>
                     <TableHead>E-mail</TableHead>
                     <TableHead>Telefone</TableHead>
+                    <TableHead>Permissões</TableHead>
                     <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -473,6 +672,12 @@ const AdminSponsorCrmPage = () => {
                       <TableCell>{c.company_name || '—'}</TableCell>
                       <TableCell className="text-xs">{c.email || '—'}</TableCell>
                       <TableCell className="text-xs">{c.phone || '—'}</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={() => { setPermContact(c); setPermDialog(true); }}>
+                          <Settings2 className="h-3 w-3" />
+                          {Object.values(c.permissions || {}).filter(Boolean).length}/{Object.keys(PERM_LABELS).length}
+                        </Button>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm" onClick={() => unlinkMutation.mutate(c.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -481,7 +686,7 @@ const AdminSponsorCrmPage = () => {
                     </TableRow>
                   ))}
                   {contacts.length === 0 && (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum vínculo.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum vínculo.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -494,7 +699,30 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Campanhas</h2>
               <Button size="sm" onClick={() => setCampaignDialog(true)}><Plus className="h-4 w-4 mr-1" /> Nova Campanha</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card">
+            {/* Mobile cards */}
+            <div className="space-y-3 sm:hidden">
+              {campaigns.map((c: any) => (
+                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground text-sm">{c.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{getSponsorTitle(c.sponsor_id)}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-[10px] capitalize">{c.status}</Badge>
+                        <span className="text-[10px] text-muted-foreground">{c.start_date ? format(new Date(c.start_date), 'dd/MM/yy') : '—'} → {c.end_date ? format(new Date(c.end_date), 'dd/MM/yy') : '—'}</span>
+                      </div>
+                      {c.budget > 0 && <p className="text-xs mt-1">R$ {Number(c.budget).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>}
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => deleteCampaignMutation.mutate(c.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {campaigns.length === 0 && <p className="text-center py-8 text-muted-foreground">Nenhuma campanha.</p>}
+            </div>
+            {/* Desktop table */}
+            <div className="rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -502,7 +730,7 @@ const AdminSponsorCrmPage = () => {
                     <TableHead>Nome</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Período</TableHead>
-                    <TableHead>Orçamento</TableHead>
+                    <TableHead>Verba</TableHead>
                     <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -541,7 +769,30 @@ const AdminSponsorCrmPage = () => {
               <h2 className="text-lg font-semibold">Contratos</h2>
               <Button size="sm" onClick={() => setContractDialog(true)}><Plus className="h-4 w-4 mr-1" /> Novo Contrato</Button>
             </div>
-            <div className="rounded-xl border border-border bg-card">
+            {/* Mobile cards */}
+            <div className="space-y-3 sm:hidden">
+              {contracts.map((c: any) => (
+                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground text-sm">{getSponsorTitle(c.sponsor_id)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Nº {c.contract_number || '—'}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-[10px] capitalize">{c.status}</Badge>
+                        <span className="text-[10px] text-muted-foreground">{c.start_date ? format(new Date(c.start_date), 'dd/MM/yy') : '—'} → {c.end_date ? format(new Date(c.end_date), 'dd/MM/yy') : '—'}</span>
+                      </div>
+                      {c.value > 0 && <p className="text-xs mt-1">R$ {Number(c.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>}
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => deleteContractMutation.mutate(c.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {contracts.length === 0 && <p className="text-center py-8 text-muted-foreground">Nenhum contrato.</p>}
+            </div>
+            {/* Desktop table */}
+            <div className="rounded-xl border border-border bg-card overflow-x-auto hidden sm:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -615,7 +866,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Link Dialog ─────────────────────────────────────────── */}
       <Dialog open={linkDialog} onOpenChange={setLinkDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Vincular Patrocinador a Usuário</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); linkMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={linkForm.sponsor_id} onChange={v => setLinkForm(p => ({ ...p, sponsor_id: v }))} /></div>
@@ -633,7 +884,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Campaign Dialog ─────────────────────────────────────── */}
       <Dialog open={campaignDialog} onOpenChange={setCampaignDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nova Campanha</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); campaignMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={campaignForm.sponsor_id} onChange={v => setCampaignForm(p => ({ ...p, sponsor_id: v }))} /></div>
@@ -650,11 +901,11 @@ const AdminSponsorCrmPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div><Label>Início</Label><Input type="date" value={campaignForm.start_date} onChange={e => setCampaignForm(p => ({ ...p, start_date: e.target.value }))} /></div>
               <div><Label>Fim</Label><Input type="date" value={campaignForm.end_date} onChange={e => setCampaignForm(p => ({ ...p, end_date: e.target.value }))} /></div>
             </div>
-            <div><Label>Orçamento (R$)</Label><Input type="number" step="0.01" value={campaignForm.budget} onChange={e => setCampaignForm(p => ({ ...p, budget: e.target.value }))} /></div>
+            <div><Label>Verba (R$)</Label><Input type="number" step="0.01" value={campaignForm.budget} onChange={e => setCampaignForm(p => ({ ...p, budget: e.target.value }))} /></div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setCampaignDialog(false)}>Cancelar</Button>
               <Button type="submit" disabled={campaignMutation.isPending}>Criar</Button>
@@ -665,7 +916,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Contract Dialog ─────────────────────────────────────── */}
       <Dialog open={contractDialog} onOpenChange={setContractDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Novo Contrato</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); contractMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={contractForm.sponsor_id} onChange={v => setContractForm(p => ({ ...p, sponsor_id: v }))} /></div>
@@ -681,7 +932,7 @@ const AdminSponsorCrmPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div><Label>Início</Label><Input type="date" value={contractForm.start_date} onChange={e => setContractForm(p => ({ ...p, start_date: e.target.value }))} /></div>
               <div><Label>Fim</Label><Input type="date" value={contractForm.end_date} onChange={e => setContractForm(p => ({ ...p, end_date: e.target.value }))} /></div>
             </div>
@@ -697,7 +948,7 @@ const AdminSponsorCrmPage = () => {
 
       {/* ─── Note Dialog ─────────────────────────────────────────── */}
       <Dialog open={noteDialog} onOpenChange={setNoteDialog}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nova Nota Interna</DialogTitle></DialogHeader>
           <form onSubmit={e => { e.preventDefault(); noteMutation.mutate(); }} className="space-y-4">
             <div><Label>Patrocinador *</Label><SponsorSelect value={noteForm.sponsor_id} onChange={v => setNoteForm(p => ({ ...p, sponsor_id: v }))} /></div>
@@ -707,6 +958,51 @@ const AdminSponsorCrmPage = () => {
               <Button type="submit" disabled={noteMutation.isPending}>Salvar</Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Permissions Dialog ──────────────────────────────────── */}
+      <Dialog open={permDialog} onOpenChange={setPermDialog}>
+        <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4" /> Permissões do Painel
+            </DialogTitle>
+          </DialogHeader>
+          {permContact && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Controle quais seções <strong>{permContact.contact_name || 'este contato'}</strong> pode acessar no painel de patrocinador.
+              </p>
+              <div className="space-y-3">
+                {Object.entries(PERM_LABELS).map(([key, label]) => {
+                  const perms = permContact.permissions || {};
+                  const enabled = perms[key] !== false;
+                  return (
+                    <div key={key} className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                      <span className="text-sm font-medium">{label}</span>
+                      <Switch
+                        checked={enabled}
+                        onCheckedChange={(checked) => {
+                          const newPerms = { ...(permContact.permissions || {}), [key]: checked };
+                          setPermContact({ ...permContact, permissions: newPerms });
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setPermDialog(false)}>Cancelar</Button>
+                <Button onClick={() => {
+                  updatePermMutation.mutate({ id: permContact.id, permissions: permContact.permissions });
+                  setPermDialog(false);
+                }}>
+                  Salvar Permissões
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </AdminLayout>

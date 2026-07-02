@@ -6,11 +6,29 @@ verify_jwt = false
 [functions.import-rss]
 verify_jwt = false
 
-[functions.batch-optimize-images]
-verify_jwt = false
-
 [functions.push-notifications]
 verify_jwt = false
 
 [functions.storage-backup]
+verify_jwt = false
+
+[functions.import-jobs-rss]
+verify_jwt = false
+
+[functions.sync-service-areas-cron]
+verify_jwt = false
+
+[functions.request-account-deletion]
+verify_jwt = false
+
+[functions.resend-webhook]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.og-profile]
+verify_jwt = false
+
+[functions.notify-auth-errors]
 verify_jwt = false

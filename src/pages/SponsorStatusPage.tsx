@@ -1,0 +1,396 @@
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+
+import { supabase } from '@/integrations/supabase/client';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { CheckCircle2, Clock, FileText, Image as ImageIcon, Loader2, ShieldCheck, XCircle, AlertCircle, ArrowLeft, Link2, RefreshCw, Sparkles, Lock } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useAuthIdentity } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import SponsorDocsUploadModal from '@/components/sponsor/SponsorDocsUploadModal';
+import SponsorStatusTimeline from '@/components/sponsor/SponsorStatusTimeline';
+import SponsorDocsAuditTrail from '@/components/sponsor/SponsorDocsAuditTrail';
+
+interface HistoryItem {
+  id: string;
+  doc_type: string;
+  action: string;
+  status: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+interface LeadStatus {
+  id: string;
+  company_name: string | null;
+  status: string;
+  docs_status: string;
+  docs_reviewed_at: string | null;
+  docs_review_notes: string | null;
+  has_cnpj: boolean;
+  has_banner: boolean;
+  checklist_confirmed: boolean;
+  docs_submitted_at: string | null;
+  created_at: string;
+}
+
+const STATUS_LABEL: Record<string, { label: string; cls: string; icon: any }> = {
+  pending:   { label: 'Aguardando documentos', cls: 'bg-amber-100 text-amber-800 border-amber-200', icon: Clock },
+  submitted: { label: 'Enviado — em análise',    cls: 'bg-blue-100 text-blue-800 border-blue-200',     icon: ShieldCheck },
+  approved:  { label: 'Aprovado',                cls: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: CheckCircle2 },
+  rejected:  { label: 'Rejeitado',               cls: 'bg-red-100 text-red-800 border-red-200',         icon: XCircle },
+};
+
+const ACTION_LABEL: Record<string, string> = {
+  uploaded: 'Documento enviado',
+  replaced: 'Documento substituído',
+  validation_failed: 'Falha de validação',
+  checklist_confirmed: 'Checklist confirmado',
+  reviewed: 'Acessado pelo administrador',
+  approved: 'Aprovado pela equipe',
+  rejected: 'Rejeitado pela equipe',
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  cnpj: 'Comprovante de CNPJ',
+  banner: 'Banner do anúncio',
+  checklist: 'Checklist',
+  review: 'Revisão',
+  additional: 'Documento adicional',
+};
+
+export default function SponsorStatusPage() {
+  const { user } = useAuthIdentity();
+  const [params, setParams] = useSearchParams();
+  const initialId = params.get('id') || '';
+  const [leadId, setLeadId] = useState<string>(initialId);
+  const [input, setInput] = useState<string>(initialId);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lead, setLead] = useState<LeadStatus | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [claiming, setClaiming] = useState(false);
+  const [claimed, setClaimed] = useState(false);
+  const [resubmitOpen, setResubmitOpen] = useState(false);
+  const lastDocsStatusRef = useRef<string | null>(null);
+
+  const fireApprovalConfetti = async () => {
+    const confetti = (await import('canvas-confetti')).default;
+    const colors = ['#10b981', '#3b82f6', '#f59e0b', '#a855f7'];
+    confetti({ particleCount: 140, spread: 100, origin: { y: 0.6 }, colors });
+    setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors }), 250);
+    setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors }), 400);
+  };
+
+  const handleClaim = async () => {
+    if (!leadId) return;
+    setClaiming(true);
+    try {
+      const { error: cErr } = await supabase.rpc('claim_sponsor_lead' as any, { _lead_id: leadId });
+      if (cErr) throw cErr;
+      toast.success('Cadastro vinculado! Agora você receberá notificações sobre revisões e atualizações.');
+      setClaimed(true);
+      load(leadId);
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível vincular este cadastro.');
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  const load = async (id: string) => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: rpcErr } = await supabase.rpc('get_sponsor_docs_status', { _lead_id: id });
+      if (rpcErr) throw rpcErr;
+      const payload = data as any;
+      if (!payload || payload.error === 'not_found') {
+        setLead(null); setHistory([]); setError('Cadastro não encontrado.');
+      } else if (payload.error) {
+        setError('Não foi possível carregar o status.');
+      } else {
+        setLead(payload.lead as LeadStatus);
+        setHistory((payload.history || []) as HistoryItem[]);
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Erro ao carregar.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (leadId) load(leadId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leadId]);
+
+  // Realtime: detect docs_status changes pushed by admin
+  useEffect(() => {
+    if (!leadId) return;
+    const channel = supabase
+      .channel(`sponsor-lead-status-${leadId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'sponsor_leads', filter: `id=eq.${leadId}` },
+        (payload: any) => {
+          const newStatus = payload?.new?.docs_status as string | undefined;
+          const prev = lastDocsStatusRef.current;
+          if (newStatus && newStatus !== prev) {
+            if (newStatus === 'approved') {
+              fireApprovalConfetti();
+              toast.success('Sua documentação foi aprovada!');
+            } else if (newStatus === 'rejected') {
+              toast.error('Documentação rejeitada — confira o motivo abaixo.');
+            }
+            lastDocsStatusRef.current = newStatus;
+          }
+          load(leadId);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [leadId]);
+
+  // Sync ref with current status (for first load and polling)
+  useEffect(() => {
+    if (lead?.docs_status) lastDocsStatusRef.current = lead.docs_status;
+  }, [lead?.docs_status]);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLeadId(input.trim());
+    setParams({ id: input.trim() }, { replace: true });
+  };
+
+  const statusInfo = lead ? STATUS_LABEL[lead.docs_status] || STATUS_LABEL.pending : null;
+  const StatusIcon = statusInfo?.icon || Clock;
+  const leadUserId = (lead as any)?.user_id ?? null;
+  const isOwner = !!(user && leadUserId && leadUserId === user.id);
+  const canResubmit = !!lead && (lead.docs_status === 'rejected' || !lead.checklist_confirmed);
+
+  return (
+    <>
+      <Header />
+      <main className="container max-w-3xl py-10">
+        <Link to="/quero-ser-patrocinador" className="text-xs text-muted-foreground inline-flex items-center gap-1 mb-4 hover:text-foreground">
+          <ArrowLeft className="h-3 w-3" /> Voltar para a página do patrocinador
+        </Link>
+        <h1 className="text-2xl font-bold mb-1">Acompanhamento do cadastro</h1>
+        <p className="text-sm text-muted-foreground mb-6">
+          Informe o ID do seu cadastro para ver se os documentos foram recebidos, revisados e aprovados.
+        </p>
+
+        <form onSubmit={submit} className="flex flex-col sm:flex-row gap-2 mb-6">
+          <div className="flex-1">
+            <Label htmlFor="lead-id" className="text-xs">ID do cadastro</Label>
+            <Input id="lead-id" value={input} onChange={(e) => setInput(e.target.value)} placeholder="ex: 4f12-..." />
+          </div>
+          <Button type="submit" className="sm:self-end">Consultar</Button>
+        </form>
+
+        {loading && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Carregando status...</div>
+        )}
+        {error && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <AlertCircle className="h-4 w-4" /> {error}
+          </div>
+        )}
+
+        {/* Rejection alert: shown prominently when admin rejected docs */}
+        {lead && lead.docs_status === 'rejected' && (
+          <Card className="mb-4 border-red-300 bg-red-50/60">
+            <CardContent className="pt-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-red-100 p-2 shrink-0">
+                  <XCircle className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-red-800">Documentação rejeitada</h3>
+                  <p className="text-xs text-red-700 mt-1">
+                    O administrador revisou seu envio e identificou pontos a corrigir. Veja o motivo abaixo
+                    e reenvie os documentos solicitados.
+                  </p>
+                  {lead.docs_review_notes && (
+                    <div className="mt-2 rounded-md border border-red-200 bg-white p-2 text-xs text-red-900">
+                      <span className="font-medium">Motivo: </span>{lead.docs_review_notes}
+                    </div>
+                  )}
+                  {lead.docs_reviewed_at && (
+                    <p className="text-[11px] text-red-700/80 mt-1">
+                      Revisado em {format(new Date(lead.docs_reviewed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                {user ? (
+                  isOwner ? (
+                    <Button size="sm" className="gap-2" onClick={() => setResubmitOpen(true)}>
+                      <RefreshCw className="h-4 w-4" /> Reenviar Documentos
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" className="gap-2" onClick={handleClaim} disabled={claiming}>
+                      <Link2 className="h-4 w-4" /> Vincular cadastro para reenviar
+                    </Button>
+                  )
+                ) : (
+                  <Button asChild size="sm" className="gap-2">
+                    <Link to={`/login?next=${encodeURIComponent(`/sponsor/status?id=${lead.id}`)}`}>
+                      <Lock className="h-4 w-4" /> Entrar para reenviar documentos
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Approval celebration banner */}
+        {lead && lead.docs_status === 'approved' && (
+          <Card className="mb-4 border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50">
+            <CardContent className="pt-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-emerald-100 p-2 shrink-0">
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-emerald-800">Parabéns! Sua documentação foi aprovada</h3>
+                  <p className="text-xs text-emerald-700 mt-1">
+                    Tudo certo do seu lado. O próximo passo é configurar sua campanha e ativar seu anúncio.
+                  </p>
+                  <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                    <Button asChild size="sm" className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+                      <Link to="/sponsor-panel">
+                        <ShieldCheck className="h-4 w-4" /> Continuar onboarding
+                      </Link>
+                    </Button>
+                    <Button asChild size="sm" variant="outline" className="gap-2">
+                      <Link to="/sponsor-panel/campanhas">Ver minhas campanhas</Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {lead && statusInfo && (
+          <Card className="mb-6">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="truncate">{lead.company_name || 'Cadastro de patrocinador'}</span>
+                <Badge variant="outline" className={`gap-1 ${statusInfo.cls}`}>
+                  <StatusIcon className="h-3 w-3" /> {statusInfo.label}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Tile icon={FileText} label="Comprovante de CNPJ" ok={lead.has_cnpj} />
+                <Tile icon={ImageIcon} label="Banner do anúncio" ok={lead.has_banner} />
+                <Tile icon={CheckCircle2} label="Checklist confirmado" ok={lead.checklist_confirmed} />
+              </div>
+              {lead.docs_submitted_at && (
+                <p className="text-xs text-muted-foreground">
+                  Documentos enviados em {format(new Date(lead.docs_submitted_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}.
+                </p>
+              )}
+              {lead.docs_reviewed_at && (
+                <p className="text-xs text-muted-foreground">
+                  Revisado em {format(new Date(lead.docs_reviewed_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}.
+                  {lead.docs_review_notes ? <> — “{lead.docs_review_notes}”</> : null}
+                </p>
+              )}
+
+              {/* Claim CTA: link this lead to the logged-in user's account for push/email */}
+              {user && !claimed && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs space-y-2">
+                  <p className="font-semibold text-foreground flex items-center gap-1">
+                    <Link2 className="h-3.5 w-3.5" /> Vincule este cadastro à sua conta
+                  </p>
+                  <p className="text-muted-foreground">
+                    Receba notificações automáticas (push e e-mail) quando o admin aprovar, reprovar ou solicitar
+                    correções na sua documentação.
+                  </p>
+                  <Button size="sm" onClick={handleClaim} disabled={claiming} className="w-full sm:w-auto">
+                    {claiming ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Link2 className="h-3.5 w-3.5 mr-1" />}
+                    Vincular à minha conta
+                  </Button>
+                </div>
+              )}
+              {!user && (
+                <p className="text-[11px] text-muted-foreground">
+                  Faça login com o e-mail usado neste cadastro para receber notificações de aprovação/reprovação automaticamente.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {lead && (
+          <Card className="mb-6">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" /> Linha do tempo do status
+                <Badge variant="outline" className="ml-auto text-[10px] gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Ao vivo
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SponsorStatusTimeline
+                docsStatus={lead.docs_status}
+                createdAt={lead.created_at}
+                docsSubmittedAt={lead.docs_submitted_at}
+                docsReviewedAt={lead.docs_reviewed_at}
+                reviewNotes={lead.docs_review_notes}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {lead && (
+          <SponsorDocsAuditTrail
+            history={history as any}
+            currentCnpjUrl={(lead as any).cnpj_document_url ?? null}
+            currentBannerUrl={(lead as any).banner_url ?? null}
+          />
+        )}
+      </main>
+      <Footer />
+
+      {/* Resubmit modal — gated to authenticated owner of the lead */}
+      {lead && isOwner && (
+        <SponsorDocsUploadModal
+          leadId={lead.id}
+          open={resubmitOpen}
+          onOpenChange={setResubmitOpen}
+          onCompleted={() => { setResubmitOpen(false); load(lead.id); }}
+        />
+      )}
+    </>
+  );
+}
+
+function Tile({ icon: Icon, label, ok }: { icon: any; label: string; ok: boolean }) {
+  return (
+    <div className={`rounded-lg border p-3 flex items-center gap-2 ${ok ? 'border-emerald-200 bg-emerald-50' : 'border-border bg-muted/30'}`}>
+      <Icon className={`h-4 w-4 ${ok ? 'text-emerald-600' : 'text-muted-foreground'}`} />
+      <div>
+        <p className="text-xs font-medium">{label}</p>
+        <p className={`text-[11px] ${ok ? 'text-emerald-700' : 'text-muted-foreground'}`}>{ok ? 'Recebido' : 'Pendente'}</p>
+      </div>
+    </div>
+  );
+}

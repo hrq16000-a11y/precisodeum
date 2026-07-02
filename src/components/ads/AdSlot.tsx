@@ -1,6 +1,6 @@
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useRef, useMemo, useState } from 'react';
 import SponsorImage from '@/components/SponsorImage';
 
 interface SlotSponsor {
@@ -38,7 +38,7 @@ function useSlotSponsors(slotSlug: string, category?: string, city?: string, sta
 
       // Get assignments
       const now = new Date().toISOString().split('T')[0];
-      const query = supabase
+      let query = supabase
         .from('ad_slot_assignments' as any)
         .select('sponsor_id, priority, target_category, target_city, target_state')
         .eq('slot_id', (slot as any).id)
@@ -60,16 +60,27 @@ function useSlotSponsors(slotSlug: string, category?: string, city?: string, sta
       const sponsorIds = validAssignments.map(a => a.sponsor_id);
       const { data: sponsors } = await supabase
         .from('sponsors')
-        .select('id, title, image_url, link_url, tier')
+        .select('id, title, image_url, logo_url, link_url, tier, status, active, sponsor_type, linked_city_slug, linked_category_slug, campaign_end, end_date, pacing_status')
         .in('id', sponsorIds)
-        .eq('active', true);
+        .eq('active', true)
+        .eq('status', 'active');
 
       if (!sponsors) return [];
 
-      // Filter by date validity
+      // FASE 1.8 — Delivery Health Gate (fail-closed).
+      // FASE 1.9 — Telemetria fire-and-forget de bloqueios.
+      const { isSponsorDeliverable, resolveSponsorHealthStatus, reportBlockedSponsor } =
+        await import('@/lib/sponsorDeliveryGuard');
+      const eligible = (sponsors as any[]).filter((s) => {
+        const ok = isSponsorDeliverable(s);
+        if (!ok) reportBlockedSponsor(slotSlug, s, resolveSponsorHealthStatus(s));
+        return ok;
+      });
+
+      // Filter by date validity (legado)
       const priorityMap = new Map(validAssignments.map(a => [a.sponsor_id, a.priority || 0]));
-      
-      return (sponsors as any[])
+
+      return eligible
         .map(s => ({ ...s, priority: priorityMap.get(s.id) || 0 }))
         .sort((a, b) => b.priority - a.priority)
         .slice(0, (slot as any).max_ads) as SlotSponsor[];
@@ -78,16 +89,20 @@ function useSlotSponsors(slotSlug: string, category?: string, city?: string, sta
   });
 }
 
+function getPagePath(): string {
+  try { return window.location.pathname; } catch { return '/'; }
+}
+
 function trackMetric(sponsorId: string, slotSlug: string, eventType: 'impression' | 'click') {
   supabase.rpc('track_sponsor_metric', {
     _sponsor_id: sponsorId,
     _slot_slug: slotSlug,
     _event_type: eventType,
-    _page_path: window.location.pathname,
+    _page_path: getPagePath(),
   } as any).then(() => {});
 }
 
-const AdSlot = ({ slotSlug, className = '', layout = 'banner', category, city, state, maxAds }: AdSlotProps) => {
+const AdSlot = React.forwardRef<HTMLElement, AdSlotProps>(({ slotSlug, className = '', layout = 'banner', category, city, state, maxAds }, ref) => {
   const { data: sponsors = [] } = useSlotSponsors(slotSlug, category, city, state);
   const tracked = useRef(new Set<string>());
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -189,7 +204,7 @@ const AdSlot = ({ slotSlug, className = '', layout = 'banner', category, city, s
             title={s.title}
           >
             {s.image_url ? (
-              <img src={s.image_url} alt={s.title} className="h-8 max-w-[140px] object-contain" loading="lazy" />
+              <img src={s.image_url} alt={s.title} className="h-8 max-w-[140px] object-contain" loading="lazy" decoding="async" />
             ) : (
               <span className="text-xs text-muted-foreground">{s.title}</span>
             )}
@@ -204,20 +219,30 @@ const AdSlot = ({ slotSlug, className = '', layout = 'banner', category, city, s
   return (
     <section className={`py-4 ${className}`}>
       <div className="container mx-auto px-4">
-        <div className="rounded-xl bg-muted/30 p-3">
+        <div className="rounded-xl bg-muted/30 p-3 overflow-hidden">
           <span className="mb-2 block text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
           <a
             href={current.link_url || '#'}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => handleClick(current)}
-            className="block text-center transition-opacity hover:opacity-80"
+            className="block transition-opacity hover:opacity-80"
             title={current.title}
           >
             {current.image_url ? (
-              <SponsorImage src={current.image_url} alt={current.title} containerClassName="mx-auto rounded-lg" />
+              <img
+                src={current.image_url}
+                alt={current.title}
+                className="w-full object-cover object-center"
+                style={{ aspectRatio: '8/1', borderRadius: 10 }}
+                width={1600}
+                height={200}
+                loading="lazy"
+              />
             ) : (
-              <span className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">{current.title}</span>
+              <div className="flex items-center justify-center bg-card" style={{ aspectRatio: '8/1' }}>
+                <span className="text-sm font-medium text-muted-foreground">{current.title}</span>
+              </div>
             )}
           </a>
           {sponsors.length > 1 && (
@@ -231,7 +256,9 @@ const AdSlot = ({ slotSlug, className = '', layout = 'banner', category, city, s
       </div>
     </section>
   );
-};
+});
+
+AdSlot.displayName = 'AdSlot';
 
 export { useSlotSponsors, trackMetric };
 export default AdSlot;

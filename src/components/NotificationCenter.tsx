@@ -2,19 +2,43 @@ import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, CheckCheck, Trash2, ExternalLink, Settings, BellRing, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications, usePushSubscription, type Notification } from '@/hooks/useNotifications';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { openSafeUrlInNewTab, resolveSafeNavigationTarget } from '@/lib/safeNavigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const typeIcons: Record<string, string> = {
-  lead: '📩',
-  review: '⭐',
-  system: '🔔',
-  job: '💼',
-  approval: '✅',
-  message: '💬',
+import { Mail, Star, Bell as BellIcon2, Briefcase, CheckCircle, MessageCircle, AlertTriangle } from 'lucide-react';
+
+const typeIconMap: Record<string, React.ComponentType<any>> = {
+  lead: Mail,
+  review: Star,
+  system: BellIcon2,
+  job: Briefcase,
+  approval: CheckCircle,
+  message: MessageCircle,
+  alert: AlertTriangle,
+};
+
+/** Blue = info, Green = success/approval, Amber = action-needed */
+const typeColorMap: Record<string, string> = {
+  lead: 'text-blue-500',
+  review: 'text-emerald-500',
+  system: 'text-blue-500',
+  job: 'text-blue-500',
+  approval: 'text-emerald-500',
+  message: 'text-blue-500',
+  alert: 'text-amber-500',
+};
+
+const typeBgMap: Record<string, string> = {
+  lead: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/30',
+  review: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/30',
+  system: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/30',
+  job: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/30',
+  approval: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/30',
+  message: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/30',
+  alert: 'bg-amber-50 dark:bg-amber-950/20 border-amber-200/50 dark:border-amber-800/30',
 };
 
 const NotificationItem = ({
@@ -22,25 +46,41 @@ const NotificationItem = ({
   onRead,
   onDelete,
   onNavigate,
+  index,
 }: {
   notification: Notification;
   onRead: (id: string) => void;
   onDelete: (id: string) => void;
   onNavigate: (link: string) => void;
+  index: number;
 }) => (
-  <div
+  <motion.div
+    initial={{ opacity: 0, x: -12 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: 12, height: 0, marginBottom: 0 }}
+    transition={{ duration: 0.25, delay: index * 0.04 }}
+    layout
     className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
       notification.read
         ? 'border-border/40 bg-background'
-        : 'border-accent/30 bg-accent/5'
+        : (typeBgMap[notification.type] || 'border-accent/30 bg-accent/5')
     }`}
   >
-    <span className="mt-0.5 text-lg">{typeIcons[notification.type] || '🔔'}</span>
+    <span className="mt-0.5">{(() => { const Icon = typeIconMap[notification.type] || BellIcon2; const color = typeColorMap[notification.type] || 'text-muted-foreground'; return <Icon className={`h-5 w-5 ${notification.read ? 'text-muted-foreground' : color}`} />; })()}</span>
     <div className="flex-1 min-w-0">
       <p className={`text-sm font-medium leading-tight ${notification.read ? 'text-muted-foreground' : 'text-foreground'}`}>
         {notification.title}
       </p>
       <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
+      {(notification as any).image_url && (
+        // PR-A6: lazy+async em thumbs para não competir com o paint do dropdown.
+        <img src={(notification as any).image_url} alt={`Imagem da notificação: ${notification.title}`} loading="lazy" decoding="async" className="mt-1.5 rounded-md max-h-24 object-cover" />
+      )}
+      {(notification as any).video_url && (
+        <a href={(notification as any).video_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[10px] text-primary hover:underline">
+          Ver vídeo
+        </a>
+      )}
       <p className="mt-1 text-[10px] text-muted-foreground/70">
         {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: ptBR })}
       </p>
@@ -49,7 +89,7 @@ const NotificationItem = ({
       {notification.link && (
         <button
           onClick={() => onNavigate(notification.link!)}
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           title="Abrir"
         >
           <ExternalLink className="h-3.5 w-3.5" />
@@ -58,7 +98,7 @@ const NotificationItem = ({
       {!notification.read && (
         <button
           onClick={() => onRead(notification.id)}
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-accent"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-accent transition-colors"
           title="Marcar como lida"
         >
           <Check className="h-3.5 w-3.5" />
@@ -66,17 +106,17 @@ const NotificationItem = ({
       )}
       <button
         onClick={() => onDelete(notification.id)}
-        className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+        className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
         title="Excluir"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
     </div>
-  </div>
+  </motion.div>
 );
 
 export const NotificationBell = () => {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const { unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,18 +142,34 @@ export const NotificationBell = () => {
         aria-label="Notificações"
       >
         <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
+        <AnimatePresence>
+          {unreadCount > 0 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+              className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </motion.span>
+          )}
+        </AnimatePresence>
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
-          <NotificationDropdown onClose={() => setOpen(false)} />
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card shadow-xl"
+          >
+            <NotificationDropdown onClose={() => setOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -126,10 +182,11 @@ const NotificationDropdown = ({ onClose }: { onClose: () => void }) => {
 
   const handleNavigate = (link: string) => {
     onClose();
-    const target = resolveSafeNavigationTarget(link);
-    if (!target) return;
-    if (target.internalPath) navigate(target.internalPath);
-    else openSafeUrlInNewTab(target.href);
+    if (link.startsWith('http')) {
+      window.open(link, '_blank');
+    } else {
+      navigate(link);
+    }
   };
 
   if (showSettings) {
@@ -179,17 +236,24 @@ const NotificationDropdown = ({ onClose }: { onClose: () => void }) => {
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h3 className="text-sm font-semibold text-foreground">
           Notificações
-          {unreadCount > 0 && (
-            <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-              {unreadCount}
-            </span>
-          )}
+          <AnimatePresence>
+            {unreadCount > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground"
+              >
+                {unreadCount}
+              </motion.span>
+            )}
+          </AnimatePresence>
         </h3>
         <div className="flex items-center gap-1">
           {unreadCount > 0 && (
             <button
               onClick={() => markAllAsRead()}
-              className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               title="Marcar todas como lidas"
             >
               <CheckCheck className="h-4 w-4" />
@@ -197,7 +261,7 @@ const NotificationDropdown = ({ onClose }: { onClose: () => void }) => {
           )}
           <button
             onClick={() => setShowSettings(true)}
-            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             title="Configurações"
           >
             <Settings className="h-4 w-4" />
@@ -207,20 +271,30 @@ const NotificationDropdown = ({ onClose }: { onClose: () => void }) => {
 
       <div className="max-h-80 overflow-y-auto p-2 space-y-1.5">
         {notifications.length === 0 ? (
-          <div className="py-8 text-center">
-            <Bell className="mx-auto h-8 w-8 text-muted-foreground/40" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="py-8 text-center"
+          >
+            <div className="animate-float-y">
+              <Bell className="mx-auto h-8 w-8 text-muted-foreground/70" aria-hidden="true" />
+            </div>
             <p className="mt-2 text-sm text-muted-foreground">Nenhuma notificação</p>
-          </div>
+            <p className="mt-0.5 text-xs text-muted-foreground/60">Você está em dia!</p>
+          </motion.div>
         ) : (
-          notifications.map(n => (
-            <NotificationItem
-              key={n.id}
-              notification={n}
-              onRead={markAsRead}
-              onDelete={deleteNotification}
-              onNavigate={handleNavigate}
-            />
-          ))
+          <AnimatePresence mode="popLayout">
+            {notifications.map((n, i) => (
+              <NotificationItem
+                key={n.id}
+                notification={n}
+                onRead={markAsRead}
+                onDelete={deleteNotification}
+                onNavigate={handleNavigate}
+                index={i}
+              />
+            ))}
+          </AnimatePresence>
         )}
       </div>
     </div>

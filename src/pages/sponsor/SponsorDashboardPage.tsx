@@ -1,46 +1,102 @@
+import { useMemo, useCallback, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { useSponsorAuth } from '@/hooks/useSponsorAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, Eye, MousePointerClick, Image, FileText, Megaphone } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import {
+  BarChart3, Eye, MousePointerClick, Image, FileText, Megaphone,
+  TrendingUp, ArrowRight, Bell, Crown, Calendar, CheckCircle2,
+  AlertTriangle, Upload, Zap, FileDown, RefreshCw
+} from 'lucide-react';
+import { exportSponsorPdf } from '@/lib/exportSponsorPdf';
 import { SponsorImage } from '@/components/SponsorImage';
+import SponsorApprovalCelebration from '@/components/sponsor/SponsorApprovalCelebration';
+import SponsorOnboardingChecklist from '@/components/sponsor/SponsorOnboardingChecklist';
+import SponsorRoiPanel from '@/components/sponsors/SponsorRoiPanel';
+import SponsorBillingCard from '@/components/sponsors/SponsorBillingCard';
+import { motion } from 'framer-motion';
+import { format, differenceInDays, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const SponsorDashboardPage = () => {
-  const { sponsor, sponsorContact, loading } = useSponsorAuth();
+  const { sponsor, sponsorContact, subscription, hasActivePlan, loading, refetch } = useSponsorAuth();
+  const { user } = useAuthIdentity();
+  const location = useLocation();
+  const [refreshingSubscription, setRefreshingSubscription] = useState(false);
 
-  const { data: campaigns } = useQuery({
+  // Onboarding lead (sponsor_leads) vinculado ao usuário autenticado — alimenta o checklist progressivo
+  const { data: onboardingLead } = useQuery({
+    queryKey: ['sponsor-onboarding-lead', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sponsor_leads' as any)
+        .select('id, cnpj_document_url, banner_url, checklist_confirmed, docs_status, docs_submitted_at, company_name, cnpj')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return (data as any) || null;
+    },
+  });
+
+  // Realtime: quando o admin mudar o status, o checklist atualiza sozinho
+  const queryLeadId = (onboardingLead as any)?.id;
+  useMemo(() => {
+    if (!queryLeadId) return;
+    const ch = supabase
+      .channel(`dashboard-lead-${queryLeadId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sponsor_leads', filter: `id=eq.${queryLeadId}` }, () => {
+        // a refetch acontece via key; força invalidação simples
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).dispatchEvent?.(new CustomEvent('sponsor-lead-updated'));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [queryLeadId]);
+
+  const { data: campaigns = [] } = useQuery({
     queryKey: ['sponsor-campaigns', sponsor?.id],
     enabled: !!sponsor?.id,
     queryFn: async () => {
+      // TODO: audit columns — UI consome apenas id/name/status; created_at usado no order.
       const { data } = await supabase
-        .from('sponsor_campaigns' as any)
-        .select('*')
-        .eq('sponsor_id', sponsor!.id);
+        .from('sponsor_campaigns')
+        .select('id, name, status, created_at')
+        .eq('sponsor_id', sponsor!.id)
+        .order('created_at', { ascending: false });
       return (data || []) as any[];
     },
   });
 
-  const { data: contracts } = useQuery({
+  const { data: contracts = [] } = useQuery({
     queryKey: ['sponsor-contracts', sponsor?.id],
     enabled: !!sponsor?.id,
     queryFn: async () => {
+      // TODO: audit columns — UI consome id/contract_number/status.
       const { data } = await supabase
         .from('sponsor_contracts' as any)
-        .select('*')
+        .select('id, contract_number, status')
         .eq('sponsor_id', sponsor!.id);
       return (data || []) as any[];
     },
   });
 
-  const { data: notifications } = useQuery({
+  const { data: notifications = [] } = useQuery({
     queryKey: ['sponsor-notifications-unread', sponsor?.id],
     enabled: !!sponsor?.id,
     queryFn: async () => {
+      // TODO: audit columns — UI usa apenas a contagem (.length).
       const { data } = await supabase
         .from('sponsor_notifications' as any)
-        .select('*')
+        .select('id')
         .eq('sponsor_id', sponsor!.id)
         .eq('read', false)
         .order('created_at', { ascending: false });
@@ -48,188 +104,449 @@ const SponsorDashboardPage = () => {
     },
   });
 
+  // Recent metrics (last 7 days)
+  const { data: recentMetrics = [] } = useQuery({
+    queryKey: ['sponsor-recent-metrics', sponsor?.id],
+    enabled: !!sponsor?.id,
+    queryFn: async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 7);
+      const { data } = await supabase
+        .from('sponsor_metrics')
+        .select('event_type, count')
+        .eq('sponsor_id', sponsor!.id)
+        .gte('event_date', since.toISOString().split('T')[0]);
+      return (data || []) as Array<{ event_type: string; count: number }>;
+    },
+  });
+
+  // Full 30-day metrics for PDF export
+  const { data: fullMetrics = [] } = useQuery({
+    queryKey: ['sponsor-full-metrics', sponsor?.id],
+    enabled: !!sponsor?.id,
+    queryFn: async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const { data } = await supabase
+        .from('sponsor_metrics')
+        .select('event_type, event_date, slot_slug, page_path, count')
+        .eq('sponsor_id', sponsor!.id)
+        .gte('event_date', since.toISOString().split('T')[0])
+        .order('event_date', { ascending: true });
+      return (data || []) as Array<{ event_type: string; event_date: string; slot_slug: string; page_path: string | null; count: number }>;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const handleExportPdf = useCallback(() => {
+    const dayMap: Record<string, { impressions: number; clicks: number }> = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = format(new Date(Date.now() - i * 86400000), 'yyyy-MM-dd');
+      dayMap[d] = { impressions: 0, clicks: 0 };
+    }
+    const slotMap: Record<string, { impressions: number; clicks: number }> = {};
+    const pageMap: Record<string, { impressions: number; clicks: number }> = {};
+
+    fullMetrics.forEach(m => {
+      if (!dayMap[m.event_date]) dayMap[m.event_date] = { impressions: 0, clicks: 0 };
+      if (m.event_type === 'impression') dayMap[m.event_date].impressions += m.count;
+      else if (m.event_type === 'click') dayMap[m.event_date].clicks += m.count;
+
+      const sk = m.slot_slug || 'outros';
+      if (!slotMap[sk]) slotMap[sk] = { impressions: 0, clicks: 0 };
+      if (m.event_type === 'impression') slotMap[sk].impressions += m.count;
+      else if (m.event_type === 'click') slotMap[sk].clicks += m.count;
+
+      const pk = (m.page_path || '/') === '/' ? 'Home' : (m.page_path || '').replace(/^\//, '').replace(/-/g, ' ').slice(0, 30);
+      if (!pageMap[pk]) pageMap[pk] = { impressions: 0, clicks: 0 };
+      if (m.event_type === 'impression') pageMap[pk].impressions += m.count;
+      else if (m.event_type === 'click') pageMap[pk].clicks += m.count;
+    });
+
+    const dailyData = Object.entries(dayMap).sort(([a], [b]) => a.localeCompare(b)).map(([date, v]) => ({
+      date: format(parseISO(date), 'dd/MM', { locale: ptBR }),
+      ...v,
+    }));
+    const slotRanking = Object.entries(slotMap).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.impressions - a.impressions).slice(0, 8);
+    const pageRanking = Object.entries(pageMap).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.impressions - a.impressions).slice(0, 8);
+    const periodImpressions = dailyData.reduce((s, d) => s + d.impressions, 0);
+    const periodClicks = dailyData.reduce((s, d) => s + d.clicks, 0);
+
+    exportSponsorPdf({
+      sponsorName: (sponsor as any)?.company_name || (sponsor as any)?.contact_name || sponsor?.title || 'Patrocinador',
+      plan: (sponsor as any)?.plan || sponsor?.tier || 'standard',
+      totalImpressions: sponsor?.impressions || 0,
+      totalClicks: sponsor?.clicks || 0,
+      ctr: (sponsor?.impressions || 0) > 0 ? (((sponsor?.clicks || 0) / (sponsor?.impressions || 1)) * 100).toFixed(2) : '0.00',
+      periodImpressions,
+      periodClicks,
+      slotRanking,
+      pageRanking,
+      dailyData,
+    });
+  }, [fullMetrics, sponsor]);
+
+  const handleRefreshSubscription = useCallback(async () => {
+    if (!sponsor?.id) return;
+    setRefreshingSubscription(true);
+    try {
+      await refetch();
+      await supabase.rpc('log_sponsor_access_event' as any, {
+        _sponsor_id: sponsor.id,
+        _event_type: 'subscription_refresh',
+        _resource_path: location.pathname,
+        _details: { source: 'sponsor_dashboard' },
+      } as any);
+      toast.success('Status da assinatura atualizado');
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível atualizar o status');
+    } finally {
+      setRefreshingSubscription(false);
+    }
+  }, [location.pathname, refetch, sponsor?.id]);
+
+  const weeklyImpressions = useMemo(() => recentMetrics.filter(m => m.event_type === 'impression').reduce((s, m) => s + m.count, 0), [recentMetrics]);
+  const weeklyClicks = useMemo(() => recentMetrics.filter(m => m.event_type === 'click').reduce((s, m) => s + m.count, 0), [recentMetrics]);
+
   if (loading) {
     return (
       <SponsorLayout>
         <div className="space-y-4">
           <div className="h-8 w-1/3 animate-pulse rounded-lg bg-muted" />
-          <div className="grid gap-4 md:grid-cols-3">
-            {[1, 2, 3].map(i => <div key={i} className="h-32 animate-pulse rounded-xl bg-muted" />)}
+          <div className="grid gap-4 md:grid-cols-4">
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-28 animate-pulse rounded-xl bg-muted" />)}
           </div>
         </div>
       </SponsorLayout>
     );
   }
 
-  const ctr = sponsor?.impressions && sponsor.impressions > 0
-    ? ((sponsor.clicks / sponsor.impressions) * 100).toFixed(2)
-    : '0.00';
+  const impressions = sponsor?.impressions || 0;
+  const clicks = sponsor?.clicks || 0;
+  const ctr = impressions > 0 ? ((clicks / impressions) * 100).toFixed(2) : '0.00';
+
+  // Guaranteed impressions progress
+  const guaranteed = (sponsor as any)?.guaranteed_impressions || 0;
+  const delivered = (sponsor as any)?.delivered_impressions || 0;
+  const deliveryPct = guaranteed > 0 ? Math.min((delivered / guaranteed) * 100, 100) : 0;
+
+  // Days remaining
+  const daysRemaining = sponsor?.end_date
+    ? differenceInDays(parseISO(sponsor.end_date), new Date())
+    : null;
+
+  // Active campaigns count
+  const activeCampaigns = campaigns.filter((c: any) => c.status === 'active').length;
+  const activeContracts = contracts.filter((c: any) => c.status === 'active').length;
+
+  // Alerts
+  const alerts: { text: string; type: 'warn' | 'info' }[] = [];
+  if (!sponsor?.image_url) alerts.push({ text: 'Você ainda não enviou um banner. Envie agora!', type: 'warn' });
+  if (!hasActivePlan) alerts.push({ text: 'Sua assinatura não está ativa. Recursos de banners, campanhas, métricas e página pública estão bloqueados até a regularização.', type: 'warn' });
+  if (hasActivePlan && daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0) alerts.push({ text: `Seu patrocínio expira em ${daysRemaining} dia(s)!`, type: 'warn' });
+  if (hasActivePlan && daysRemaining !== null && daysRemaining <= 0) alerts.push({ text: 'Seu patrocínio expirou. Entre em contato para renovar.', type: 'warn' });
+  if (activeCampaigns === 0 && campaigns.length === 0) alerts.push({ text: 'Crie sua primeira campanha para organizar seus anúncios.', type: 'info' });
 
   return (
     <SponsorLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Olá, {sponsorContact?.contact_name || sponsor?.title} 👋
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Painel do patrocinador — {sponsor?.title}
-          </p>
-        </div>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                Olá, {sponsorContact?.contact_name || sponsor?.title}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Painel do patrocinador — {sponsor?.title}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleRefreshSubscription} disabled={refreshingSubscription || !sponsor?.id}>
+                <RefreshCw className={`h-4 w-4 ${refreshingSubscription ? 'animate-spin' : ''}`} />
+                Atualizar status
+              </Button>
+              <Button variant="default" size="sm" className="gap-2" onClick={handleExportPdf}>
+                <FileDown className="h-4 w-4" />
+                Gerar Relatório Mensal (PDF)
+              </Button>
+              <Badge variant="outline" className="capitalize gap-1">
+                <Crown className="w-3 h-3" /> {subscription?.sponsor_plans?.name || sponsor?.tier || 'free'}
+              </Badge>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Approval celebration (fires once when status flips to active) */}
+        {sponsor?.id && (
+          <SponsorApprovalCelebration
+            sponsorId={sponsor.id}
+            currentStatus={(sponsor as any)?.status}
+            lastViewedStatus={(sponsor as any)?.last_viewed_status}
+            slotName={sponsor?.position}
+            userRef={(sponsor as any)?.user_ref || (sponsorContact as any)?.user_id}
+          />
+        )}
+
+        {/* Onboarding progressivo (avança automaticamente conforme docs/status mudam) */}
+        {(onboardingLead || !sponsor?.id) && (
+          <SponsorOnboardingChecklist
+            state={{
+              hasCompanyData: !!(onboardingLead?.company_name && onboardingLead?.cnpj),
+              hasCnpjDoc: !!onboardingLead?.cnpj_document_url,
+              hasBanner: !!onboardingLead?.banner_url,
+              checklistConfirmed: !!onboardingLead?.checklist_confirmed,
+              docsApproved: onboardingLead?.docs_status === 'approved',
+              docsRejected: onboardingLead?.docs_status === 'rejected',
+              hasActiveCampaign: campaigns.some((c: any) => c.status === 'active'),
+              leadId: onboardingLead?.id || null,
+            }}
+          />
+        )}
+
+        {/* Alerts */}
+        {alerts.length > 0 && (
+          <div className="space-y-2">
+            {alerts.map((a, i) => (
+              <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}>
+                <div className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-sm ${
+                  a.type === 'warn' ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-primary/30 bg-primary/5 text-primary'
+                }`}>
+                  {a.type === 'warn' ? <AlertTriangle className="w-4 h-4 shrink-0" /> : <Zap className="w-4 h-4 shrink-0" />}
+                  {a.text}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Impressões</CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{(sponsor?.impressions || 0).toLocaleString('pt-BR')}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Cliques</CardTitle>
-              <MousePointerClick className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{(sponsor?.clicks || 0).toLocaleString('pt-BR')}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">CTR</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{ctr}%</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Notificações</CardTitle>
-              <Megaphone className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{notifications?.length || 0}</div>
-              {(notifications?.length || 0) > 0 && (
-                <p className="text-xs text-destructive mt-1">não lidas</p>
-              )}
-            </CardContent>
-          </Card>
+          {[
+            { title: 'Impressões', value: impressions.toLocaleString('pt-BR'), icon: Eye, sub: `${weeklyImpressions} esta semana` },
+            { title: 'Cliques', value: clicks.toLocaleString('pt-BR'), icon: MousePointerClick, sub: `${weeklyClicks} esta semana` },
+            { title: 'CTR', value: `${ctr}%`, icon: BarChart3 },
+            { title: 'Notificações', value: String(notifications.length), icon: Bell, sub: notifications.length > 0 ? 'não lidas' : undefined, alert: notifications.length > 0 },
+          ].map((kpi, i) => (
+            <motion.div key={kpi.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+              <Card className="hover:shadow-md transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
+                  <kpi.icon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{kpi.value}</div>
+                  {kpi.sub && (
+                    <p className={`text-xs mt-1 ${kpi.alert ? 'text-destructive' : 'text-muted-foreground'}`}>{kpi.sub}</p>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Status row */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Sponsor status */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Image className="h-4 w-4" /> Status do Banner
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Ativo</span>
-                <Badge variant={sponsor?.active ? 'default' : 'secondary'}>
-                  {sponsor?.active ? 'Sim' : 'Não'}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Posição</span>
-                <Badge variant="outline">{sponsor?.position || '—'}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Plano</span>
-                <Badge variant="outline" className="capitalize">{sponsor?.tier || '—'}</Badge>
-              </div>
-              {sponsor?.start_date && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Período</span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(sponsor.start_date).toLocaleDateString('pt-BR')} —{' '}
-                    {sponsor.end_date ? new Date(sponsor.end_date).toLocaleDateString('pt-BR') : 'Indefinido'}
-                  </span>
+        {/* Guaranteed impressions progress */}
+        {guaranteed > 0 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" /> Impressões Garantidas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{delivered.toLocaleString('pt-BR')} de {guaranteed.toLocaleString('pt-BR')}</span>
+                  <span className="font-medium">{deliveryPct.toFixed(1)}%</span>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <Progress value={deliveryPct} className="h-2" />
+                {deliveryPct >= 100 && (
+                  <p className="text-xs text-accent flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Meta de impressões atingida!
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
-          {/* Campaigns summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Megaphone className="h-4 w-4" /> Campanhas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {campaigns && campaigns.length > 0 ? (
-                <div className="space-y-2">
-                  {campaigns.slice(0, 3).map((c: any) => (
-                    <div key={c.id} className="flex items-center justify-between text-sm">
-                      <span className="truncate mr-2">{c.name}</span>
-                      <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-[10px]">
-                        {c.status}
-                      </Badge>
-                    </div>
-                  ))}
-                  {campaigns.length > 3 && (
-                    <p className="text-xs text-muted-foreground">+{campaigns.length - 3} mais</p>
+        {/* Fase 2.3 — ROI comercial real (impressões → cliques → perfis → leads) */}
+        {sponsor?.id && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
+            <SponsorRoiPanel sponsorId={sponsor.id} days={30} />
+          </motion.div>
+        )}
+
+        {/* Fase 2.5 — Card resumido de cobrança/renovação */}
+        {sponsor?.id && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <SponsorBillingCard sponsorId={sponsor.id} />
+          </motion.div>
+        )}
+
+        {/* Quick actions + Status row */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Status */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Image className="h-4 w-4" /> Status do Banner
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Status</span>
+                  {(sponsor as any)?.status === 'active' || sponsor?.active ? (
+                    <span className="relative inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_hsl(142_71%_45%/0.8)]" />
+                      </span>
+                      Ativo no site
+                    </span>
+                  ) : (sponsor as any)?.status === 'pending_approval' ? (
+                    <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/30">
+                      Pendente
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Inativo</Badge>
                   )}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Nenhuma campanha cadastrada.</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Contracts summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Contratos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {contracts && contracts.length > 0 ? (
-                <div className="space-y-2">
-                  {contracts.slice(0, 3).map((c: any) => (
-                    <div key={c.id} className="flex items-center justify-between text-sm">
-                      <span className="truncate mr-2">{c.contract_number || 'Sem número'}</span>
-                      <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-[10px]">
-                        {c.status}
-                      </Badge>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Posição</span>
+                  <Badge variant="outline">{sponsor?.position || '—'}</Badge>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Nenhum contrato registrado.</p>
-              )}
-            </CardContent>
-          </Card>
+                {daysRemaining !== null && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Dias restantes</span>
+                    <Badge variant={daysRemaining <= 7 ? 'destructive' : 'outline'}>
+                      <Calendar className="w-3 h-3 mr-1" /> {daysRemaining > 0 ? daysRemaining : 'Expirado'}
+                    </Badge>
+                  </div>
+                )}
+                {sponsor?.start_date && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Período</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(parseISO(sponsor.start_date), 'dd/MM/yy', { locale: ptBR })} —{' '}
+                      {sponsor.end_date ? format(parseISO(sponsor.end_date), 'dd/MM/yy', { locale: ptBR }) : '∞'}
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Quick Actions */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Zap className="h-4 w-4" /> Ações Rápidas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="outline" size="sm" className="w-full justify-start" disabled={!hasActivePlan} asChild={hasActivePlan}>
+                  {hasActivePlan ? <Link to="/sponsor-panel/banners">
+                    <Upload className="w-4 h-4 mr-2" /> {sponsor?.image_url ? 'Alterar Banner' : 'Enviar Banner'}
+                  </Link> : <span><Upload className="w-4 h-4 mr-2" /> Banner bloqueado</span>}
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start" disabled={!hasActivePlan} asChild={hasActivePlan}>
+                  {hasActivePlan ? <Link to="/sponsor-panel/campanhas">
+                    <Megaphone className="w-4 h-4 mr-2" /> {activeCampaigns > 0 ? `${activeCampaigns} campanha(s) ativa(s)` : 'Criar Campanha'}
+                  </Link> : <span><Megaphone className="w-4 h-4 mr-2" /> Campanhas bloqueadas</span>}
+                </Button>
+                <Button variant="outline" size="sm" className="w-full justify-start" disabled={!hasActivePlan} asChild={hasActivePlan}>
+                  {hasActivePlan ? <Link to="/sponsor-panel/metricas">
+                    <BarChart3 className="w-4 h-4 mr-2" /> Ver Métricas Detalhadas
+                  </Link> : <span><BarChart3 className="w-4 h-4 mr-2" /> Métricas bloqueadas</span>}
+                </Button>
+                {notifications.length > 0 && (
+                  <Button variant="outline" size="sm" className="w-full justify-start text-destructive" asChild>
+                    <Link to="/sponsor-panel/notificacoes">
+                      <Bell className="w-4 h-4 mr-2" /> {notifications.length} notificação(ões) nova(s)
+                    </Link>
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Campaigns + Contracts summary */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Resumo
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Campanhas</p>
+                  {campaigns.length > 0 ? (
+                    <div className="space-y-1">
+                      {campaigns.slice(0, 3).map((c: any) => (
+                        <div key={c.id} className="flex items-center justify-between text-sm">
+                          <span className="truncate mr-2">{c.name}</span>
+                          <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-[10px]">
+                            {c.status}
+                          </Badge>
+                        </div>
+                      ))}
+                      {campaigns.length > 3 && (
+                        <Link to="/sponsor-panel/campanhas" className="text-xs text-primary hover:underline flex items-center gap-1">
+                          Ver todas <ArrowRight className="w-3 h-3" />
+                        </Link>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Nenhuma campanha</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Contratos</p>
+                  {contracts.length > 0 ? (
+                    <div className="space-y-1">
+                      {contracts.slice(0, 2).map((c: any) => (
+                        <div key={c.id} className="flex items-center justify-between text-sm">
+                          <span className="truncate mr-2">{c.contract_number || 'Sem número'}</span>
+                          <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-[10px]">
+                            {c.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Nenhum contrato</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
 
         {/* Banner preview */}
         {sponsor?.image_url && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Preview do Banner Atual</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-center">
-                <SponsorImage
-                  src={sponsor.image_url}
-                  alt={sponsor.title}
-                  className="rounded-xl"
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm">Preview do Banner</CardTitle>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to="/sponsor-panel/banners" className="text-xs">
+                      Editar <ArrowRight className="w-3 h-3 ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-center bg-muted/30 rounded-xl p-3">
+                  <SponsorImage src={sponsor.image_url} alt={sponsor.title} className="rounded-xl" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
       </div>
     </SponsorLayout>

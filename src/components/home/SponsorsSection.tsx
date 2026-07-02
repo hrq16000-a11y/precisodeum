@@ -1,66 +1,86 @@
-import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import SponsorImage from '@/components/SponsorImage';
+import { useEffect, useMemo, memo } from 'react';
+import { handleImageError } from '@/lib/imageResolver';
+import { useSponsorsBySlot } from '@/hooks/useSponsors';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
 
-interface Sponsor {
-  id: string;
-  title: string;
-  image_url: string | null;
-  link_url: string | null;
-  position: string;
-}
+const SponsorCard = memo(({ sponsor, onClickTrack }: { sponsor: any; onClickTrack: (id: string) => void }) => {
+  const isPremium = sponsor.tier === 'premium';
+  const visualSrc = sponsor.logo_url || sponsor.image_url;
 
-interface Props {
-  sponsors: Sponsor[];
-}
+  if (!visualSrc) return null;
 
-/** Sponsors section — visual-first, no text labels, big images */
-const SponsorsSection = ({ sponsors }: Props) => {
-  const visibleSponsors = sponsors.filter(s => s.position === 'banner' || s.position === 'card' || s.position === 'featured');
-  const tracked = useRef(new Set<string>());
+  return (
+    <a
+      href={sponsor.link_url || '#'}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() => onClickTrack(sponsor.id)}
+      className="group relative block overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+    >
+      {isPremium && (
+        <span className="absolute top-2 right-2 z-10 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold text-accent-foreground shadow-sm">
+          Premium
+        </span>
+      )}
+
+      <div className="flex aspect-[5/3] items-center justify-center bg-muted/10 p-3 sm:p-4">
+        <img
+          src={visualSrc}
+          alt={sponsor.title}
+          width={300}
+          height={180}
+          className="max-h-full max-w-full object-contain"
+          loading="lazy"
+          decoding="async"
+          onError={handleImageError}
+        />
+      </div>
+
+      <div className="border-t border-border/60 px-3 py-2">
+        <p className="line-clamp-2 text-xs font-semibold text-foreground">
+          {sponsor.company_name || sponsor.title}
+        </p>
+      </div>
+    </a>
+  );
+});
+
+SponsorCard.displayName = 'SponsorCard';
+
+/** Self-contained: fetches position=card sponsors internally */
+const SponsorsSection = () => {
+  const { data: sponsors = [], trackImpression, trackClick } = useSponsorsBySlot('card');
+  const config = getPositionConfig('card');
+
+  const displayed = useMemo(
+    () => rankAndOptimise(sponsors, { maxItems: config.maxItems }),
+    [sponsors, config.maxItems],
+  );
 
   useEffect(() => {
-    visibleSponsors.forEach(s => {
-      if (!tracked.current.has(s.id)) {
-        tracked.current.add(s.id);
-          supabase.rpc('increment_sponsor_impression', { sponsor_id: s.id } as any).catch((err) => {
-            console.error('Sponsor impression tracking error:', err);
-          });
-      }
+    displayed.forEach((s) => {
+      trackImpression(s.id);
+      recordImpression(s.id);
     });
-  }, [visibleSponsors]);
+  }, [displayed, trackImpression]);
 
-  if (visibleSponsors.length === 0) return null;
+  if (displayed.length === 0) return null;
 
   return (
     <section className="py-8">
       <div className="container">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {visibleSponsors.map((sponsor) => (
-            <a
-              key={sponsor.id}
-              href={sponsor.link_url || '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                supabase.rpc('increment_sponsor_click', { sponsor_id: sponsor.id } as any).catch((err) => {
-                  console.error('Sponsor click tracking error:', err);
-                });
-              }}
-              className="group rounded-2xl shadow-card transition-all hover:shadow-lg hover:scale-[1.02]"
-            >
-              {sponsor.image_url ? (
-                <SponsorImage
-                  src={sponsor.image_url}
-                  alt={sponsor.title}
-                  containerClassName="rounded-2xl"
-                />
-              ) : (
-                <div className="flex items-center justify-center bg-muted/20 p-6 min-h-[100px]">
-                  <span className="text-sm font-bold text-muted-foreground">{sponsor.title}</span>
-                </div>
-              )}
-            </a>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold text-foreground">
+            Parceiros & Patrocinadores
+          </h2>
+          <span className="rounded-md bg-muted px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Publicidade
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {displayed.map((sponsor) => (
+            <SponsorCard key={sponsor.id} sponsor={sponsor} onClickTrack={trackClick} />
           ))}
         </div>
       </div>
@@ -68,4 +88,4 @@ const SponsorsSection = ({ sponsors }: Props) => {
   );
 };
 
-export default SponsorsSection;
+export default memo(SponsorsSection);

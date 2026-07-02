@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
@@ -10,6 +10,7 @@ import { useJsonLd } from '@/hooks/useJsonLd';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight, DollarSign, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CategoryIcon from '@/components/CategoryIcon';
 
 const PopularServicePage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -24,7 +25,7 @@ const PopularServicePage = () => {
         .select('*')
         .eq('slug', slug)
         .eq('active', true)
-        .maybeSingle();
+        .single();
       return data as any;
     },
     enabled: !!slug,
@@ -87,8 +88,11 @@ const PopularServicePage = () => {
           rating: Number(p.rating_avg), reviewCount: p.review_count,
           photo: p.photo_url || profile?.avatar_url || '',
           description: p.description, phone: p.phone, whatsapp: p.whatsapp,
-          yearsExperience: p.years_experience, plan: p.plan,
-          services: [], reviews: [], slug: p.slug || p.id, featured: p.featured,
+          yearsExperience: p.years_experience,
+          slug: p.slug || p.id, featured: p.featured,
+          servicesCount: p.services_count || 0,
+          portfolioAlbumCount: p.portfolio_album_count || 0,
+          portfolioPhotoCount: p.portfolio_photo_count || 0,
         };
       });
     },
@@ -97,14 +101,8 @@ const PopularServicePage = () => {
 
   const title = service ? `${service.name} - A partir de R$ ${Number(service.min_price).toFixed(2).replace('.', ',')}` : 'Carregando...';
   const desc = service?.description || '';
-  const shouldNoindex = !!service && providers.length === 0 && !provsLoading;
 
-  useSeoHead({
-    title,
-    description: desc,
-    canonical: `${SITE_BASE_URL}/servico/${slug}`,
-    noindex: shouldNoindex,
-  });
+  useSeoHead({ title, description: desc, canonical: `${SITE_BASE_URL}/servico/${slug}` });
   useJsonLd(service ? {
     '@context': 'https://schema.org',
     '@type': 'Service',
@@ -113,22 +111,6 @@ const PopularServicePage = () => {
     provider: { '@type': 'Organization', name: 'Preciso de um' },
     offers: { '@type': 'Offer', priceCurrency: 'BRL', price: service.min_price, priceSpecification: { '@type': 'UnitPriceSpecification', priceCurrency: 'BRL', price: service.min_price, unitText: 'A partir de' } },
   } : null);
-  const itemListLd = useMemo(() => {
-    if (!service || providers.length === 0) return null;
-
-    return {
-      '@context': 'https://schema.org',
-      '@type': 'ItemList',
-      name: `Profissionais de ${service.name}`,
-      itemListElement: providers.slice(0, 12).map((provider: any, index: number) => ({
-        '@type': 'ListItem',
-        position: index + 1,
-        url: `${SITE_BASE_URL}/profissional/${provider.slug}`,
-        name: provider.name,
-      })),
-    };
-  }, [service, providers]);
-  useJsonLd(itemListLd);
 
   if (serviceLoading) {
     return (
@@ -163,7 +145,7 @@ const PopularServicePage = () => {
               <span className="text-foreground">{service.name}</span>
             </nav>
             <div className="flex items-center gap-4">
-              <span className="text-5xl">{service.icon}</span>
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10"><CategoryIcon icon={service.icon} size={32} className="text-accent" /></span>
               <div>
                 <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">{aiContent?.title || service.name}</h1>
                 <p className="mt-2 text-muted-foreground max-w-xl">{aiContent?.description || service.description}</p>

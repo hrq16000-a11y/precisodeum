@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,58 +10,90 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube, Palette, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowUp, ArrowDown, ExternalLink, Upload, X, Instagram, Facebook, Youtube, Palette, Eye, Type, Layout, Link2, Sparkles } from 'lucide-react';
 import ThemePreview from '@/components/dashboard/ThemePreview';
+import { setOnboardingProgress } from '@/lib/onboardingProgressSync';
 
 const THEMES = [
   {
     id: 'default',
     label: 'Padrão',
-    description: 'Layout padrão com Plus Jakarta Sans',
+    description: 'Clean e profissional',
     preview: 'bg-card border-border',
-    font: 'Plus Jakarta Sans',
+    emoji: '🏢',
   },
   {
     id: 'moderno',
     label: 'Moderno',
-    description: 'Space Grotesk + DM Sans, gradientes suaves e sombras',
+    description: 'Gradientes e sombras suaves',
     preview: 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200',
-    font: 'Space Grotesk',
+    emoji: '✨',
   },
   {
     id: 'classico',
     label: 'Clássico',
-    description: 'Playfair Display + DM Sans, visual elegante e formal',
+    description: 'Elegante e formal',
     preview: 'bg-amber-50/50 border-amber-300',
-    font: 'Playfair Display',
+    emoji: '🏛️',
   },
   {
     id: 'minimalista',
     label: 'Minimalista',
-    description: 'Space Grotesk light, sem bordas, ultra-limpo',
+    description: 'Ultra-limpo e leve',
     preview: 'bg-white border-gray-100',
-    font: 'Space Grotesk',
+    emoji: '⚡',
+  },
+  {
+    id: 'dark',
+    label: 'Dark',
+    description: 'Escuro e sofisticado',
+    preview: 'bg-gray-900 border-gray-700',
+    emoji: '🌙',
+  },
+  {
+    id: 'neon',
+    label: 'Neon',
+    description: 'Vibrante e futurista',
+    preview: 'bg-gradient-to-br from-purple-900 to-cyan-900 border-cyan-400',
+    emoji: '💜',
+  },
+  {
+    id: 'vintage',
+    label: 'Vintage',
+    description: 'Retrô e acolhedor',
+    preview: 'bg-gradient-to-br from-amber-100 to-orange-50 border-amber-400',
+    emoji: '📜',
+  },
+  {
+    id: 'natureza',
+    label: 'Natureza',
+    description: 'Tons verdes e orgânicos',
+    preview: 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-300',
+    emoji: '🌿',
   },
 ];
 
 const ACCENT_COLORS = [
-  { label: 'Padrão', value: '' },
-  { label: 'Azul', value: '217 91% 50%' },
-  { label: 'Verde', value: '142 71% 45%' },
-  { label: 'Roxo', value: '262 83% 58%' },
-  { label: 'Laranja', value: '25 95% 53%' },
-  { label: 'Rosa', value: '330 81% 60%' },
-  { label: 'Turquesa', value: '174 72% 40%' },
-  { label: 'Vermelho', value: '0 72% 51%' },
-  { label: 'Dourado', value: '45 93% 47%' },
+  { label: 'Padrão', value: '', color: 'hsl(var(--accent))' },
+  { label: 'Azul', value: '217 91% 50%', color: 'hsl(217 91% 50%)' },
+  { label: 'Verde', value: '142 71% 45%', color: 'hsl(142 71% 45%)' },
+  { label: 'Roxo', value: '262 83% 58%', color: 'hsl(262 83% 58%)' },
+  { label: 'Laranja', value: '25 95% 53%', color: 'hsl(25 95% 53%)' },
+  { label: 'Rosa', value: '330 81% 60%', color: 'hsl(330 81% 60%)' },
+  { label: 'Turquesa', value: '174 72% 40%', color: 'hsl(174 72% 40%)' },
+  { label: 'Vermelho', value: '0 72% 51%', color: 'hsl(0 72% 51%)' },
+  { label: 'Dourado', value: '45 93% 47%', color: 'hsl(45 93% 47%)' },
+  { label: 'Navy', value: '220 60% 30%', color: 'hsl(220 60% 30%)' },
+  { label: 'Limão', value: '80 80% 45%', color: 'hsl(80 80% 45%)' },
+  { label: 'Coral', value: '16 85% 60%', color: 'hsl(16 85% 60%)' },
 ];
 
 const ALL_SECTIONS = [
-  { id: 'about', label: 'Sobre o profissional' },
-  { id: 'portfolio', label: 'Portfólio' },
-  { id: 'services', label: 'Serviços' },
-  { id: 'reviews', label: 'Avaliações' },
-  { id: 'lead_form', label: 'Formulário de orçamento' },
+  { id: 'about', label: 'Sobre o profissional', icon: '👤' },
+  { id: 'portfolio', label: 'Portfólio', icon: '📸' },
+  { id: 'services', label: 'Serviços', icon: '🛠️' },
+  { id: 'reviews', label: 'Avaliações', icon: '⭐' },
+  { id: 'lead_form', label: 'Formulário de contato', icon: '📋' },
 ];
 
 const DashboardMyPagePage = () => {
@@ -72,7 +106,7 @@ const DashboardMyPagePage = () => {
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
   const [headline, setHeadline] = useState('');
   const [tagline, setTagline] = useState('');
-  const [ctaText, setCtaText] = useState('Solicitar Orçamento');
+  const [ctaText, setCtaText] = useState('Falar com o profissional');
   const [ctaWhatsappText, setCtaWhatsappText] = useState('Chamar no WhatsApp');
   const [accentColor, setAccentColor] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
@@ -82,6 +116,7 @@ const DashboardMyPagePage = () => {
   const [tiktokUrl, setTiktokUrl] = useState('');
   const [theme, setTheme] = useState('default');
   const [existsInDb, setExistsInDb] = useState(false);
+  const [activeTab, setActiveTab] = useState<'visual' | 'content' | 'sections'>('visual');
 
   useEffect(() => {
     if (!provider) return;
@@ -97,7 +132,7 @@ const DashboardMyPagePage = () => {
         setHiddenSections((data.hidden_sections as string[]) || []);
         setHeadline(data.headline || '');
         setTagline(data.tagline || '');
-        setCtaText(data.cta_text || 'Solicitar Orçamento');
+        setCtaText(data.cta_text || 'Falar com o profissional');
         setCtaWhatsappText(data.cta_whatsapp_text || 'Chamar no WhatsApp');
         setAccentColor(data.accent_color || '');
         setCoverImageUrl(data.cover_image_url || '');
@@ -108,6 +143,24 @@ const DashboardMyPagePage = () => {
         setTheme((data as any).theme || 'default');
       }
       setLoading(false);
+
+      // Visitar a página de personalização já marca o passo "Personalize sua
+      // página" como concluído na esteira de onboarding (a maioria dos usuários
+      // só ajusta cor/tema e sai sem clicar em Salvar — antes disso o passo
+      // ficava preso e nunca progredia).
+      // Canonical onboarding_progress write boundary (Fase 1.6.5).
+      try {
+        const current = ((provider as any)?.onboarding_progress as Record<string, unknown>) || {};
+        if (!current.page_customized) {
+          await setOnboardingProgress(
+            provider.id,
+            { page_customized: true },
+            { source: 'my_page_auto_visit', currentProgress: current },
+          );
+        }
+      } catch (e) {
+        console.warn('[MyPage] auto-mark page_customized falhou:', e);
+      }
     };
     fetch();
   }, [provider]);
@@ -135,23 +188,31 @@ const DashboardMyPagePage = () => {
 
     let error;
     if (existsInDb) {
-      ({ error } = await supabase
-        .from('provider_page_settings')
-        .update(payload)
-        .eq('provider_id', provider.id));
+      ({ error } = await supabase.from('provider_page_settings').update(payload).eq('provider_id', provider.id));
     } else {
-      ({ error } = await supabase
-        .from('provider_page_settings')
-        .insert(payload));
+      ({ error } = await supabase.from('provider_page_settings').insert(payload));
       if (!error) setExistsInDb(true);
     }
 
     setSaving(false);
     if (error) {
       toast.error('Erro ao salvar configurações');
-      console.error(error);
     } else {
       toast.success('Configurações salvas!');
+      // Marca o passo "Personalize sua página" como concluído na esteira de onboarding.
+      // Canonical onboarding_progress write boundary (Fase 1.6.5).
+      try {
+        const current = ((provider as any)?.onboarding_progress as Record<string, any>) || {};
+        if (!current.page_customized) {
+          await setOnboardingProgress(
+            provider.id,
+            { page_customized: true },
+            { source: 'my_page_save', currentProgress: current },
+          );
+        }
+      } catch (e) {
+        console.warn('[MyPage] Falha ao marcar page_customized:', e);
+      }
     }
   };
 
@@ -159,18 +220,37 @@ const DashboardMyPagePage = () => {
     const file = e.target.files?.[0];
     if (!file || !provider) return;
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `covers/${provider.user_id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('portfolio').upload(path, file, { upsert: true });
-    if (error) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'portfolio');
+      formData.append('folder', `covers/${provider.user_id}`);
+
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+        {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'apikey': anonKey,
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      setCoverImageUrl(data.url);
+      toast.success('Imagem de capa enviada e otimizada!');
+    } catch {
       toast.error('Erro ao enviar imagem');
-      setUploading(false);
-      return;
     }
-    const { data: { publicUrl } } = supabase.storage.from('portfolio').getPublicUrl(path);
-    setCoverImageUrl(publicUrl);
     setUploading(false);
-    toast.success('Imagem de capa enviada!');
   };
 
   const moveSection = (index: number, direction: 'up' | 'down') => {
@@ -183,9 +263,7 @@ const DashboardMyPagePage = () => {
 
   const toggleSection = (sectionId: string) => {
     setHiddenSections(prev =>
-      prev.includes(sectionId)
-        ? prev.filter(s => s !== sectionId)
-        : [...prev, sectionId]
+      prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
     );
   };
 
@@ -211,12 +289,29 @@ const DashboardMyPagePage = () => {
     );
   }
 
+  const tabs = [
+    { id: 'visual' as const, label: 'Visual', icon: <Palette className="h-4 w-4" /> },
+    { id: 'content' as const, label: 'Conteúdo', icon: <Type className="h-4 w-4" /> },
+    { id: 'sections' as const, label: 'Seções', icon: <Layout className="h-4 w-4" /> },
+  ];
+
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="font-display text-2xl font-bold text-foreground">Minha Página</h1>
-          <div className="flex gap-2">
+      <div className="max-w-3xl mx-auto space-y-5">
+        {/* Botão Voltar — visível em mobile e desktop */}
+        <Button variant="ghost" size="sm" asChild className="-ml-2 self-start">
+          <Link to="/dashboard" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Voltar ao Dashboard
+          </Link>
+        </Button>
+
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="font-display text-2xl font-bold text-foreground">Minha Página</h1>
+            <p className="text-sm text-muted-foreground">Personalize sua vitrine profissional</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
             {provider.slug && (
               <Button variant="outline" size="sm" asChild>
                 <a href={`/profissional/${provider.slug}`} target="_blank" rel="noopener noreferrer">
@@ -224,170 +319,236 @@ const DashboardMyPagePage = () => {
                 </a>
               </Button>
             )}
-            <Button onClick={handleSave} disabled={saving} size="sm">
+            <Button onClick={handleSave} disabled={saving} size="sm" variant="accent">
               {saving ? 'Salvando...' : 'Salvar'}
             </Button>
           </div>
         </div>
 
         {/* Live Preview */}
-        <section className="rounded-xl border border-border bg-card p-5 space-y-3">
-          <h2 className="font-semibold text-foreground flex items-center gap-2"><Eye className="h-4 w-4" /> Pré-visualização</h2>
-          <p className="text-xs text-muted-foreground">Veja como sua página ficará em tempo real.</p>
-          <ThemePreview
-            theme={theme}
-            accentColor={accentColor}
-            headline={headline}
-            tagline={tagline}
-            ctaText={ctaText}
-            ctaWhatsappText={ctaWhatsappText}
-            coverImageUrl={coverImageUrl}
-          />
+        <section className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
+            <Eye className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Pré-visualização</span>
+          </div>
+          <div className="p-4">
+            <ThemePreview
+              theme={theme}
+              accentColor={accentColor}
+              headline={headline}
+              tagline={tagline}
+              ctaText={ctaText}
+              ctaWhatsappText={ctaWhatsappText}
+              coverImageUrl={coverImageUrl}
+            />
+          </div>
         </section>
 
-        {/* Theme Selector */}
-        <section className="rounded-xl border border-border bg-card p-5 space-y-3">
-          <h2 className="font-semibold text-foreground flex items-center gap-2"><Palette className="h-4 w-4" /> Tema da Página</h2>
-          <p className="text-xs text-muted-foreground">Cada tema inclui fontes, estilos de botões e layouts únicos.</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {THEMES.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTheme(t.id)}
-                className={`text-left rounded-xl border-2 p-4 transition-all ${theme === t.id ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/30'}`}
-              >
-                <div className={`h-12 rounded-lg border ${t.preview} mb-2 flex items-center justify-center`}>
-                  <span className="text-[10px] text-muted-foreground" style={{ fontFamily: t.font }}>{t.font}</span>
+        {/* Tab Navigation */}
+        <div className="flex gap-1 rounded-lg bg-muted p-1">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* TAB: Visual */}
+        {activeTab === 'visual' && (
+          <div className="space-y-5">
+            {/* Theme Selector */}
+            <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-accent" />
+                <h2 className="font-semibold text-foreground">Tema da Página</h2>
+              </div>
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+                {THEMES.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTheme(t.id)}
+                    className={`text-left rounded-xl border-2 p-3 transition-all ${
+                      theme === t.id
+                        ? 'border-accent ring-2 ring-accent/20 bg-accent/5'
+                        : 'border-border hover:border-accent/30'
+                    }`}
+                  >
+                    <div className={`h-10 rounded-lg border ${t.preview} mb-2 flex items-center justify-center text-lg`}>
+                      {t.emoji}
+                    </div>
+                    <span className="text-xs font-semibold text-foreground block">{t.label}</span>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{t.description}</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Accent Color */}
+            <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <h2 className="font-semibold text-foreground flex items-center gap-2">
+                <Palette className="h-4 w-4 text-accent" /> Cor de Destaque
+              </h2>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+                {ACCENT_COLORS.map(c => (
+                  <button
+                    key={c.label}
+                    onClick={() => setAccentColor(c.value)}
+                    className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-all ${
+                      accentColor === c.value
+                        ? 'border-accent bg-accent/5 scale-105'
+                        : 'border-border hover:border-accent/30'
+                    }`}
+                  >
+                    <div
+                      className="h-8 w-8 rounded-full shadow-sm ring-1 ring-black/5"
+                      style={{ backgroundColor: c.color }}
+                    />
+                    <span className="text-[10px] text-muted-foreground font-medium">{c.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Cover Image */}
+            <section className="rounded-xl border border-border bg-card p-5 space-y-3">
+              <h2 className="font-semibold text-foreground">🖼️ Imagem de Capa</h2>
+              {coverImageUrl ? (
+                <div className="relative aspect-[16/5] overflow-hidden rounded-lg border border-border">
+                  <img src={coverImageUrl} alt="Capa" loading="lazy" decoding="async" width={1200} height={300} className="aspect-[4/1] h-full w-full object-cover" />
+                  <button
+                    onClick={() => setCoverImageUrl('')}
+                    className="absolute top-2 right-2 rounded-full bg-background/80 p-1.5 hover:bg-background shadow"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-                <span className="text-sm font-semibold text-foreground">{t.label}</span>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{t.description}</p>
-              </button>
-            ))}
+              ) : (
+                <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border p-8 text-muted-foreground hover:border-accent/50 transition-colors">
+                  <Upload className="h-8 w-8 opacity-50" />
+                  <span className="text-sm">{uploading ? 'Enviando...' : 'Clique para enviar imagem de capa'}</span>
+                  <span className="text-[10px] text-muted-foreground/70">Recomendado: 1200x400px</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} disabled={uploading} />
+                </label>
+              )}
+            </section>
           </div>
-        </section>
+        )}
 
-        {/* Cover Image */}
-        <section className="rounded-xl border border-border bg-card p-5 space-y-3">
-          <h2 className="font-semibold text-foreground">Imagem de Capa</h2>
-          {coverImageUrl ? (
-            <div className="relative aspect-[16/5] overflow-hidden rounded-lg border border-border">
-              <img src={coverImageUrl} alt="Capa" className="h-full w-full object-cover" />
-              <button
-                onClick={() => setCoverImageUrl('')}
-                className="absolute top-2 right-2 rounded-full bg-background/80 p-1 hover:bg-background"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border p-8 text-muted-foreground hover:border-primary/50 transition-colors">
-              <Upload className="h-8 w-8" />
-              <span className="text-sm">{uploading ? 'Enviando...' : 'Clique para enviar imagem de capa'}</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} disabled={uploading} />
-            </label>
-          )}
-        </section>
-
-        {/* Headline & Tagline */}
-        <section className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <h2 className="font-semibold text-foreground">Textos de Destaque</h2>
-          <div className="space-y-2">
-            <Label htmlFor="headline">Headline (frase principal)</Label>
-            <Input id="headline" value={headline} onChange={e => setHeadline(e.target.value)} placeholder="Ex: Eletricista profissional com 10 anos de experiência" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="tagline">Tagline (subtítulo)</Label>
-            <Input id="tagline" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Ex: Atendimento rápido e garantia de qualidade" />
-          </div>
-        </section>
-
-        {/* CTA Texts */}
-        <section className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <h2 className="font-semibold text-foreground">Textos dos Botões</h2>
-          <div className="space-y-2">
-            <Label htmlFor="ctaText">Botão de orçamento</Label>
-            <Input id="ctaText" value={ctaText} onChange={e => setCtaText(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ctaWhatsapp">Botão do WhatsApp</Label>
-            <Input id="ctaWhatsapp" value={ctaWhatsappText} onChange={e => setCtaWhatsappText(e.target.value)} />
-          </div>
-        </section>
-
-        {/* Social Media */}
-        <section className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <h2 className="font-semibold text-foreground">Redes Sociais</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label className="flex items-center gap-1.5"><Instagram className="h-4 w-4" /> Instagram</Label>
-              <Input value={instagramUrl} onChange={e => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/..." />
-            </div>
-            <div className="space-y-1">
-              <Label className="flex items-center gap-1.5"><Facebook className="h-4 w-4" /> Facebook</Label>
-              <Input value={facebookUrl} onChange={e => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/..." />
-            </div>
-            <div className="space-y-1">
-              <Label className="flex items-center gap-1.5"><Youtube className="h-4 w-4" /> YouTube</Label>
-              <Input value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/..." />
-            </div>
-            <div className="space-y-1">
-              <Label>🎵 TikTok</Label>
-              <Input value={tiktokUrl} onChange={e => setTiktokUrl(e.target.value)} placeholder="https://tiktok.com/..." />
-            </div>
-          </div>
-        </section>
-
-        {/* Accent Color */}
-        <section className="rounded-xl border border-border bg-card p-5 space-y-3">
-          <h2 className="font-semibold text-foreground">Cor de Destaque</h2>
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-            {ACCENT_COLORS.map(c => (
-              <button
-                key={c.label}
-                onClick={() => setAccentColor(c.value)}
-                className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-colors ${accentColor === c.value ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
-              >
-                <div
-                  className="h-8 w-8 rounded-full border border-border"
-                  style={{ backgroundColor: c.value ? `hsl(${c.value})` : 'hsl(var(--accent))' }}
-                />
-                <span className="text-[11px] text-muted-foreground">{c.label}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Sections Order */}
-        <section className="rounded-xl border border-border bg-card p-5 space-y-3">
-          <h2 className="font-semibold text-foreground">Ordem das Seções</h2>
-          <p className="text-xs text-muted-foreground">Reordene e escolha quais seções aparecem na sua página.</p>
-          <div className="space-y-2">
-            {sectionsOrder.map((sectionId, index) => {
-              const section = ALL_SECTIONS.find(s => s.id === sectionId);
-              if (!section) return null;
-              const isHidden = hiddenSections.includes(sectionId);
-              return (
-                <div key={sectionId} className={`flex items-center gap-3 rounded-lg border border-border p-3 transition-opacity ${isHidden ? 'opacity-50' : ''}`}>
-                  <div className="flex flex-col gap-0.5">
-                    <button onClick={() => moveSection(index, 'up')} disabled={index === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30">
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={() => moveSection(index, 'down')} disabled={index === sectionsOrder.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30">
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <span className="flex-1 text-sm font-medium text-foreground">{section.label}</span>
-                  <Switch checked={!isHidden} onCheckedChange={() => toggleSection(sectionId)} />
+        {/* TAB: Content */}
+        {activeTab === 'content' && (
+          <div className="space-y-5">
+            {/* Headline & Tagline */}
+            <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <h2 className="font-semibold text-foreground flex items-center gap-2">
+                <Type className="h-4 w-4 text-accent" /> Textos de Destaque
+              </h2>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="headline">Headline (frase principal)</Label>
+                  <Input id="headline" value={headline} onChange={e => setHeadline(e.target.value)} placeholder="Ex: Eletricista profissional com 10 anos de experiência" />
                 </div>
-              );
-            })}
-          </div>
-        </section>
+                <div className="space-y-1.5">
+                  <Label htmlFor="tagline">Tagline (subtítulo)</Label>
+                  <Input id="tagline" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Ex: Atendimento rápido e garantia de qualidade" />
+                </div>
+              </div>
+            </section>
 
-        {/* Save button bottom */}
-        <div className="flex justify-end pb-8">
-          <Button onClick={handleSave} disabled={saving} size="lg">
-            {saving ? 'Salvando...' : 'Salvar Configurações'}
+            {/* CTA Texts */}
+            <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <h2 className="font-semibold text-foreground">📢 Textos dos Botões</h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ctaText">Botão principal de contato</Label>
+                  <Input id="ctaText" value={ctaText} onChange={e => setCtaText(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ctaWhatsapp">Botão do WhatsApp</Label>
+                  <Input id="ctaWhatsapp" value={ctaWhatsappText} onChange={e => setCtaWhatsappText(e.target.value)} />
+                </div>
+              </div>
+            </section>
+
+            {/* Social Media */}
+            <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <h2 className="font-semibold text-foreground flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-accent" /> Redes Sociais
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5"><Instagram className="h-4 w-4" /> Instagram</Label>
+                  <Input value={instagramUrl} onChange={e => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/..." />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5"><Facebook className="h-4 w-4" /> Facebook</Label>
+                  <Input value={facebookUrl} onChange={e => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/..." />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5"><Youtube className="h-4 w-4" /> YouTube</Label>
+                  <Input value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/..." />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>🎵 TikTok</Label>
+                  <Input value={tiktokUrl} onChange={e => setTiktokUrl(e.target.value)} placeholder="https://tiktok.com/..." />
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* TAB: Sections */}
+        {activeTab === 'sections' && (
+          <div className="space-y-5">
+            <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <div>
+                <h2 className="font-semibold text-foreground flex items-center gap-2">
+                  <Layout className="h-4 w-4 text-accent" /> Ordem das Seções
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">Arraste para reordenar e ative/desative cada seção.</p>
+              </div>
+              <div className="space-y-2">
+                {sectionsOrder.map((sectionId, index) => {
+                  const section = ALL_SECTIONS.find(s => s.id === sectionId);
+                  if (!section) return null;
+                  const isHidden = hiddenSections.includes(sectionId);
+                  return (
+                    <div
+                      key={sectionId}
+                      className={`flex items-center gap-3 rounded-lg border border-border p-3 transition-all ${
+                        isHidden ? 'opacity-40 bg-muted/30' : 'bg-card'
+                      }`}
+                    >
+                      <CategoryIcon icon={section.icon} size={18} className="text-foreground" />
+                      <div className="flex flex-col gap-0.5">
+                        <button onClick={() => moveSection(index, 'up')} disabled={index === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-20">
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => moveSection(index, 'down')} disabled={index === sectionsOrder.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-20">
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <span className="flex-1 text-sm font-medium text-foreground">{section.label}</span>
+                      <Switch checked={!isHidden} onCheckedChange={() => toggleSection(sectionId)} />
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* Floating Save */}
+        <div className="sticky bottom-4 flex justify-end pb-4">
+          <Button onClick={handleSave} disabled={saving} size="lg" variant="accent" className="shadow-lg">
+            {saving ? 'Salvando...' : '💾 Salvar Configurações'}
           </Button>
         </div>
       </div>

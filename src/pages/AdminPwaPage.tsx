@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -13,8 +14,10 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Smartphone, Download, Eye, MousePointerClick, XCircle, CheckCircle2, BarChart3, Settings, MessageSquare, Monitor, Palette, Clock } from 'lucide-react';
 import type { PwaSettings } from '@/hooks/usePwaInstall';
+import AdminPwaCityStatsCard from '@/components/admin/AdminPwaCityStatsCard';
 
 const AdminPwaPage = () => {
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<PwaSettings | null>(null);
 
@@ -60,7 +63,7 @@ const AdminPwaPage = () => {
     if (settings && !form) {
       setForm(settings);
     }
-  }, [settings, form]);
+  }, [settings]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: Partial<PwaSettings>) => {
@@ -88,7 +91,7 @@ const AdminPwaPage = () => {
     setForm(prev => prev ? { ...prev, [key]: value } : null);
   };
 
-  if (isLoading || !form) {
+  if (adminLoading || isLoading || !form) {
     return (
       <AdminLayout>
         <div className="space-y-3 max-w-md mx-auto py-12">
@@ -171,6 +174,9 @@ const AdminPwaPage = () => {
             </Card>
           </div>
         )}
+
+        {/* Adoção do app por cidade (Curitiba/SJP em destaque) */}
+        <AdminPwaCityStatsCard />
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Master Toggle + Points */}

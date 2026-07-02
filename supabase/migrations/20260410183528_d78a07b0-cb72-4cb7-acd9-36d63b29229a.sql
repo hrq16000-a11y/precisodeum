@@ -1,0 +1,1 @@
+ALTER TABLE public.providers ADD COLUMN cnpj TEXT DEFAULT NULL;

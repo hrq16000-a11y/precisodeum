@@ -1,0 +1,343 @@
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { logAuditAction } from '@/hooks/useAuditLog';
+import { fetchAllMunicipalities, normalize, type CityResult } from '@/lib/geoUtils';
+import { geocodeAddress } from '@/lib/geocodeAddress';
+import { Search, Loader2, MapPin } from 'lucide-react';
+import PhoneMaskedInput from '@/components/PhoneMaskedInput';
+import { sanitizePhone } from '@/lib/whatsapp';
+import {
+  normalizePhoneBR,
+  isValidPhoneBR,
+  shouldEnforcePhone,
+  PHONE_INVALID_MESSAGE,
+} from '@/lib/validation/phoneNormalization';
+import CategoryCombobox from '@/components/admin/CategoryCombobox';
+import UFSelect from '@/components/admin/UFSelect';
+import { formatCityState } from '@/lib/locationFormat';
+
+interface Props {
+  provider: any;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+const ProviderEditDialog = ({ provider, onClose, onSaved }: Props) => {
+  const [form, setForm] = useState({
+    business_name: provider.business_name || '',
+    city: provider.city || '',
+    state: provider.state || '',
+    neighborhood: provider.neighborhood || '',
+    cnpj: provider.cnpj || '',
+    phone: provider.phone || '',
+    whatsapp: provider.whatsapp || '',
+    description: provider.description || '',
+    category_id: provider.category_id || '',
+    website: provider.website || '',
+    working_hours: provider.working_hours || '',
+    years_experience: provider.years_experience || 0,
+    latitude: provider.latitude ?? null as number | null,
+    longitude: provider.longitude ?? null as number | null,
+  });
+  const [categories, setCategories] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
+
+  // City autocomplete
+  const [citySearch, setCitySearch] = useState(
+    provider.city ? (formatCityState(provider.city, provider.state, ', ') || provider.city) : ''
+  );
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [allCities, setAllCities] = useState<CityResult[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    supabase.from('categories').select('id, name, icon, parent_id').is('deleted_at', null).order('name')
+      .then(({ data }) => setCategories(data || []));
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target as Node)) setShowCitySuggestions(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const loadCities = useCallback(() => {
+    if (allCities.length > 0) return;
+    setCitiesLoading(true);
+    fetchAllMunicipalities().then((cities) => { setAllCities(cities); setCitiesLoading(false); });
+  }, [allCities.length]);
+
+  const filteredCities = useMemo(() => {
+    if (!citySearch.trim()) return allCities.slice(0, 10);
+    const q = normalize(citySearch);
+    const terms = q.split(/\s+/).filter(Boolean);
+    return allCities.filter(c => {
+      const cn = normalize(c.name);
+      const sn = normalize(c.state);
+      return terms.every(t => cn.includes(t) || sn.includes(t));
+    }).slice(0, 10);
+  }, [citySearch, allCities]);
+
+  const handleCitySelect = async (c: CityResult) => {
+    setForm(prev => ({ ...prev, city: c.name, state: c.state }));
+    setCitySearch(`${c.name}, ${c.state}`);
+    setShowCitySuggestions(false);
+    // Geocoding invisível
+    const { latitude, longitude } = await geocodeAddress({
+      city: c.name,
+      state: c.state,
+      neighborhood: form.neighborhood,
+    });
+    setForm(prev => ({ ...prev, latitude, longitude }));
+  };
+
+  // Phone → WhatsApp auto-sync
+  const handlePhoneChange = useCallback((name: string, rawValue: string) => {
+    setForm(prev => {
+      const next = { ...prev, [name]: rawValue };
+      if (name === 'phone' && (!prev.whatsapp || prev.whatsapp === prev.phone)) {
+        next.whatsapp = rawValue;
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSave = async () => {
+    if (!form.city || !form.state) { toast.error('Selecione uma cidade válida'); return; }
+    setPhoneError(null);
+    setWhatsappError(null);
+
+    // FASE 1.6.2 — só valida quando mudou (preserva legado)
+    const prevPhone = provider.phone || '';
+    const prevWhatsapp = provider.whatsapp || '';
+    if (form.phone && shouldEnforcePhone(form.phone, prevPhone) && !isValidPhoneBR(form.phone)) {
+      setPhoneError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'provider',
+        resource_id: provider.id,
+        details: { field: 'phone', source: 'admin_provider_edit_dialog', target_user_id: provider.user_id, reason: 'invalid_phone' },
+      }).catch(() => undefined);
+      return;
+    }
+    if (form.whatsapp && shouldEnforcePhone(form.whatsapp, prevWhatsapp) && !isValidPhoneBR(form.whatsapp)) {
+      setWhatsappError(PHONE_INVALID_MESSAGE);
+      toast.error(PHONE_INVALID_MESSAGE);
+      logAuditAction({
+        action: 'admin_validation_blocked',
+        resource_type: 'provider',
+        resource_id: provider.id,
+        details: { field: 'whatsapp', source: 'admin_provider_edit_dialog', target_user_id: provider.user_id, reason: 'invalid_phone' },
+      }).catch(() => undefined);
+      return;
+    }
+
+    setSaving(true);
+
+    // Geocoding invisível ao salvar (se algo mudou ou se faltam coords)
+    let lat = form.latitude;
+    let lon = form.longitude;
+    const cityChanged = form.city !== provider.city || form.state !== provider.state || form.neighborhood !== provider.neighborhood;
+    if (cityChanged || lat == null || lon == null) {
+      const geo = await geocodeAddress({
+        city: form.city,
+        state: form.state,
+        neighborhood: form.neighborhood,
+      });
+      if (geo.latitude && geo.longitude) {
+        lat = geo.latitude;
+        lon = geo.longitude;
+      }
+    }
+
+    // PJ: business_name permissivo (sem regra PF de nome completo). Apenas trim.
+    const businessName = typeof form.business_name === 'string' ? form.business_name.trim() : form.business_name;
+
+    // Canonical admin write boundary (Fase 1.6.7).
+    const { updateAdminProvider } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProvider({
+      providerId: provider.id,
+      source: 'admin_provider_edit_dialog:save',
+      skipNormalize: true, // já normalizamos abaixo
+      patch: {
+        business_name: businessName || null,
+        city: form.city,
+        state: form.state,
+        neighborhood: form.neighborhood,
+        cnpj: form.cnpj || null,
+        phone: form.phone ? (normalizePhoneBR(form.phone) || sanitizePhone(form.phone)) : '',
+        whatsapp: form.whatsapp ? (normalizePhoneBR(form.whatsapp) || sanitizePhone(form.whatsapp)) : '',
+        description: form.description,
+        category_id: form.category_id || null,
+        website: form.website || null,
+        working_hours: form.working_hours || null,
+        years_experience: Number(form.years_experience) || 0,
+        latitude: lat,
+        longitude: lon,
+      },
+    });
+
+    if (!res.ok) toast.error('Erro: ' + (res.error?.message || 'Falha ao salvar'));
+    else {
+      await logAuditAction({ action: 'update', resource_type: 'provider', resource_id: provider.id });
+      toast.success('Prestador atualizado!');
+      onSaved();
+      onClose();
+    }
+    setSaving(false);
+  };
+
+  const update = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
+
+  return (
+    <Dialog open onOpenChange={open => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Editar Prestador</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>Nome Fantasia</Label>
+              <Input value={form.business_name} onChange={e => update('business_name', e.target.value)} />
+            </div>
+            <div>
+              <Label>CNPJ</Label>
+              <Input value={form.cnpj} onChange={e => update('cnpj', e.target.value)} placeholder="00.000.000/0000-00" />
+            </div>
+          </div>
+
+          {/* City autocomplete */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="relative" ref={cityDropdownRef}>
+              <Label>Cidade</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  value={citySearch}
+                  onChange={e => { setCitySearch(e.target.value); setShowCitySuggestions(true); loadCities(); }}
+                  onFocus={() => { setShowCitySuggestions(true); loadCities(); }}
+                  placeholder="Buscar cidade..."
+                  className="pl-8"
+                />
+              </div>
+              {showCitySuggestions && (
+                <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md">
+                  {citiesLoading ? (
+                    <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando...</div>
+                  ) : filteredCities.length > 0 ? (
+                    filteredCities.map((c, i) => (
+                      <button key={`${c.name}-${c.state}-${i}`} type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent/10 flex items-center gap-2"
+                        onClick={() => handleCitySelect(c)}>
+                        <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span>{c.name}</span>
+                        <span className="text-muted-foreground text-xs ml-auto">{c.state}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="px-3 py-2 text-sm text-muted-foreground">Nenhuma cidade encontrada</p>
+                  )}
+                </div>
+              )}
+            </div>
+            <div>
+              <Label>Estado (UF) <span className="text-[10px] text-muted-foreground font-normal">— auto ao escolher cidade</span></Label>
+              <UFSelect value={form.state} onChange={(uf) => update('state', uf)} placeholder="UF" />
+            </div>
+            <div>
+              <Label>Bairro</Label>
+              <Input value={form.neighborhood} onChange={e => update('neighborhood', e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="provider-edit-phone">Telefone</Label>
+              <PhoneMaskedInput
+                name="phone"
+                id="provider-edit-phone"
+                value={form.phone}
+                onChange={(n, v) => { handlePhoneChange(n, v); if (phoneError) setPhoneError(null); }}
+                aria-invalid={!!phoneError}
+                aria-describedby={phoneError ? 'provider-edit-phone-error' : undefined}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
+              />
+              {phoneError && (
+                <p id="provider-edit-phone-error" data-testid="provider-edit-phone-error" className="mt-1 text-xs text-destructive">{phoneError}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="provider-edit-whatsapp">WhatsApp</Label>
+              <PhoneMaskedInput
+                name="whatsapp"
+                id="provider-edit-whatsapp"
+                value={form.whatsapp}
+                onChange={(n, v) => { handlePhoneChange(n, v); if (whatsappError) setWhatsappError(null); }}
+                aria-invalid={!!whatsappError}
+                aria-describedby={whatsappError ? 'provider-edit-whatsapp-error' : undefined}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
+              />
+              {whatsappError ? (
+                <p id="provider-edit-whatsapp-error" data-testid="provider-edit-whatsapp-error" className="mt-1 text-xs text-destructive">{whatsappError}</p>
+              ) : (
+                <p className="text-[10px] text-muted-foreground mt-1">Auto-preenchido do Telefone se vazio</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <Label>Categoria</Label>
+            <CategoryCombobox
+              categories={categories}
+              value={form.category_id || null}
+              onChange={(id) => update('category_id', id || '')}
+              placeholder="Digite para buscar (ex: Acu...)"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>Website</Label>
+              <Input value={form.website} onChange={e => update('website', e.target.value)} placeholder="https://..." />
+            </div>
+            <div>
+              <Label>Experiência (anos)</Label>
+              <Input type="number" value={form.years_experience} onChange={e => update('years_experience', e.target.value)} min={0} />
+            </div>
+          </div>
+
+          <div>
+            <Label>Horário de Funcionamento</Label>
+            <Input value={form.working_hours} onChange={e => update('working_hours', e.target.value)} placeholder="Seg-Sex 8h-18h" />
+          </div>
+
+          <div>
+            <Label>Descrição</Label>
+            <Textarea value={form.description} onChange={e => update('description', e.target.value)} rows={3} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? 'Salvando...' : 'Salvar'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default ProviderEditDialog;

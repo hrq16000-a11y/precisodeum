@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, ChevronRight } from 'lucide-react';
+import { MapPin, ChevronRight, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import FadeInSection from '@/components/FadeInSection';
 
 interface City {
   name: string;
@@ -23,43 +22,68 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+const stateColors: Record<string, string> = {
+  SP: 'from-blue-500/10 to-blue-600/5',
+  RJ: 'from-orange-500/10 to-orange-600/5',
+  MG: 'from-red-500/10 to-red-600/5',
+  PR: 'from-green-500/10 to-green-600/5',
+  SC: 'from-teal-500/10 to-teal-600/5',
+  RS: 'from-indigo-500/10 to-indigo-600/5',
+};
+
 const CitiesSection = ({ cities }: Props) => {
-  const randomCities = useMemo(() => shuffle(cities).slice(0, 6), [cities]);
+  const randomCities = useMemo(() => shuffle(cities).slice(0, 8), [cities]);
 
   if (randomCities.length === 0) return null;
 
   return (
     <section className="py-10">
       <div className="container">
-        <FadeInSection className="mb-6 text-center">
+        <div className="mb-6 text-center animate-fade-in">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-3">
+            <Building2 className="h-3.5 w-3.5" />
+            Cobertura nacional
+          </div>
           <h2 className="font-display text-xl font-bold text-foreground md:text-2xl">
             Profissionais por Cidade
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Encontre profissionais nas cidades com serviços ativos
           </p>
-        </FadeInSection>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {randomCities.map((city, i) => (
-            <FadeInSection key={city.slug} delay={i * 0.06}>
-              <Link
-                to={`/cidade/${city.slug}`}
-                className="group flex flex-col items-center rounded-xl border border-border bg-card p-4 text-center shadow-card transition-all duration-300 hover:border-primary/40 hover:-translate-y-1 hover:shadow-card-hover"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 transition-transform duration-300 group-hover:scale-110">
-                  <MapPin className="h-4 w-4 text-accent" />
-                </div>
-                <span className="mt-2 font-display text-sm font-bold text-foreground">{city.name}</span>
-                <span className="text-[11px] text-muted-foreground">{city.state}</span>
-              </Link>
-            </FadeInSection>
-          ))}
         </div>
-        <FadeInSection delay={0.3} className="mt-5 text-center">
-          <Button variant="outline" size="sm" className="rounded-full gap-1.5" asChild>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 [content-visibility:auto] [contain-intrinsic-size:1px_400px]">
+          {randomCities.map((city, i) => {
+            const gradient = stateColors[city.state] || 'from-primary/10 to-accent/5';
+            return (
+              <div
+                key={city.slug}
+                className="animate-fade-in"
+                style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'backwards' }}
+              >
+                <Link
+                  to={`/cidade/${city.slug}`}
+                  className="group relative flex flex-col items-center rounded-xl border border-border bg-card p-5 text-center shadow-card transition-all duration-300 hover:border-primary/40 hover:-translate-y-1 hover:shadow-card-hover overflow-hidden"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-out" />
+
+                  <div className="relative flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-accent/10 to-accent/20 transition-transform duration-300 group-hover:shadow-md group-hover:scale-110">
+                    <MapPin className="h-5 w-5 text-accent" />
+                  </div>
+                  <span className="relative mt-2.5 font-display text-sm font-bold text-foreground group-hover:text-primary transition-colors">{city.name}</span>
+                  <span className="relative text-[11px] text-muted-foreground font-medium">{city.state}</span>
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 text-center animate-fade-in" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
+          <Button variant="outline" size="sm" className="rounded-full gap-1.5 shadow-sm" asChild>
             <Link to="/cidades">Ver mais cidades <ChevronRight className="h-3 w-3" /></Link>
           </Button>
-        </FadeInSection>
+        </div>
       </div>
     </section>
   );

@@ -1,0 +1,1 @@
+ALTER TABLE public.services ADD COLUMN view_count integer NOT NULL DEFAULT 0;

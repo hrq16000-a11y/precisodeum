@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAdmin } from '@/hooks/useAdmin';
-import { openSafeUrlInNewTab } from '@/lib/safeNavigation';
 
 const emptyForm = { title: '', description: '', url: '', icon: '🔗', display_order: 0, active: true };
 
@@ -86,7 +86,7 @@ const AdminCommunityPage = () => {
               <div><Label>Título *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></div>
               <div><Label>Descrição</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
               <div><Label>URL *</Label><Input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required /></div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div><Label>Ícone (emoji)</Label><Input value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} /></div>
                 <div><Label>Ordem</Label><Input type="number" value={form.display_order} onChange={(e) => setForm({ ...form, display_order: Number(e.target.value) })} /></div>
               </div>
@@ -106,7 +106,7 @@ const AdminCommunityPage = () => {
         ) : (links as any[]).map((link) => (
           <div key={link.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
             <div className="flex items-center gap-3 min-w-0">
-              <span className="text-xl">{link.icon}</span>
+              <CategoryIcon icon={link.icon} size={20} className="text-foreground" />
               <div>
                 <h3 className="text-sm font-medium text-foreground">{link.title}</h3>
                 <p className="text-xs text-muted-foreground truncate max-w-xs">{link.url}</p>
@@ -116,9 +116,9 @@ const AdminCommunityPage = () => {
               </span>
             </div>
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" onClick={() => openSafeUrlInNewTab(link.url)}><ExternalLink className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => openEdit(link)}><Pencil className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(link.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => window.open(link.url, '_blank')} aria-label="Abrir link em nova aba"><ExternalLink className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => openEdit(link)} aria-label="Editar link"><Pencil className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(link.id)} aria-label="Excluir link"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
           </div>
         ))}

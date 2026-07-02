@@ -1,18 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useSponsorsBySlot } from '@/hooks/useSponsors';
+import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
+import { getPositionConfig } from '@/config/sponsorPositions';
 import SponsorImage from '@/components/SponsorImage';
-
-interface Sponsor {
-  id: string;
-  title: string;
-  image_url: string | null;
-  link_url: string | null;
-  position: string;
-  tier?: string;
-  start_date?: string | null;
-  end_date?: string | null;
-}
+import { sponsorInternalHref } from '@/lib/sponsorLink';
 
 interface SponsorAdProps {
   position: string;
@@ -20,62 +12,17 @@ interface SponsorAdProps {
   layout?: 'horizontal' | 'vertical' | 'inline';
 }
 
-function weightedShuffle(sponsors: Sponsor[]): Sponsor[] {
-  const weighted = sponsors.flatMap((s) => {
-    const tier = (s as any).tier || 'basic';
-    const weight = tier === 'premium' ? 5 : tier === 'destaque' ? 3 : 1;
-    return Array(weight).fill(s);
-  });
-  const shuffled = weighted.sort(() => Math.random() - 0.5);
-  // Deduplicate keeping order
-  const seen = new Set<string>();
-  return shuffled.filter((s) => {
-    if (seen.has(s.id)) return false;
-    seen.add(s.id);
-    return true;
-  });
-}
-
-export function useSponsorsByPosition(position: string) {
-  return useQuery({
-    queryKey: ['sponsors', position],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('sponsors')
-        .select('*')
-        .eq('active', true)
-        .eq('position', position)
-        .order('display_order');
-      const now = new Date().toISOString().split('T')[0];
-      return ((data || []) as Sponsor[]).filter((s: any) => {
-        if (s.start_date && s.start_date > now) return false;
-        if (s.end_date && s.end_date < now) return false;
-        return true;
-      });
-    },
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-function trackImpression(id: string) {
-  supabase.rpc('increment_sponsor_impression', { sponsor_id: id } as any).catch((err) => {
-    console.error('Sponsor impression tracking error:', err);
-  });
-}
-
-function trackClick(id: string) {
-  supabase.rpc('increment_sponsor_click', { sponsor_id: id } as any).catch((err) => {
-    console.error('Sponsor click tracking error:', err);
-  });
-}
-
 const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorAdProps) => {
-  const { data: rawSponsors = [] } = useSponsorsByPosition(position);
-  const sponsors = useMemo(() => weightedShuffle(rawSponsors), [rawSponsors]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const tracked = useRef(new Set<string>());
+  const { data: rawSponsors = [], trackImpression, trackClick } = useSponsorsBySlot(position);
+  const config = getPositionConfig(position);
 
-  // Rotate for single-display positions
+  const sponsors = useMemo(
+    () => rankAndOptimise(rawSponsors, { maxItems: config.maxItems }),
+    [rawSponsors, config.maxItems],
+  );
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   useEffect(() => {
     if (sponsors.length <= 1) return;
     const interval = setInterval(() => {
@@ -84,50 +31,54 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
     return () => clearInterval(interval);
   }, [sponsors.length]);
 
-  // Track impression on mount/change
   useEffect(() => {
     if (sponsors.length === 0) return;
     if (layout === 'vertical' || layout === 'inline') {
       sponsors.forEach((s) => {
-        if (!tracked.current.has(s.id)) {
-          tracked.current.add(s.id);
-          trackImpression(s.id);
-        }
+        trackImpression(s.id);
+        recordImpression(s.id);
       });
     } else {
       const s = sponsors[currentIndex];
-      if (s && !tracked.current.has(s.id)) {
-        tracked.current.add(s.id);
+      if (s) {
         trackImpression(s.id);
+        recordImpression(s.id);
       }
     }
-  }, [sponsors, currentIndex, layout]);
+  }, [sponsors, currentIndex, layout, trackImpression]);
 
   if (sponsors.length === 0) return null;
-
-  const handleClick = (s: Sponsor) => {
-    trackClick(s.id);
-  };
 
   if (layout === 'vertical') {
     return (
       <div className={`space-y-3 ${className}`}>
-        {sponsors.map((s) => (
-          <a
-            key={s.id}
-            href={s.link_url || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => handleClick(s)}
-            className="block rounded-xl bg-card p-3 shadow-card transition-all hover:shadow-card-hover"
-          >
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
-            {s.image_url && (
-              <SponsorImage src={s.image_url} alt={s.title} containerClassName="mt-2 rounded-lg" />
-            )}
-            <p className="mt-2 text-xs font-medium text-foreground">{s.title}</p>
-          </a>
-        ))}
+        {sponsors.map((s) => {
+          const visualSrc = s.logo_url || s.image_url;
+          const internalHref = sponsorInternalHref(s.slug);
+          return (
+            <div key={s.id} className="rounded-xl bg-card p-3 shadow-card transition-all hover:shadow-card-hover">
+              <a
+                href={s.link_url || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackClick(s.id)}
+                className="block"
+              >
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
+                {visualSrc && (
+                  <SponsorImage src={visualSrc} alt={s.title} containerClassName="mt-2 rounded-lg" />
+                )}
+              </a>
+              {internalHref ? (
+                <Link to={internalHref} className="mt-2 block text-xs font-medium text-foreground hover:text-accent hover:underline">
+                  {s.title}
+                </Link>
+              ) : (
+                <p className="mt-2 text-xs font-medium text-foreground">{s.title}</p>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -135,48 +86,76 @@ const SponsorAd = ({ position, className = '', layout = 'horizontal' }: SponsorA
   if (layout === 'inline') {
     return (
       <div className={`flex flex-wrap items-center justify-center gap-4 ${className}`}>
-        {sponsors.map((s) => (
-          <a
-            key={s.id}
-            href={s.link_url || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => handleClick(s)}
-            className="opacity-60 transition-opacity hover:opacity-100"
-            title={s.title}
-          >
-            {s.image_url ? (
-              <img src={s.image_url} alt={s.title} className="h-8 max-w-[140px] object-contain" loading="lazy" />
-            ) : (
-              <span className="text-xs text-primary-foreground/50">{s.title}</span>
-            )}
-          </a>
-        ))}
+        {sponsors.map((s) => {
+          const visualSrc = s.logo_url || s.image_url;
+          return (
+            <a
+              key={s.id}
+              href={s.link_url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackClick(s.id)}
+              className="opacity-60 transition-opacity hover:opacity-100"
+              title={s.title}
+            >
+              {visualSrc ? (
+                // PR-A6: decoding async libera o main thread durante o paint inicial.
+                <img src={visualSrc} alt={s.title} className="h-8 max-w-[140px] object-contain" loading="lazy" decoding="async" />
+
+
+              ) : (
+                <span className="text-xs text-primary-foreground/50">{s.title}</span>
+              )}
+            </a>
+          );
+        })}
       </div>
     );
   }
 
-  // Rotational horizontal (between sections)
   const current = sponsors[currentIndex] || sponsors[0];
+  const currentVisualSrc = current.logo_url || current.image_url;
+  const currentInternalHref = sponsorInternalHref(current.slug);
+
   return (
     <section className={`py-6 ${className}`}>
       <div className="container">
-        <div className="rounded-xl bg-muted/30 p-4">
+        <div className="rounded-xl bg-muted/30 p-4 overflow-hidden">
           <span className="mb-2 block text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
           <a
             href={current.link_url || '#'}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => handleClick(current)}
-            className="block text-center transition-opacity hover:opacity-80"
+            onClick={() => trackClick(current.id)}
+            className="block transition-opacity hover:opacity-80"
             title={current.title}
           >
-            {current.image_url ? (
-              <SponsorImage src={current.image_url} alt={current.title} containerClassName="mx-auto max-w-[300px] rounded-lg" />
+            {currentVisualSrc ? (
+              <img
+                src={currentVisualSrc}
+                alt={current.title}
+                className="w-full object-cover object-center"
+                style={{ aspectRatio: '8/1', borderRadius: 10 }}
+                width={1600}
+                height={200}
+                loading="lazy"
+              />
             ) : (
-              <span className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">{current.title}</span>
+              <div className="flex items-center justify-center bg-card" style={{ aspectRatio: '8/1' }}>
+                <span className="text-sm font-medium text-muted-foreground">{current.title}</span>
+              </div>
             )}
           </a>
+          {currentInternalHref && (
+            <div className="mt-2 text-center">
+              <Link
+                to={currentInternalHref}
+                className="text-xs font-medium text-muted-foreground hover:text-accent hover:underline"
+              >
+                {current.title}
+              </Link>
+            </div>
+          )}
           {sponsors.length > 1 && (
             <div className="mt-2 flex justify-center gap-1">
               {sponsors.map((_, i) => (

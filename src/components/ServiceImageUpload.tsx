@@ -1,9 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ImagePlus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { ImagePlus, Trash2, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleImageError } from '@/lib/imageResolver';
+import { upsertMedia, deactivateMedia, resolveIdentity } from '@/lib/mediaUtils';
+import { generateBlurDataUrl } from '@/lib/compressImage';
+import { uploadWithFallback } from '@/lib/uploadWithFallback';
+import { classifyUploadError, userMessageFor } from '@/lib/uploadErrors';
+import { validateImageFile } from '@/lib/imageValidation';
+import {
+  UploadProgressIndicator,
+  makeInitialStages,
+  type UploadStagesState,
+} from '@/components/upload/UploadProgressIndicator';
 
 interface ServiceImage {
   id: string;
@@ -19,121 +29,236 @@ interface ServiceImageUploadProps {
 const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
   const [images, setImages] = useState<ServiceImage[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [stages, setStages] = useState<UploadStagesState>(makeInitialStages());
+  const [hasFailed, setHasFailed] = useState(false);
+  const [attemptInfo, setAttemptInfo] = useState<{ attempt: number; max: number; reason?: string } | null>(null);
+  const [localPreviews, setLocalPreviews] = useState<string[]>([]);
+  const pendingFilesRef = useRef<File[]>([]);
+  const previewUrlsRef = useRef<string[]>([]);
 
-  const fetchImages = useCallback(async () => {
+  // Cleanup das object URLs ao desmontar.
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+      previewUrlsRef.current = [];
+    };
+  }, []);
+
+  const fetchImages = async () => {
     const { data } = await supabase
       .from('service_images')
       .select('*')
       .eq('service_id', serviceId)
       .order('display_order');
     if (data) setImages(data);
-  }, [serviceId]);
+  };
 
   useEffect(() => {
-    void fetchImages();
-  }, [fetchImages]);
+    fetchImages();
+  }, [serviceId]);
 
-  /** Get user_ref for media table */
-  const getUserRef = async (): Promise<string | null> => {
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_ref')
-        .eq('id', userId)
-        .maybeSingle();
-      return data?.user_ref || null;
-    } catch {
-      return null;
-    }
-  };
-
-  /** Insert into media table (additive, non-blocking) */
-  const insertMedia = async (publicUrl: string, storagePath: string, file: File) => {
-    try {
-      const userRef = await getUserRef();
-      await supabase.from('media').insert({
-        user_ref: userRef,
-        entity_type: 'service',
-        entity_ref: serviceId,
-        original_name: file.name,
-        storage_path: storagePath,
-        public_url: publicUrl,
-        mime_type: file.type || 'image/jpeg',
-        size_original: file.size,
-        is_active: true,
-      });
-    } catch {
-      // Non-blocking: media insert failure should not break upload
-    }
-  };
+  const MAX_IMAGES = 5; // 1 capa + 4 conteúdos
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    const remaining = MAX_IMAGES - images.length;
+    if (remaining <= 0) {
+      toast.error(`Máximo de ${MAX_IMAGES} fotos por serviço (1 capa + 4 conteúdos).`);
+      e.target.value = '';
+      return;
+    }
+
+    const candidates = Array.from(files).slice(0, remaining);
+    if (files.length > remaining) {
+      toast.warning(`Só ${remaining} foto(s) restantes. Apenas as primeiras serão enviadas.`);
+    }
+
+    // Valida tipo/tamanho/dimensões de cada arquivo ANTES de iniciar o batch
+    const toUpload: File[] = [];
+    for (const f of candidates) {
+      const v = await validateImageFile(f, {
+        maxSizeBytes: 5 * 1024 * 1024,
+        minDimension: 64,
+        maxDimension: 6000,
+      });
+      if (!v.ok) {
+        toast.error(`${f.name}: ${v.message}`);
+        continue;
+      }
+      toUpload.push(f);
+    }
+
+    if (toUpload.length === 0) {
+      e.target.value = '';
+      return;
+    }
+
+    // Prévia local IMEDIATA (mantém UI responsiva enquanto comprime/envia)
+    previewUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    const newPreviews = toUpload.map((f) => URL.createObjectURL(f));
+    previewUrlsRef.current = newPreviews;
+    setLocalPreviews(newPreviews);
+
+    await runBatch(toUpload);
+    e.target.value = '';
+  };
+
+  const runBatch = async (toUpload: File[]) => {
+    pendingFilesRef.current = toUpload;
     setUploading(true);
+    setHasFailed(false);
+    setAttemptInfo(null);
+    setStages(makeInitialStages());
+
     try {
-      for (const file of Array.from(files)) {
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error(`${file.name} excede 5MB`);
-          continue;
-        }
-
-        const ext = file.name.split('.').pop();
-        const path = `${userId}/${serviceId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('service-images')
-          .upload(path, file);
-
-        if (uploadError) {
-          toast.error('Erro no upload: ' + uploadError.message);
-          continue;
-        }
-
-        const { data: urlData } = supabase.storage
-          .from('service-images')
-          .getPublicUrl(path);
-
-        const maxOrder = images.length > 0 ? Math.max(...images.map(i => i.display_order)) + 1 : 0;
-
-        await supabase.from('service_images').insert({
-          service_id: serviceId,
-          image_url: urlData.publicUrl,
-          display_order: maxOrder,
-        });
-
-        // Also insert into media table (additive, non-blocking)
-        await insertMedia(urlData.publicUrl, `service-images/${path}`, file);
+      const { userRef } = await resolveIdentity(userId);
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Você precisa estar logado');
+        return;
       }
 
-      toast.success('Imagens enviadas!');
+      let nextOrder = images.length > 0 ? Math.max(...images.map(i => i.display_order)) + 1 : 0;
+      const failed: File[] = [];
+
+      for (const raw of toUpload) {
+        // Validação já foi feita no handleUpload — sem dupla checagem aqui.
+        setStages(makeInitialStages());
+
+        try {
+          const result = await uploadWithFallback<any>(raw, {
+            url: `https://${projectId}.supabase.co/functions/v1/optimize-image`,
+            headers: {
+              apikey: anonKey,
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            baseMaxDimension: 1200,
+            baseTargetKB: 300,
+            buildFormData: (file) => {
+              const fd = new FormData();
+              fd.append('file', file);
+              fd.append('bucket', 'service-images');
+              fd.append('folder', `${userId}/${serviceId}`);
+              return fd;
+            },
+            onStage: ({ stage, status, errorKind, errorMessage }) => {
+              setStages((prev) => {
+                if (stage === 'fallback') return prev;
+                if (status === 'error') {
+                  return {
+                    ...prev,
+                    [stage]: 'error',
+                    errorStage: stage as any,
+                    errorKind: errorKind ?? 'unknown',
+                    errorMessage: errorMessage ?? null,
+                  };
+                }
+                return {
+                  ...prev,
+                  [stage]: status === 'start' ? 'active' : 'done',
+                };
+              });
+            },
+            onAttempt: (a, max, reason) => {
+              setAttemptInfo({ attempt: a, max, reason });
+              if (a > 1) {
+                setStages((prev) => ({ ...prev, retry: 'active' }));
+                const msg =
+                  reason === 'timeout'
+                    ? `${raw.name}: tempo esgotado, retentando (${a}/${max})…`
+                    : reason === 'network'
+                    ? `${raw.name}: sem rede, reenviando (${a}/${max})…`
+                    : `${raw.name}: tentando novamente (${a}/${max})…`;
+                toast.message(msg);
+              }
+            },
+          });
+
+          const data = result.data;
+          if (data.error) {
+            failed.push(raw);
+            continue;
+          }
+
+          await supabase.from('service_images').insert({
+            service_id: serviceId,
+            image_url: data.url,
+            display_order: nextOrder,
+          });
+          nextOrder++;
+
+          if (userRef && data.path) {
+            const blurDataUrl = await generateBlurDataUrl(raw);
+            await upsertMedia({
+              storagePath: `service-images/${data.path}`,
+              publicUrl: data.url,
+              originalName: raw.name,
+              mimeType: raw.type || 'image/jpeg',
+              entityType: 'service',
+              entityRef: serviceId,
+              userRef,
+              sizeOriginal: raw.size,
+              blurDataUrl: blurDataUrl || undefined,
+            });
+          }
+
+          if (result.fallbackLevel > 0) {
+            toast.success(`${raw.name} enviada (qualidade reduzida — nível ${result.fallbackLevel}).`);
+          }
+        } catch (err) {
+          failed.push(raw);
+          const kind = classifyUploadError(err);
+          toast.error(`${raw.name}: ${userMessageFor(kind)}`, {
+            description: 'Não foi possível enviar a foto. Você pode tentar novamente ou pular e adicionar depois.',
+          });
+        }
+      }
+
+      if (failed.length > 0) {
+        pendingFilesRef.current = failed;
+        setHasFailed(true);
+        setStages((prev) => ({ ...prev, upload: 'error' }));
+      } else {
+        toast.success('Imagens enviadas!');
+        pendingFilesRef.current = [];
+        // Limpa prévias locais — agora as fotos reais aparecem no grid.
+        previewUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+        previewUrlsRef.current = [];
+        setLocalPreviews([]);
+      }
       fetchImages();
     } catch (err: any) {
-      toast.error('Erro: ' + err.message);
+      toast.error('Não foi possível enviar a foto. Você pode tentar novamente ou pular e adicionar depois.', {
+        description: err?.message,
+      });
+      setHasFailed(true);
     } finally {
       setUploading(false);
-      e.target.value = '';
+    }
+  };
+
+  const handleRetry = async () => {
+    if (pendingFilesRef.current.length > 0) {
+      await runBatch(pendingFilesRef.current);
     }
   };
 
   const handleDelete = async (img: ServiceImage) => {
-    // Extract path from URL
     const urlParts = img.image_url.split('/service-images/');
     if (urlParts[1]) {
       await supabase.storage.from('service-images').remove([decodeURIComponent(urlParts[1])]);
     }
     await supabase.from('service_images').delete().eq('id', img.id);
 
-    // Also deactivate in media table (non-blocking)
-    try {
-      await supabase
-        .from('media')
-        .update({ is_active: false })
-        .eq('public_url', img.image_url);
-    } catch {
-      // The media registry is auxiliary; storage deletion must still succeed.
-    }
+    // Deactivate in media table with audit
+    await deactivateMedia(
+      urlParts[1] ? `service-images/${decodeURIComponent(urlParts[1])}` : img.image_url,
+      'service'
+    );
 
     toast.success('Imagem removida');
     fetchImages();
@@ -144,7 +269,6 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
     if (swapIndex < 0 || swapIndex >= newImages.length) return;
 
-    // Swap display_order
     const tempOrder = newImages[index].display_order;
     newImages[index].display_order = newImages[swapIndex].display_order;
     newImages[swapIndex].display_order = tempOrder;
@@ -157,41 +281,91 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
     fetchImages();
   };
 
+  const reachedMax = images.length >= MAX_IMAGES;
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground">Fotos do serviço</label>
-        <label className="cursor-pointer">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <label className="text-sm font-medium text-foreground">Fotos do serviço</label>
+          <p className="text-[11px] text-muted-foreground">
+            1 capa + até 4 fotos de conteúdo. {images.length}/{MAX_IMAGES} usadas.
+          </p>
+        </div>
+        <label className={reachedMax ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/*"
             multiple
             onChange={handleUpload}
             className="hidden"
-            disabled={uploading}
+            disabled={uploading || reachedMax}
           />
-          <Button variant="outline" size="sm" asChild disabled={uploading}>
+          <Button variant="outline" size="sm" asChild disabled={uploading || reachedMax}>
             <span>
               <ImagePlus className="mr-1 h-4 w-4" />
-              {uploading ? 'Enviando...' : 'Adicionar'}
+              {uploading ? 'Enviando...' : reachedMax ? 'Limite atingido' : 'Adicionar'}
             </span>
           </Button>
         </label>
       </div>
 
+      {/* Prévias locais instantâneas — visíveis enquanto o batch processa. */}
+      {localPreviews.length > 0 && (uploading || hasFailed) && (
+        <div className="flex gap-2 overflow-x-auto rounded-md border border-dashed border-border bg-muted/20 p-2">
+          {localPreviews.map((src, i) => (
+            <div key={src} className="relative flex-shrink-0">
+              <img
+                src={src}
+                alt={`Prévia ${i + 1}`}
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded object-cover opacity-80"
+              />
+              <span className="absolute bottom-0 left-0 right-0 bg-foreground/60 text-center text-[9px] text-background">
+                local
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {(uploading || hasFailed) && (
+        <div className="space-y-2">
+          <UploadProgressIndicator stages={stages} />
+          {attemptInfo && attemptInfo.attempt > 1 && (
+            <p className="text-[11px] text-muted-foreground" aria-live="polite">
+              Tentativa {attemptInfo.attempt}/{attemptInfo.max}
+              {attemptInfo.reason === 'timeout' && ' — tempo esgotado, reenviando…'}
+              {attemptInfo.reason === 'network' && ' — sem rede, aguardando reconexão…'}
+              {attemptInfo.reason === 'server' && ' — servidor instável, retentando…'}
+            </p>
+          )}
+          {hasFailed && !uploading && pendingFilesRef.current.length > 0 && (
+            <Button type="button" variant="outline" size="sm" onClick={handleRetry}>
+              <RefreshCw className="mr-1 h-3 w-3" /> Tentar novamente ({pendingFilesRef.current.length})
+            </Button>
+          )}
+        </div>
+      )}
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {images.map((img, idx) => (
             <div key={img.id} className="relative group rounded-lg overflow-hidden border border-border">
+              {idx === 0 && (
+                <span className="absolute left-1 top-1 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground shadow">
+                  Capa
+                </span>
+              )}
               <img
                 src={img.image_url}
-                alt="Foto do serviço"
+                alt={idx === 0 ? 'Capa do serviço' : `Foto ${idx + 1} do serviço`}
                 className="w-full h-28 object-cover"
                 onError={handleImageError}
               />
               <div className="absolute inset-0 bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                 {idx > 0 && (
-                  <Button variant="secondary" size="sm" className="h-7 w-7 p-0" onClick={() => handleMove(idx, 'up')}>
+                  <Button variant="secondary" size="sm" className="h-7 w-7 p-0" onClick={() => handleMove(idx, 'up')} title={idx === 1 ? 'Tornar capa' : 'Mover para cima'}>
                     <ArrowUp className="h-3 w-3" />
                   </Button>
                 )}
@@ -206,6 +380,12 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {images.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border bg-muted/20 p-6 text-center text-xs text-muted-foreground">
+          Nenhuma foto ainda. A primeira enviada vira a capa do anúncio.
         </div>
       )}
     </div>

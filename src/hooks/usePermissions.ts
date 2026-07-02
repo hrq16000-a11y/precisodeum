@@ -1,0 +1,169 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface UserPermissions {
+  create_users: boolean;
+  edit_users: boolean;
+  delete_users: boolean;
+  view_users: boolean;
+  manage_settings: boolean;
+  view_reports: boolean;
+  manage_billing: boolean;
+}
+
+export interface ProfilePermissions {
+  dashboard: boolean;
+  profile: boolean;
+  services: boolean;
+  my_page: boolean;
+  jobs: boolean;
+  community: boolean;
+  notifications: boolean;
+  leads: boolean;
+  plan: boolean;
+  reviews: boolean;
+  admin_panel: boolean;
+  sponsor_panel: boolean;
+}
+
+const DEFAULT_PERMISSIONS: UserPermissions = {
+  create_users: false,
+  edit_users: false,
+  delete_users: false,
+  view_users: false,
+  manage_settings: false,
+  view_reports: false,
+  manage_billing: false,
+};
+
+const DEFAULT_PROFILE_PERMISSIONS: ProfilePermissions = {
+  dashboard: true,
+  profile: true,
+  services: true,
+  my_page: true,
+  jobs: true,
+  community: true,
+  notifications: true,
+  leads: true,
+  plan: true,
+  reviews: true,
+  admin_panel: true,
+  sponsor_panel: true,
+};
+
+function toProfilePermissions(json: unknown): ProfilePermissions {
+  return { ...DEFAULT_PROFILE_PERMISSIONS, ...((json as Partial<ProfilePermissions>) ?? {}) };
+}
+
+function toUserPermissions(json: unknown): UserPermissions {
+  return { ...DEFAULT_PERMISSIONS, ...((json as Partial<UserPermissions>) ?? {}) };
+}
+
+interface UsePermissionsReturn {
+  permissions: UserPermissions;
+  profilePermissions: ProfilePermissions;
+  levelName: string;
+  levelColor: string;
+  accountTypeName: string;
+  accountTypeColor: string;
+  loading: boolean;
+  hasPermission: (key: keyof UserPermissions) => boolean;
+  hasProfilePermission: (key: keyof ProfilePermissions) => boolean;
+}
+
+export const usePermissions = (): UsePermissionsReturn => {
+  const { profile } = useAuth();
+  const [permissions, setPermissions] = useState<UserPermissions>(DEFAULT_PERMISSIONS);
+  const [profilePermissions, setProfilePermissions] = useState<ProfilePermissions>(DEFAULT_PROFILE_PERMISSIONS);
+  const [levelName, setLevelName] = useState('');
+  const [levelColor, setLevelColor] = useState('');
+  const [accountTypeName, setAccountTypeName] = useState('');
+  const [accountTypeColor, setAccountTypeColor] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!profile) {
+      setPermissions(DEFAULT_PERMISSIONS);
+      setProfilePermissions(DEFAULT_PROFILE_PERMISSIONS);
+      setLevelName('');
+      setLevelColor('');
+      setAccountTypeName('');
+      setAccountTypeColor('');
+      setLoading(false);
+      return;
+    }
+
+    // Read profile-level permissions
+    setProfilePermissions(toProfilePermissions(profile.permissions));
+
+
+    const fetchData = async () => {
+      const levelPromise = profile.level_id
+        ? supabase.from('user_levels').select('name, color').eq('id', profile.level_id).maybeSingle().then(r => r)
+        : Promise.resolve({ data: null } as any);
+
+      const accTypePromise = profile.account_type_id
+        ? supabase.from('account_types').select('name, color').eq('id', profile.account_type_id).maybeSingle().then(r => r)
+        : Promise.resolve({ data: null } as any);
+
+      const [levelRes, accTypeRes] = await Promise.all([levelPromise, accTypePromise]);
+
+      if (levelRes.data) {
+        setLevelName(levelRes.data.name || '');
+        setLevelColor(levelRes.data.color || '');
+        setPermissions(toUserPermissions(profile.permissions));
+      } else {
+        setPermissions(toUserPermissions(profile.permissions));
+        setLevelName('');
+        setLevelColor('');
+      }
+
+      if (accTypeRes.data) {
+        setAccountTypeName(accTypeRes.data.name || '');
+        setAccountTypeColor(accTypeRes.data.color || '');
+      } else {
+        setAccountTypeName('');
+        setAccountTypeColor('');
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [profile?.level_id, profile?.account_type_id, profile?.permissions]);
+
+  const hasPermission = (key: keyof UserPermissions) => permissions[key] === true;
+  const hasProfilePermission = (key: keyof ProfilePermissions) => profilePermissions[key] !== false;
+
+  return { permissions, profilePermissions, levelName, levelColor, accountTypeName, accountTypeColor, loading, hasPermission, hasProfilePermission };
+};
+
+// Map admin paths to required permissions
+export const ADMIN_ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
+  '/admin/usuarios': 'view_users',
+  '/admin/niveis': 'manage_settings',
+  '/admin/tipos-conta': 'manage_settings',
+  '/admin/crm-usuarios': 'view_users',
+  '/admin/configuracoes': 'manage_settings',
+  '/admin/metatags': 'manage_settings',
+  '/admin/menus': 'manage_settings',
+  '/admin/modulos': 'manage_settings',
+  '/admin/backup': 'manage_settings',
+  '/admin/regras': 'manage_billing',
+  '/admin/estatisticas': 'view_reports',
+  '/admin/auditoria': 'view_reports',
+  '/admin/auditoria-rls': 'view_reports',
+};
+
+// Map dashboard paths to required profile permissions
+export const DASHBOARD_ROUTE_PERMISSIONS: Record<string, keyof ProfilePermissions> = {
+  '/dashboard/leads': 'leads',
+  '/dashboard/servicos': 'services',
+  '/dashboard/minha-pagina': 'my_page',
+  '/dashboard/vagas': 'jobs',
+  '/dashboard/comunidade': 'community',
+  '/dashboard/avaliacoes': 'reviews',
+  '/dashboard/plano': 'plan',
+  '/dashboard/patrocinio': 'sponsor_panel',
+};

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 
 interface FadeInSectionProps {
   children: ReactNode;
@@ -7,6 +7,12 @@ interface FadeInSectionProps {
   delay?: number;
   direction?: 'up' | 'down' | 'left' | 'right' | 'none';
   duration?: number;
+  scale?: boolean;
+  blur?: boolean;
+  /** Use viewport-triggered animation instead of mount-triggered */
+  viewportTrigger?: boolean;
+  /** Viewport margin for earlier trigger */
+  viewportMargin?: string;
 }
 
 const directionMap = {
@@ -17,26 +23,51 @@ const directionMap = {
   none: { x: 0, y: 0 },
 };
 
-const FadeInSection = ({
+const FadeInSection = forwardRef<HTMLDivElement, FadeInSectionProps>(({
   children,
   className = '',
   delay = 0,
   direction = 'up',
   duration = 0.6,
-}: FadeInSectionProps) => {
+  scale = false,
+  blur = false,
+  viewportTrigger = true,
+  viewportMargin = '-40px',
+}, ref) => {
   const offset = directionMap[direction];
+
+  const initial = {
+    opacity: 0,
+    ...offset,
+    ...(scale ? { scale: 0.95 } : {}),
+    ...(blur ? { filter: 'blur(8px)' } : {}),
+  };
+
+  const visible = {
+    opacity: 1,
+    x: 0,
+    y: 0,
+    ...(scale ? { scale: 1 } : {}),
+    ...(blur ? { filter: 'blur(0px)' } : {}),
+  };
+
+  const animateProps = viewportTrigger
+    ? { whileInView: visible, viewport: { once: true, margin: viewportMargin } }
+    : { animate: visible };
 
   return (
     <motion.div
-      initial={{ opacity: 0, ...offset }}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
+      ref={ref}
+      initial={initial}
+      {...animateProps}
       transition={{ duration, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={className}
     >
       {children}
     </motion.div>
   );
-};
+});
+
+FadeInSection.displayName = 'FadeInSection';
 
 export default FadeInSection;

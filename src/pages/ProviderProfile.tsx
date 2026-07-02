@@ -1,20 +1,73 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { avatarLarge, portfolioThumb, portfolioFull, coverImage, serviceImageThumb, originalUrl } from '@/lib/imageOptimizer';
+import { avatarLarge, portfolioThumb, portfolioFull, coverImage, optimizedImageUrl, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
-import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube } from 'lucide-react';
-import { whatsappLink, telLink, toCanonical } from '@/lib/whatsapp';
-import ImageLightbox from '@/components/ImageLightbox';
+import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench, Info, UserRound } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
+import WorkingHoursDisplay from '@/components/profile/WorkingHoursDisplay';
+import { useAuthIdentity } from '@/hooks/useAuth';
+import { whatsappLink, telLink, toCanonical, sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
+import { z } from 'zod';
+
+const leadSubmitSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Nome deve ter pelo menos 2 caracteres')
+    .max(100, 'Nome muito longo'),
+  phone: z
+    .string()
+    .min(10, 'Telefone inválido')
+    .max(20, 'Telefone inválido')
+    .transform((val) => sanitizePhone(val)),
+  message: z.string().max(1000, 'Mensagem muito longa').optional(),
+  service: z.string().optional(),
+});
+import { useSubmitGuard } from '@/hooks/useSubmitGuard';
+import { formatLocationString, capitalizeName } from '@/lib/normalize';
+import { resolveAvatarUrl } from '@/lib/providerDisplay';
+import { formatCityState, safeUF } from '@/lib/locationFormat';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StarRating from '@/components/StarRating';
+import ReviewSummary from '@/components/ReviewSummary';
+import ProfileBadge from '@/components/ProfileBadge';
+import ConversionTags from '@/components/ConversionTags';
+import TopProfessionalBadge from '@/components/TopProfessionalBadge';
+import TopProfessionalCriteriaCard from '@/components/TopProfessionalCriteriaCard';
+import PublicActivityBadges from '@/components/PublicActivityBadges';
+import { useTopProfessional } from '@/hooks/useTopProfessional';
+
+/** Componente isolado para usar o hook sem misturar lifecycle no componente principal. */
+const ProviderTopBadgeInline = ({ userId }: { userId: string }) => {
+  const isTop = useTopProfessional(userId);
+  return isTop ? <TopProfessionalBadge size="md" showLabel /> : null;
+};
+import TrustGuarantee from '@/components/TrustGuarantee';
+import DailyPostHighlight from '@/components/profile/DailyPostHighlight';
+import TestimonialsCarousel from '@/components/TestimonialsCarousel';
 import SponsorAd from '@/components/SponsorAd';
+import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadge';
+import PublicAchievementsStrip from '@/components/PublicAchievementsStrip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { lazy, Suspense } from 'react';
-const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+import ErrorGuard from '@/components/ErrorGuard';
+import ShareDialog from '@/components/ShareDialog';
+import { importWithRetry } from '@/lib/lazyWithRetry';
+const ImageLightbox = lazy(() => importWithRetry(() => import('@/components/ImageLightbox')));
+const AdSlot = lazy(() => importWithRetry(() => import('@/components/ads/AdSlot')));
+const SponsorAdSlot = lazy(() => importWithRetry(() => import('@/components/ads/SponsorAdSlot')));
+const SeoEnhancementSection = lazy(() => importWithRetry(() => import('@/components/seo/SeoEnhancementSection')));
+// ── Code-split A7: heavy below-the-fold sections extracted to dedicated chunks
+const ServicesSection = lazy(() => importWithRetry(() => import('@/pages/provider-profile/sections/ServicesSection')));
+const RelatedProvidersSection = lazy(() => importWithRetry(() => import('@/pages/provider-profile/sections/RelatedProvidersSection')));
+import { SectionSkeleton } from '@/pages/provider-profile/sections/_skeleton';
+import { THEME_CLASSES, type ThemeConfig } from '@/pages/provider-profile/sections/theme';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,11 +75,84 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { buildProviderSlugCandidates } from '@/lib/slugify';
+import { sanitizeSlug } from '@/lib/slugify';
 import { toast } from 'sonner';
-import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { extractSpecialties } from '@/lib/specialtyExtractor';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useAvatarFallbackConfig } from '@/hooks/useAvatarFallbackConfig';
+import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
+import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
+import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
+import { resolveWhatsappVariant, getWhatsappCtaLabel, ctaSourceTag } from '@/lib/ctaVariants';
+
+/** Fire-and-forget contact click tracker */
+const getLeadSource = () => {
+  if (typeof window === 'undefined') return 'direto';
+  const params = new URLSearchParams(window.location.search);
+  const source = (params.get('origem') || params.get('utm_source') || '').toLowerCase();
+  if (source.includes('busca') || document.referrer.includes('/buscar')) return 'busca';
+  if (source.includes('categoria') || document.referrer.includes('/categoria/')) return 'categoria';
+  return 'direto';
+};
+
+type ContactCtaOrigin = 'principal' | 'sticky' | 'flutuante' | 'servico';
+
+const trackContactClick = (providerId: string, contactType: 'whatsapp' | 'phone', pagePath: string, serviceName?: string, ctaOrigin: ContactCtaOrigin = 'principal') => {
+  try {
+    (supabase.rpc as any)('log_contact_click', {
+      _provider_id: providerId,
+      _contact_type: contactType,
+      _page_path: pagePath,
+      _visitor_id: crypto.randomUUID?.() || Math.random().toString(36).slice(2),
+    }).then(() => {});
+  } catch { /* silent */ }
+
+  // Also log to audit_log via RPC so the provider's dashboard LeadAnalytics can show it,
+  // including visits from anonymous clients.
+  try {
+    (supabase.rpc as any)('log_provider_public_event', {
+      provider_id: providerId,
+      event_action: contactType === 'whatsapp' ? 'whatsapp_click' : 'phone_click',
+      page_path: pagePath,
+      service_name: serviceName || null,
+      source_marker: getLeadSource(),
+      cta_origin: ctaOrigin,
+    }).then(() => {});
+  } catch { /* silent */ }
+
+  // Registra um lead 'click_only' (separado do pipeline qualificado) para
+  // que o profissional veja no dashboard quem clicou em WhatsApp/Ligar.
+  try {
+    (supabase.rpc as any)('register_click_lead', {
+      _provider_id: providerId,
+      _contact_kind: contactType,
+      _service_needed: serviceName || null,
+      _lead_context: {
+        page_path: pagePath,
+        cta_origin: ctaOrigin,
+        source_marker: getLeadSource(),
+      },
+    }).then(() => {});
+  } catch { /* silent */ }
+};
+
+/** Fire-and-forget profile view tracker (one entry per session per provider). */
+const trackProfileView = (providerId: string) => {
+  try {
+    const key = `pv_logged:${providerId}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    (supabase.rpc as any)('log_provider_public_event', {
+      provider_id: providerId,
+      event_action: 'profile_view',
+      page_path: window.location.pathname,
+      source_marker: getLeadSource(),
+    }).then(() => {});
+  } catch { /* silent */ }
+};
 
 interface PageSettings {
   sections_order: string[];
@@ -45,12 +171,13 @@ interface PageSettings {
 }
 
 const DEFAULT_SETTINGS: PageSettings = {
-  sections_order: ['about', 'portfolio', 'services', 'reviews', 'lead_form'],
+  // Hierarquia de confiança: portfólio (prova visual) + bio (autoridade) ANTES dos serviços (preços).
+  sections_order: ['portfolio', 'about', 'services', 'reviews'],
   hidden_sections: [],
   headline: '',
   tagline: '',
-  cta_text: 'Solicitar Orçamento',
-  cta_whatsapp_text: 'Chamar no WhatsApp',
+  cta_text: 'Falar com o profissional',
+  cta_whatsapp_text: 'Falar no WhatsApp',
   accent_color: '',
   cover_image_url: '',
   instagram_url: '',
@@ -60,17 +187,11 @@ const DEFAULT_SETTINGS: PageSettings = {
   theme: 'default',
 };
 
-interface ThemeConfig {
-  card: string;
-  section: string;
-  page: string;
-  heading: string;
-  button: string;
-  buttonOutline: string;
-  fontBody: string;
-  fontHeading: string;
-  badge: string;
-  input: string;
+interface PortfolioAlbum {
+  id: string;
+  name: string;
+  description: string;
+  photos: { id: string; image_url: string; display_order: number }[];
 }
 
 interface ProviderProfileSnapshot {
@@ -79,122 +200,127 @@ interface ProviderProfileSnapshot {
   reviews: any[];
   portfolioImages: string[];
   portfolioRawUrls: string[];
+  portfolioAlbums: PortfolioAlbum[];
   pageSettings: PageSettings;
+  relatedProviders: any[];
 }
 
 const PROVIDER_PROFILE_CACHE_TTL = 1000 * 60 * 15;
 const providerProfileCache = new Map<string, { ts: number; snapshot: ProviderProfileSnapshot }>();
-type ProviderSlugAliasRow = { provider_id: string; slug: string };
 
-async function resolveProviderBySlug(slug: string) {
-  const candidates = buildProviderSlugCandidates(slug);
-
-  for (const candidate of candidates) {
-    const { data } = await supabase
-      .from('providers')
-      .select('*, categories(name, slug, icon)')
-      .eq('slug', candidate)
-      .maybeSingle();
-
-    if (data) {
-      return { provider: data, matchedSlug: candidate, resolvedByAlias: false };
-    }
+/**
+ * Invalida o cache em memória do perfil público para um slug específico
+ * (ou todos, se nenhum for passado). Use após salvar o Wizard ou qualquer
+ * mutação no perfil para garantir que `/profissional/{slug}` reflita as
+ * mudanças sem F5.
+ */
+export const invalidateProviderProfileCache = (slug?: string) => {
+  if (slug) {
+    providerProfileCache.delete(slug);
+  } else {
+    providerProfileCache.clear();
   }
-
-  if (candidates.length === 0) {
-    return { provider: null, matchedSlug: null, resolvedByAlias: false };
-  }
-
-  const aliasQuery = await supabase
-    .from('provider_slug_aliases' as any)
-    .select('provider_id, slug')
-    .in('slug', candidates)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const aliasRow = aliasQuery.data as unknown as ProviderSlugAliasRow | null;
-
-  if (!aliasRow?.provider_id) {
-    return { provider: null, matchedSlug: null, resolvedByAlias: false };
-  }
-
-  const { data: provider } = await supabase
-    .from('providers')
-    .select('*, categories(name, slug, icon)')
-    .eq('id', aliasRow.provider_id)
-    .maybeSingle();
-
-  return { provider: provider ?? null, matchedSlug: aliasRow.slug ?? null, resolvedByAlias: true };
-}
-
-const THEME_CLASSES: Record<string, ThemeConfig> = {
-  default: {
-    card: 'rounded-xl border border-border bg-card shadow-card',
-    section: 'rounded-xl border border-border bg-card p-6 shadow-card',
-    page: '',
-    heading: 'font-display',
-    button: 'rounded-md',
-    buttonOutline: 'rounded-md border border-input',
-    fontBody: 'font-sans',
-    fontHeading: "font-['Plus_Jakarta_Sans']",
-    badge: 'rounded-full',
-    input: 'rounded-md border border-input',
-  },
-  moderno: {
-    card: 'rounded-2xl border-0 bg-gradient-to-br from-card to-accent/5 shadow-lg',
-    section: 'rounded-2xl border-0 bg-gradient-to-br from-card to-accent/5 p-6 shadow-lg',
-    page: 'bg-gradient-to-b from-background to-accent/5',
-    heading: "font-['Space_Grotesk'] tracking-tight",
-    button: 'rounded-xl shadow-lg',
-    buttonOutline: 'rounded-xl border-2 border-primary/20',
-    fontBody: "font-['DM_Sans']",
-    fontHeading: "font-['Space_Grotesk']",
-    badge: 'rounded-xl',
-    input: 'rounded-xl border-0 bg-muted/50 shadow-inner',
-  },
-  classico: {
-    card: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 shadow-sm',
-    section: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 p-6 shadow-sm',
-    page: 'bg-amber-50/20',
-    heading: "font-['Playfair_Display'] italic",
-    button: 'rounded-lg border-2',
-    buttonOutline: 'rounded-lg border-2 border-amber-300/60',
-    fontBody: "font-['DM_Sans']",
-    fontHeading: "font-['Playfair_Display']",
-    badge: 'rounded-lg border border-amber-200/60',
-    input: 'rounded-lg border-2 border-amber-200/40',
-  },
-  minimalista: {
-    card: 'rounded-none border-0 border-b border-border/30 bg-transparent shadow-none',
-    section: 'rounded-none border-0 border-b border-border/30 bg-transparent p-6 shadow-none',
-    page: 'bg-background',
-    heading: "font-['Space_Grotesk'] font-light tracking-[0.2em] uppercase text-sm",
-    button: 'rounded-none border-b-2 border-foreground bg-transparent text-foreground shadow-none hover:bg-foreground hover:text-background',
-    buttonOutline: 'rounded-none border-b border-border/50',
-    fontBody: "font-['DM_Sans'] font-light",
-    fontHeading: "font-['Space_Grotesk']",
-    badge: 'rounded-none border-b border-border/30',
-    input: 'rounded-none border-0 border-b border-border/50 bg-transparent',
-  },
 };
 
+
+/* ── Animated Counter ── */
+const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    if (value <= 0) return;
+    let start = 0;
+    const step = value / (duration * 60);
+    const id = setInterval(() => {
+      start += step;
+      if (start >= value) { setDisplay(value); clearInterval(id); }
+      else setDisplay(Math.floor(start));
+    }, 1000 / 60);
+    return () => clearInterval(id);
+  }, [value, duration]);
+  return <>{display}</>;
+};
+
+/* ── Stat Mini Card ── */
+const StatMiniCard = ({ icon: Icon, label, value, delay, accentBg }: { icon: any; label: string; value: string | number; delay: number; accentBg?: string }) => (
+  <motion.div
+    className="flex flex-col items-center gap-1 rounded-xl bg-accent/5 border border-accent/10 px-3 py-2.5 text-center"
+    initial={{ opacity: 0, y: 16, scale: 0.9 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    whileHover={{ scale: 1.05, y: -2 }}
+  >
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10" style={accentBg ? { backgroundColor: `${accentBg}20` } : undefined}>
+      <Icon className="h-4 w-4 text-accent" style={accentBg ? { color: accentBg } : undefined} />
+    </div>
+    <span className="text-lg font-bold text-foreground leading-none">
+      {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
+    </span>
+    <span className="text-[10px] text-muted-foreground leading-none">{label}</span>
+  </motion.div>
+);
+
+/* ── Trust Badge ── */
+const TrustBadge = ({ icon: Icon, text, delay }: { icon: any; text: string; delay: number }) => (
+  <motion.span
+    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-600"
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay, type: 'spring', stiffness: 300, damping: 20 }}
+  >
+    <Icon className="h-3 w-3" />
+    {text}
+  </motion.span>
+);
+
 const ProviderProfile = () => {
+  const { user } = useAuthIdentity();
   const isMobile = useIsMobile();
-  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
+  const siteSettings = useSiteSettings();
+  const avatarFallbackConfig = useAvatarFallbackConfig();
+  const featureFlags = siteSettings.data?.flags ?? {};
+  const settingValues = siteSettings.data?.values ?? {};
+  const reviewsEnabled = featureFlags.reviews_enabled ?? false;
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { requestWhatsApp } = useWhatsAppGate();
   const [provider, setProvider] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
   const [portfolioRawUrls, setPortfolioRawUrls] = useState<string[]>([]);
+  const [portfolioAlbums, setPortfolioAlbums] = useState<PortfolioAlbum[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [leadDialogOpen, setLeadDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
-  const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '' });
+  const [leadForm, setLeadForm] = useState({ name: '', phone: '', service: '', message: '', city: '', state: '' });
+  const [preferredWindow, setPreferredWindow] = useState<PreferredWindow | null>(null);
   const [pageSettings, setPageSettings] = useState<PageSettings>(DEFAULT_SETTINGS);
+  const [relatedProviders, setRelatedProviders] = useState<any[]>([]);
+  const [showStickyContact, setShowStickyContact] = useState(false);
+  const [showEmergencyContact, setShowEmergencyContact] = useState(false);
+  const [showStickyName, setShowStickyName] = useState(false);
+  const mainWhatsappRef = useRef<HTMLDivElement | null>(null);
+  const nameAnchorRef = useRef<HTMLDivElement | null>(null);
+
+  // Pré-preenche o formulário de lead com contexto da busca (?servico=, ?cidade=, ?uf=)
+  // ou cai no city/state do próprio provider, para o profissional saber de onde vem o contato.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const qService = params.get('servico') || params.get('service') || '';
+    const qCity = params.get('cidade') || params.get('city') || '';
+    const qUf = (params.get('uf') || params.get('state') || '').toUpperCase();
+    setLeadForm(prev => ({
+      ...prev,
+      service: prev.service || qService,
+      city: prev.city || qCity || provider?.city || '',
+      state: prev.state || qUf || (provider?.state || '').toUpperCase(),
+    }));
+  }, [provider?.city, provider?.state]);
 
   useEffect(() => {
     let active = true;
@@ -206,7 +332,9 @@ const ProviderProfile = () => {
       setReviews(snapshot.reviews);
       setPortfolioRawUrls(snapshot.portfolioRawUrls);
       setPortfolioImages(snapshot.portfolioImages);
+      setPortfolioAlbums(snapshot.portfolioAlbums || []);
       setPageSettings(snapshot.pageSettings);
+      setRelatedProviders(snapshot.relatedProviders);
       setLoading(false);
     };
 
@@ -224,12 +352,27 @@ const ProviderProfile = () => {
 
       if (active) setLoading(true);
 
-      const resolved = await resolveProviderBySlug(slug);
-      const data = resolved.provider;
+      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, years_experience, ibge_code, latitude, longitude, created_at, website, meta_title, meta_description, contact_hours';
 
-      if (data && data.slug && data.slug !== slug) {
-        navigate(`/profissional/${data.slug}`, { replace: true });
-        return;
+      let { data } = await supabase
+        .from('providers')
+        .select(`${PROVIDER_PUBLIC_COLS}, categories(name, slug, icon)`)
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (!data && slug) {
+        const sanitized = sanitizeSlug(slug);
+        if (sanitized !== slug) {
+          const { data: fallback } = await supabase
+            .from('providers')
+            .select(`${PROVIDER_PUBLIC_COLS}, categories(name, slug, icon)`)
+            .eq('slug', sanitized)
+            .maybeSingle();
+          if (fallback) {
+            navigate(`/profissional/${fallback.slug}`, { replace: true });
+            return;
+          }
+        }
       }
 
       if (data) {
@@ -238,6 +381,7 @@ const ProviderProfile = () => {
         let preparedReviews: any[] = [];
         let preparedPortfolioRawUrls: string[] = [];
         let preparedPortfolioImages: string[] = [];
+        let preparedRelated: any[] = [];
 
         const { data: profile } = await supabase
           .from('public_profiles' as any)
@@ -245,16 +389,33 @@ const ProviderProfile = () => {
           .eq('id', data.user_id)
           .maybeSingle();
 
-        const providerWithProfile = { ...data, profiles: profile };
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('level_id, account_type_id')
+          .eq('id', data.user_id)
+          .maybeSingle();
 
-        const [{ data: svc }, { data: rev }, { data: files }, { data: ps }] = await Promise.all([
-          supabase.from('services').select('*').eq('provider_id', data.id),
+        let levelInfo: any = null;
+        let accTypeInfo: any = null;
+        if (userProfile?.level_id) {
+          const { data: lv } = await supabase.from('user_levels').select('name, color').eq('id', userProfile.level_id).maybeSingle();
+          levelInfo = lv;
+        }
+        if (userProfile?.account_type_id) {
+          const { data: at } = await supabase.from('account_types').select('name, color').eq('id', userProfile.account_type_id).maybeSingle();
+          accTypeInfo = at;
+        }
+
+        const providerWithProfile = { ...data, profiles: profile, levelInfo, accTypeInfo };
+
+        const [{ data: svc }, { data: rev }, { data: ps }] = await Promise.all([
+          supabase.from('services').select('id, provider_id, service_name, description, price, service_area, working_hours, instagram_url, facebook_url, youtube_url').eq('provider_id', data.id).limit(50),
           supabase.from('reviews')
-            .select('*, user_id')
+            .select('id, provider_id, user_id, rating, comment, created_at')
             .eq('provider_id', data.id)
-            .order('created_at', { ascending: false }),
-          supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 }),
-          supabase.from('provider_page_settings').select('*').eq('provider_id', data.id).maybeSingle(),
+            .order('created_at', { ascending: false })
+            .limit(50),
+          supabase.from('provider_page_settings').select('provider_id, sections_order, hidden_sections, headline, tagline, cta_text, cta_whatsapp_text, accent_color, cover_image_url, instagram_url, facebook_url, youtube_url, tiktok_url, theme').eq('provider_id', data.id).maybeSingle(),
         ]);
 
         if (ps) {
@@ -282,9 +443,10 @@ const ProviderProfile = () => {
               .select('service_id, category_id, categories(name, icon)')
               .in('service_id', svcIds),
             supabase.from('service_images')
-              .select('*')
+              .select('id, service_id, image_url, display_order')
               .in('service_id', svcIds)
-              .order('display_order'),
+              .order('display_order')
+              .limit(200),
           ]);
 
           const catMap: Record<string, any[]> = {};
@@ -317,10 +479,72 @@ const ProviderProfile = () => {
           preparedReviews = rev.map((r: any) => ({ ...r, profiles: { full_name: profileMap[r.user_id] || 'Cliente' } }));
         }
 
-        if (files) {
-          const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
-          preparedPortfolioRawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
-          preparedPortfolioImages = preparedPortfolioRawUrls.map(u => portfolioThumb(u));
+        // Fetch portfolio: try albums first, fallback to legacy storage
+        let preparedAlbums: PortfolioAlbum[] = [];
+        const { data: albumsData } = await supabase
+          .from('portfolio_albums')
+          .select('id, name, description')
+          .eq('provider_id', data.id)
+          .order('display_order');
+
+        if (albumsData && albumsData.length > 0) {
+          const albumIds = albumsData.map(a => a.id);
+          const { data: photosData } = await supabase
+            .from('portfolio_photos')
+            .select('id, album_id, image_url, display_order')
+            .in('album_id', albumIds)
+            .order('display_order');
+
+          preparedAlbums = albumsData.map(album => ({
+            ...album,
+            photos: (photosData || []).filter(p => p.album_id === album.id),
+          }));
+
+          // Flatten all photos for lightbox compatibility
+          const allPhotos = preparedAlbums.flatMap(a => a.photos);
+          preparedPortfolioRawUrls = allPhotos.map(p => p.image_url);
+          preparedPortfolioImages = preparedPortfolioRawUrls.map(u => isVideoUrl(u) ? u : portfolioThumb(u));
+        } else {
+          // Fallback: legacy flat storage for old profiles
+          const { data: files } = await supabase.storage.from('portfolio').list(`${data.user_id}`, { limit: 20 });
+          if (files) {
+            const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder');
+            preparedPortfolioRawUrls = filtered.map(f => supabase.storage.from('portfolio').getPublicUrl(`${data.user_id}/${f.name}`).data.publicUrl);
+            preparedPortfolioImages = preparedPortfolioRawUrls.map(u => isVideoUrl(u) ? u : portfolioThumb(u));
+          }
+        }
+
+        // Fetch related providers — prioritize same category, then same city
+        try {
+          let relatedQuery = supabase
+            .from('providers')
+            .select('id, slug, business_name, city, state, photo_url, rating_avg, review_count, user_id, category_id, categories(name, icon)')
+            .neq('id', data.id)
+            .eq('status', 'approved')
+            .is('deleted_at', null)
+            .order('rating_avg', { ascending: false })
+            .limit(6);
+
+          if (data.category_id) {
+            relatedQuery = relatedQuery.eq('category_id', data.category_id);
+          } else if (data.city) {
+            relatedQuery = relatedQuery.eq('city', data.city);
+          }
+
+          const { data: related } = await relatedQuery;
+
+          if (related && related.length > 0) {
+            const relUserIds = related.map((r: any) => r.user_id);
+            const { data: relProfiles } = await supabase
+              .from('public_profiles' as any)
+              .select('id, full_name, avatar_url')
+              .in('id', relUserIds);
+            const pMap: Record<string, any> = {};
+            (relProfiles || []).forEach((p: any) => { pMap[p.id] = p; });
+            preparedRelated = related.map((r: any) => ({ ...r, profiles: pMap[r.user_id] || null }));
+          }
+        } catch {
+          // silently ignore
         }
 
         const snapshot: ProviderProfileSnapshot = {
@@ -329,7 +553,9 @@ const ProviderProfile = () => {
           reviews: preparedReviews,
           portfolioImages: preparedPortfolioImages,
           portfolioRawUrls: preparedPortfolioRawUrls,
+          portfolioAlbums: preparedAlbums,
           pageSettings: preparedPageSettings,
+          relatedProviders: preparedRelated,
         };
 
         providerProfileCache.set(slug, { ts: Date.now(), snapshot });
@@ -344,124 +570,677 @@ const ProviderProfile = () => {
         setPortfolioImages([]);
         setPortfolioRawUrls([]);
         setPageSettings(DEFAULT_SETTINGS);
+        setRelatedProviders([]);
         setLoading(false);
       }
     };
 
     fetchProvider();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [slug, navigate]);
 
-  const name = provider ? ((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
-  const avatarUrl = provider ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : '';
-  const category = provider ? ((provider.categories as any)?.name || '') : '';
-  const categorySlug = provider ? ((provider.categories as any)?.slug || '') : '';
-  const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
-  // Auto-fill WhatsApp from phone if empty
-  const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
+  // ── Realtime sync for provider stats ──
+  useEffect(() => {
+    if (!provider?.id) return;
+    // Track a profile_view (debounced via sessionStorage in the helper)
+    trackProfileView(provider.id);
+    // Fase 2.2 — também emite no funil público canônico (public_funnel)
+    void import('@/lib/publicFunnelTelemetry').then(({ trackProfileView: tpv }) =>
+      tpv({ providerId: provider.id, category, city: provider.city, source: getLeadSource() }),
+    );
+    const channel = supabase
+      .channel(`profile-realtime-${provider.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'providers',
+        filter: `id=eq.${provider.id}`,
+      }, (payload) => {
+        setProvider((prev: any) => prev ? { ...prev, ...payload.new } : prev);
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'reviews',
+        filter: `provider_id=eq.${provider.id}`,
+      }, (payload) => {
+        setReviews((prev) => [payload.new as any, ...prev]);
+        setProvider((prev: any) => prev ? { ...prev, review_count: (prev.review_count || 0) + 1 } : prev);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [provider?.id]);
 
+  /**
+   * Preload do LCP (cover image) — assim que `pageSettings.cover_image_url`
+   * é resolvido, injeta `<link rel="preload" as="image">` no <head> com a
+   * URL JÁ transformada (800×450 WebP). O navegador começa o download em
+   * paralelo ao restante da hidratação React, cortando ~500ms do LCP mobile.
+   *
+   * `imagesrcset` permite o navegador escolher 1x/2x conforme DPR sem precisar
+   * de duas requests. Removemos o link no cleanup para não vazar entre perfis.
+   */
+  useEffect(() => {
+    const url = pageSettings.cover_image_url;
+    if (!url || typeof document === 'undefined') return;
+    const small = optimizedImageUrl(url, { width: 480, height: 270, quality: 70, resize: 'cover' });
+    const mid = coverImage(url);
+    const large = optimizedImageUrl(url, { width: 1600, height: 900, quality: 75, resize: 'cover' });
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = mid;
+    link.setAttribute('imagesrcset', `${small} 480w, ${mid} 800w, ${large} 1600w`);
+    link.setAttribute('imagesizes', '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px');
+    link.setAttribute('fetchpriority', 'high');
+    document.head.appendChild(link);
+    return () => {
+      try { document.head.removeChild(link); } catch { /* já removido */ }
+    };
+  }, [pageSettings.cover_image_url]);
+
+  useEffect(() => {
+    const currentWhatsApp = toCanonical(provider?.whatsapp || provider?.phone || '');
+    if (!isMobile || !currentWhatsApp) {
+      setShowStickyContact(false);
+      setShowEmergencyContact(false);
+      return;
+    }
+
+    const target = mainWhatsappRef.current;
+    if (!target) {
+      setShowStickyContact(false);
+      setShowEmergencyContact(false);
+      return;
+    }
+
+    let frame: number | null = null;
+    let emergencyTimer: number | null = null;
+    let safeAreaBottom = 0;
+    let lastShouldShow: boolean | null = null;
+    let disposed = false;
+    // Throttle: limita medições por scroll a ~12fps (80ms) em devices lentos,
+    // mantendo trailing call para garantir o estado final correto.
+    const scrollThrottleMs = 80;
+    let lastScrollMeasureAt = 0;
+    let trailingScrollTimer: number | null = null;
+    // Hysteresis 50ms: após detectar mudança de visibilidade, esperamos um
+    // pequeno janela de confirmação antes de comitar o estado, evitando flicker
+    // em iOS/scroll instável (rubber-band, address-bar collapse). Se uma nova
+    // medição reverter o estado dentro da janela, cancelamos o commit.
+    const stateCommitDelayMs = 50;
+    let pendingShouldShow: boolean | null = null;
+    let commitTimer: number | null = null;
+    const minVisibleCtaPx = 8;
+    const fallbackVisibilityHysteresisPx = 8;
+    const visualViewport = window.visualViewport;
+    const supportsIntersectionObserver = 'IntersectionObserver' in window;
+    const supportsResizeObserver = 'ResizeObserver' in window;
+    const hasLimitedApiSupport = !supportsIntersectionObserver || !supportsResizeObserver || !visualViewport;
+    const debugVisibilityMetrics = import.meta.env.DEV && hasLimitedApiSupport;
+    const visibilityMetrics = {
+      calls: 0,
+      scheduled: 0,
+      skippedFrames: 0,
+      scrollSchedules: 0,
+      observerSchedules: 0,
+      resizeSchedules: 0,
+      totalMs: 0,
+      maxMs: 0,
+      lastReportAt: performance.now(),
+      lastSource: 'init',
+    };
+
+    /**
+     * Sticky Action Bar visibility contract
+     *
+     * - IntersectionObserver: primary signal for detecting whether the main WhatsApp CTA
+     *   is inside the viewport. When available, it avoids running layout reads on every scroll.
+     * - ResizeObserver: secondary signal for layout changes that can move or resize the CTA
+     *   without a scroll event, such as image loads, expandable content, font swaps, or admin data.
+     * - visualViewport: preferred viewport dimensions on mobile because browser chrome and
+     *   virtual keyboards can change the visible area without changing window.innerHeight.
+     *
+      * Fallback behavior:
+      * - If IntersectionObserver is missing, scroll uses scheduleVisibilityMeasure(), which is
+      *   throttled by requestAnimationFrame so only one visibility measurement runs per frame.
+      *   The fallback also applies an 8px hysteresis while the sticky CTA is visible, preventing
+      *   flicker when scroll settles around the visibility threshold.
+     * - If visualViewport is missing, measurements fall back to documentElement/client size and
+     *   then window.innerHeight/innerWidth, preserving the same visible-area rule.
+     * - If ResizeObserver is missing, window resize plus the scroll fallback keep the CTA reachable;
+     *   while a scheduled fallback measurement is pending, showEmergencyContact can reveal a compact
+     *   emergency button so users still have access to the WhatsApp CTA.
+     */
+    const getSafeAreaBottom = () => {
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;bottom:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;';
+      document.body.appendChild(probe);
+      const value = parseFloat(getComputedStyle(probe).paddingBottom) || 0;
+      probe.remove();
+      return value;
+    };
+
+    const measureVisibility = () => {
+      if (disposed) return;
+      const startedAt = debugVisibilityMetrics ? performance.now() : 0;
+      frame = null;
+      if (emergencyTimer !== null) {
+        window.clearTimeout(emergencyTimer);
+        emergencyTimer = null;
+      }
+      setShowEmergencyContact(false);
+      const rect = target.getBoundingClientRect();
+      const viewportHeight = visualViewport?.height ?? document.documentElement.clientHeight ?? window.innerHeight;
+      const viewportWidth = visualViewport?.width ?? document.documentElement.clientWidth ?? window.innerWidth;
+      const visibleHeight = Math.min(rect.bottom, viewportHeight - safeAreaBottom) - Math.max(rect.top, 0);
+      const visibleWidth = Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0);
+      const visibilityThreshold = !supportsIntersectionObserver && lastShouldShow === true
+        ? minVisibleCtaPx + fallbackVisibilityHysteresisPx
+        : minVisibleCtaPx;
+      const shouldShow = !(visibleHeight > visibilityThreshold && visibleWidth > visibilityThreshold);
+      if (shouldShow !== lastShouldShow) {
+        // Se já há um commit pendente para o MESMO estado novo, mantém.
+        // Se o novo estado é o atual confirmado, cancela commit pendente
+        // (caso típico de flicker: leaves → re-enters viewport em <50ms).
+        if (pendingShouldShow !== null && pendingShouldShow !== shouldShow) {
+          if (commitTimer !== null) {
+            window.clearTimeout(commitTimer);
+            commitTimer = null;
+          }
+          pendingShouldShow = null;
+        }
+        if (commitTimer !== null) return;
+        pendingShouldShow = shouldShow;
+        commitTimer = window.setTimeout(() => {
+          commitTimer = null;
+          pendingShouldShow = null;
+          if (disposed) return;
+          lastShouldShow = shouldShow;
+          setShowStickyContact(shouldShow);
+        }, stateCommitDelayMs);
+      } else if (commitTimer !== null && pendingShouldShow !== shouldShow) {
+        // Estado voltou ao valor já comitado antes do timer disparar → cancela.
+        window.clearTimeout(commitTimer);
+        commitTimer = null;
+        pendingShouldShow = null;
+      }
+      if (debugVisibilityMetrics) {
+        const now = performance.now();
+        const duration = now - startedAt;
+        visibilityMetrics.calls += 1;
+        visibilityMetrics.totalMs += duration;
+        visibilityMetrics.maxMs = Math.max(visibilityMetrics.maxMs, duration);
+        if (now - visibilityMetrics.lastReportAt >= 2000) {
+          console.debug('[StickyActionBar] measureVisibility metrics', {
+            calls: visibilityMetrics.calls,
+            scheduled: visibilityMetrics.scheduled,
+            skippedFrames: visibilityMetrics.skippedFrames,
+            scrollSchedules: visibilityMetrics.scrollSchedules,
+            observerSchedules: visibilityMetrics.observerSchedules,
+            resizeSchedules: visibilityMetrics.resizeSchedules,
+            avgMs: Number((visibilityMetrics.totalMs / visibilityMetrics.calls).toFixed(3)),
+            maxMs: Number(visibilityMetrics.maxMs.toFixed(3)),
+            lastSource: visibilityMetrics.lastSource,
+          });
+          visibilityMetrics.lastReportAt = now;
+        }
+      }
+    };
+    const cancelScheduledVisibilityMeasure = () => {
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
+        frame = null;
+      }
+    };
+    const scheduleVisibilityMeasure = (source: 'scroll' | 'observer' | 'resize' | 'init' = 'init') => {
+      if (disposed) return;
+      if (debugVisibilityMetrics) {
+        visibilityMetrics.scheduled += 1;
+        visibilityMetrics.lastSource = source;
+        if (source === 'scroll') visibilityMetrics.scrollSchedules += 1;
+        if (source === 'observer') visibilityMetrics.observerSchedules += 1;
+        if (source === 'resize') visibilityMetrics.resizeSchedules += 1;
+      }
+      if (frame !== null) {
+        if (debugVisibilityMetrics) visibilityMetrics.skippedFrames += 1;
+        return;
+      }
+      frame = requestAnimationFrame(measureVisibility);
+      if (hasLimitedApiSupport && emergencyTimer === null) {
+        emergencyTimer = window.setTimeout(() => {
+          if (frame !== null) setShowEmergencyContact(true);
+        }, 180);
+      }
+    };
+    const updateSafeAreaAndVisibility = () => {
+      safeAreaBottom = getSafeAreaBottom();
+      scheduleVisibilityMeasure('resize');
+    };
+    const handleObserverVisibility = () => scheduleVisibilityMeasure('observer');
+    const handleResizeObserverVisibility = () => scheduleVisibilityMeasure('resize');
+    const scheduleScrollMeasure = () => {
+      if (disposed) return;
+      const now = performance.now();
+      const elapsed = now - lastScrollMeasureAt;
+      if (elapsed >= scrollThrottleMs) {
+        lastScrollMeasureAt = now;
+        scheduleVisibilityMeasure('scroll');
+        return;
+      }
+      // Trailing: garante uma medição final quando o scroll para.
+      if (trailingScrollTimer !== null) return;
+      trailingScrollTimer = window.setTimeout(() => {
+        trailingScrollTimer = null;
+        if (disposed) return;
+        lastScrollMeasureAt = performance.now();
+        scheduleVisibilityMeasure('scroll');
+      }, scrollThrottleMs - elapsed);
+    };
+    const handleScrollFallback = scheduleScrollMeasure;
+    const handleVisualViewportScroll = scheduleScrollMeasure;
+
+    const observer = supportsIntersectionObserver ? new IntersectionObserver(
+      handleObserverVisibility,
+      { threshold: [0, 0.01, 0.1, 1] },
+    ) : null;
+    const resizeObserver = supportsResizeObserver ? new ResizeObserver(handleResizeObserverVisibility) : null;
+    const useScrollFallback = !supportsIntersectionObserver;
+
+    observer?.observe(target);
+    resizeObserver?.observe(target);
+    resizeObserver?.observe(document.body);
+    if (useScrollFallback) window.addEventListener('scroll', handleScrollFallback, { passive: true });
+    window.addEventListener('resize', updateSafeAreaAndVisibility);
+    visualViewport?.addEventListener('resize', updateSafeAreaAndVisibility);
+    visualViewport?.addEventListener('scroll', handleVisualViewportScroll);
+    updateSafeAreaAndVisibility();
+
+    return () => {
+      disposed = true;
+      cancelScheduledVisibilityMeasure();
+      if (emergencyTimer !== null) window.clearTimeout(emergencyTimer);
+      if (trailingScrollTimer !== null) {
+        window.clearTimeout(trailingScrollTimer);
+        trailingScrollTimer = null;
+      }
+      if (commitTimer !== null) {
+        window.clearTimeout(commitTimer);
+        commitTimer = null;
+      }
+      pendingShouldShow = null;
+      observer?.disconnect();
+      resizeObserver?.disconnect();
+      if (useScrollFallback) window.removeEventListener('scroll', handleScrollFallback);
+      window.removeEventListener('resize', updateSafeAreaAndVisibility);
+      visualViewport?.removeEventListener('resize', updateSafeAreaAndVisibility);
+      visualViewport?.removeEventListener('scroll', handleVisualViewportScroll);
+    };
+  }, [isMobile, provider?.whatsapp, provider?.phone]);
+
+  // Sticky header: mostra nome + selo Top quando o título principal sai do viewport
+  useEffect(() => {
+    const target = nameAnchorRef.current;
+    if (!target || typeof IntersectionObserver === 'undefined') {
+      setShowStickyName(false);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => setShowStickyName(!entry.isIntersecting),
+      { threshold: 0, rootMargin: '-72px 0px 0px 0px' },
+    );
+    obs.observe(target);
+    return () => obs.disconnect();
+  }, [provider?.id]);
+
+  // DESTAQUE criteria
+  const destaqueRequireAvatar = settingValues.destaque_require_avatar !== 'false';
+  const destaqueRequirePortfolio = settingValues.destaque_require_portfolio !== 'false';
+  const destaqueRequireServices = settingValues.destaque_require_services !== 'false';
+  const destaqueMinServices = Number(settingValues.destaque_min_services) || 1;
+  const destaqueMinPortfolio = Number(settingValues.destaque_min_portfolio) || 1;
+  const avatarFallbackStyle = settingValues.avatar_fallback_style || 'adventurer';
+
+  const name = provider ? capitalizeName((provider.profiles as any)?.full_name || provider.business_name || 'Profissional') : '';
+  const hasOwnAvatar = !!(provider && ((provider.profiles as any)?.avatar_url || provider.photo_url));
+  const initialsAvatar = provider
+    ? resolveAvatarUrl({
+        seed: provider.user_id || provider.id,
+        name,
+        // Pool de fallback: portfólio + capa, deterministicamente escolhido.
+        portfolioImages: [
+          ...(portfolioRawUrls || []),
+          pageSettings.cover_image_url || null,
+        ],
+        config: avatarFallbackConfig,
+      })
+    : '';
+  const avatarUrl = provider ? (hasOwnAvatar ? avatarLarge((provider.profiles as any)?.avatar_url || provider.photo_url) : initialsAvatar) : '';
+  // Categoria principal — prioridade:
+  // 1) provider.categories (categoria principal cadastrada)
+  // 2) Primeira categoria do primeiro serviço (fallback universal — corrige perfis
+  //    antigos que ficaram sem category_id mas têm serviços com categorias)
+  // 3) string vazia (renderiza "Categoria não informada" no UI)
+  const _firstServiceCategory = (() => {
+    if (!services || services.length === 0) return null;
+    for (const s of services) {
+      const cats = (s as any)?.serviceCategories;
+      if (Array.isArray(cats) && cats.length > 0) {
+        const first = cats.find((c: any) => c && c.name);
+        if (first) return first;
+      }
+    }
+    return null;
+  })();
+  const _providerCat = provider ? (provider.categories as any) : null;
+  const category = (_providerCat?.name || _firstServiceCategory?.name || '') as string;
+  const categorySlug = (_providerCat?.slug || _firstServiceCategory?.slug || '') as string;
+  const categoryIcon = (_providerCat?.icon || _firstServiceCategory?.icon || '') as string;
+  const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '';
+  const providerSocialImage = provider
+    ? pageSettings.cover_image_url || portfolioRawUrls.find((url) => !isVideoUrl(url)) || (hasOwnAvatar ? ((provider.profiles as any)?.avatar_url || provider.photo_url) : '')
+    : '';
+
+  // DESTAQUE: critério rigoroso — só ganha o selo quem tem perfil REAL e completo.
+  // Avatar próprio + descrição + serviços + portfólio (todos obrigatórios). Evita poluir
+  // a UI com "DESTAQUE" para perfis vazios.
+  const isDestaque = !!provider && (
+    hasOwnAvatar &&
+    !!(provider.description && provider.description.trim().length >= 40) &&
+    (provider.services_count || 0) >= Math.max(destaqueMinServices || 1, 2) &&
+    (provider.portfolio_album_count || 0) >= (destaqueMinPortfolio || 1) &&
+    (provider.review_count || 0) >= 1
+  );
+  const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
-  useSeoHead({
-    title: provider ? `${name} - ${category} em ${provider.city}` : 'Profissional',
-    description: provider
-      ? `${name}, ${category} em ${provider.city}-${provider.state}. ${provider.review_count} avaliações, nota ${Number(provider.rating_avg).toFixed(1)}.`
-      : 'Encontre profissionais na plataforma.',
-    canonical: provider?.slug ? `${SITE_BASE_URL}/profissional/${provider.slug}` : undefined,
-  });
+  // Helpers de SEO: garantem limites recomendados (title <=60, description <=160).
+  // Truncam em palavra completa, evitando cortar no meio de uma palavra.
+  const truncateAt = (text: string, max: number) => {
+    const clean = text.replace(/\s+/g, ' ').trim();
+    if (clean.length <= max) return clean;
+    const slice = clean.slice(0, max - 1);
+    const lastSpace = slice.lastIndexOf(' ');
+    return (lastSpace > max * 0.6 ? slice.slice(0, lastSpace) : slice).replace(/[\s,.;:-]+$/, '') + '…';
+  };
 
-  const breadcrumbLd = useMemo(() => provider ? ({
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
+  const seoTitleRaw = provider
+    ? (provider.meta_title?.trim() || `${name} - ${category} em ${provider.city} | Preciso de um`)
+    : 'Profissional';
+  const seoDescriptionRaw = provider
+    ? (provider.meta_description?.trim() ||
+        `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}. ${provider.review_count} avaliacoes, nota ${Number(provider.rating_avg).toFixed(1)}. ${provider.levelInfo?.name ? `Nivel ${provider.levelInfo.name}.` : ''} Entre em contato direto, sem intermediarios!`)
+    : 'Encontre profissionais na plataforma.';
+
+  const seoTitle = truncateAt(seoTitleRaw, 60);
+  const seoDescription = truncateAt(seoDescriptionRaw, 160);
+
+  const seoCanonical = slug ? `${SITE_BASE_URL}/profissional/${slug}` : undefined;
+
+  // Validação automática de SEO em desenvolvimento.
+  // Avisa (sem quebrar produção) se title/description fugirem dos limites
+  // recomendados, ou se faltar slug/cidade/categoria, evitando regressões.
+  useEffect(() => {
+    if (!import.meta.env.DEV || !provider) return;
+    const issues: string[] = [];
+    if (!slug) issues.push('slug ausente — canonical e JSON-LD ficarão inconsistentes');
+    if (!provider.city) issues.push('cidade ausente — areaServed e SEO local prejudicados');
+    if (!category || category === 'all') issues.push('categoria não definida — serviceType vazio');
+    if (seoTitle.length < 20) issues.push(`title muito curto (${seoTitle.length} chars)`);
+    if (seoTitle.length > 60) issues.push(`title acima de 60 chars (${seoTitle.length})`);
+    if (seoDescription.length < 70) issues.push(`description muito curta (${seoDescription.length})`);
+    if (seoDescription.length > 160) issues.push(`description acima de 160 chars (${seoDescription.length})`);
+    if (issues.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(`[SEO][ProviderProfile slug=${slug || '?'}]`, issues);
+    }
+  }, [provider, slug, category, seoTitle, seoDescription]);
+
+
+  // "Padrão Ouro" alinhado à mesma regra do RPC nearby_providers:
+  // nível Ouro+ E last_active_at < 7 dias (mesmo recency_factor do score).
+  const isPadraoOuro = useMemo(() => {
+    if (!provider) return false;
+    const levelName = String(provider.levelInfo?.name || '').toLowerCase();
+    const isGoldPlus = ['ouro', 'platina', 'diamante', 'mestre'].includes(levelName);
+    const lastActive = provider.last_active_at ? new Date(provider.last_active_at).getTime() : 0;
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return isGoldPlus && lastActive >= sevenDaysAgo;
+  }, [provider]);
+
+  const seoSpecialties = useMemo(() => {
+    if (!provider) return [] as string[];
+    const parts: string[] = [
+      provider.description || '',
+      category || '',
+      provider.business_name || '',
+      ...(services || []).slice(0, 10).map((s: any) => `${s.name || ''} ${s.description || ''}`),
+    ];
+    return extractSpecialties(parts, 6);
+  }, [provider, category, services]);
+
+  const breadcrumbLd = useMemo(() => {
+    if (!provider) return null;
+    const cSlug = provider.city
+      ? provider.city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')
+      : '';
+    const items: any[] = [
       { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
-      ...(categorySlug ? [{ '@type': 'ListItem', position: 2, name: category, item: `${SITE_BASE_URL}/categoria/${categorySlug}` }] : []),
-      { '@type': 'ListItem', position: categorySlug ? 3 : 2, name },
-    ],
-  }) : null, [provider, name, category, categorySlug]);
+    ];
+    let pos = 2;
+    if (categorySlug) {
+      items.push({ '@type': 'ListItem', position: pos++, name: category, item: `${SITE_BASE_URL}/categoria/${categorySlug}` });
+    }
+    if (provider.city && cSlug) {
+      const cityUrl = categorySlug
+        ? `${SITE_BASE_URL}/categoria/${categorySlug}/em/${cSlug}`
+        : `${SITE_BASE_URL}/cidade/${cSlug}`;
+      items.push({ '@type': 'ListItem', position: pos++, name: provider.city, item: cityUrl });
+    }
+    items.push({ '@type': 'ListItem', position: pos, name });
+    return { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items };
+  }, [provider, name, category, categorySlug]);
 
-  const localBusinessLd = useMemo(() => provider ? ({
+
+
+  const localBusinessLd = useMemo(() => {
+    if (!provider) return null;
+    const sameAs = [
+      pageSettings.instagram_url,
+      pageSettings.facebook_url,
+      pageSettings.youtube_url,
+      pageSettings.tiktok_url,
+    ].filter(Boolean) as string[];
+
+    return {
+      '@context': 'https://schema.org',
+      // ProfessionalService is a more specific subtype of LocalBusiness — better for SEO of service providers.
+      '@type': ['ProfessionalService', 'LocalBusiness'],
+      '@id': `${SITE_BASE_URL}/profissional/${slug}`,
+      name: provider.business_name || name,
+      description: provider.description || `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}.`,
+      image: avatarUrl || undefined,
+      url: `${SITE_BASE_URL}/profissional/${slug}`,
+      telephone: effectiveWhatsApp || provider.phone || undefined,
+      priceRange: '$$',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: provider.city,
+        addressRegion: safeUF(provider.state) || provider.state,
+        addressCountry: 'BR',
+        // streetAddress real só quando o profissional optou por exibir endereço
+        // completo (PF/PJ com show_full_address=true) e existe rua + número.
+        ...((provider as any).show_full_address && (provider as any).street && (provider as any).street_number
+          ? { streetAddress: `${(provider as any).street}, ${(provider as any).street_number}` }
+          : {}),
+        ...(provider.neighborhood ? { addressLocality: provider.city, addressArea: provider.neighborhood } : {}),
+      },
+      ...(provider.latitude && provider.longitude
+        ? {
+            geo: {
+              '@type': 'GeoCoordinates',
+              latitude: Number(provider.latitude),
+              longitude: Number(provider.longitude),
+            },
+          }
+        : {}),
+      ...(provider.city
+        ? {
+            areaServed: {
+              '@type': 'City',
+              name: provider.city,
+              containedInPlace: { '@type': 'AdministrativeArea', name: provider.state },
+            },
+          }
+        : {}),
+      ...(category ? { serviceType: category } : {}),
+      ...(provider.review_count > 0
+        ? {
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: Number(provider.rating_avg).toFixed(1),
+              reviewCount: provider.review_count,
+              bestRating: 5,
+              worstRating: 1,
+            },
+          }
+        : {}),
+      ...(sameAs.length > 0 ? { sameAs } : {}),
+      ...(seoSpecialties.length > 0 ? { knowsAbout: seoSpecialties } : {}),
+      ...(isPadraoOuro ? {
+        award: 'Padrão Ouro — Profissional ativo e bem avaliado na plataforma',
+      } : {}),
+      ...(services && services.length > 0
+        ? {
+            hasOfferCatalog: {
+              '@type': 'OfferCatalog',
+              name: `Serviços de ${name}`,
+              itemListElement: services.slice(0, 20).map((s: any, idx: number) => ({
+                '@type': 'Offer',
+                position: idx + 1,
+                itemOffered: {
+                  '@type': 'Service',
+                  name: s.name || s.title || s.service_name || 'Serviço',
+                  ...(s.description ? { description: String(s.description).slice(0, 280) } : {}),
+                  ...(category ? { category } : {}),
+                  areaServed: provider.city
+                    ? { '@type': 'City', name: provider.city }
+                    : undefined,
+                },
+                ...(s.price_min || s.price
+                  ? {
+                      priceSpecification: {
+                        '@type': 'PriceSpecification',
+                        priceCurrency: 'BRL',
+                        ...(s.price_min ? { minPrice: Number(s.price_min) } : {}),
+                        ...(s.price_max ? { maxPrice: Number(s.price_max) } : {}),
+                        ...(s.price && !s.price_min ? { price: Number(s.price) } : {}),
+                      },
+                    }
+                  : {}),
+              })),
+            },
+          }
+        : {}),
+    };
+  }, [provider, name, category, avatarUrl, slug, effectiveWhatsApp, services, pageSettings.instagram_url, pageSettings.facebook_url, pageSettings.youtube_url, pageSettings.tiktok_url]);
+
+
+
+  // Person schema — habilita rich snippets quando alguém busca pelo nome do profissional
+  const personLd = useMemo(() => provider ? ({
     '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    name: provider.business_name || name,
-    description: provider.description,
-    image: avatarUrl || undefined,
-    telephone: provider.phone,
-    address: { '@type': 'PostalAddress', addressLocality: provider.city, addressRegion: provider.state, addressCountry: 'BR' },
-    ...(provider.review_count > 0 ? {
-      aggregateRating: { '@type': 'AggregateRating', ratingValue: Number(provider.rating_avg).toFixed(1), reviewCount: provider.review_count, bestRating: 5 },
+    '@type': 'Person',
+    name,
+    url: `${SITE_BASE_URL}/profissional/${slug}`,
+    ...(avatarUrl ? { image: avatarUrl } : {}),
+    jobTitle: category || 'Profissional',
+    ...(seoSpecialties.length > 0 ? { knowsAbout: seoSpecialties } : {}),
+    ...(isPadraoOuro ? {
+      award: 'Padrão Ouro — Profissional ativo e bem avaliado na plataforma Preciso de um',
     } : {}),
-    url: provider?.slug ? `${SITE_BASE_URL}/profissional/${provider.slug}` : undefined,
-  }) : null, [provider, name, avatarUrl]);
+    ...(provider.city ? {
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: provider.city,
+        addressRegion: provider.state,
+        addressCountry: 'BR',
+      },
+    } : {}),
+    worksFor: { '@type': 'Organization', name: 'Preciso de um', url: SITE_BASE_URL },
+  }) : null, [provider, name, slug, avatarUrl, category, seoSpecialties, isPadraoOuro]);
 
   useJsonLd(breadcrumbLd);
   useJsonLd(localBusinessLd);
+  useJsonLd(personLd);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <div className="container py-8">
-          <Skeleton className="mb-4 h-40 rounded-xl" />
-          <Skeleton className="mb-4 h-32 rounded-xl" />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!provider) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <div className="container flex flex-1 items-center justify-center py-20">
-          <p className="text-lg text-muted-foreground">Profissional não encontrado.</p>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  const accentStyle = pageSettings.accent_color
-    ? { '--provider-accent': pageSettings.accent_color } as React.CSSProperties
-    : {};
-
-  const accentBg = pageSettings.accent_color ? `hsl(${pageSettings.accent_color})` : undefined;
-
-  const handleLeadSubmit = async (e: React.FormEvent) => {
+  const [isSubmittingLead, handleLeadSubmit] = useSubmitGuard(async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validação Zod ANTES de qualquer concatenação de ctxBlock ou montagem de payload.
+    const parsed = leadSubmitSchema.safeParse({
+      name: leadForm.name,
+      phone: leadForm.phone,
+      message: leadForm.message,
+      service: leadForm.service,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message || 'Dados inválidos');
+      return;
+    }
+    // Validação do telefone antes do INSERT (reusa whatsapp.ts).
+    const phoneCheck = validateWhatsapp(leadForm.phone);
+    if (!phoneCheck.valid) {
+      toast.error(phoneCheck.message);
+      return;
+    }
+    const phoneSanitized = parsed.data.phone;
+    // Anexa contexto (cidade/UF + origem) ao final da mensagem para o provider ver
+    // de onde veio o lead, sem depender de novas colunas no banco.
+    const ctxParts: string[] = [];
+    const locStr = [leadForm.city, leadForm.state].filter(Boolean).join(' - ');
+    if (locStr) ctxParts.push(`Localização: ${locStr}`);
+    const origem = getLeadSource();
+    if (origem && origem !== 'direto') ctxParts.push(`Origem: ${origem}`);
+    if (category) ctxParts.push(`Categoria: ${category}`);
+    const ctxBlock = ctxParts.length ? `\n\n— Contexto —\n${ctxParts.join('\n')}` : '';
+    const finalMessage = `${leadForm.message || ''}${ctxBlock}`.trim();
+
+    const leadContext = {
+      city: leadForm.city || null,
+      state: leadForm.state || null,
+      category: category || null,
+      origin: getLeadSource() || 'direto',
+      page: 'provider_profile',
+      provider_slug: slug || null,
+      referrer: typeof document !== 'undefined' ? (document.referrer || null) : null,
+      captured_at: new Date().toISOString(),
+    };
+
     const { error } = await supabase.from('leads').insert({
       provider_id: provider.id,
       client_name: leadForm.name,
-      phone: leadForm.phone,
+      phone: phoneSanitized,
       service_needed: leadForm.service,
-      message: leadForm.message,
-    });
+      message: finalMessage,
+      lead_context: leadContext,
+      preferred_window: preferredWindow ?? null,
+    } as any);
     if (error) {
       toast.error('Erro ao enviar solicitação');
       return;
     }
     setLeadSent(true);
-    toast.success('Solicitação enviada!');
-  };
-
-  const citySlug = provider.city?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
-
-  const visibleSections = pageSettings.sections_order.filter(s => !pageSettings.hidden_sections.includes(s));
-  const tc = THEME_CLASSES[pageSettings.theme] || THEME_CLASSES.default;
-
-  // Section renderers
-  const renderAbout = () => (
-    <div key="about" className={`mt-6 p-6 ${tc.section}`}>
-      <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Sobre o profissional</h2>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        {provider.description || 'Este profissional ainda não adicionou uma descrição.'}
-      </p>
-    </div>
-  );
+    toast.success('Solicitação enviada com sucesso!');
+    // Fase 2.2 — fecha o funil perfil→lead com evento canônico no public_funnel.
+    void import('@/lib/publicFunnelTelemetry').then(({ trackLeadSubmit }) =>
+      trackLeadSubmit({
+        providerId: provider.id,
+        category,
+        city: leadForm.city || provider.city,
+        source: getLeadSource(),
+      }),
+    );
+  });
 
   const openPortfolioLightbox = (index: number) => {
     setLightboxImages(portfolioRawUrls);
@@ -475,425 +1254,1152 @@ const ProviderProfile = () => {
     setLightboxOpen(true);
   };
 
+  // CLS-safe: animação só por opacidade. Translação no Y causa layout shift contabilizável quando whileInView dispara.
+  const fadeUp = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
+  const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
+  const scaleIn = { hidden: { opacity: 0, scale: 0.92 }, visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
+  const slideInLeft = { hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } } };
+
+  // 'Verificado' badge removed — replaced by Engagement Tier ranking (see ProviderCard)
+  const hasProfileImages = !!(provider?.photo_url || portfolioImages.length > 0);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        {/* Capa: mesmo aspect-ratio (16:5) da capa real → sem CLS quando o
+            conteúdo final hidratar. Header CTA reserva 44px de altura. */}
+        <Skeleton className="w-full aspect-[16/5] rounded-none" />
+        <div className="container py-8 space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+          </div>
+          <Skeleton className="h-11 w-full sm:w-48 rounded-md" />
+          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-32 rounded-xl" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!provider) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <div className="container flex flex-1 items-center justify-center py-20">
+          <motion.div
+            className="text-center space-y-3"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="mx-auto h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+              <Users className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-lg font-semibold text-foreground">Profissional não encontrado</p>
+            <p className="text-sm text-muted-foreground">Verifique o link ou tente buscar novamente.</p>
+            <Button variant="outline" asChild>
+              <Link to="/buscar">Buscar profissionais</Link>
+            </Button>
+          </motion.div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const accentStyle = pageSettings.accent_color
+    ? { '--provider-accent': pageSettings.accent_color } as React.CSSProperties
+    : {};
+  const accentBg = pageSettings.accent_color ? `hsl(${pageSettings.accent_color})` : undefined;
+  const citySlug = provider.city?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+  const visibleSections = pageSettings.sections_order.filter(s => !pageSettings.hidden_sections.includes(s));
+  const tc = THEME_CLASSES[pageSettings.theme] || THEME_CLASSES.default;
+
+  // FASE 2.6 — Variante CTA WhatsApp controlada por site_settings (admin).
+  const whatsappVariantRaw = settingValues.cta_whatsapp_variant || '';
+  const whatsappVariant = resolveWhatsappVariant(whatsappVariantRaw);
+  const whatsappCtaLabel = getWhatsappCtaLabel(whatsappVariant, pageSettings.cta_whatsapp_text);
+
+  // ── Section renderers ──
+
+  const renderAbout = () => (
+    <motion.div key="about" className={`mt-6 ${tc.section} overflow-hidden`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+          <Briefcase className="h-4 w-4 text-accent" />
+        </div>
+        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Sobre o profissional</h2>
+      </div>
+      <motion.p
+        className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line"
+        variants={slideInLeft}
+      >
+        {provider.description && !/cadastrado na plataforma|entre em contato para mais informa/i.test(provider.description) ? provider.description : 'Este profissional ainda não adicionou uma descrição.'}
+      </motion.p>
+
+      {/* Info grid */}
+      <motion.div
+        className="mt-5 grid grid-cols-2 gap-3"
+        variants={stagger}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+      >
+        {provider.city && (
+          <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
+            <MapPin className="h-4 w-4 text-accent shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Localização</p>
+              <p className="text-xs font-medium text-foreground">{formatCityState(provider.city, provider.state)}</p>
+            </div>
+          </motion.div>
+        )}
+        {provider.neighborhood && (
+          <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
+            <MapPin className="h-4 w-4 text-accent shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Bairro</p>
+              <p className="text-xs font-medium text-foreground">{provider.neighborhood}</p>
+            </div>
+          </motion.div>
+        )}
+        <motion.div variants={scaleIn} className="col-span-full">
+          <WorkingHoursDisplay
+            struct={(provider as any).working_hours_struct ?? null}
+            legacyText={provider.working_hours ?? null}
+          />
+        </motion.div>
+        {provider.service_radius && (
+          <motion.div variants={scaleIn} className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-3">
+            <Zap className="h-4 w-4 text-accent shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Raio de Atuação</p>
+              <p className="text-xs font-medium text-foreground">{provider.service_radius}</p>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+
   const renderPortfolio = () => {
     if (portfolioImages.length === 0) return null;
-    return (
-      <div key="portfolio" className={`mt-6 p-6 ${tc.section}`}>
-        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Portfólio</h2>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {portfolioImages.map((url, i) => (
-            <div key={i} className="aspect-square cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]" onClick={() => openPortfolioLightbox(i)}>
-              <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
+
+    // If we have albums, render organized by album
+    if (portfolioAlbums.length > 0) {
+      let globalIndex = 0;
+      return (
+        <motion.div key="portfolio" className={`mt-6 ${tc.section} overflow-hidden`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+              <ImageIcon className="h-4 w-4 text-accent" />
             </div>
-          ))}
+            <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Trabalhos Realizados</h2>
+            <motion.span
+              className="ml-auto inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent"
+              initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}
+            >
+              <ImageIcon className="h-3 w-3" />
+              {portfolioAlbums.length} {portfolioAlbums.length === 1 ? 'álbum' : 'álbuns'} • {portfolioImages.length} fotos
+            </motion.span>
+          </div>
+          <div className="space-y-5">
+            {portfolioAlbums.filter(a => a.photos.length > 0).map(album => {
+              const albumPhotos = album.photos.map(p => isVideoUrl(p.image_url) ? p.image_url : portfolioThumb(p.image_url));
+              const showCount = isMobile ? 3 : 4;
+              const visible = albumPhotos.slice(0, showCount);
+              const remaining = albumPhotos.length - showCount;
+              const startIdx = globalIndex;
+              globalIndex += album.photos.length;
+
+              return (
+                <div key={album.id}>
+                  <h3 className="text-sm font-semibold text-foreground mb-2">{album.name}</h3>
+                  {album.description && <p className="text-xs text-muted-foreground mb-2">{album.description}</p>}
+                  <motion.div className="grid grid-cols-2 gap-2 sm:grid-cols-4" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                    {visible.map((url, i) => (
+                      <motion.div
+                        key={i}
+                        variants={scaleIn}
+                        className="relative cursor-pointer overflow-hidden rounded-xl border border-border group aspect-square"
+                        onClick={() => openPortfolioLightbox(startIdx + i)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {isVideoUrl(url) ? (
+                          <>
+                            <video src={url} muted playsInline preload="metadata" className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110" />
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="h-10 w-10 rounded-full bg-black/60 flex items-center justify-center">
+                                <Play className="h-5 w-5 text-white fill-white" />
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <img src={url} alt={`${album.name} ${i + 1}`} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" onError={handleImageError} />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <motion.div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" whileHover={{ scale: 1.1 }}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </motion.div>
+                        {i === showCount - 1 && remaining > 0 && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+                            <span className="text-white text-lg font-bold">+{remaining}</span>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      );
+    }
+
+    // Fallback: flat grid (legacy storage)
+    const showCount = isMobile ? 4 : 6;
+    const visiblePhotos = portfolioImages.slice(0, showCount);
+    const remaining = portfolioImages.length - showCount;
+
+    return (
+      <motion.div key="portfolio" className={`mt-6 ${tc.section} overflow-hidden`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+            <ImageIcon className="h-4 w-4 text-accent" />
+          </div>
+          <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Trabalhos Realizados</h2>
+          <motion.span
+            className="ml-auto inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent"
+            initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}
+          >
+            <ImageIcon className="h-3 w-3" />
+            {portfolioImages.length} fotos
+          </motion.span>
         </div>
-      </div>
+        <motion.div className="grid grid-cols-2 gap-2 sm:grid-cols-3" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+          {visiblePhotos.map((url, i) => (
+            <motion.div
+              key={i}
+              variants={scaleIn}
+              className={`relative cursor-pointer overflow-hidden rounded-xl border border-border group ${i === 0 ? 'col-span-2 row-span-2 aspect-[4/3]' : 'aspect-square'}`}
+              onClick={() => openPortfolioLightbox(i)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {isVideoUrl(url) ? (
+                <>
+                  <video src={url} muted playsInline preload="metadata" className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="h-10 w-10 rounded-full bg-black/60 flex items-center justify-center">
+                      <Play className="h-5 w-5 text-white fill-white" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" onError={handleImageError} />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <motion.div
+                className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                whileHover={{ scale: 1.1 }}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </motion.div>
+              {i === showCount - 1 && remaining > 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+                  <span className="text-white text-lg font-bold">+{remaining}</span>
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.div>
     );
   };
 
   const renderServices = () => (
-    <ServicesList key="services" services={services} whatsapp={effectiveWhatsApp} providerName={name} providerCity={provider.city} ctaWhatsappText={pageSettings.cta_whatsapp_text} accentBg={accentBg} themeClasses={tc} onImageClick={openServiceLightbox} />
+    <Suspense fallback={<SectionSkeleton minH="min-h-64" />} key="services">
+      <ServicesSection
+        services={services}
+        whatsapp={effectiveWhatsApp}
+        providerName={name}
+        providerCity={provider.city}
+        ctaWhatsappText={pageSettings.cta_whatsapp_text}
+        accentBg={accentBg}
+        themeClasses={tc}
+        onImageClick={openServiceLightbox}
+        providerId={provider.id}
+      />
+    </Suspense>
   );
+
 
   const renderReviews = () => {
     if (!reviewsEnabled) return null;
+    const avgRating = Number(provider.rating_avg) || 0;
     return (
-      <div key="reviews" className={`mt-6 p-6 ${tc.section}`}>
-        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Avaliações</h2>
+      <motion.div key="reviews" className={`mt-6 ${tc.section} overflow-hidden`} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+            <Star className="h-4 w-4 text-accent" />
+          </div>
+          <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Avaliações</h2>
+          {reviews.length > 0 && (
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">
+              <Star className="h-3 w-3 fill-accent" />
+              {avgRating.toFixed(1)} ({reviews.length})
+            </span>
+          )}
+        </div>
+
         {reviews.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
+          <div className="text-center py-6 space-y-2">
+            <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+              <Star className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
+          </div>
         ) : (
-          <div className="mt-4 space-y-4">
+          <motion.div className="mt-2 space-y-4" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             {reviews.map((r) => (
-              <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+              <motion.div key={r.id} className="rounded-lg border border-border/50 p-4 hover:border-accent/20 transition-colors" variants={fadeUp}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground">
-                    {(r.profiles as any)?.full_name || 'Cliente'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">
+                      {((r.profiles as any)?.full_name || 'C')[0]}
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">
+                      {(r.profiles as any)?.full_name || 'Cliente'}
+                    </span>
+                  </div>
                   <span className="text-xs text-muted-foreground">
                     {new Date(r.created_at).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
-                <div className="mt-1">
-                  <StarRating rating={r.rating} showValue={false} size={12} />
+                <div className="mt-2">
+                  <StarRating rating={r.rating} showValue={false} size={14} />
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>
-              </div>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{r.comment}</p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     );
   };
 
-  const renderLeadForm = () => (
-    <div key="lead_form" className={`mt-6 w-full lg:hidden p-6 ${tc.section}`}>
-      <h3 className={`${tc.heading} text-lg font-bold text-foreground`}>{pageSettings.cta_text}</h3>
-      {leadSent ? (
-        <div className="mt-4 rounded-lg bg-success/10 p-4 text-center">
-          <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
-          <p className="mt-1 text-xs text-muted-foreground">O profissional entrará em contato em breve.</p>
-        </div>
-      ) : (
-        <form onSubmit={handleLeadSubmit} className="mt-4 space-y-3">
-          <input type="text" placeholder="Seu nome" required value={leadForm.name}
-            onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
-            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-          <input type="tel" placeholder="Seu telefone" required value={leadForm.phone}
-            onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
-            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-          <input type="text" placeholder="Serviço necessário" required value={leadForm.service}
-            onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
-            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-          <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
-            onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
-            className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-          <Button type="submit" variant="accent" className={`w-full ${tc.button}`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
-            Enviar Solicitação
-          </Button>
-        </form>
-      )}
-    </div>
+  const renderTestimonials = () => (
+    <TestimonialsCarousel reviews={reviews} />
+  );
+
+  const renderAboutWithGuarantee = () => (
+    <>
+      {provider?.id ? <div className="mt-6"><DailyPostHighlight providerId={provider.id} /></div> : null}
+      {renderAbout()}
+      <TrustGuarantee />
+    </>
   );
 
   const sectionMap: Record<string, () => React.ReactNode> = {
-    about: renderAbout,
+    about: renderAboutWithGuarantee,
     portfolio: renderPortfolio,
     services: renderServices,
     reviews: renderReviews,
-    lead_form: renderLeadForm,
+    testimonials: renderTestimonials,
   };
 
   return (
-    <div className={`flex min-h-screen flex-col ${tc.page} ${tc.fontBody}`} style={accentStyle}>
+    // data-seo-ready: ProviderProfile usa estado local (`useState`) com try/catch manual
+    // — não há flag de erro de React Query no escopo. O early-return `if (loading)` em
+    // 1239 e o fallback de "provider não encontrado" garantem que provider só estará
+    // presente após fetch bem-sucedido. Por isso !loading && !!provider é suficiente.
+    <div className={`flex min-h-screen flex-col ${tc.page} ${tc.fontBody}`} style={accentStyle} data-seo-ready={!loading && !!provider ? 'true' : undefined}>
+
+      <SeoMeta
+        title={seoTitle}
+        description={seoDescription}
+        canonical={seoCanonical}
+        ogImage={providerSocialImage || undefined}
+        ogType="profile"
+      />
       <Header />
 
-      {/* Cover Image Hero */}
+      {/* Cover Image Hero — aspect-ratio reservado ANTES da imagem chegar
+          (CLS = 0). bg-muted serve de placeholder; o `motion.img` preenche
+          com object-cover. width/height intrínsecos batem com o transform. */}
       {pageSettings.cover_image_url && (
-        <div className="relative w-full aspect-[16/5] sm:aspect-[16/5] overflow-hidden">
-          <img src={coverImage(pageSettings.cover_image_url)} alt="Capa" className="h-full w-full object-cover" loading="eager" onError={handleImageError} />
+        <div className="relative w-full aspect-[16/5] overflow-hidden bg-muted">
+          {/* LCP image — sem motion wrapper (transform atrasa paint mobile),
+              srcSet/sizes para 1x mobile / 2x desktop sem dupla request. */}
+          <img
+            src={coverImage(pageSettings.cover_image_url)}
+            srcSet={`${optimizedImageUrl(pageSettings.cover_image_url, { width: 480, height: 270, quality: 70, resize: 'cover' })} 480w, ${coverImage(pageSettings.cover_image_url)} 800w, ${optimizedImageUrl(pageSettings.cover_image_url, { width: 1600, height: 900, quality: 75, resize: 'cover' })} 1600w`}
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px"
+            alt="Capa"
+            width={1600}
+            height={500}
+            className="h-full w-full object-cover"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            onError={handleImageError}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 container pb-6 text-white">
-            {pageSettings.headline && (
-              <h2 className="font-display text-xl sm:text-3xl font-bold drop-shadow-lg">{pageSettings.headline}</h2>
-            )}
-            {pageSettings.tagline && (
-              <p className="mt-1 text-sm sm:text-lg opacity-90 drop-shadow">{pageSettings.tagline}</p>
-            )}
+            {pageSettings.headline && <h2 className="font-display text-xl sm:text-3xl font-bold drop-shadow-lg">{pageSettings.headline}</h2>}
+            {pageSettings.tagline && <p className="mt-1 text-sm sm:text-lg opacity-90 drop-shadow">{pageSettings.tagline}</p>}
           </div>
         </div>
       )}
 
-      {/* Headline without cover */}
       {!pageSettings.cover_image_url && (pageSettings.headline || pageSettings.tagline) && (
         <div className="container pt-6">
-          {pageSettings.headline && (
-            <h2 className="font-display text-xl font-bold text-foreground">{pageSettings.headline}</h2>
-          )}
-          {pageSettings.tagline && (
-            <p className="mt-1 text-sm text-muted-foreground">{pageSettings.tagline}</p>
-          )}
+          {pageSettings.headline && <h2 className="font-display text-xl font-bold text-foreground line-clamp-2">{pageSettings.headline}</h2>}
+          {pageSettings.tagline && <p className="mt-1 text-sm text-muted-foreground">{pageSettings.tagline}</p>}
         </div>
       )}
 
-      {/* Breadcrumb */}
-      <nav className="container py-3 text-sm text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">Início</Link>
+      {/* Breadcrumb — quando temos categoria + cidade, o link da cidade aponta
+          para a rota canônica rica (categoria×cidade), distribuindo autoridade
+          interna para a página com mais contexto SEO. */}
+      <nav className="container py-3 text-sm text-muted-foreground" aria-label="Breadcrumb">
+        <Link to="/" className="hover:text-foreground transition-colors">Início</Link>
         {categorySlug && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/categoria/${categorySlug}`} className="hover:text-foreground">{category}</Link>
+            <Link to={`/categoria/${categorySlug}`} className="hover:text-foreground transition-colors">{category}</Link>
           </>
         )}
         {provider.city && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/cidade/${citySlug}`} className="hover:text-foreground">{provider.city}</Link>
+            <Link
+              to={categorySlug && citySlug ? `/categoria/${categorySlug}/em/${citySlug}` : `/cidade/${citySlug}`}
+              className="hover:text-foreground transition-colors"
+            >
+              {provider.city}
+            </Link>
           </>
         )}
         <ChevronRight className="mx-1 inline h-3 w-3" />
-        <span className="text-foreground">{name}</span>
+        <span className="text-foreground font-medium">{name}</span>
       </nav>
 
-      {/* Profile Top Ad Slot */}
       <Suspense fallback={null}><AdSlot slotSlug="profile-top" category={category} city={provider.city} state={provider.state} /></Suspense>
 
-      <div className="container py-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          <div className="flex-1">
-            {/* Profile header */}
-            <div className={`p-6 ${tc.card}`}>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <Avatar className="h-20 w-20 shrink-0 rounded-2xl">
+      <div className="container py-6">
+        <div className="mx-auto max-w-3xl">
+          {/* ── Profile Header Card ── */}
+          <motion.div
+            className={`p-6 ${tc.card} overflow-hidden relative`}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {/* Subtle gradient background accent */}
+            <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-accent/5 blur-3xl -translate-y-1/2 translate-x-1/2" />
+
+            <div className="relative flex flex-col items-center text-center gap-4 sm:flex-row sm:items-start sm:text-left">
+              <motion.div
+                className="relative"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <Avatar className="h-28 w-28 shrink-0 rounded-2xl ring-4 ring-accent/20 shadow-xl">
                   <AvatarImage src={avatarUrl || undefined} alt={name} className="rounded-2xl" />
-                  <AvatarFallback className="rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-                    {initials}
+                  <AvatarFallback className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 border border-white/10 shadow-inner">
+                    <UserRound className="w-1/2 h-1/2 text-slate-300" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
-                    {provider.plan === 'premium' && (
-                      <span className={`inline-flex items-center gap-1 ${tc.badge} bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                        <Crown className="h-3 w-3" /> DESTAQUE
-                      </span>
-                    )}
-                  </div>
-                  {provider.business_name && (
-                    <p className="text-sm text-muted-foreground">{provider.business_name}</p>
+                {/* Online indicator pulse */}
+                <motion.div
+                  className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 border-2 border-card"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                />
+              </motion.div>
+              <motion.div
+                className="flex-1 min-w-0"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.25, duration: 0.5 }}
+              >
+                <div ref={nameAnchorRef} className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
+                  {provider.user_id && <ProviderTopBadgeInline userId={provider.user_id} />}
+                  {provider.user_id && <PublicActivityBadges userId={provider.user_id} size="sm" />}
+                  {/* Selo de gamification inline ao lado do nome (autoridade visível em qualquer breakpoint) */}
+                  {provider.levelInfo && !(provider.accTypeInfo?.name || '').toLowerCase().includes('admin') && !['usuário', 'usuario', 'user'].includes((provider.levelInfo.name || '').toLowerCase()) && (
+                    <GamificationLevelBadge
+                      levelName={provider.levelInfo.name}
+                      levelColor={provider.levelInfo.color}
+                      size="sm"
+                      showShine={true}
+                    />
                   )}
-                  <p className="mt-1 text-sm font-medium" style={accentBg ? { color: accentBg } : undefined}>
-                    {category || 'Categoria não informada'}
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {provider.city
-                        ? `${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${provider.city} - ${provider.state}`
-                        : 'Localização não informada'}
-                    </span>
+                  {isDestaque && (
+                    <motion.span
+                      className={`inline-flex items-center gap-1 ${tc.badge} border-2 border-accent/40 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent`}
+                      initial={{ scale: 0, rotate: -12 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.4, type: 'spring', stiffness: 300, damping: 15 }}
+                    >
+                      <Crown className="h-3 w-3" strokeWidth={1.75} /> DESTAQUE
+                    </motion.span>
+                  )}
+                  {/* Badge "Prestador"/"Empresa" removido — a categoria já comunica o papel.
+                      Ver pedido do produto: manter apenas a categoria abaixo do nome. */}
+                </div>
+
+                {/* Seção "Por que é Profissional Top" — critérios cumpridos (visível só quando is_verified=true) */}
+                {provider.id && <TopProfessionalCriteriaCard providerId={provider.id} />}
+
+                {/* ── PROMINENT LEVEL BADGE (Metallic Design) — hidden for admins and generic "Usuário" level ── */}
+                {provider.levelInfo && !(provider.accTypeInfo?.name || '').toLowerCase().includes('admin') && !['usuário', 'usuario', 'user'].includes((provider.levelInfo.name || '').toLowerCase()) && (
+                  <div className="mt-2 flex justify-center sm:justify-start">
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="inline-flex items-center gap-1.5" aria-label={`Profissional Nível ${provider.levelInfo.name}`}>
+                            <GamificationLevelBadge
+                              levelName={provider.levelInfo.name}
+                              levelColor={provider.levelInfo.color}
+                              size="lg"
+                              showShine={true}
+                            />
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-xs text-center">
+                          Este profissional atingiu o nível máximo de completude e engajamento na plataforma.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                )}
+
+                {/* ── MURAL DE VITRINES (Social Proof) ── */}
+                <PublicAchievementsStrip
+                  userId={provider.user_id}
+                  servicesCount={services.length}
+                  portfolioPhotoCount={Number(provider.portfolio_photo_count || 0)}
+                  ratingAvg={Number(provider.rating_avg || 0)}
+                  reviewCount={Number(provider.review_count || 0)}
+                  city={provider.city}
+                  state={provider.state}
+                  levelName={provider.levelInfo?.name ?? null}
+                />
+                {provider.business_name && <p className="text-sm text-muted-foreground mt-1">{provider.business_name}</p>}
+                <p className="mt-1 text-sm font-semibold flex items-center justify-center sm:justify-start gap-1" style={accentBg ? { color: accentBg } : undefined}>
+                  <CategoryIcon icon={categoryIcon} size={16} className="text-accent" />
+                  {category || 'Categoria não informada'}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-3 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4 text-accent" />
+                    {provider.city
+                      ? `${provider.neighborhood ? `${provider.neighborhood}, ` : ''}${formatCityState(provider.city, provider.state)}`
+                      : 'Localização não informada'}
+                  </span>
+                </div>
+
+                {/* Experience & Projects Highlight */}
+                {(provider.years_experience > 0 || provider.portfolio_photo_count > 0) && (
+                  <motion.div
+                    className="mt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-3"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
                     {provider.years_experience > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {provider.years_experience} anos de experiência
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent/10 border border-accent/20 px-3 py-1.5 text-xs font-semibold text-accent">
+                        <CalendarClock className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        {provider.years_experience}+ anos de experiência
                       </span>
                     )}
+                    {provider.portfolio_photo_count > 0 && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent/10 border border-accent/20 px-3 py-1.5 text-xs font-semibold text-accent">
+                        <FolderOpen className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        {provider.portfolio_photo_count} projetos realizados
+                      </span>
+                    )}
+                  </motion.div>
+                )}
+                {reviewsEnabled && (
+                  <div className="mt-3 flex justify-center sm:justify-start">
+                    <ReviewSummary rating={Number(provider.rating_avg)} reviewCount={provider.review_count} />
                   </div>
-                  {reviewsEnabled && (
-                    <div className="mt-3">
-                      <StarRating rating={Number(provider.rating_avg)} count={provider.review_count} />
-                    </div>
-                  )}
-                  {/* Social links */}
-                  {hasSocial && (
-                    <div className="mt-3 flex gap-2">
-                      {pageSettings.instagram_url && (
-                        <a href={pageSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                          <Instagram className="h-5 w-5" />
-                        </a>
-                      )}
-                      {pageSettings.facebook_url && (
-                        <a href={pageSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                          <Facebook className="h-5 w-5" />
-                        </a>
-                      )}
-                      {pageSettings.youtube_url && (
-                        <a href={pageSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                          <Youtube className="h-5 w-5" />
-                        </a>
-                      )}
-                      {pageSettings.tiktok_url && (
-                        <a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors text-sm font-bold">
-                          🎵
-                        </a>
-                      )}
-                    </div>
+                )}
+
+                {/* Trust Badges */}
+                <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-1.5">
+                  <ProfileBadge hasPhoto={hasOwnAvatar} hasServices={services.length > 0} />
+                  {provider.years_experience >= 3 && <TrustBadge icon={Award} text="Experiente" delay={0.6} />}
+                  {provider.response_time && (
+                    <motion.span
+                      className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-[11px] font-medium text-blue-600"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.8, type: 'spring', stiffness: 300, damping: 20 }}
+                    >
+                      <Zap className="h-3 w-3" />
+                      Responde em {provider.response_time}
+                    </motion.span>
                   )}
                 </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {effectiveWhatsApp && (
-                  <Button variant="accent" size="lg" className={tc.button} asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                    <a href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)} target="_blank" rel="noopener noreferrer">
-                      <MessageCircle className="h-5 w-5" /> {pageSettings.cta_whatsapp_text}
-                    </a>
-                  </Button>
+
+                {hasSocial && (
+                  <div className="mt-3 flex justify-center sm:justify-start gap-2">
+                    {pageSettings.instagram_url && (
+                      <motion.a href={pageSettings.instagram_url} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <Instagram className="h-4 w-4" />
+                      </motion.a>
+                    )}
+                    {pageSettings.facebook_url && (
+                      <motion.a href={pageSettings.facebook_url} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <Facebook className="h-4 w-4" />
+                      </motion.a>
+                    )}
+                    {pageSettings.youtube_url && (
+                      <motion.a href={pageSettings.youtube_url} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <Youtube className="h-4 w-4" />
+                      </motion.a>
+                    )}
+                     {pageSettings.tiktok_url && (
+                      <motion.a href={pageSettings.tiktok_url} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                        <Music className="h-4 w-4" />
+                      </motion.a>
+                    )}
+                    {provider?.website && (
+                      <motion.a
+                        href={/^https?:\/\//.test(provider.website) ? provider.website : `https://${provider.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        aria-label="Site / portfólio"
+                        title="Site / portfólio"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-all"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Globe className="h-4 w-4" />
+                      </motion.a>
+                    )}
+                  </div>
                 )}
-                {isMobile && provider.phone && telLink(provider.phone) && (
-                  <Button variant="outline" size="lg" className={tc.buttonOutline} asChild>
-                    <a href={telLink(provider.phone)}>
-                      <Phone className="h-5 w-5" /> Ligar
-                    </a>
-                  </Button>
-                )}
-                <Button variant="outline" size="lg" onClick={() => {
-                  navigator.clipboard.writeText(window.location.href).then(() => {
-                    toast.success('Link copiado!');
-                  }).catch(() => {
-                    window.prompt('Copie o link:', window.location.href);
-                  });
-                }}>
-                  <Copy className="h-4 w-4" /> Copiar Link
-                </Button>
-              </div>
+              </motion.div>
             </div>
 
-            {/* Dynamic sections with ad slots interspersed */}
-            {visibleSections.map((sectionId, idx) => {
-              const render = sectionMap[sectionId];
-              return (
-                <div key={sectionId}>
-                  {render ? render() : null}
-                  {sectionId === 'about' && (
-                    <Suspense fallback={null}><AdSlot slotSlug="profile-after-desc" category={category} city={provider.city} state={provider.state} /></Suspense>
-                  )}
-                  {sectionId === 'services' && (
-                    <Suspense fallback={null}><AdSlot slotSlug="profile-between-services" category={category} city={provider.city} state={provider.state} /></Suspense>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+            {/* ── Trust Statistics Section ──
+                Regra: só renderiza métricas que o profissional realmente possui.
+                Se TODAS estiverem zeradas, o bloco inteiro é omitido (não mostramos "0 / —"). */}
+            {(() => {
+              const stats = [
+                provider.years_experience > 0 && { label: 'Anos exp.', value: `${provider.years_experience}+` },
+                services.length > 0 && { label: 'Serviços', value: String(services.length) },
+                (provider.review_count || 0) > 0 && { label: 'Avaliações', value: String(provider.review_count) },
+                portfolioImages.length > 0 && { label: 'Fotos', value: String(portfolioImages.length) },
+              ].filter(Boolean) as Array<{ label: string; value: string }>;
 
-          {/* Sidebar */}
-          <aside className="hidden lg:block w-80">
-            <div className={`sticky top-20 p-6 ${tc.card}`}>
-              <h3 className={`${tc.heading} text-lg font-bold text-foreground`}>{pageSettings.cta_text}</h3>
-              {leadSent ? (
-                <div className="mt-4 rounded-lg bg-success/10 p-4 text-center">
-                  <p className="text-sm font-semibold text-foreground">Solicitação enviada!</p>
-                  <p className="mt-1 text-xs text-muted-foreground">O profissional entrará em contato em breve.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleLeadSubmit} className="mt-4 space-y-3">
-                  <input type="text" placeholder="Seu nome" required value={leadForm.name}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-                  <input type="tel" placeholder="Seu telefone" required value={leadForm.phone}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-                  <input type="text" placeholder="Serviço necessário" required value={leadForm.service}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-                  <textarea placeholder="Descreva o que precisa..." rows={3} value={leadForm.message}
-                    onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground`} />
-                  <Button type="submit" variant="accent" className={`w-full ${tc.button}`} style={accentBg ? { backgroundColor: accentBg } : undefined}>
-                    Enviar Solicitação
-                  </Button>
-                </form>
+              if (stats.length === 0) return null;
+
+              return (
+                <motion.div
+                  className="mt-5 rounded-xl bg-gradient-to-r from-emerald-500/5 via-accent/5 to-blue-500/5 border border-border/50 p-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45 }}
+                >
+                  <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Shield className="h-3 w-3" strokeWidth={1.75} /> Estatísticas de Confiança
+                  </h3>
+                  <div className={`grid gap-3 ${stats.length >= 4 ? 'grid-cols-2 sm:grid-cols-4' : stats.length === 3 ? 'grid-cols-3' : stats.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {stats.map((s) => (
+                      <div key={s.label} className="text-center">
+                        <p className="text-xl font-extrabold text-foreground leading-none">{s.value}</p>
+                        <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              );
+            })()}
+
+            {/* ── Stats Mini Cards ── */}
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              {provider.years_experience > 0 && (
+                <StatMiniCard icon={Briefcase} label="Experiência" value={`${provider.years_experience}+`} delay={0.4} accentBg={accentBg} />
+              )}
+              {provider.review_count > 0 && (
+                <StatMiniCard icon={Star} label="Avaliações" value={provider.review_count} delay={0.5} accentBg={accentBg} />
+              )}
+              {services.length > 0 && (
+                <StatMiniCard icon={Briefcase} label="Serviços" value={services.length} delay={0.6} accentBg={accentBg} />
+              )}
+              {portfolioImages.length > 0 && !(provider.years_experience > 0 && provider.review_count > 0 && services.length > 0) && (
+                <StatMiniCard icon={ImageIcon} label="Fotos" value={portfolioImages.length} delay={0.6} accentBg={accentBg} />
               )}
             </div>
-            <SponsorAd position="sidebar" layout="vertical" className="mt-4" />
-          </aside>
+
+            {/* ── Conversion Tags ── */}
+            <ConversionTags reviewCount={provider.review_count} responseTime={provider.response_time} />
+
+            {/* ── CTA Buttons ── */}
+            <motion.div
+              className="mt-6 flex min-h-[44px] flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-2"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.5 }}
+            >
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <Button
+                  variant="accent"
+                  size="lg"
+                  className={`${tc.button} gap-2 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto`}
+                  onClick={() => setLeadDialogOpen(true)}
+                >
+                  <Send className="h-4 w-4" />
+                  {pageSettings.cta_text}
+                </Button>
+              </motion.div>
+              {effectiveWhatsApp && (
+                <motion.div ref={mainWhatsappRef} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                  <Button
+                    size="lg"
+                    className="gap-2 w-full sm:w-auto bg-[#25D366] text-white hover:bg-[#1ebe5a] shadow-lg hover:shadow-xl transition-all"
+                    onClick={() => {
+                      if (provider) trackContactClick(provider.id, 'whatsapp', `${window.location.pathname}?${ctaSourceTag('whatsapp', whatsappVariant)}`, undefined, 'principal');
+                      requestWhatsApp({
+                       url: whatsappLink(effectiveWhatsApp, `Olá ${name}! Vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.`),
+                        targetType: 'provider',
+                        targetId: provider?.id ?? null,
+                        targetLabel: name,
+                        whatsappNumber: effectiveWhatsApp,
+                      });
+                    }}
+                  >
+                    <MessageCircle className="h-5 w-5" /> {whatsappCtaLabel}
+                  </Button>
+                </motion.div>
+              )}
+              <div className="flex gap-2 justify-center">
+                {isMobile && provider.phone && telLink(provider.phone) && (
+                  <Button variant="outline" size="lg" className={tc.buttonOutline}
+                    onClick={() => {
+                      if (provider) trackContactClick(provider.id, 'phone', window.location.pathname);
+                      window.location.href = telLink(provider.phone) || '';
+                    }}
+                  >
+                    <Phone className="h-5 w-5" /> Ligar
+                  </Button>
+                )}
+                <Button variant="ghost" size="lg" onClick={() => setShareDialogOpen(true)}>
+                  <Share2 className="h-4 w-4" /> Compartilhar
+                </Button>
+              </div>
+            </motion.div>
+
+            <ShareDialog
+              open={shareDialogOpen}
+              onOpenChange={setShareDialogOpen}
+              url={typeof window !== 'undefined' ? window.location.href : ''}
+              title={`${name} — ${category}${provider.city ? ` em ${provider.city}` : ''}`}
+              text={`Recomendo ${name}, ${category} no Preciso de um!`}
+            />
+
+            {/* ── Owner: Pedir Avaliação ── */}
+            {user?.id === provider.user_id && (
+              <motion.div
+                className="mt-3 flex flex-col items-center sm:items-start gap-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="gap-2 border-accent/30 hover:bg-accent/5 w-full sm:w-auto"
+                  asChild
+                >
+                  <a
+                    href={whatsappLink('', `Olá! Agradeço por escolher meus serviços. Poderia me avaliar rapidinho na plataforma? Isso fortalece meu trabalho! ${window.location.href}`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-wa-skip="true"
+                  >
+                    <Star className="h-4 w-4 text-accent" /> Pedir Avaliação
+                  </a>
+                </Button>
+                <p className="text-[10px] text-muted-foreground">Envie para clientes recentes via WhatsApp</p>
+              </motion.div>
+            )}
+
+          </motion.div>
+
+          {/* ── Dynamic sections ── */}
+          {visibleSections.map((sectionId) => {
+            const render = sectionMap[sectionId];
+            return (
+              <div key={sectionId}>
+                {render ? render() : null}
+                {sectionId === 'about' && (
+                  <Suspense fallback={null}><AdSlot slotSlug="profile-after-desc" category={category} city={provider.city} state={provider.state} /></Suspense>
+                )}
+                {sectionId === 'services' && (
+                  <Suspense fallback={null}><AdSlot slotSlug="profile-between-services" category={category} city={provider.city} state={provider.state} /></Suspense>
+                )}
+              </div>
+            );
+          })}
+
+          {/* ── Testimonials (always rendered if reviews exist) ── */}
+          {!visibleSections.includes('testimonials') && reviews.length > 0 && (
+            <TestimonialsCarousel reviews={reviews} />
+          )}
+
+          {/* ── Related Providers (lazy chunk) ── */}
+          {relatedProviders.length > 0 && (
+            <Suspense fallback={<SectionSkeleton minH="min-h-72" />}>
+              <RelatedProvidersSection
+                relatedProviders={relatedProviders}
+                category={category}
+                categorySlug={categorySlug || undefined}
+                themeClasses={tc}
+              />
+            </Suspense>
+          )}
+
+
+          <Suspense fallback={null}><AdSlot slotSlug="profile-before-whatsapp" category={category} city={provider.city} state={provider.state} /></Suspense>
+          <Suspense fallback={null}><AdSlot slotSlug="profile-footer" category={category} city={provider.city} state={provider.state} /></Suspense>
+        </div>
       </div>
-      {/* Profile footer ad slot */}
-      <Suspense fallback={null}><AdSlot slotSlug="profile-footer" category={category} city={provider.city} state={provider.state} /></Suspense>
-      </div>
-      {/* Floating WhatsApp Button — same pattern as homepage FloatingWhatsApp */}
+
+      {/* ── Lead Form Dialog (popup) ── */}
+      <Dialog open={leadDialogOpen} onOpenChange={setLeadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10">
+                <Send className="h-4 w-4 text-accent" />
+              </div>
+              {pageSettings.cta_text}
+            </DialogTitle>
+          </DialogHeader>
+          <AnimatePresence mode="wait">
+            {leadSent ? (
+              <motion.div
+                key="success"
+                className="rounded-xl bg-accent/10 p-6 text-center space-y-3"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+              >
+                <motion.div
+                  className="mx-auto h-14 w-14 rounded-full bg-emerald-500/20 flex items-center justify-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
+                >
+                  <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+                </motion.div>
+                <p className="text-base font-semibold text-foreground">Solicitação enviada!</p>
+                <p className="text-sm text-muted-foreground">O profissional entrará em contato em breve.</p>
+                <Button variant="outline" onClick={() => setLeadDialogOpen(false)} className="mt-2">Fechar</Button>
+              </motion.div>
+            ) : (
+              <motion.form
+                key="form"
+                onSubmit={handleLeadSubmit}
+                className="space-y-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Seu nome</label>
+                  <input type="text" placeholder="Como quer ser chamado?" required value={leadForm.name}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Telefone</label>
+                  <input type="tel" placeholder="(00) 00000-0000" required value={leadForm.phone}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Serviço necessário</label>
+                  <input type="text" placeholder={category ? `Ex: ${category}` : 'Ex: Reforma de banheiro'} required value={leadForm.service}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                </div>
+                <div className="grid grid-cols-[1fr_84px] gap-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Sua cidade</label>
+                    <input type="text" placeholder="Cidade" value={leadForm.city}
+                      onChange={(e) => setLeadForm(prev => ({ ...prev, city: e.target.value }))}
+                      className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">UF</label>
+                    <input type="text" placeholder="UF" maxLength={2} value={leadForm.state}
+                      onChange={(e) => setLeadForm(prev => ({ ...prev, state: e.target.value.toUpperCase().slice(0, 2) }))}
+                      className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm uppercase text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</label>
+                  <textarea placeholder={category ? `Conte rapidamente o que precisa em ${category.toLowerCase()}...` : 'Descreva o que precisa...'} rows={3} value={leadForm.message}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none resize-none transition-all`} />
+                </div>
+                <ContactWindowPicker
+                  value={preferredWindow}
+                  onChange={setPreferredWindow}
+                  providerHours={normalizeContactHours((provider as any)?.contact_hours)}
+                  helperText="Ajuda o profissional a te ligar na hora certa."
+                />
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button type="submit" disabled={isSubmittingLead} variant="accent" className="w-full gap-2 shadow-lg" style={accentBg ? { backgroundColor: accentBg } : undefined}>
+                    <Send className="h-4 w-4" /> {isSubmittingLead ? 'Enviando…' : 'Enviar Solicitação'}
+                  </Button>
+                </motion.div>
+              </motion.form>
+            )}
+          </AnimatePresence>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sticky header: nome do prestador + selo Top fixos no topo durante o scroll */}
+      <AnimatePresence initial={false}>
+        {provider && showStickyName && (
+          <motion.div
+            key="sticky-provider-name"
+            role="banner"
+            aria-label={`Cabeçalho fixo: ${name}`}
+            className="fixed inset-x-0 top-0 z-[998] border-b border-border bg-card/95 px-3 py-2 shadow-sm backdrop-blur-lg"
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -40, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+          >
+            <div className="container flex items-center gap-2 min-w-0">
+              {avatarUrl && (
+                <img
+                  src={avatarUrl}
+                  alt={`Foto de ${name}`}
+                  className="h-8 w-8 shrink-0 rounded-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+              <span className="truncate font-display text-sm font-semibold text-foreground">
+                {name}
+              </span>
+              {provider.user_id && (
+                <span className="shrink-0">
+                  <ProviderTopBadgeInline userId={provider.user_id} />
+                </span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sticky CTA bar for mobile */}
+      <AnimatePresence initial={false}>
+        {effectiveWhatsApp && showStickyContact && (
+          <motion.div
+            key="sticky-mobile-whatsapp"
+            role="region"
+            aria-label="Ação rápida de contato"
+            aria-live="polite"
+            aria-atomic="true"
+            data-testid="sticky-action-bar"
+            className="fixed inset-x-0 border-t border-border bg-card/95 p-3 md:hidden shadow-lg backdrop-blur-lg transform-gpu will-change-transform"
+            style={{ zIndex: 999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)' }}
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 34, mass: 0.8 }}
+            onAnimationComplete={() => {
+              // Preserve keyboard focus when the bar appears: only auto-focus
+              // the CTA if the user previously focused the in-view CTA that
+              // just scrolled off-screen (avoids stealing focus from inputs).
+              if (typeof document === 'undefined') return;
+              const active = document.activeElement as HTMLElement | null;
+              if (!active || active === document.body) return;
+              const wasOffscreenCta = active.matches?.('[data-cta="whatsapp-inline"]');
+              if (!wasOffscreenCta) return;
+              const rect = active.getBoundingClientRect();
+              const offscreen = rect.bottom < 0 || rect.top > window.innerHeight;
+              if (!offscreen) return;
+              const target = document.querySelector<HTMLButtonElement>(
+                '[data-testid="sticky-action-bar"] button',
+              );
+              target?.focus({ preventScroll: true });
+            }}
+          >
+            <span id="sticky-whatsapp-description" className="sr-only">
+              Abre uma conversa no WhatsApp com este profissional sem alterar sua posição na página.
+            </span>
+            <Button
+              type="button"
+              variant="accent"
+              size="lg"
+              aria-label={`Chamar ${name} no WhatsApp`}
+              aria-describedby="sticky-whatsapp-description"
+              className="min-h-12 w-full gap-2 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onClick={() => {
+                if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'sticky');
+                requestWhatsApp({
+                  url: whatsappLink(effectiveWhatsApp, `Olá ${name}! Vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.`),
+                  targetType: 'provider',
+                  targetId: provider?.id ?? null,
+                  targetLabel: name,
+                  whatsappNumber: effectiveWhatsApp,
+                });
+              }}
+            >
+              <MessageCircle className="h-5 w-5" aria-hidden="true" /> {pageSettings.cta_whatsapp_text}
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence initial={false}>
+        {effectiveWhatsApp && showEmergencyContact && !showStickyContact && (
+          <motion.div
+            key="emergency-mobile-whatsapp"
+            role="navigation"
+            aria-label="Contato rápido de emergência"
+            className="fixed right-3 md:hidden"
+            style={{ zIndex: 1000, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)' }}
+            initial={{ scale: 0.92, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.92, opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+          >
+            <Button
+              type="button"
+              size="icon"
+              aria-label={`Chamar ${name} no WhatsApp`}
+              className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onClick={() => {
+                if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'sticky');
+                requestWhatsApp({
+                  url: whatsappLink(effectiveWhatsApp, `Olá ${name}! Vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.`),
+                  targetType: 'provider',
+                  targetId: provider?.id ?? null,
+                  targetLabel: name,
+                  whatsappNumber: effectiveWhatsApp,
+                });
+              }}
+            >
+              <MessageCircle className="h-5 w-5" aria-hidden="true" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating WhatsApp — desktop only */}
       {effectiveWhatsApp && (
-        <a
-          href={whatsappLink(effectiveWhatsApp, `Olá! Vi seu perfil "${name}" no Preciso de um e gostaria de um orçamento.`)}
+        <motion.a
+          href={whatsappLink(effectiveWhatsApp, `Olá ${name}! Vi seu perfil no Preciso de um e gostaria de conversar sobre uma necessidade.`)}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed right-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
-          style={{
-            zIndex: 9999,
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)',
-          }}
+          onClick={() => provider?.id && trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'flutuante')}
+          className="fixed right-4 hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg"
+          style={{ zIndex: 9999, bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
           aria-label="WhatsApp"
+          whileHover={{ scale: 1.15 }}
+          whileTap={{ scale: 0.9 }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 1, type: 'spring', stiffness: 300 }}
         >
-          <MessageCircle className="h-5 w-5" />
-        </a>
+          <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          <span className="absolute inset-0 rounded-full animate-ping bg-[#25D366]/30 pointer-events-none" style={{ animationDuration: '3s' }} />
+        </motion.a>
       )}
+
+      {/* Sponsor ad sidebar slot on profile pages */}
+      <div className="container py-4">
+        <div className="mx-auto max-w-3xl">
+          <Suspense fallback={null}>
+            <SponsorAdSlot locationKey="profile-sidebar" layout="card" maxAds={1} />
+          </Suspense>
+        </div>
+      </div>
+
+      {/* Fase 2.9 — SEO runtime enhancement (links contextuais + FAQ leve) */}
+      {provider && (
+        <Suspense fallback={null}>
+          <SeoEnhancementSection
+            indexation={{
+              type: 'category',
+              path: `/profissional/${slug || provider.slug || provider.id}`,
+              slug: provider.slug || provider.id,
+              providersCount: 1,
+            }}
+            content={{
+              categoryName: category,
+              cityName: provider.city || undefined,
+              providersCount: 1,
+              hasSponsor: !!provider.featured,
+            }}
+            faq={{
+              categoryName: category || 'profissional',
+              cityName: provider.city || undefined,
+            }}
+            links={{
+              citySlug: provider.city ? sanitizeSlug(provider.city) : undefined,
+              categorySlug: categorySlug || undefined,
+              relatedCategories: categorySlug && provider.city
+                ? [{ name: category, slug: categorySlug }]
+                : undefined,
+              relatedCities: provider.city && categorySlug
+                ? [{ name: provider.city, slug: sanitizeSlug(provider.city) }]
+                : undefined,
+              highConversionProviders: (relatedProviders || [])
+                .slice(0, 6)
+                .map((r: any) => ({
+                  name: r.business_name || r.profiles?.full_name || 'Profissional',
+                  slug: r.slug || r.id,
+                })),
+            }}
+          />
+        </Suspense>
+      )}
+
       <Footer />
-      <ImageLightbox
-        images={lightboxImages}
-        initialIndex={lightboxIndex}
-        open={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-      />
+
+      <Suspense fallback={null}>
+        <ImageLightbox
+          images={lightboxImages}
+          initialIndex={lightboxIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+        />
+      </Suspense>
     </div>
   );
 };
 
-/* ── Service Detail Dialog ── */
-const ServiceDetailDialog = ({ service, open, onClose, whatsapp, ctaWhatsappText, accentBg, onImageClick }: { service: any; open: boolean; onClose: () => void; whatsapp: string; ctaWhatsappText?: string; accentBg?: string; onImageClick?: (images: string[], index: number) => void }) => (
-  <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-      <DialogHeader>
-        <DialogTitle className="text-lg font-bold">{service.service_name}</DialogTitle>
-      </DialogHeader>
-      {service.serviceImages?.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
-          {service.serviceImages.map((img: any, idx: number) => (
-            <div
-              key={img.id}
-              className="aspect-video cursor-pointer overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.02]"
-              onClick={() => onImageClick?.(service.serviceImages.map((i: any) => i.image_url), idx)}
-            >
-              <img src={serviceImageThumb(img.image_url)} alt="Foto do serviço" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
-            </div>
-          ))}
-        </div>
-      )}
-      {service.serviceCategories?.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {service.serviceCategories.map((cat: any, i: number) => (
-            <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
-              {cat.icon} {cat.name}
-            </span>
-          ))}
-        </div>
-      )}
-      {service.description && <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>}
-      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-        {service.price && <span className="font-semibold text-foreground">💰 {service.price}</span>}
-        {service.service_area && <span>📍 {service.service_area}</span>}
-        {service.working_hours && <span>🕐 {service.working_hours}</span>}
-      </div>
-      <Button variant="accent" className="w-full" asChild style={accentBg ? { backgroundColor: accentBg } : undefined}>
-        <a href={whatsappLink(whatsapp || '', `Olá! Vi seu serviço no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
-          <MessageCircle className="h-4 w-4" /> {ctaWhatsappText || 'Chamar no WhatsApp'}
-        </a>
-      </Button>
-    </DialogContent>
-  </Dialog>
+/* ServicesList + ServiceDetailDialog foram extraídos para
+ * `src/pages/provider-profile/sections/ServicesSection.tsx` (lazy chunk). */
+
+
+
+const ProviderProfileWithGuard = () => (
+  <ErrorGuard componentName="ProviderProfile" fallbackRoute="/ajuda">
+    <ProviderProfile />
+  </ErrorGuard>
 );
 
-/* ── Services List with popup ── */
-const ServicesList = ({ services, whatsapp, providerName, providerCity, ctaWhatsappText, accentBg, themeClasses, onImageClick }: { services: any[]; whatsapp: string; providerName: string; providerCity: string; ctaWhatsappText?: string; accentBg?: string; themeClasses?: ThemeConfig; onImageClick?: (images: string[], index: number) => void }) => {
-  const [selected, setSelected] = useState<any | null>(null);
-  const tc = themeClasses || THEME_CLASSES.default;
-
-  return (
-    <>
-      <div className={`mt-6 p-6 ${tc.section}`}>
-        <h2 className={`${tc.heading} text-lg font-bold text-foreground`}>Serviços oferecidos</h2>
-        <div className="mt-4 space-y-3">
-          {services.map((s: any) => (
-            <button
-              key={s.id}
-              onClick={() => setSelected(s)}
-              className="w-full text-left rounded-lg border border-border p-4 transition-all hover:border-primary/30 hover:shadow-sm"
-            >
-              <h3 className="text-sm font-semibold text-foreground">{s.service_name}</h3>
-              {s.serviceCategories?.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {s.serviceCategories.map((cat: any, i: number) => (
-                    <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-[11px] font-medium text-accent">
-                      {cat.icon} {cat.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {s.description && <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{s.description}</p>}
-              <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                {s.price && <span>💰 {s.price}</span>}
-                {s.service_area && <span>📍 {s.service_area}</span>}
-              </div>
-              {s.serviceImages?.length > 0 && (
-                <div className="mt-3 flex gap-2 overflow-hidden">
-                  {s.serviceImages.slice(0, 3).map((img: any) => (
-                    <div key={img.id} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border">
-                      <img src={serviceImageThumb(img.image_url)} alt="" className="h-full w-full object-cover" loading="lazy" onError={handleImageError} />
-                    </div>
-                  ))}
-                  {s.serviceImages.length > 3 && (
-                    <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-xs text-muted-foreground">+{s.serviceImages.length - 3}</span>
-                  )}
-                </div>
-              )}
-            </button>
-          ))}
-          {services.length === 0 && <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado.</p>}
-        </div>
-      </div>
-      {selected && (
-        <ServiceDetailDialog service={selected} open={!!selected} onClose={() => setSelected(null)} whatsapp={whatsapp} ctaWhatsappText={ctaWhatsappText} accentBg={accentBg} onImageClick={onImageClick} />
-      )}
-    </>
-  );
-};
-
-export default ProviderProfile;
+export default ProviderProfileWithGuard;

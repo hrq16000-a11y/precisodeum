@@ -1,61 +1,111 @@
-import { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
-  children?: React.ReactNode;
-  /** Profile types allowed to access this route */
+  children: React.ReactNode;
   allowedTypes?: string[];
-  /** If true, requires authentication */
   requireAuth?: boolean;
 }
 
 /**
- * Protects routes by profile type.
- * Redirects clients away from provider-only pages, etc.
+ * ProtectedRoute — handles AUTH and ROLE checks only.
+ *
+ * Refatorado para roteamento 100% declarativo:
+ *  - Nada de `useEffect` + `navigate()` (causava 1 frame de UI montada antes do redirect).
+ *  - Enquanto `loading === true` (auth ainda resolvendo), retorna spinner — nenhuma
+ *    decisão de redirect é tomada com estado parcial.
+ *  - Quando o acesso é negado, retorna `<Navigate replace />` imediatamente.
+ *
+ * O onboarding gate (must-complete-triage) continua sendo de responsabilidade
+ * exclusiva do `OnboardingGate` em App.tsx.
  */
 const ProtectedRoute = ({ children, allowedTypes, requireAuth = true }: ProtectedRouteProps) => {
   const { user, profile, loading } = useAuth();
-  const navigate = useNavigate();
+  const location = useLocation();
 
-  useEffect(() => {
-    if (loading) return;
-
-    if (requireAuth && !user) {
-      navigate('/login', { replace: true });
-      return;
-    }
-
-    if (allowedTypes && profile) {
-      const profileType = profile.profile_type || 'client';
-      if (!allowedTypes.includes(profileType)) {
-        navigate('/dashboard', { replace: true });
-      }
-    }
-  }, [loading, user, profile, allowedTypes, requireAuth, navigate]);
-
+  // 1) Auth ainda resolvendo — nunca decide redirect.
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="space-y-3 w-full max-w-md px-4">
-          <div className="h-8 w-3/4 animate-pulse rounded-lg bg-muted" />
-          <div className="h-4 w-full animate-pulse rounded bg-muted" />
-        </div>
+      <div
+        className="flex min-h-screen items-center justify-center"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
+        <span className="sr-only">Carregando sua sessão</span>
       </div>
     );
   }
 
-  if (requireAuth && !user) return null;
-
-  // If specific profile types are required, ensure profile is loaded and authorized
-  if (allowedTypes) {
-    if (!profile) return null; // Wait for profile if it's required for type check
-    
-    const profileType = profile.profile_type || 'client';
-    if (!allowedTypes.includes(profileType)) return null;
+  // 2) Auth obrigatória sem usuário — redireciona declarativamente.
+  if (requireAuth && !user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    );
   }
 
-  return children ? <>{children}</> : <Outlet />;
+  // 3) Usuário existe mas profile ainda carregando (caso transitório legítimo
+  //    pós-signup): exibe skeleton sem decidir nada — o useAuth garante que
+  //    `loading=false` só ocorre quando os dados estão prontos ou falharam.
+  if (user && !profile) {
+    return <ProfileLoadingFallback />;
+  }
+
+
+  // 4) Restrição de tipo de conta — redirect declarativo.
+  if (allowedTypes && profile?.profile_type && !allowedTypes.includes(profile.profile_type)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+/**
+ * Audit-fix #8 — fallback com timeout para evitar spinner infinito quando
+ * o trigger handle_new_user falha ou demora demais a criar o profile.
+ *
+ * Onda 4 / FIX 7: após 6s redirecionamos para /login (preservando `from`)
+ * em vez de /cadastro-inicial — usuários já cadastrados que perderam sessão
+ * voltam para o login e, após autenticar, retornam à página de origem.
+ * Só vão a /cadastro-inicial se realmente não tiverem `onboarding_completed`.
+ */
+const ProfileLoadingFallback = () => {
+  const [timedOut, setTimedOut] = useState(false);
+  const location = useLocation();
+  useEffect(() => {
+    const t = window.setTimeout(() => setTimedOut(true), 6000);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  if (timedOut) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    );
+  }
+
+  return (
+    <div
+      className="flex min-h-screen items-center justify-center"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
+      <span className="sr-only">Carregando perfil</span>
+    </div>
+  );
 };
 
 export default ProtectedRoute;
+

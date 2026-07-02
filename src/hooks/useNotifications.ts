@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -26,24 +26,23 @@ export interface Notification {
 }
 
 export function useNotifications(options?: { limit?: number | null }) {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const queryClient = useQueryClient();
-  const limit = options?.limit ?? 50;
+  // Truncation guard: null/undefined fall back to default 50.
+  // Query never runs without an explicit .limit() — prevents silent 1000-row truncation.
+  const rawLimit = options?.limit;
+  const limit = typeof rawLimit === 'number' && rawLimit > 0 ? rawLimit : 50;
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.id, limit],
     enabled: !!user?.id,
     queryFn: async () => {
-      if (!user?.id) return [];
-      let query = supabase
+      const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (limit !== null) {
-        query = query.limit(limit);
-      }
-      const { data, error } = await query;
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
       if (error) throw error;
       return (data || []) as Notification[];
     },
@@ -116,8 +115,7 @@ export function useNotifications(options?: { limit?: number | null }) {
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
-      if (!user?.id) return;
-      .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .eq('read', false);
       if (error) throw error;
     },
@@ -151,7 +149,7 @@ export function useNotifications(options?: { limit?: number | null }) {
 
 // Push notification subscription
 export function usePushSubscription() {
-  const { user } = useAuth();
+  const { user } = useAuthIdentity();
   const [permission, setPermission] = useState<NotificationPermission>(
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
@@ -193,12 +191,11 @@ export function usePushSubscription() {
 
       const subJson = subscription.toJSON();
       
-      if (!subJson.endpoint || !subJson.keys?.p256dh || !subJson.keys?.auth) return false;
       await supabase.from('push_subscriptions').upsert({
         user_id: user.id,
-        endpoint: subJson.endpoint,
-        p256dh: subJson.keys.p256dh,
-        auth: subJson.keys.auth,
+        endpoint: subJson.endpoint!,
+        p256dh: subJson.keys!.p256dh,
+        auth: subJson.keys!.auth,
       }, { onConflict: 'user_id,endpoint' });
 
       setIsSubscribed(true);

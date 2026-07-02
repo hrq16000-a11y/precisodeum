@@ -1,0 +1,1 @@
+ALTER TABLE public.sponsors ADD COLUMN IF NOT EXISTS last_viewed_status TEXT;

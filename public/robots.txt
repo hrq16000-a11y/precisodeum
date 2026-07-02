@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
+Allow: /especialidades
+Allow: /categoria
+Allow: /como-funciona
 
 Disallow: /admin/
 Disallow: /login
@@ -7,6 +10,7 @@ Disallow: /cadastro
 Disallow: /dashboard/
 Disallow: /reset-password
 
+# Search Engines
 User-agent: Googlebot
 Allow: /
 
@@ -19,4 +23,42 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: https://precisodeum.com.br/sitemap.xml
+# AI Chatbots & Agents
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+# Dynamic sitemap index (sub-sitemaps for categories, providers, cities,
+# AND category+city pairs at /categoria/:slug/em/:cidade — page is noindex
+# automatic when the pair has 0 eligible providers, so the sitemap only emits
+# pairs with eligible content).
+Sitemap: https://www.precisodeum.com.br/sitemap.xml
+
+# AI content guide
+# https://www.precisodeum.com.br/llms.txt

@@ -11,6 +11,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { DEFAULT_LOGO_URL, DEFAULT_SOCIAL_IMAGE_URL } from '@/lib/siteAssets';
 
 export type EntityType = 'service' | 'profile' | 'provider' | 'banner' | 'sponsor' | 'portfolio';
 
@@ -34,6 +35,25 @@ export function safeImageUrl(url: string | null | undefined): string {
  * Get optimized thumbnail URL. Uses Supabase render endpoint with graceful fallback.
  * The <img> tag's onerror should fallback to original URL.
  */
+/**
+ * Inject Supabase Storage transformation params (width, quality, webp).
+ * Safely no-ops on external/non-Supabase URLs.
+ */
+export function getOptimizedUrl(
+  url: string | null | undefined,
+  width = 400,
+  quality = 75
+): string {
+  if (!url) return '';
+  if (!url.includes('supabase.co/storage') && !url.includes('/storage/v1/')) return url;
+  // Prefer the render endpoint when applicable
+  const base = url.includes('/storage/v1/object/public/')
+    ? url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
+    : url;
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}width=${width}&quality=${quality}&format=webp&resize=cover`;
+}
+
 export function thumbUrl(url: string | null | undefined, width = 400): string {
   if (!url) return '';
   if (!url.includes('/storage/v1/object/public/')) return url;
@@ -139,6 +159,29 @@ export function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
     return;
   }
 
-  // Last resort: show nothing gracefully
-  img.style.display = 'none';
+  // Last resort: show a neutral placeholder instead of hiding
+  img.src = '/placeholder.svg';
+  img.style.objectFit = 'contain';
+  img.style.background = 'hsl(var(--muted))';
+}
+
+export function handleBrandImageError(
+  e: React.SyntheticEvent<HTMLImageElement>,
+  type: 'logo' | 'social' = 'logo'
+) {
+  const img = e.currentTarget;
+  const fallback = type === 'social' ? DEFAULT_SOCIAL_IMAGE_URL : DEFAULT_LOGO_URL;
+  const currentSrc = img.currentSrc || img.src;
+
+  img.removeAttribute('srcset');
+  img.removeAttribute('sizes');
+
+  if (!currentSrc.endsWith(fallback) && img.src !== fallback) {
+    img.src = fallback;
+    return;
+  }
+
+  img.src = '/placeholder.svg';
+  img.style.objectFit = 'contain';
+  img.style.background = 'hsl(var(--muted))';
 }

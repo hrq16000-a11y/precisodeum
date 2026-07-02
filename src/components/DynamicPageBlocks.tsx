@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { SafeHTML } from '@/components/ui/SafeHTML';
+import CategoryIcon from '@/components/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
-import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
 interface DynamicPageBlocksProps {
   pageSlug: string;
@@ -9,13 +10,13 @@ interface DynamicPageBlocksProps {
   campaign?: string;
 }
 
-const DynamicPageBlocks = ({ pageSlug, city, category, campaign }: DynamicPageBlocksProps) => {
+const DynamicPageBlocks = React.forwardRef<HTMLDivElement, DynamicPageBlocksProps>(({ pageSlug, city, category, campaign }, ref) => {
   const [blocks, setBlocks] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchBlocks = async () => {
       const now = new Date().toISOString();
-      const query = supabase
+      let query = supabase
         .from('page_blocks')
         .select('*')
         .eq('page_slug', pageSlug)
@@ -50,7 +51,7 @@ const DynamicPageBlocks = ({ pageSlug, city, category, campaign }: DynamicPageBl
       ))}
     </div>
   );
-};
+});
 
 const DynamicBlock = ({ block }: { block: any }) => {
   const content = block.content || {};
@@ -62,7 +63,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
           {block.title && <h2 className="text-2xl font-bold text-foreground mb-2">{block.title}</h2>}
           {block.subtitle && <p className="text-muted-foreground mb-4">{block.subtitle}</p>}
           {content.body && (
-            <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.body) }} />
+            <SafeHTML html={content.body} className="prose prose-sm max-w-none text-foreground" />
           )}
         </section>
       );
@@ -71,7 +72,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
       return (
         <section className="relative overflow-hidden rounded-lg mx-4" style={{ minHeight: content.height || '200px' }}>
           {content.image_url && (
-            <img src={content.image_url} alt={block.title} className="w-full h-full object-cover absolute inset-0" />
+            <img src={content.image_url} alt={block.title} loading="lazy" decoding="async" className="w-full h-full object-cover absolute inset-0" />
           )}
           <div className="relative z-10 flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: content.overlay ? `rgba(0,0,0,${content.overlay_opacity || 0.5})` : undefined }}>
             {block.title && <h2 className="text-2xl font-bold text-white mb-2">{block.title}</h2>}
@@ -101,7 +102,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
     case 'html':
       return (
         <section className="container mx-auto px-4">
-          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.html || '') }} />
+          <SafeHTML html={content.html || ''} />
         </section>
       );
 
@@ -112,7 +113,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {(content.items || []).map((item: any, i: number) => (
               <div key={i} className="rounded-lg border border-border bg-card p-4">
-                {item.icon && <span className="text-2xl mb-2 block">{item.icon}</span>}
+                {item.icon && <div className="mb-2"><CategoryIcon icon={item.icon} size={28} className="text-foreground" /></div>}
                 {item.title && <h3 className="font-semibold text-foreground">{item.title}</h3>}
                 {item.description && <p className="text-sm text-muted-foreground mt-1">{item.description}</p>}
               </div>
@@ -125,7 +126,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
       return (
         <section className="container mx-auto px-4">
           {content.image_url && (
-            <img src={content.image_url} alt={block.title || ''} className="w-full rounded-lg object-cover" style={{ maxHeight: content.max_height || '400px' }} />
+            <img src={content.image_url} alt={block.title || ''} loading="lazy" decoding="async" className="w-full rounded-lg object-cover" style={{ maxHeight: content.max_height || '400px' }} />
           )}
           {block.title && <p className="text-sm text-muted-foreground mt-2 text-center">{block.title}</p>}
         </section>
@@ -139,5 +140,7 @@ const DynamicBlock = ({ block }: { block: any }) => {
       );
   }
 };
+
+DynamicPageBlocks.displayName = 'DynamicPageBlocks';
 
 export default DynamicPageBlocks;

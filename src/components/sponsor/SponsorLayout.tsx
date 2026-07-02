@@ -1,25 +1,37 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings } from 'lucide-react';
+import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings, Shield, Globe, CreditCard, Pencil, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthIdentity } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { useSponsorAuth, type SponsorPermissionKey } from '@/hooks/useSponsorAuth';
+import Logo from '@/components/Logo';
 
-const sponsorMenu = [
+const sponsorMenu: { label: string; icon: any; path: string; permKey?: SponsorPermissionKey; requiresActivePlan?: boolean }[] = [
   { label: 'Visão Geral', icon: LayoutDashboard, path: '/sponsor-panel' },
-  { label: 'Meus Banners', icon: Image, path: '/sponsor-panel/banners' },
-  { label: 'Campanhas', icon: Megaphone, path: '/sponsor-panel/campanhas' },
-  { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas' },
-  { label: 'Contratos', icon: FileText, path: '/sponsor-panel/contratos' },
-  { label: 'Notificações', icon: Bell, path: '/sponsor-panel/notificacoes' },
-  { label: 'Meus Dados', icon: Settings, path: '/sponsor-panel/dados' },
+  { label: 'Personalizar Página', icon: Globe, path: '/sponsor-panel/pagina', requiresActivePlan: true },
+  { label: 'Editar campanha', icon: Pencil, path: '/sponsor-panel/editar' },
+  { label: 'Meus Banners', icon: Image, path: '/sponsor-panel/banners', permKey: 'banners', requiresActivePlan: true },
+  { label: 'Campanhas', icon: Megaphone, path: '/sponsor-panel/campanhas', permKey: 'campanhas', requiresActivePlan: true },
+  { label: 'Métricas', icon: BarChart3, path: '/sponsor-panel/metricas', permKey: 'metricas', requiresActivePlan: true },
+  { label: 'Contratos', icon: FileText, path: '/sponsor-panel/contratos', permKey: 'contratos' },
+  { label: 'Notificações', icon: Bell, path: '/sponsor-panel/notificacoes', permKey: 'notificacoes' },
+  { label: 'Assinatura e Pagamentos', icon: CreditCard, path: '/sponsor-panel/assinatura' },
+  { label: 'Faturamento', icon: Receipt, path: '/sponsor-panel/faturamento' },
+  { label: 'Meus Dados', icon: Settings, path: '/sponsor-panel/dados', permKey: 'dados' },
 ];
 
 const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut } = useAuthIdentity();
+  const { hasSponsorPermission, hasActivePlan, isAdmin, subscription } = useSponsorAuth(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const visibleMenu = sponsorMenu.filter(item => {
+    if (item.requiresActivePlan && !hasActivePlan && !isAdmin) return false;
+    return !item.permKey || hasSponsorPermission(item.permKey);
+  });
 
   const handleSignOut = async () => {
     await signOut();
@@ -30,9 +42,9 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="flex min-h-screen bg-background">
       {/* Mobile header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border bg-card px-4 lg:hidden">
-        <div className="flex items-center gap-2">
-          <Megaphone className="h-4 w-4 text-primary" />
-          <span className="font-display text-sm font-bold text-foreground">Painel Patrocinador</span>
+        <div className="flex h-14 min-w-0 max-w-[calc(100%-3rem)] items-center gap-2 overflow-hidden">
+          <Logo priority className="drop-shadow-sm" />
+          <span className="sr-only">Painel patrocinador</span>
         </div>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-foreground">
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -41,13 +53,15 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-60 transform border-r border-sidebar-border bg-sidebar transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
-        <div className="flex h-14 items-center gap-2 px-5 border-b border-sidebar-border">
-          <Megaphone className="h-4 w-4 text-primary" />
-          <span className="font-display text-sm font-bold text-sidebar-foreground">Patrocinador</span>
-          <Badge variant="secondary" className="ml-auto text-[10px]">CRM</Badge>
+        <div className="flex h-14 min-w-0 items-center gap-2 overflow-hidden px-5 border-b border-sidebar-border">
+          <Logo priority className="drop-shadow-sm" />
+          <span className="sr-only">Menu do patrocinador</span>
+          <Badge variant={hasActivePlan ? 'secondary' : 'outline'} className="ml-auto text-[10px]">
+            {hasActivePlan ? (subscription?.sponsor_plans?.name || 'Ativo') : 'Sem plano ativo'}
+          </Badge>
         </div>
         <nav className="mt-2 space-y-0.5 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 56px - 80px)' }}>
-          {sponsorMenu.map((item) => {
+          {visibleMenu.map((item) => {
             const active = location.pathname === item.path;
             return (
               <Link
@@ -63,6 +77,11 @@ const SponsorLayout = ({ children }: { children: React.ReactNode }) => {
           })}
         </nav>
         <div className="absolute bottom-4 left-3 right-3 space-y-1">
+          {isAdmin && (
+            <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
+              <Link to="/admin"><Shield className="h-4 w-4" /> Painel Admin</Link>
+            </Button>
+          )}
           <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-sidebar-foreground/70" asChild>
             <Link to="/"><LayoutDashboard className="h-4 w-4" /> Ir ao Site</Link>
           </Button>

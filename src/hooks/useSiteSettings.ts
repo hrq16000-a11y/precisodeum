@@ -7,8 +7,9 @@ export function useSiteSettings() {
     queryFn: async () => {
       const { data } = await supabase
         .from('site_settings' as any)
-        .select('*')
-        .order('key');
+        .select('key, value')
+        .order('key')
+        .limit(200);
       const map: Record<string, boolean> = {};
       const raw: Record<string, string> = {};
       (data || []).forEach((s: any) => {
@@ -17,7 +18,11 @@ export function useSiteSettings() {
       });
       return { flags: map, values: raw };
     },
-    staleTime: 60000,
+    staleTime: Infinity, // settings raramente mudam — invalidar manualmente após edição admin
+    gcTime: 1000 * 60 * 60 * 24, // 24h
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 }
 

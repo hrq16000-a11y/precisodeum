@@ -1,0 +1,1 @@
+ALTER TABLE public.providers ADD COLUMN category_custom TEXT DEFAULT NULL;

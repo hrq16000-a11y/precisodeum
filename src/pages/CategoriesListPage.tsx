@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
-import { useJsonLd } from '@/hooks/useJsonLd';
 
 const INITIAL = 12;
 const MORE = 12;
@@ -23,27 +24,28 @@ const CategoriesListPage = () => {
     canonical: `${SITE_BASE_URL}/categorias`,
   });
 
-  const filtered = search.trim()
-    ? categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
-    : categories;
-  useJsonLd(categories.length > 0 ? {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: 'Categorias de Serviços',
-    url: `${SITE_BASE_URL}/categorias`,
-    mainEntity: {
-      '@type': 'ItemList',
-      itemListElement: categories.slice(0, 24).map((cat, index) => ({
-        '@type': 'ListItem',
-        position: index + 1,
-        url: `${SITE_BASE_URL}/categoria/${cat.slug}`,
-        name: cat.name,
-      })),
-    },
-  } : null);
+  const shuffled = useMemo(() => {
+    const shuffle = <T,>(arr: T[]): T[] => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+    return shuffle(categories);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categories.length]);
 
-  const visible = filtered.slice(0, visibleCount);
-  const hasMore = visibleCount < filtered.length;
+  const filtered = search.trim()
+    ? shuffled.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+    : shuffled;
+
+  const withProviders = filtered.filter((c) => c.count > 0);
+  const withoutProviders = filtered.filter((c) => c.count === 0);
+
+  const visible = withProviders.slice(0, visibleCount);
+  const hasMore = visibleCount < withProviders.length;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -73,34 +75,49 @@ const CategoriesListPage = () => {
 
       <div className="container flex-1 py-8">
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}>
             {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 rounded-xl" />
+              <Skeleton key={i} className="min-h-[3.5rem] rounded-xl" />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+            <motion.div
+              className="grid gap-[0.75rem]"
+              style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}
+              initial="hidden"
+              animate="show"
+              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
+            >
               {visible.map((cat) => (
-                <Link
+                <motion.div
                   key={cat.id}
-                  to={`/categoria/${cat.slug}`}
-                  className="group flex items-center gap-2.5 rounded-xl border border-border bg-card p-3 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-primary/30"
+                  variants={{ hidden: { opacity: 0, y: 16, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1 } }}
+                  transition={{ duration: 0.35 }}
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xl text-primary">
-                    {cat.icon}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                      {cat.name}
-                    </span>
+                  <Link
+                    to={`/categoria/${cat.slug}`}
+                    className="group relative flex items-center gap-[0.625rem] rounded-3xl border border-border/50 bg-card p-[0.75rem] shadow-[0_2px_12px_-2px_rgb(0_0_0/0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] hover:-translate-y-0.5 hover:border-primary/30 overflow-hidden min-h-[3.5rem]"
+                  >
+                    {/* Badge de quantidade */}
                     {cat.count > 0 && (
-                      <span className="text-xs text-muted-foreground">{cat.count} profissional(is)</span>
+                      <span className="absolute -top-1.5 -right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-card">
+                        {cat.count > 99 ? '99+' : cat.count}
+                      </span>
                     )}
-                  </div>
-                </Link>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/[0.03] to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
+                    <span className="relative flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                      <CategoryIcon icon={cat.icon} size={22} className="text-primary" />
+                    </span>
+                    <div className="relative min-w-0 flex-1">
+                      <span className="text-xs sm:text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2 break-words" style={{ hyphens: 'auto' }}>
+                        {cat.name}
+                      </span>
+                    </div>
+                  </Link>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             {hasMore && (
               <div className="mt-6 text-center">
@@ -110,6 +127,38 @@ const CategoriesListPage = () => {
                 >
                   Ver Mais Categorias
                 </button>
+              </div>
+            )}
+
+            {withoutProviders.length > 0 && (
+              <div className="mt-10">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Categorias em breve
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}>
+                  {withoutProviders.map((cat) => (
+                    <div
+                      key={cat.id}
+                      className="flex items-center gap-[0.625rem] rounded-xl border border-border bg-card/50 p-[0.75rem] opacity-50 cursor-default min-h-[3.5rem]"
+                    >
+                      <span className="flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                        <CategoryIcon icon={cat.icon} size={22} className="text-muted-foreground" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs sm:text-sm font-semibold leading-tight text-muted-foreground line-clamp-2 break-words" style={{ hyphens: 'auto' }}>
+                          {cat.name}
+                        </span>
+                        <p className="text-[10px] leading-tight text-muted-foreground/70 mt-0.5">
+                          Ainda não temos prestadores. Participe!
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </>

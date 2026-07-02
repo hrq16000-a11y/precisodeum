@@ -1,6 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
-    <loc>https://precisodeum.com.br/sitemap.xml</loc>
+    <loc>https://www.precisodeum.com.br/sitemap?type=static</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.precisodeum.com.br/sitemap?type=categories</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.precisodeum.com.br/sitemap?type=especialidades</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.precisodeum.com.br/sitemap?type=providers</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.precisodeum.com.br/sitemap?type=cities</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.precisodeum.com.br/sitemap?type=blog</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.precisodeum.com.br/sitemap?type=jobs</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.precisodeum.com.br/sitemap?type=pages</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.precisodeum.com.br/sitemap?type=popular</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://www.precisodeum.com.br/sitemap?type=seo</loc>
   </sitemap>
 </sitemapindex>

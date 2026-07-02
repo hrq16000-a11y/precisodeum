@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Trash2, Eye, EyeOff, Search, Image as ImageIcon, RefreshCw, Download, AlertTriangle, Loader2, CloudUpload } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Trash2, Eye, EyeOff, Search, Image as ImageIcon, RefreshCw, Download, AlertTriangle, Loader2, CloudUpload, History, ChevronDown, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import PaginationControls from '@/components/PaginationControls';
@@ -45,6 +46,11 @@ const AdminMediaPage = () => {
   const [batchCompressing, setBatchCompressing] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncDone, setSyncDone] = useState(false);
+  const [syncHistory, setSyncHistory] = useState<any[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [portfolioOptimizing, setPortfolioOptimizing] = useState(false);
+  const [allBucketsOptimizing, setAllBucketsOptimizing] = useState(false);
+  const [optimizeResult, setOptimizeResult] = useState<any>(null);
 
   const fetchMedia = useCallback(async () => {
     setLoading(true);
@@ -68,9 +74,9 @@ const AdminMediaPage = () => {
     setLoading(false);
   }, [page, entityFilter, mimeFilter, statusFilter, search]);
 
-  const fetchStats = useCallback(async () => {
-    const { count: totalCount } = await supabase.from('media').select('id', { count: 'exact', head: true });
-    const { count: activeCount } = await supabase.from('media').select('id', { count: 'exact', head: true }).eq('is_active', true);
+  const fetchStats = async () => {
+    const { count: totalCount } = await supabase.from('media').select('id', { count: 'estimated', head: true });
+    const { count: activeCount } = await supabase.from('media').select('id', { count: 'estimated', head: true }).eq('is_active', true);
     
     // For size stats, sample recent 1000
     const { data } = await supabase.from('media').select('size_original, size_optimized').limit(1000);
@@ -83,9 +89,19 @@ const AdminMediaPage = () => {
       totalSize,
       oversized,
     });
+  };
+
+  const fetchSyncHistory = useCallback(async () => {
+    const { data } = await supabase
+      .from('audit_log' as any)
+      .select('*')
+      .eq('resource_type', 'storage_sync')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    setSyncHistory((data || []) as any[]);
   }, []);
 
-  const syncStorage = useCallback(async () => {
+  const syncStorage = async () => {
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('sync-storage-media');
@@ -96,29 +112,44 @@ const AdminMediaPage = () => {
       } else {
         toast.info('Storage já está sincronizado');
       }
+      await logAuditAction({
+        action: 'media_uploaded',
+        resource_type: 'storage_sync',
+        details: {
+          inserted: data?.inserted || 0,
+          new_files_found: data?.new_files_found || 0,
+          existing_tracked: data?.existing_tracked || 0,
+          scanned_buckets: data?.scanned_buckets || [],
+        },
+      });
       setSyncDone(true);
       fetchMedia();
       fetchStats();
+      fetchSyncHistory();
     } catch (err: any) {
       toast.error('Erro ao sincronizar: ' + (err.message || ''));
     } finally {
       setSyncing(false);
     }
-  }, [fetchMedia, fetchStats]);
+  };
 
   // Auto-sync on first load
   useEffect(() => {
     if (isAdmin && !syncDone) {
-      void syncStorage();
+      syncStorage();
     }
-  }, [isAdmin, syncDone, syncStorage]);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (isAdmin) fetchSyncHistory();
+  }, [isAdmin]);
 
   useEffect(() => {
     if (isAdmin && syncDone) {
-      void fetchMedia();
-      void fetchStats();
+      fetchMedia();
+      fetchStats();
     }
-  }, [isAdmin, syncDone, fetchMedia, fetchStats]);
+  }, [isAdmin, syncDone, page, entityFilter, mimeFilter, statusFilter]);
 
   const handleSearch = () => { setPage(1); fetchMedia(); };
 
@@ -243,12 +274,18 @@ const AdminMediaPage = () => {
 
   const compressSingle = async (bucket: string, filePath: string) => {
     try {
-      const { error } = await supabase.functions.invoke('optimize-image', {
+      const { data, error } = await supabase.functions.invoke('optimize-image', {
         body: { bucket, path: filePath },
       });
       if (error) throw error;
-      toast.success('Imagem otimizada com sucesso');
+      if (data?.optimized) {
+        toast.success(data.message || 'Imagem otimizada com sucesso');
+      } else {
+        toast.info(data?.message || 'Arquivo já está otimizado');
+      }
       scanOversized();
+      fetchMedia();
+      fetchStats();
     } catch (err: any) {
       toast.error('Erro ao comprimir: ' + (err.message || ''));
     }
@@ -257,21 +294,51 @@ const AdminMediaPage = () => {
   const compressAll = async () => {
     if (!oversizedFiles.length) return;
     setBatchCompressing(true);
-    let ok = 0, fail = 0;
+    let ok = 0, fail = 0, skipped = 0;
     for (const f of oversizedFiles) {
       try {
-        const { error } = await supabase.functions.invoke('optimize-image', {
+        const { data, error } = await supabase.functions.invoke('optimize-image', {
           body: { bucket: f.bucket, path: f.file },
         });
         if (error) throw error;
-        ok++;
+        if (data?.optimized) ok++;
+        else skipped++;
       } catch {
         fail++;
       }
     }
-    toast.success(`${ok} otimizada(s), ${fail} erro(s)`);
+    toast.success(`${ok} otimizada(s), ${skipped} já otimizada(s), ${fail} erro(s)`);
     setBatchCompressing(false);
     scanOversized();
+    fetchMedia();
+    fetchStats();
+  };
+
+  const optimizePortfolio = async () => {
+    setPortfolioOptimizing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('batch-optimize-portfolio');
+      if (error) throw error;
+      toast.success(data?.message || 'Otimização concluída');
+      if (data?.errors?.length > 0) {
+        toast.warning(`${data.errors.length} erro(s) durante o processo`);
+      }
+      await logAuditAction({
+        action: 'batch_optimize',
+        resource_type: 'media',
+        details: {
+          total_scanned: data?.total_scanned,
+          total_optimized: data?.total_optimized,
+          savings_kb: data?.savings_kb,
+        },
+      });
+      fetchMedia();
+      fetchStats();
+    } catch (err: any) {
+      toast.error('Erro ao otimizar portfólio: ' + (err.message || ''));
+    } finally {
+      setPortfolioOptimizing(false);
+    }
   };
 
   if (adminLoading || !isAdmin) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
@@ -318,7 +385,82 @@ const AdminMediaPage = () => {
           </Card>
         </div>
 
-        {/* Compression Scanner */}
+        {/* Sync History */}
+        <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer hover:bg-muted/50 transition-colors">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  Histórico de Sincronizações
+                  <ChevronDown className={`h-4 w-4 ml-auto text-muted-foreground transition-transform ${historyOpen ? 'rotate-180' : ''}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                {syncHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhuma sincronização registrada</p>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {syncHistory.map((entry: any) => {
+                      const d = entry.details || {};
+                      return (
+                        <div key={entry.id} className="flex items-center justify-between rounded-lg border border-border p-2 text-sm">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-foreground">
+                              {new Date(entry.created_at).toLocaleDateString('pt-BR')} às {new Date(entry.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              Buckets: {Array.isArray(d.scanned_buckets) ? d.scanned_buckets.join(', ') : '—'}
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0 ml-2">
+                            <Badge variant={d.inserted > 0 ? 'default' : 'secondary'} className="text-[10px]">
+                              {d.inserted || 0} novo(s)
+                            </Badge>
+                            <p className="text-[9px] text-muted-foreground mt-0.5">
+                              {d.existing_tracked || 0} já indexados
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+        {/* Optimize All Result */}
+        {optimizeResult && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  Resultado da Otimização — {optimizeResult.grand_total_optimized} arquivo(s), {optimizeResult.grand_total_savings_kb}KB economizados
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setOptimizeResult(null)}>Fechar</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {Object.entries(optimizeResult.buckets || {}).map(([bucket, info]: [string, any]) => (
+                  <div key={bucket} className="flex items-center justify-between rounded-lg border border-border p-2 text-sm">
+                    <div>
+                      <p className="font-medium text-foreground">{bucket}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {info.scanned} escaneados · {info.eligible} elegíveis · {info.optimized} otimizados · {info.skipped} ignorados
+                      </p>
+                    </div>
+                    <Badge variant={info.optimized > 0 ? 'default' : 'secondary'}>{info.savings_kb}KB salvos</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {showOversized && (
           <Card>
             <CardHeader className="pb-3">
@@ -386,6 +528,38 @@ const AdminMediaPage = () => {
           </Button>
           <Button variant="outline" size="sm" onClick={scanOversized} disabled={scanLoading}>
             {scanLoading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-1 h-4 w-4" />} Escanear
+          </Button>
+          <Button variant="default" size="sm" onClick={optimizePortfolio} disabled={portfolioOptimizing}>
+            {portfolioOptimizing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Zap className="mr-1 h-4 w-4" />}
+            {portfolioOptimizing ? 'Otimizando...' : 'Otimizar Portfólio'}
+          </Button>
+          <Button variant="default" size="sm" onClick={async () => {
+            setAllBucketsOptimizing(true);
+            setOptimizeResult(null);
+            try {
+              const { data, error } = await supabase.functions.invoke('batch-optimize-all');
+              if (error) throw error;
+              setOptimizeResult(data);
+              toast.success(data?.message || 'Otimização concluída');
+              await logAuditAction({
+                action: 'batch_optimize_all',
+                resource_type: 'media',
+                details: {
+                  grand_total_optimized: data?.grand_total_optimized,
+                  grand_total_savings_kb: data?.grand_total_savings_kb,
+                  buckets: data?.buckets,
+                },
+              });
+              fetchMedia();
+              fetchStats();
+            } catch (err: any) {
+              toast.error('Erro: ' + (err.message || ''));
+            } finally {
+              setAllBucketsOptimizing(false);
+            }
+          }} disabled={allBucketsOptimizing}>
+            {allBucketsOptimizing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Zap className="mr-1 h-4 w-4" />}
+            {allBucketsOptimizing ? 'Otimizando Tudo...' : 'Otimizar Todos Buckets'}
           </Button>
         </div>
 

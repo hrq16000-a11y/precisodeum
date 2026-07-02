@@ -1,240 +1,247 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Users, Zap, Briefcase, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import SearchBar from '@/components/SearchBar';
-import GeoLocationChip from '@/components/GeoLocationChip';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { MapPin, Search } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
-import { useHeroBanners, type HeroBannerData } from '@/hooks/useHeroBanners';
+import UrgencyToggle from '@/components/home/UrgencyToggle';
+import { useUrgencyMode } from '@/hooks/useUrgencyMode';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useSettingValue } from '@/hooks/useSiteSettings';
+import { importWithRetry } from '@/lib/lazyWithRetry';
+import { getCategoryForService, CATEGORY_IMAGES } from '@/lib/serviceCategoryMap';
+import { Icon } from '@/components/ui/Icon';
 
-const heroImage = '/hero-image.webp';
+const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBar')));
 
-interface HeroBannerProps {
-  totalServices?: number;
-  totalJobs?: number;
-}
 
-function useCountUp(target: number, duration = 1500) {
-  const [count, setCount] = useState(0);
-  const prevTarget = useRef(0);
+type HeroPhraseInfo = { slug: string; label: string; prefix: 'need' | 'find' };
 
-  useEffect(() => {
-    if (!target || target <= 0) return;
-    const start = prevTarget.current;
-    prevTarget.current = target;
-    const startTime = performance.now();
+const CriticalHeroSearch = ({
+  onUpgrade,
+  phraseRef,
+}: {
+  onUpgrade: () => void;
+  phraseRef?: React.MutableRefObject<HeroPhraseInfo | null>;
+}) => {
+  const [query, setQuery] = useState('');
+  const navigate = useNavigate();
 
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(start + (target - start) * eased));
-      if (progress < 1) requestAnimationFrame(tick);
-    };
+  const trackCtaClick = (action: 'submit' | 'focus') => {
+    const info = phraseRef?.current;
+    if (!info) return;
+    // Lazy import para não inflar o bundle crítico do hero
+    import('@/lib/tracking').then(({ trackEvent }) => {
+      trackEvent({
+        event: 'hero_cta_click',
+        slug: info.slug,
+        source: 'hero_search',
+        extra: {
+          phrase_prefix: info.prefix,
+          phrase_label: info.label,
+          action,
+        },
+      });
+    }).catch(() => { /* silent */ });
+  };
 
-    requestAnimationFrame(tick);
-  }, [target, duration]);
-
-  return count;
-}
-
-/* Floating decorative dots */
-const FloatingDots = () => (
-  <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-    {[...Array(5)].map((_, i) => (
-      <motion.div
-        key={i}
-        className="absolute rounded-full bg-secondary/20"
-        style={{
-          width: 6 + i * 4,
-          height: 6 + i * 4,
-          left: `${15 + i * 18}%`,
-          top: `${20 + (i % 3) * 25}%`,
-        }}
-        animate={{
-          y: [0, -20, 0],
-          opacity: [0.3, 0.6, 0.3],
-        }}
-        transition={{
-          duration: 4 + i,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: i * 0.7,
-        }}
-      />
-    ))}
-  </div>
-);
-
-const HeroBanner = ({ totalServices, totalJobs }: HeroBannerProps) => {
-  const animatedServices = useCountUp(totalServices || 0);
-  const animatedJobs = useCountUp(totalJobs || 0);
-  const [showJobs, setShowJobs] = useState(false);
-  const { data: banners = [] } = useHeroBanners();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const { city: geoCity } = useGeoCity();
-
-  useEffect(() => {
-    if (!totalJobs || totalJobs <= 0) return;
-    const interval = setInterval(() => setShowJobs((v) => !v), 5000);
-    return () => clearInterval(interval);
-  }, [totalJobs]);
-
-  useEffect(() => {
-    if (banners.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % banners.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [banners.length]);
-
-  const activeBanner: HeroBannerData | null = banners.length > 0 ? banners[currentSlide] || banners[0] : null;
-  const bgImage = activeBanner?.image_url || heroImage;
-  const overlayOpacity = activeBanner?.overlay_opacity ?? 0.8;
-  const title = activeBanner?.title || 'Encontre profissionais para';
-  const subtitle = activeBanner?.subtitle || '';
-  const ctaText = activeBanner?.cta_text || 'Cadastrar agora';
-  const ctaLink = activeBanner?.cta_link || '/cadastro';
-  const textAlign = activeBanner?.text_alignment || 'center';
-  const hasCustomTitle = !!activeBanner?.title;
-
-  const alignClass = textAlign === 'left' ? 'items-start text-left' : textAlign === 'right' ? 'items-end text-right' : 'items-center text-center';
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const value = query.trim();
+    trackCtaClick('submit');
+    if (!value) {
+      onUpgrade();
+      return;
+    }
+    navigate(`/buscar?q=${encodeURIComponent(value)}`);
+  };
 
   return (
-    <section className="relative overflow-hidden py-12 md:py-28">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.img
-          key={bgImage}
-          src={bgImage}
-          alt=""
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-center scale-105"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-        />
-      </AnimatePresence>
+    <form onSubmit={handleSubmit} className="flex w-full items-center gap-2 rounded-full bg-card pl-4 pr-1.5 py-1.5 shadow-card-hover">
+      <input
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        onFocus={() => { onUpgrade(); trackCtaClick('focus'); }}
+        placeholder="O que você precisa?"
+        className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 outline-none"
+        autoComplete="off"
+        inputMode="search"
+      />
+      <button
+        type="submit"
+        aria-label="Buscar profissional"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md transition-transform active:scale-95"
+      >
+        <Icon icon={Search} className="h-5 w-5" />
+      </button>
+    </form>
+  );
+};
 
-      {/* Gradient overlay */}
+// HeroPrefixRotator foi removido — a alternância de prefixos agora vive
+// dentro de RotatingServiceText, encadeada com o nome do serviço para
+// formar frases com nexo ("Preciso de um pintor" → "Encontre um pintor!").
+
+
+const HeroBanner = () => {
+  const [displayedImage, setDisplayedImage] = useState(CATEGORY_IMAGES.instalacoes);
+  const [nextImage, setNextImage] = useState<string | null>(null);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
+  const [enhancedSearch, setEnhancedSearch] = useState(false);
+  const { city: geoCity } = useGeoCity();
+  const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
+
+  const ctaPrimaryLinkText = useSettingValue('hero_cta_primary_link_text');
+  const ctaPrimaryLink = useSettingValue('hero_cta_primary_link');
+  const ctaSecondaryText = useSettingValue('hero_cta_secondary_text');
+  const ctaSecondaryLink = useSettingValue('hero_cta_secondary_link');
+
+
+  const handleServiceChange = useCallback((service: string) => {
+    if (!heroImageLoaded) return;
+    const cat = getCategoryForService(service);
+    const newImg = CATEGORY_IMAGES[cat];
+    if (newImg !== displayedImage) {
+      setNextImage(newImg);
+      const img = new Image();
+      img.onload = () => {
+        setDisplayedImage(newImg);
+        setNextImage(null);
+      };
+      img.src = newImg;
+    }
+  }, [displayedImage, heroImageLoaded]);
+
+  useEffect(() => {
+    if (enhancedSearch) return;
+    const onFirstInput = () => setEnhancedSearch(true);
+    window.addEventListener('pointerdown', onFirstInput, { once: true, passive: true });
+    window.addEventListener('keydown', onFirstInput, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', onFirstInput);
+      window.removeEventListener('keydown', onFirstInput);
+    };
+  }, [enhancedSearch]);
+
+  // Frase atual do rotator — guardada em ref para a CTA registrar analytics
+  // sem causar re-render a cada troca (HOLD_MS = 2.6s).
+  const phraseRef = useRef<HeroPhraseInfo | null>(null);
+  const handlePhraseChange = useCallback((info: HeroPhraseInfo) => {
+    phraseRef.current = info;
+    import('@/lib/tracking').then(({ trackEvent }) => {
+      trackEvent({
+        event: 'hero_phrase_shown',
+        slug: info.slug,
+        source: 'hero_rotator',
+        extra: { phrase_prefix: info.prefix, phrase_label: info.label },
+      });
+    }).catch(() => { /* silent */ });
+  }, []);
+
+  return (
+    <section
+      className="relative overflow-visible py-6 sm:py-8 md:overflow-hidden md:py-20"
+      style={{ height: 340, minHeight: 340 }}
+    >
+      {/* Current background — dimensions explicit to prevent CLS.
+          Wrapped in <picture> to enable modern format negotiation.
+          AVIF source can be added later once variants are generated;
+          AVIF asset paths are intentionally omitted today to avoid 404s. */}
+      <picture className="absolute inset-0 h-full w-full">
+        <source srcSet={displayedImage} type="image/webp" />
+        <img
+          src={displayedImage.replace(/\.webp$/i, '.jpg')}
+          alt="Profissionais de serviços"
+          width={1920}
+          height={768}
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
+          // @ts-expect-error - non-standard but supported by Chromium for LCP hinting
+          elementtiming="hero-lcp"
+          className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700"
+          style={{ width: '100%', height: '100%' }}
+          onLoad={() => setHeroImageLoaded(true)}
+        />
+      </picture>
+
+
+      {nextImage && (
+        <img
+          src={nextImage}
+          alt=""
+          aria-hidden="true"
+          width={1920}
+          height={768}
+          loading="eager"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover object-center animate-fade-in"
+          style={{ animationDuration: '800ms', width: '100%', height: '100%' }}
+        />
+      )}
+
       <div
         className="absolute inset-0"
         style={{
-          background: `linear-gradient(135deg, hsl(var(--primary) / ${overlayOpacity}) 0%, hsl(var(--primary) / ${Math.max(overlayOpacity - 0.15, 0.4)}) 100%)`,
+          background: `linear-gradient(135deg, hsl(var(--primary) / 0.85) 0%, hsl(var(--primary) / 0.7) 100%)`,
         }}
       />
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background/20 to-transparent" />
+      {/* Stronger bottom shadow gradient for legibility on mobile */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/40 via-black/15 to-transparent" />
 
-      <FloatingDots />
-
-      <div className={`container relative z-10 flex flex-col ${alignClass}`}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
-        >
-          <h1 className="font-display text-3xl font-extrabold tracking-tight text-primary-foreground sm:text-4xl md:text-5xl lg:text-6xl drop-shadow-sm">
-            {hasCustomTitle ? title : (
-              <>
-                Encontre profissionais para
-                <br />
-                <RotatingServiceText />
-              </>
-            )}
-          </h1>
-        </motion.div>
-
-        {subtitle && (
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="mt-4 text-base text-primary-foreground/80 md:text-lg max-w-2xl leading-relaxed"
+      <div className="container relative z-10 flex flex-col items-center text-center hero-entrance">
+        <div className="w-full max-w-full px-2">
+          <h1
+            className="font-display font-black text-primary-foreground max-w-full text-[clamp(0.95rem,4vw,3.25rem)] leading-[1.1] sm:leading-[1.08] tracking-[-0.015em] [text-wrap:balance]"
+            style={{
+              textShadow: '0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3)',
+              // Reserva altura mínima (~2 linhas) para evitar CLS quando o rotator alterna frases (mobile-first).
+              minHeight: 'clamp(2.1rem, 8.8vw, 7.15rem)',
+            }}
           >
-            {subtitle}
-          </motion.p>
-        )}
+            <RotatingServiceText
+              onServiceChange={handleServiceChange}
+              onPhraseChange={handlePhraseChange}
+            />
+          </h1>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          className="mt-6 md:mt-10 w-full max-w-2xl"
-        >
-          <div className="rounded-2xl bg-background/10 backdrop-blur-sm p-2 ring-1 ring-primary-foreground/10">
-            <SearchBar />
-          </div>
-          <div className="mt-3 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">
-            <MapPin className="h-3.5 w-3.5 text-secondary" />
-            <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
-            <span className="text-primary-foreground/40">·</span>
-            <GeoLocationChip variant="hero" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.45 }}
-          className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:gap-4"
-        >
-          <p className="text-sm text-primary-foreground/80">
-            Cadastre seus serviços gratuitamente.{' '}
-            <Link to={ctaLink} className="font-semibold text-secondary hover:underline underline-offset-2">{ctaText} →</Link>
-          </p>
-          <span className="hidden sm:inline text-primary-foreground/40">|</span>
-          <p className="text-sm text-primary-foreground/80">
-            <Link to="/dashboard/vagas" className="font-semibold text-secondary hover:underline underline-offset-2">Cadastre uma vaga / oportunidade →</Link>
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-primary-foreground/80"
-        >
-          <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-            {showJobs && totalJobs && totalJobs > 0 ? (
-              <>
-                <Briefcase className="h-3.5 w-3.5 text-secondary" />
-                <span className="font-semibold tabular-nums">{animatedJobs.toLocaleString('pt-BR')}</span> vagas
-              </>
-            ) : totalServices && totalServices > 0 ? (
-              <>
-                <Shield className="h-3.5 w-3.5 text-secondary" />
-                <span className="font-semibold tabular-nums">{animatedServices.toLocaleString('pt-BR')}</span> serviços
-              </>
+        <div className="relative z-30 mt-4 w-full max-w-2xl md:mt-6 hero-search-wrapper min-h-[64px]">
+          <div className="animate-glow-ring rounded-full">
+            {enhancedSearch ? (
+              <Suspense fallback={<CriticalHeroSearch onUpgrade={() => setEnhancedSearch(true)} phraseRef={phraseRef} />}>
+                <SearchBar />
+              </Suspense>
             ) : (
-              <>
-                <Shield className="h-3.5 w-3.5 text-secondary" />
-                Verificados
-              </>
+              <CriticalHeroSearch onUpgrade={() => setEnhancedSearch(true)} phraseRef={phraseRef} />
             )}
-          </span>
-          <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-            <Users className="h-3.5 w-3.5 text-secondary" />
-            Profissionais verificados
-          </span>
-          <span className="flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-            <Zap className="h-3.5 w-3.5 text-secondary" /> Resposta rápida
-          </span>
-        </motion.div>
-
-        {banners.length > 1 && (
-          <div className="mt-6 flex gap-2">
-            {banners.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentSlide(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${i === currentSlide ? 'w-8 bg-secondary' : 'w-2 bg-primary-foreground/40 hover:bg-primary-foreground/60'}`}
-              />
-            ))}
           </div>
-        )}
+          <div className="mt-3 flex min-h-[2.5rem] flex-col items-center justify-center gap-2 text-xs text-primary-foreground/70 sm:min-h-[1.25rem] sm:flex-row sm:gap-3">
+            <span className="inline-flex items-center gap-2">
+              <Icon icon={MapPin} className="h-3.5 w-3.5 text-secondary" />
+              <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
+            </span>
+            <UrgencyToggle
+              enabled={urgencyMode}
+              onToggle={setUrgencyMode}
+              variant="hero"
+            />
+          </div>
+        </div>
+
+        <div className="relative z-10 mt-4 flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
+          <Link
+            to={ctaPrimaryLink || '/cadastro'}
+            className="inline-flex items-center justify-center rounded-full bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground shadow-md transition-transform hover:scale-105 active:scale-95 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:text-primary-foreground/80 sm:font-semibold sm:hover:underline sm:underline-offset-2"
+          >
+            {ctaPrimaryLinkText || 'Cadastrar agora →'}
+          </Link>
+          <span className="hidden text-primary-foreground/40 sm:inline">|</span>
+          <p className="text-sm sm:text-base drop-shadow-lg">
+            <Link to={ctaSecondaryLink || '/dashboard/vagas'} className="font-bold text-white hover:underline underline-offset-4" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
+              {ctaSecondaryText || 'Cadastre uma vaga / oportunidade →'}
+            </Link>
+          </p>
+        </div>
       </div>
     </section>
   );

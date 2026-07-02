@@ -1,0 +1,793 @@
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import ServiceImageDragUploader from '@/components/dashboard/ServiceImageDragUploader';
+import PhoneMaskedInput from '@/components/PhoneMaskedInput';
+import {
+  ArrowRight, ArrowLeft, Store, Phone, ImagePlus,
+  CheckCircle2, Copy, ExternalLink, Share2, Sparkles, X, Info,
+} from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
+import { motion, AnimatePresence } from 'framer-motion';
+import { formatCityState } from '@/lib/locationFormat';
+import { buildServiceCountdownCopy } from '@/lib/serviceWizardCopy';
+import { recoverProviderId, fetchProviderServiceCount } from '@/lib/recoverProviderId';
+import StuckStepBanner from '@/components/wizard/StuckStepBanner';
+import ReportWizardErrorButton from '@/components/wizard/ReportWizardErrorButton';
+
+/**
+ * ServiceWizard — ONBOARDING ONLY
+ * Used exclusively for initial professional setup (first-time provider registration).
+ * DO NOT use for day-to-day service creation/editing — use DashboardServicesPage Dialog instead.
+ */
+interface ServiceWizardProps {
+  providerId: string;
+  userId: string;
+  provider: any;
+  categories: any[];
+  onComplete: (serviceId: string) => void;
+  onCancel: () => void;
+  /** Posição deste serviço (1-based). Quando informado, o header mostra
+   * uma contagem expressa contextual ("2º serviço", "penúltimo", etc.). */
+  serviceNumber?: number;
+  /** Limite total de serviços do plano. Default: 5. */
+  maxServices?: number;
+}
+
+const STEPS = [
+  { key: 'identity', label: 'Identidade', icon: Store },
+  { key: 'details', label: 'Detalhes', icon: Phone },
+  { key: 'photos', label: 'Fotos', icon: ImagePlus },
+] as const;
+
+/* ───── Component ───── */
+const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, onCancel, serviceNumber, maxServices = 5 }: ServiceWizardProps) => {
+  const [step, setStep] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [createdServiceId, setCreatedServiceId] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [photoCount, setPhotoCount] = useState(0);
+
+  // ─── Fallback de providerId ───
+  // Se vier vazio (sessão expirou, draft perdido, prop tardio), recupera
+  // do banco usando userId. Mesma lógica do OnboardingV2Shell.
+  const [effectiveProviderId, setEffectiveProviderId] = useState<string | null>(providerId || null);
+  useEffect(() => {
+    if (providerId) {
+      setEffectiveProviderId(providerId);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const recovered = await recoverProviderId({ userId, hint: providerId });
+      if (!cancelled && recovered) setEffectiveProviderId(recovered);
+    })();
+    return () => { cancelled = true; };
+  }, [providerId, userId]);
+
+  // ─── Validação da contagem expressa contra o banco ───
+  // Sobrescreve o prop `serviceNumber` (que pode estar defasado após reload
+  // ou troca de aba) com a contagem real +1. Só ativa em modo CRIAÇÃO,
+  // i.e. quando o parent passa serviceNumber explicitamente.
+  const isCreatingNew = typeof serviceNumber === 'number' && serviceNumber >= 1;
+  const [verifiedServiceNumber, setVerifiedServiceNumber] = useState<number | null>(
+    isCreatingNew ? serviceNumber! : null,
+  );
+  useEffect(() => {
+    if (!isCreatingNew) { setVerifiedServiceNumber(null); return; }
+    let cancelled = false;
+    const sync = async () => {
+      const realCount = await fetchProviderServiceCount(effectiveProviderId);
+      if (cancelled) return;
+      // Próximo número = realCount + 1 (clamp ao max)
+      const next = Math.min(realCount + 1, maxServices);
+      setVerifiedServiceNumber(next);
+    };
+    void sync();
+    const onVisible = () => { if (document.visibilityState === 'visible') void sync(); };
+    window.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [isCreatingNew, effectiveProviderId, maxServices, serviceNumber]);
+
+  const displayServiceNumber = verifiedServiceNumber ?? (isCreatingNew ? serviceNumber! : null);
+
+  // Step 1 — Identity
+  const [serviceName, setServiceName] = useState('');
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
+    provider?.category_id ? [provider.category_id] : []
+  );
+  const [categorySearch, setCategorySearch] = useState('');
+  const [showCatDrop, setShowCatDrop] = useState(false);
+  const catRef = useRef<HTMLDivElement>(null);
+
+  // Step 2 — Details (contact + description)
+  const [whatsapp, setWhatsapp] = useState(provider?.whatsapp || '');
+  const [description, setDescription] = useState('');
+  const [serviceArea, setServiceArea] = useState('');
+  const [workingHours, setWorkingHours] = useState(provider?.working_hours || '');
+  const [website, setWebsite] = useState(provider?.website || '');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [facebookUrl, setFacebookUrl] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+
+  // Outside click for category dropdown
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setShowCatDrop(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // ─── Re-hidratação a partir de draft local (localStorage) ───
+  // Restaura campos quando o usuário recarrega/volta para o wizard
+  const draftKey = `service-wizard-draft-${userId || 'anon'}`;
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d && typeof d === 'object') {
+        if (d.serviceName && !serviceName) setServiceName(d.serviceName);
+        if (d.description && !description) setDescription(d.description);
+        if (d.serviceArea && !serviceArea) setServiceArea(d.serviceArea);
+        if (d.workingHours && !workingHours) setWorkingHours(d.workingHours);
+        if (d.website && !website) setWebsite(d.website);
+        if (d.instagramUrl && !instagramUrl) setInstagramUrl(d.instagramUrl);
+        if (d.facebookUrl && !facebookUrl) setFacebookUrl(d.facebookUrl);
+        if (d.youtubeUrl && !youtubeUrl) setYoutubeUrl(d.youtubeUrl);
+        if (Array.isArray(d.selectedCategoryIds) && d.selectedCategoryIds.length && !selectedCategoryIds.length) {
+          setSelectedCategoryIds(d.selectedCategoryIds.slice(0, 1));
+        }
+        if (d.createdServiceId && !createdServiceId) setCreatedServiceId(d.createdServiceId);
+      }
+    } catch {/* ignore */}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  // Persiste draft a cada alteração relevante
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({
+        serviceName, description, serviceArea, workingHours,
+        website, instagramUrl, facebookUrl, youtubeUrl,
+        selectedCategoryIds, createdServiceId,
+      }));
+    } catch {/* ignore */}
+  }, [userId, draftKey, serviceName, description, serviceArea, workingHours, website, instagramUrl, facebookUrl, youtubeUrl, selectedCategoryIds, createdServiceId]);
+
+  // Re-hidratação a partir do banco quando já existe um serviço criado
+  useEffect(() => {
+    if (!createdServiceId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('services')
+        .select('service_name, description, whatsapp, service_area, working_hours, website, instagram_url, facebook_url, youtube_url, category_id')
+        .eq('id', createdServiceId)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const row: any = data;
+      if (row.service_name && !serviceName) setServiceName(row.service_name);
+      if (row.description && !description) setDescription(row.description);
+      if (row.whatsapp && !whatsapp) setWhatsapp(row.whatsapp);
+      if (row.service_area && !serviceArea) setServiceArea(row.service_area);
+      if (row.working_hours && !workingHours) setWorkingHours(row.working_hours);
+      if (row.website && !website) setWebsite(row.website);
+      if (row.instagram_url && !instagramUrl) setInstagramUrl(row.instagram_url);
+      if (row.facebook_url && !facebookUrl) setFacebookUrl(row.facebook_url);
+      if (row.youtube_url && !youtubeUrl) setYoutubeUrl(row.youtube_url);
+      if (row.category_id && !selectedCategoryIds.length) setSelectedCategoryIds([row.category_id]);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createdServiceId]);
+
+  const filteredCats = useMemo(() => {
+    return categories.filter(c =>
+      !selectedCategoryIds.includes(c.id) &&
+      (!categorySearch || c.name.toLowerCase().includes(categorySearch.toLowerCase()))
+    ).slice(0, 20);
+  }, [categories, selectedCategoryIds, categorySearch]);
+
+  // Track the last auto-filled name so we only overwrite when the user hasn't customized it.
+  const lastAutoNameRef = useRef<string>('');
+
+  // Single-select category — replaces previous and (re)auto-fills service name when applicable.
+  const handleSelectCategory = (catId: string) => {
+    const cat = categories.find((c: any) => c.id === catId);
+    setSelectedCategoryIds([catId]);
+    setCategorySearch('');
+    setShowCatDrop(false);
+    if (!cat?.name) return;
+    const current = serviceName.trim();
+    const isEmpty = current.length === 0;
+    const isPreviousAuto = current && current === lastAutoNameRef.current.trim();
+    if (isEmpty || isPreviousAuto) {
+      setServiceName(cat.name);
+      lastAutoNameRef.current = cat.name;
+    }
+  };
+
+  // Quick suggestions for service area / working hours
+  const areaSuggestions = useMemo(() => {
+    const city = provider?.city || '';
+    const list: string[] = [];
+    if (city) {
+      list.push(city);
+      list.push(`Região metropolitana de ${city}`);
+    }
+    list.push('Atendo toda a cidade', 'Atendo a domicílio');
+    return list;
+  }, [provider?.city]);
+
+  const hoursSuggestions = [
+    'Seg a Sex, 08h às 18h',
+    'Seg a Sáb, 08h às 18h',
+    'Comercial (09h às 17h)',
+    '24 horas',
+    'Sob agendamento',
+  ];
+
+  const providerCityDisplay = formatCityState(provider?.city, provider?.state);
+  const providerSlug = provider?.slug || '';
+  const profileUrl = `${window.location.origin}/profissional/${providerSlug}`;
+
+  const canNext = () => {
+    if (step === 0) return serviceName.trim().length > 0 && selectedCategoryIds.length > 0;
+    return true;
+  };
+
+  /* ──── Save service (called when moving from step 2 → step 3) ──── */
+  // Retry com backoff exponencial leve: 0ms, 400ms, 1000ms (3 tentativas).
+  const PROVIDER_RETRY_DELAYS = [0, 400, 1000];
+  const ensureProviderId = async (): Promise<string | null> => {
+    if (effectiveProviderId) return effectiveProviderId;
+    for (const delay of PROVIDER_RETRY_DELAYS) {
+      if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+      const pid = await recoverProviderId({ userId, hint: effectiveProviderId });
+      if (pid) {
+        setEffectiveProviderId(pid);
+        return pid;
+      }
+    }
+    return null;
+  };
+
+  const handleCreate = async (): Promise<boolean> => {
+    if (!serviceName.trim()) { toast.error('Nome do serviço é obrigatório'); return false; }
+    // Retry automático para garantir que o providerId esteja disponível
+    const pid = await ensureProviderId();
+    if (!pid) {
+      toast.error('Não conseguimos identificar seu cadastro de prestador. Atualize a página.');
+      return false;
+    }
+    setSaving(true);
+
+    try {
+      const address = [provider?.neighborhood, provider?.city, provider?.state].filter(Boolean).join(', ');
+      const { data, error } = await (supabase as any).rpc('create_service_atomic', {
+        _provider_id: pid,
+        _service_name: serviceName,
+        _description: description,
+        _whatsapp: whatsapp || provider?.whatsapp || '',
+        _service_area: serviceArea,
+        _address: address,
+        _working_hours: workingHours,
+        _website: website,
+        _instagram_url: instagramUrl,
+        _facebook_url: facebookUrl,
+        _youtube_url: youtubeUrl,
+        _category_id: selectedCategoryIds[0],
+        _category_ids: selectedCategoryIds,
+      });
+
+      if (error || !data?.success) {
+        toast.error('Erro: ' + (error?.message || data?.error || 'falha ao salvar serviço'));
+        setSaving(false);
+        return false;
+      }
+
+      setCreatedServiceId(data.service_id);
+
+      toast.success('Serviço criado! Agora adicione fotos.');
+      return true;
+    } catch (err: any) {
+      toast.error('Erro: ' + err.message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Campos faltantes para o banner de "etapa travada"
+  const missingFields: string[] = [];
+  if (step === 0) {
+    if (!serviceName.trim()) missingFields.push('Nome do serviço');
+    if (selectedCategoryIds.length === 0) missingFields.push('Categoria');
+  }
+
+  const handleNext = async () => {
+    if (step === 1 && !createdServiceId) {
+      // Save the service before going to photos
+      const ok = await handleCreate();
+      if (!ok) return;
+    }
+    setStep(step + 1);
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(profileUrl);
+    setLinkCopied(true);
+    toast.success('Link copiado!');
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const handleShareNative = async () => {
+    const text = `Confira meu perfil profissional: ${profileUrl}`;
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      try {
+        await (navigator as any).share({ title: serviceName || 'Meu perfil', text, url: profileUrl });
+        return;
+      } catch {
+        // user cancelled — fall through to copy
+      }
+    }
+    handleCopyLink();
+  };
+
+  const handleSkipForNow = () => {
+    try { localStorage.removeItem(draftKey); } catch {}
+    if (createdServiceId) onComplete(createdServiceId);
+    else onCancel();
+  };
+
+  const progress = ((step + 1) / STEPS.length) * 100;
+  const isPhotosStep = step === 2;
+
+  /* ──── Wizard ──── */
+  return (
+    <div className="mx-auto max-w-lg space-y-5 py-2">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Store className="h-5 w-5 text-accent" />
+          <span className="font-display text-sm font-bold text-foreground">Cadastro Express</span>
+        </div>
+        {displayServiceNumber !== null && displayServiceNumber >= 1 && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent"
+            aria-label={`Serviço ${displayServiceNumber} de ${maxServices}`}
+          >
+            <Sparkles className="h-3 w-3" />
+            {displayServiceNumber}/{maxServices}
+          </span>
+        )}
+      </div>
+
+      <div className="text-center">
+        {displayServiceNumber !== null && displayServiceNumber >= 1 ? (
+          (() => {
+            const c = buildServiceCountdownCopy(displayServiceNumber, maxServices);
+            return (
+              <>
+                <h1 className="font-display text-xl font-bold text-foreground">
+                  {c.title}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">{c.subtitle}</p>
+              </>
+            );
+          })()
+        ) : (
+          <>
+            <h1 className="font-display text-xl font-bold text-foreground">
+              Seu serviço pronto em <span className="text-accent italic">2 minutos</span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              3 passos rápidos para criar seu anúncio profissional.
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+        <motion.div
+          className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.4 }}
+        />
+      </div>
+
+      {/* Step indicators */}
+      <div className="flex items-center justify-between text-xs">
+        {STEPS.map((s, i) => {
+          const active = i === step;
+          const done = i < step;
+          return (
+            <button
+              key={s.key}
+              onClick={() => i < step && !isPhotosStep && setStep(i)}
+              disabled={isPhotosStep}
+              className={`flex items-center gap-1.5 transition-colors ${active ? 'text-accent font-bold' : done ? 'text-accent/70' : 'text-muted-foreground'} ${i < step && !isPhotosStep ? 'cursor-pointer' : ''}`}
+            >
+              <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${active ? 'bg-accent text-accent-foreground' : done ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                {done ? <CheckCircle2 className="h-3 w-3" /> : i + 1}
+              </span>
+              <span className="hidden sm:inline">{s.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mensagem clara quando faltarem dados para avançar */}
+      {missingFields.length > 0 && (
+        <StuckStepBanner
+          missing={missingFields}
+          stepLabel={STEPS[step]?.label}
+          showStatusLink
+        />
+      )}
+
+      {/* Step content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.2 }}
+        >
+          <div className="rounded-xl border border-border bg-card p-5 shadow-card space-y-4">
+
+            {/* ──── STEP 1: Identity ──── */}
+            {step === 0 && (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                    <Store className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-foreground">Identidade do Serviço</h3>
+                    <p className="text-xs text-muted-foreground">Nome, categoria e localização</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Nome do Serviço *</label>
+                  <Input
+                    placeholder="Ex: Assistência Técnica, Pintura Residencial..."
+                    value={serviceName}
+                    onChange={e => setServiceName(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+
+                {/* Category single-select */}
+                <div ref={catRef}>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Categoria *</label>
+                  <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 min-h-[40px]">
+                    {selectedCategoryIds.map(catId => {
+                      const cat = categories.find((c: any) => c.id === catId);
+                      if (!cat) return null;
+                      return (
+                        <span key={catId} className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-medium text-accent">
+                          <CategoryIcon icon={cat.icon} size={12} className="text-accent" /> {cat.name}
+                          <button onClick={() => setSelectedCategoryIds([])} className="hover:text-destructive" aria-label="Remover categoria">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                    {selectedCategoryIds.length === 0 && (
+                      <div className="relative flex-1 min-w-[120px]">
+                        <input
+                          value={categorySearch}
+                          onChange={e => { setCategorySearch(e.target.value); setShowCatDrop(true); }}
+                          onFocus={() => setShowCatDrop(true)}
+                          placeholder="Buscar categoria..."
+                          className="w-full border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Limite de 1 categoria por serviço. Você poderá cadastrar outros serviços depois.
+                  </p>
+                  {showCatDrop && selectedCategoryIds.length === 0 && filteredCats.length > 0 && (
+                    <div className="relative">
+                      <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-border bg-card shadow-lg">
+                        {filteredCats.map((c: any) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => handleSelectCategory(c.id)}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent/10"
+                          >
+                            <CategoryIcon icon={c.icon} size={14} className="text-current" /> {c.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* City display */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Cidade</label>
+                  <Input value={providerCityDisplay} readOnly className="bg-muted/50 text-muted-foreground" />
+                  <p className="text-[11px] text-muted-foreground mt-1">Herdado do seu perfil. Altere em "Editar Perfil".</p>
+                </div>
+              </>
+            )}
+
+            {/* ──── STEP 2: Details (Contact + Description) ──── */}
+            {step === 1 && (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                    <Phone className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-foreground">Detalhes do Serviço</h3>
+                    <p className="text-xs text-muted-foreground">Descrição, WhatsApp e horários</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">📝 Descrição do serviço</label>
+                  <Textarea
+                    placeholder="Descreva seus serviços, diferenciais e horário de funcionamento..."
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    rows={4}
+                    autoFocus
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">{description.length}/500 caracteres</p>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">📱 WhatsApp</label>
+                  <PhoneMaskedInput
+                    name="whatsapp"
+                    value={whatsapp}
+                    onChange={(_, val) => setWhatsapp(val)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-foreground">🗺️ Área de atendimento</label>
+                    <Input
+                      placeholder="Ex: Zona Sul, Grande SP"
+                      value={serviceArea}
+                      onChange={e => setServiceArea(e.target.value)}
+                    />
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {areaSuggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setServiceArea(s)}
+                          className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-foreground hover:bg-accent/10 hover:border-accent transition"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                    {serviceArea && (
+                      <p className="text-[11px] text-muted-foreground mt-1">Ficará visível assim: <span className="text-foreground">{serviceArea}</span></p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-foreground">🕐 Horário</label>
+                    <Input
+                      placeholder="Ex: Seg-Sex, 8h-18h"
+                      value={workingHours}
+                      onChange={e => setWorkingHours(e.target.value)}
+                    />
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {hoursSuggestions.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setWorkingHours(s)}
+                          className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-foreground hover:bg-accent/10 hover:border-accent transition"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                    {workingHours && (
+                      <p className="text-[11px] text-muted-foreground mt-1">Ficará visível assim: <span className="text-foreground">{workingHours}</span></p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">🌐 Site / Rede Social</label>
+                  <Input
+                    placeholder="https://seusite.com.br"
+                    value={website}
+                    onChange={e => setWebsite(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">📸 Instagram</label>
+                  <Input
+                    placeholder="https://instagram.com/seu_perfil"
+                    value={instagramUrl}
+                    onChange={e => setInstagramUrl(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">📘 Facebook</label>
+                  <Input
+                    placeholder="https://facebook.com/sua_pagina"
+                    value={facebookUrl}
+                    onChange={e => setFacebookUrl(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-foreground">🎬 YouTube</label>
+                  <Input
+                    placeholder="https://youtube.com/watch?v=..."
+                    value={youtubeUrl}
+                    onChange={e => setYoutubeUrl(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* ──── STEP 3: Photos ──── */}
+            {step === 2 && createdServiceId && (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                    <ImagePlus className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-foreground">Fotos do Serviço</h3>
+                    <p className="text-xs text-muted-foreground">Lojas com fotos recebem 3x mais visualizações</p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 text-sm text-foreground flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                  <span><strong>{serviceName}</strong> foi criado com sucesso! Adicione fotos abaixo.</span>
+                </div>
+
+                <ServiceImageDragUploader
+                  serviceId={createdServiceId}
+                  userId={userId}
+                  maxPhotos={5}
+                  onChange={(imgs) => setPhotoCount(imgs.length)}
+                />
+
+                {/* Guia contextual — onde fica "Pular por enquanto" + como concluir sem fotos */}
+                <div className="rounded-lg border border-dashed border-border bg-muted/30 p-3 text-[12px] text-muted-foreground space-y-1.5">
+                  <p className="flex items-start gap-1.5 text-foreground">
+                    <Info className="h-3.5 w-3.5 mt-0.5 text-accent shrink-0" strokeWidth={2} />
+                    <span>
+                      <strong>Sem fotos no momento?</strong> Você pode concluir mesmo assim:
+                      role até o fim e clique em <em>“Pular por enquanto”</em> — seu serviço já está
+                      salvo e você adiciona as fotos depois pelo Dashboard.
+                    </span>
+                  </p>
+                  <p className="pl-5">
+                    Se as fotos não estiverem subindo (carregando travado), tente
+                    1) trocar para outra rede (Wi-Fi ↔ 4G); 2) usar imagens menores que 5 MB;
+                    3) atualizar a página. Se ainda assim falhar, use o botão
+                    <em> “Reportar erro” </em> abaixo — vamos ajudar.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Navigation buttons */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {isPhotosStep ? (
+          <>
+            <Button variant="outline" onClick={() => setStep(step - 1)} className="w-full sm:w-auto">
+              <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+            </Button>
+            <Button
+              variant="accent"
+              disabled={photoCount === 0}
+              onClick={() => { try { localStorage.removeItem(draftKey); } catch {} onComplete(createdServiceId!); }}
+              title={photoCount === 0 ? 'Adicione ao menos 1 foto para concluir' : ''}
+              className="w-full sm:w-auto"
+            >
+              {photoCount === 0 ? 'Adicione 1 foto' : 'Concluir'} <Sparkles className="h-4 w-4 ml-1" />
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => { if (step > 0) setStep(step - 1); }}
+              disabled={step === 0}
+              className="w-full sm:w-auto"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Voltar
+            </Button>
+
+            <Button
+              variant="accent"
+              disabled={!canNext() || saving}
+              onClick={handleNext}
+              className="w-full sm:w-auto"
+            >
+              {saving ? 'Salvando...' : step === 1 ? 'Salvar e adicionar fotos' : 'Próximo'}
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </>
+        )}
+      </div>
+
+      {/* Secondary action bar — visible "skip" with proper contrast */}
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">
+          Sem tempo agora? Você pode pular e completar depois pelo Dashboard.
+        </p>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={handleSkipForNow}
+          className="w-full sm:w-auto font-semibold"
+        >
+          Pular por enquanto
+        </Button>
+      </div>
+
+      {/* Reportar erro — pré-preenchido com etapa, user_id e últimos eventos */}
+      <div className="flex justify-center">
+        <ReportWizardErrorButton step={STEPS[step]?.key || 'unknown'} componentName="ServiceWizard" />
+      </div>
+
+      {/* Share section (only on photos step) */}
+      {isPhotosStep && createdServiceId && (
+        <div className="rounded-xl border border-border bg-card p-4 shadow-card space-y-3">
+          <p className="text-sm font-medium text-foreground">🔗 Compartilhe seu perfil</p>
+          <div className="flex items-center gap-2">
+            <Input value={profileUrl} readOnly className="text-xs flex-1" />
+            <Button variant="outline" size="sm" onClick={handleCopyLink}>
+              <Copy className="h-4 w-4 mr-1" /> {linkCopied ? 'Copiado!' : 'Copiar'}
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="accent" size="sm" className="flex-1 min-w-[140px]" onClick={handleShareNative}>
+              <Share2 className="h-4 w-4 mr-1" /> Compartilhar
+            </Button>
+            {/* Desktop only — "Ver minha página" */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:inline-flex flex-1 min-w-[140px]"
+              onClick={() => window.open(profileUrl, '_blank', 'noopener')}
+            >
+              <ExternalLink className="h-4 w-4 mr-1" /> Ver minha página
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ServiceWizard;

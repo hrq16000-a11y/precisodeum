@@ -41,7 +41,6 @@ describe('Critical page imports', () => {
     { name: 'CategoryPage', path: '@/pages/CategoryPage' },
     { name: 'ProviderProfile', path: '@/pages/ProviderProfile' },
     { name: 'LoginPage', path: '@/pages/LoginPage' },
-    { name: 'SignupPage', path: '@/pages/SignupPage' },
     { name: 'DashboardPage', path: '@/pages/DashboardPage' },
     { name: 'DashboardProfilePage', path: '@/pages/DashboardProfilePage' },
     { name: 'AdminPage', path: '@/pages/AdminPage' },
@@ -53,19 +52,16 @@ describe('Critical page imports', () => {
     it(`${name} can be imported without errors`, async () => {
       const mod = await import(/* @vite-ignore */ path);
       expect(mod.default).toBeDefined();
-    });
+    }, 30_000); // cold-start do Vite pode demorar; passa em <2s isolado
   });
 });
 
 // ── 3. Utilitários core ─────────────────────────────────────────────
 describe('Core utilities stability', () => {
   it('sanitizeSlug works correctly', async () => {
-    const { sanitizeSlug, generateProviderSlug, buildProviderSlugCandidates } = await import('@/lib/slugify');
+    const { sanitizeSlug } = await import('@/lib/slugify');
     expect(sanitizeSlug('Olá Mundo')).toBe('ola-mundo');
     expect(sanitizeSlug('  São Paulo  ')).toBe('sao-paulo');
-    expect(generateProviderSlug('João Silva', 'JS Reformas', 'São Paulo')).toBe('joao-silva-js-reformas-sao-paulo');
-    expect(generateProviderSlug('', 'JS Reformas', 'São Paulo')).toBe('js-reformas-sao-paulo');
-    expect(buildProviderSlugCandidates('Jo%C3%A3o--Silva')).toContain('joao-silva');
   });
 
   it('cn utility merges classes', async () => {

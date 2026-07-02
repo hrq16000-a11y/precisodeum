@@ -13,12 +13,12 @@ import {
 } from '@/hooks/usePwaInstall';
 
 const PwaFooterInstall = () => {
-  const { isStandalone } = usePwaInstallPrompt();
+  const { isStandalone, canInstall } = usePwaInstallPrompt();
   const { data: settings } = usePwaSettings();
   const footerCta = settings?.footer_cta_text || 'Instalar App';
 
   const openInstallPopup = () => {
-    if (isStandalone) return;
+    if (isStandalone || !canInstall) return;
     window.dispatchEvent(
       new CustomEvent(PWA_OPEN_INSTALL_MODAL_EVENT, { detail: { source: 'footer' } }),
     );

@@ -3,11 +3,12 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, Save, X } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { sanitizeSlug } from '@/lib/slugify';
+import { Switch } from '@/components/ui/switch';
 
 interface PopularService {
   id: string;
@@ -23,15 +24,7 @@ interface PopularService {
 }
 
 const emptyService: Omit<PopularService, 'id'> = {
-  name: '',
-  slug: '',
-  category_name: '',
-  category_slug: '',
-  min_price: 0,
-  icon: '🔧',
-  description: '',
-  display_order: 0,
-  active: true,
+  name: '', slug: '', category_name: '', category_slug: '', min_price: 0, icon: '🔧', description: '', display_order: 0, active: true,
 };
 
 const AdminPopularServicesPage = () => {
@@ -45,45 +38,31 @@ const AdminPopularServicesPage = () => {
     if (data) setServices(data as any);
   };
 
-  useEffect(() => {
-    if (isAdmin) fetch();
-  }, [isAdmin]);
+  useEffect(() => { if (isAdmin) fetch(); }, [isAdmin]);
 
-  const generateSlug = (name: string) => sanitizeSlug(name);
+  const generateSlug = (name: string) => name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
   const handleSave = async () => {
-    if (!editing?.name) {
-      toast.error('Nome é obrigatório');
-      return;
-    }
-    const slug = sanitizeSlug(editing.slug || editing.name);
+    if (!editing?.name) { toast.error('Nome é obrigatório'); return; }
+    const slug = editing.slug || generateSlug(editing.name);
     const payload = { ...editing, slug };
 
     if (isNew) {
       const { error } = await (supabase.from('popular_services' as any) as any).insert([payload]);
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
+      if (error) { toast.error(error.message); return; }
       toast.success('Serviço criado!');
     } else {
       const { error } = await (supabase.from('popular_services' as any) as any).update(payload).eq('id', editing.id);
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
+      if (error) { toast.error(error.message); return; }
       toast.success('Serviço atualizado!');
     }
-    setEditing(null);
-    setIsNew(false);
-    fetch();
+    setEditing(null); setIsNew(false); fetch();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir este serviço?')) return;
     await (supabase.from('popular_services' as any) as any).delete().eq('id', id);
-    toast.success('Excluído');
-    fetch();
+    toast.success('Excluído'); fetch();
   };
 
   if (loading) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
@@ -105,9 +84,9 @@ const AdminPopularServicesPage = () => {
           <h3 className="font-display font-bold text-foreground">{isNew ? 'Novo Serviço' : 'Editar Serviço'}</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <Input placeholder="Nome do serviço" value={editing.name || ''} onChange={e => setEditing({ ...editing, name: e.target.value, slug: generateSlug(e.target.value) })} />
-            <Input placeholder="Slug" value={editing.slug || ''} onChange={e => setEditing({ ...editing, slug: sanitizeSlug(e.target.value) })} />
+            <Input placeholder="Slug" value={editing.slug || ''} onChange={e => setEditing({ ...editing, slug: e.target.value })} />
             <Input placeholder="Categoria" value={editing.category_name || ''} onChange={e => setEditing({ ...editing, category_name: e.target.value })} />
-            <Input placeholder="Slug da categoria" value={editing.category_slug || ''} onChange={e => setEditing({ ...editing, category_slug: sanitizeSlug(e.target.value) })} />
+            <Input placeholder="Slug da categoria" value={editing.category_slug || ''} onChange={e => setEditing({ ...editing, category_slug: e.target.value })} />
             <Input type="number" placeholder="Preço mínimo (R$)" value={editing.min_price || 0} onChange={e => setEditing({ ...editing, min_price: Number(e.target.value) })} />
             <Input placeholder="Ícone (emoji)" value={editing.icon || ''} onChange={e => setEditing({ ...editing, icon: e.target.value })} />
             <Input type="number" placeholder="Ordem" value={editing.display_order || 0} onChange={e => setEditing({ ...editing, display_order: Number(e.target.value) })} />
@@ -122,24 +101,24 @@ const AdminPopularServicesPage = () => {
 
       <div className="mt-6 space-y-2">
         {services.map(s => (
-          <div key={s.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-card">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{s.icon}</span>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">{s.name}</h3>
-                <p className="text-xs text-muted-foreground">{s.category_name} · A partir de R$ {s.min_price.toFixed(2).replace('.', ',')}</p>
+          <div key={s.id} className="rounded-xl border border-border bg-card p-3 shadow-card">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10"><CategoryIcon icon={s.icon} size={20} className="text-accent" /></span>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-foreground truncate">{s.name}</h3>
+                <p className="text-xs text-muted-foreground">{s.category_name} · R$ {s.min_price.toFixed(2).replace('.', ',')}</p>
+                <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full ${s.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {s.active ? 'Ativo' : 'Inativo'}
+                </span>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs px-2 py-0.5 rounded-full ${s.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {s.active ? 'Ativo' : 'Inativo'}
-              </span>
-              <Button variant="ghost" size="sm" onClick={() => { setEditing(s); setIsNew(false); }}>
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              <div className="flex gap-1 shrink-0">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setEditing(s); setIsNew(false); }}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDelete(s.id)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </div>
           </div>
         ))}

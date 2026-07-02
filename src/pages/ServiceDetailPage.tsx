@@ -1,4 +1,5 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { serviceImageThumb } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
 import { useQuery } from '@tanstack/react-query';
@@ -8,14 +9,18 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MessageCircle, MapPin, ChevronRight, Clock, Globe } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useMemo, useEffect } from 'react';
-import { whatsappLink } from '@/lib/whatsapp';
+import { useMemo, useEffect, useRef } from 'react';
+import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
+import { useGeoCity } from '@/hooks/useGeoCity';
+import { formatLocationString } from '@/lib/normalize';
+import { formatCityState } from '@/lib/locationFormat';
 
 const ServiceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const { city: userCity, state: userState } = useGeoCity();
 
   const { data, isLoading } = useQuery({
     queryKey: ['service-detail', id],
@@ -28,7 +33,7 @@ const ServiceDetailPage = () => {
       if (!svc) return null;
 
       const [{ data: provider }, { data: profile }, { data: images }, { data: scats }] = await Promise.all([
-        supabase.from('providers').select('*, categories(name, slug, icon)').eq('id', svc.provider_id).maybeSingle(),
+        supabase.from('providers').select('id, user_id, business_name, description, photo_url, city, state, neighborhood, phone, whatsapp, website, years_experience, slug, rating_avg, review_count, status, category_id, categories(name, slug, icon)').eq('id', svc.provider_id).maybeSingle(),
         supabase.from('public_profiles' as any).select('full_name, avatar_url').eq('id', (await supabase.from('providers').select('user_id').eq('id', svc.provider_id).maybeSingle()).data?.user_id || '').maybeSingle() as any,
         supabase.from('service_images').select('*').eq('service_id', svc.id).order('display_order'),
         supabase.from('service_categories').select('category_id, categories(name, icon)').eq('service_id', svc.id),
@@ -44,20 +49,11 @@ const ServiceDetailPage = () => {
   const city = svc?.provider?.city || '';
   const state = svc?.provider?.state || '';
   const provSlug = svc?.provider?.slug || svc?.provider?.id || '';
-  const shouldNoindex = !!svc && !svc.provider;
-  const canonicalServiceUrl = svc?.slug ? `${SITE_BASE_URL}/servico-detalhe/${svc.slug}` : id ? `${SITE_BASE_URL}/servico-detalhe/${id}` : undefined;
-
-  useEffect(() => {
-    if (svc && id && svc.slug && svc.slug !== id) {
-      navigate(`/servico-detalhe/${svc.slug}`, { replace: true });
-    }
-  }, [svc, id, navigate]);
 
   useSeoHead({
     title: svc ? `${svc.service_name} em ${city} – ${providerName}` : 'Serviço',
-    description: svc ? `${svc.service_name} em ${city}-${state}. ${svc.description?.slice(0, 120)}` : '',
-    canonical: canonicalServiceUrl,
-    noindex: shouldNoindex,
+    description: svc ? `${svc.service_name} em ${formatCityState(city, state) || city}. ${svc.description?.slice(0, 120)}` : '',
+    canonical: id ? `${SITE_BASE_URL}/servico-detalhe/${id}` : undefined,
   });
 
   const ld = useMemo(() => svc ? ({
@@ -66,30 +62,22 @@ const ServiceDetailPage = () => {
     name: svc.service_name,
     description: svc.description,
     areaServed: { '@type': 'City', name: city },
-    ...(svc.provider ? {
-      provider: {
-        '@type': 'LocalBusiness',
-        name: providerName,
-        url: `${SITE_BASE_URL}/profissional/${provSlug}`,
-      },
-    } : {}),
+    provider: {
+      '@type': 'LocalBusiness',
+      name: providerName,
+      url: `${SITE_BASE_URL}/profissional/${provSlug}`,
+    },
   }) : null, [svc, city, providerName, provSlug]);
 
   useJsonLd(ld);
-  const breadcrumbLd = useMemo(() => {
-    if (!svc) return null;
 
-    return {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_BASE_URL}/` },
-        ...(svc.categories?.slug ? [{ '@type': 'ListItem', position: 2, name: svc.categories.name, item: `${SITE_BASE_URL}/categoria/${svc.categories.slug}` }] : []),
-        { '@type': 'ListItem', position: svc.categories?.slug ? 3 : 2, name: svc.service_name, item: canonicalServiceUrl || `${SITE_BASE_URL}/servico-detalhe/${id}` },
-      ],
-    };
-  }, [svc, id, canonicalServiceUrl]);
-  useJsonLd(breadcrumbLd);
+  // Auto-increment view_count once per page visit
+  const viewTracked = useRef(false);
+  useEffect(() => {
+    if (!svc?.id || viewTracked.current) return;
+    viewTracked.current = true;
+    (supabase.rpc as any)('increment_service_view', { service_id: svc.id });
+  }, [svc?.id]);
 
   if (isLoading) {
     return (
@@ -116,17 +104,12 @@ const ServiceDetailPage = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <nav className="container py-3 text-sm text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">Início</Link>
-        {catInfo?.slug && (
-          <>
-            <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/categoria/${catInfo.slug}`} className="hover:text-foreground">{catInfo.name}</Link>
-          </>
-        )}
-        <ChevronRight className="mx-1 inline h-3 w-3" />
-        <span className="text-foreground">{svc.service_name}</span>
-      </nav>
+      <div className="container py-3">
+        <Breadcrumbs items={[
+          ...(catInfo?.slug ? [{ label: catInfo.name, url: `/categoria/${catInfo.slug}` }] : []),
+          { label: svc.service_name },
+        ]} />
+      </div>
 
       <main className="flex-1">
         <div className="container py-6">
@@ -134,14 +117,14 @@ const ServiceDetailPage = () => {
             <div className="flex-1">
               <h1 className="font-display text-2xl font-bold text-foreground md:text-3xl">{svc.service_name}</h1>
               <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
-                <MapPin className="h-4 w-4" /> {city} - {state}
+                <MapPin className="h-4 w-4" /> {formatCityState(city, state)}
               </p>
 
               {svc.serviceCategories?.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {svc.serviceCategories.map((sc: any, i: number) => (
-                    <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
-                      {(sc.categories as any)?.icon} {(sc.categories as any)?.name}
+                    <span key={i} className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
+                      <CategoryIcon icon={(sc.categories as any)?.icon} size={12} className="text-accent" /> {(sc.categories as any)?.name}
                     </span>
                   ))}
                 </div>
@@ -164,20 +147,21 @@ const ServiceDetailPage = () => {
 
               <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
                 {svc.price && <span className="font-semibold text-foreground">💰 {svc.price}</span>}
-                {svc.service_area && <span>🗺️ Atende: {svc.service_area}</span>}
+                {svc.service_area && <span>🗺️ Atende: {formatLocationString(svc.service_area)}</span>}
                 {svc.working_hours && <span><Clock className="mr-1 inline h-3.5 w-3.5" />{svc.working_hours}</span>}
               </div>
             </div>
 
+            {/* Sidebar */}
             <aside className="w-full lg:w-80">
               <div className="sticky top-20 rounded-xl border border-border bg-card p-6 shadow-card">
                 <h3 className="font-display text-base font-bold text-foreground">Profissional</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{providerName}</p>
-                <p className="text-xs text-muted-foreground">{city} - {state}</p>
+                <p className="text-xs text-muted-foreground">{formatCityState(city, state)}</p>
 
                 <div className="mt-4 space-y-2">
                   <Button variant="accent" className="w-full" asChild>
-                    <a href={whatsappLink(svc.provider?.whatsapp || svc.whatsapp || '', `Olá! Vi o serviço "${svc.service_name}" no Preciso de um e gostaria de mais informações.`)} target="_blank" rel="noopener noreferrer">
+                    <a href={whatsappLink(svc.provider?.whatsapp || svc.whatsapp || '', buildSmartMessage(providerName, catInfo?.name || svc.service_name, userCity, userState))} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="h-4 w-4" /> WhatsApp
                     </a>
                   </Button>
@@ -192,7 +176,7 @@ const ServiceDetailPage = () => {
       </main>
 
       <a
-        href={whatsappLink(svc.provider?.whatsapp || svc.whatsapp || '', `Olá! Vi o serviço "${svc.service_name}" no Preciso de um e gostaria de mais informações.`)}
+        href={whatsappLink(svc.provider?.whatsapp || svc.whatsapp || '', buildSmartMessage(providerName, catInfo?.name || svc.service_name, userCity, userState))}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 lg:hidden animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"

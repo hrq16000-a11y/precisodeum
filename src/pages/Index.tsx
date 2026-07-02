@@ -1,33 +1,38 @@
-import { lazy as reactLazy, Suspense, memo, Component, ReactNode, type ComponentType } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import { lazy as reactLazy, Suspense, Component, ReactNode, type ComponentType, useMemo, useCallback, useEffect, useRef, useState } from 'react';
+import { useHomeFeatureFlags } from '@/hooks/useHomeFeatureFlags';
 import { useCategoriesWithCount, useFeaturedProviders } from '@/hooks/useProviders';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import type { FeaturedProviderSort } from '@/hooks/useProviders';
 
+// Critical path — eagerly loaded for instant render
 import Header from '@/components/Header';
 import HeroBanner from '@/components/home/HeroBanner';
+import ProSignupStrip from '@/components/home/ProSignupStrip';
 import CategoriesGrid from '@/components/home/CategoriesGrid';
-import HighlightsCarousel from '@/components/home/HighlightsCarousel';
-import FeaturedProviders from '@/components/home/FeaturedProviders';
-import RecentServices from '@/components/home/RecentServices';
-import PwaInstallSection from '@/components/home/PwaInstallSection';
-import DynamicPageBlocks from '@/components/DynamicPageBlocks';
+import GpsScrollPrompt from '@/components/home/GpsScrollPrompt';
+import Footer from '@/components/Footer';
 
 type LazyModule<T extends ComponentType<any>> = { default: T };
 const lazy = <T extends ComponentType<any>>(importer: () => Promise<LazyModule<T>>) =>
   reactLazy(() => importWithRetry(importer));
 
-// Lazy load below-the-fold sections
+// Lazy load non-critical sections (below the fold)
+const UrgencyBanner = lazy(() => import('@/components/home/UrgencyBanner'));
+const HighlightsCarousel = lazy(() => import('@/components/home/HighlightsCarousel'));
+const FeaturedProviders = lazy(() => import('@/components/home/FeaturedProviders'));
+const StatsCounter = lazy(() => import('@/components/home/StatsCounter'));
+const PwaInstallSection = lazy(() => import('@/components/home/PwaInstallSection'));
+const DynamicPageBlocks = lazy(() => import('@/components/DynamicPageBlocks'));
 const PopularServices = lazy(() => import('@/components/home/PopularServices'));
 const FeaturedJobs = lazy(() => import('@/components/home/FeaturedJobs'));
 const BlogHighlight = lazy(() => import('@/components/home/BlogHighlight'));
 const CitiesSection = lazy(() => import('@/components/home/CitiesSection'));
 const CtaSection = lazy(() => import('@/components/home/CtaSection'));
 const SponsorsSection = lazy(() => import('@/components/home/SponsorsSection'));
+const SponsorLeaderBanner = lazy(() => import('@/components/sponsors/SponsorLeaderBanner'));
 const HowItWorksSection = lazy(() => import('@/components/home/HowItWorksSection'));
 const TestimonialsSection = lazy(() => import('@/components/home/TestimonialsSection'));
 const FaqSection = lazy(() => import('@/components/home/FaqSection'));
@@ -35,9 +40,16 @@ const PopularSearches = lazy(() => import('@/components/home/PopularSearches'));
 const AdBanner = lazy(() => import('@/components/ads/AdBanner'));
 const AdShowcase = lazy(() => import('@/components/ads/AdShowcase'));
 const AdSlot = lazy(() => import('@/components/ads/AdSlot'));
+const SponsorAdSlot = lazy(() => import('@/components/ads/SponsorAdSlot'));
+const SponsorTopBanner = lazy(() => import('@/components/sponsors/SponsorTopBanner'));
+const SponsorFooterCTA = lazy(() => import('@/components/sponsors/SponsorFooterCTA'));
+const CmsBannersCarousel = lazy(() => import('@/components/home/CmsBannersCarousel'));
+const CoursesPromo = lazy(() => import('@/components/home/CoursesPromo'));
+const CommunityFeed = lazy(() => import('@/components/dashboard/CommunityFeed'));
 
-const Footer = lazy(() => import('@/components/Footer'));
 const FloatingWhatsApp = lazy(() => import('@/components/FloatingWhatsApp'));
+const ActiveProvidersCounter = lazy(() => import('@/components/home/ActiveProvidersCounter'));
+const MOBILE_FIRST_DELAY_MS = 2600;
 
 // Error boundary to prevent lazy load failures from crashing the page
 class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -46,21 +58,135 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
     this.state = { hasError: false };
   }
   static getDerivedStateFromError() { return { hasError: true }; }
-  render() { return this.state.hasError ? null : this.props.children; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <p className="text-sm text-muted-foreground">Algo deu errado ao carregar esta seção.</p>
+          <a
+            href="/ajuda"
+            className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Acionar suporte
+          </a>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
+
+// Instant fallback — no blocking skeletons
 
 const SectionFallback = () => null;
 
+const FeaturedProvidersFallback = () => (
+  <section className="relative overflow-hidden pt-8 pb-24 md:py-14">
+    <div className="container relative">
+      <div className="mb-8 space-y-3 text-center md:text-left">
+        <div className="mx-auto h-6 w-28 rounded-full bg-muted md:mx-0" />
+        <div className="mx-auto h-8 w-64 rounded-md bg-muted md:mx-0" />
+        <div className="mx-auto h-4 w-80 max-w-full rounded-md bg-muted md:mx-0" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="h-56 rounded-2xl border border-border bg-card shadow-sm">
+            <div className="h-1 rounded-t-2xl bg-muted" />
+            <div className="space-y-4 p-4">
+              <div className="flex gap-3">
+                <div className="h-14 w-14 rounded-full bg-muted" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-3/4 rounded bg-muted" />
+                  <div className="h-3 w-1/2 rounded bg-muted" />
+                  <div className="h-3 w-2/3 rounded bg-muted" />
+                </div>
+              </div>
+              <div className="h-3 w-24 rounded bg-muted" />
+              <div className="flex gap-2">
+                <div className="h-9 flex-1 rounded-md bg-muted" />
+                <div className="h-9 flex-1 rounded-md bg-muted" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+const DeferredAboveFoldSection = ({ children, minHeight }: { children: ReactNode; minHeight?: number }) => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if ('requestIdleCallback' in window) {
+      const id = (window as any).requestIdleCallback(() => setReady(true), { timeout: MOBILE_FIRST_DELAY_MS });
+      return () => (window as any).cancelIdleCallback?.(id);
+    }
+
+    const id = globalThis.setTimeout(() => setReady(true), MOBILE_FIRST_DELAY_MS);
+    return () => globalThis.clearTimeout(id);
+  }, []);
+
+  // Reserve space to avoid CLS as deferred content mounts
+  const style = minHeight ? { minHeight: `${minHeight}px` } : undefined;
+  return <div style={style}>{ready ? children : null}</div>;
+};
+
+const LazyViewportSection = ({ children }: { children: ReactNode }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || visible) return;
+
+    if (!('IntersectionObserver' in window)) {
+      const id = globalThis.setTimeout(() => setVisible(true), 1200);
+      return () => globalThis.clearTimeout(id);
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '250px 0px' },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [visible]);
+
+  return <div ref={ref} className="cv-auto">{visible ? children : null}</div>;
+};
+
+// Default section order
+// Default section order — ENXUTO (limpeza visual). Removidos duplicados:
+// sponsor_top/home_featured_ad/ad2/showcase/sponsor_cta/popular/pwa eram
+// concorrentes diretos de outras seções. Admin ainda pode reordenar/exibir
+// via site_settings (sections_order / hidden_sections).
+// "howitworks" promovido para antes de "categories" — serve de orientação
+// imediata ao visitante (passo a passo + filtro rápido) antes da grade.
+const DEFAULT_ORDER = 'cms_banners,urgency,howitworks,categories,searches,featured,ad1,jobs,courses,blog,cities,highlights,cta,sponsors,testimonials,faq';
+
+// Sections that appear before 'categories' in the default order load lazily,
+// each one pushing the categories grid down and causing a layout shift.
+// To eliminate this CLS we render CategoriesGrid eagerly (it's already imported)
+// right after HeroBanner, outside the lazy section loop.
+
 const Index = () => {
-  const { city: geoCity } = useGeoCity();
-  const seoSuffix = geoCity ? ` em ${geoCity}` : '';
+  const { city: geoCity, latitude: geoLat, longitude: geoLng } = useGeoCity();
+  const [postLcpReady, setPostLcpReady] = useState(false);
+  const [featuredSort, setFeaturedSort] = useState<FeaturedProviderSort>('proximity');
 
   useSeoHead({
     title: geoCity
       ? `Profissionais confiáveis em ${geoCity} | Preciso de um`
-      : 'Preciso de um | Encontre profissionais confiáveis perto de você',
+      : 'Preciso de um | Encontre um profissional para qualquer tipo de serviço no Brasil',
     description: geoCity
-      ? `Encontre eletricistas, encanadores, técnicos e mais em ${geoCity}. Compare avaliações e solicite orçamentos gratuitamente.`
+      ? `Encontre eletricistas, encanadores, técnicos e mais em ${geoCity}. Veja avaliações e fale direto com o profissional.`
       : 'Marketplace de serviços profissionais. Encontre eletricistas, encanadores, técnicos e muito mais na sua cidade. Cadastre-se gratuitamente.',
     canonical: SITE_BASE_URL,
   });
@@ -77,120 +203,237 @@ const Index = () => {
     },
   });
 
-  const reviewsEnabled = useFeatureEnabled('reviews_enabled');
-  const featuredEnabled = useFeatureEnabled('featured_providers_enabled');
-  const popularSearchesEnabled = useFeatureEnabled('popular_searches_enabled');
-  const faqEnabled = useFeatureEnabled('faq_enabled');
+  useJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Preciso de um',
+    url: SITE_BASE_URL,
+    logo: `${SITE_BASE_URL}/placeholder.svg`,
+    sameAs: [],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer service',
+      availableLanguage: 'Portuguese',
+    },
+  });
+
+  // Single unified hook for all feature flags (avoids 10+ re-render subscriptions)
+  const {
+    reviewsEnabled, featuredEnabled, popularSearchesEnabled, faqEnabled,
+    blogEnabled, jobsEnabled, howItWorksEnabled, ctaEnabled,
+    citiesEnabled, sponsorsEnabled, heroBannersEnabled,
+    sectionsOrderRaw, hiddenSectionsRaw,
+  } = useHomeFeatureFlags();
+
+  const sectionOrder = useMemo(() => {
+    const order = (sectionsOrderRaw || DEFAULT_ORDER).split(',').map(s => s.trim()).filter(Boolean);
+    const hidden = new Set((hiddenSectionsRaw || '').split(',').map(s => s.trim()).filter(Boolean));
+    const normalized = order.filter(s => !hidden.has(s) && s !== 'leader_sponsor');
+    return normalized;
+  }, [sectionsOrderRaw, hiddenSectionsRaw]);
+
+  const categoriesIndex = sectionOrder.indexOf('categories');
+  const sectionsBeforeCategories = categoriesIndex >= 0 ? sectionOrder.slice(0, categoriesIndex) : sectionOrder;
+  const sectionsAfterCategories = categoriesIndex >= 0 ? sectionOrder.slice(categoriesIndex + 1) : [];
+
   const { data: categories = [], isLoading: catsLoading } = useCategoriesWithCount();
-  const { data: featuredProviders = [], isLoading: provsLoading } = useFeaturedProviders();
-
-  // Consolidated counts query (single request instead of two)
-  const { data: counts } = useQuery({
-    queryKey: ['home-counts'],
-    queryFn: async () => {
-      const [servicesRes, jobsRes] = await Promise.all([
-        supabase.from('services').select('id', { count: 'exact', head: true }),
-        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      ]);
-      return {
-        services: servicesRes.count || 0,
-        jobs: jobsRes.count || 0,
-      };
-    },
-    staleTime: 1000 * 60 * 5,
+  const {
+    data: featuredProviders = [],
+    isLoading: provsLoading,
+    isFetching: featuredFetching,
+    isError: featuredError,
+    dataUpdatedAt: featuredUpdatedAt,
+  } = useFeaturedProviders({
+    enabled: featuredEnabled && postLcpReady,
+    latitude: geoLat,
+    longitude: geoLng,
+    userCity: geoCity || undefined,
+    sortBy: featuredSort,
+    limit: 6,
   });
 
-  // Consolidated secondary data (cities + categories for SEO + recent services + sponsors)
-  const { data: secondaryData } = useQuery({
-    queryKey: ['home-secondary-data'],
-    queryFn: async () => {
-      const [citiesRes, allCatsRes, recentRes, sponsorsRes] = await Promise.all([
-        // Cities with services
-        (async () => {
-          const { data: services } = await supabase.from('services').select('provider_id');
-          if (!services || services.length === 0) return [];
-          const providerIds = [...new Set(services.map((s: any) => s.provider_id))];
-          const { data: providers } = await supabase.from('providers').select('city').in('id', providerIds);
-          if (!providers) return [];
-          const cityNames = [...new Set(providers.map((p: any) => p.city).filter(Boolean))];
-          const { data: cities } = await supabase.from('cities').select('name, slug, state').in('name', cityNames);
-          const shuffled = [...(cities || [])].sort(() => Math.random() - 0.5);
-          return shuffled.slice(0, 6);
-        })(),
-        // All categories slugs
-        supabase.from('categories').select('name, slug').order('name').then(r => r.data || []),
-        // Recent services
-        (async () => {
-          const { data } = await supabase
-            .from('services')
-            .select('id, service_name, service_area, created_at, provider_id, category_id, categories(name, slug, icon)')
-            .order('created_at', { ascending: false })
-            .limit(6);
-          if (!data || data.length === 0) return [];
-          const providerIds = [...new Set(data.map((s: any) => s.provider_id))];
-          const { data: providers } = await supabase.from('providers').select('id, city, state').in('id', providerIds);
-          const providerMap: Record<string, any> = {};
-          (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
-          return data.map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
-        })(),
-        // Sponsors
-        supabase.from('sponsors').select('id, title, image_url, link_url, tier, position, active, display_order').eq('active', true).order('display_order').then(r => r.data || []),
-      ]);
-      return {
-        topCities: citiesRes,
-        allCategories: allCatsRes,
-        recentServices: recentRes,
-        sponsors: sponsorsRes,
-      };
-    },
-    staleTime: 1000 * 60 * 5,
+  useJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: geoCity ? `Diretório local de profissionais em ${geoCity}` : 'Diretório local de profissionais no Brasil',
+    url: SITE_BASE_URL,
+    itemListElement: featuredProviders.slice(0, 6).map((provider, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'LocalBusiness',
+        name: provider.name,
+        url: `${SITE_BASE_URL}/profissional/${provider.slug}`,
+        image: provider.photo || undefined,
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: provider.city || geoCity || undefined,
+          addressRegion: provider.state || undefined,
+          addressCountry: 'BR',
+        },
+        aggregateRating: provider.rating > 0 ? {
+          '@type': 'AggregateRating',
+          ratingValue: provider.rating,
+          reviewCount: provider.reviewCount || 1,
+        } : undefined,
+      },
+    })),
   });
 
-  const topCities = secondaryData?.topCities || [];
-  const allCategories = secondaryData?.allCategories || [];
-  const recentServices = secondaryData?.recentServices || [];
-  const sponsors = secondaryData?.sponsors || [];
+  useEffect(() => {
+    const id = window.setTimeout(() => setPostLcpReady(true), MOBILE_FIRST_DELAY_MS);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  // Section renderer — memoized to avoid re-creation each render
+  const renderSection = useCallback((slug: string) => {
+    switch (slug) {
+      case 'cms_banners':
+        return heroBannersEnabled ? <CmsBannersCarousel key={slug} /> : null;
+      case 'urgency':
+        return <UrgencyBanner key={slug} />;
+      case 'leader_sponsor':
+        return null; // rendered directly below hero as the wide sponsor banner
+      case 'sponsor_top':
+        return sponsorsEnabled ? <SponsorTopBanner key={slug} /> : null;
+      case 'stats':
+        return null;
+      case 'highlights':
+        return <HighlightsCarousel key={slug} />;
+      case 'categories':
+        return null; // rendered eagerly outside the loop to prevent CLS
+      case 'pwa':
+        return <PwaInstallSection key={slug} />;
+      case 'dynamic':
+        return <DynamicPageBlocks key={slug} pageSlug="home" city={geoCity || undefined} />;
+      case 'home_featured_ad':
+        return <SponsorAdSlot key={slug} locationKey="home-featured" layout="banner" />;
+      case 'ad1':
+        return (
+          <div key={slug}>
+            <AdBanner position="between-sections" className="container mx-auto px-4" />
+            <AdSlot slotSlug="home-between" />
+            <SponsorAdSlot locationKey="home-between" layout="banner" />
+          </div>
+        );
+      case 'featured':
+        return featuredEnabled ? (
+          <FeaturedProviders
+            key={slug}
+            providers={featuredProviders}
+            isLoading={!postLcpReady || provsLoading}
+            isFetching={featuredFetching}
+            hasError={featuredError}
+            sortBy={featuredSort}
+            updatedAt={featuredUpdatedAt}
+            onSortChange={setFeaturedSort}
+          />
+        ) : null;
+      case 'popular':
+        return <PopularServices key={slug} />;
+      case 'recent':
+        return null;
+      case 'ad2':
+        return (
+          <div key={slug}>
+            <AdBanner position="mid-content" className="container mx-auto px-4" />
+            <AdSlot slotSlug="home-mid" />
+          </div>
+        );
+      case 'jobs':
+        return jobsEnabled ? <FeaturedJobs key={slug} /> : null;
+      case 'blog':
+        return blogEnabled ? <BlogHighlight key={slug} /> : null;
+      case 'courses':
+        return <CoursesPromo key={slug} />;
+      case 'cities':
+        return null;
+      case 'cta':
+        return ctaEnabled ? <CtaSection key={slug} /> : null;
+      case 'showcase':
+        return <AdShowcase key={slug} />;
+      case 'sponsors':
+        return sponsorsEnabled ? <SponsorsSection key={slug} /> : null;
+      case 'howitworks':
+        return howItWorksEnabled ? <HowItWorksSection key={slug} /> : null;
+      case 'searches':
+        return popularSearchesEnabled ? <PopularSearches key={slug} /> : null;
+      case 'testimonials':
+        return reviewsEnabled ? <TestimonialsSection key={slug} /> : null;
+      case 'faq':
+        return faqEnabled ? <FaqSection key={slug} /> : null;
+      case 'sponsor_cta':
+        return sponsorsEnabled ? <SponsorFooterCTA key={slug} city={geoCity || undefined} /> : null;
+      default:
+        return null;
+    }
+  }, [
+    heroBannersEnabled, sponsorsEnabled, featuredEnabled, postLcpReady, jobsEnabled,
+    blogEnabled, ctaEnabled, howItWorksEnabled, popularSearchesEnabled,
+    reviewsEnabled, faqEnabled,
+    featuredProviders, provsLoading, featuredFetching, featuredError,
+    featuredSort, featuredUpdatedAt, geoCity,
+  ]);
+
+  const renderWrappedSection = useCallback((slug: string) => {
+    const section = renderSection(slug);
+    if (!section) return null;
+    if (slug === 'featured') {
+      return (
+        <LazyErrorBoundary key={slug}>
+          <Suspense fallback={<FeaturedProvidersFallback />}>
+            {section}
+          </Suspense>
+        </LazyErrorBoundary>
+      );
+    }
+    return (
+      <LazyErrorBoundary key={slug}>
+        <LazyViewportSection>
+          <Suspense fallback={<SectionFallback />}>
+            {section}
+          </Suspense>
+        </LazyViewportSection>
+      </LazyErrorBoundary>
+    );
+  }, [renderSection]);
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <HeroBanner totalServices={counts?.services} totalJobs={counts?.jobs} />
-      <CategoriesGrid categories={categories} isLoading={catsLoading} />
-      <PwaInstallSection />
-      <HighlightsCarousel />
-      <DynamicPageBlocks pageSlug="home" city={geoCity || undefined} />
+      <HeroBanner />
+      {/* Faixa de captura de prestador — clean, abaixo do Hero (cliente em cima, prestador logo após). */}
+      <ProSignupStrip />
+      {sponsorsEnabled && (
+        <LazyErrorBoundary>
+          <Suspense fallback={<div className="h-24" />}>
+            <SponsorLeaderBanner />
+          </Suspense>
+        </LazyErrorBoundary>
+      )}
+      <DeferredAboveFoldSection minHeight={56}>
+        <Suspense fallback={<div className="h-8" />}><ActiveProvidersCounter /></Suspense>
+      </DeferredAboveFoldSection>
 
-      <LazyErrorBoundary>
-        <Suspense fallback={<SectionFallback />}>
-          <AdBanner position="between-sections" className="container mx-auto px-4" />
-          <AdSlot slotSlug="home-between" />
-
-          {featuredEnabled && (
-            <FeaturedProviders providers={featuredProviders} isLoading={provsLoading} />
-          )}
-          <PopularServices />
-          {recentServices.length > 0 && <RecentServices services={recentServices} />}
-
-          <AdBanner position="mid-content" className="container mx-auto px-4" />
-          <AdSlot slotSlug="home-mid" />
-
-          <FeaturedJobs />
-          <BlogHighlight />
-
-          {topCities.length > 0 && <CitiesSection cities={topCities} />}
-          <CtaSection />
-          <AdShowcase />
-          <SponsorsSection sponsors={sponsors} />
-          <HowItWorksSection />
-          {popularSearchesEnabled && allCategories.length > 0 && topCities.length > 0 && (
-            <PopularSearches categories={allCategories} cities={topCities} />
-          )}
-          {reviewsEnabled && <TestimonialsSection />}
-          {faqEnabled && <FaqSection />}
-          <Footer />
-          <FloatingWhatsApp />
+      {/* Mural de Prova Social — Realtime (compacto, ~40% menor) */}
+      <DeferredAboveFoldSection minHeight={120}>
+        <Suspense fallback={null}>
+          <div className="container mx-auto px-4 mt-3 max-w-2xl">
+            <CommunityFeed compact />
+          </div>
         </Suspense>
-      </LazyErrorBoundary>
+      </DeferredAboveFoldSection>
+
+      {sectionsBeforeCategories.map(renderWrappedSection)}
+
+      {/* Categories rendered eagerly (not lazy) at the configured position to avoid CLS */}
+      <CategoriesGrid categories={categories} isLoading={catsLoading} />
+
+      {/* GPS prompt — appears after the user scrolls past categories. */}
+      <GpsScrollPrompt />
+
+      {sectionsAfterCategories.map(renderWrappedSection)}
+      <Footer />
     </div>
   );
 };

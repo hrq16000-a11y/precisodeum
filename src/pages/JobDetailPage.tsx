@@ -1,16 +1,22 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { MapPin, Clock, Phone, MessageCircle, Briefcase, ArrowLeft, Copy, CheckCircle2, DollarSign, Gift, ClipboardList, ShieldCheck } from 'lucide-react';
+import CategoryIcon from '@/components/CategoryIcon';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import InfoRow from '@/components/ui/InfoRow';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { SeoMeta } from '@/components/SeoMeta';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { whatsappLink } from '@/lib/whatsapp';
+import { formatDate, formatDeadline, formatCurrency } from '@/lib/formatters';
+import { Eye, Share2, Facebook, Linkedin } from 'lucide-react';
+import { formatCityState } from '@/lib/locationFormat';
 
 const renderList = (text: string) => {
   if (!text) return null;
@@ -21,7 +27,6 @@ const renderList = (text: string) => {
 
 const JobDetailPage = () => {
   const { slug } = useParams();
-  const navigate = useNavigate();
 
   const { data: job, isLoading } = useQuery({
     queryKey: ['job-detail', slug],
@@ -34,21 +39,11 @@ const JobDetailPage = () => {
   });
 
   const pageUrl = `${SITE_BASE_URL}/vaga/${slug}`;
-  const canonicalJobUrl = job ? `${SITE_BASE_URL}/vaga/${job.slug}` : pageUrl;
-  const shouldNoindex = !!job && job.status !== 'active';
 
-  useEffect(() => {
-    if (job && slug && job.slug && job.slug !== slug) {
-      navigate(`/vaga/${job.slug}`, { replace: true });
-    }
-  }, [job, slug, navigate]);
-
-  useSeoHead({
-    title: job ? `${job.title} - Vaga em ${job.city || 'Brasil'}` : 'Vaga',
-    description: job ? `${job.title} em ${job.city}-${job.state}. ${(job.description || '').slice(0, 120)}` : 'Vaga de serviço.',
-    canonical: canonicalJobUrl,
-    noindex: shouldNoindex,
-  });
+  const seoTitle = job ? `${job.title} - Vaga em ${job.city || 'Brasil'}` : 'Vaga';
+  const seoDescription = job
+    ? `${job.title} em ${formatCityState(job.city, job.state) || job.city}. ${(job.description || '').slice(0, 120)}`
+    : 'Vaga de serviço.';
 
   const jobLd = useMemo(() => job ? ({
     '@context': 'https://schema.org',
@@ -76,10 +71,23 @@ const JobDetailPage = () => {
   }) : null, [job]);
   useJsonLd(jobLd);
 
+  // Track view count (once per page load)
+  const viewTracked = useRef(false);
+  useEffect(() => {
+    if (job?.id && !viewTracked.current) {
+      viewTracked.current = true;
+      supabase.rpc('increment_job_view', { job_id: job.id }).then(() => {});
+    }
+  }, [job?.id]);
+
   const copyUrl = () => {
     navigator.clipboard.writeText(pageUrl);
     toast.success('Link copiado!');
   };
+
+  const shareWhatsApp = () => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`${job?.title} - ${pageUrl}`)}`, '_blank');
+  const shareFacebook = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`, '_blank');
+  const shareLinkedIn = () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(pageUrl)}`, '_blank');
 
   if (isLoading) {
     return (
@@ -109,6 +117,7 @@ const JobDetailPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <SeoMeta title={seoTitle} description={seoDescription} canonical={pageUrl} noindex={!job} />
       <Header />
       <div className="container py-8">
         <div className="flex items-center justify-between mb-6">
@@ -132,7 +141,7 @@ const JobDetailPage = () => {
                   {job.opportunity_type === 'emprego' ? 'Emprego' : job.opportunity_type === 'freelance' ? 'Freelance' : 'Serviço'}
                 </span>
                 {(job.categories as any)?.name && (
-                  <span className="text-xs text-muted-foreground">{(job.categories as any)?.icon} {(job.categories as any)?.name}</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><CategoryIcon icon={(job.categories as any)?.icon || 'Briefcase'} size={12} className="text-muted-foreground" /> {(job.categories as any)?.name}</span>
                 )}
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                   {job.status === 'active' ? 'Ativa' : 'Encerrada'}
@@ -142,12 +151,12 @@ const JobDetailPage = () => {
               {job.subtitle && <p className="mt-1 text-base text-muted-foreground">{job.subtitle}</p>}
             </div>
 
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-col gap-[0.625rem] sm:flex-row sm:flex-wrap sm:gap-[1rem] text-sm text-muted-foreground">
               {job.city && (
-                <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{job.city}{job.state ? `, ${job.state}` : ''}{job.neighborhood ? ` - ${job.neighborhood}` : ''}</span>
+                <InfoRow icon={MapPin}>{formatCityState(job.city, job.state, ', ')}{job.neighborhood ? ` - ${job.neighborhood}` : ''}</InfoRow>
               )}
-              {job.deadline && <span className="flex items-center gap-1"><Clock className="h-4 w-4" />Prazo: {job.deadline}</span>}
-              <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />Publicada em {new Date(job.created_at).toLocaleDateString('pt-BR')}</span>
+              {job.deadline && <InfoRow icon={Clock}>Prazo: {formatDeadline(job.deadline)}</InfoRow>}
+              <InfoRow icon={Briefcase}>Publicada em {formatDate(job.created_at)}</InfoRow>
             </div>
 
             {/* Description */}
@@ -194,7 +203,7 @@ const JobDetailPage = () => {
                 <h2 className="flex items-center gap-2 font-display text-lg font-bold text-foreground">
                   <DollarSign className="h-5 w-5 text-accent" /> Salário e Benefícios
                 </h2>
-                {job.salary && <p className="mt-3 text-sm font-medium text-foreground">💰 {job.salary}</p>}
+                {job.salary && <p className="mt-3 text-sm font-medium text-foreground">💰 {formatCurrency(job.salary)}</p>}
                 {job.benefits && (
                   <ul className="mt-2 space-y-1.5 list-disc list-inside">{renderList(job.benefits)}</ul>
                 )}
@@ -227,6 +236,29 @@ const JobDetailPage = () => {
               <Button variant="outline" className="w-full" size="sm" onClick={copyUrl}>
                 <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar link da vaga
               </Button>
+
+              {/* View count */}
+              {job.view_count != null && (
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground pt-2">
+                  <Eye className="h-3.5 w-3.5" /> {job.view_count} visualização(ões)
+                </p>
+              )}
+
+              {/* Social sharing */}
+              <div className="pt-2 border-t border-border">
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1"><Share2 className="h-3.5 w-3.5" /> Compartilhar</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={shareWhatsApp}>
+                    <MessageCircle className="mr-1 h-3.5 w-3.5" /> WhatsApp
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={shareFacebook}>
+                    <Facebook className="mr-1 h-3.5 w-3.5" /> Facebook
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={shareLinkedIn}>
+                    <Linkedin className="mr-1 h-3.5 w-3.5" /> LinkedIn
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

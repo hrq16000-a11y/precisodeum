@@ -1,0 +1,172 @@
+/**
+ * useOnboardingV2RemoteDraft — sincroniza o rascunho do V2 com o banco.
+ *
+ * Estratégia:
+ *  - Local (useOnboardingV2Draft): cobre F5/abas — instantâneo.
+ *  - Remoto (este hook): cobre troca de DISPOSITIVO. Debounce 1.5s, idempotente.
+ *
+ * Privacidade: payload completo fica em onboarding_v2_drafts (RLS por user_id),
+ * só o próprio usuário lê/escreve.
+ */
+
+import { useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { OnboardingState } from './types';
+import { wasRemoteDraftWrittenRecently, markRemoteDraftWritten } from './flushDraft';
+import { recordWizardSupabaseCall } from './diagnostics';
+import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
+
+const REMOTE_DEBOUNCE_MS = 1500;
+
+export async function fetchRemoteDraft(userId: string): Promise<{
+  payload: {
+    profile: OnboardingState['profile'];
+    service: OnboardingState['service'];
+    userRef?: OnboardingState['userRef'];
+    providerId?: OnboardingState['providerId'];
+    firstServiceId?: OnboardingState['firstServiceId'];
+  };
+  phase: OnboardingState['phase'];
+  updated_at: string;
+} | null> {
+  try {
+    const { data, error } = await supabase
+      .from('onboarding_v2_drafts' as any)
+      .select('payload, phase, updated_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data as any;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearRemoteDraft(userId: string): Promise<void> {
+  try {
+    await supabase.from('onboarding_v2_drafts' as any).delete().eq('user_id', userId);
+  } catch { /* fail-soft */ }
+}
+
+export function useOnboardingV2RemoteDraft(state: OnboardingState, userId: string | undefined) {
+  const firstRun = useRef(true);
+  const timerRef = useRef<number | null>(null);
+  const retryRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    if (firstRun.current) { firstRun.current = false; return; }
+    if (state.phase === 'done') return;
+
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = scheduleWizardTimeout(
+      { phase: state.phase as any, action: 'autosave_remote_draft', runIfStale: true },
+      async () => {
+        // Anti-duplicação: se um flush imediato (clique "Salvar e continuar")
+        // já gravou esta mesma fase nos últimos 2s para ESTE userId, pulamos
+        // o upsert para evitar 2 chamadas redundantes ao Supabase.
+        if (wasRemoteDraftWrittenRecently(state.phase as any, userId)) {
+          recordWizardSupabaseCall('useRemoteDraft.skipped', state.phase as any, userId);
+          return;
+        }
+        const upsertOnce = async () =>
+          supabase.from('onboarding_v2_drafts' as any).upsert({
+            user_id: userId,
+            payload: {
+              profile: state.profile,
+              service: state.service,
+              userRef: state.userRef,
+              providerId: state.providerId,
+              firstServiceId: state.firstServiceId,
+            },
+            phase: state.phase,
+          } as any, { onConflict: 'user_id' });
+
+        const reportFailure = async (error: any, attempt: number) => {
+          console.error('[onboardingV2] remote draft upsert failed', {
+            phase: state.phase,
+            userId,
+            attempt,
+            message: error?.message || String(error),
+            code: error?.code || null,
+            details: error?.details || null,
+            hint: error?.hint || null,
+          });
+          // Containment patch — Crítico #5: telemetria explícita p/ falhas de
+          // draft remoto. Antes era console.error silencioso e perdíamos a
+          // pista quando o usuário relatava "nada foi salvo".
+          try {
+            const { trackOnboardingEvent } = await import('./telemetry');
+            void trackOnboardingEvent({
+              phase: state.phase as any,
+              event: 'error',
+              userId,
+              meta: {
+                kind: 'remote_draft_failed',
+                attempt,
+                code: error?.code || null,
+                message: String(error?.message || error || '').slice(0, 240),
+              },
+            });
+          } catch { /* fail-soft: telemetria nunca pode travar o fluxo */ }
+        };
+
+        const reportSuccess = async (attempt: number) => {
+          // Throttle adicional por fase: evita flood de `autosave_remote_ok`
+          // quando o usuário digita rapidamente (cada keystroke debounce-ok).
+          // Janela de 8s por (phase, userId) — telemetria, não persistência.
+          try {
+            const tkey = `onboarding_v2_autosave_ok:${userId}:${state.phase}`;
+            const last = Number(sessionStorage.getItem(tkey) || '0');
+            if (Date.now() - last < 8_000) return;
+            sessionStorage.setItem(tkey, String(Date.now()));
+          } catch { /* fail-soft */ }
+          try {
+            const { trackOnboardingEvent } = await import('./telemetry');
+            void trackOnboardingEvent({
+              phase: state.phase as any,
+              event: 'next',
+              userId,
+              meta: { kind: 'autosave_remote_ok', attempt },
+            });
+          } catch { /* fail-soft */ }
+        };
+        try {
+          const { error } = await upsertOnce();
+          if (error) throw error;
+          markRemoteDraftWritten(state.phase as any, userId);
+          recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
+          await reportSuccess(1);
+        } catch (error: any) {
+          await reportFailure(error, 1);
+          // Retry simples (1 nova tentativa). Usa scheduleWizardTimeout com
+          // runIfStale:false para que, se a fase tiver mudado entre a falha
+          // e o retry, o upsert seja CANCELADO — assim evitamos sobrescrever
+          // um upsert mais novo da nova fase com payload da fase antiga.
+          if (retryRef.current) window.clearTimeout(retryRef.current);
+          retryRef.current = scheduleWizardTimeout(
+            { phase: state.phase as any, action: 'autosave_remote_retry', runIfStale: false },
+            async () => {
+              try {
+                const { error: err2 } = await upsertOnce();
+                if (err2) throw err2;
+                markRemoteDraftWritten(state.phase as any, userId);
+                recordWizardSupabaseCall('useRemoteDraft.debounced', state.phase as any, userId);
+                await reportSuccess(2);
+              } catch (retryErr: any) {
+                await reportFailure(retryErr, 2);
+              }
+            },
+            1500,
+          );
+        }
+      },
+      REMOTE_DEBOUNCE_MS,
+    );
+
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+      if (retryRef.current) window.clearTimeout(retryRef.current);
+    };
+  }, [state.profile, state.service, state.phase, state.userRef, state.providerId, state.firstServiceId, userId]);
+}

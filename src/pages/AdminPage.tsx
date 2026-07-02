@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/AdminLayout';
-import { Users, Briefcase, MessageSquare, FolderOpen, Star, TrendingUp, ClipboardList, Megaphone, Eye, MousePointerClick, CheckCircle, XCircle, ArrowRight, Activity } from 'lucide-react';
+import { Users, Briefcase, MessageSquare, FolderOpen, Star, TrendingUp, ClipboardList, Megaphone, Eye, MousePointerClick, CheckCircle, XCircle, ArrowRight, Activity, Zap, BarChart3 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import AnimatedCounter from '@/components/ui/AnimatedCounter';
+import GlassCard from '@/components/ui/GlassCard';
+import ProgressRing from '@/components/ui/ProgressRing';
+import AdminHealthMonitor from '@/components/admin/AdminHealthMonitor';
+import AdminQuickActions from '@/components/admin/AdminQuickActions';
+import AdminPlatformPulse from '@/components/admin/AdminPlatformPulse';
+import AdminGrowthChart from '@/components/admin/AdminGrowthChart';
+import AdminKpiBar from '@/components/admin/AdminKpiBar';
 
 interface Stats {
   totalProviders: number;
@@ -30,6 +39,16 @@ interface FeaturedDiag {
   withBoth: number;
 }
 
+const containerVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.96 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: "easeOut" as const } },
+};
+
 const AdminPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [stats, setStats] = useState<Stats>({
@@ -46,14 +65,14 @@ const AdminPage = () => {
     if (!isAdmin) return;
     const fetchAll = async () => {
       const [providers, pending, profiles, leads, reviews, categories, jobs, pendingJ, sponsors] = await Promise.all([
-        supabase.from('providers').select('id', { count: 'exact', head: true }),
-        supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('leads').select('id', { count: 'exact', head: true }),
-        supabase.from('reviews').select('id', { count: 'exact', head: true }),
-        supabase.from('categories').select('id', { count: 'exact', head: true }),
-        supabase.from('jobs').select('id', { count: 'exact', head: true }),
-        (supabase.from('jobs').select('id', { count: 'exact', head: true }) as any).eq('approval_status', 'pending'),
+        supabase.from('providers').select('id', { count: 'estimated', head: true }),
+        supabase.from('providers').select('id', { count: 'estimated', head: true }).eq('status', 'pending'),
+        supabase.from('profiles').select('id', { count: 'estimated', head: true }),
+        supabase.from('leads').select('id', { count: 'estimated', head: true }),
+        supabase.from('reviews').select('id', { count: 'estimated', head: true }),
+        supabase.from('categories').select('id', { count: 'estimated', head: true }),
+        supabase.from('jobs').select('id', { count: 'estimated', head: true }),
+        (supabase.from('jobs').select('id', { count: 'estimated', head: true }) as any).eq('approval_status', 'pending'),
         supabase.from('sponsors').select('impressions, clicks'),
       ]);
 
@@ -81,7 +100,16 @@ const AdminPage = () => {
 
       const { data: pProviders } = await supabase.from('providers').select('id, business_name, city, created_at, user_id')
         .eq('status', 'pending').order('created_at', { ascending: false }).limit(10);
-      setPendingProvidersList(pProviders || []);
+      
+      // Enrich with profile names
+      const enrichedProviders = pProviders || [];
+      if (enrichedProviders.length > 0) {
+        const userIds = enrichedProviders.map((p: any) => p.user_id);
+        const { data: profileNames } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
+        const nameMap = new Map((profileNames || []).map((p: any) => [p.id, p.full_name]));
+        enrichedProviders.forEach((p: any) => { p._profileName = nameMap.get(p.user_id) || ''; });
+      }
+      setPendingProvidersList(enrichedProviders);
 
       // Featured diagnostics
       const [featuredRes, servicesAllRes] = await Promise.all([
@@ -135,7 +163,20 @@ const AdminPage = () => {
     fetchAll();
   }, [isAdmin]);
 
-  if (loading) return <AdminLayout><p className="text-muted-foreground">Carregando...</p></AdminLayout>;
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="space-y-6 animate-pulse">
+          <div className="h-8 w-1/3 rounded-lg bg-muted" />
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-28 rounded-2xl bg-muted" style={{ animationDelay: `${i * 80}ms` }} />
+            ))}
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const handleApproveJob = async (id: string) => {
     await supabase.from('jobs').update({ approval_status: 'approved' } as any).eq('id', id);
@@ -151,15 +192,31 @@ const AdminPage = () => {
     toast.success('Vaga rejeitada');
   };
 
+  // LEGACY (Fase 1.6.7): este AdminPage permanece para compat. As mutações
+  // são delegadas à canonical admin write boundary, não removidas ainda.
   const handleApproveProvider = async (id: string) => {
-    await supabase.from('providers').update({ status: 'approved' }).eq('id', id);
+    const { updateAdminProvider } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProvider({
+      providerId: id,
+      source: 'admin_page_legacy:approve_provider',
+      skipNormalize: true,
+      patch: { status: 'approved' },
+    });
+    if (!res.ok) { toast.error(res.error?.message || 'Falha ao salvar'); return; }
     setPendingProvidersList(prev => prev.filter(p => p.id !== id));
     setStats(prev => ({ ...prev, pendingProviders: prev.pendingProviders - 1 }));
     toast.success('Prestador aprovado');
   };
 
   const handleRejectProvider = async (id: string) => {
-    await supabase.from('providers').update({ status: 'rejected' }).eq('id', id);
+    const { updateAdminProvider } = await import('@/lib/adminWriteBoundary');
+    const res = await updateAdminProvider({
+      providerId: id,
+      source: 'admin_page_legacy:reject_provider',
+      skipNormalize: true,
+      patch: { status: 'rejected' },
+    });
+    if (!res.ok) { toast.error(res.error?.message || 'Falha ao salvar'); return; }
     setPendingProvidersList(prev => prev.filter(p => p.id !== id));
     setStats(prev => ({ ...prev, pendingProviders: prev.pendingProviders - 1 }));
     toast.success('Prestador rejeitado');
@@ -168,169 +225,279 @@ const AdminPage = () => {
   const hasPending = pendingJobsList.length > 0 || pendingProvidersList.length > 0;
 
   const statCards = [
-    { label: 'Profissionais', value: stats.totalProviders, icon: Briefcase, color: 'text-blue-500' },
-    { label: 'Pendentes', value: stats.pendingProviders, icon: TrendingUp, color: 'text-amber-500', alert: stats.pendingProviders > 0 },
-    { label: 'Usuários', value: stats.totalProfiles, icon: Users, color: 'text-green-500' },
-    { label: 'Leads', value: stats.totalLeads, icon: MessageSquare, color: 'text-purple-500' },
-    { label: 'Avaliações', value: stats.totalReviews, icon: Star, color: 'text-orange-500' },
-    { label: 'Categorias', value: stats.totalCategories, icon: FolderOpen, color: 'text-teal-500' },
-    { label: 'Vagas', value: stats.totalJobs, icon: ClipboardList, color: 'text-indigo-500' },
-    { label: 'Patrocinadores', value: stats.totalSponsors, icon: Megaphone, color: 'text-pink-500' },
+    { label: 'Profissionais', value: stats.totalProviders, icon: Briefcase, gradient: 'from-blue-500/10 to-blue-600/5', iconBg: 'bg-blue-500/15', iconColor: 'text-blue-500' },
+    { label: 'Pendentes', value: stats.pendingProviders, icon: TrendingUp, gradient: 'from-amber-500/10 to-amber-600/5', iconBg: 'bg-amber-500/15', iconColor: 'text-amber-500', alert: stats.pendingProviders > 0 },
+    { label: 'Usuários', value: stats.totalProfiles, icon: Users, gradient: 'from-emerald-500/10 to-emerald-600/5', iconBg: 'bg-emerald-500/15', iconColor: 'text-emerald-500' },
+    { label: 'Leads', value: stats.totalLeads, icon: MessageSquare, gradient: 'from-purple-500/10 to-purple-600/5', iconBg: 'bg-purple-500/15', iconColor: 'text-purple-500' },
+    { label: 'Avaliações', value: stats.totalReviews, icon: Star, gradient: 'from-orange-500/10 to-orange-600/5', iconBg: 'bg-orange-500/15', iconColor: 'text-orange-500' },
+    { label: 'Categorias', value: stats.totalCategories, icon: FolderOpen, gradient: 'from-teal-500/10 to-teal-600/5', iconBg: 'bg-teal-500/15', iconColor: 'text-teal-500' },
+    { label: 'Vagas', value: stats.totalJobs, icon: ClipboardList, gradient: 'from-indigo-500/10 to-indigo-600/5', iconBg: 'bg-indigo-500/15', iconColor: 'text-indigo-500' },
+    { label: 'Patrocinadores', value: stats.totalSponsors, icon: Megaphone, gradient: 'from-pink-500/10 to-pink-600/5', iconBg: 'bg-pink-500/15', iconColor: 'text-pink-500' },
   ];
+
+  const ctr = stats.totalImpressions > 0 ? (stats.totalClicks / stats.totalImpressions) * 100 : 0;
 
   return (
     <AdminLayout>
-      <h1 className="font-display text-2xl font-bold text-foreground">Painel Administrativo</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Visão geral da plataforma</p>
-
-      {/* Pending queues — top priority */}
-      {hasPending && (
-        <div className="mt-6 space-y-4">
-          {pendingJobsList.length > 0 && (
-            <div className="rounded-xl border-2 border-amber-300 bg-amber-50/50 p-5 dark:border-amber-700 dark:bg-amber-900/20">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-display text-lg font-bold text-amber-800 dark:text-amber-200">
-                  📋 Vagas Aguardando ({stats.pendingJobs})
-                </h2>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/admin/vagas" className="text-amber-700">Ver todas <ArrowRight className="ml-1 h-3 w-3" /></Link>
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {pendingJobsList.map(job => (
-                  <div key={job.id} className="flex items-center justify-between rounded-lg border border-amber-200 bg-background p-3 dark:border-amber-800">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-medium text-foreground truncate">{job.title}</h3>
-                      <p className="text-xs text-muted-foreground">{job.city} · {new Date(job.created_at).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    <div className="flex flex-col gap-1 ml-2 shrink-0 sm:flex-row">
-                      <Button size="sm" variant="accent" onClick={() => handleApproveJob(job.id)}>
-                        <CheckCircle className="mr-1 h-3 w-3" /> Aprovar
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleRejectJob(job.id)}>
-                        <XCircle className="mr-1 h-3 w-3" /> Rejeitar
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {pendingProvidersList.length > 0 && (
-            <div className="rounded-xl border-2 border-blue-300 bg-blue-50/50 p-5 dark:border-blue-700 dark:bg-blue-900/20">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-display text-lg font-bold text-blue-800 dark:text-blue-200">
-                  👤 Prestadores Aguardando ({stats.pendingProviders})
-                </h2>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/admin/prestadores" className="text-blue-700">Ver todos <ArrowRight className="ml-1 h-3 w-3" /></Link>
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {pendingProvidersList.map(p => (
-                  <div key={p.id} className="flex items-center justify-between rounded-lg border border-blue-200 bg-background p-3 dark:border-blue-800">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-medium text-foreground truncate">{p.business_name || 'Sem nome'}</h3>
-                      <p className="text-xs text-muted-foreground">{p.city} · {new Date(p.created_at).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    <div className="flex flex-col gap-1 ml-2 shrink-0 sm:flex-row">
-                      <Button size="sm" variant="accent" onClick={() => handleApproveProvider(p.id)}>
-                        <CheckCircle className="mr-1 h-3 w-3" /> Aprovar
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleRejectProvider(p.id)}>
-                        <XCircle className="mr-1 h-3 w-3" /> Rejeitar
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Stats grid */}
-      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4">
-        {statCards.map(s => (
-          <div key={s.label} className={`rounded-xl border bg-card p-4 shadow-card ${s.alert ? 'border-amber-300 dark:border-amber-700' : 'border-border'}`}>
-            <s.icon className={`h-4 w-4 ${s.color}`} />
-            <p className="mt-2 font-display text-2xl font-bold text-foreground">{s.value}</p>
-            <p className="text-[11px] text-muted-foreground">{s.label}</p>
+      {/* Header with gradient accent */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative"
+      >
+        <div className="absolute -top-4 -left-4 -right-4 h-32 bg-gradient-to-br from-primary/5 via-accent/3 to-transparent rounded-3xl -z-10" />
+        <div className="flex items-center gap-3">
+          <motion.div
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20"
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Zap className="h-5 w-5 text-primary" />
+          </motion.div>
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">Painel Administrativo</h1>
+            <p className="text-sm text-muted-foreground">Visão geral da plataforma em tempo real</p>
           </div>
-        ))}
+        </div>
+      </motion.div>
+
+      {/* KPI Trend Bar */}
+      <div className="mt-5">
+        <AdminKpiBar />
       </div>
 
-      {/* Sponsor Metrics */}
-      <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
-        <h2 className="font-display text-base font-bold text-foreground mb-3">📊 Métricas de Patrocinadores</h2>
-        <div className="flex flex-wrap gap-6">
-          <div className="flex items-center gap-2">
-            <Eye className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Impressões:</span>
-            <span className="font-bold text-foreground">{stats.totalImpressions.toLocaleString('pt-BR')}</span>
+      {/* Quick Actions */}
+      <div className="mt-4">
+        <AdminQuickActions />
+      </div>
+
+      {/* Health Monitor + Platform Pulse + Growth */}
+      <div className="mt-5 grid gap-4 grid-cols-1 lg:grid-cols-3">
+        <AdminHealthMonitor />
+        <AdminPlatformPulse />
+        <AdminGrowthChart />
+      </div>
+
+      {/* Pending queues */}
+      <AnimatePresence>
+        {hasPending && (
+          <motion.div
+            className="mt-6 space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {pendingJobsList.length > 0 && (
+              <GlassCard variant="bordered" hoverEffect={false} className="border-amber-300 dark:border-amber-700 bg-amber-50/30 dark:bg-amber-900/10">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-amber-400/60 to-transparent shimmer" />
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-display text-lg font-bold text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                    <motion.span animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}>📋</motion.span>
+                    Vagas Aguardando ({stats.pendingJobs})
+                  </h2>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to="/admin/vagas" className="text-amber-700">Ver todas <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <AnimatePresence>
+                    {pendingJobsList.map((job, i) => (
+                      <motion.div
+                        key={job.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20, height: 0 }}
+                        transition={{ duration: 0.3, delay: i * 0.05 }}
+                        className="flex items-center justify-between rounded-xl border border-amber-200/60 bg-background/80 backdrop-blur-sm p-3 dark:border-amber-800"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-medium text-foreground truncate">{job.title}</h3>
+                          <p className="text-xs text-muted-foreground">{job.city} · {new Date(job.created_at).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                        <div className="flex flex-col gap-1 ml-2 shrink-0 sm:flex-row">
+                          <Button size="sm" variant="accent" onClick={() => handleApproveJob(job.id)} className="transition-transform active:scale-95">
+                            <CheckCircle className="mr-1 h-3 w-3" /> Aprovar
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleRejectJob(job.id)} className="transition-transform active:scale-95">
+                            <XCircle className="mr-1 h-3 w-3" /> Rejeitar
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </GlassCard>
+            )}
+
+            {pendingProvidersList.length > 0 && (
+              <GlassCard variant="bordered" hoverEffect={false} delay={0.1} className="border-blue-300 dark:border-blue-700 bg-blue-50/30 dark:bg-blue-900/10">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-400/60 to-transparent shimmer" />
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-display text-lg font-bold text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                    <motion.span animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}>👤</motion.span>
+                    Prestadores Aguardando ({stats.pendingProviders})
+                  </h2>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to="/admin/prestadores" className="text-blue-700">Ver todos <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <AnimatePresence>
+                    {pendingProvidersList.map((p, i) => (
+                      <motion.div
+                        key={p.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20, height: 0 }}
+                        transition={{ duration: 0.3, delay: i * 0.05 }}
+                        className="flex items-center justify-between rounded-xl border border-blue-200/60 bg-background/80 backdrop-blur-sm p-3 dark:border-blue-800"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-medium text-foreground truncate">{(p as any)._profileName || p.business_name || 'Sem nome'}</h3>
+                          <p className="text-xs text-muted-foreground">{p.city} · {new Date(p.created_at).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                        <div className="flex flex-col gap-1 ml-2 shrink-0 sm:flex-row">
+                          <Button size="sm" variant="accent" onClick={() => handleApproveProvider(p.id)} className="transition-transform active:scale-95">
+                            <CheckCircle className="mr-1 h-3 w-3" /> Aprovar
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleRejectProvider(p.id)} className="transition-transform active:scale-95">
+                            <XCircle className="mr-1 h-3 w-3" /> Rejeitar
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </GlassCard>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Stats grid with gradient cards and animated counters */}
+      <motion.div
+        className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4"
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+      >
+        {statCards.map((s, i) => (
+          <motion.div
+            key={s.label}
+            variants={itemVariants}
+            whileHover={{ y: -6, scale: 1.04, transition: { duration: 0.2 } }}
+            whileTap={{ scale: 0.97 }}
+            className={`group rounded-2xl border border-border bg-gradient-to-br ${s.gradient} p-4 shadow-card transition-shadow hover:shadow-card-hover relative overflow-hidden ${s.alert ? 'ring-2 ring-amber-300/50 dark:ring-amber-700/50' : ''}`}
+          >
+            {/* Shimmer on hover */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+            
+            <div className="flex items-center justify-between relative">
+              <div className={`rounded-xl ${s.iconBg} p-2 transition-transform group-hover:scale-110 duration-300`}>
+                <s.icon className={`h-4 w-4 ${s.iconColor}`} />
+              </div>
+              {s.alert && (
+                <span className="flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute h-2.5 w-2.5 rounded-full bg-amber-400 opacity-75" />
+                  <span className="relative h-2.5 w-2.5 rounded-full bg-amber-500" />
+                </span>
+              )}
+            </div>
+            <div className="mt-3 relative">
+              <AnimatedCounter value={s.value} className="font-display text-2xl font-bold text-foreground" />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Sponsor Metrics — enhanced with progress ring */}
+      <GlassCard variant="gradient" delay={0.4} className="mt-6" hoverEffect={false}>
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/20 via-accent/40 to-primary/20" />
+        <div className="flex items-center gap-2 mb-4">
+          <div className="rounded-xl bg-accent/10 p-2">
+            <BarChart3 className="h-5 w-5 text-accent" />
           </div>
-          <div className="flex items-center gap-2">
-            <MousePointerClick className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Cliques:</span>
-            <span className="font-bold text-foreground">{stats.totalClicks.toLocaleString('pt-BR')}</span>
+          <h2 className="font-display text-base font-bold text-foreground">Métricas de Patrocinadores</h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-8">
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-blue-500" />
+              <span className="text-xs text-muted-foreground">Impressões</span>
+            </div>
+            <AnimatedCounter value={stats.totalImpressions} className="text-xl font-bold text-foreground" />
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2">
+              <MousePointerClick className="h-4 w-4 text-emerald-500" />
+              <span className="text-xs text-muted-foreground">Cliques</span>
+            </div>
+            <AnimatedCounter value={stats.totalClicks} className="text-xl font-bold text-foreground" />
           </div>
           {stats.totalImpressions > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">CTR:</span>
-              <span className="font-bold text-accent">{((stats.totalClicks / stats.totalImpressions) * 100).toFixed(2)}%</span>
-            </div>
+            <ProgressRing value={ctr} size={72} label="CTR" color="hsl(var(--accent))" />
           )}
         </div>
-      </div>
+      </GlassCard>
 
-      {/* Featured Diagnostics */}
+      {/* Featured Diagnostics — enhanced */}
       {featuredDiag && (
-        <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-card">
-          <div className="flex items-center gap-2 mb-4">
-            <Activity className="h-5 w-5 text-accent" />
-            <h2 className="font-display text-base font-bold text-foreground">Diagnóstico dos Destaques</h2>
+        <GlassCard variant="default" delay={0.5} className="mt-6" hoverEffect={false}>
+          <div className="flex items-center gap-3 mb-4">
+            <motion.div
+              className="rounded-xl bg-accent/10 p-2"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+            >
+              <Activity className="h-5 w-5 text-accent" />
+            </motion.div>
+            <div>
+              <h2 className="font-display text-base font-bold text-foreground">Diagnóstico dos Destaques</h2>
+              <p className="text-[11px] text-muted-foreground">
+                Profissionais com <strong>imagem ou portfólio</strong> aparecem na home
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            Regra atual: profissionais com <strong>imagem de serviço OU portfólio</strong> aparecem na home (3–5 aleatórios por carregamento).
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <motion.div
+            className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+          >
             {[
-              { label: 'Aprovados + Featured', value: featuredDiag.approvedFeatured, color: 'text-foreground' },
-              { label: 'Com serviço', value: featuredDiag.withService, color: 'text-blue-500' },
-              { label: 'Com imagem no serviço', value: featuredDiag.withServiceImage, color: 'text-green-500' },
-              { label: 'Com portfólio', value: featuredDiag.withPortfolio, color: 'text-purple-500' },
-              { label: '✅ Elegíveis (img OU port)', value: featuredDiag.withImageOrPortfolio, color: 'text-accent' },
-              { label: 'Com ambos (img + port)', value: featuredDiag.withBoth, color: 'text-orange-500' },
+              { label: 'Aprovados + Featured', value: featuredDiag.approvedFeatured, color: 'text-foreground', bg: 'from-muted/50 to-muted/30' },
+              { label: 'Com serviço', value: featuredDiag.withService, color: 'text-blue-500', bg: 'from-blue-500/10 to-blue-500/5' },
+              { label: 'Com imagem', value: featuredDiag.withServiceImage, color: 'text-emerald-500', bg: 'from-emerald-500/10 to-emerald-500/5' },
+              { label: 'Com portfólio', value: featuredDiag.withPortfolio, color: 'text-purple-500', bg: 'from-purple-500/10 to-purple-500/5' },
+              { label: '✅ Elegíveis', value: featuredDiag.withImageOrPortfolio, color: 'text-accent', bg: 'from-accent/10 to-accent/5' },
+              { label: 'Ambos (img+port)', value: featuredDiag.withBoth, color: 'text-orange-500', bg: 'from-orange-500/10 to-orange-500/5' },
             ].map(item => (
-              <div key={item.label} className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className={`font-display text-xl font-bold ${item.color}`}>{item.value}</p>
+              <motion.div
+                key={item.label}
+                variants={itemVariants}
+                whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+                className={`rounded-xl border border-border bg-gradient-to-br ${item.bg} p-3 transition-shadow hover:shadow-card`}
+              >
+                <AnimatedCounter value={item.value} className={`font-display text-xl font-bold ${item.color}`} />
                 <p className="text-[11px] text-muted-foreground leading-tight mt-1">{item.label}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
           {featuredDiag.withImageOrPortfolio < 5 && (
-            <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-              ⚠️ Apenas {featuredDiag.withImageOrPortfolio} perfis elegíveis — para melhorar a rotação, incentive profissionais a adicionarem imagens nos serviços ou portfólio.
-            </p>
+            <motion.p
+              className="mt-3 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              ⚠️ Menos de 5 elegíveis — considere adicionar imagens/portfólios.
+            </motion.p>
           )}
-        </div>
+        </GlassCard>
       )}
-
-      {/* Quick links */}
-      <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-4">
-        {[
-          { label: 'Gerenciar Vagas', path: '/admin/vagas', icon: ClipboardList },
-          { label: 'Patrocinadores', path: '/admin/patrocinadores', icon: Megaphone },
-          { label: 'Blog / Notícias', path: '/admin/blog', icon: FolderOpen },
-          { label: 'Configurações', path: '/admin/configuracoes', icon: TrendingUp },
-        ].map(q => (
-          <Link key={q.path} to={q.path} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-card transition-all hover:shadow-lg hover:border-accent/30">
-            <q.icon className="h-5 w-5 text-accent" />
-            <span className="text-sm font-medium text-foreground">{q.label}</span>
-          </Link>
-        ))}
-      </div>
     </AdminLayout>
   );
 };

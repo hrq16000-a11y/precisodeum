@@ -1,21 +1,29 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
+// PR-A1: importar `icons` puxa o catálogo Lucide inteiro. Roteado via
+// IconRenderer (iconLibrary pina ~250 ícones realmente usados).
 import { Plus, Trash2, Edit2, ChevronRight } from 'lucide-react';
+import { IconRenderer } from '@/components/ui/IconRenderer';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { sanitizeSlug } from '@/lib/slugify';
+import IconPicker from '@/components/admin/IconPicker';
+
+/** Render a Lucide icon by name (delegated to the shared IconRenderer + iconLibrary registry). */
+const DynIcon = ({ name, size = 20 }: { name: string; size?: number }) => (
+  <IconRenderer name={name} size={size} className="text-slate-600" />
+);
 
 const AdminCategoriesPage = () => {
   const { isAdmin, loading } = useAdmin();
   const [categories, setCategories] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', slug: '', icon: '🔧', parent_id: '' });
+  const [form, setForm] = useState({ name: '', slug: '', icon: 'Wrench', parent_id: '' });
 
   const fetchCategories = async () => {
-    const { data } = await supabase.from('categories').select('*').order('name');
+    const { data } = await supabase.from('categories').select('*').is('deleted_at', null).order('name');
     setCategories(data || []);
   };
 
@@ -25,8 +33,8 @@ const AdminCategoriesPage = () => {
   const getChildren = (parentId: string) => categories.filter(c => (c as any).parent_id === parentId);
 
   const handleSave = async () => {
-    if (!form.name) { toast.error('Nome é obrigatório'); return; }
-    const payload: any = { name: form.name, slug: sanitizeSlug(form.slug || form.name), icon: form.icon };
+    if (!form.name || !form.slug) { toast.error('Nome e slug são obrigatórios'); return; }
+    const payload: any = { name: form.name, slug: form.slug, icon: form.icon };
     if (form.parent_id) payload.parent_id = form.parent_id;
     else payload.parent_id = null;
 
@@ -39,7 +47,7 @@ const AdminCategoriesPage = () => {
       if (error) { toast.error(error.message); return; }
       toast.success('Categoria criada!');
     }
-    setForm({ name: '', slug: '', icon: '🔧', parent_id: '' });
+    setForm({ name: '', slug: '', icon: 'Wrench', parent_id: '' });
     setShowForm(false);
     setEditId(null);
     fetchCategories();
@@ -69,7 +77,7 @@ const AdminCategoriesPage = () => {
           <h1 className="font-display text-2xl font-bold text-foreground">Categorias</h1>
           <p className="mt-1 text-sm text-muted-foreground">{parentCategories.length} macro · {categories.length - parentCategories.length} sub</p>
         </div>
-        <Button variant="accent" size="sm" onClick={() => { setShowForm(true); setEditId(null); setForm({ name: '', slug: '', icon: '🔧', parent_id: '' }); }}>
+        <Button variant="accent" size="sm" onClick={() => { setShowForm(true); setEditId(null); setForm({ name: '', slug: '', icon: 'Wrench', parent_id: '' }); }}>
           <Plus className="mr-1 h-4 w-4" /> Nova Categoria
         </Button>
       </div>
@@ -77,6 +85,15 @@ const AdminCategoriesPage = () => {
       {showForm && (
         <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
           <h2 className="font-display text-lg font-bold text-foreground">{editId ? 'Editar' : 'Nova'} Categoria</h2>
+
+          {/* Preview card */}
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-sky-50 p-4 w-fit">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
+              <DynIcon name={form.icon} size={24} />
+            </span>
+            <span className="text-sm font-bold text-foreground">{form.name || 'Nome da categoria'}</span>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Categoria Pai (opcional)</label>
@@ -87,7 +104,7 @@ const AdminCategoriesPage = () => {
               >
                 <option value="">— Nenhuma (macro) —</option>
                 {parentCategories.map(p => (
-                  <option key={p.id} value={p.id}>{p.icon} {p.name}</option>
+                  <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
             </div>
@@ -101,14 +118,10 @@ const AdminCategoriesPage = () => {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Slug</label>
-              <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: sanitizeSlug(e.target.value) }))}
+              <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Ícone</label>
-              <input value={form.icon} onChange={e => setForm(f => ({ ...f, icon: e.target.value }))}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
-            </div>
+            <IconPicker value={form.icon} onChange={(name) => setForm(f => ({ ...f, icon: name }))} />
           </div>
           <div className="flex gap-2">
             <Button variant="accent" onClick={handleSave}>Salvar</Button>
@@ -124,7 +137,9 @@ const AdminCategoriesPage = () => {
             <div key={p.id}>
               <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-card">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{p.icon}</span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50">
+                    <DynIcon name={p.icon} size={20} />
+                  </span>
                   <div>
                     <p className="text-sm font-semibold text-foreground">{p.name}</p>
                     <p className="text-xs text-muted-foreground">/{p.slug} · {children.length} sub</p>
@@ -141,7 +156,9 @@ const AdminCategoriesPage = () => {
                     <div key={c.id} className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 p-3">
                       <div className="flex items-center gap-2">
                         <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-lg">{c.icon}</span>
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50">
+                          <DynIcon name={c.icon} size={14} />
+                        </span>
                         <div>
                           <p className="text-sm font-medium text-foreground">{c.name}</p>
                           <p className="text-[10px] text-muted-foreground">/{c.slug}</p>
@@ -158,11 +175,12 @@ const AdminCategoriesPage = () => {
             </div>
           );
         })}
-        {/* Orphan categories (have parent_id but parent not found) */}
         {categories.filter(c => (c as any).parent_id && !parentCategories.find(p => p.id === (c as any).parent_id)).map(c => (
           <div key={c.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-card">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{c.icon}</span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50">
+                <DynIcon name={c.icon} size={20} />
+              </span>
               <div>
                 <p className="text-sm font-semibold text-foreground">{c.name}</p>
                 <p className="text-xs text-muted-foreground">/{c.slug}</p>

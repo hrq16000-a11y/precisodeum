@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
@@ -8,155 +8,66 @@ import PaginationControls from '@/components/PaginationControls';
 import SearchBar from '@/components/SearchBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Crown, Star } from 'lucide-react';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
+import { useGeoCity } from '@/hooks/useGeoCity';
+import { useNearbyProviders } from '@/hooks/useNearbyProviders';
+import GamificationLevelBadge from '@/components/dashboard/GamificationLevelBadge';
+
+const SponsorAdSlot = lazy(() => import('@/components/ads/SponsorAdSlot'));
 
 const ITEMS_PER_PAGE = 12;
 
-type SeoParsedSlug = {
-  categorySlug: string;
-  categoryName: string;
-  city: string;
-  citySlug: string;
-  neighborhood: string;
-};
-
-const normalizeSlugLabel = (value: string) =>
-  value
-    .split('-')
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-
-const parseSeoSlug = async (slug: string): Promise<SeoParsedSlug | null> => {
-  const [{ data: categories }, { data: cities }] = await Promise.all([
-    supabase.from('categories').select('name, slug').order('name'),
-    supabase.from('cities').select('name, slug').order('slug'),
-  ]);
-  if (!categories || !cities) return null;
+const parseSeoSlug = async (slug: string) => {
+  const { data: categories } = await supabase.from('categories').select('name, slug').order('name');
+  if (!categories) return null;
 
   const categoryMap: Record<string, string> = {};
   categories.forEach((c) => { categoryMap[c.slug] = c.name; });
 
   const categorySlugs = Object.keys(categoryMap).sort((a, b) => b.length - a.length);
-  const sortedCities = [...cities].sort((a, b) => b.slug.length - a.slug.length);
 
   for (const catSlug of categorySlugs) {
+    if (slug.startsWith(catSlug + '-')) {
+      const rest = slug.slice(catSlug.length + 1);
+      const { data: cities } = await supabase.from('cities').select('name, slug').order('slug');
+      
+      if (cities) {
+        const sortedCities = [...cities].sort((a, b) => b.slug.length - a.slug.length);
+        for (const city of sortedCities) {
+          if (rest.startsWith(city.slug + '-')) {
+            const neighborhoodPart = rest.slice(city.slug.length + 1);
+            const neighborhood = neighborhoodPart.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: city.name, citySlug: city.slug, neighborhood };
+          }
+          if (rest === city.slug) {
+            return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: city.name, citySlug: city.slug, neighborhood: '' };
+          }
+        }
+      }
+
+      const city = rest.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city, citySlug: rest, neighborhood: '' };
+    }
     if (slug === catSlug) {
       return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: '', citySlug: '', neighborhood: '' };
     }
-
-    if (!slug.startsWith(`${catSlug}-`)) continue;
-
-    const rest = slug.slice(catSlug.length + 1);
-
-    for (const city of sortedCities) {
-      if (rest === city.slug) {
-        return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: city.name, citySlug: city.slug, neighborhood: '' };
-      }
-
-      if (!rest.startsWith(`${city.slug}-`)) continue;
-
-      const neighborhoodPart = rest.slice(city.slug.length + 1).replace(/^-+|-+$/g, '');
-      if (!neighborhoodPart || neighborhoodPart.length < 3) {
-        return { categorySlug: catSlug, categoryName: categoryMap[catSlug], city: city.name, citySlug: city.slug, neighborhood: '' };
-      }
-
-      return {
-        categorySlug: catSlug,
-        categoryName: categoryMap[catSlug],
-        city: city.name,
-        citySlug: city.slug,
-        neighborhood: normalizeSlugLabel(neighborhoodPart),
-      };
-    }
   }
-
   return null;
 };
-
-async function resolveCityBySlug(slug: string) {
-  const { data: city } = await supabase.from('cities').select('id, name, slug, state').eq('slug', slug).maybeSingle();
-  if (city) return city;
-
-  const { data: alias } = await supabase
-    .from('city_slug_aliases' as any)
-    .select('city_id')
-    .eq('slug', slug)
-    .maybeSingle();
-
-  if (!alias?.city_id) return null;
-  const { data: resolved } = await supabase.from('cities').select('id, name, slug, state').eq('id', alias.city_id).maybeSingle();
-  return resolved || null;
-}
-
-async function resolveCategoryBySlug(slug: string) {
-  const { data: category } = await supabase.from('categories').select('id, name, slug, icon').eq('slug', slug).maybeSingle();
-  if (category) return category;
-
-  const { data: alias } = await supabase
-    .from('category_slug_aliases' as any)
-    .select('category_id')
-    .eq('slug', slug)
-    .maybeSingle();
-
-  if (!alias?.category_id) return null;
-  const { data: resolved } = await supabase.from('categories').select('id, name, slug, icon').eq('id', alias.category_id).maybeSingle();
-  return resolved || null;
-}
 
 const SeoPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [page, setPage] = useState(1);
+  const { latitude: userLat, longitude: userLon } = useGeoCity();
 
+  // Parse slug to extract category/city/neighborhood
   const { data, isLoading } = useQuery({
     queryKey: ['seo-page', slug],
     queryFn: async () => {
       if (!slug) return null;
-      const cityAlias = await resolveCityBySlug(slug);
-      if (cityAlias) {
-        const { data: provs } = await supabase
-          .from('providers')
-          .select('*, categories(name, slug, icon)')
-          .eq('status', 'approved')
-          .ilike('city', `%${cityAlias.name}%`)
-          .order('rating_avg', { ascending: false });
-
-        const userIds = [...new Set((provs || []).map((p) => p.user_id))];
-        const profileMap: Record<string, string> = {};
-        if (userIds.length > 0) {
-          const { data: profiles } = await supabase.from('public_profiles' as any).select('id, full_name').in('id', userIds) as { data: { id: string; full_name: string }[] | null };
-          (profiles || []).forEach((p: any) => { profileMap[p.id] = p.full_name; });
-        }
-
-        const providers = (provs || []).map((p) => ({
-          id: p.id,
-          name: profileMap[p.user_id] || p.business_name || 'Profissional',
-          businessName: p.business_name || undefined,
-          category: (p.categories as any)?.name || '',
-          categorySlug: (p.categories as any)?.slug || '',
-          categoryIcon: (p.categories as any)?.icon || '🔧',
-          city: p.city, state: p.state, neighborhood: p.neighborhood,
-          rating: Number(p.rating_avg) || 0, reviewCount: p.review_count || 0,
-          photo: p.photo_url || '', description: p.description,
-          phone: p.phone, whatsapp: p.whatsapp,
-          yearsExperience: p.years_experience, plan: p.plan,
-          slug: p.slug || p.id, featured: p.featured,
-        }));
-
-        const { data: allCategories } = await supabase.from('categories').select('name, slug').order('name');
-        const { data: topCities } = await supabase.from('cities').select('name, slug').order('name').limit(10);
-
-        return { parsed: { categorySlug: '', categoryName: '', city: cityAlias.name, citySlug: cityAlias.slug, neighborhood: '' }, providers, allCategories: allCategories || [], topCities: topCities || [] };
-      }
-
       const parsed = await parseSeoSlug(slug);
       if (!parsed) return null;
-      const categoryAlias = await resolveCategoryBySlug(parsed.categorySlug);
-      if (categoryAlias && categoryAlias.slug !== parsed.categorySlug) {
-        parsed.categorySlug = categoryAlias.slug;
-        parsed.categoryName = categoryAlias.name;
-      }
 
       let query = supabase
         .from('providers')
@@ -164,7 +75,7 @@ const SeoPage = () => {
         .eq('status', 'approved');
 
       if (parsed.categorySlug) {
-        const { data: cat } = await supabase.from('categories').select('id').eq('slug', parsed.categorySlug).maybeSingle();
+        const { data: cat } = await supabase.from('categories').select('id').eq('slug', parsed.categorySlug).single();
         if (cat) query = query.eq('category_id', cat.id);
       }
       if (parsed.city) query = query.ilike('city', `%${parsed.city}%`);
@@ -173,7 +84,7 @@ const SeoPage = () => {
       const { data: provs } = await query.order('rating_avg', { ascending: false });
 
       const userIds = [...new Set((provs || []).map((p) => p.user_id))];
-      const profileMap: Record<string, string> = {};
+      let profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase.from('public_profiles' as any).select('id, full_name').in('id', userIds) as { data: { id: string; full_name: string }[] | null };
         (profiles || []).forEach((p: any) => { profileMap[p.id] = p.full_name; });
@@ -181,17 +92,22 @@ const SeoPage = () => {
 
       const providers = (provs || []).map((p) => ({
         id: p.id,
+        userId: p.user_id,
         name: profileMap[p.user_id] || p.business_name || 'Profissional',
         businessName: p.business_name || undefined,
         category: (p.categories as any)?.name || parsed.categoryName,
         categorySlug: (p.categories as any)?.slug || parsed.categorySlug,
         categoryIcon: (p.categories as any)?.icon || '🔧',
         city: p.city, state: p.state, neighborhood: p.neighborhood,
+        latitude: p.latitude ?? null, longitude: p.longitude ?? null,
         rating: Number(p.rating_avg) || 0, reviewCount: p.review_count || 0,
         photo: p.photo_url || '', description: p.description,
         phone: p.phone, whatsapp: p.whatsapp,
-        yearsExperience: p.years_experience, plan: p.plan,
+        yearsExperience: p.years_experience,
         slug: p.slug || p.id, featured: p.featured,
+        servicesCount: p.services_count || 0,
+        portfolioAlbumCount: p.portfolio_album_count || 0,
+        portfolioPhotoCount: p.portfolio_photo_count || 0,
       }));
 
       const { data: allCategories } = await supabase.from('categories').select('name, slug').order('name');
@@ -202,31 +118,45 @@ const SeoPage = () => {
     enabled: !!slug,
   });
 
+  // Use PostGIS RPC for distance when user has GPS
+  const parsedCatSlug = data?.parsed?.categorySlug || undefined;
+  const { data: nearbyData } = useNearbyProviders({
+    lat: userLat,
+    lng: userLon,
+    radiusM: 100000,
+    categorySlug: parsedCatSlug,
+    limit: 200,
+  });
+
+  // Build distance map from RPC results
+  const distanceMap = new Map<string, number>();
+  (nearbyData || []).forEach((p) => {
+    distanceMap.set(p.id, p.distanceKm);
+  });
+
+  // Merge distance into providers and sort by proximity when available
+  const baseProviders = data?.providers || [];
+  const providers = baseProviders.map((p) => ({
+    ...p,
+    distanceKm: distanceMap.get(p.id),
+  })).sort((a, b) => {
+    // Sort by distance if available, otherwise keep rating order
+    if (a.distanceKm != null && b.distanceKm != null) return a.distanceKm - b.distanceKm;
+    if (a.distanceKm != null) return -1;
+    if (b.distanceKm != null) return 1;
+    return 0;
+  });
   const parsed = data?.parsed;
-  const providers = data?.providers || [];
   const locationLabel = parsed?.neighborhood ? `${parsed.neighborhood}, ${parsed.city}` : parsed?.city || '';
   const seoTitle = locationLabel ? `${parsed?.categoryName} em ${locationLabel}` : parsed?.categoryName || '';
   const seoDesc = locationLabel
-    ? `Encontre os melhores profissionais de ${parsed?.categoryName} em ${locationLabel}. Veja avaliações e solicite orçamentos.`
-    : `Encontre os melhores profissionais de ${parsed?.categoryName}. Veja avaliações e solicite orçamentos.`;
-  const isNotFound = !isLoading && !data;
-  const shouldNoindex = isNotFound || providers.length === 0;
-  const canonicalSlug = useMemo(() => {
-    if (!parsed) return undefined;
-    if (parsed.neighborhood) {
-      return `${parsed.categorySlug}-${parsed.citySlug}-${parsed.neighborhood.toLowerCase().replace(/\s+/g, '-')}`;
-    }
-    if (parsed.citySlug) {
-      return `${parsed.categorySlug}-${parsed.citySlug}`;
-    }
-    return parsed.categorySlug;
-  }, [parsed]);
+    ? `Encontre os melhores profissionais de ${parsed?.categoryName} em ${locationLabel}. Veja avaliações e fale direto com o profissional.`
+    : `Encontre os melhores profissionais de ${parsed?.categoryName}. Veja avaliações e fale direto com o profissional.`;
 
   useSeoHead({
-    title: isNotFound ? 'Página não encontrada' : seoTitle || 'Buscar',
-    description: isNotFound ? 'A página que você procura não existe.' : seoDesc || 'Encontre profissionais na plataforma.',
-    canonical: !shouldNoindex && canonicalSlug ? `${SITE_BASE_URL}/${canonicalSlug}` : undefined,
-    noindex: shouldNoindex,
+    title: seoTitle || 'Buscar',
+    description: seoDesc || 'Encontre profissionais na plataforma.',
+    canonical: slug ? `${SITE_BASE_URL}/${slug}` : undefined,
   });
 
   const paginatedProviders = providers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
@@ -261,7 +191,6 @@ const SeoPage = () => {
     );
   }
 
-  if (!parsed) return null;
   const { allCategories, topCities } = data;
 
   return (
@@ -271,17 +200,17 @@ const SeoPage = () => {
       <nav className="container py-3 text-sm text-muted-foreground">
         <Link to="/" className="hover:text-foreground">Início</Link>
         <ChevronRight className="mx-1 inline h-3 w-3" />
-        <Link to={`/categoria/${parsed.categorySlug}`} className="hover:text-foreground">{parsed.categoryName}</Link>
-        {parsed.city && (
+        <Link to={`/categoria/${parsed!.categorySlug}`} className="hover:text-foreground">{parsed!.categoryName}</Link>
+        {parsed!.city && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <Link to={`/cidade/${parsed.citySlug}`} className="hover:text-foreground">{parsed.city}</Link>
+            <Link to={`/cidade/${parsed!.citySlug}`} className="hover:text-foreground">{parsed!.city}</Link>
           </>
         )}
-        {parsed.neighborhood && (
+        {parsed!.neighborhood && (
           <>
             <ChevronRight className="mx-1 inline h-3 w-3" />
-            <span className="text-foreground">{parsed.neighborhood}</span>
+            <span className="text-foreground">{parsed!.neighborhood}</span>
           </>
         )}
       </nav>
@@ -296,7 +225,52 @@ const SeoPage = () => {
         </div>
       </section>
 
+      {/* Sponsor slot for local gold sponsors */}
+      <Suspense fallback={null}>
+        <SponsorAdSlot locationKey={`seo-${parsed?.categorySlug || 'general'}`} layout="banner" maxAds={1} />
+      </Suspense>
+
       <div className="container py-8">
+        {/* Top 3 Masters Section */}
+        {providers.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Crown className="h-5 w-5 text-amber-500" />
+              <h2 className="font-display text-lg font-bold text-foreground">Top Profissionais da Região</h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {providers.slice(0, 3).map((p, i) => (
+                <Link key={p.id} to={`/profissional/${p.slug}`}
+                  className="group rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl font-black text-sm ${
+                      i === 0 ? 'bg-amber-500/15 text-amber-600' : i === 1 ? 'bg-gray-300/20 text-gray-600' : 'bg-orange-500/15 text-orange-600'
+                    }`}>
+                      #{i + 1}
+                    </div>
+                    {p.photo ? (
+                      <img src={p.photo} alt={p.name} className="h-10 w-10 rounded-full object-cover border border-border" />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-sm font-bold">
+                        {p.name?.charAt(0)}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-foreground truncate group-hover:text-accent transition-colors">{p.name}</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                        <span className="text-xs text-muted-foreground">{p.rating?.toFixed(1) || '0.0'} ({p.reviewCount})</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{p.description}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         <p className="mb-6 text-sm text-muted-foreground">{providers.length} profissional(is) encontrado(s)</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {paginatedProviders.map((p) => <ProviderCard key={p.id} provider={p} />)}
@@ -313,12 +287,12 @@ const SeoPage = () => {
       <section className="bg-muted/50 py-12">
         <div className="container max-w-4xl">
           <h2 className="font-display text-xl font-bold text-foreground">
-            Encontre {parsed.categoryName}{parsed.city ? ` em ${parsed.city}` : ''}
+            Encontre {parsed!.categoryName}{parsed!.city ? ` em ${parsed!.city}` : ''}
           </h2>
           <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
             <p>
-              Precisa de um {parsed.categoryName?.toLowerCase()}? Nossa plataforma conecta você com profissionais
-              qualificados{parsed.city ? ` em ${parsed.city}` : ' em todo o Brasil'}.
+              Precisa de um {parsed!.categoryName?.toLowerCase()}? Nossa plataforma conecta você com profissionais
+              qualificados{parsed!.city ? ` em ${parsed!.city}` : ' em todo o Brasil'}.
             </p>
           </div>
 

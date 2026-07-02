@@ -31,42 +31,13 @@ export function sanitizeSlug(text: string): string {
 }
 
 /**
- * Generate provider slug from the strongest available business identity.
- * Preference:
- * 1. full name + business name + city
- * 2. full name + city
- * 3. business name + city
- * 4. full name
- * 5. business name
+ * Generate provider slug from name + city.
  */
-export function generateProviderSlug(fullName: string, businessName = '', city = ''): string {
-  const primaryParts = [fullName, businessName, city].map((part) => part.trim()).filter(Boolean);
-
-  if (primaryParts.length > 0) {
-    return sanitizeSlug(primaryParts.join(' '));
-  }
-
-  return 'profissional';
+export function generateProviderSlug(name: string, city: string): string {
+  const raw = `${name} ${city}`;
+  return sanitizeSlug(raw);
 }
 
-export function buildProviderSlugCandidates(slug: string): string[] {
-  const raw = slug?.trim();
-  if (!raw) return [];
+// Alias retrocompatível
+export const slugify = sanitizeSlug;
 
-  const decoded = (() => {
-    try {
-      return decodeURIComponent(raw);
-    } catch {
-      return raw;
-    }
-  })();
-
-  const normalized = sanitizeSlug(decoded);
-  const candidates = new Set<string>([raw, decoded, normalized]);
-
-  if (normalized.includes('--')) {
-    candidates.add(normalized.replace(/-{2,}/g, '-'));
-  }
-
-  return Array.from(candidates).filter(Boolean);
-}
