@@ -233,6 +233,7 @@ const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: n
     let start = 0;
     const step = value / (duration * 60);
     const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       start += step;
       if (start >= value) { setDisplay(value); clearInterval(id); }
       else setDisplay(Math.floor(start));

@@ -90,9 +90,9 @@ export function useNotifications(options?: { limit?: number | null }) {
   useEffect(() => {
     if ('setAppBadge' in navigator) {
       if (unreadCount > 0) {
-        (navigator as any).setAppBadge(unreadCount).catch(() => {});
+        (navigator as any).setAppBadge(unreadCount).catch((err: unknown) => console.debug('[useNotifications] setAppBadge', err));
       } else {
-        (navigator as any).clearAppBadge().catch(() => {});
+        (navigator as any).clearAppBadge().catch((err: unknown) => console.debug('[useNotifications] clearAppBadge', err));
       }
     }
   }, [unreadCount]);
@@ -160,7 +160,7 @@ export function usePushSubscription() {
     navigator.serviceWorker.ready.then(async (reg) => {
       const sub = await reg.pushManager.getSubscription();
       setIsSubscribed(!!sub);
-    }).catch(() => {});
+    }).catch((err) => console.debug('[useNotifications] pushManager.getSubscription', err));
   }, [user?.id]);
 
   const subscribe = useCallback(async () => {

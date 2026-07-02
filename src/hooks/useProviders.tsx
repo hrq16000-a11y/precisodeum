@@ -1159,7 +1159,7 @@ export function filterAndRankProvidersGrouped(
         had_user_coords: String(Number.isFinite(effectiveUserLat) && Number.isFinite(effectiveUserLon)),
         used_city_fallback: String(!!fallbackUserCoords),
       });
-    }).catch(() => {});
+    }).catch((err) => console.debug('[useProviders] trackGeoEvent import', err));
   }
 
   const hasGeoContext = !!(geoContext.cityNorm || geoContext.stateNorm);
