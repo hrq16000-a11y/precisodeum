@@ -63,8 +63,10 @@ async function renderRoute(browser, baseUrl, route) {
     mkdirSync(dirname(filePath), { recursive: true });
     writeFileSync(filePath, html, 'utf-8');
     process.stdout.write(`  ✓ ${route}\n`);
+    return { route, ok: true, bytes: Buffer.byteLength(html, 'utf-8') };
   } catch (err) {
     process.stdout.write(`  ✗ ${route}: ${err.message}\n`);
+    return { route, ok: false, error: err.message };
   } finally {
     await page.close().catch(() => {});
   }
@@ -80,6 +82,7 @@ async function renderRouteWithTimeout(browser, baseUrl, route) {
     timeoutPromise,
   ]).catch(err => {
     process.stdout.write(`  ✗ ${route}: ${err.message}\n`);
+    return { route, ok: false, error: err.message };
   });
 }
 
