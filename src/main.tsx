@@ -187,7 +187,7 @@ const resetCachesIfNeeded = async () => {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.ready
       .then((reg) => reg.update())
-      .catch(() => {});
+      .catch((err) => console.debug('[main.tsx] sw.update', err));
   }
 
   try {
@@ -270,7 +270,10 @@ const startVersionWatcher = () => {
     }
   };
 
-  setInterval(check, VERSION_CHECK_INTERVAL_MS);
+  setInterval(() => {
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+    void check();
+  }, VERSION_CHECK_INTERVAL_MS);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") check();
   });
@@ -431,8 +434,8 @@ void bootstrap();
     if (inIframe || isPreviewHost) {
       // Garante limpeza caso um SW anterior tenha ficado registrado aqui.
       navigator.serviceWorker.getRegistrations()
-        .then((regs) => regs.forEach((r) => r.unregister().catch(() => {})))
-        .catch(() => {});
+        .then((regs) => regs.forEach((r) => r.unregister().catch((err) => console.debug('[main.tsx] sw.unregister', err))))
+        .catch((err) => console.debug('[main.tsx] sw.getRegistrations', err));
       return;
     }
 

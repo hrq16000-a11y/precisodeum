@@ -66,7 +66,8 @@ export function SeoFaqBlock({ items, title = 'Perguntas frequentes', eligible = 
       {jsonLd ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          // Escapa "<" para impedir que um "</script>" no conteúdo quebre o parsing HTML.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
         />
       ) : null}
     </section>

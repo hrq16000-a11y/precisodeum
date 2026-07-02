@@ -129,7 +129,10 @@ const DashboardLeadsPage = () => {
 
   // Re-render minute-by-minute para atualizar relativos e badge "vencido"
   useEffect(() => {
-    const interval = setInterval(() => setTick((n) => n + 1), 60_000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      setTick((n) => n + 1);
+    }, 60_000);
     return () => clearInterval(interval);
   }, []);
 
