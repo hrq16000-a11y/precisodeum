@@ -1288,6 +1288,10 @@ const ProviderProfile = () => {
   if (!provider) {
     return (
       <div className="flex min-h-screen flex-col">
+        <Helmet>
+          <title>Profissional não encontrado | Preciso de um</title>
+          <meta name="robots" content="noindex, follow" />
+        </Helmet>
         <Header />
         <div className="container flex flex-1 items-center justify-center py-20">
           <motion.div
@@ -1309,6 +1313,7 @@ const ProviderProfile = () => {
       </div>
     );
   }
+
 
   const accentStyle = pageSettings.accent_color
     ? { '--provider-accent': pageSettings.accent_color } as React.CSSProperties
