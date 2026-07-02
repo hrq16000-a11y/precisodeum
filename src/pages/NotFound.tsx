@@ -50,8 +50,13 @@ const NotFound = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <Helmet>
+        <title>Página não encontrada | Preciso de um</title>
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
       <Header />
       <main className="flex flex-1 items-center justify-center px-4 py-16">
+
         <div className="text-center max-w-lg">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <FileQuestion className="h-8 w-8 text-primary" />
