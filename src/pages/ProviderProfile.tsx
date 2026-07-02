@@ -1,4 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, optimizedImageUrl, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench, Info, UserRound } from 'lucide-react';
@@ -1288,6 +1290,10 @@ const ProviderProfile = () => {
   if (!provider) {
     return (
       <div className="flex min-h-screen flex-col">
+        <Helmet>
+          <title>Profissional não encontrado | Preciso de um</title>
+          <meta name="robots" content="noindex, follow" />
+        </Helmet>
         <Header />
         <div className="container flex flex-1 items-center justify-center py-20">
           <motion.div
@@ -1309,6 +1315,7 @@ const ProviderProfile = () => {
       </div>
     );
   }
+
 
   const accentStyle = pageSettings.accent_color
     ? { '--provider-accent': pageSettings.accent_color } as React.CSSProperties

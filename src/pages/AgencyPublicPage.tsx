@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -52,9 +54,17 @@ const AgencyPublicPage = () => {
           <p className="text-muted-foreground">Carregando...</p>
         ) : !agency ? (
           <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <Helmet>
+              <title>Agência não encontrada | Preciso de um</title>
+              <meta name="robots" content="noindex, follow" />
+            </Helmet>
             <h1 className="font-display text-xl font-bold text-foreground">Agência não encontrada</h1>
             <p className="mt-2 text-sm text-muted-foreground">Este perfil não está disponível ou está pendente de aprovação.</p>
+            <div className="mt-4">
+              <Link to="/buscar" className="text-sm font-medium text-primary hover:underline">Buscar profissionais</Link>
+            </div>
           </div>
+
         ) : (
           <>
             <header className="rounded-2xl border border-border bg-card p-6 sm:p-8">
