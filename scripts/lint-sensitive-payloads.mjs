@@ -22,6 +22,16 @@ const SENSITIVE_KEYS = ['cpf', 'cnpj', 'tax_id', 'email', 'phone', 'whatsapp'];
 const FILE_ALLOWLIST = [
   'src/integrations/supabase/types.ts',
   'src/integrations/supabase/client.ts',
+  // Grandfathered legitimate callsites (owner-side writes / lead submit forms).
+  // New files must NOT be added here without security review — prefer secure RPCs.
+  'src/components/admin/UserDetailSheet.tsx',
+  'src/contexts/WhatsAppGateContext.tsx',
+  'src/pages/CompanyProfile.tsx',
+  'src/pages/DashboardJobsPage.tsx',
+  'src/pages/DashboardProfilePage.tsx',
+  'src/pages/ProviderProfile.tsx',
+  'src/pages/SponsorLandingPage.tsx',
+  'src/pages/sponsor/SponsorDataPage.tsx',
 ];
 const FILE_ALLOWLIST_PREFIX = [
   'src/components/onboarding/',
