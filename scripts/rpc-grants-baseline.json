@@ -1,0 +1,731 @@
+{
+  "grants": {
+    "public.get_latest_user_access_logs()": [
+      "authenticated"
+    ],
+    "public.admin_system_health(integer)": [
+      "authenticated"
+    ],
+    "public.admin_notify_users(uuid[],text,text,text)": [
+      "authenticated"
+    ],
+    "public.effective_user_permissions(uuid)": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.admin_assign_user_level(uuid,uuid)": [
+      "authenticated"
+    ],
+    "public.get_home_bootstrap()": [
+      "anon",
+      "authenticated"
+    ],
+    "public.refresh_featured_providers_mv()": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.get_featured_providers(integer)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.complete_onboarding_checklist()": [
+      "authenticated"
+    ],
+    "public.calc_provider_avg_response(uuid)": [
+      "service_role"
+    ],
+    "public.get_pinned_sponsor_for_search(text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.get_provider_verification_status(uuid)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.recalc_provider_community_verified(uuid)": [],
+    "public.get_smart_ads(text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.admin_sponsor_metrics_summary(uuid[])": [
+      "authenticated"
+    ],
+    "public.get_lead_stats(uuid)": [
+      "authenticated"
+    ],
+    "public.log_provider_public_event(uuid,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.update_site_setting_audited(text,text)": [
+      "authenticated"
+    ],
+    "public.update_service_atomic(uuid,jsonb,uuid[])": [
+      "authenticated"
+    ],
+    "public.update_album_atomic(uuid,jsonb)": [
+      "authenticated"
+    ],
+    "public.update_photo_atomic(uuid,jsonb)": [
+      "authenticated"
+    ],
+    "public.process_daily_stats()": [],
+    "public.log_provider_public_event(uuid,text,text,text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.sponsor_has_active_plan(uuid)": [
+      "authenticated"
+    ],
+    "public.current_user_owns_sponsor(uuid)": [
+      "authenticated"
+    ],
+    "public.log_sponsor_access_event(uuid,text,text,jsonb)": [
+      "authenticated"
+    ],
+    "public.increment_service_view(uuid)": [
+      "authenticated"
+    ],
+    "public.admin_list_rls_policies()": [
+      "authenticated"
+    ],
+    "public.admin_capture_rls_snapshot()": [
+      "authenticated",
+      "postgres"
+    ],
+    "public.admin_list_rls_snapshot_dates()": [
+      "authenticated"
+    ],
+    "public.admin_diff_rls_snapshots(date,date)": [
+      "authenticated"
+    ],
+    "public.admin_list_orphan_profiles()": [
+      "authenticated"
+    ],
+    "public.admin_reconcile_orphan_profile(uuid)": [
+      "authenticated"
+    ],
+    "public.process_lead_followup_reminders()": [
+      "service_role"
+    ],
+    "public.reschedule_lead_followup(uuid,timestamptz,text)": [
+      "authenticated"
+    ],
+    "public.admin_log_sponsor_doc_access(uuid,text,text)": [
+      "authenticated"
+    ],
+    "public.get_sponsor_docs_status(uuid)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.log_sponsor_doc_validation_failure(uuid,text,text,jsonb)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.admin_review_sponsor_docs(uuid,text,text)": [
+      "authenticated"
+    ],
+    "public.claim_sponsor_lead(uuid)": [
+      "authenticated"
+    ],
+    "public.admin_reopen_sponsor_checklist(uuid,text,text[])": [
+      "authenticated"
+    ],
+    "public.set_profile_tax_id(text)": [
+      "authenticated"
+    ],
+    "public.admin_set_profile_tax_id(uuid,text)": [
+      "authenticated"
+    ],
+    "public.get_profile_tax_id(uuid)": [
+      "authenticated"
+    ],
+    "public.search_cities(text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.get_contact_impact_24h(uuid)": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.complete_mission(text,jsonb)": [
+      "authenticated"
+    ],
+    "public.resolve_identity_suggestion(uuid,text)": [
+      "authenticated"
+    ],
+    "public.is_top_professional(uuid)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.nearby_providers(precision,precision,integer,text,integer,uuid[])": [
+      "anon",
+      "authenticated"
+    ],
+    "public.complete_first_contact_mission(uuid)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.admin_conversion_metrics(text,text,integer)": [
+      "authenticated"
+    ],
+    "public.mark_lead_as_concluded(uuid)": [
+      "authenticated"
+    ],
+    "public.get_review_short_link(uuid)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.get_search_demand_stats(uuid)": [
+      "authenticated"
+    ],
+    "public.create_daily_post(text,text)": [
+      "authenticated"
+    ],
+    "public.get_provider_daily_post(uuid)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.delete_daily_post()": [
+      "authenticated"
+    ],
+    "public.track_presence_heartbeat()": [
+      "authenticated"
+    ],
+    "public.close_presence_session()": [
+      "authenticated"
+    ],
+    "public.get_missed_opportunities(uuid)": [
+      "authenticated"
+    ],
+    "public.get_provider_weekly_stats(uuid)": [
+      "authenticated"
+    ],
+    "public.register_referral(text)": [
+      "authenticated"
+    ],
+    "public.get_my_referrals_summary()": [
+      "authenticated"
+    ],
+    "public.get_provider_activity_signals(uuid)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.get_my_referrals_full()": [
+      "authenticated"
+    ],
+    "public.complete_app_install_mission()": [
+      "authenticated"
+    ],
+    "public.log_pwa_install_event(text,jsonb)": [
+      "authenticated"
+    ],
+    "public.get_engagement_ranking(int,int)": [
+      "authenticated"
+    ],
+    "public.get_my_engagement_rank(int)": [
+      "authenticated"
+    ],
+    "public.admin_pwa_install_stats_by_city()": [
+      "authenticated"
+    ],
+    "public.get_my_referral_points_timeline(int)": [
+      "authenticated"
+    ],
+    "public.get_active_today_providers()": [
+      "anon",
+      "authenticated"
+    ],
+    "public.register_click_lead(uuid,text,text,jsonb)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.admin_onboarding_funnel(int,text)": [
+      "authenticated"
+    ],
+    "public.get_lead_history_authors(uuid[])": [
+      "authenticated"
+    ],
+    "public.search_cities_prioritized(text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.publish_my_provider()": [
+      "authenticated"
+    ],
+    "public.realign_first_service(uuid,uuid,uuid)": [
+      "authenticated"
+    ],
+    "public.resolve_city_slug(text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.recompute_provider_verified(uuid)": [
+      "authenticated"
+    ],
+    "public.admin_set_provider_verified(uuid,boolean,text)": [
+      "authenticated"
+    ],
+    "public.admin_list_default_neighborhood_providers(text,text,int)": [
+      "authenticated"
+    ],
+    "public.admin_fix_provider_neighborhood(uuid,text,text)": [
+      "authenticated"
+    ],
+    "public.admin_bulk_fix_provider_neighborhood(uuid[],text,text)": [
+      "authenticated"
+    ],
+    "public.admin_list_service_area_corrections(int,int)": [
+      "authenticated"
+    ],
+    "public.admin_sync_provider_city_with_services(boolean,text,text)": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.admin_list_service_area_sync_runs(int)": [
+      "authenticated"
+    ],
+    "public.service_area_is_in_catalog(text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.service_description_first_forbidden_term(text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.admin_list_kill_switch_blocks(uuid,timestamptz,timestamptz,int)": [
+      "authenticated"
+    ],
+    "public.admin_reprocess_kill_switch_block(uuid)": [
+      "authenticated"
+    ],
+    "public.track_lead_interaction(uuid,uuid,text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.get_provider_lead_stats(uuid)": [
+      "authenticated"
+    ],
+    "public.touch_my_provider_activity()": [
+      "authenticated"
+    ],
+    "public.register_service_completion()": [
+      "authenticated"
+    ],
+    "public.get_provider_clicks_24h(uuid)": [
+      "authenticated"
+    ],
+    "public.admin_signup_funnel(int)": [
+      "authenticated"
+    ],
+    "public.admin_error_500_summary(int)": [
+      "authenticated"
+    ],
+    "public.admin_error_500_recent(int)": [
+      "authenticated"
+    ],
+    "public.admin_exit_intent_funnel(timestamptz,timestamptz)": [
+      "authenticated"
+    ],
+    "public.audit_user_ref_health()": [
+      "authenticated"
+    ],
+    "public.validate_db_health()": [
+      "authenticated"
+    ],
+    "public.audit_user_ref_full_detailed()": [
+      "authenticated"
+    ],
+    "public.get_app_version_config()": [
+      "anon",
+      "authenticated"
+    ],
+    "public.bump_auth_rate_limit(text,text,text,boolean,integer,integer,integer)": [
+      "service_role"
+    ],
+    "public.peek_auth_rate_limit(text,text,text)": [
+      "service_role"
+    ],
+    "public.list_consent_revocations(integer,integer,boolean)": [
+      "authenticated"
+    ],
+    "public.mark_consent_revocations_read(uuid[])": [
+      "authenticated"
+    ],
+    "public.mark_notification_read(uuid)": [
+      "authenticated"
+    ],
+    "public.mark_notifications_read_bulk(uuid[])": [
+      "authenticated"
+    ],
+    "public.count_unread_notifications()": [
+      "authenticated"
+    ],
+    "public.search_user_notifications(text,text,text,int,int)": [
+      "authenticated"
+    ],
+    "public.search_user_notifications(text,text,text,int,int,text,timestamptz,timestamptz,uuid)": [
+      "authenticated"
+    ],
+    "public.list_user_notification_types()": [
+      "authenticated"
+    ],
+    "public.get_lead_conversion_stats(uuid,int)": [
+      "authenticated"
+    ],
+    "public.get_provider_retention(int)": [
+      "authenticated"
+    ],
+    "public.record_dashboard_session(text,text)": [
+      "authenticated"
+    ],
+    "public.nearby_providers(precision,precision,integer,text,integer,uuid[],text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.get_featured_providers(integer,text)": [
+      "anon",
+      "authenticated",
+      "service_role"
+    ],
+    "public.list_my_geo_audit(int)": [
+      "authenticated"
+    ],
+    "public.record_my_geo_event(text,text,text,text,text,numeric,numeric,numeric,numeric,text,text)": [
+      "authenticated"
+    ],
+    "public.admin_onboarding_stats(integer)": [
+      "authenticated"
+    ],
+    "public.admin_onboarding_funnel_by_source(integer)": [
+      "authenticated"
+    ],
+    "public.admin_onboarding_user_funnel(integer,integer)": [
+      "authenticated"
+    ],
+    "public.upload_failure_stats(int)": [
+      "authenticated"
+    ],
+    "public.log_query_telemetry(text,integer,integer,jsonb)": [
+      "authenticated"
+    ],
+    "public.admin_explain_query(text)": [
+      "authenticated"
+    ],
+    "public.suggest_nearby_cities(text,text,precision,integer)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.record_registration_snapshot(jsonb)": [
+      "authenticated"
+    ],
+    "public.request_self_account_ban()": [
+      "authenticated"
+    ],
+    "public.admin_review_anchor_audit(integer)": [
+      "authenticated"
+    ],
+    "public.suggest_next_contact_slot(uuid,timestamptz)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.mark_ghost_providers()": [
+      "service_role"
+    ],
+    "public.archive_stale_incomplete_providers()": [
+      "service_role"
+    ],
+    "public.audit_incomplete_providers_3d()": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.self_delete_account(text)": [
+      "authenticated"
+    ],
+    "public.check_registration_block(text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.admin_meta_tracking_quality()": [
+      "authenticated"
+    ],
+    "public.record_privacy_event(text,text,jsonb,text,text)": [
+      "authenticated"
+    ],
+    "public.check_registration_block(text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.admin_broken_links_stats(integer)": [
+      "authenticated"
+    ],
+    "public.admin_broken_links_by_referrer(integer)": [
+      "authenticated"
+    ],
+    "public.finalize_onboarding_atomic(uuid,text)": [
+      "authenticated"
+    ],
+    "public.get_my_provider_details()": [
+      "authenticated"
+    ],
+    "public.get_my_profile_status()": [
+      "authenticated"
+    ],
+    "public.admin_db_perf_dashboard()": [
+      "authenticated"
+    ],
+    "public.admin_capture_db_perf_snapshot(text,boolean)": [
+      "authenticated"
+    ],
+    "public.admin_auth_health_summary(timestamptz,text)": [
+      "authenticated"
+    ],
+    "public.check_and_log_whatsapp_click(uuid)": [
+      "authenticated"
+    ],
+    "public.get_whatsapp_clicks_today()": [
+      "authenticated"
+    ],
+    "public.list_whatsapp_contacts_history(text,text,int,int)": [
+      "authenticated"
+    ],
+    "public.get_sponsor_performance(uuid,date,date)": [
+      "authenticated"
+    ],
+    "public.get_sponsor_delivery_status(boolean)": [
+      "authenticated"
+    ],
+    "public.refresh_all_sponsor_pacing()": [
+      "service_role"
+    ],
+    "public.resolve_sponsor_slot_capacity(text,text,text)": [
+      "authenticated"
+    ],
+    "public.get_sponsor_inventory_status()": [
+      "authenticated"
+    ],
+    "public.get_sponsor_inventory_forecast(integer)": [
+      "authenticated"
+    ],
+    "public.normalize_slug(text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.search_sponsor_inventory(text,text,text)": [
+      "authenticated"
+    ],
+    "public.audit_sponsor_scope_consistency()": [
+      "authenticated"
+    ],
+    "public.apply_sponsor_scope_fix(uuid,text,text)": [
+      "authenticated"
+    ],
+    "public.get_sponsor_health_status(uuid)": [
+      "authenticated"
+    ],
+    "public.activate_sponsor_with_gate(uuid,boolean,text)": [
+      "authenticated"
+    ],
+    "public.auto_degrade_expired_sponsors()": [
+      "authenticated"
+    ],
+    "public.record_sponsor_delivery_block(uuid,text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.get_sponsor_delivery_telemetry(int)": [
+      "authenticated"
+    ],
+    "public.record_public_funnel_event(text,text,text,text,int,text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.get_public_funnel_telemetry(int)": [
+      "authenticated"
+    ],
+    "public.record_public_funnel_event(text,text,text,text,int,text,text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.get_sponsor_roi(uuid,int)": [
+      "authenticated"
+    ],
+    "public.get_admin_sponsor_roi(int)": [
+      "authenticated"
+    ],
+    "public.sponsor_submit_change_request(uuid,jsonb,text[])": [
+      "authenticated"
+    ],
+    "public.sponsor_cancel_change_request(uuid)": [
+      "authenticated"
+    ],
+    "public.admin_review_sponsor_change_request(uuid,text,text)": [
+      "authenticated"
+    ],
+    "public.sponsor_request_renewal(uuid)": [
+      "authenticated"
+    ],
+    "public.admin_mark_billing_paid(uuid,text,text,text)": [
+      "authenticated"
+    ],
+    "public.admin_update_billing_cycle(uuid,text,timestamptz,text)": [
+      "authenticated"
+    ],
+    "public.get_sponsor_billing_status(uuid)": [
+      "authenticated"
+    ],
+    "public.refresh_sponsor_billing_status()": [
+      "service_role"
+    ],
+    "public.get_provider_conversion_stats(uuid[],int)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.admin_provider_conversion_insights(int,int)": [
+      "authenticated"
+    ],
+    "public.compute_sponsor_cycle_amount(uuid)": [
+      "service_role"
+    ],
+    "public.generate_invoice_for_cycle(uuid)": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.admin_generate_invoice_for_change_request(uuid,numeric,text)": [
+      "authenticated"
+    ],
+    "public.notify_admins_about_sponsor(uuid,text,text,text,text)": [
+      "service_role"
+    ],
+    "public.notify_sponsor_contacts(uuid,text,text,text)": [
+      "service_role"
+    ],
+    "public.list_sponsor_invoices(uuid,int)": [
+      "authenticated"
+    ],
+    "public.record_public_funnel_event(text,text,text,text,integer,text,text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.get_public_funnel_health(integer)": [
+      "authenticated"
+    ],
+    "public.log_contact_click(uuid,text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.log_search_intent(text,text,text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.log_error_page_event(text,integer,text,text,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.log_exit_intent_event(text,text,text,text,text,text,text,text,text,jsonb,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.log_web_vitals(jsonb,text)": [
+      "anon",
+      "authenticated"
+    ],
+    "public.detect_onboarding_regressions(int,int,int)": [
+      "service_role"
+    ],
+    "public.admin_onboarding_ops_funnel(integer)": [
+      "authenticated"
+    ],
+    "public.admin_onboarding_session_timeline(text,integer)": [
+      "authenticated"
+    ],
+    "public.admin_onboarding_release_compare(integer)": [
+      "authenticated"
+    ],
+    "public.evaluate_onboarding_auto_response(integer,integer,integer)": [
+      "authenticated"
+    ],
+    "public.admin_list_onboarding_incidents(integer,boolean)": [
+      "authenticated"
+    ],
+    "public.admin_resolve_onboarding_incident(uuid,text)": [
+      "authenticated"
+    ],
+    "public.compute_onboarding_release_health(int,text)": [
+      "authenticated"
+    ],
+    "public.create_onboarding_release_snapshot(text,text,text,int,text)": [
+      "authenticated"
+    ],
+    "public.list_onboarding_release_snapshots(int,text)": [
+      "authenticated"
+    ],
+    "public.compare_onboarding_release_snapshots(uuid,uuid)": [
+      "authenticated"
+    ],
+    "public.admin_onboarding_behavioral_summary(int)": [
+      "authenticated"
+    ],
+    "public.purge_telemetry_tables()": [
+      "service_role"
+    ],
+    "public.get_web_vitals_weekly_summary(integer)": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.calculate_user_level(uuid)": [
+      "service_role"
+    ],
+    "public.get_demand_signal(uuid)": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.get_profile_completeness(uuid)": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.get_profile_health_score(uuid)": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.derive_provider_primary_category(uuid)": [
+      "authenticated",
+      "service_role"
+    ],
+    "public.get_open_lead_client_contact(uuid)": [
+      "authenticated"
+    ],
+    "public.get_categories_with_provider_count()": [
+      "anon",
+      "authenticated",
+      "service_role"
+    ],
+    "public.get_geo_categories()": [
+      "anon",
+      "authenticated",
+      "service_role"
+    ],
+    "public.get_web_vitals_p75(integer)": [
+      "authenticated"
+    ],
+    "public.get_web_vitals_alerts(integer)": [
+      "authenticated"
+    ],
+    "public.capture_rls_drift()": [
+      "service_role"
+    ],
+    "public._sync_in_progress()": [],
+    "public.prevent_audit_log_tampering()": [],
+    "public.health_check_history_autoclean()": [],
+    "public.restrict_anon_lead_update()": [],
+    "public.trg_fn_restrict_anon_sponsor_lead_update()": [],
+    "public.purge_cold_storage_91d()": [],
+    "public.expire_registration_blocks_180d()": [],
+    "public.notify_admins_geo_alert(text,text,text,text)": [],
+    "public.log_provider_geo_issue(uuid,text,text,text,text,jsonb,uuid)": [],
+    "public.set_provider_geo_source(uuid,text,numeric,jsonb,text,text,text,uuid)": [],
+    "public.recalculate_engagement_points(uuid)": [],
+    "public.find_orphan_media(integer)": [],
+    "public.get_rss_import_headers()": []
+  }
+}
