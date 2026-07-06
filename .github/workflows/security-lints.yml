@@ -7,7 +7,13 @@ on:
     branches: [ "main" ]
     paths:
       - "src/**"
+      - "supabase/migrations/**"
+      - "supabase/functions/**"
       - "scripts/lint-tax-id-access.mjs"
+      - "scripts/lint-sensitive-payloads.mjs"
+      - "scripts/audit-rpc-grants.mjs"
+      - "scripts/rpc-grants-baseline.json"
+      - "scripts/rpc-grants-allowlist.json"
       - ".github/workflows/security-lints.yml"
 
 jobs:
@@ -21,3 +27,33 @@ jobs:
           node-version: 20
       - name: Run tax_id access guardrail
         run: node scripts/lint-tax-id-access.mjs
+
+  sensitive-payloads:
+    name: Forbid sensitive payloads (CPF/CNPJ/email/phone/whatsapp) outside allowlist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run sensitive-payloads guardrail
+        run: node scripts/lint-sensitive-payloads.mjs
+
+  rpc-grants-diff:
+    name: RPC grants diff (fail on new anon/public exposure)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Audit RPC grants vs baseline
+        run: node scripts/audit-rpc-grants.mjs
+      - name: Upload grants report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpc-grants-report
+          path: .rpc-grants-report.json
+          if-no-files-found: ignore
+
