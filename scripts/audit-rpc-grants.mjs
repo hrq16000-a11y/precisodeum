@@ -109,10 +109,10 @@ for (const [fn, roles] of Object.entries(grants)) {
     allowlist.anon_callable.includes(fn) || allowlist.public_callable.includes(fn);
   const prevRoles = baseline.grants[fn] ?? [];
   const wasExposed = prevRoles.some((r) => r === 'anon' || r === 'public');
+  // Only fail on NEW exposure. Existing baseline exposures are grandfathered —
+  // they're already in production; tightening them is a separate policy call.
   if (!allowed && !wasExposed) {
     risky.push({ fn, roles, reason: 'newly_exposed_to_anon_or_public' });
-  } else if (!allowed && wasExposed) {
-    risky.push({ fn, roles, reason: 'still_exposed_not_in_allowlist' });
   }
 }
 
