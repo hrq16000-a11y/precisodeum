@@ -113,9 +113,10 @@ function classifyOccurrences(strippedSrc) {
     if (!/\btax_id\b/.test(line)) continue;
     const isSanitizer =
       REGEX_LITERAL_WITH_TAX_ID.test(line) ||
-      (PII_LIST_LINE.test(line) && SANITIZER_VOCAB.test(line)) ||
-      // list line without vocab still counts as sanitizer if the file itself
-      // has vocab nearby (checked below with fallback)
+      // A quoted-string list of PII field names (e.g. Set/array literals used
+      // by sanitize/redact helpers). Direct table selects are already handled
+      // by DIRECT_TABLE_RE above, so this cannot mask real access.
+      PII_LIST_LINE.test(line) ||
       false;
     if (isSanitizer) sanitizer++;
     else real++;
