@@ -62,9 +62,12 @@ const ALLOWLIST = [
 ];
 
 // -- Detectors ---------------------------------------------------------------
-// Any direct .from('profiles' | 'providers') ... select(...) referencing tax_id.
+// Any direct .from('profiles' | 'providers') ... select(...) referencing the
+// sensitive `tax_id` column exactly (NOT the public-safe derivatives
+// `tax_id_last4` / `tax_id_kind`, which are already surfaced to owners for
+// UI hints and are covered by RLS). Word boundary keeps the rule precise.
 // This rule is NEVER waived by the allowlist.
-const DIRECT_TABLE_RE = /\.from\(\s*['"`](profiles|providers)['"`]\s*\)[\s\S]{0,400}?\.select\(\s*['"`][^'"`]*tax_id/g;
+const DIRECT_TABLE_RE = /\.from\(\s*['"`](profiles|providers)['"`]\s*\)[\s\S]{0,400}?\.select\(\s*['"`][^'"`]*\btax_id(?![_a-z0-9])/gi;
 
 // Raw catch-all: applied AFTER stripping comments and sanitizer lines.
 const RAW_RE = /\btax_id\b/g;
