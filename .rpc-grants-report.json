@@ -1,12 +1,31 @@
 {
-  "generated_at": "2026-07-07T07:10:40.583Z",
+  "generated_at": "2026-07-11T08:17:41.359Z",
   "totals": {
-    "functions_with_grants": 233,
-    "events": 277,
-    "risky": 0,
+    "functions_with_grants": 235,
+    "events": 280,
+    "risky": 2,
     "removed_from_baseline": 0
   },
-  "risky": [],
+  "risky": [
+    {
+      "fn": "public.attach_sponsor_lead_docs(uuid,uuid,text,text,boolean,jsonb)",
+      "roles": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "reason": "newly_exposed_to_anon_or_public"
+    },
+    {
+      "fn": "public.accept_sponsor_lead_contract(uuid,uuid)",
+      "roles": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "reason": "newly_exposed_to_anon_or_public"
+    }
+  ],
   "removed": [],
   "grants": {
     "public.get_latest_user_access_logs()": [
@@ -735,6 +754,16 @@
     "public.set_provider_geo_source(uuid,text,numeric,jsonb,text,text,text,uuid)": [],
     "public.recalculate_engagement_points(uuid)": [],
     "public.find_orphan_media(integer)": [],
-    "public.get_rss_import_headers()": []
+    "public.get_rss_import_headers()": [],
+    "public.attach_sponsor_lead_docs(uuid,uuid,text,text,boolean,jsonb)": [
+      "anon",
+      "authenticated",
+      "service_role"
+    ],
+    "public.accept_sponsor_lead_contract(uuid,uuid)": [
+      "anon",
+      "authenticated",
+      "service_role"
+    ]
   }
 }
