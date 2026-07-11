@@ -122,6 +122,7 @@ const AdminDashboardLayoutPage = lazy(() => import("@/pages/admin/AdminDashboard
 const AdminSponsorPlansPage = lazy(() => import("@/pages/admin/AdminSponsorPlansPage"));
 const AdminSponsorCampaignsPage = lazy(() => import("@/pages/admin/AdminSponsorCampaignsPage"));
 const AdminSponsorContractsPage = lazy(() => import("@/pages/admin/AdminSponsorContractsPage"));
+const AdminSponsorDocsAuditPage = lazy(() => import("@/pages/admin/AdminSponsorDocsAuditPage"));
 
 export const adminRoutes = (
   <>
@@ -233,5 +234,6 @@ export const adminRoutes = (
     <Route path="/admin/sponsor-campaigns" element={guarded("AdminSponsorCampaignsPage", <AdminSponsorCampaignsPage />)} />
     <Route path="/admin/sponsor-contracts" element={guarded("AdminSponsorContractsPage", <AdminSponsorContractsPage />)} />
     <Route path="/admin/security-findings" element={guarded("AdminSecurityFindingsPage", <AdminSecurityFindingsPage />)} />
+    <Route path="/admin/sponsor-docs-audit" element={guarded("AdminSponsorDocsAuditPage", <AdminSponsorDocsAuditPage />)} />
   </>
 );
