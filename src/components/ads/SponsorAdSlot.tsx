@@ -121,18 +121,22 @@ const GhostSlot: React.FC<{ locationKey: string; layout: string }> = ({ location
 
 /* ─── Public "Sua marca aqui" — vendedor automático premium ─── */
 const SaleInviteSlot: React.FC<{ locationKey: string; layout: string }> = ({ locationKey, layout }) => {
-  const ar = ASPECT_RATIOS[layout] || ASPECT_RATIOS.banner;
   const href = `/quero-ser-patrocinador?slot=${encodeURIComponent(locationKey)}`;
   const isCompact = layout === 'inline' || layout === 'banner';
+  // Slots vazios NÃO devem dominar o layout: quando não há anúncio real,
+  // exibimos um convite compacto (altura fixa) ao invés de manter o aspect-ratio
+  // do banner original (8:1), que criava buracos visuais gigantes na home.
+  const minH = layout === 'inline' ? 48 : layout === 'banner' ? 64 : 88;
+  const maxH = layout === 'inline' ? 56 : layout === 'banner' ? 80 : 120;
 
   return (
     <a
       href={href}
       aria-label="Anuncie sua marca nesta posição"
-      className="group relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-primary/30 shadow-sm transition-all duration-300 hover:border-primary/60 hover:shadow-md"
+      className="group relative flex w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-primary/30 shadow-sm transition-all duration-300 hover:border-primary/60 hover:shadow-md"
       style={{
-        aspectRatio: ar === 'auto' ? '16 / 3' : ar,
-        minHeight: layout === 'inline' ? 56 : 80,
+        minHeight: minH,
+        maxHeight: maxH,
         backgroundImage: `
           radial-gradient(ellipse at top left, hsl(var(--primary) / 0.08), transparent 60%),
           radial-gradient(ellipse at bottom right, hsl(var(--accent) / 0.07), transparent 60%),
@@ -142,19 +146,18 @@ const SaleInviteSlot: React.FC<{ locationKey: string; layout: string }> = ({ loc
         backgroundColor: 'hsl(var(--background))',
       }}
     >
-      {/* Subtle shine on hover */}
       <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-primary/5 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 
       <div className={`relative z-10 flex ${isCompact ? 'flex-row items-center gap-3 px-5' : 'flex-col items-center gap-1.5 px-4'} text-center`}>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-500/10 ring-1 ring-orange-500/20 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-6deg]">
-          <Megaphone className="h-4.5 w-4.5 text-orange-500" strokeWidth={2.25} />
+          <Megaphone className="h-4 w-4 text-orange-500" strokeWidth={2.25} />
         </div>
 
         <div className={`flex ${isCompact ? 'flex-col items-start' : 'flex-col items-center'}`}>
           <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/80">
             Espaço VIP disponível
           </span>
-          <span className="text-sm font-bold tracking-tight text-foreground sm:text-base">
+          <span className="text-sm font-bold tracking-tight text-foreground">
             Sua marca aqui
           </span>
           <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary/80 transition-colors group-hover:text-primary">
@@ -242,10 +245,18 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
   // Loading state
   if (isLoading) return <AdSkeleton layout={layout} />;
 
-  // Empty slot — show invite card to visitors / ghost to admins
+  // Empty slot — show invite card to visitors / ghost to admins.
+  // O convite/ghost sempre entra dentro de `container mx-auto px-4` para não
+  // esticar edge-to-edge em desktop/tablet.
   if (displayAds.length === 0) {
-    if (isAdmin) return <div className={className}><GhostSlot locationKey={locationKey} layout={layout} /></div>;
-    return <div className={className}><SaleInviteSlot locationKey={locationKey} layout={layout} /></div>;
+    const inner = isAdmin
+      ? <GhostSlot locationKey={locationKey} layout={layout} />
+      : <SaleInviteSlot locationKey={locationKey} layout={layout} />;
+    return (
+      <div className={className}>
+        <div className="container mx-auto px-4 py-2">{inner}</div>
+      </div>
+    );
   }
 
   const handleClick = (ad: SponsorAd) => trackAdMetric(ad.id, locationKey, 'click');
