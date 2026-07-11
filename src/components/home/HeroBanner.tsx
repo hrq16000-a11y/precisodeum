@@ -138,9 +138,10 @@ const HeroBanner = () => {
 
   return (
     <section
-      className="relative overflow-visible py-6 sm:py-8 md:overflow-hidden md:py-20"
-      style={{ height: 340, minHeight: 340 }}
+      className="relative overflow-visible py-6 sm:py-8 md:overflow-hidden md:py-20 md:min-h-[520px] lg:min-h-[560px]"
+      style={{ minHeight: 340 }}
     >
+
       {/* Current background — dimensions explicit to prevent CLS.
           Wrapped in <picture> to enable modern format negotiation.
           AVIF source can be added later once variants are generated;
