@@ -31,7 +31,20 @@ const AdminReviewsPage = () => {
       .from('reviews')
       .select('*, profiles:user_id(full_name, email), providers:provider_id(business_name, city)')
       .order('created_at', { ascending: false });
-    setReviews(data || []);
+    const rows = data || [];
+    // admin_note foi movido para tabela admin-only (fix de segurança).
+    // Hidrata cada review com a nota correspondente, quando o admin logado
+    // tiver permissão via RLS.
+    const ids = rows.map((r: any) => r.id).filter(Boolean);
+    let noteMap: Record<string, string> = {};
+    if (ids.length > 0) {
+      const { data: notes } = await supabase
+        .from('review_admin_notes' as any)
+        .select('review_id, note')
+        .in('review_id', ids);
+      (notes || []).forEach((n: any) => { if (n?.review_id) noteMap[n.review_id] = n.note || ''; });
+    }
+    setReviews(rows.map((r: any) => ({ ...r, admin_note: noteMap[r.id] || '' })));
   };
 
   useEffect(() => { if (isAdmin) fetchReviews(); }, [isAdmin]);
