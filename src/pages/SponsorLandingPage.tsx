@@ -476,6 +476,7 @@ export default function SponsorLandingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [leadId, setLeadId] = useState<string | null>(null);
+  const [leadToken, setLeadToken] = useState<string | null>(null);
   const [docsModalOpen, setDocsModalOpen] = useState(false);
   const [docsCompleted, setDocsCompleted] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'premium'>('pro');
@@ -506,12 +507,19 @@ export default function SponsorLandingPage() {
         plan: data.plan,
         contract_accepted: true,
         status: 'pending',
-      } as any).select('id').single();
+      } as any).select('id, submission_token').single();
       if (error) throw error;
       const newId = (inserted as any)?.id ?? null;
+      const newToken = (inserted as any)?.submission_token ?? null;
       setLeadId(newId);
+      setLeadToken(newToken);
       if (newId) {
         try { localStorage.setItem('pdu_sponsor_lead_id', newId); } catch { /* ignore */ }
+        // Token secreto necessário para anexar documentos via RPC segura.
+        // Vive apenas 24h server-side; sem ele o usuário precisa recomeçar.
+        if (newToken) {
+          try { localStorage.setItem('pdu_sponsor_lead_token', newToken); } catch { /* ignore */ }
+        }
       }
       setSubmitted(true);
       toast.success('Interesse registrado com sucesso!');
@@ -632,6 +640,7 @@ export default function SponsorLandingPage() {
             open={docsModalOpen}
             onOpenChange={setDocsModalOpen}
             leadId={leadId}
+            leadToken={leadToken}
             onCompleted={() => setDocsCompleted(true)}
           />
         )}
