@@ -31,7 +31,7 @@ interface FileSlot {
 
 const initialSlot: FileSlot = { file: null, uploading: false, progress: 0, path: null, error: null };
 
-export function SponsorDocsUploadModal({ open, onOpenChange, leadId, onCompleted }: Props) {
+export function SponsorDocsUploadModal({ open, onOpenChange, leadId, leadToken, onCompleted }: Props) {
   const [cnpjDoc, setCnpjDoc] = useState<FileSlot>(initialSlot);
   const [banner, setBanner] = useState<FileSlot>(initialSlot);
   const [checklist, setChecklist] = useState({
