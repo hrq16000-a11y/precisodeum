@@ -726,6 +726,16 @@
     "public.set_provider_geo_source(uuid,text,numeric,jsonb,text,text,text,uuid)": [],
     "public.recalculate_engagement_points(uuid)": [],
     "public.find_orphan_media(integer)": [],
-    "public.get_rss_import_headers()": []
+    "public.get_rss_import_headers()": [],
+    "public.attach_sponsor_lead_docs(uuid,uuid,text,text,boolean,jsonb)": [
+      "anon",
+      "authenticated",
+      "service_role"
+    ],
+    "public.accept_sponsor_lead_contract(uuid,uuid)": [
+      "anon",
+      "authenticated",
+      "service_role"
+    ]
   }
 }

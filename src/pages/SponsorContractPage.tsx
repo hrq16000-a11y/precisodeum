@@ -205,21 +205,37 @@ export default function SponsorContractPage() {
     if (!accepted) return;
     setSubmitting(true);
     try {
-      // Update sponsor_leads if lead ID provided
+      // Aceite via RPC segura (SECURITY DEFINER) que valida submission_token.
+      // Substitui UPDATE anon direto — a policy anon foi removida no hardening.
       if (leadId) {
-        await supabase
-          .from('sponsor_leads' as any)
-          .update({
-            contract_accepted: true,
-            status: 'contract_signed',
-            updated_at: new Date().toISOString(),
-          } as any)
-          .eq('id', leadId);
+        const token =
+          (typeof window !== 'undefined' && localStorage.getItem('pdu_sponsor_lead_token')) ||
+          null;
+        if (!token) {
+          toast.error(
+            'Sessão expirada. Recomece o cadastro para confirmar o aceite do contrato.',
+          );
+          return;
+        }
+        const { error } = await supabase.rpc('accept_sponsor_lead_contract' as any, {
+          _lead_id: leadId,
+          _token: token,
+        });
+        if (error) throw error;
       }
       setConfirmed(true);
       toast.success('Contrato aceito com sucesso!');
-    } catch {
-      toast.error('Erro ao registrar aceite. Tente novamente.');
+    } catch (e: any) {
+      const msg = String(e?.message || '').toLowerCase();
+      if (msg.includes('invalid_token')) {
+        toast.error('Sessão inválida. Recomece o cadastro para aceitar o contrato.');
+      } else if (msg.includes('expired')) {
+        toast.error('Esta solicitação expirou (24h). Recomece o cadastro.');
+      } else if (msg.includes('already_claimed')) {
+        toast.error('Este cadastro já foi vinculado a uma conta. Faça login para continuar.');
+      } else {
+        toast.error('Erro ao registrar aceite. Tente novamente.');
+      }
     } finally {
       setSubmitting(false);
     }

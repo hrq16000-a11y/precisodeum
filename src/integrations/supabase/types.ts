@@ -6435,6 +6435,39 @@ export type Database = {
           },
         ]
       }
+      sponsor_lead_docs_audit: {
+        Row: {
+          action: string
+          actor_ip: string | null
+          actor_user_agent: string | null
+          created_at: string
+          fields_present: string[]
+          id: string
+          lead_id: string
+          outcome: string
+        }
+        Insert: {
+          action: string
+          actor_ip?: string | null
+          actor_user_agent?: string | null
+          created_at?: string
+          fields_present?: string[]
+          id?: string
+          lead_id: string
+          outcome: string
+        }
+        Update: {
+          action?: string
+          actor_ip?: string | null
+          actor_user_agent?: string | null
+          created_at?: string
+          fields_present?: string[]
+          id?: string
+          lead_id?: string
+          outcome?: string
+        }
+        Relationships: []
+      }
       sponsor_leads: {
         Row: {
           additional_docs: Json
@@ -8782,6 +8815,10 @@ export type Database = {
       _is_blank_text: { Args: { v: string }; Returns: boolean }
       _strip_accents: { Args: { t: string }; Returns: string }
       _sync_in_progress: { Args: never; Returns: boolean }
+      accept_sponsor_lead_contract: {
+        Args: { _lead_id: string; _token: string }
+        Returns: boolean
+      }
       activate_sponsor_with_gate: {
         Args: {
           _override?: boolean

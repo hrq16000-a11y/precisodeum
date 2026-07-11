@@ -1,1 +1,7 @@
-{"anon_callable":[],"public_callable":[]}
+{
+  "anon_callable": [
+    "public.attach_sponsor_lead_docs(uuid,uuid,text,text,boolean,jsonb)",
+    "public.accept_sponsor_lead_contract(uuid,uuid)"
+  ],
+  "public_callable": []
+}
