@@ -5209,9 +5209,43 @@ export type Database = {
         }
         Relationships: []
       }
+      review_admin_notes: {
+        Row: {
+          created_at: string
+          id: string
+          note: string
+          review_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string
+          review_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string
+          review_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_admin_notes_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: true
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
-          admin_note: string
           approval_status: string
           comment: string
           created_at: string
@@ -5225,7 +5259,6 @@ export type Database = {
           user_ref: string | null
         }
         Insert: {
-          admin_note?: string
           approval_status?: string
           comment?: string
           created_at?: string
@@ -5239,7 +5272,6 @@ export type Database = {
           user_ref?: string | null
         }
         Update: {
-          admin_note?: string
           approval_status?: string
           comment?: string
           created_at?: string
@@ -6427,6 +6459,7 @@ export type Database = {
           phone: string
           plan: string
           status: string
+          submission_token: string
           updated_at: string
           user_id: string | null
         }
@@ -6453,6 +6486,7 @@ export type Database = {
           phone: string
           plan?: string
           status?: string
+          submission_token?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -6479,6 +6513,7 @@ export type Database = {
           phone?: string
           plan?: string
           status?: string
+          submission_token?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -9525,6 +9560,17 @@ export type Database = {
         Returns: {
           archived_count: number
         }[]
+      }
+      attach_sponsor_lead_docs: {
+        Args: {
+          _additional_docs?: Json
+          _banner_url?: string
+          _checklist_confirmed?: boolean
+          _cnpj_document_url?: string
+          _lead_id: string
+          _token: string
+        }
+        Returns: boolean
       }
       audit_incomplete_providers_3d: {
         Args: never
