@@ -41,6 +41,7 @@ const CadastroInicialPage = lazy(() => import("@/pages/CadastroInicialPage"));
 const InstitutionalPage = lazy(() => import("@/pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("@/pages/PopularServicePage"));
 const CityPage = lazy(() => import("@/pages/CityPage"));
+const NeighborhoodPage = lazy(() => import("@/pages/NeighborhoodPage"));
 const CitiesListPage = lazy(() => import("@/pages/CitiesListPage"));
 const StateProviderPage = lazy(() => import("@/pages/StateProviderPage"));
 const CityDetailPage = lazy(() => import("@/pages/CityDetailPage"));
@@ -186,6 +187,7 @@ export const publicRoutes = (
     <Route path="/servicos" element={<ServicesPage />} />
     <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />
     <Route path="/cidade/:slug" element={<CityPage />} />
+    <Route path="/cidade/:citySlug/bairro/:neighborhoodSlug" element={<NeighborhoodPage />} />
     <Route path="/cidades" element={<CitiesListPage />} />
     <Route path="/cidades/:estado" element={<StateProviderPage />} />
     <Route path="/cidades/:estado/:cidade" element={<CityDetailPage />} />
