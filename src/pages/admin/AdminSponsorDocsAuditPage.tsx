@@ -90,7 +90,7 @@ const AdminSponsorDocsAuditPage = () => {
   }, [data]);
 
   return (
-    <AdminLayout title="Auditoria · Documentos de patrocinadores">
+    <AdminLayout>
       <div className="space-y-4">
         <Card>
           <CardHeader className="pb-3">
