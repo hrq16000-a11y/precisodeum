@@ -137,7 +137,11 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, leadToken, 
       onOpenChange(false);
     } catch (e: any) {
       const msg = String(e?.message || '').toLowerCase();
-      if (msg.includes('invalid_token')) {
+      if (msg.includes('rate_limited')) {
+        toast.error(
+          'Muitas tentativas em pouco tempo. Aguarde 15 minutos antes de tentar novamente.',
+        );
+      } else if (msg.includes('invalid_token')) {
         toast.error(
           'Sessão inválida ou token não reconhecido. Recomece o cadastro para anexar documentos.',
         );

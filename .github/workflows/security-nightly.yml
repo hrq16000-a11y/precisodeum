@@ -1,0 +1,47 @@
+name: Security Nightly
+
+# Job agendado que reexecuta o linter tax_id + varredura de segurança completa
+# (lint-sensitive-payloads + audit-rpc-grants). Falha o pipeline se qualquer
+# guardrail retornar exit != 0, garantindo que regressões apareçam em até 24h.
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # 06:00 UTC diariamente
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/**"
+      - "supabase/migrations/**"
+      - "supabase/functions/**"
+      - "scripts/lint-tax-id-access.mjs"
+      - "scripts/lint-sensitive-payloads.mjs"
+      - "scripts/audit-rpc-grants.mjs"
+      - ".github/workflows/security-nightly.yml"
+
+jobs:
+  full-security-sweep:
+    name: Sweep completo (tax_id + payloads + rpc grants)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: lint-tax-id-access
+        run: node scripts/lint-tax-id-access.mjs
+
+      - name: lint-sensitive-payloads
+        run: node scripts/lint-sensitive-payloads.mjs
+
+      - name: audit-rpc-grants (fail on new anon/public exposure)
+        run: node scripts/audit-rpc-grants.mjs
+
+      - name: Upload grants report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpc-grants-report-nightly
+          path: .rpc-grants-report.json
+          if-no-files-found: ignore
