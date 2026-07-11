@@ -416,18 +416,19 @@ const Index = () => {
           </Suspense>
         </LazyErrorBoundary>
       )}
-      <DeferredAboveFoldSection minHeight={56}>
-        <Suspense fallback={<div className="h-8" />}><ActiveProvidersCounter /></Suspense>
+      <DeferredAboveFoldSection>
+        <Suspense fallback={null}><ActiveProvidersCounter /></Suspense>
       </DeferredAboveFoldSection>
 
       {/* Mural de Prova Social — Realtime (compacto, ~40% menor) */}
-      <DeferredAboveFoldSection minHeight={120}>
+      <DeferredAboveFoldSection>
         <Suspense fallback={null}>
           <div className="container mx-auto px-4 mt-3 max-w-2xl">
             <CommunityFeed compact />
           </div>
         </Suspense>
       </DeferredAboveFoldSection>
+
 
       {sectionsBeforeCategories.map(renderWrappedSection)}
 
