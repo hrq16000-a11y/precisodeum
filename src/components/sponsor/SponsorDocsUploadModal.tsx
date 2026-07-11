@@ -112,27 +112,36 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, leadToken, 
 
   const handleFinish = async () => {
     if (!canFinish) return;
+    if (!leadToken) {
+      toast.error('Sessão expirada. Recomece o cadastro para anexar documentos.');
+      return;
+    }
     setSubmitting(true);
     try {
-      const updates: Record<string, any> = {
-        checklist_confirmed: true,
-        docs_submitted_at: new Date().toISOString(),
-        additional_docs: [],
-      };
-      if (cnpjDoc.path) updates.cnpj_document_url = cnpjDoc.path;
-      if (banner.path) updates.banner_url = banner.path;
-
-      const { error } = await supabase
-        .from('sponsor_leads' as any)
-        .update(updates)
-        .eq('id', leadId);
+      // Antes: UPDATE direto na tabela (policy anon vulnerável a takeover
+      // dentro de janela de 24h). Agora: RPC SECURITY DEFINER que valida
+      // submission_token contra o lead antes de aplicar as mudanças.
+      const { data, error } = await supabase.rpc('attach_sponsor_lead_docs' as any, {
+        _lead_id: leadId,
+        _token: leadToken,
+        _cnpj_document_url: cnpjDoc.path ?? null,
+        _banner_url: banner.path ?? null,
+        _checklist_confirmed: true,
+        _additional_docs: [],
+      });
       if (error) throw error;
+      if (data !== true) throw new Error('invalid_or_expired_lead');
 
       toast.success('Documentos vinculados ao seu cadastro!');
       onCompleted?.();
       onOpenChange(false);
     } catch (e: any) {
-      toast.error(e?.message || 'Não foi possível vincular os documentos.');
+      const msg = String(e?.message || '').toLowerCase();
+      if (msg.includes('invalid_or_expired_lead') || msg.includes('42501')) {
+        toast.error('Este cadastro expirou (24h). Recomece para anexar documentos.');
+      } else {
+        toast.error(e?.message || 'Não foi possível vincular os documentos.');
+      }
     } finally {
       setSubmitting(false);
     }
