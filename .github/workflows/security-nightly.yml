@@ -1,8 +1,11 @@
 name: Security Nightly
 
-# Job agendado que reexecuta o linter tax_id + varredura de segurança completa
-# (lint-sensitive-payloads + audit-rpc-grants). Falha o pipeline se qualquer
-# guardrail retornar exit != 0, garantindo que regressões apareçam em até 24h.
+# Job agendado que reexecuta os guardrails de segurança e publica artefatos
+# para depuração rápida quando algo falhar.
+#
+# Estrutura: 3 jobs dependentes, cada um com upload de logs. Se um falhar,
+# os subsequentes ainda rodam (needs + if:always) para maximizar o sinal
+# em uma única execução noturna.
 
 on:
   schedule:
@@ -20,28 +23,71 @@ on:
       - ".github/workflows/security-nightly.yml"
 
 jobs:
-  full-security-sweep:
-    name: Sweep completo (tax_id + payloads + rpc grants)
+  tax-id-access:
+    name: 1/3 · lint-tax-id-access
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: lint-tax-id-access
-        run: node scripts/lint-tax-id-access.mjs
-
-      - name: lint-sensitive-payloads
-        run: node scripts/lint-sensitive-payloads.mjs
-
-      - name: audit-rpc-grants (fail on new anon/public exposure)
-        run: node scripts/audit-rpc-grants.mjs
-
-      - name: Upload grants report artifact
+      - name: Run lint-tax-id-access (tee log)
+        run: |
+          set -o pipefail
+          mkdir -p .security-logs
+          node scripts/lint-tax-id-access.mjs 2>&1 | tee .security-logs/tax-id-access.log
+      - name: Upload tax-id-access log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rpc-grants-report-nightly
-          path: .rpc-grants-report.json
-          if-no-files-found: ignore
+          name: security-nightly-tax-id-access
+          path: .security-logs/tax-id-access.log
+          if-no-files-found: warn
+
+  sensitive-payloads:
+    name: 2/3 · lint-sensitive-payloads
+    needs: tax-id-access
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run lint-sensitive-payloads (tee log)
+        run: |
+          set -o pipefail
+          mkdir -p .security-logs
+          node scripts/lint-sensitive-payloads.mjs 2>&1 | tee .security-logs/sensitive-payloads.log
+      - name: Upload sensitive-payloads log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-nightly-sensitive-payloads
+          path: .security-logs/sensitive-payloads.log
+          if-no-files-found: warn
+
+  rpc-grants:
+    name: 3/3 · audit-rpc-grants
+    needs: sensitive-payloads
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run audit-rpc-grants (tee log)
+        run: |
+          set -o pipefail
+          mkdir -p .security-logs
+          node scripts/audit-rpc-grants.mjs 2>&1 | tee .security-logs/rpc-grants.log
+      - name: Upload rpc-grants report + log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-nightly-rpc-grants
+          path: |
+            .security-logs/rpc-grants.log
+            .rpc-grants-report.json
+          if-no-files-found: warn

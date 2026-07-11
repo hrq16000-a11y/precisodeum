@@ -309,11 +309,16 @@ const Index = () => {
       case 'home_featured_ad':
         return <SponsorAdSlot key={slug} locationKey="home-featured" layout="banner" />;
       case 'ad1':
+        // Antes: 3 slots empilhados (AdBanner + AdSlot + SponsorAdSlot) para a
+        // MESMA posição, gerando 2 convites "Sua marca aqui" redundantes quando
+        // o AdBanner já mostrava algo. Agora só o AdBanner ocupa esta faixa; o
+        // AdSlot legado só entra se houver anúncio real (retorna null quando
+        // vazio) e o SponsorAdSlot foi removido daqui para evitar duplicação
+        // visual na home.
         return (
-          <div key={slug}>
+          <div key={slug} className="my-2">
             <AdBanner position="between-sections" className="container mx-auto px-4" />
             <AdSlot slotSlug="home-between" />
-            <SponsorAdSlot locationKey="home-between" layout="banner" />
           </div>
         );
       case 'featured':
