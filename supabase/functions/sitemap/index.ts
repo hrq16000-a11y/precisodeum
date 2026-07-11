@@ -199,6 +199,51 @@ ${entries.join('\n')}
     }
   }
 
+  if (type === 'neighborhoods') {
+    // Sub-sitemap de landings /cidade/:citySlug/bairro/:neighborhoodSlug.
+    // Anti-thin gate (memória Core): mínimo 2 providers aprovados por par
+    // (cidade × bairro). Sem gate, geraria milhares de URLs quase-vazias.
+    const { data: rows } = await supabase
+      .from('providers')
+      .select('city, neighborhood')
+      .eq('status', 'approved')
+      .not('city', 'is', null)
+      .not('neighborhood', 'is', null);
+    const { data: citiesData } = await supabase.from('cities').select('slug, name');
+    const citySlugByNorm = new Map<string, string>();
+    for (const c of citiesData || []) {
+      const norm = String(c.name || c.slug || '').trim().toLowerCase();
+      if (norm) citySlugByNorm.set(norm, c.slug);
+    }
+    const slugify = (s: string) =>
+      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+       .toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const pairCounts = new Map<string, number>(); // `citySlug::hoodSlug`
+    for (const row of rows || []) {
+      const cityNorm = String(row.city || '').trim().toLowerCase();
+      const citySlug = citySlugByNorm.get(cityNorm);
+      if (!citySlug) continue;
+      const hood = String(row.neighborhood || '').trim();
+      if (!hood || hood.length < 3) continue;
+      const hoodSlug = slugify(hood);
+      if (!hoodSlug || hoodSlug === citySlug) continue;
+      const key = `${citySlug}::${hoodSlug}`;
+      pairCounts.set(key, (pairCounts.get(key) || 0) + 1);
+    }
+    const MIN_PROVIDERS = 2; // alinhado com SEO_ROUTE_REGISTRY.neighborhood.minProviders
+    for (const [key, count] of pairCounts) {
+      if (count < MIN_PROVIDERS) continue;
+      const [citySlug, hoodSlug] = key.split('::');
+      urls += entry(
+        siteUrl,
+        `/cidade/${citySlug}/bairro/${hoodSlug}`,
+        today,
+        'monthly',
+        '0.5',
+      );
+    }
+  }
+
   if (type === 'blog') {
     const { data } = await supabase.from('blog_posts').select('slug, updated_at').eq('published', true).is('deleted_at', null);
     for (const post of data || []) {
