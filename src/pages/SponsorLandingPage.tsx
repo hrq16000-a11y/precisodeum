@@ -476,6 +476,7 @@ export default function SponsorLandingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [leadId, setLeadId] = useState<string | null>(null);
+  const [leadToken, setLeadToken] = useState<string | null>(null);
   const [docsModalOpen, setDocsModalOpen] = useState(false);
   const [docsCompleted, setDocsCompleted] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'premium'>('pro');
