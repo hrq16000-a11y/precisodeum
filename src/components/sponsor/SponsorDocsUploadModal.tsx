@@ -137,8 +137,22 @@ export function SponsorDocsUploadModal({ open, onOpenChange, leadId, leadToken, 
       onOpenChange(false);
     } catch (e: any) {
       const msg = String(e?.message || '').toLowerCase();
-      if (msg.includes('invalid_or_expired_lead') || msg.includes('42501')) {
-        toast.error('Este cadastro expirou (24h). Recomece para anexar documentos.');
+      if (msg.includes('invalid_token')) {
+        toast.error(
+          'Sessão inválida ou token não reconhecido. Recomece o cadastro para anexar documentos.',
+        );
+      } else if (msg.includes('expired')) {
+        toast.error(
+          'Esta janela de envio expirou (24h). Refaça o cadastro para gerar um novo link seguro.',
+        );
+      } else if (msg.includes('already_claimed')) {
+        toast.error(
+          'Este cadastro já foi vinculado a uma conta de patrocinador. Faça login para anexar documentos.',
+        );
+      } else if (msg.includes('invalid_arguments')) {
+        toast.error('Dados incompletos. Recarregue a página e tente novamente.');
+      } else if (msg.includes('42501') || msg.includes('permission')) {
+        toast.error('Acesso negado pela política de segurança. Recomece o cadastro.');
       } else {
         toast.error(e?.message || 'Não foi possível vincular os documentos.');
       }
