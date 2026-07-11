@@ -74,26 +74,31 @@ const AdminReviewsPage = () => {
   };
 
   const handleApprove = async (review: any) => {
-    const { error } = await supabase.from('reviews').update({ approval_status: 'approved', admin_note: '' } as any).eq('id', review.id);
-    if (error) toast.error(error.message);
-    else {
-      await logAuditAction({ action: 'approve', resource_type: 'review', resource_id: review.id });
-      toast.success('Avaliação aprovada!');
-      fetchReviews();
-    }
+    const { error } = await supabase.from('reviews').update({ approval_status: 'approved' } as any).eq('id', review.id);
+    if (error) { toast.error(error.message); return; }
+    // Limpa nota interna ao aprovar (best-effort; silencioso se sem permissão).
+    await supabase.from('review_admin_notes' as any).delete().eq('review_id', review.id);
+    await logAuditAction({ action: 'approve', resource_type: 'review', resource_id: review.id });
+    toast.success('Avaliação aprovada!');
+    fetchReviews();
   };
 
   const handleReject = async () => {
     if (!moderateReview) return;
-    const { error } = await supabase.from('reviews').update({ approval_status: 'rejected', admin_note: adminNote } as any).eq('id', moderateReview.id);
-    if (error) toast.error(error.message);
-    else {
-      await logAuditAction({ action: 'reject', resource_type: 'review', resource_id: moderateReview.id, details: { reason: adminNote } });
-      toast.success('Avaliação rejeitada');
-      setModerateReview(null);
-      setAdminNote('');
-      fetchReviews();
-    }
+    const { error } = await supabase.from('reviews').update({ approval_status: 'rejected' } as any).eq('id', moderateReview.id);
+    if (error) { toast.error(error.message); return; }
+    // Grava nota interna em tabela admin-only (fora da leitura pública).
+    const { error: noteErr } = await supabase.from('review_admin_notes' as any).upsert({
+      review_id: moderateReview.id,
+      note: adminNote,
+      updated_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+    } as any, { onConflict: 'review_id' });
+    if (noteErr) toast.error(noteErr.message);
+    await logAuditAction({ action: 'reject', resource_type: 'review', resource_id: moderateReview.id, details: { reason: adminNote } });
+    toast.success('Avaliação rejeitada');
+    setModerateReview(null);
+    setAdminNote('');
+    fetchReviews();
   };
 
   const handleDelete = async (id: string) => {
