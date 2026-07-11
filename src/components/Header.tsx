@@ -4,7 +4,9 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import PrefetchLink from '@/components/PrefetchLink';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, ChevronRight, Radar } from 'lucide-react';
+import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, ChevronRight, Radar, CircleDot } from 'lucide-react';
+import { resolveIcon } from '@/lib/iconLibrary';
+
 import { Switch } from '@/components/ui/switch';
 import { useAdDebug } from '@/contexts/AdDebugContext';
 import { useAuth } from '@/hooks/useAuth';
