@@ -1,19 +1,21 @@
 /**
- * /admin/sponsor-docs-audit — Trilha de auditoria da RPC attach_sponsor_lead_docs
- * e accept_sponsor_lead_contract.
+ * /admin/sponsor-docs-audit — Trilha de auditoria das RPCs seguras
+ * `attach_sponsor_lead_docs` e `accept_sponsor_lead_contract`.
  *
- * Mostra apenas metadados mínimos (lead_id, action, outcome, campos presentes,
- * created_at). NUNCA exibe conteúdo dos arquivos ou dados sensíveis (CNPJ,
- * e-mail, telefone). O acesso à tabela é restrito a admins via RLS
- * (`has_role(auth.uid(), 'admin')`).
+ * REDACTION garantida:
+ *  - O SELECT lista APENAS as 6 colunas de metadado mínimo (whitelist explícita).
+ *  - Colunas potencialmente sensíveis da tabela (actor_ip, actor_user_agent)
+ *    NUNCA são requisitadas do backend, portanto nunca chegam ao browser.
+ *  - Uma checagem de segurança pós-fetch (SENSITIVE_KEYS) remove qualquer chave
+ *    inesperada antes de renderizar, mesmo que a tabela ganhe colunas novas.
  *
- * Filtros:
- *  - lead_id (uuid exato)
- *  - intervalo de datas (from/to)
- *  - outcome (opcional)
+ * Filtros: lead_id (UUID), from/to (datas), outcome.
+ * Paginação: server-side (range) com PAGE_SIZE=25.
+ * Ordenação: created_at | outcome | action (asc/desc), controlada por header.
+ * Acesso: RLS admin-only + AdminGuard na rota.
  */
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,19 +25,48 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { ShieldCheck, Filter, RefreshCw, Loader2 } from 'lucide-react';
+import {
+  ShieldCheck, Filter, RefreshCw, Loader2, ChevronLeft, ChevronRight,
+  ArrowDownUp, ArrowDown, ArrowUp,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 type Outcome = 'success' | 'invalid_token' | 'expired' | 'already_claimed' | 'invalid_arguments' | 'rate_limited';
+type SortField = 'created_at' | 'outcome' | 'action';
+type SortDir = 'asc' | 'desc';
 
-interface AuditRow {
+/**
+ * Whitelist de campos exibíveis. QUALQUER outro campo é removido antes de render.
+ * Testado em src/pages/admin/__tests__/AdminSponsorDocsAuditPage.redaction.test.ts.
+ */
+export const AUDIT_SAFE_FIELDS = ['id', 'lead_id', 'action', 'outcome', 'fields_present', 'created_at'] as const;
+export const SENSITIVE_KEYS = [
+  'actor_ip', 'actor_user_agent', 'metadata', 'payload', 'cnpj', 'cnpj_document_url',
+  'banner_url', 'additional_docs', 'email', 'phone', 'whatsapp', 'tax_id',
+] as const;
+
+export type AuditRow = {
   id: string;
   lead_id: string;
   action: 'attach_docs' | 'contract_accept';
   outcome: Outcome;
   fields_present: string[];
   created_at: string;
+};
+
+/** Remove qualquer chave sensível/inesperada do payload devolvido pelo backend. */
+export function redactAuditRows(rows: unknown[]): AuditRow[] {
+  return (rows ?? []).map((raw) => {
+    const src = (raw ?? {}) as Record<string, unknown>;
+    const clean: Record<string, unknown> = {};
+    for (const key of AUDIT_SAFE_FIELDS) {
+      if (key in src) clean[key] = (src as any)[key];
+    }
+    // Sanity check: nenhum SENSITIVE_KEY deve sobreviver.
+    for (const banned of SENSITIVE_KEYS) delete clean[banned];
+    return clean as unknown as AuditRow;
+  });
 }
 
 const OUTCOME_STYLES: Record<Outcome, string> = {
@@ -47,6 +78,7 @@ const OUTCOME_STYLES: Record<Outcome, string> = {
   rate_limited: 'bg-purple-100 text-purple-800 border-purple-200',
 };
 
+const PAGE_SIZE = 25;
 const isUuid = (v: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.trim());
 
@@ -57,37 +89,55 @@ const AdminSponsorDocsAuditPage = () => {
   const [from, setFrom] = useState(weekAgo.toISOString().slice(0, 10));
   const [to, setTo] = useState(today.toISOString().slice(0, 10));
   const [outcome, setOutcome] = useState<Outcome | 'all'>('all');
+  const [page, setPage] = useState(0);
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const filters = useMemo(
-    () => ({ leadId: leadId.trim(), from, to, outcome }),
-    [leadId, from, to, outcome],
+    () => ({ leadId: leadId.trim(), from, to, outcome, page, sortField, sortDir }),
+    [leadId, from, to, outcome, page, sortField, sortDir],
   );
 
   const { data, isLoading, isFetching, refetch, error } = useQuery({
     queryKey: ['admin-sponsor-docs-audit', filters],
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
     queryFn: async () => {
+      const start = filters.page * PAGE_SIZE;
+      const end = start + PAGE_SIZE - 1;
       let q = supabase
         .from('sponsor_lead_docs_audit' as any)
-        .select('id, lead_id, action, outcome, fields_present, created_at')
-        .order('created_at', { ascending: false })
-        .limit(500);
+        .select(AUDIT_SAFE_FIELDS.join(','), { count: 'exact' })
+        .order(filters.sortField, { ascending: filters.sortDir === 'asc' })
+        .range(start, end);
       if (filters.leadId && isUuid(filters.leadId)) q = q.eq('lead_id', filters.leadId);
       if (filters.from) q = q.gte('created_at', `${filters.from}T00:00:00Z`);
       if (filters.to) q = q.lte('created_at', `${filters.to}T23:59:59Z`);
       if (filters.outcome !== 'all') q = q.eq('outcome', filters.outcome);
-      const { data: rows, error: err } = await q;
+      const { data: rows, error: err, count } = await q;
       if (err) throw err;
-      return (rows ?? []) as unknown as AuditRow[];
+      return { rows: redactAuditRows((rows ?? []) as unknown[]), count: count ?? 0 };
     },
-    staleTime: 30_000,
   });
 
+  const rows = data?.rows ?? [];
+  const total = data?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   const stats = useMemo(() => {
-    const rows = data ?? [];
     const acc: Record<string, number> = { total: rows.length };
     for (const r of rows) acc[r.outcome] = (acc[r.outcome] ?? 0) + 1;
     return acc;
-  }, [data]);
+  }, [rows]);
+
+  const toggleSort = (f: SortField) => {
+    setPage(0);
+    if (f === sortField) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortField(f); setSortDir('desc'); }
+  };
+  const SortIcon = ({ f }: { f: SortField }) =>
+    sortField !== f ? <ArrowDownUp className="h-3 w-3 opacity-40" />
+      : sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
 
   return (
     <AdminLayout>
@@ -103,7 +153,8 @@ const AdminSponsorDocsAuditPage = () => {
             <p className="text-xs text-muted-foreground">
               Apenas metadados são exibidos: lead_id, ação, resultado, quais campos foram enviados e horário.
               Conteúdo dos arquivos, CNPJ, e-mail, telefone e demais dados sensíveis <strong>nunca</strong>{' '}
-              aparecem aqui. O acesso é restrito por RLS a administradores.
+              aparecem aqui — a UI aplica whitelist explícita antes de renderizar.
+              O acesso à tabela é restrito por RLS a administradores.
             </p>
           </CardContent>
         </Card>
@@ -120,7 +171,7 @@ const AdminSponsorDocsAuditPage = () => {
               <Input
                 id="leadId"
                 value={leadId}
-                onChange={(e) => setLeadId(e.target.value)}
+                onChange={(e) => { setLeadId(e.target.value); setPage(0); }}
                 placeholder="00000000-0000-0000-0000-000000000000"
                 data-testid="filter-lead-id"
               />
@@ -130,15 +181,15 @@ const AdminSponsorDocsAuditPage = () => {
             </div>
             <div className="space-y-1">
               <Label htmlFor="from" className="text-xs">De</Label>
-              <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} data-testid="filter-from" />
+              <Input id="from" type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(0); }} data-testid="filter-from" />
             </div>
             <div className="space-y-1">
               <Label htmlFor="to" className="text-xs">Até</Label>
-              <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} data-testid="filter-to" />
+              <Input id="to" type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(0); }} data-testid="filter-to" />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Resultado</Label>
-              <Select value={outcome} onValueChange={(v) => setOutcome(v as any)}>
+              <Select value={outcome} onValueChange={(v) => { setOutcome(v as any); setPage(0); }}>
                 <SelectTrigger data-testid="filter-outcome"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
@@ -164,7 +215,7 @@ const AdminSponsorDocsAuditPage = () => {
           {(['total', 'success', 'invalid_token', 'expired', 'already_claimed', 'rate_limited'] as const).map((k) => (
             <Card key={k}>
               <CardContent className="py-3">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{k}</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{k === 'total' ? 'nesta página' : k}</p>
                 <p className="text-lg font-semibold">{stats[k] ?? 0}</p>
               </CardContent>
             </Card>
@@ -179,7 +230,7 @@ const AdminSponsorDocsAuditPage = () => {
               <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center">
                 <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
               </div>
-            ) : (data?.length ?? 0) === 0 ? (
+            ) : rows.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">
                 Nenhum registro no intervalo/lead selecionado.
               </p>
@@ -188,15 +239,27 @@ const AdminSponsorDocsAuditPage = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Horário</TableHead>
-                      <TableHead>Ação</TableHead>
-                      <TableHead>Resultado</TableHead>
+                      <TableHead>
+                        <button className="inline-flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort('created_at')} data-testid="sort-created">
+                          Horário <SortIcon f="created_at" />
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button className="inline-flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort('action')} data-testid="sort-action">
+                          Ação <SortIcon f="action" />
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button className="inline-flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort('outcome')} data-testid="sort-outcome">
+                          Resultado <SortIcon f="outcome" />
+                        </button>
+                      </TableHead>
                       <TableHead>Lead ID</TableHead>
                       <TableHead>Campos enviados</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(data ?? []).map((row) => (
+                    {rows.map((row) => (
                       <TableRow key={row.id} data-testid="audit-row">
                         <TableCell className="text-xs whitespace-nowrap">
                           {format(new Date(row.created_at), "dd/MM/yy HH:mm:ss", { locale: ptBR })}
@@ -219,9 +282,28 @@ const AdminSponsorDocsAuditPage = () => {
                     ))}
                   </TableBody>
                 </Table>
-                <p className="text-[11px] text-muted-foreground mt-2">
-                  Mostrando até 500 registros ordenados por horário decrescente.
-                </p>
+
+                <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                  <span>
+                    Página {page + 1} de {totalPages} · {total} registro(s)
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline" size="sm" data-testid="page-prev"
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      disabled={page === 0 || isFetching}
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" /> Anterior
+                    </Button>
+                    <Button
+                      variant="outline" size="sm" data-testid="page-next"
+                      onClick={() => setPage((p) => (p + 1 < totalPages ? p + 1 : p))}
+                      disabled={page + 1 >= totalPages || isFetching}
+                    >
+                      Próxima <ChevronRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
