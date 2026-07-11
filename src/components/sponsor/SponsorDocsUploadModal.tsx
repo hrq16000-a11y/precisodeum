@@ -12,6 +12,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   leadId: string;
+  /** Token secreto retornado no insert do lead. Necessário para RPC segura de anexo. */
+  leadToken?: string | null;
   onCompleted?: () => void;
 }
 
