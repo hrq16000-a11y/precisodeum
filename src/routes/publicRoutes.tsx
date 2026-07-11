@@ -187,6 +187,7 @@ export const publicRoutes = (
     <Route path="/servicos" element={<ServicesPage />} />
     <Route path="/servico-detalhe/:id" element={<ServiceDetailPage />} />
     <Route path="/cidade/:slug" element={<CityPage />} />
+    <Route path="/cidade/:citySlug/bairro/:neighborhoodSlug" element={<NeighborhoodPage />} />
     <Route path="/cidades" element={<CitiesListPage />} />
     <Route path="/cidades/:estado" element={<StateProviderPage />} />
     <Route path="/cidades/:estado/:cidade" element={<CityDetailPage />} />
