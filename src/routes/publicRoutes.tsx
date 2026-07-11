@@ -41,6 +41,7 @@ const CadastroInicialPage = lazy(() => import("@/pages/CadastroInicialPage"));
 const InstitutionalPage = lazy(() => import("@/pages/InstitutionalPage"));
 const PopularServicePage = lazy(() => import("@/pages/PopularServicePage"));
 const CityPage = lazy(() => import("@/pages/CityPage"));
+const NeighborhoodPage = lazy(() => import("@/pages/NeighborhoodPage"));
 const CitiesListPage = lazy(() => import("@/pages/CitiesListPage"));
 const StateProviderPage = lazy(() => import("@/pages/StateProviderPage"));
 const CityDetailPage = lazy(() => import("@/pages/CityDetailPage"));
