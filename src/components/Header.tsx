@@ -77,7 +77,7 @@ const CompactSearch = forwardRef<HTMLFormElement, CompactSearchProps>(({ onSubmi
   };
 
   return (
-    <form ref={ref} onSubmit={handleSubmit} className="relative hidden md:block">
+    <form ref={ref} onSubmit={handleSubmit} className="relative hidden lg:block">
       <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/70" />
       <Input
         ref={inputRef}
@@ -267,7 +267,7 @@ const Header = () => {
         </div>
 
         {/* Center: nav links (hidden when compact, replaced by search) */}
-        <nav className={`hidden items-center gap-5 md:flex transition-all duration-300 ${
+        <nav className={`hidden items-center gap-5 lg:flex transition-all duration-300 ${
           isCompact ? 'gap-3' : 'gap-5'
         }`}>
           {isCompact ? (
@@ -293,7 +293,7 @@ const Header = () => {
         </nav>
 
         {/* Right: actions (desktop) */}
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           {!isCompact && searchOpen && (
             <form
               onSubmit={handleSearchSubmit}
@@ -336,7 +336,7 @@ const Header = () => {
         </div>
 
         {/* Mobile right actions */}
-        <div className="flex items-center gap-1.5 md:hidden h-[28px] min-w-[28px]">
+        <div className="flex items-center gap-1.5 lg:hidden h-[28px] min-w-[28px]">
           {isCompact ? (
             <>
               {/* Compact search on mobile */}
@@ -369,7 +369,7 @@ const Header = () => {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="overflow-hidden border-t border-border glass-strong md:hidden animate-scale-in">
+        <div className="overflow-hidden border-t border-border glass-strong lg:hidden animate-scale-in">
           <nav className="flex flex-col gap-0.5 p-3">
             {mobileNavLinks.filter(i => !i.parent_id).map((item, index) => {
               const active = isActiveLink(item.url);
