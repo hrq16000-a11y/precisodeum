@@ -4,7 +4,9 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import PrefetchLink from '@/components/PrefetchLink';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, ChevronRight, Radar } from 'lucide-react';
+import { Menu, X, Search, LogOut, LayoutDashboard, Users, MapPin, Thermometer, ChevronRight, Radar, CircleDot } from 'lucide-react';
+import { resolveIcon } from '@/lib/iconLibrary';
+
 import { Switch } from '@/components/ui/switch';
 import { useAdDebug } from '@/contexts/AdDebugContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -350,10 +352,12 @@ const Header = () => {
                 />
               </form>
               {/* Hide geo on very narrow screens to prevent overflow */}
-              <GeoBadge city={geoCity} temp={geoTemp} compact className="hidden xs:inline-flex text-[10px] px-1.5 py-0.5 shrink-0" />
+              {/* Só mostra no mobile bem estreito — o badge cheio à esquerda cobre sm+ */}
+              <GeoBadge city={geoCity} temp={geoTemp} compact className="inline-flex sm:hidden text-[10px] px-1.5 py-0.5 shrink-0" />
             </>
           ) : (
-            <GeoBadge city={geoCity} temp={geoTemp} compact className="hidden xs:inline-flex text-[10px] px-1.5 py-0.5 shrink-0 max-w-[110px] truncate" />
+            <GeoBadge city={geoCity} temp={geoTemp} compact className="inline-flex sm:hidden text-[10px] px-1.5 py-0.5 shrink-0 max-w-[110px] truncate" />
+
           )}
           {deferredReady && <NotificationBell />}
           <button
@@ -373,40 +377,43 @@ const Header = () => {
           <nav className="flex flex-col gap-0.5 p-3">
             {mobileNavLinks.filter(i => !i.parent_id).map((item, index) => {
               const active = isActiveLink(item.url);
+              const ItemIcon = resolveIcon(item.icon) || CircleDot;
+              const baseCls = `group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:translate-x-0.5 ${active ? 'bg-accent/10 text-accent shadow-sm' : 'text-foreground hover:bg-muted'}`;
+              const iconWrapCls = `flex h-7 w-7 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110 ${active ? 'bg-accent/15 text-accent' : 'bg-muted/60 text-muted-foreground group-hover:bg-accent/10 group-hover:text-accent'}`;
+              const content = (
+                <>
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <span className={iconWrapCls}>
+                      <ItemIcon className="h-3.5 w-3.5" strokeWidth={2} />
+                    </span>
+                    <span className="truncate">{item.label}</span>
+                  </span>
+                  {active ? (
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-accent" />
+                  )}
+                </>
+              );
               return (
                 <div
                   key={item.id}
                   className="animate-fade-in"
-                  style={{ animationDelay: `${index * 40}ms`, animationFillMode: 'both' }}
+                  style={{ animationDelay: `${index * 35}ms`, animationFillMode: 'both' }}
                 >
                   {item.open_in_new_tab || item.url?.startsWith('http') ? (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${active ? 'bg-accent/10 text-accent' : 'text-foreground hover:bg-muted'}`}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <span className="flex items-center gap-2">{item.label}</span>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
+                    <a href={item.url} target="_blank" rel="noopener noreferrer" className={baseCls} onClick={() => setMobileOpen(false)}>
+                      {content}
                     </a>
                   ) : (
-                    <Link
-                      to={item.url}
-                      className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${active ? 'bg-accent/10 text-accent' : 'text-foreground hover:bg-muted'}`}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <span className="flex items-center gap-2">{item.label}</span>
-                      {active ? (
-                        <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                      ) : (
-                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
-                      )}
+                    <Link to={item.url} className={baseCls} onClick={() => setMobileOpen(false)}>
+                      {content}
                     </Link>
                   )}
                 </div>
               );
             })}
+
             {whatsappGroupUrl && (
               <a
                 href={whatsappGroupUrl}

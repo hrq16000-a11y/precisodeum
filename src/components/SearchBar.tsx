@@ -243,22 +243,23 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
 
   const detectedLocationChip = detectedLocationLabel ? (
     <div
-      className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-[11px] font-medium text-foreground shadow-sm"
+      className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/60 bg-background/95 px-3 py-1 text-[11px] font-medium text-foreground shadow-lg backdrop-blur-md"
       role="status"
       aria-live="polite"
       data-testid="search-detected-location"
     >
       <MapPin className="h-3 w-3 shrink-0 text-primary" aria-hidden />
       <span className="truncate">
-        Buscando perto de <strong className="font-semibold">{detectedLocationLabel}</strong>
+        Buscando perto de <strong className="font-semibold text-primary">{detectedLocationLabel}</strong>
       </span>
       {detectedLocationSource && (
-        <span className="shrink-0 rounded-full bg-background/80 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+        <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
           via {detectedLocationSource}
         </span>
       )}
     </div>
   ) : null;
+
 
   const suggestionsDropdown = isOpen && filteredSuggestions.length > 0 ? (
     <div
