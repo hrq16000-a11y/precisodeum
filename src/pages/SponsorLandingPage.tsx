@@ -640,6 +640,7 @@ export default function SponsorLandingPage() {
             open={docsModalOpen}
             onOpenChange={setDocsModalOpen}
             leadId={leadId}
+            leadToken={leadToken}
             onCompleted={() => setDocsCompleted(true)}
           />
         )}
