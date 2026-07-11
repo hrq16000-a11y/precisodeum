@@ -350,10 +350,12 @@ const Header = () => {
                 />
               </form>
               {/* Hide geo on very narrow screens to prevent overflow */}
-              <GeoBadge city={geoCity} temp={geoTemp} compact className="hidden xs:inline-flex text-[10px] px-1.5 py-0.5 shrink-0" />
+              {/* Só mostra no mobile bem estreito — o badge cheio à esquerda cobre sm+ */}
+              <GeoBadge city={geoCity} temp={geoTemp} compact className="inline-flex sm:hidden text-[10px] px-1.5 py-0.5 shrink-0" />
             </>
           ) : (
-            <GeoBadge city={geoCity} temp={geoTemp} compact className="hidden xs:inline-flex text-[10px] px-1.5 py-0.5 shrink-0 max-w-[110px] truncate" />
+            <GeoBadge city={geoCity} temp={geoTemp} compact className="inline-flex sm:hidden text-[10px] px-1.5 py-0.5 shrink-0 max-w-[110px] truncate" />
+
           )}
           {deferredReady && <NotificationBell />}
           <button
