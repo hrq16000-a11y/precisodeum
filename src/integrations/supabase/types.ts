@@ -6748,6 +6748,42 @@ export type Database = {
           },
         ]
       }
+      sponsor_pii_access_log: {
+        Row: {
+          accessed_by: string | null
+          accessed_columns: string[]
+          created_at: string
+          id: string
+          ip_address: string | null
+          reason: string | null
+          source: string
+          sponsor_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_by?: string | null
+          accessed_columns?: string[]
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+          source?: string
+          sponsor_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_by?: string | null
+          accessed_columns?: string[]
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+          source?: string
+          sponsor_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       sponsor_plans: {
         Row: {
           active: boolean | null
@@ -10595,6 +10631,15 @@ export type Database = {
           _lead_id: string
           _metadata?: Json
           _reason: string
+        }
+        Returns: undefined
+      }
+      log_sponsor_pii_access: {
+        Args: {
+          _accessed_columns?: string[]
+          _reason?: string
+          _source?: string
+          _sponsor_id: string
         }
         Returns: undefined
       }
