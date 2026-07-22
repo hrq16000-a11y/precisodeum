@@ -4,7 +4,12 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import WizardShell from '@/components/onboarding/wizard/WizardShell';
-import { isTabLeader } from '@/components/onboarding/wizard/phases/v2/crossTabSync';
+import {
+  detectConcurrentTab,
+  isTabLeader,
+  startTabHeartbeat,
+  startTabLeaderElection,
+} from '@/components/onboarding/wizard/phases/v2/crossTabSync';
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 import { getOnboardingReviewSection, isOnboardingReviewMode } from '@/lib/onboardingAccess';
 
