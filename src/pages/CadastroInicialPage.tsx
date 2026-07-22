@@ -4,7 +4,12 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import WizardShell from '@/components/onboarding/wizard/WizardShell';
-import { isTabLeader } from '@/components/onboarding/wizard/phases/v2/crossTabSync';
+import {
+  detectConcurrentTab,
+  isTabLeader,
+  startTabHeartbeat,
+  startTabLeaderElection,
+} from '@/components/onboarding/wizard/phases/v2/crossTabSync';
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 import { getOnboardingReviewSection, isOnboardingReviewMode } from '@/lib/onboardingAccess';
 
@@ -219,14 +224,61 @@ export default function CadastroInicialPage() {
   const [selfHealFailed, setSelfHealFailed] = useState(false);
   const [providerStatus, setProviderStatus] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
-  // Prompt 5 cont. — Parte C: banner para aba não-líder.
-  const [isLeader, setIsLeader] = useState<boolean>(() => isTabLeader());
+  // ─────────────────────────────────────────────────────────────────────
+  // Aviso de edição concorrente entre abas.
+  //
+  // Regra correta: só avisar quando OUTRA aba estiver ativamente batendo
+  // heartbeat recente (<7s). Antes usávamos `isTabLeader()`, que retorna
+  // `false` quando NÃO existe registro de líder ainda — o que acontece
+  // no boot da única aba aberta, antes do WizardShell montar e chamar
+  // `startTabLeaderElection`. Isso gerava falso positivo persistente
+  // com toast `duration: Infinity`.
+  //
+  // Correção definitiva:
+  //  1. Iniciar heartbeat + leader election no PRÓPRIO page (garante que
+  //     a chave de liderança existe assim que o usuário chega, sem
+  //     depender do ciclo de montagem do shell).
+  //  2. Mostrar o aviso somente quando `detectConcurrentTab()` for true
+  //     (outra aba com heartbeat fresco) E esta aba não for líder.
+  //  3. Aplicar grace period no boot (2s) para evitar flash durante a
+  //     primeira escrita de heartbeat.
+  // ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const id = setInterval(() => setIsLeader(isTabLeader()), 5000);
-    return () => clearInterval(id);
+    const stopHeartbeat = startTabHeartbeat();
+    const stopLeader = startTabLeaderElection();
+    return () => {
+      stopHeartbeat();
+      stopLeader();
+    };
   }, []);
+
+  const [showConcurrentWarning, setShowConcurrentWarning] = useState(false);
   useEffect(() => {
-    if (!isLeader) {
+    let mounted = true;
+    // Grace period: dá 2s para heartbeat/leader estabilizarem antes de avaliar.
+    const graceTimer = window.setTimeout(() => {
+      if (!mounted) return;
+      const evaluate = () => {
+        if (!mounted) return;
+        const concurrent = detectConcurrentTab();
+        const leader = isTabLeader();
+        setShowConcurrentWarning(concurrent && !leader);
+      };
+      evaluate();
+      const id = window.setInterval(evaluate, 3000);
+      // Guarda o interval para cleanup via ref-like closure
+      (graceTimer as any)._interval = id;
+    }, 2000);
+    return () => {
+      mounted = false;
+      const id = (graceTimer as any)._interval as number | undefined;
+      if (id) window.clearInterval(id);
+      window.clearTimeout(graceTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showConcurrentWarning) {
       toast.warning('Você está editando em outra aba. Feche esta para continuar aqui.', {
         id: 'non-leader-warning',
         duration: Infinity,
@@ -234,7 +286,7 @@ export default function CadastroInicialPage() {
     } else {
       toast.dismiss('non-leader-warning');
     }
-  }, [isLeader]);
+  }, [showConcurrentWarning]);
   useEffect(() => {
     if (loading || !authSettled || !user) return;
     if (profile) {
