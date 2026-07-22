@@ -74,32 +74,18 @@ export function useWizardDuplicateCheck(): UseWizardDuplicateCheckResult {
       }
       setChecking((c) => ({ ...c, tax_id: true }));
       try {
-        const last4 = clean.slice(-4);
-        const kind: 'cpf' | 'cnpj' = clean.length === 11 ? 'cpf' : 'cnpj';
-
-        // Estratégia em 2 passos para reduzir falso positivo:
-        //  1) Filtra publicamente por tax_id_last4 + tax_id_kind (campos não-sensíveis,
-        //     legíveis via RLS pública). Isso retorna candidatos plausíveis.
-        //  2) Se houver candidatos, tenta confirmar com tax_id direto. RLS pode
-        //     restringir esse campo — nesse caso, tratamos last4+kind como sinal
-        //     suficiente (já é uma colisão estatisticamente improvável).
-        let candidatesQuery = supabase
-          .from('profiles')
-          .select('id, tax_id', { count: 'exact' })
-          .eq('tax_id_last4', last4)
-          .eq('tax_id_kind', kind)
-          .limit(10);
-        if (ignoreUserId) candidatesQuery = candidatesQuery.neq('id', ignoreUserId);
-
-        const { data: candidates, error } = await candidatesQuery;
-        if (error || !candidates || candidates.length === 0) {
+        // Delega ao RPC SECURITY DEFINER `check_tax_id_duplicate`, que combina
+        // tax_id_last4 + tax_id_kind e, quando possível, confirma via tax_id
+        // exato — sem expor o documento bruto ao cliente.
+        const { data, error } = await supabase.rpc('check_tax_id_duplicate', {
+          _digits: clean,
+          _ignore_user_id: ignoreUserId ?? null,
+        });
+        if (error) {
           setDuplicates((d) => ({ ...d, tax_id: false }));
           return false;
         }
-
-        // Confirmação exata quando RLS permite ler tax_id; senão usa last4+kind.
-        const exact = candidates.some((c) => (c as { tax_id?: string | null }).tax_id === clean);
-        const dup = exact || candidates.length > 0;
+        const dup = Boolean(data);
         setDuplicates((d) => ({ ...d, tax_id: dup }));
         return dup;
       } finally {
@@ -108,6 +94,7 @@ export function useWizardDuplicateCheck(): UseWizardDuplicateCheckResult {
     },
     [],
   );
+
 
   const reset = (field?: DuplicateField) => {
     if (field) {

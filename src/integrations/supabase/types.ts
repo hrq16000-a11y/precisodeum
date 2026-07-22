@@ -9757,6 +9757,10 @@ export type Database = {
             }
             Returns: Json
           }
+      check_tax_id_duplicate: {
+        Args: { _digits: string; _ignore_user_id?: string }
+        Returns: boolean
+      }
       claim_sponsor_lead: { Args: { _lead_id: string }; Returns: Json }
       close_presence_session: { Args: never; Returns: Json }
       compare_onboarding_release_snapshots: {
