@@ -57,10 +57,31 @@ jobs:
             if curl -sf http://localhost:4173 >/dev/null; then break; fi
             sleep 1
           done
-      - name: Run signup E2E
+      - name: Run signup E2E suite
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:4173
-        run: bunx playwright test tests/e2e/signup-to-dashboard-tablet.spec.ts --reporter=line
+        run: |
+          bunx playwright test \
+            tests/e2e/signup-to-dashboard-tablet.spec.ts \
+            tests/e2e/signup-duplicate-handling.spec.ts \
+            tests/e2e/signup-logout-login.spec.ts \
+            tests/e2e/signup-network-recovery.spec.ts \
+            --reporter=line
+      - name: Cleanup residual E2E users (best-effort)
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::warning::Sem SUPABASE_URL/CRON_SECRET — cleanup pulado (o cron nightly limpa depois)."
+            exit 0
+          fi
+          curl -sS -X POST \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -H "content-type: application/json" \
+            "$SUPABASE_URL/functions/v1/cleanup-e2e-test-users" \
+            -d '{}' || echo "::warning::Cleanup call falhou (não bloqueante)."
       - name: Stop preview
         if: always()
         run: kill "$(cat preview.pid)" || true
