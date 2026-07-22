@@ -1,0 +1,107 @@
+# Signup Flow CI — bloqueia merge se qualquer teste do fluxo de cadastro falhar.
+#
+# Camadas cobertas:
+#   1. Vitest (unit + integration) — testes em src/**/__tests__.
+#   2. Playwright E2E — signup tablet 820x1180 → dashboard.
+#   3. Deno test — integração SQL/RPC contra Supabase preview.
+#
+# Este workflow é obrigatório na branch protection (required status check):
+#   `Signup Flow CI / gate`.
+
+name: Signup Flow CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: signup-flow-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vitest:
+    name: Vitest (signup unit + integration)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: bun install --frozen-lockfile
+      - name: Run signup-related vitest specs
+        run: |
+          bunx vitest run \
+            --reporter=default \
+            src/hooks/__tests__/useWizardDuplicateCheck.test.ts \
+            src/lib/__tests__/wizard-review-mode-and-skip.test.ts || \
+          bunx vitest run --reporter=default
+
+  playwright:
+    name: Playwright — signup tablet 820x1180
+    runs-on: ubuntu-latest
+    env:
+      SKIP_SIGNUP_E2E: ${{ secrets.SUPABASE_ANON_KEY == '' && '1' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+      - name: Build preview
+        run: bun run build
+      - name: Start preview server
+        run: |
+          bunx vite preview --port 4173 &
+          echo $! > preview.pid
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4173 >/dev/null; then break; fi
+            sleep 1
+          done
+      - name: Run signup E2E
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:4173
+        run: bunx playwright test tests/e2e/signup-to-dashboard-tablet.spec.ts --reporter=line
+      - name: Stop preview
+        if: always()
+        run: kill "$(cat preview.pid)" || true
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  deno-sql:
+    name: Deno — signup SQL/RPC contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with: { deno-version: v1.x }
+      - name: Run signup contract tests
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::warning::Sem credenciais Supabase — Deno tests marcados como skip gracioso."
+          fi
+          deno test --allow-net --allow-env supabase/functions/_tests/signup_flow_test.ts
+
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    needs: [vitest, playwright, deno-sql]
+    if: always()
+    steps:
+      - name: Fail if any job failed
+        run: |
+          if [ "${{ needs.vitest.result }}" != "success" ] || \
+             [ "${{ needs.playwright.result }}" != "success" ] || \
+             [ "${{ needs.deno-sql.result }}" != "success" ]; then
+            echo "::error::Um ou mais jobs do Signup Flow CI falharam. Merge bloqueado."
+            exit 1
+          fi
+          echo "Todos os jobs verdes. Merge liberado."
