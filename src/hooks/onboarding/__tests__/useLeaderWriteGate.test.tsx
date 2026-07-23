@@ -28,6 +28,9 @@ beforeEach(() => {
   sessionStorage.clear();
   __resetTabLeader();
   (trackOnboardingEvent as any).mockClear();
+  // jsdom pode reportar navigation.type='reload', o que faria
+  // `detectConcurrentTab` cair no anti-falso-positivo. Neutralizamos.
+  vi.spyOn(performance, 'getEntriesByType').mockReturnValue([]);
   vi.useFakeTimers({ now: new Date('2026-07-23T12:00:00Z') });
 });
 
