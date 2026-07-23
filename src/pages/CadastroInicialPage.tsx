@@ -12,6 +12,7 @@ import {
 } from '@/components/onboarding/wizard/phases/v2/crossTabSync';
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 import { getOnboardingReviewSection, isOnboardingReviewMode } from '@/lib/onboardingAccess';
+import { ctDebug } from '@/lib/crossTabDebug';
 
 /**
  * /cadastro-inicial — porta única do onboarding (V3 + V2 fundidos).
@@ -253,20 +254,22 @@ export default function CadastroInicialPage() {
   }, []);
 
   const [showConcurrentWarning, setShowConcurrentWarning] = useState(false);
+  const [, setIsLeaderState] = useState(false);
   useEffect(() => {
     let mounted = true;
-    // Grace period: dá 2s para heartbeat/leader estabilizarem antes de avaliar.
     const graceTimer = window.setTimeout(() => {
       if (!mounted) return;
       const evaluate = () => {
         if (!mounted) return;
         const concurrent = detectConcurrentTab();
         const leader = isTabLeader();
+        setIsLeaderState(leader);
         setShowConcurrentWarning(concurrent && !leader);
+        ctDebug('page', 'evaluate', { leader, concurrent });
       };
+
       evaluate();
       const id = window.setInterval(evaluate, 3000);
-      // Guarda o interval para cleanup via ref-like closure
       (graceTimer as any)._interval = id;
     }, 2000);
     return () => {
