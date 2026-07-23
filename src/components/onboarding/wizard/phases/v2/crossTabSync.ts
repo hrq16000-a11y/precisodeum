@@ -127,6 +127,15 @@ export function detectConcurrentTab(): boolean {
     const nav = (performance.getEntriesByType?.('navigation') || [])[0] as PerformanceNavigationTiming | undefined;
     if (nav && nav.type === 'reload') return false;
   } catch { /* fail-soft */ }
+  // Confirmação dupla: só há concorrência real se ALÉM do heartbeat de outra
+  // aba, também existir um registro de líder FRESCO pertencente a outra aba.
+  // Como reivindicamos liderança imediatamente no boot, uma aba única sempre
+  // é dona do LEADER_KEY — isso elimina o falso positivo em aba única e no
+  // pós-fechamento de aba anterior (heartbeat órfão sem líder pareado).
+  const leader = readLeader();
+  if (!leader) return false;
+  if (leader.tabId === myId) return false;
+  if (Date.now() - leader.ts > LEADER_STALE_MS) return false;
   return true;
 }
 
