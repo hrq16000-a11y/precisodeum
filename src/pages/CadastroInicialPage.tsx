@@ -12,6 +12,7 @@ import {
 } from '@/components/onboarding/wizard/phases/v2/crossTabSync';
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 import { getOnboardingReviewSection, isOnboardingReviewMode } from '@/lib/onboardingAccess';
+import { ctDebug } from '@/lib/crossTabDebug';
 
 /**
  * /cadastro-inicial — porta única do onboarding (V3 + V2 fundidos).
@@ -264,12 +265,9 @@ export default function CadastroInicialPage() {
         const leader = isTabLeader();
         setIsLeaderState(leader);
         setShowConcurrentWarning(concurrent && !leader);
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const { ctDebug } = require('@/lib/crossTabDebug');
-          ctDebug('page', 'evaluate', { leader, concurrent });
-        } catch { /* noop */ }
+        ctDebug('page', 'evaluate', { leader, concurrent });
       };
+
       evaluate();
       const id = window.setInterval(evaluate, 3000);
       (graceTimer as any)._interval = id;
