@@ -6,6 +6,8 @@
  * usa mergePreservingTouched para nunca sobrescrever edições da sessão.
  */
 
+import { ctDebug } from '@/lib/crossTabDebug';
+
 const CHANNEL_NAME = 'onboarding-v2-draft';
 export const DRAFT_CHANGE_EVENT = 'onboarding-v2:draft-changed';
 
