@@ -64,16 +64,30 @@ describe('useLeaderWriteGate', () => {
     expect(localStorage.getItem(LEADER_KEY)).toBeNull();
   });
 
-  it('detecta aba concorrente pré-existente e emite telemetria one-shot', () => {
-    // Simula outra aba com heartbeat fresco antes desta montar.
-    localStorage.setItem(
-      HEARTBEAT_KEY,
-      JSON.stringify({ tabId: 'ghost-tab', updatedAt: Date.now() - 500 }),
-    );
-    localStorage.setItem(
-      LEADER_KEY,
-      JSON.stringify({ tabId: 'ghost-tab', ts: Date.now() - 500 }),
-    );
+  it('detecta aba concorrente que escreve APÓS o boot (race window)', () => {
+    // Simula: outra aba escreve seu heartbeat entre `startTabHeartbeat` e
+    // `detectConcurrentTab` do hook. Para isso, aproveitamos que
+    // `startTabHeartbeat` escreve nossa chave — depois substituímos por
+    // uma chave "fresca" de outro tabId no instante entre os dois writes.
+    //
+    // Implementação: spy em `Storage.setItem` que, na PRIMEIRA escrita em
+    // HEARTBEAT_KEY, adia via microtask uma sobreposição por outro tabId.
+    const originalSet = Storage.prototype.setItem;
+    let overwritten = false;
+    const spy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(function (this: Storage, key: string, value: string) {
+        originalSet.call(this, key, value);
+        if (!overwritten && key === HEARTBEAT_KEY) {
+          overwritten = true;
+          // Simula outra aba escrevendo LOGO em seguida, dentro da mesma tick.
+          originalSet.call(
+            this,
+            HEARTBEAT_KEY,
+            JSON.stringify({ tabId: 'racing-tab', updatedAt: Date.now() }),
+          );
+        }
+      });
 
     const { unmount } = renderHook(() =>
       useLeaderWriteGate({ getCurrentState: () => stateStub('phase2_details'), userId: 'user-1' }),
@@ -88,6 +102,7 @@ describe('useLeaderWriteGate', () => {
       meta: { kind: 'concurrent_tab_detected' },
     });
 
+    spy.mockRestore();
     unmount();
   });
 
