@@ -164,4 +164,57 @@ test.describe('/cadastro-inicial · coordenação multi-aba', () => {
     // reassumiu e o toast some (ou nunca aparece).
     await expect(page.getByText(WARNING_TEXT)).toHaveCount(0, { timeout: 3000 });
   });
+
+  test('duas abas abertas simultaneamente: apenas UM líder no localStorage compartilhado', async ({
+    context,
+  }) => {
+    // Dispara ambas as navegações em paralelo (Promise.all) para minimizar
+    // a defasagem entre boots e forçar a corrida no claim inicial.
+    const [tabA, tabB] = await Promise.all([context.newPage(), context.newPage()]);
+    await Promise.all([tabA.goto('/cadastro-inicial'), tabB.goto('/cadastro-inicial')]);
+
+    // Aguarda ambos escreverem tabId + heartbeat estabilizar.
+    await Promise.all([
+      expect
+        .poll(async () => (await readTabState(tabA)).tabId, { timeout: 5000 })
+        .not.toBeNull(),
+      expect
+        .poll(async () => (await readTabState(tabB)).tabId, { timeout: 5000 })
+        .not.toBeNull(),
+    ]);
+
+    const [stateA, stateB] = await Promise.all([readTabState(tabA), readTabState(tabB)]);
+    // Cada aba tem tabId próprio (sessionStorage é isolado por aba).
+    expect(stateA.tabId).not.toBe(stateB.tabId);
+    // localStorage é compartilhado → líder registrado é o MESMO valor
+    // observado por ambas as abas, e é o tabId de uma delas (não ambos).
+    expect(stateA.leader?.tabId).toBe(stateB.leader?.tabId);
+    expect([stateA.tabId, stateB.tabId]).toContain(stateA.leader?.tabId);
+
+    await tabA.close();
+    await tabB.close();
+  });
+
+  test('navegação entre telas preserva liderança e tabId da aba', async ({ page }) => {
+    await page.goto('/cadastro-inicial');
+    await expect
+      .poll(async () => (await readTabState(page)).leader?.tabId ?? null, { timeout: 5000 })
+      .not.toBeNull();
+    const before = await readTabState(page);
+    expect(before.leader?.tabId).toBe(before.tabId);
+
+    // Sai da rota do wizard (cleanup do effect libera a chave), depois
+    // volta. sessionStorage.tabId sobrevive; leader é reassumido.
+    await page.goto('/');
+    await page.waitForTimeout(500);
+    await page.goto('/cadastro-inicial');
+    await expect
+      .poll(async () => (await readTabState(page)).leader?.tabId ?? null, { timeout: 5000 })
+      .not.toBeNull();
+
+    const after = await readTabState(page);
+    expect(after.tabId).toBe(before.tabId);
+    expect(after.leader?.tabId).toBe(after.tabId);
+    await expect(page.getByText(WARNING_TEXT)).toHaveCount(0, { timeout: 3000 });
+  });
 });
