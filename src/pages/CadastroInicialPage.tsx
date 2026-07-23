@@ -253,7 +253,7 @@ export default function CadastroInicialPage() {
   }, []);
 
   const [showConcurrentWarning, setShowConcurrentWarning] = useState(false);
-  const [isLeaderState, setIsLeaderState] = useState(false);
+  const [, setIsLeaderState] = useState(false);
   useEffect(() => {
     let mounted = true;
     const graceTimer = window.setTimeout(() => {
