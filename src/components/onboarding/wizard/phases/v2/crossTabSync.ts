@@ -215,7 +215,16 @@ export function startTabLeaderElection(): () => void {
   if (typeof window === 'undefined') return () => {};
   const myId = getOrCreateTabId();
 
-  const tryClaimLeadership = () => {
+  const debugLog = (event: string, data?: Record<string, unknown>) => {
+    try {
+      // Lazy require para não quebrar em SSR/testes unitários sem alias '@'.
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ctDebug } = require('@/lib/crossTabDebug');
+      ctDebug('leader', event, data);
+    } catch { /* noop */ }
+  };
+
+  const tryClaimLeadership = (source: 'boot' | 'heartbeat') => {
     const rec = readLeader();
     const now = Date.now();
     const noLeader = !rec;
@@ -223,23 +232,25 @@ export function startTabLeaderElection(): () => void {
     const staleLeader = rec && now - rec.ts > LEADER_FRESH_MS;
     if (noLeader || ownLeader || staleLeader) {
       writeLeader(myId);
+      debugLog('claim', {
+        tabId: myId,
+        source,
+        reason: noLeader ? 'no_leader' : ownLeader ? 'renew' : 'stale_takeover',
+      });
     }
   };
 
-  // Tentativa inicial síncrona — se não houver líder fresco, vira líder agora.
-  tryClaimLeadership();
+  tryClaimLeadership('boot');
 
   const handle = window.setInterval(() => {
     const rec = readLeader();
     const now = Date.now();
     if (!rec || rec.tabId === myId) {
-      // Mantém liderança / assume se chave foi apagada.
       writeLeader(myId);
     } else if (now - rec.ts > LEADER_STALE_MS) {
-      // Líder anterior morreu — promove-se.
       writeLeader(myId);
+      debugLog('promote', { tabId: myId, previous: rec.tabId, staleMs: now - rec.ts });
     }
-    // caso contrário: outra aba é líder fresca → permanece seguidora.
   }, LEADER_HEARTBEAT_MS);
 
   return () => {
@@ -248,6 +259,7 @@ export function startTabLeaderElection(): () => void {
       const rec = readLeader();
       if (rec?.tabId === myId) {
         localStorage.removeItem(LEADER_KEY);
+        debugLog('release', { tabId: myId });
       }
     } catch { /* noop */ }
   };
