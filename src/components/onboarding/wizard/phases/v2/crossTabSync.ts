@@ -218,13 +218,9 @@ export function startTabLeaderElection(): () => void {
   const myId = getOrCreateTabId();
 
   const debugLog = (event: string, data?: Record<string, unknown>) => {
-    try {
-      // Lazy require para não quebrar em SSR/testes unitários sem alias '@'.
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { ctDebug } = require('@/lib/crossTabDebug');
-      ctDebug('leader', event, data);
-    } catch { /* noop */ }
+    ctDebug('leader', event, data);
   };
+
 
   const tryClaimLeadership = (source: 'boot' | 'heartbeat') => {
     const rec = readLeader();
