@@ -164,34 +164,24 @@ describe('useLeaderWriteGate', () => {
     expect(localStorage.getItem(HEARTBEAT_KEY)).toBeNull();
   });
 
-  it('cenário auth atrasado: getCurrentState resolve a fase apenas quando telemetria dispara', () => {
-    // Injeta concorrência para forçar disparo de telemetria.
-    localStorage.setItem(
-      HEARTBEAT_KEY,
-      JSON.stringify({ tabId: 'other', updatedAt: Date.now() }),
-    );
-    localStorage.setItem(
-      LEADER_KEY,
-      JSON.stringify({ tabId: 'other', ts: Date.now() }),
-    );
-
+  it('authSettled/profile atrasados NÃO reemitem telemetria nem re-registram leader', () => {
     let currentPhase = 'phase2_service';
     const getCurrentState = () => stateStub(currentPhase);
-    // Simula usuário ainda não autenticado no boot.
     const { rerender, unmount } = renderHook(
       (userId: string | undefined) => useLeaderWriteGate({ getCurrentState, userId }),
       { initialProps: undefined as string | undefined },
     );
+    const initialLeaderTs = JSON.parse(localStorage.getItem(LEADER_KEY)!).ts;
 
-    expect(trackOnboardingEvent).toHaveBeenCalledTimes(1);
-    const firstCall = (trackOnboardingEvent as any).mock.calls[0][0];
-    expect(firstCall.userId).toBeUndefined();
-    expect(firstCall.phase).toBe('phase2_service');
-
-    // authSettled tardio: userId aparece; hook não re-emite telemetria.
+    // authSettled tardio + mudança de fase → nenhuma nova telemetria,
+    // nenhum re-claim de liderança (effect roda 1× por mount).
     currentPhase = 'phase2_details';
     rerender('user-late');
-    expect(trackOnboardingEvent).toHaveBeenCalledTimes(1);
+    rerender('user-late');
+    expect(trackOnboardingEvent).not.toHaveBeenCalled();
+    // ts pode ter sido renovado apenas pelo interval — não pelo re-render.
+    const afterRerender = JSON.parse(localStorage.getItem(LEADER_KEY)!).ts;
+    expect(afterRerender).toBe(initialLeaderTs);
 
     unmount();
   });
