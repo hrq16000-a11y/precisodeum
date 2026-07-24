@@ -258,9 +258,17 @@ export function startTabLeaderElection(): () => void {
     const now = Date.now();
     if (!rec || rec.tabId === myId) {
       writeLeader(myId);
+      pushDiag({ kind: 'heartbeat_write', tabId: myId, at: now, ttlMs: LEADER_STALE_MS });
     } else if (now - rec.ts > LEADER_STALE_MS) {
       writeLeader(myId);
       debugLog('promote', { tabId: myId, previous: rec.tabId, staleMs: now - rec.ts });
+      pushDiag({
+        kind: 'leader_promote',
+        tabId: myId,
+        at: now,
+        ttlMs: LEADER_STALE_MS,
+        meta: { previous: rec.tabId, staleMs: now - rec.ts },
+      });
     }
   }, LEADER_HEARTBEAT_MS);
 
@@ -271,6 +279,7 @@ export function startTabLeaderElection(): () => void {
       if (rec?.tabId === myId) {
         localStorage.removeItem(LEADER_KEY);
         debugLog('release', { tabId: myId });
+        pushDiag({ kind: 'leader_release', tabId: myId, at: Date.now() });
       }
     } catch { /* noop */ }
   };
