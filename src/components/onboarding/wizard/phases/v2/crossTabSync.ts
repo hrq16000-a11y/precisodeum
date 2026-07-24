@@ -239,10 +239,14 @@ export function startTabLeaderElection(): () => void {
     const staleLeader = rec && now - rec.ts > LEADER_FRESH_MS;
     if (noLeader || ownLeader || staleLeader) {
       writeLeader(myId);
-      debugLog('claim', {
+      const reason = noLeader ? 'no_leader' : ownLeader ? 'renew' : 'stale_takeover';
+      debugLog('claim', { tabId: myId, source, reason });
+      pushDiag({
+        kind: reason === 'renew' ? 'leader_renew' : reason === 'stale_takeover' ? 'leader_stale_takeover' : 'leader_claim',
         tabId: myId,
-        source,
-        reason: noLeader ? 'no_leader' : ownLeader ? 'renew' : 'stale_takeover',
+        at: now,
+        ttlMs: LEADER_STALE_MS,
+        meta: { source, previousTabId: rec?.tabId ?? null, ageMs: rec ? now - rec.ts : null },
       });
     }
   };
