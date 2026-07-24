@@ -275,4 +275,52 @@ export function startTabLeaderElection(): () => void {
 /** Test-only: limpa registro de líder entre testes. */
 export function __resetTabLeader(): void {
   try { localStorage.removeItem(LEADER_KEY); } catch { /* noop */ }
+  __crossTabEvents.length = 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Diagnóstico de conflitos reais — buffer em memória (últimos 50 eventos)
+ * exposto via `getCrossTabDiagnostics()`. Não persiste, não trafega. Serve
+ * para inspecionar claim/heartbeat/TTL sem depender do console.
+ *
+ * Em DEV/TEST também espelha em `window.__crossTabDiag` para uso ad-hoc.
+ * ───────────────────────────────────────────────────────────────────────── */
+export type CrossTabEventKind =
+  | 'leader_claim'
+  | 'leader_renew'
+  | 'leader_stale_takeover'
+  | 'leader_promote'
+  | 'leader_release'
+  | 'heartbeat_write'
+  | 'concurrent_detected'
+  | 'concurrent_dismissed';
+
+export interface CrossTabDiagEvent {
+  kind: CrossTabEventKind;
+  tabId: string;
+  at: number;
+  ttlMs?: number;
+  meta?: Record<string, unknown>;
+}
+
+const DIAG_MAX = 50;
+const __crossTabEvents: CrossTabDiagEvent[] = [];
+
+function pushDiag(evt: CrossTabDiagEvent) {
+  __crossTabEvents.push(evt);
+  if (__crossTabEvents.length > DIAG_MAX) __crossTabEvents.shift();
+  try {
+    if (typeof window !== 'undefined') {
+      (window as any).__crossTabDiag = __crossTabEvents;
+    }
+  } catch { /* noop */ }
+}
+
+export function getCrossTabDiagnostics(): readonly CrossTabDiagEvent[] {
+  return __crossTabEvents.slice();
+}
+
+/** Emite um evento de diagnóstico (uso interno + testes). */
+export function recordCrossTabDiag(evt: Omit<CrossTabDiagEvent, 'at'> & { at?: number }) {
+  pushDiag({ ...evt, at: evt.at ?? Date.now() });
 }
