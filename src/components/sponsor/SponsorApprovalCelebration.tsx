@@ -49,23 +49,15 @@ const SponsorApprovalCelebration = ({
     setShow(true);
     fireConfetti();
 
-    // Persist so the celebration only fires once
+    // Persist so the celebration only fires once.
+    // NOTE: removida a gravação best-effort em `audit_log` — a tabela
+    // exige role admin (RLS) e a chamada gerava 403 no console para
+    // patrocinadores comuns sem valor prático.
     supabase
       .from('sponsors')
       .update({ last_viewed_status: 'active' })
       .eq('id', sponsorId)
-      .then(() => {
-        // best-effort audit
-        if (userRef) {
-          supabase.from('audit_log').insert({
-            user_id: userRef,
-            action: 'sponsor.celebration.viewed',
-            resource_type: 'sponsor',
-            resource_id: sponsorId,
-            details: { slot: slotName ?? null },
-          } as any);
-        }
-      });
+      .then(() => { /* noop */ });
   }, [sponsorId, currentStatus, lastViewedStatus, slotName, userRef]);
 
   return (
