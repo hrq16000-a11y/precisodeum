@@ -173,14 +173,29 @@ describe('crossTabSync heartbeat', () => {
     expect(m.detectConcurrentTab()).toBe(false);
   });
 
-  it('detectConcurrentTab=true quando outra aba escreveu heartbeat recente', async () => {
+  it('detectConcurrentTab=true quando outra aba escreveu heartbeat recente + líder pareado', async () => {
     const m = await import('@/components/onboarding/wizard/phases/v2/crossTabSync');
-    // Simula outra aba: tabId diferente, updatedAt recente.
+    // Simula outra aba: tabId diferente, heartbeat + registro de líder frescos.
     localStorage.setItem(
       'onboarding_v2_active_tab',
       JSON.stringify({ tabId: 'outra-aba', updatedAt: Date.now() }),
     );
+    localStorage.setItem(
+      'wizard_tab_leader',
+      JSON.stringify({ tabId: 'outra-aba', ts: Date.now() }),
+    );
     expect(m.detectConcurrentTab()).toBe(true);
+  });
+
+  it('detectConcurrentTab=false com aba única (heartbeat próprio, sem líder rival)', async () => {
+    const m = await import('@/components/onboarding/wizard/phases/v2/crossTabSync');
+    // Só existe heartbeat de OUTRA aba mas nenhum líder — cenário órfão
+    // pós-fechamento. Nova regra: sem par heartbeat+leader, ignorar.
+    localStorage.setItem(
+      'onboarding_v2_active_tab',
+      JSON.stringify({ tabId: 'aba-antiga', updatedAt: Date.now() }),
+    );
+    expect(m.detectConcurrentTab()).toBe(false);
   });
 
   it('startTabHeartbeat retorna função de cleanup', async () => {

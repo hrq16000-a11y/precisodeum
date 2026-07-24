@@ -122,10 +122,14 @@ export function detectConcurrentTab(): boolean {
   const hb = readHeartbeat();
   if (!hb) return false;
   if (hb.tabId === myId) return false;
-  if (Date.now() - hb.updatedAt >= HEARTBEAT_FRESH_MS) return false;
+  const hbAge = Date.now() - hb.updatedAt;
+  if (hbAge >= HEARTBEAT_FRESH_MS) return false;
   try {
     const nav = (performance.getEntriesByType?.('navigation') || [])[0] as PerformanceNavigationTiming | undefined;
-    if (nav && nav.type === 'reload') return false;
+    if (nav && nav.type === 'reload') {
+      pushDiag({ kind: 'concurrent_dismissed', tabId: myId, at: Date.now(), meta: { reason: 'reload', otherTabId: hb.tabId } });
+      return false;
+    }
   } catch { /* fail-soft */ }
   // Confirmação dupla: só há concorrência real se ALÉM do heartbeat de outra
   // aba, também existir um registro de líder FRESCO pertencente a outra aba.
@@ -133,9 +137,23 @@ export function detectConcurrentTab(): boolean {
   // é dona do LEADER_KEY — isso elimina o falso positivo em aba única e no
   // pós-fechamento de aba anterior (heartbeat órfão sem líder pareado).
   const leader = readLeader();
-  if (!leader) return false;
+  if (!leader) {
+    pushDiag({ kind: 'concurrent_dismissed', tabId: myId, at: Date.now(), meta: { reason: 'no_leader_pair', otherTabId: hb.tabId, hbAgeMs: hbAge } });
+    return false;
+  }
   if (leader.tabId === myId) return false;
-  if (Date.now() - leader.ts > LEADER_STALE_MS) return false;
+  const leaderAge = Date.now() - leader.ts;
+  if (leaderAge > LEADER_STALE_MS) {
+    pushDiag({ kind: 'concurrent_dismissed', tabId: myId, at: Date.now(), meta: { reason: 'leader_stale', otherTabId: leader.tabId, leaderAgeMs: leaderAge } });
+    return false;
+  }
+  pushDiag({
+    kind: 'concurrent_detected',
+    tabId: myId,
+    at: Date.now(),
+    ttlMs: LEADER_STALE_MS,
+    meta: { otherTabId: leader.tabId, hbAgeMs: hbAge, leaderAgeMs: leaderAge },
+  });
   return true;
 }
 
@@ -239,10 +257,14 @@ export function startTabLeaderElection(): () => void {
     const staleLeader = rec && now - rec.ts > LEADER_FRESH_MS;
     if (noLeader || ownLeader || staleLeader) {
       writeLeader(myId);
-      debugLog('claim', {
+      const reason = noLeader ? 'no_leader' : ownLeader ? 'renew' : 'stale_takeover';
+      debugLog('claim', { tabId: myId, source, reason });
+      pushDiag({
+        kind: reason === 'renew' ? 'leader_renew' : reason === 'stale_takeover' ? 'leader_stale_takeover' : 'leader_claim',
         tabId: myId,
-        source,
-        reason: noLeader ? 'no_leader' : ownLeader ? 'renew' : 'stale_takeover',
+        at: now,
+        ttlMs: LEADER_STALE_MS,
+        meta: { source, previousTabId: rec?.tabId ?? null, ageMs: rec ? now - rec.ts : null },
       });
     }
   };
@@ -254,9 +276,17 @@ export function startTabLeaderElection(): () => void {
     const now = Date.now();
     if (!rec || rec.tabId === myId) {
       writeLeader(myId);
+      pushDiag({ kind: 'heartbeat_write', tabId: myId, at: now, ttlMs: LEADER_STALE_MS });
     } else if (now - rec.ts > LEADER_STALE_MS) {
       writeLeader(myId);
       debugLog('promote', { tabId: myId, previous: rec.tabId, staleMs: now - rec.ts });
+      pushDiag({
+        kind: 'leader_promote',
+        tabId: myId,
+        at: now,
+        ttlMs: LEADER_STALE_MS,
+        meta: { previous: rec.tabId, staleMs: now - rec.ts },
+      });
     }
   }, LEADER_HEARTBEAT_MS);
 
@@ -267,6 +297,7 @@ export function startTabLeaderElection(): () => void {
       if (rec?.tabId === myId) {
         localStorage.removeItem(LEADER_KEY);
         debugLog('release', { tabId: myId });
+        pushDiag({ kind: 'leader_release', tabId: myId, at: Date.now() });
       }
     } catch { /* noop */ }
   };
@@ -275,4 +306,52 @@ export function startTabLeaderElection(): () => void {
 /** Test-only: limpa registro de líder entre testes. */
 export function __resetTabLeader(): void {
   try { localStorage.removeItem(LEADER_KEY); } catch { /* noop */ }
+  __crossTabEvents.length = 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Diagnóstico de conflitos reais — buffer em memória (últimos 50 eventos)
+ * exposto via `getCrossTabDiagnostics()`. Não persiste, não trafega. Serve
+ * para inspecionar claim/heartbeat/TTL sem depender do console.
+ *
+ * Em DEV/TEST também espelha em `window.__crossTabDiag` para uso ad-hoc.
+ * ───────────────────────────────────────────────────────────────────────── */
+export type CrossTabEventKind =
+  | 'leader_claim'
+  | 'leader_renew'
+  | 'leader_stale_takeover'
+  | 'leader_promote'
+  | 'leader_release'
+  | 'heartbeat_write'
+  | 'concurrent_detected'
+  | 'concurrent_dismissed';
+
+export interface CrossTabDiagEvent {
+  kind: CrossTabEventKind;
+  tabId: string;
+  at: number;
+  ttlMs?: number;
+  meta?: Record<string, unknown>;
+}
+
+const DIAG_MAX = 50;
+const __crossTabEvents: CrossTabDiagEvent[] = [];
+
+function pushDiag(evt: CrossTabDiagEvent) {
+  __crossTabEvents.push(evt);
+  if (__crossTabEvents.length > DIAG_MAX) __crossTabEvents.shift();
+  try {
+    if (typeof window !== 'undefined') {
+      (window as any).__crossTabDiag = __crossTabEvents;
+    }
+  } catch { /* noop */ }
+}
+
+export function getCrossTabDiagnostics(): readonly CrossTabDiagEvent[] {
+  return __crossTabEvents.slice();
+}
+
+/** Emite um evento de diagnóstico (uso interno + testes). */
+export function recordCrossTabDiag(evt: Omit<CrossTabDiagEvent, 'at'> & { at?: number }) {
+  pushDiag({ ...evt, at: evt.at ?? Date.now() });
 }

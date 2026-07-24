@@ -282,9 +282,17 @@ export default function CadastroInicialPage() {
 
   useEffect(() => {
     if (showConcurrentWarning) {
-      toast.warning('Você está editando em outra aba. Feche esta para continuar aqui.', {
+      toast.warning('Cadastro aberto em outra aba', {
         id: 'non-leader-warning',
         duration: Infinity,
+        description:
+          'Para evitar sobrescrever dados: 1) volte para a outra aba e continue por lá, ou 2) feche a outra aba e clique em "Assumir aqui".',
+        action: {
+          label: 'Assumir aqui',
+          onClick: () => {
+            try { window.location.reload(); } catch { /* noop */ }
+          },
+        },
       });
     } else {
       toast.dismiss('non-leader-warning');
