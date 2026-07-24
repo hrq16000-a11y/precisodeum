@@ -122,10 +122,14 @@ export function detectConcurrentTab(): boolean {
   const hb = readHeartbeat();
   if (!hb) return false;
   if (hb.tabId === myId) return false;
-  if (Date.now() - hb.updatedAt >= HEARTBEAT_FRESH_MS) return false;
+  const hbAge = Date.now() - hb.updatedAt;
+  if (hbAge >= HEARTBEAT_FRESH_MS) return false;
   try {
     const nav = (performance.getEntriesByType?.('navigation') || [])[0] as PerformanceNavigationTiming | undefined;
-    if (nav && nav.type === 'reload') return false;
+    if (nav && nav.type === 'reload') {
+      pushDiag({ kind: 'concurrent_dismissed', tabId: myId, at: Date.now(), meta: { reason: 'reload', otherTabId: hb.tabId } });
+      return false;
+    }
   } catch { /* fail-soft */ }
   // Confirmação dupla: só há concorrência real se ALÉM do heartbeat de outra
   // aba, também existir um registro de líder FRESCO pertencente a outra aba.
@@ -133,9 +137,23 @@ export function detectConcurrentTab(): boolean {
   // é dona do LEADER_KEY — isso elimina o falso positivo em aba única e no
   // pós-fechamento de aba anterior (heartbeat órfão sem líder pareado).
   const leader = readLeader();
-  if (!leader) return false;
+  if (!leader) {
+    pushDiag({ kind: 'concurrent_dismissed', tabId: myId, at: Date.now(), meta: { reason: 'no_leader_pair', otherTabId: hb.tabId, hbAgeMs: hbAge } });
+    return false;
+  }
   if (leader.tabId === myId) return false;
-  if (Date.now() - leader.ts > LEADER_STALE_MS) return false;
+  const leaderAge = Date.now() - leader.ts;
+  if (leaderAge > LEADER_STALE_MS) {
+    pushDiag({ kind: 'concurrent_dismissed', tabId: myId, at: Date.now(), meta: { reason: 'leader_stale', otherTabId: leader.tabId, leaderAgeMs: leaderAge } });
+    return false;
+  }
+  pushDiag({
+    kind: 'concurrent_detected',
+    tabId: myId,
+    at: Date.now(),
+    ttlMs: LEADER_STALE_MS,
+    meta: { otherTabId: leader.tabId, hbAgeMs: hbAge, leaderAgeMs: leaderAge },
+  });
   return true;
 }
 
