@@ -304,10 +304,30 @@ describe('detectConcurrentTab', () => {
     expect(detectConcurrentTab()).toBe(false);
   });
 
-  it('true quando outra aba tem heartbeat fresco (<7s)', () => {
+  it('true quando outra aba tem heartbeat fresco (<7s) E líder pareado', () => {
     setActiveTab('tab-A');
     writeHeartbeatRaw('tab-B', Date.now() - 1_000);
+    localStorage.setItem(LEADER_KEY, JSON.stringify({ tabId: 'tab-B', ts: Date.now() }));
     expect(detectConcurrentTab()).toBe(true);
+  });
+
+  it('false com aba única — heartbeat órfão sem líder rival (regressão)', () => {
+    setActiveTab('tab-A');
+    // Heartbeat de aba antiga ficou órfão no localStorage mas nenhum
+    // líder rival existe (nova regra: dupla confirmação obrigatória).
+    writeHeartbeatRaw('tab-antiga', Date.now() - 500);
+    expect(detectConcurrentTab()).toBe(false);
+  });
+
+  it('false quando aba única é a única líder (boot cenário real)', () => {
+    setActiveTab('tab-A');
+    const stop = startTabLeaderElection();
+    // Um único startTabLeaderElection reivindica LEADER_KEY para tab-A,
+    // então mesmo se um heartbeat órfão existir, não deve haver concorrência.
+    writeHeartbeatRaw('tab-B', Date.now() - 500);
+    // Sem par leader-B, não há concorrência.
+    expect(detectConcurrentTab()).toBe(false);
+    stop();
   });
 
   it('false quando heartbeat de outra aba está stale (>=7s)', () => {
