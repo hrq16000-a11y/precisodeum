@@ -9,21 +9,22 @@ interface AuditEntry {
   details?: Record<string, unknown>;
 }
 
-export const logAuditAction = async (entry: AuditEntry) => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase.from('audit_log' as any).insert({
-      user_id: user.id,
-      action: entry.action,
-      resource_type: entry.resource_type,
-      resource_id: entry.resource_id || null,
-      details: entry.details || {},
-    } as any);
-  } catch (e) {
-    console.error('[AuditLog] Failed to log:', e);
+/**
+ * logAuditAction — best-effort client telemetry.
+ *
+ * IMPORTANTE: a tabela `public.audit_log` só aceita INSERT de admins
+ * (RLS `has_role(auth.uid(),'admin')`). Chamar direto do cliente gera
+ * ruído 403 no console para usuários normais sem qualquer valor. Por
+ * isso este helper virou no-op silencioso — mantido como shim para não
+ * quebrar call-sites existentes. Trilha auditável deve ir por RPC
+ * `SECURITY DEFINER` dedicada (padrão do projeto).
+ */
+export const logAuditAction = async (_entry: AuditEntry) => {
+  if (import.meta.env?.DEV) {
+    // eslint-disable-next-line no-console
+    console.debug('[AuditLog] client insert suppressed (admin-only RLS)', _entry.action);
   }
+  return;
 };
 
 export const useAuditLog = () => {
