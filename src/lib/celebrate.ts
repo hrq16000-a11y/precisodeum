@@ -145,32 +145,15 @@ function shouldRunCelebration(id?: string): { allowed: boolean; cooldownRemainin
 }
 
 async function logCelebrationTelemetry(
-  action: typeof TELEMETRY_ACTION_TRIGGERED | typeof TELEMETRY_ACTION_BLOCKED,
-  opts: ConfettiOptions,
-  cooldownRemainingMs?: number,
+  _action: typeof TELEMETRY_ACTION_TRIGGERED | typeof TELEMETRY_ACTION_BLOCKED,
+  _opts: ConfettiOptions,
+  _cooldownRemainingMs?: number,
 ) {
-  if (!opts.id || typeof window === 'undefined') return;
-  try {
-    const { supabase } = await import('@/integrations/supabase/client');
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user?.id) return;
-
-    await supabase.from('audit_log').insert({
-      user_id: user.id,
-      action,
-      resource_type: 'celebration',
-      resource_id: opts.id,
-      details: {
-        celebration_id: opts.id,
-        intensity: opts.intensity ?? 'big',
-        cooldown_ms: CELEBRATION_COOLDOWN_MS,
-        cooldown_remaining_ms: cooldownRemainingMs ?? null,
-        page_path: window.location.pathname,
-      },
-    } as any);
-  } catch {
-    /* telemetry is best-effort */
-  }
+  // No-op: `audit_log` só aceita INSERT de admin (RLS). Inserir daqui gera
+  // 403 recorrente no console para 99% dos usuários. Telemetria de
+  // celebração é ornamental e não precisa persistir; se algum dia formos
+  // logar, deve ser via RPC SECURITY DEFINER dedicada.
+  return;
 }
 
 function cleanupExpiredSessionKeys() {
