@@ -24,6 +24,8 @@ import { isOnboardingCompletionGraceActive, resolveOnboardingGateTarget } from "
 import { runOnboardingSelfHeal } from "@/lib/onboardingSelfHeal";
 import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 import { queryClient } from '@/lib/queryClient';
+import { pausePrefetching, cancelPendingPrefetches } from "@/lib/lazyWithRetry";
+import { markNavigationStart, markNavigationEnd, startWebVitalsMonitor } from "@/lib/webVitalsMonitor";
 
 // Route groups — extraídos para src/routes/* (PR 3 · split estrutural).
 // App.tsx é apenas composição: providers + shells + Suspense + gates.
@@ -42,7 +44,18 @@ const FloatingHelpButton = reactLazy(() => importWithRetry(() => import("./compo
 const CurtainReveal = reactLazy(() => importWithRetry(() => import("./components/CurtainReveal")));
 const GlobalLinkPrefetcher = reactLazy(() => importWithRetry(() => import("./components/GlobalLinkPrefetcher")));
 
-const PageFallback = () => null;
+/** Barra de progresso topo — transição suave entre rotas, sem CLS. */
+const PageFallback = () => (
+  <div
+    role="status"
+    aria-live="polite"
+    aria-label="Carregando página"
+    className="fixed left-0 right-0 top-0 z-[9999] h-0.5 overflow-hidden bg-transparent"
+  >
+    <div className="h-full w-1/3 animate-[routeProgress_1.1s_ease-in-out_infinite] bg-primary/70" />
+    <style>{`@keyframes routeProgress{0%{transform:translateX(-100%)}60%{transform:translateX(180%)}100%{transform:translateX(320%)}}`}</style>
+  </div>
+);
 
 const hasRequestIdleCallback = () => typeof window !== 'undefined' && typeof (window as any).requestIdleCallback === 'function';
 const hasCancelIdleCallback = () => typeof window !== 'undefined' && typeof (window as any).cancelIdleCallback === 'function';
@@ -80,6 +93,14 @@ const RoutePrefetcher = () => {
   const location = useLocation();
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    // Marca início da navegação (para métricas) e pausa a fila de prefetch por
+    // ~700ms para não competir com o download do chunk da rota atual.
+    markNavigationStart(location.pathname);
+    pausePrefetching(700);
+    cancelPendingPrefetches();
+
+    const rafId = requestAnimationFrame(() => markNavigationEnd(location.pathname));
+
     const prefetch = () => {
       if (location.pathname === '/' || location.pathname === '/index') {
         void prefetchImportWithRetry('route-search', () => import('./pages/SearchPage'));
@@ -94,6 +115,7 @@ const RoutePrefetcher = () => {
       ? (window as any).requestIdleCallback(prefetch, { timeout: 3500 })
       : globalThis.setTimeout(prefetch, 2200);
     return () => {
+      cancelAnimationFrame(rafId);
       if ('cancelIdleCallback' in window) (window as any).cancelIdleCallback(id);
       else globalThis.clearTimeout(id);
     };
@@ -225,6 +247,7 @@ const App = () => {
   useEffect(() => {
     initializeUiFreezeMonitor();
     installPopupGuards();
+    startWebVitalsMonitor();
 
     // Invalidate all queries if daily purge just ran
     if ((window as any).__DAILY_PURGE_TRIGGERED__) {
