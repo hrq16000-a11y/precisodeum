@@ -40,6 +40,7 @@ const FloatingHelpButton = reactLazy(() => importWithRetry(() => import("./compo
 
 // Minimal page transition — no heavy loader, pages render instantly
 const CurtainReveal = reactLazy(() => importWithRetry(() => import("./components/CurtainReveal")));
+const GlobalLinkPrefetcher = reactLazy(() => importWithRetry(() => import("./components/GlobalLinkPrefetcher")));
 
 const PageFallback = () => null;
 
