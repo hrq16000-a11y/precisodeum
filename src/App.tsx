@@ -71,6 +71,7 @@ const DeferredShell = () => {
       <BackToTopButton />
       <CookieConsent />
       <PwaInstallBanner />
+      <GlobalLinkPrefetcher />
     </Suspense>
   );
 };
