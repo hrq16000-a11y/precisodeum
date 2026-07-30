@@ -1,0 +1,84 @@
+name: Portability · export/restore/validate (release)
+
+# Roda a pipeline completa de portabilidade a cada release publicada
+# (e sob demanda), com logs estruturados JSON e relatório de cobertura
+# por user_ref anexado como artefato de auditoria.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Restore em modo dry-run (não grava no destino)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: portability-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  portability:
+    name: Export → Restore → Validate → Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BUNDLE: backup/portability-user-ref-media.zip
+      SOURCE_SUPABASE_URL: ${{ secrets.SOURCE_SUPABASE_URL }}
+      SOURCE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SOURCE_SUPABASE_SERVICE_ROLE_KEY }}
+      TARGET_SUPABASE_URL: ${{ secrets.TARGET_SUPABASE_URL }}
+      TARGET_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TARGET_SUPABASE_SERVICE_ROLE_KEY }}
+      PORTABILITY_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Guard · segredos obrigatórios
+        run: |
+          missing=0
+          for v in SOURCE_SUPABASE_URL SOURCE_SUPABASE_SERVICE_ROLE_KEY TARGET_SUPABASE_URL TARGET_SUPABASE_SERVICE_ROLE_KEY; do
+            if [ -z "${!v}" ]; then echo "::error::secret ausente: $v"; missing=1; fi
+          done
+          exit $missing
+
+      - name: 1/4 · Export por user_ref
+        run: |
+          mkdir -p backup logs
+          npm run portability:export-media -- "$BUNDLE" 2>&1 | tee logs/export.log
+
+      - name: 2/4 · Restore no destino
+        run: npm run portability:restore-media -- "$BUNDLE" 2>&1 | tee logs/restore.log
+
+      - name: 3/4 · Validate (checksum + órfãos)
+        run: npm run portability:validate-restore -- "$BUNDLE" 2>&1 | tee logs/validate.log
+
+      - name: 4/4 · Relatório consolidado de cobertura
+        run: node scripts/portability/migration-report.mjs "$BUNDLE" portability-report 2>&1 | tee logs/report.log
+
+      - name: Resumo no GitHub Actions
+        if: always()
+        run: |
+          if [ -f portability-report/migration-report.md ]; then
+            cat portability-report/migration-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '### Pipeline de portabilidade falhou antes de gerar o relatório.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload relatórios e logs (auditoria)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portability-audit-${{ github.run_id }}
+          retention-days: 90
+          if-no-files-found: warn
+          path: |
+            portability-report/**
+            logs/**
+            backup/*.restore-report.json
+            backup/*.validation-report.json
