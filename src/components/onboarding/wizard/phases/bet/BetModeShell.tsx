@@ -370,6 +370,13 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
     dispatch({ type: 'GOTO', phase });
   };
   const awardReward = (reward: BetRewardKey, points: number) => {
+    // Contabiliza o ganho DESTA sessão separadamente do total exibido no HUD.
+    // O HUD pode estar hidratado com o saldo do banco; usar a diferença
+    // (HUD - banco) para persistir falhava quando a hidratação chegava depois
+    // do 1º prêmio (delta negativo → pontos silenciosamente perdidos).
+    if (!state.rewards[reward]) {
+      sessionAwardedRef.current += points;
+    }
     dispatch({ type: 'AWARD_REWARD', reward, points });
   };
 
