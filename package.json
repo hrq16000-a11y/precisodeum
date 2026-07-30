@@ -34,6 +34,7 @@
     "portability:export-media": "node scripts/portability/export-user-ref-media.mjs",
     "portability:restore-media": "node scripts/portability/restore-bundle.mjs",
     "portability:validate-restore": "node scripts/portability/validate-restore.mjs",
+    "portability:report": "node scripts/portability/migration-report.mjs",
     "ci:performance": "npm run lint && npm run test && npm run validate:json-ld && npm run build && npm run check:performance && npm run lighthouse:ci && node scripts/lighthouse-summary.mjs && node scripts/performance-regression.mjs",
     "health:ui": "node scripts/health-check-ui.mjs",
     "lint": "eslint .",
