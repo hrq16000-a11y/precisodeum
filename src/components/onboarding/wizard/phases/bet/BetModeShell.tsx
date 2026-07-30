@@ -352,6 +352,11 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
 
   const patch = (p: Partial<BetState>) => dispatch({ type: 'PATCH', patch: p });
   /**
+   * Pontos efetivamente conquistados NESTA sessão do wizard (não é o total
+   * exibido no HUD, que pode estar hidratado com o saldo do banco).
+   */
+  const sessionAwardedRef = useRef(0);
+  /**
    * `goto` unificado: dispara `playWizardTransition` em toda transição,
    * inferindo a direção via BET_BACK_MAP.
    *  - se `phase` é o "anterior" da fase atual → 'back'
@@ -476,20 +481,30 @@ export default function BetModeShell({ onInternalHandoff, onPhaseChange, seedSta
 
   /** Soma incremento de pontos ganhos NESTA sessão ao saldo do banco. */
   async function addSessionPointsToProfile() {
+    if (!user?.id) return;
+    const delta = sessionAwardedRef.current;
+    if (delta <= 0) return;
     try {
-      const dbPoints = Number((profile as any)?.engagement_points ?? 0);
-      // state.points pode já estar hidratado com dbPoints — garante que só soma o delta.
-      const delta = Math.max(0, state.points - dbPoints);
-      if (delta <= 0) return;
+      // Lê o saldo FRESCO (o `profile` do contexto pode estar desatualizado,
+      // o que antes produzia delta negativo e perda silenciosa de pontos).
+      const { data: fresh } = await (supabase as any)
+        .from('profiles')
+        .select('engagement_points')
+        .eq('id', user.id)
+        .maybeSingle();
+      const dbPoints = Number(fresh?.engagement_points ?? (profile as any)?.engagement_points ?? 0);
       const { error } = await (supabase as any)
         .from('profiles')
         .update({ engagement_points: dbPoints + delta })
-        .eq('id', user!.id);
+        .eq('id', user.id);
       if (error) {
         // Pontos são UX-only — não bloqueiam navegação, mas falha sistemática
         // precisa ser visível em telemetria/console.
         console.warn('[BetModeShell] addSessionPointsToProfile update failed', error);
+        return;
       }
+      // Só zera após confirmação — retry futuro ainda persiste o ganho.
+      sessionAwardedRef.current = 0;
     } catch (err) {
       console.warn('[BetModeShell] addSessionPointsToProfile threw', err);
     }
