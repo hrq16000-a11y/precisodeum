@@ -10,7 +10,7 @@
 // desregistra o SW — comportamento herdado da blindagem anterior; o registro
 // volta no próximo load.
 
-const CACHE_VERSION = 'v1.2.0';
+const CACHE_VERSION = 'v1.2.1';
 const STATIC_CACHE = `pdu-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pdu-runtime-${CACHE_VERSION}`;
 const FONTS_CACHE = `pdu-fonts-${CACHE_VERSION}`;
