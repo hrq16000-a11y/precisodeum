@@ -7,6 +7,7 @@ import {
   detectConcurrentTab,
   getCrossTabDiagnostics,
   startTabLeaderElection,
+  __recordPeerPresence,
   __resetTabLeader,
 } from '@/components/onboarding/wizard/phases/v2/crossTabSync';
 
@@ -64,6 +65,7 @@ describe('getCrossTabDiagnostics', () => {
       JSON.stringify({ tabId: 'tab-B', updatedAt: Date.now() - 200 }),
     );
     localStorage.setItem(LEADER_KEY, JSON.stringify({ tabId: 'tab-B', ts: Date.now() }));
+    __recordPeerPresence('tab-B');
     expect(detectConcurrentTab()).toBe(true);
     const events = getCrossTabDiagnostics();
     const conflict = events.find((e) => e.kind === 'concurrent_detected');

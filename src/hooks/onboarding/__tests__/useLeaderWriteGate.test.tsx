@@ -16,7 +16,7 @@ vi.mock('@/components/onboarding/wizard/phases/v2/telemetry', () => ({
 }));
 
 import { useLeaderWriteGate } from '@/hooks/onboarding/useLeaderWriteGate';
-import { __resetTabLeader } from '@/components/onboarding/wizard/phases/v2/crossTabSync';
+import { __recordPeerPresence, __resetTabLeader } from '@/components/onboarding/wizard/phases/v2/crossTabSync';
 import { trackOnboardingEvent } from '@/components/onboarding/wizard/phases/v2/telemetry';
 
 const TAB_ID_KEY = 'onboarding_v2_tab_id';
@@ -86,6 +86,8 @@ describe('useLeaderWriteGate', () => {
             HEARTBEAT_KEY,
             JSON.stringify({ tabId: 'racing-tab', updatedAt: Date.now() }),
           );
+          originalSet.call(this, LEADER_KEY, JSON.stringify({ tabId: 'racing-tab', ts: Date.now() }));
+          __recordPeerPresence('racing-tab');
         }
       });
 

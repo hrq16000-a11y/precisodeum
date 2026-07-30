@@ -22,6 +22,7 @@ import {
   isTabLeader,
   startTabHeartbeat,
   startTabLeaderElection,
+  __recordPeerPresence,
   __resetTabLeader,
 } from '@/components/onboarding/wizard/phases/v2/crossTabSync';
 
@@ -308,6 +309,7 @@ describe('detectConcurrentTab', () => {
     setActiveTab('tab-A');
     writeHeartbeatRaw('tab-B', Date.now() - 1_000);
     localStorage.setItem(LEADER_KEY, JSON.stringify({ tabId: 'tab-B', ts: Date.now() }));
+    __recordPeerPresence('tab-B');
     expect(detectConcurrentTab()).toBe(true);
   });
 

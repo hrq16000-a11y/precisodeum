@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import WizardShell from '@/components/onboarding/wizard/WizardShell';
 import {
   detectConcurrentTab,
+  forceClaimCurrentTabLeadership,
   isTabLeader,
   startTabHeartbeat,
   startTabLeaderElection,
@@ -290,7 +291,9 @@ export default function CadastroInicialPage() {
         action: {
           label: 'Assumir aqui',
           onClick: () => {
-            try { window.location.reload(); } catch { /* noop */ }
+            forceClaimCurrentTabLeadership();
+            setShowConcurrentWarning(false);
+            toast.dismiss('non-leader-warning');
           },
         },
       });
