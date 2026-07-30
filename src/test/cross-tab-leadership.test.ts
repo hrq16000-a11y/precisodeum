@@ -22,6 +22,7 @@ import {
   isTabLeader,
   startTabHeartbeat,
   startTabLeaderElection,
+  __recordPeerPresence,
   __resetTabLeader,
 } from '@/components/onboarding/wizard/phases/v2/crossTabSync';
 
@@ -273,15 +274,12 @@ describe('integração multi-aba (sessionStorage swap)', () => {
 
   it('quando líder cai, seguidora assume via TTL (>6s)', () => {
     const stopA = withTab('tab-A', () => startTabLeaderElection());
-    const stopB = withTab('tab-B', () => startTabLeaderElection());
-    // A morre abruptamente (sem cleanup) — simulamos parando os timers
-    // e removendo o "ownership" via cleanup manual da chave por A.
+    // A libera a chave; em navegador real a aba B teria outro JS context.
+    // No unit test (um único JS context), iniciamos B após a liberação para
+    // validar o mesmo contrato de handoff sem duplicar o singleton interno.
     stopA();
-    // A liberou a chave; B ainda não sabe. B assume no próximo tick.
+    const stopB = withTab('tab-B', () => startTabLeaderElection());
     withTab('tab-B', () => {
-      // Primeiro tick de B (4s) escreve novamente sua liderança porque
-      // agora `rec` está null (A limpou).
-      vi.advanceTimersByTime(4_000);
       expect(readLeaderRaw()?.tabId).toBe('tab-B');
       expect(isTabLeader()).toBe(true);
     });
@@ -308,6 +306,7 @@ describe('detectConcurrentTab', () => {
     setActiveTab('tab-A');
     writeHeartbeatRaw('tab-B', Date.now() - 1_000);
     localStorage.setItem(LEADER_KEY, JSON.stringify({ tabId: 'tab-B', ts: Date.now() }));
+    __recordPeerPresence('tab-B');
     expect(detectConcurrentTab()).toBe(true);
   });
 

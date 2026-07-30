@@ -210,6 +210,13 @@ export type Database = {
             referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ad_slot_assignments_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ad_slots: {
@@ -3395,6 +3402,13 @@ export type Database = {
             referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "page_blocks_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       performance_reports: {
@@ -6095,6 +6109,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sponsor_billing_cycles_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sponsor_billing_cycles_subscription_id_fkey"
             columns: ["subscription_id"]
             isOneToOne: false
@@ -6146,6 +6167,13 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_campaigns_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
             referencedColumns: ["id"]
           },
         ]
@@ -6201,6 +6229,13 @@ export type Database = {
             referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sponsor_change_requests_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sponsor_contacts: {
@@ -6251,6 +6286,13 @@ export type Database = {
             referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sponsor_contacts_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sponsor_contracts: {
@@ -6296,6 +6338,13 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_contracts_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
             referencedColumns: ["id"]
           },
         ]
@@ -6431,6 +6480,13 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_invoices_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
             referencedColumns: ["id"]
           },
         ]
@@ -6591,6 +6647,13 @@ export type Database = {
             referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sponsor_metrics_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sponsor_notes: {
@@ -6621,6 +6684,13 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_notes_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
             referencedColumns: ["id"]
           },
         ]
@@ -6662,6 +6732,13 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_notifications_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
             referencedColumns: ["id"]
           },
         ]
@@ -6737,6 +6814,13 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_payments_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
             referencedColumns: ["id"]
           },
           {
@@ -6906,6 +6990,13 @@ export type Database = {
             referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sponsor_regions_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sponsor_slot_limits: {
@@ -7007,6 +7098,13 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_subscriptions_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
             referencedColumns: ["id"]
           },
         ]
@@ -8789,6 +8887,132 @@ export type Database = {
           description?: string | null
           id?: string | null
           name?: string | null
+        }
+        Relationships: []
+      }
+      sponsors_public: {
+        Row: {
+          active: boolean | null
+          ad_format: string | null
+          badge_type: string | null
+          campaign_end: string | null
+          campaign_start: string | null
+          clicks: number | null
+          company_name: string | null
+          created_at: string | null
+          deleted_at: string | null
+          delivered_impressions: number | null
+          display_order: number | null
+          end_date: string | null
+          external_link: string | null
+          full_description: string | null
+          guaranteed_impressions: number | null
+          id: string | null
+          image_url: string | null
+          impressions: number | null
+          link_url: string | null
+          linked_category: string | null
+          linked_category_slug: string | null
+          linked_city: string | null
+          linked_city_slug: string | null
+          logo_url: string | null
+          max_height: number | null
+          max_width: number | null
+          pacing_status: string | null
+          plan: string | null
+          plan_tier: string | null
+          position: string | null
+          short_description: string | null
+          slug: string | null
+          sponsor_type: string | null
+          start_date: string | null
+          status: string | null
+          target_pages: string | null
+          tier: string | null
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          ad_format?: string | null
+          badge_type?: string | null
+          campaign_end?: string | null
+          campaign_start?: string | null
+          clicks?: number | null
+          company_name?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          delivered_impressions?: number | null
+          display_order?: number | null
+          end_date?: string | null
+          external_link?: string | null
+          full_description?: string | null
+          guaranteed_impressions?: number | null
+          id?: string | null
+          image_url?: string | null
+          impressions?: number | null
+          link_url?: string | null
+          linked_category?: string | null
+          linked_category_slug?: string | null
+          linked_city?: string | null
+          linked_city_slug?: string | null
+          logo_url?: string | null
+          max_height?: number | null
+          max_width?: number | null
+          pacing_status?: string | null
+          plan?: string | null
+          plan_tier?: string | null
+          position?: string | null
+          short_description?: string | null
+          slug?: string | null
+          sponsor_type?: string | null
+          start_date?: string | null
+          status?: string | null
+          target_pages?: string | null
+          tier?: string | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          ad_format?: string | null
+          badge_type?: string | null
+          campaign_end?: string | null
+          campaign_start?: string | null
+          clicks?: number | null
+          company_name?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          delivered_impressions?: number | null
+          display_order?: number | null
+          end_date?: string | null
+          external_link?: string | null
+          full_description?: string | null
+          guaranteed_impressions?: number | null
+          id?: string | null
+          image_url?: string | null
+          impressions?: number | null
+          link_url?: string | null
+          linked_category?: string | null
+          linked_category_slug?: string | null
+          linked_city?: string | null
+          linked_city_slug?: string | null
+          logo_url?: string | null
+          max_height?: number | null
+          max_width?: number | null
+          pacing_status?: string | null
+          plan?: string | null
+          plan_tier?: string | null
+          position?: string | null
+          short_description?: string | null
+          slug?: string | null
+          sponsor_type?: string | null
+          start_date?: string | null
+          status?: string | null
+          target_pages?: string | null
+          tier?: string | null
+          title?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

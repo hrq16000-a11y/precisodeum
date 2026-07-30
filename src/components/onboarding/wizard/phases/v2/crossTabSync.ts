@@ -12,6 +12,12 @@ const CHANNEL_NAME = 'onboarding-v2-draft';
 export const DRAFT_CHANGE_EVENT = 'onboarding-v2:draft-changed';
 
 let channel: BroadcastChannel | null = null;
+let presenceListenerBound = false;
+let heartbeatRefs = 0;
+let heartbeatHandle: number | null = null;
+let leaderRefs = 0;
+let leaderHandle: number | null = null;
+let leaderOwnerTabId: string | null = null;
 
 function getChannel(): BroadcastChannel | null {
   if (typeof window === 'undefined') return null;
@@ -68,6 +74,8 @@ const HEARTBEAT_INTERVAL_MS = 5_000;
 // primeiro write da nova aba após reload, evitando falso positivo de
 // "concurrent_tab_detected" no boot.
 const HEARTBEAT_FRESH_MS = 7_000;
+const PEER_FRESH_MS = 8_000;
+const activePeers = new Map<string, number>();
 
 function getOrCreateTabId(): string {
   if (typeof window === 'undefined') return 'ssr';
@@ -109,6 +117,49 @@ function writeHeartbeat(tabId: string) {
   } catch { /* fail-soft */ }
 }
 
+function postTabPresence(reason: 'boot' | 'heartbeat' | 'leader' | 'request' | 'force' = 'heartbeat') {
+  const ch = getChannel();
+  if (!ch) return;
+  try {
+    ch.postMessage({ type: 'tab-presence', tabId: getOrCreateTabId(), at: Date.now(), reason });
+  } catch { /* fail-soft */ }
+}
+
+function setupPresenceListener(): void {
+  if (presenceListenerBound) return;
+  const ch = getChannel();
+  if (!ch) return;
+  presenceListenerBound = true;
+  ch.addEventListener('message', (e: MessageEvent) => {
+    const data = e?.data;
+    if (!data || typeof data !== 'object') return;
+    const type = String((data as any).type || '');
+    const tabId = typeof (data as any).tabId === 'string' ? (data as any).tabId : null;
+    const myId = getOrCreateTabId();
+    if (!tabId || tabId === myId) return;
+    if (type === 'tab-presence') {
+      activePeers.set(tabId, typeof (data as any).at === 'number' ? (data as any).at : Date.now());
+      return;
+    }
+    if (type === 'tab-presence-request') {
+      postTabPresence('request');
+    }
+  });
+}
+
+function requestPeerPresence(): void {
+  const ch = getChannel();
+  if (!ch) return;
+  try {
+    ch.postMessage({ type: 'tab-presence-request', tabId: getOrCreateTabId(), at: Date.now() });
+  } catch { /* fail-soft */ }
+}
+
+function hasFreshPeer(tabId: string): boolean {
+  const seenAt = activePeers.get(tabId);
+  return typeof seenAt === 'number' && Date.now() - seenAt < PEER_FRESH_MS;
+}
+
 /**
  * Detecta sessão concorrente: outra aba escreveu heartbeat há <FRESH_MS.
  * Retorna `true` se houver concorrência. Não bloqueia nada.
@@ -147,6 +198,16 @@ export function detectConcurrentTab(): boolean {
     pushDiag({ kind: 'concurrent_dismissed', tabId: myId, at: Date.now(), meta: { reason: 'leader_stale', otherTabId: leader.tabId, leaderAgeMs: leaderAge } });
     return false;
   }
+  if (!hasFreshPeer(leader.tabId)) {
+    requestPeerPresence();
+    pushDiag({
+      kind: 'concurrent_dismissed',
+      tabId: myId,
+      at: Date.now(),
+      meta: { reason: 'peer_not_confirmed', otherTabId: leader.tabId, hbAgeMs: hbAge, leaderAgeMs: leaderAge },
+    });
+    return false;
+  }
   pushDiag({
     kind: 'concurrent_detected',
     tabId: myId,
@@ -163,9 +224,29 @@ export function detectConcurrentTab(): boolean {
 export function startTabHeartbeat(): () => void {
   if (typeof window === 'undefined') return () => {};
   const myId = getOrCreateTabId();
+  heartbeatRefs += 1;
+  if (heartbeatRefs > 1 && heartbeatHandle !== null) {
+    writeHeartbeat(myId);
+    postTabPresence('heartbeat');
+    return () => {
+      heartbeatRefs = Math.max(0, heartbeatRefs - 1);
+    };
+  }
+  setupPresenceListener();
   writeHeartbeat(myId);
-  const handle = window.setInterval(() => writeHeartbeat(myId), HEARTBEAT_INTERVAL_MS);
-  return () => window.clearInterval(handle);
+  postTabPresence('boot');
+  requestPeerPresence();
+  heartbeatHandle = window.setInterval(() => {
+    writeHeartbeat(myId);
+    postTabPresence('heartbeat');
+  }, HEARTBEAT_INTERVAL_MS);
+  return () => {
+    heartbeatRefs = Math.max(0, heartbeatRefs - 1);
+    if (heartbeatRefs === 0 && heartbeatHandle !== null) {
+      window.clearInterval(heartbeatHandle);
+      heartbeatHandle = null;
+    }
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -243,6 +324,15 @@ export function isTabLeader(): boolean {
 export function startTabLeaderElection(): () => void {
   if (typeof window === 'undefined') return () => {};
   const myId = getOrCreateTabId();
+  leaderRefs += 1;
+  if (leaderRefs > 1 && leaderOwnerTabId === myId && leaderHandle !== null) {
+    postTabPresence('leader');
+    return () => {
+      leaderRefs = Math.max(0, leaderRefs - 1);
+    };
+  }
+  setupPresenceListener();
+  leaderOwnerTabId = myId;
 
   const debugLog = (event: string, data?: Record<string, unknown>) => {
     ctDebug('leader', event, data);
@@ -259,6 +349,7 @@ export function startTabLeaderElection(): () => void {
       writeLeader(myId);
       const reason = noLeader ? 'no_leader' : ownLeader ? 'renew' : 'stale_takeover';
       debugLog('claim', { tabId: myId, source, reason });
+      postTabPresence('leader');
       pushDiag({
         kind: reason === 'renew' ? 'leader_renew' : reason === 'stale_takeover' ? 'leader_stale_takeover' : 'leader_claim',
         tabId: myId,
@@ -271,15 +362,17 @@ export function startTabLeaderElection(): () => void {
 
   tryClaimLeadership('boot');
 
-  const handle = window.setInterval(() => {
+  leaderHandle = window.setInterval(() => {
     const rec = readLeader();
     const now = Date.now();
     if (!rec || rec.tabId === myId) {
       writeLeader(myId);
+      postTabPresence('leader');
       pushDiag({ kind: 'heartbeat_write', tabId: myId, at: now, ttlMs: LEADER_STALE_MS });
     } else if (now - rec.ts > LEADER_STALE_MS) {
       writeLeader(myId);
       debugLog('promote', { tabId: myId, previous: rec.tabId, staleMs: now - rec.ts });
+      postTabPresence('leader');
       pushDiag({
         kind: 'leader_promote',
         tabId: myId,
@@ -291,7 +384,13 @@ export function startTabLeaderElection(): () => void {
   }, LEADER_HEARTBEAT_MS);
 
   return () => {
-    try { window.clearInterval(handle); } catch { /* noop */ }
+    leaderRefs = Math.max(0, leaderRefs - 1);
+    if (leaderRefs > 0) return;
+    try {
+      if (leaderHandle !== null) window.clearInterval(leaderHandle);
+      leaderHandle = null;
+      leaderOwnerTabId = null;
+    } catch { /* noop */ }
     try {
       const rec = readLeader();
       if (rec?.tabId === myId) {
@@ -307,6 +406,26 @@ export function startTabLeaderElection(): () => void {
 export function __resetTabLeader(): void {
   try { localStorage.removeItem(LEADER_KEY); } catch { /* noop */ }
   __crossTabEvents.length = 0;
+  activePeers.clear();
+  heartbeatRefs = 0;
+  leaderRefs = 0;
+  heartbeatHandle = null;
+  leaderHandle = null;
+  leaderOwnerTabId = null;
+}
+
+/** Ação explícita do usuário para reassumir a edição nesta aba. */
+export function forceClaimCurrentTabLeadership(): void {
+  const myId = getOrCreateTabId();
+  writeHeartbeat(myId);
+  writeLeader(myId);
+  postTabPresence('force');
+  pushDiag({ kind: 'leader_claim', tabId: myId, at: Date.now(), ttlMs: LEADER_STALE_MS, meta: { source: 'force' } });
+}
+
+/** Test-only: registra presença viva de outra aba sem depender de BroadcastChannel. */
+export function __recordPeerPresence(tabId: string, at = Date.now()): void {
+  activePeers.set(tabId, at);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
