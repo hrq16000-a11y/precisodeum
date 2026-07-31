@@ -101,6 +101,32 @@ Deno.serve(async (req) => {
     url.searchParams.get("sitemap") ?? "https://www.precisodeum.com.br/sitemap.xml";
   const triggered_by = callerId(req);
 
+  // Auth: admin only. Nenhuma ação (nem leitura) fica exposta a usuários comuns.
+  {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!SUPABASE_URL || !ANON_KEY || !SERVICE_KEY) {
+      return json({ error: "server_misconfigured" }, 500);
+    }
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return json({ error: "unauthorized" }, 401);
+    }
+    const adminClient = createClient(SUPABASE_URL, SERVICE_KEY);
+    const { data: isAdmin } = await adminClient.rpc("has_role", {
+      _user_id: userData.user.id,
+      _role: "admin",
+    });
+    if (!isAdmin) {
+      return json({ error: "forbidden" }, 403);
+    }
+  }
+
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const GSC = Deno.env.get("GOOGLE_SEARCH_CONSOLE_API_KEY");
 
