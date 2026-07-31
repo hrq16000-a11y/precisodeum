@@ -1,5 +1,8 @@
 // Google Search Console helper + audit log.
 // Actions: status | get-token | verify | add | list | list-sitemaps | submit-sitemap | delete-sitemap
+// Auth: admin only (JWT validado + has_role('admin')).
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const GATEWAY = "https://connector-gateway.lovable.dev/google_search_console";
 
 const corsHeaders = {
