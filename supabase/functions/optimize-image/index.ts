@@ -163,6 +163,38 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: "GIF files cannot be optimized (may be animated)" }, 400);
       }
 
+      // ── Ownership check (fail-closed) ───────────────────────────────────
+      // Só o dono do arquivo (via public.media.user_ref) ou um admin pode
+      // reprocessar/sobrescrever um arquivo existente no Storage.
+      {
+        const { data: isAdmin } = await supabase.rpc("has_role", {
+          _user_id: user.id,
+          _role: "admin",
+        });
+        if (!isAdmin) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_ref")
+            .eq("id", user.id)
+            .maybeSingle();
+          const { data: mediaRow } = await supabase
+            .from("media")
+            .select("user_ref")
+            .eq("storage_path", `${bucket}/${path}`)
+            .maybeSingle();
+          const ownsViaMedia =
+            !!profile?.user_ref && !!mediaRow?.user_ref && mediaRow.user_ref === profile.user_ref;
+          const ownsViaPath =
+            path.startsWith(`${user.id}/`) ||
+            (!!profile?.user_ref && path.startsWith(`${profile.user_ref}/`));
+          if (!ownsViaMedia && !ownsViaPath) {
+            console.warn("[optimize-image] forbidden path optimize", { user: user.id, bucket });
+            return jsonResponse({ error: "Forbidden" }, 403);
+          }
+        }
+      }
+
+
       const profile = BUCKET_PROFILES[bucket] || BUCKET_PROFILES["service-images"];
       const targetBytes = profile.targetKB * 1024;
       const effectiveProfile = {
