@@ -10,7 +10,7 @@
 // desregistra o SW — comportamento herdado da blindagem anterior; o registro
 // volta no próximo load.
 
-const CACHE_VERSION = 'v1.2.1';
+const CACHE_VERSION = 'v1.2.2';
 const STATIC_CACHE = `pdu-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pdu-runtime-${CACHE_VERSION}`;
 const FONTS_CACHE = `pdu-fonts-${CACHE_VERSION}`;
@@ -159,5 +159,8 @@ self.addEventListener('fetch', (event) => {
 
 // ─── Mensagens (skip waiting manual a partir do client) ────────────────────
 self.addEventListener('message', (event) => {
-  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+  const data = event.data;
+  const type = typeof data === 'string' ? data : data && data.type;
+  if (type === 'SKIP_WAITING') self.skipWaiting();
 });
+

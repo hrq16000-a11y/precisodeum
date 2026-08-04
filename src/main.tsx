@@ -4,9 +4,24 @@ import App from "./App.tsx";
 import "./index.css";
 import { installConsentBridge } from "./lib/consentBridge";
 import { installWebVitalsPerRoute } from "./lib/webVitalsPerRoute";
+import { APP_VERSION, APP_BUILD_ID } from "./lib/appVersion";
+
+// Expõe a versão/build ativos no DOM para o smoke test pós-deploy confirmar
+// que o domínio está servindo a release mais recente.
+try {
+  const meta = document.querySelector('meta[name="app-version"]') ?? document.createElement('meta');
+  meta.setAttribute('name', 'app-version');
+  meta.setAttribute('content', APP_VERSION);
+  document.head.appendChild(meta);
+  const buildMeta = document.createElement('meta');
+  buildMeta.setAttribute('name', 'app-build');
+  buildMeta.setAttribute('content', APP_BUILD_ID);
+  document.head.appendChild(buildMeta);
+} catch { /* best-effort */ }
 
 // installConsentBridge é leve mas precisa estar pronto cedo (gates de gtag/fbq antes de scripts de terceiros).
 installConsentBridge();
+
 // webVitalsPerRoute apenas observa métricas — adiar para após o first paint reduz TBT/LCP em mobile.
 const __scheduleVitals = () => {
   try { installWebVitalsPerRoute(); } catch { /* best-effort */ }
@@ -440,10 +455,37 @@ void bootstrap();
     }
 
     window.addEventListener('load', () => {
+      // Cache busting: a query `?v=` muda a cada release/build, então o browser
+      // trata como um script novo e ativa a versão nova imediatamente após o
+      // deploy (sem esperar o ciclo de update do SW antigo).
+      const swUrl = `/sw.js?v=${encodeURIComponent(APP_VERSION)}.${encodeURIComponent(APP_BUILD_ID)}`;
       navigator.serviceWorker
-        .register('/sw.js', { scope: '/', updateViaCache: 'none' })
+        .register(swUrl, { scope: '/', updateViaCache: 'none' })
+        .then((reg) => {
+          // Força checagem imediata + a cada 15 min enquanto a aba estiver viva.
+          reg.update().catch(() => {});
+          setInterval(() => reg.update().catch(() => {}), 15 * 60 * 1000);
+          reg.addEventListener('updatefound', () => {
+            const sw = reg.installing;
+            if (!sw) return;
+            sw.addEventListener('statechange', () => {
+              // Nova versão pronta com SW antigo controlando → ativa e recarrega.
+              if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+                sw.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          });
+        })
         .catch((err) => console.warn('[sw] registration failed', err));
+
+      let reloadedOnce = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloadedOnce) return;
+        reloadedOnce = true;
+        window.location.reload();
+      });
     });
+
   } catch (err) {
     console.warn('[sw] registration guard error', err);
   }

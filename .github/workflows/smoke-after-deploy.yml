@@ -13,8 +13,11 @@ on:
         description: 'Base URL alvo'
         required: false
         default: 'https://precisodeum.com.br'
+  release:
+    types: [published]
   schedule:
     - cron: '0 9 * * *'
+
 
 permissions:
   contents: read

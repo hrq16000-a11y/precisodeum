@@ -87,6 +87,25 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // ── Autenticação da chamada (fail-closed) ────────────────────────────
+    // Aceita:
+    //  a) header `x-webhook-secret` igual a NOTIFY_AUTH_WEBHOOK_SECRET, ou
+    //  b) Authorization Bearer com a service role key (padrão dos DB webhooks).
+    // Sem nenhum dos dois → 401. Isso impede que terceiros disparem e-mails.
+    const WEBHOOK_SECRET = Deno.env.get("NOTIFY_AUTH_WEBHOOK_SECRET");
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const providedSecret = req.headers.get("x-webhook-secret");
+    const bearer = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const secretOk = !!WEBHOOK_SECRET && providedSecret === WEBHOOK_SECRET;
+    const serviceOk = !!SERVICE_KEY && bearer === SERVICE_KEY;
+    if (!secretOk && !serviceOk) {
+      console.warn("[notify-auth-errors] unauthorized call rejected");
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = await req.json().catch(() => null);
     const row = extractRecord(body);
     if (!row) {
@@ -96,12 +115,32 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Anti-spoof: só envia e-mail se o evento realmente existir no banco.
+    if (row.id) {
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      if (SUPABASE_URL && SERVICE_KEY) {
+        const check = await fetch(
+          `${SUPABASE_URL}/rest/v1/onboarding_events?id=eq.${encodeURIComponent(row.id)}&select=id,event,error_code,error_message,phase,user_id,created_at`,
+          { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+        );
+        const rows = (await check.json().catch(() => [])) as OnboardingEventRow[];
+        if (!Array.isArray(rows) || rows.length === 0) {
+          return new Response(JSON.stringify({ skipped: "event_not_found" }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        Object.assign(row, rows[0]); // usa os valores do banco, não do payload
+      }
+    }
+
     if (row.event !== "error" || !row.error_code || !CRITICAL_CODES.has(row.error_code)) {
       return new Response(
         JSON.stringify({ skipped: "not_critical", code: row.error_code ?? null }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
 
     const { subject, html } = buildHtml(row);
 
