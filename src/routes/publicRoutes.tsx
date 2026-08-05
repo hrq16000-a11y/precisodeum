@@ -64,6 +64,7 @@ const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const AccountDeletionPage = lazy(() => import("@/pages/AccountDeletionPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const CookiesPage = lazy(() => import("@/pages/CookiesPage"));
+const StatusPage = lazy(() => import("@/pages/StatusPage"));
 const AboutPage = lazy(() => import("@/pages/AboutPage"));
 const ComoFuncionaPage = lazy(() => import("@/pages/ComoFuncionaPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
@@ -93,7 +94,7 @@ export const PUBLIC_PATH_PREFIXES = [
   '/cidade', '/cidades', '/categorias', '/servico', '/servicos', '/servico-detalhe',
   '/excluir-conta', '/exclusao-de-conta', '/delete-account',
   '/esqueci-senha', '/senha-redefinida', '/password-reset-success',
-  '/sitemap', '/p', '/error',
+  '/sitemap', '/p', '/error', '/status',
 ] as const;
 
 /**
@@ -206,6 +207,7 @@ export const publicRoutes = (
     <Route path="/delete-account" element={<AccountDeletionPage />} />
     <Route path="/termos" element={<TermsPage />} />
     <Route path="/cookies" element={<CookiesPage />} />
+    <Route path="/status" element={<StatusPage />} />
     <Route path="/sobre" element={<AboutPage />} />
     <Route path="/como-funciona" element={<ComoFuncionaPage />} />
     <Route path="/reset-password" element={<ResetPasswordPage />} />

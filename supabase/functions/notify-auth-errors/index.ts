@@ -1,6 +1,7 @@
 // Edge function: notify-auth-errors
 // Recebe payload de Database Webhook (INSERT em onboarding_events) e
 // envia alerta por e-mail (Resend) apenas para erros críticos.
+import { verifyRotatingWebhook } from "../_shared/rotatingWebhookAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -88,25 +89,29 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Autenticação da chamada (fail-closed) ────────────────────────────
-    // Aceita:
-    //  a) header `x-webhook-secret` igual a NOTIFY_AUTH_WEBHOOK_SECRET, ou
-    //  b) Authorization Bearer com a service role key (padrão dos DB webhooks).
-    // Sem nenhum dos dois → 401. Isso impede que terceiros disparem e-mails.
-    const WEBHOOK_SECRET = Deno.env.get("NOTIFY_AUTH_WEBHOOK_SECRET");
-    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const providedSecret = req.headers.get("x-webhook-secret");
-    const bearer = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-    const secretOk = !!WEBHOOK_SECRET && providedSecret === WEBHOOK_SECRET;
-    const serviceOk = !!SERVICE_KEY && bearer === SERVICE_KEY;
-    if (!secretOk && !serviceOk) {
-      console.warn("[notify-auth-errors] unauthorized call rejected");
-      return new Response(JSON.stringify({ error: "unauthorized" }), {
-        status: 401,
+    // Preferencial: assinatura HMAC-SHA256 com timestamp (anti-replay ±5 min)
+    //   headers: x-webhook-timestamp + x-webhook-signature: v1=<hex>
+    //   segredos aceitos (rotação sem downtime):
+    //     NOTIFY_AUTH_WEBHOOK_SECRET, _PREVIOUS, _NEXT
+    // Compatibilidade: Database Webhooks internos com Bearer service role key.
+    // Sem nenhum dos dois → 401.
+    const rawBody = await req.text();
+    const auth = await verifyRotatingWebhook(req, rawBody, {
+      prefix: "NOTIFY_AUTH_WEBHOOK_SECRET",
+      allowServiceRole: true,
+    });
+    if (!auth.ok) {
+      console.warn("[notify-auth-errors] rejected:", auth.error);
+      return new Response(JSON.stringify({ error: auth.error }), {
+        status: auth.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    console.log(`[notify-auth-errors] authorized via=${auth.via} key=${auth.keyVersion}`);
 
-    const body = await req.json().catch(() => null);
+    const body = (() => {
+      try { return JSON.parse(rawBody); } catch { return null; }
+    })();
     const row = extractRecord(body);
     if (!row) {
       return new Response(JSON.stringify({ skipped: "no_record" }), {
