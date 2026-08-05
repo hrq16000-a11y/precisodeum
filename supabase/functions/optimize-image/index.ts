@@ -276,7 +276,7 @@ Deno.serve(async (req) => {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const bucket = (formData.get("bucket") as string) || "service-images";
-    const folder = (formData.get("folder") as string) || "";
+    let folder = (formData.get("folder") as string) || "";
 
     if (!ALLOWED_BUCKETS.includes(bucket)) {
       return jsonResponse({ error: "Invalid bucket" }, 400);
@@ -284,6 +284,36 @@ Deno.serve(async (req) => {
     if (folder && isInvalidStoragePath(folder)) {
       return jsonResponse({ error: "Invalid folder path" }, 400);
     }
+
+    // ── Scope enforcement (fail-safe) ────────────────────────────────────
+    // Não-admin só grava em pasta que contenha seu próprio id/user_ref como
+    // segmento. Se o cliente enviar uma pasta fora do escopo, o upload é
+    // reescrito para dentro do escopo do usuário (nunca escreve na área alheia).
+    {
+      const { data: isAdminUpload } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+      if (!isAdminUpload) {
+        const { data: profileUp } = await supabase
+          .from("profiles")
+          .select("user_ref")
+          .eq("id", user.id)
+          .maybeSingle();
+        const segments = folder.split("/").filter(Boolean);
+        const scoped =
+          segments.includes(user.id) ||
+          (!!profileUp?.user_ref && segments.includes(profileUp.user_ref));
+        if (!scoped) {
+          console.warn("[optimize-image] folder out of scope, rewriting", {
+            user: user.id,
+            bucket,
+          });
+          folder = folder ? `${user.id}/${folder}` : user.id;
+        }
+      }
+    }
+
     if (!file) {
       return jsonResponse({ error: "No file provided" }, 400);
     }
