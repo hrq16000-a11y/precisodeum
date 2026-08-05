@@ -207,6 +207,7 @@ export const publicRoutes = (
     <Route path="/delete-account" element={<AccountDeletionPage />} />
     <Route path="/termos" element={<TermsPage />} />
     <Route path="/cookies" element={<CookiesPage />} />
+    <Route path="/status" element={<StatusPage />} />
     <Route path="/sobre" element={<AboutPage />} />
     <Route path="/como-funciona" element={<ComoFuncionaPage />} />
     <Route path="/reset-password" element={<ResetPasswordPage />} />
