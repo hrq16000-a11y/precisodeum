@@ -1,6 +1,7 @@
 // Edge function: notify-auth-errors
 // Recebe payload de Database Webhook (INSERT em onboarding_events) e
 // envia alerta por e-mail (Resend) apenas para erros críticos.
+import { verifyRotatingWebhook } from "../_shared/rotatingWebhookAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
