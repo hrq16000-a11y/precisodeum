@@ -64,6 +64,7 @@ const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const AccountDeletionPage = lazy(() => import("@/pages/AccountDeletionPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const CookiesPage = lazy(() => import("@/pages/CookiesPage"));
+const StatusPage = lazy(() => import("@/pages/StatusPage"));
 const AboutPage = lazy(() => import("@/pages/AboutPage"));
 const ComoFuncionaPage = lazy(() => import("@/pages/ComoFuncionaPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
