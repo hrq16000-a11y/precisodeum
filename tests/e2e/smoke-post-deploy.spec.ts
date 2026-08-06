@@ -16,6 +16,11 @@ import { test, expect, request as pwRequest } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
 const BASE_URL = (process.env.BASE_URL || 'https://precisodeum.com.br').replace(/\/$/, '');
+const PROJECT_ID = process.env.VITE_SUPABASE_PROJECT_ID || 'qaftogrqeyymewoofexc';
+const ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const REST = `https://${PROJECT_ID}.supabase.co/rest/v1`;
+const FUNCTIONS = `https://${PROJECT_ID}.supabase.co/functions/v1`;
+const anonHeaders = () => (ANON_KEY ? { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } : {});
 
 function localAppVersion(): string {
   try {
