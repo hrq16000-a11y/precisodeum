@@ -149,6 +149,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const startedAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     let attemptsUsed = 0;
     let lastErrorMessage: string | null = null;
+    // 42501 = permission denied (sessão expirada → PostgREST trata como anon).
+    // Tentamos UM refresh de sessão; se persistir, abortamos o loop para não
+    // gerar dezenas de 42501 em produção e caímos em perfil mínimo.
+    let permissionDenied = false;
+    let sessionRefreshTried = false;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       if (ctrl.signal.aborted) break;
       attemptsUsed = attempt + 1;
