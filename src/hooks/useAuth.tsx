@@ -149,6 +149,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const startedAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     let attemptsUsed = 0;
     let lastErrorMessage: string | null = null;
+    // 42501 = permission denied (sessão expirada → PostgREST trata como anon).
+    // Tentamos UM refresh de sessão; se persistir, abortamos o loop para não
+    // gerar dezenas de 42501 em produção e caímos em perfil mínimo.
+    let permissionDenied = false;
+    let sessionRefreshTried = false;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       if (ctrl.signal.aborted) break;
       attemptsUsed = attempt + 1;
@@ -193,6 +198,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               lastErrorMessage = `profiles(min): ${fb.error.message}`;
             } else {
               pErr = null as any;
+            }
+          }
+          if (code === '42501' || /permission denied/i.test(msg)) {
+            if (!sessionRefreshTried) {
+              sessionRefreshTried = true;
+              console.warn('[useAuth] 42501 em profiles — tentando refresh de sessão');
+              try { await supabase.auth.refreshSession(); } catch { /* noop */ }
+            } else {
+              permissionDenied = true;
+              break;
             }
           }
         }
@@ -251,13 +266,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const elapsedMs = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - startedAt);
+
+    // Permissão negada persistente (sessão inválida): não insistimos, não
+    // poluímos a telemetria e montamos um perfil mínimo a partir do auth user
+    // para que nenhuma tela fique em branco.
+    if (!profileData && permissionDenied) {
+      console.warn('[useAuth] profiles inacessível (42501) — usando perfil mínimo da sessão');
+      profileData = {
+        id: userId,
+        full_name: (authUser?.user_metadata?.full_name as string) ?? null,
+        avatar_url: (authUser?.user_metadata?.avatar_url as string) ?? null,
+      } as unknown as ProfileWithDerived;
+      providerRows = providerRows ?? [];
+    }
+
     // Fire-and-forget telemetry
-    supabase.from('auth_profile_metrics' as any).insert({
-      user_id: userId,
-      duration_ms: elapsedMs,
-      attempts: attemptsUsed,
-      succeeded: !!profileData,
-    } as any).then(() => undefined, () => undefined);
+    if (!permissionDenied) {
+      supabase.from('auth_profile_metrics' as any).insert({
+        user_id: userId,
+        duration_ms: elapsedMs,
+        attempts: attemptsUsed,
+        succeeded: !!profileData,
+      } as any).then(() => undefined, () => undefined);
+    }
 
     if (!profileData) {
       reportError({
