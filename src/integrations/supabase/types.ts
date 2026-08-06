@@ -9878,6 +9878,16 @@ export type Database = {
           total_3d: number
         }[]
       }
+      audit_privileged_revert: {
+        Args: {
+          _attempted: Json
+          _entity_id: string
+          _entity_type: string
+          _kept: Json
+          _target_user_id: string
+        }
+        Returns: undefined
+      }
       audit_sponsor_scope_consistency: {
         Args: never
         Returns: {
