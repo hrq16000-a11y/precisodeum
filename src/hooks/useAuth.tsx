@@ -200,6 +200,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               pErr = null as any;
             }
           }
+          if (code === '42501' || /permission denied/i.test(msg)) {
+            if (!sessionRefreshTried) {
+              sessionRefreshTried = true;
+              console.warn('[useAuth] 42501 em profiles — tentando refresh de sessão');
+              try { await supabase.auth.refreshSession(); } catch { /* noop */ }
+            } else {
+              permissionDenied = true;
+              break;
+            }
+          }
         }
         if (pvErr) {
           const pvCode = hasCode(pvErr) ? pvErr.code : '';
