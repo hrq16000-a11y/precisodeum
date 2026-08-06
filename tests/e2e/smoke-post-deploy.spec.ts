@@ -135,9 +135,13 @@ test.describe('@smoke pós-deploy', () => {
     expect([200, 503]).toContain(res.status());
     const payload = await res.json().catch(() => null);
     expect(payload, 'health-check não retornou JSON').not.toBeNull();
-    const raw = JSON.stringify(payload).toLowerCase();
-    expect(raw).toContain('gsc');
-    expect(raw, 'health-check reportou serviço em falha').not.toContain('"status":"down"');
+    const names = (payload.checks || []).map((c: any) => c.name);
+    expect(names).toContain('gsc_verify');
+    expect(names).toContain('public_profiles');
+    expect(names).toContain('profiles_closed');
+    const failed = (payload.checks || []).filter((c: any) => !c.ok).map((c: any) => c.name);
+    expect(failed, `health-check com falhas: ${failed.join(', ')}`).toEqual([]);
+    expect(payload.status).toBe('ok');
     await ctx.dispose();
   });
 });
