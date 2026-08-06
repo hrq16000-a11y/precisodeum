@@ -89,6 +89,38 @@ Deno.serve(async (req: Request) => {
   );
 
   checks.push(
+    await timed("public_profiles", async () => {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/public_profiles?select=id&limit=1`,
+        { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } },
+      );
+      const rows = res.ok ? await res.json().catch(() => null) : null;
+      return {
+        ok: res.ok && Array.isArray(rows),
+        status: res.status,
+        detail: res.ok ? "view pública legível" : "leitura pública de perfis falhou",
+      };
+    }),
+  );
+
+  checks.push(
+    await timed("profiles_closed", async () => {
+      // profiles NÃO pode ser legível por anônimo (PII). 401/403 ou 0 linhas = saudável.
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?select=id&limit=1`,
+        { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } },
+      );
+      const rows = res.ok ? await res.json().catch(() => null) : null;
+      const closed = !res.ok || (Array.isArray(rows) && rows.length === 0);
+      return {
+        ok: closed,
+        status: res.status,
+        detail: closed ? "fechado para anônimo" : "ATENÇÃO: profiles vazando para anônimo",
+      };
+    }),
+  );
+
+  checks.push(
     await timed("sitemap", async () => {
       const res = await fetch(`${SITE_URL}/sitemap.xml`, { redirect: "follow" });
       const head = res.ok ? (await res.text()).slice(0, 80) : "";
