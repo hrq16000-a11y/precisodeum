@@ -266,13 +266,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const elapsedMs = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - startedAt);
+
+    // Permissão negada persistente (sessão inválida): não insistimos, não
+    // poluímos a telemetria e montamos um perfil mínimo a partir do auth user
+    // para que nenhuma tela fique em branco.
+    if (!profileData && permissionDenied) {
+      console.warn('[useAuth] profiles inacessível (42501) — usando perfil mínimo da sessão');
+      profileData = {
+        id: userId,
+        full_name: (authUser?.user_metadata?.full_name as string) ?? null,
+        avatar_url: (authUser?.user_metadata?.avatar_url as string) ?? null,
+      } as unknown as ProfileWithDerived;
+      providerRows = providerRows ?? [];
+    }
+
     // Fire-and-forget telemetry
-    supabase.from('auth_profile_metrics' as any).insert({
-      user_id: userId,
-      duration_ms: elapsedMs,
-      attempts: attemptsUsed,
-      succeeded: !!profileData,
-    } as any).then(() => undefined, () => undefined);
+    if (!permissionDenied) {
+      supabase.from('auth_profile_metrics' as any).insert({
+        user_id: userId,
+        duration_ms: elapsedMs,
+        attempts: attemptsUsed,
+        succeeded: !!profileData,
+      } as any).then(() => undefined, () => undefined);
+    }
 
     if (!profileData) {
       reportError({
