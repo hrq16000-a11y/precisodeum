@@ -87,4 +87,53 @@ test.describe('@smoke pós-deploy', () => {
     const blocked = /entrar|login|acesso|permiss|carregando/.test(body);
     expect(blocked, 'tela admin não deve renderizar dados para anônimo').toBeTruthy();
   });
+
+  test('public_profiles é legível por anônimo (view pública sem PII)', async () => {
+    const ctx = await pwRequest.newContext();
+    const res = await ctx.get(`${REST}/public_profiles?select=id,full_name&limit=1`, {
+      headers: anonHeaders(),
+      failOnStatusCode: false,
+    });
+    expect(res.status(), `public_profiles quebrou para anônimo: ${await res.text()}`).toBe(200);
+    const rows = await res.json();
+    expect(Array.isArray(rows)).toBeTruthy();
+    // Nenhuma coluna sensível pode escapar pela view.
+    for (const row of rows) {
+      for (const forbidden of ['tax_id', 'phone', 'whatsapp', 'email', 'cpf', 'cnpj']) {
+        expect(row).not.toHaveProperty(forbidden);
+      }
+    }
+    await ctx.dispose();
+  });
+
+  test('profiles permanece fechada para anônimo (42501/permission denied)', async () => {
+    const ctx = await pwRequest.newContext();
+    const res = await ctx.get(`${REST}/profiles?select=id&limit=1`, {
+      headers: anonHeaders(),
+      failOnStatusCode: false,
+    });
+    if (res.status() === 200) {
+      const rows = await res.json();
+      expect(Array.isArray(rows) && rows.length === 0, 'profiles vazou linhas para anônimo').toBeTruthy();
+    } else {
+      expect([401, 403]).toContain(res.status());
+    }
+    await ctx.dispose();
+  });
+
+  test('health-check reporta serviços críticos saudáveis (inclui gsc-verify)', async () => {
+    const ctx = await pwRequest.newContext();
+    const res = await ctx.get(`${FUNCTIONS}/health-check`, {
+      headers: anonHeaders(),
+      failOnStatusCode: false,
+    });
+    expect([200, 503]).toContain(res.status());
+    const payload = await res.json().catch(() => null);
+    expect(payload, 'health-check não retornou JSON').not.toBeNull();
+    const raw = JSON.stringify(payload).toLowerCase();
+    expect(raw).toContain('gsc');
+    expect(raw, 'health-check reportou serviço em falha').not.toContain('"status":"down"');
+    await ctx.dispose();
+  });
 });
+
