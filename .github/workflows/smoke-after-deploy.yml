@@ -16,7 +16,7 @@ on:
   release:
     types: [published]
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '0 */6 * * *'
 
 
 permissions:
@@ -33,6 +33,8 @@ jobs:
     timeout-minutes: 15
     env:
       BASE_URL: ${{ github.event.inputs.base_url || 'https://precisodeum.com.br' }}
+      VITE_SUPABASE_PROJECT_ID: ${{ vars.VITE_SUPABASE_PROJECT_ID }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -77,6 +79,10 @@ jobs:
               '- Perfil de prestador renderiza com `data-seo-ready="true"`',
               '- Contato/WhatsApp emite event tracking',
               '- Página de planos (Sponsor) carrega sem erro',
+              '- Leitura anônima de `public_profiles` (view pública sem PII)',
+              '- `profiles` permanece fechada para anônimo (sem vazamento)',
+              '- Rotas admin bloqueadas para anônimo',
+              '- Edge `health-check` (inclui gsc-verify) sem serviço em falha',
             ].join('\n');
             await github.rest.issues.create({
               owner: context.repo.owner,
