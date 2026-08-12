@@ -170,7 +170,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         'whatsapp, phone, website, years_experience, category_id, services_count, ' +
         'portfolio_album_count, portfolio_photo_count, rating_avg, review_count, response_time, ' +
         'service_radius, working_hours, working_hours_struct, latitude, longitude, account_type, ' +
-        'status, onboarding_progress, lead_followup_hours, mission_answers, user_ref, cnpj, cpf';
+        'status, onboarding_progress, lead_followup_hours, mission_answers, user_ref';
       try {
         // Per-attempt timeout + abortSignal: cancela requests Supabase pendentes
         // tanto pelo timeout interno quanto pelo abort externo (cleanup/refetch).
@@ -234,7 +234,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         }
-        const normalizedProviderRows = Array.isArray(pvRows) ? (pvRows as any[]) : [];
+        let normalizedProviderRows = Array.isArray(pvRows) ? (pvRows as any[]) : [];
+        // SEGURANÇA: cpf/cnpj/birth_date não são mais legíveis direto na tabela.
+        // Só o dono (ou admin) recebe esses campos via RPC SECURITY DEFINER.
+        if (normalizedProviderRows.length > 0) {
+          try {
+            const { data: docs } = await supabase.rpc('get_provider_documents' as any, {
+              _provider_ids: normalizedProviderRows.map((row: any) => row.id),
+            });
+            const docsMap = new Map((docs as any[] | null ?? []).map((d: any) => [d.id, d]));
+            normalizedProviderRows = normalizedProviderRows.map((row: any) => ({
+              ...row,
+              cpf: docsMap.get(row.id)?.cpf ?? null,
+              cnpj: docsMap.get(row.id)?.cnpj ?? null,
+              birth_date: docsMap.get(row.id)?.birth_date ?? null,
+            }));
+          } catch {
+            /* documentos são opcionais para a sessão */
+          }
+        }
         let derivedAccountType: string | null = null;
         let derivedPrimaryCategoryId: string | null = null;
         if (normalizedProviderRows.length > 0) {
