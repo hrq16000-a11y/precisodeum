@@ -1,0 +1,85 @@
+name: Build Time Guard
+
+# Executa o build de produção em PRs e falha se ultrapassar um limite
+# configurável (segundos). Evita que o deploy descubra o timeout só na publicação.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit_seconds:
+        description: "Limite máximo do build em segundos"
+        required: false
+        default: "300"
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-time-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Limite padrão (5 min). Pode ser sobrescrito por variável de repositório
+  # BUILD_TIME_LIMIT_SECONDS ou pelo input do workflow_dispatch.
+  DEFAULT_LIMIT_SECONDS: "300"
+
+jobs:
+  build-time:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolver limite de tempo
+        id: limit
+        run: |
+          LIMIT="${{ github.event.inputs.limit_seconds }}"
+          if [ -z "$LIMIT" ]; then LIMIT="${{ vars.BUILD_TIME_LIMIT_SECONDS }}"; fi
+          if [ -z "$LIMIT" ]; then LIMIT="$DEFAULT_LIMIT_SECONDS"; fi
+          echo "limit=$LIMIT" >> "$GITHUB_OUTPUT"
+          echo "Limite configurado: ${LIMIT}s"
+
+      - name: Build de produção com medição de tempo
+        id: build
+        env:
+          PRERENDER: "0"
+          LIMIT: ${{ steps.limit.outputs.limit }}
+        run: |
+          set -o pipefail
+          START=$(date +%s)
+          # timeout mata o build se travar (limite + 60s de folga para o kill).
+          timeout $((LIMIT + 60)) npm run build 2>&1 | tee build.log
+          STATUS=$?
+          END=$(date +%s)
+          DURATION=$((END - START))
+          echo "duration=$DURATION" >> "$GITHUB_OUTPUT"
+          echo "## Build time: ${DURATION}s (limite ${LIMIT}s)" >> "$GITHUB_STEP_SUMMARY"
+          if [ $STATUS -ne 0 ]; then
+            echo "::error::Build falhou ou foi interrompido por timeout (status $STATUS)."
+            exit 1
+          fi
+          if [ "$DURATION" -gt "$LIMIT" ]; then
+            echo "::error::Build levou ${DURATION}s, acima do limite de ${LIMIT}s."
+            exit 1
+          fi
+          echo "Build OK em ${DURATION}s."
+
+      - name: Upload do log de build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
