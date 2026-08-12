@@ -22,3 +22,12 @@ export const JOB_PUBLIC_COLUMNS =
 export const SERVICE_PUBLIC_COLUMNS =
   'id, provider_id, service_name, description, price, service_area, created_at, category_id, address, working_hours, website, deleted_at, user_ref, view_count, instagram_url, facebook_url, youtube_url, is_emergency, service_radius, seo_tags, meta_title, meta_description, updated_at, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, accepts_on_demand' as const;
 
+/**
+ * profiles.tax_id / tax_id_encrypted foram revogados até para `authenticated`.
+ * A leitura do documento acontece só via RPC (`get_profile_tax_id` /
+ * `admin_set_profile_tax_id`). Use esta lista no lugar de `select('*')`.
+ */
+export const PROFILE_FULL_COLUMNS =
+  'id, full_name, email, phone, avatar_url, role, created_at, updated_at, profile_type, status, whatsapp, user_ref, level_id, department, account_type_id, permissions, engagement_points, suspended_at, suspended_reason, suspended_by, onboarding_completed, is_suspicious, suspicious_reason, suspicious_ip, suspicious_at, staff_role, commercial_plan, trial_boost_until, onboarding_checklist_completed_at, referral_code, onboarding_step, celebration_muted, bio, city, state, preferred_category_ids, tax_id_last4, tax_id_kind, neighborhood, banned_at, ban_reason, registration_ip, registration_user_agent' as const;
+
+
