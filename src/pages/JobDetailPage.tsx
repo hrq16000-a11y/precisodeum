@@ -32,9 +32,9 @@ const JobDetailPage = () => {
   const { data: job, isLoading } = useQuery({
     queryKey: ['job-detail', slug],
     queryFn: async () => {
-      const { data: bySlug } = await supabase.from('jobs').select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)`).eq('slug', slug!).maybeSingle();
+      const { data: bySlug } = await supabase.from('jobs').select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)` as const).eq('slug', slug!).maybeSingle();
       if (bySlug) return bySlug;
-      const { data: byId } = await supabase.from('jobs').select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)`).eq('id', slug!).maybeSingle();
+      const { data: byId } = await supabase.from('jobs').select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)` as const).eq('id', slug!).maybeSingle();
       return byId;
     },
   });

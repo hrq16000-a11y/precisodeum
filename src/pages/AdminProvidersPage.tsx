@@ -190,7 +190,7 @@ const AdminProvidersPage = () => {
   const fetchProviders = async () => {
     const { data: providerData, count } = await supabase
       .from('providers')
-      .select(`${PROVIDER_SAFE_COLUMNS}, categories(name, icon)`, { count: 'exact' })
+      .select(`${PROVIDER_SAFE_COLUMNS}, categories(name, icon)` as const, { count: 'exact' })
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(ADMIN_FETCH_CAP);

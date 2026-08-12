@@ -124,7 +124,7 @@ const JobsPage = () => {
 
       let query = supabase
         .from('jobs')
-        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)`, { count: 'exact' })
+        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)` as const, { count: 'exact' })
         .eq('status', 'active')
         .is('deleted_at', null);
 
@@ -166,7 +166,7 @@ const JobsPage = () => {
     queryFn: async () => {
       let query = supabase
         .from('jobs')
-        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)`, { count: 'exact' })
+        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)` as const, { count: 'exact' })
         .eq('status', 'active')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
