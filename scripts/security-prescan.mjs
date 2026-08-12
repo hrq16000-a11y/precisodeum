@@ -153,6 +153,8 @@ async function main() {
     (SENSITIVE_TABLES.includes(r.tablename) ? critical : warnings).push(msg);
   }
   for (const r of results.anon_policies_sensitive) {
+    const key = `${r.tablename}.${r.policyname}`;
+    if (isDenyPolicy(r) || PUBLIC_WRITE_ALLOWLIST.has(key)) continue;
     const msg = `Escrita liberada para anon/public: ${r.tablename}."${r.policyname}" (${r.cmd})`;
     (SENSITIVE_TABLES.includes(r.tablename) ? critical : warnings).push(msg);
   }
