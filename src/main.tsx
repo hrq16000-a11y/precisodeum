@@ -478,9 +478,13 @@ void bootstrap();
         })
         .catch((err) => console.warn('[sw] registration failed', err));
 
+      // Só recarrega quando havia um SW anterior controlando a página (update real).
+      // Na primeira visita o controller passa de null → SW novo; recarregar aqui
+      // provocaria um reload inesperado logo após o primeiro carregamento.
+      const hadController = !!navigator.serviceWorker.controller;
       let reloadedOnce = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloadedOnce) return;
+        if (!hadController || reloadedOnce) return;
         reloadedOnce = true;
         window.location.reload();
       });
