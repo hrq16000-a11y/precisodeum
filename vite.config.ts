@@ -39,11 +39,16 @@ export default defineConfig(({ mode }) => ({
     // Substitui o drop_console do terser sem custo de CPU extra.
     drop: mode === 'production' ? ['console', 'debugger'] : [],
   },
+  logLevel: "info",
   build: {
     // esbuild minifica ~10-20x mais rápido que terser (que rodava com passes:2
     // e estourava o limite de tempo do build de produção). Ganho de tamanho do
     // terser era marginal frente ao risco de timeout no deploy.
     minify: 'esbuild',
+    // Sourcemaps de produção dobravam o tempo de emissão e o I/O do deploy.
+    sourcemap: false,
+    // Evita recomprimir (gzip) cada chunk só para o relatório do terminal.
+    reportCompressedSize: false,
     chunkSizeWarningLimit: 1500,
     // Estabilidade > micro-otimização: o particionamento manual criou um ciclo
     // entre chunks de vendor no build publicado, quebrando o namespace do React
