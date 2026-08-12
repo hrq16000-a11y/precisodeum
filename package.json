@@ -41,6 +41,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "security:prescan": "node scripts/security-prescan.mjs",
     "security:prescan:strict": "node scripts/security-prescan.mjs --strict",
     "prepublish:check": "node scripts/audit-rpc-grants.mjs && node scripts/lint-sensitive-payloads.mjs && node scripts/security-prescan.mjs"
