@@ -80,6 +80,9 @@ const QUERIES = {
     WHERE schemaname = 'public'
       AND ('anon' = ANY(roles) OR 'public' = ANY(roles))
       AND cmd <> 'SELECT'
+      -- só é achado quando NÃO há amarração a usuário/role autenticado
+      AND coalesce(with_check, '') !~* '(auth\\.uid|has_role|auth\\.role|current_setting)'
+      AND coalesce(qual, '') !~* '(auth\\.uid|has_role|auth\\.role|current_setting)'
     ORDER BY 1,2`,
   anon_security_definer: `
     SELECT p.proname AS function_name
