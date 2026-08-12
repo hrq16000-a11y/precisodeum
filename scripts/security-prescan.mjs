@@ -95,7 +95,7 @@ const QUERIES = {
       AND with_check IS NULL
     ORDER BY 1,2`,
   anon_policies_sensitive: `
-    SELECT tablename, policyname, cmd, roles::text AS roles
+    SELECT tablename, policyname, cmd, roles::text AS roles, qual, with_check
     FROM pg_policies
     WHERE schemaname = 'public'
       AND ('anon' = ANY(roles) OR 'public' = ANY(roles))
