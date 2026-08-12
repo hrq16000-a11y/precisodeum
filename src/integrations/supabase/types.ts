@@ -10258,6 +10258,15 @@ export type Database = {
         }[]
       }
       get_home_bootstrap: { Args: never; Returns: Json }
+      get_job_contact: {
+        Args: { _job_id: string }
+        Returns: {
+          contact_name: string
+          contact_phone: string
+          masked: boolean
+          whatsapp: string
+        }[]
+      }
       get_latest_user_access_logs: {
         Args: never
         Returns: {
@@ -10404,6 +10413,16 @@ export type Database = {
           hours_remaining: number
           id: string
           image_url: string
+        }[]
+      }
+      get_provider_documents: {
+        Args: { _provider_ids?: string[] }
+        Returns: {
+          birth_date: string
+          cnpj: string
+          cpf: string
+          id: string
+          user_id: string
         }[]
       }
       get_provider_lead_stats: {
