@@ -34,12 +34,13 @@ import {
   FULL_NAME_INVALID_MESSAGE,
 } from '@/lib/validation/fullNameValidation';
 import {
-import { PROFILE_FULL_COLUMNS } from '@/lib/dbSafeColumns';
   normalizePhoneBR,
   isValidPhoneBR,
   shouldEnforcePhone,
   PHONE_INVALID_MESSAGE,
 } from '@/lib/validation/phoneNormalization';
+import { PROFILE_FULL_COLUMNS } from '@/lib/dbSafeColumns';
+
 
 interface UserDetailSheetProps {
   user: any | null;
