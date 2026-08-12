@@ -5,9 +5,13 @@ interface PageTransitionProps {
   className?: string;
 }
 
-/** Lightweight page transition using CSS only — avoids framer-motion reflow */
+/**
+ * Transição de página CSS-only (sem framer-motion).
+ * Usa a mesma curva/duração da camada global de motion (RouteMotion)
+ * e respeita `prefers-reduced-motion` via index.css.
+ */
 const PageTransition = ({ children, className = '' }: PageTransitionProps) => (
-  <div className={`animate-fade-in ${className}`}>
+  <div className={`route-motion-enter ${className}`}>
     {children}
   </div>
 );
