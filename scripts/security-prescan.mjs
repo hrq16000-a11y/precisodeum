@@ -39,6 +39,26 @@ const SENSITIVE_TABLES = [
   "support_tickets",
 ];
 
+/**
+ * Escritas públicas intencionais (formulários anônimos do portal),
+ * já protegidas por triggers/validação server-side.
+ */
+const PUBLIC_WRITE_ALLOWLIST = new Set([
+  "leads.Anyone can create leads",
+  "open_leads.Anyone can create open leads",
+  "sponsor_leads.Anyone can submit sponsor lead",
+  "search_demand_logs.Anyone can insert demand logs",
+  "coverage_search_log.anyone can insert valid coverage log",
+  "pwa_install_events.Anyone can insert pwa events",
+  "performance_reports.Anyone can create bounded performance reports",
+  "onboarding_events.anyone can insert telemetry",
+  "auth_profile_metrics.auth_profile_metrics: anon insert no user",
+]);
+
+/** Policies que existem para NEGAR (qual/with_check = false) não são achados. */
+const isDenyPolicy = (row) =>
+  /^\s*false\s*$/i.test(row.with_check || "") || /^\s*false\s*$/i.test(row.qual || "");
+
 function loadAllowlist() {
   const p = path.join(__dirname, "rpc-grants-allowlist.json");
   if (!existsSync(p)) return [];
