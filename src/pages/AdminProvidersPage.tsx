@@ -7,6 +7,7 @@ import { Check, X, Eye, Search, MapPin, Edit2, MoreHorizontal, ExternalLink, Dow
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAdmin } from '@/hooks/useAdmin';
+import { PROVIDER_SAFE_COLUMNS } from '@/lib/dbSafeColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -189,7 +190,7 @@ const AdminProvidersPage = () => {
   const fetchProviders = async () => {
     const { data: providerData, count } = await supabase
       .from('providers')
-      .select('*, categories(name, icon)', { count: 'exact' })
+      .select(`${PROVIDER_SAFE_COLUMNS}, categories(name, icon)` as const, { count: 'exact' })
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(ADMIN_FETCH_CAP);
@@ -198,14 +199,31 @@ const AdminProvidersPage = () => {
       toast.warning(`Exibindo ${ADMIN_FETCH_CAP} de ${count} prestadores — use os filtros para ver os demais.`);
     }
 
-    setAllProviders(providerData);
+    // SEGURANÇA: CNPJ/CPF só chegam via RPC (admin/dono).
+    let withDocs: any[] = providerData as any[];
+    try {
+      const { data: docs } = await supabase.rpc('get_provider_documents' as any, {
+        _provider_ids: (providerData as any[]).map((p: any) => p.id),
+      });
+      const docsMap = new Map(((docs as any[]) || []).map((d: any) => [d.id, d]));
+      withDocs = (providerData as any[]).map((p: any) => ({
+        ...p,
+        cnpj: docsMap.get(p.id)?.cnpj ?? null,
+        cpf: docsMap.get(p.id)?.cpf ?? null,
+      }));
+    } catch {
+      /* sem documentos: listagem segue funcionando */
+    }
+    const providerRows: any[] = withDocs;
 
-    const userIds = [...new Set(providerData.map(p => p.user_id))];
+    setAllProviders(providerRows);
+
+    const userIds = [...new Set(providerRows.map((p: any) => p.user_id))];
     const { data: profileData } = await supabase
       .from('profiles').select('id, full_name, email, avatar_url, is_suspicious, suspicious_reason, suspicious_ip').in('id', userIds);
     const profileMap = new Map((profileData || []).map(p => [p.id, p]));
 
-    setProviders(providerData.map(p => ({
+    setProviders(providerRows.map((p: any) => ({
       ...p,
       profiles: profileMap.get(p.user_id) || null,
     })));

@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { PROVIDER_SAFE_COLUMNS } from '@/lib/dbSafeColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { appendWizardResetDebugLog } from '@/lib/wizardResetDebug';
@@ -816,7 +817,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         // ANTI-DUPLICAÇÃO: query ignora qualquer ID local e busca direto no DB
         // por user_id. Se já existir, atualiza; senão, insere uma única vez.
         const { data: existing } = await supabase
-          .from('providers').select('*').eq('user_id', user.id).is('deleted_at', null).limit(1);
+          .from('providers').select(PROVIDER_SAFE_COLUMNS).eq('user_id', user.id).is('deleted_at', null).limit(1);
 
         if (existing && existing[0]) {
           const fullName = (p.full_name || '').trim();

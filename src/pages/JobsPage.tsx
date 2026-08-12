@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
+import { JOB_PUBLIC_COLUMNS } from '@/lib/dbSafeColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -123,7 +124,7 @@ const JobsPage = () => {
 
       let query = supabase
         .from('jobs')
-        .select('*, categories(name, slug, icon)', { count: 'exact' })
+        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)` as const, { count: 'exact' })
         .eq('status', 'active')
         .is('deleted_at', null);
 
@@ -165,7 +166,7 @@ const JobsPage = () => {
     queryFn: async () => {
       let query = supabase
         .from('jobs')
-        .select('*, categories(name, slug, icon)', { count: 'exact' })
+        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)` as const, { count: 'exact' })
         .eq('status', 'active')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
@@ -634,7 +635,7 @@ const JobsPage = () => {
                         {/* Right column */}
                         <div className="flex shrink-0 flex-col items-end justify-between">
                           <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(job.created_at)}</span>
-                          {job.whatsapp && (
+                          {(job as any).whatsapp && (
                             <span className="mt-auto flex items-center gap-0.5 text-[10px] font-medium text-green-600">
                               <MessageCircle className="h-3 w-3" />
                               <span className="hidden sm:inline">WhatsApp</span>

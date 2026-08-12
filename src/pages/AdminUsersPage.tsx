@@ -168,7 +168,7 @@ const AdminUsersPage = () => {
         'id, user_id, full_name, email, phone, whatsapp, profile_type, role, status, created_at, city, commercial_plan, engagement_points, is_suspicious, services_count, staff_role, user_ref',
         { count: 'exact' }
       ).order('created_at', { ascending: false }).limit(ADMIN_FETCH_CAP),
-      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, cnpj, photo_url, whatsapp, phone, description, services_count, latitude, longitude', { count: 'exact' }).is('deleted_at', null).limit(ADMIN_FETCH_CAP),
+      supabase.from('providers').select('id, user_id, business_name, city, state, plan, status, slug, categories(name, icon), created_at, photo_url, whatsapp, phone, description, services_count, latitude, longitude', { count: 'exact' }).is('deleted_at', null).limit(ADMIN_FETCH_CAP),
       supabase.from('user_tags').select('id, user_id, tag_name, created_at').limit(ADMIN_FETCH_CAP),
       supabase.from('sponsor_contacts' as any).select('user_id').limit(ADMIN_FETCH_CAP),
       supabase.rpc('get_latest_user_access_logs' as any),
@@ -179,6 +179,18 @@ const AdminUsersPage = () => {
       const map: Record<string, any> = {};
       provs.forEach((p: any) => { map[p.user_id] = p; });
       setProvidersMap(map);
+      // SEGURANÇA: CNPJ vem por RPC (admin), não pela tabela providers.
+      if (provs.length > 0) {
+        supabase.rpc('get_provider_documents' as any, { _provider_ids: provs.map((p: any) => p.id) })
+          .then(({ data: docs }: any) => {
+            const docsMap = new Map(((docs as any[]) || []).map((d: any) => [d.id, d]));
+            const merged = provs.map((p: any) => ({ ...p, cnpj: docsMap.get(p.id)?.cnpj ?? null }));
+            setProvidersRaw(merged);
+            const m2: Record<string, any> = {};
+            merged.forEach((p: any) => { m2[p.user_id] = p; });
+            setProvidersMap(m2);
+          }, () => undefined);
+      }
       setUserTags(tRes.data || []);
       setSponsorUserIds(new Set((scRes.data || []).map((r: any) => r.user_id)));
       const logsMap: Record<string, any> = {};
