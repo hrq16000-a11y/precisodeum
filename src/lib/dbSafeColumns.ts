@@ -14,3 +14,11 @@ export const PROVIDER_SAFE_COLUMNS =
 
 export const JOB_PUBLIC_COLUMNS =
   'id, user_id, title, category_id, opportunity_type, description, city, state, neighborhood, deadline, cover_image_url, status, slug, created_at, updated_at, subtitle, activities, requirements, schedule, salary, benefits, approval_status, job_type, work_model, deleted_at, view_count, user_ref, import_source_id, external_id' as const;
+
+/**
+ * services.whatsapp foi revogado para `anon`. Use estas colunas em qualquer
+ * consulta que possa rodar sem sessão (páginas públicas / SEO).
+ */
+export const SERVICE_PUBLIC_COLUMNS =
+  'id, provider_id, service_name, description, price, service_area, created_at, category_id, address, working_hours, website, deleted_at, user_ref, view_count, instagram_url, facebook_url, youtube_url, is_emergency, service_radius, seo_tags, meta_title, meta_description, updated_at, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, accepts_on_demand' as const;
+

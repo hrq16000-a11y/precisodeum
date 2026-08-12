@@ -1,4 +1,5 @@
 import { lazy as reactLazy, Suspense, useEffect, useState } from "react";
+import RouteMotion from "./components/motion/RouteMotion";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Navigate, useLocation } from "react-router-dom";
 const Sonner = reactLazy(() => importWithRetry(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster }))));
@@ -43,18 +44,25 @@ const FloatingHelpButton = reactLazy(() => importWithRetry(() => import("./compo
 // Minimal page transition — no heavy loader, pages render instantly
 const CurtainReveal = reactLazy(() => importWithRetry(() => import("./components/CurtainReveal")));
 const GlobalLinkPrefetcher = reactLazy(() => importWithRetry(() => import("./components/GlobalLinkPrefetcher")));
+const RouteSkeleton = reactLazy(() => importWithRetry(() => import("./components/motion/RouteSkeleton")));
 
-/** Barra de progresso topo — transição suave entre rotas, sem CLS. */
+/** Fallback de rota: barra de progresso + skeleton atrasado (sem flash). */
 const PageFallback = () => (
-  <div
-    role="status"
-    aria-live="polite"
-    aria-label="Carregando página"
-    className="fixed left-0 right-0 top-0 z-[9999] h-0.5 overflow-hidden bg-transparent"
+  <Suspense
+    fallback={
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Carregando página"
+        className="fixed left-0 right-0 top-0 z-[9999] h-0.5 overflow-hidden bg-transparent"
+      >
+        <div className="h-full w-1/3 animate-[routeProgress_1.1s_ease-in-out_infinite] bg-primary/70" />
+        <style>{`@keyframes routeProgress{0%{transform:translateX(-100%)}60%{transform:translateX(180%)}100%{transform:translateX(320%)}}`}</style>
+      </div>
+    }
   >
-    <div className="h-full w-1/3 animate-[routeProgress_1.1s_ease-in-out_infinite] bg-primary/70" />
-    <style>{`@keyframes routeProgress{0%{transform:translateX(-100%)}60%{transform:translateX(180%)}100%{transform:translateX(320%)}}`}</style>
-  </div>
+    <RouteSkeleton />
+  </Suspense>
 );
 
 const hasRequestIdleCallback = () => typeof window !== 'undefined' && typeof (window as any).requestIdleCallback === 'function';
@@ -283,12 +291,14 @@ const App = () => {
                 <Suspense fallback={<PageFallback />}>
                   <LazyRouteBoundary>
                   <OnboardingGate>
+                    <RouteMotion>
                     <Routes>
                       {publicRoutes}
                       {dashboardRoutes}
                       {adminRoutes}
                       {sponsorRoutes}
                     </Routes>
+                    </RouteMotion>
                   </OnboardingGate>
                   </LazyRouteBoundary>
                 </Suspense>
@@ -304,12 +314,14 @@ const App = () => {
               <Suspense fallback={<PageFallback />}>
                 <LazyRouteBoundary>
                 <OnboardingGate>
+                  <RouteMotion>
                   <Routes>
                     {publicRoutes}
                     {dashboardRoutes}
                     {adminRoutes}
                     {sponsorRoutes}
                   </Routes>
+                  </RouteMotion>
                 </OnboardingGate>
                 </LazyRouteBoundary>
               </Suspense>

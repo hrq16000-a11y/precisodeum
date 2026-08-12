@@ -4,7 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { validateCronRequest } from "../_shared/cronAuth.ts";
+import { authorizeAdminOrCron } from "../_shared/adminOrCronAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -105,8 +105,8 @@ function extractLocation(text: string): { city: string; state: string } {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const authError = validateCronRequest(req);
-  if (authError) return authError;
+  const authz = await authorizeAdminOrCron(req, corsHeaders);
+  if (!authz.ok) return authz.response;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,

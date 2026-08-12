@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { formatCityState } from '@/lib/locationFormat';
 import { sanitizeSlug } from '@/lib/slugify';
 import { importWithRetry } from '@/lib/lazyWithRetry';
+import { SERVICE_PUBLIC_COLUMNS } from '@/lib/dbSafeColumns';
 
 // Fase 2.9 — runtime SEO enhancement leve (lazy, fora do critical path).
 const SeoEnhancementSection = lazy(() =>
@@ -226,7 +227,7 @@ export default function CompanyProfile() {
       if (!company?.id) return [] as CompanyService[];
       const { data: svc } = await supabase
         .from('services')
-        .select('*')
+        .select(SERVICE_PUBLIC_COLUMNS)
         .eq('provider_id', company.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
