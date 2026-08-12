@@ -17,6 +17,7 @@ import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { formatLocationString } from '@/lib/normalize';
 import { formatCityState } from '@/lib/locationFormat';
+import { SERVICE_PUBLIC_COLUMNS } from '@/lib/dbSafeColumns';
 
 const ServiceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,7 +28,7 @@ const ServiceDetailPage = () => {
     queryFn: async () => {
       const { data: svc } = await supabase
         .from('services')
-        .select('*, categories(name, slug, icon)')
+        .select(`${SERVICE_PUBLIC_COLUMNS}, categories(name, slug, icon)`)
         .eq('id', id)
         .maybeSingle();
       if (!svc) return null;
