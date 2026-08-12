@@ -199,14 +199,31 @@ const AdminProvidersPage = () => {
       toast.warning(`Exibindo ${ADMIN_FETCH_CAP} de ${count} prestadores — use os filtros para ver os demais.`);
     }
 
-    setAllProviders(providerData);
+    // SEGURANÇA: CNPJ/CPF só chegam via RPC (admin/dono).
+    let withDocs: any[] = providerData as any[];
+    try {
+      const { data: docs } = await supabase.rpc('get_provider_documents' as any, {
+        _provider_ids: (providerData as any[]).map((p: any) => p.id),
+      });
+      const docsMap = new Map(((docs as any[]) || []).map((d: any) => [d.id, d]));
+      withDocs = (providerData as any[]).map((p: any) => ({
+        ...p,
+        cnpj: docsMap.get(p.id)?.cnpj ?? null,
+        cpf: docsMap.get(p.id)?.cpf ?? null,
+      }));
+    } catch {
+      /* sem documentos: listagem segue funcionando */
+    }
+    const providerRows: any[] = withDocs;
 
-    const userIds = [...new Set(providerData.map(p => p.user_id))];
+    setAllProviders(providerRows);
+
+    const userIds = [...new Set(providerRows.map((p: any) => p.user_id))];
     const { data: profileData } = await supabase
       .from('profiles').select('id, full_name, email, avatar_url, is_suspicious, suspicious_reason, suspicious_ip').in('id', userIds);
     const profileMap = new Map((profileData || []).map(p => [p.id, p]));
 
-    setProviders(providerData.map(p => ({
+    setProviders(providerRows.map((p: any) => ({
       ...p,
       profiles: profileMap.get(p.user_id) || null,
     })));
