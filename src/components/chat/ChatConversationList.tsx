@@ -37,12 +37,15 @@ export default function ChatConversationList({ selectedId, onSelect }: Props) {
     queryKey: ['chat-partner-profiles', partnerIds.join(',')],
     enabled: partnerIds.length > 0,
     queryFn: async () => {
-      // public_profiles: view pública (sem PII) — profiles direto só permite
-      // ler o próprio registro, o que deixava o nome do parceiro vazio.
-      const { data } = await supabase
+      // public_profiles: view pública (sem PII) — expõe apenas id/full_name/avatar_url.
+      const { data, error } = await supabase
         .from('public_profiles' as any)
-        .select('id, full_name, avatar_url, profile_type')
+        .select('id, full_name, avatar_url')
         .in('id', partnerIds);
+      if (error) {
+        console.warn('[chat] falha ao carregar perfis dos parceiros', error.message);
+        return [] as any[];
+      }
       return (data || []) as any[];
     },
   });
