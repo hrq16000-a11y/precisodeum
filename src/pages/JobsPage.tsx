@@ -635,7 +635,7 @@ const JobsPage = () => {
                         {/* Right column */}
                         <div className="flex shrink-0 flex-col items-end justify-between">
                           <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(job.created_at)}</span>
-                          {job.whatsapp && (
+                          {(job as any).whatsapp && (
                             <span className="mt-auto flex items-center gap-0.5 text-[10px] font-medium text-green-600">
                               <MessageCircle className="h-3 w-3" />
                               <span className="hidden sm:inline">WhatsApp</span>

@@ -39,6 +39,19 @@ const JobDetailPage = () => {
     },
   });
 
+  // SEGURANÇA: contato da vaga não é mais legível por anônimos direto na tabela.
+  // A RPC devolve os dados completos para usuários logados e mascarados para visitantes.
+  const { data: contact } = useQuery({
+    queryKey: ['job-contact', (job as any)?.id],
+    enabled: !!(job as any)?.id,
+    queryFn: async () => {
+      const { data } = await supabase.rpc('get_job_contact' as any, { _job_id: (job as any).id });
+      const row = Array.isArray(data) ? (data[0] as any) : (data as any);
+      return (row ?? null) as { contact_name: string | null; contact_phone: string | null; whatsapp: string | null; masked: boolean } | null;
+    },
+  });
+  const contactMasked = contact?.masked !== false;
+
   const pageUrl = `${SITE_BASE_URL}/vaga/${slug}`;
 
   const seoTitle = job ? `${job.title} - Vaga em ${job.city || 'Brasil'}` : 'Vaga';
@@ -65,7 +78,7 @@ const JobDetailPage = () => {
     },
     hiringOrganization: {
       '@type': 'Organization',
-      name: job.contact_name || 'Preciso de um',
+      name: 'Preciso de um',
       sameAs: SITE_BASE_URL,
     },
     ...(job.salary ? { baseSalary: { '@type': 'MonetaryAmount', currency: 'BRL', value: { '@type': 'QuantitativeValue', value: job.salary } } } : {}),
@@ -112,8 +125,8 @@ const JobDetailPage = () => {
     );
   }
 
-  const whatsappUrl = job.whatsapp
-    ? whatsappLink(job.whatsapp, `Olá! Vi a vaga "${job.title}" no Preciso de um e gostaria de mais informações.`)
+  const whatsappUrl = !contactMasked && contact?.whatsapp
+    ? whatsappLink(contact.whatsapp, `Olá! Vi a vaga "${job.title}" no Preciso de um e gostaria de mais informações.`)
     : null;
 
   return (
@@ -216,11 +229,22 @@ const JobDetailPage = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-20 rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
               <h3 className="font-display text-lg font-bold text-foreground">Enviar currículo</h3>
-              {job.contact_name && <p className="text-sm font-medium text-foreground">{job.contact_name}</p>}
-              {job.contact_phone && (
-                <a href={`tel:${job.contact_phone}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-                  <Phone className="h-4 w-4" /> {job.contact_phone}
+              {contact?.contact_name && <p className="text-sm font-medium text-foreground">{contact.contact_name}</p>}
+              {contact?.contact_phone && !contactMasked && (
+                <a href={`tel:${contact.contact_phone}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+                  <Phone className="h-4 w-4" /> {contact.contact_phone}
                 </a>
+              )}
+              {contactMasked && (contact?.contact_phone || contact?.whatsapp) && (
+                <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3">
+                  <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Lock className="h-4 w-4" /> {contact?.whatsapp || contact?.contact_phone}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">Entre na sua conta para ver o contato completo desta vaga.</p>
+                  <Button variant="accent" className="mt-3 w-full" size="lg" asChild>
+                    <Link to={`/login?next=${encodeURIComponent(`/vaga/${slug}`)}`}>Entrar e ver contato</Link>
+                  </Button>
+                </div>
               )}
               {whatsappUrl && (
                 <Button variant="accent" className="w-full" size="lg" asChild>
@@ -229,9 +253,9 @@ const JobDetailPage = () => {
                   </a>
                 </Button>
               )}
-              {!whatsappUrl && job.contact_phone && (
+              {!whatsappUrl && !contactMasked && contact?.contact_phone && (
                 <Button variant="accent" className="w-full" size="lg" asChild>
-                  <a href={`tel:${job.contact_phone}`}><Phone className="mr-2 h-5 w-5" /> Ligar</a>
+                  <a href={`tel:${contact.contact_phone}`}><Phone className="mr-2 h-5 w-5" /> Ligar</a>
                 </Button>
               )}
               <Button variant="outline" className="w-full" size="sm" onClick={copyUrl}>
