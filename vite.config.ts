@@ -22,6 +22,9 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+    // Log verboso por etapa: mostra exatamente onde o build de produção gasta
+    // (ou trava) tempo — útil quando o deploy estoura o limite.
+    mode === "production" && buildTimingPlugin(),
     mode === "production" && process.env.ANALYZE === "1" && visualizer({
       filename: "/tmp/bundle-stats.html",
       template: "treemap",
