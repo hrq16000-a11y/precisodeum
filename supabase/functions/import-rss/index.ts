@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { authorizeAdminOrCron } from "../_shared/adminOrCronAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -390,42 +391,9 @@ serve(async (req) => {
       });
     }
 
-    // Auth: require admin JWT, service_role JWT, or valid cron secret for automated calls
-    let isAdmin = false;
-    let isServiceRole = false;
-    const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      // Check if it's the service_role key (used by pg_cron)
-      if (token === SUPABASE_SERVICE_ROLE_KEY) {
-        isServiceRole = true;
-      } else {
-        const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          global: { headers: { Authorization: authHeader } },
-        });
-        const { data: { user: caller } } = await callerClient.auth.getUser();
-        if (caller) {
-          const { data: adminResult } = await callerClient.rpc("has_role", { _user_id: caller.id, _role: "admin" });
-          isAdmin = !!adminResult;
-        }
-      }
-    }
-
-    // Validate automated mode via shared secret header instead of trusting body flag
-    let isAutomatedValid = false;
-    if (isAutomated) {
-      const cronSecret = Deno.env.get("CRON_SECRET");
-      const providedSecret = req.headers.get("x-cron-secret");
-      if (cronSecret && providedSecret === cronSecret) {
-        isAutomatedValid = true;
-      }
-    }
-
-    if (!isAdmin && !isServiceRole && !isAutomatedValid) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Auth: admin JWT, service_role key ou x-cron-secret (fail-closed)
+    const authz = await authorizeAdminOrCron(req, corsHeaders);
+    if (!authz.ok) return authz.response;
 
     const results = [];
     for (const f of feedsToImport) {
