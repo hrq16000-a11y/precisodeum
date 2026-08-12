@@ -74,16 +74,22 @@ async function renderRoute(browser, baseUrl, route) {
 
 async function renderRouteWithTimeout(browser, baseUrl, route) {
   const hardLimit = (isStaticRoute(route) ? TIMEOUT_STATIC : TIMEOUT_DYNAMIC) + 2_000;
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error(`hard-timeout após ${hardLimit}ms`)), hardLimit),
-  );
-  return Promise.race([
-    renderRoute(browser, baseUrl, route),
-    timeoutPromise,
-  ]).catch(err => {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`hard-timeout após ${hardLimit}ms`)), hardLimit);
+  });
+
+  try {
+    return await Promise.race([
+      renderRoute(browser, baseUrl, route),
+      timeoutPromise,
+    ]);
+  } catch (err) {
     process.stdout.write(`  ✗ ${route}: ${err.message}\n`);
     return { route, ok: false, error: err.message };
-  });
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 async function main() {
@@ -111,7 +117,9 @@ async function main() {
   }
 
   await browser.close();
-  server.httpServer.close();
+  await new Promise((resolveClose, rejectClose) => {
+    server.httpServer.close((error) => error ? rejectClose(error) : resolveClose());
+  });
 
   const ok = results.filter(r => r.ok);
   const failed = results.filter(r => !r.ok);
