@@ -4,6 +4,41 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { visualizer } from "rollup-plugin-visualizer";
 
+// Plugin de instrumentação: imprime marcos e duração de cada etapa do build.
+function buildTimingPlugin() {
+  const t0 = Date.now();
+  let modules = 0;
+  const since = () => `${((Date.now() - t0) / 1000).toFixed(1)}s`;
+  const log = (msg: string) => console.log(`[build:timing +${since()}] ${msg}`);
+  return {
+    name: "build-timing",
+    apply: "build" as const,
+    buildStart() {
+      log("buildStart — iniciando resolução de módulos");
+    },
+    moduleParsed() {
+      modules += 1;
+      if (modules % 500 === 0) log(`${modules} módulos processados`);
+    },
+    buildEnd(err?: Error) {
+      log(err ? `buildEnd com erro: ${err.message}` : `buildEnd — ${modules} módulos`);
+    },
+    renderStart() {
+      log("renderStart — gerando e minificando chunks");
+    },
+    generateBundle(_opts: unknown, bundle: Record<string, unknown>) {
+      log(`generateBundle — ${Object.keys(bundle).length} arquivos`);
+    },
+    writeBundle() {
+      log("writeBundle — arquivos escritos em disco");
+    },
+    closeBundle() {
+      log("closeBundle — build finalizado");
+    },
+  };
+}
+
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   define: {
