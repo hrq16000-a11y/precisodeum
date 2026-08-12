@@ -53,6 +53,26 @@ maybe('RLS/GRANTs · visitante anônimo', () => {
     const view = await client.from('public_profiles' as never).select('id').limit(1);
     expect(view.error).toBeNull();
   });
+
+  it('não lê tax_id de profiles nem com sessão anônima', async () => {
+    const client = anonClient();
+    const { data, error } = await client.from('profiles' as never).select('id, tax_id').limit(1);
+    expect(error).toBeTruthy();
+    expect(data ?? null).toBeNull();
+  });
+
+  it('lê mídia pública apenas de donos aprovados/ativos', async () => {
+    const client = anonClient();
+    const { data, error } = await client
+      .from('media' as never)
+      .select('id, public_url, entity_type, is_active')
+      .limit(5);
+    expect(error).toBeNull();
+    for (const row of (data ?? []) as Array<{ is_active: boolean; entity_type: string }>) {
+      expect(row.is_active).toBe(true);
+      expect(['service', 'portfolio', 'profile']).toContain(row.entity_type);
+    }
+  });
 });
 
 if (!RUN) {
