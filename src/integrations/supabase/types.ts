@@ -10959,6 +10959,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      media_owner_is_public: { Args: { _user_ref: string }; Returns: boolean }
       nearby_providers: {
         Args: {
           _account_type?: string

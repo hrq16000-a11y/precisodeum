@@ -39,6 +39,8 @@ import {
   shouldEnforcePhone,
   PHONE_INVALID_MESSAGE,
 } from '@/lib/validation/phoneNormalization';
+import { PROFILE_FULL_COLUMNS } from '@/lib/dbSafeColumns';
+
 
 interface UserDetailSheetProps {
   user: any | null;
@@ -159,7 +161,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
     // A listagem usa allowlist (id, name, status, created_at, ...) por
     // performance. Aqui buscamos o registro completo para hidratar campos
     // como whatsapp, permissions, tax_id, suspended_reason, metadados, etc.
-    supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
+    supabase.from('profiles').select(PROFILE_FULL_COLUMNS).eq('id', user.id).maybeSingle()
       .then(({ data, error }) => {
         if (error) {
           toastAssertiveError('Não foi possível carregar todos os dados do usuário.');

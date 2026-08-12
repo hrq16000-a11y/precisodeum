@@ -41,6 +41,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "security:prescan": "node scripts/security-prescan.mjs",
     "security:prescan:strict": "node scripts/security-prescan.mjs --strict",
     "prepublish:check": "node scripts/audit-rpc-grants.mjs && node scripts/lint-sensitive-payloads.mjs && node scripts/security-prescan.mjs"
@@ -137,6 +138,7 @@
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react-swc": "^3.11.0",
+    "@vitest/coverage-v8": "3.2.4",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "autoprefixer": "^10.4.21",
