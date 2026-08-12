@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowRight, SkipForward, CheckCircle2, LayoutDashboard, UserRound, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { PROVIDER_SAFE_COLUMNS } from '@/lib/dbSafeColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
@@ -81,7 +82,7 @@ const Step20_MoreServices = ({ onBack, onContinue, onSkip, onGoToPath }: Step20P
         if (!prov?.id && user?.id) {
           const { data, error } = await supabase
             .from('providers')
-            .select('*')
+            .select(PROVIDER_SAFE_COLUMNS)
             .eq('user_id', user.id)
             .maybeSingle();
           if (error) throw error;

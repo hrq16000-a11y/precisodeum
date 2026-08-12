@@ -7,6 +7,7 @@ import { Check, X, Eye, Search, MapPin, Edit2, MoreHorizontal, ExternalLink, Dow
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAdmin } from '@/hooks/useAdmin';
+import { PROVIDER_SAFE_COLUMNS } from '@/lib/dbSafeColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -189,7 +190,7 @@ const AdminProvidersPage = () => {
   const fetchProviders = async () => {
     const { data: providerData, count } = await supabase
       .from('providers')
-      .select('*, categories(name, icon)', { count: 'exact' })
+      .select(`${PROVIDER_SAFE_COLUMNS}, categories(name, icon)`, { count: 'exact' })
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(ADMIN_FETCH_CAP);

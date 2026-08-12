@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
+import { JOB_PUBLIC_COLUMNS } from '@/lib/dbSafeColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useGeoCity } from '@/hooks/useGeoCity';
@@ -123,7 +124,7 @@ const JobsPage = () => {
 
       let query = supabase
         .from('jobs')
-        .select('*, categories(name, slug, icon)', { count: 'exact' })
+        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)`, { count: 'exact' })
         .eq('status', 'active')
         .is('deleted_at', null);
 
@@ -165,7 +166,7 @@ const JobsPage = () => {
     queryFn: async () => {
       let query = supabase
         .from('jobs')
-        .select('*, categories(name, slug, icon)', { count: 'exact' })
+        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)`, { count: 'exact' })
         .eq('status', 'active')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });

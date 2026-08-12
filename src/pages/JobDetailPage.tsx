@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import InfoRow from '@/components/ui/InfoRow';
 import { useQuery } from '@tanstack/react-query';
+import { JOB_PUBLIC_COLUMNS } from '@/lib/dbSafeColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { SeoMeta } from '@/components/SeoMeta';
@@ -31,9 +32,9 @@ const JobDetailPage = () => {
   const { data: job, isLoading } = useQuery({
     queryKey: ['job-detail', slug],
     queryFn: async () => {
-      const { data: bySlug } = await supabase.from('jobs').select('*, categories(name, slug, icon)').eq('slug', slug!).maybeSingle();
+      const { data: bySlug } = await supabase.from('jobs').select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)`).eq('slug', slug!).maybeSingle();
       if (bySlug) return bySlug;
-      const { data: byId } = await supabase.from('jobs').select('*, categories(name, slug, icon)').eq('id', slug!).maybeSingle();
+      const { data: byId } = await supabase.from('jobs').select(`${JOB_PUBLIC_COLUMNS}, categories(name, slug, icon)`).eq('id', slug!).maybeSingle();
       return byId;
     },
   });
