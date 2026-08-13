@@ -6,6 +6,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Newspaper, Calendar } from 'luci
 import { Button } from '@/components/ui/button';
 import FadeInSection from '@/components/FadeInSection';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
+import LazyImage from '@/components/motion/LazyImage';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -106,11 +107,12 @@ const BlogHighlight = () => {
               >
                 <div className="relative overflow-hidden">
                   {post.cover_image_url ? (
-                    <img
+                    <LazyImage
                       src={post.cover_image_url}
                       alt={post.title}
-                      className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
+                      aspect="4 / 3"
+                      wrapperClassName="w-full"
+                      className="transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
                     <div className="aspect-[4/3] w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
