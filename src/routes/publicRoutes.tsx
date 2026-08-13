@@ -39,6 +39,7 @@ const SponsorSlotsPage = lazy(() => import("@/pages/SponsorSlotsPage"));
 const SponsorContractPage = lazy(() => import("@/pages/SponsorContractPage"));
 const CadastroInicialPage = lazy(() => import("@/pages/CadastroInicialPage"));
 const InstitutionalPage = lazy(() => import("@/pages/InstitutionalPage"));
+const GuidePreviewPage = lazy(() => import("@/pages/GuidePreviewPage"));
 const PopularServicePage = lazy(() => import("@/pages/PopularServicePage"));
 const CityPage = lazy(() => import("@/pages/CityPage"));
 const NeighborhoodPage = lazy(() => import("@/pages/NeighborhoodPage"));
