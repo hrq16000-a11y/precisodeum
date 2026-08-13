@@ -1637,6 +1637,30 @@ export type Database = {
         }
         Relationships: []
       }
+      gsc_job_locks: {
+        Row: {
+          acquired_at: string
+          expires_at: string
+          holder: string
+          lock_key: string
+          meta: Json
+        }
+        Insert: {
+          acquired_at?: string
+          expires_at: string
+          holder: string
+          lock_key: string
+          meta?: Json
+        }
+        Update: {
+          acquired_at?: string
+          expires_at?: string
+          holder?: string
+          lock_key?: string
+          meta?: Json
+        }
+        Relationships: []
+      }
       health_check_history: {
         Row: {
           created_at: string
@@ -10643,6 +10667,23 @@ export type Database = {
       }
       get_weekly_summary: { Args: { _user_id: string }; Returns: Json }
       get_whatsapp_clicks_today: { Args: never; Returns: Json }
+      gsc_release_lock: {
+        Args: { _holder: string; _lock_key: string }
+        Returns: boolean
+      }
+      gsc_try_acquire_lock: {
+        Args: {
+          _holder: string
+          _lock_key: string
+          _meta?: Json
+          _ttl_seconds?: number
+        }
+        Returns: {
+          acquired: boolean
+          expires_at: string
+          holder: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
