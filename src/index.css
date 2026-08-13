@@ -583,19 +583,6 @@ button, a, [role="button"] {
   outline-offset: 2px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .motion-overlay,
-  .motion-surface,
-  [data-sonner-toast],
-  [data-state='open'],
-  [data-state='closed'] {
-    animation: none !important;
-    transition: none !important;
-  }
-  .motion-overlay,
-  .motion-surface { opacity: 1 !important; transform: none !important; }
-  .motion-interactive:active { transform: none !important; }
-}
 
 /* Modal centralizado: preserva o translate(-50%,-50%) durante a animação. */
 @keyframes motionDialogIn {
@@ -606,7 +593,30 @@ button, a, [role="button"] {
 .motion-dialog[data-state='closed'] {
   animation: motionDialogIn var(--motion-fast) var(--motion-ease-in) reverse both;
 }
+
+/* ── Reduced motion: bloco final consolidado ─────────────────────────────
+   Neutraliza TODAS as camadas de motion (rotas, seções, skeletons, imagens,
+   overlays, modais e toasts) mantendo o conteúdo visível e no lugar.       */
 @media (prefers-reduced-motion: reduce) {
+  .route-motion-enter,
+  .motion-enter,
+  .motion-enter-fade,
+  .motion-enter-scale,
+  .motion-exit,
+  .motion-stagger > *,
+  .motion-overlay,
+  .motion-surface,
+  [data-sonner-toast],
+  [data-state='open'],
+  [data-state='closed'] {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .skeleton-shimmer::after { animation: none !important; }
+  .motion-img { opacity: 1 !important; filter: none !important; }
+  .motion-interactive:active { transform: none !important; }
   .motion-dialog {
     animation: none !important;
     opacity: 1 !important;
