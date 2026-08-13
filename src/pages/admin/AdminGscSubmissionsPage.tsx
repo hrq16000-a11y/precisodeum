@@ -383,14 +383,34 @@ const AdminGscSubmissionsPage = () => {
               )}
               Validar partições
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => runSubmission("dryRun")}
+              disabled={running !== null}
+            >
+              {running === "dryRun" ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FlaskConical className="h-4 w-4" aria-hidden />
+              )}
+              Reenviar (dry-run)
+            </Button>
             <Button size="sm" onClick={() => runSubmission("submit")} disabled={running !== null}>
               {running === "submit" ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               ) : (
                 <Send className="h-4 w-4" aria-hidden />
               )}
-              Submeter agora
+              Reenviar sitemaps do último build
             </Button>
+            <Button variant="outline" size="sm" onClick={() => exportHistory("csv")}>
+              <Download className="h-4 w-4" aria-hidden /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => exportHistory("json")}>
+              <Download className="h-4 w-4" aria-hidden /> JSON
+            </Button>
+
           </div>
         </CardHeader>
         <CardContent>
