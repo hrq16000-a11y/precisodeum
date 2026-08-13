@@ -43,7 +43,11 @@ export function SeoMeta({ title, description, canonical, ogType = 'website', ogI
   const pathOrUrl = canonical
     || (typeof window !== 'undefined' ? window.location.pathname : '/');
   const canonicalUrl = buildCanonicalUrl(pathOrUrl);
-  const resolvedImage = ogImage ? normalizeSocialImageUrl(ogImage, 'og:image') : undefined;
+  // Imagem social sempre presente: usa a específica da rota ou a padrão da marca,
+  // garantindo preview correto em qualquer URL compartilhada.
+  const resolvedImage = (ogImage ? normalizeSocialImageUrl(ogImage, 'og:image') : '')
+    || DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL;
+  const imageType = /\.jpe?g$/i.test(resolvedImage) ? 'image/jpeg' : 'image/png';
 
   return (
     <Helmet prioritizeSeoTags>
