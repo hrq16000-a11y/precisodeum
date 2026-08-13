@@ -9,6 +9,7 @@ Disallow: /login
 Disallow: /cadastro
 Disallow: /dashboard/
 Disallow: /reset-password
+Disallow: /preview/
 
 # Search Engines
 User-agent: Googlebot
