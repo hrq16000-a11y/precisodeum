@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import CategoryIcon from '@/components/CategoryIcon';
 import DashboardLayout from '@/components/DashboardLayout';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
+import { SkeletonForm } from '@/components/motion/Skeletons';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -569,7 +571,16 @@ const DashboardProfilePage = () => {
 
   const displayName = form.full_name || 'Usuário';
 
-  if (loading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-3xl space-y-4 motion-enter-fade" data-testid="dashboard-profile-loading">
+          <ProgressIndicator label="Carregando perfil" />
+          <SkeletonForm fields={5} />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   const inputCls = 'w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all';
   const labelCls = 'mb-1.5 block text-sm font-medium text-foreground';

@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Phone, MessageCircle, AlertTriangle, Clock, Timer, History, Send, Paperclip, CalendarClock, Trash2 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
+import { SkeletonList, SkeletonText } from '@/components/motion/Skeletons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -75,7 +77,17 @@ const DashboardLeadDetailPage = () => {
   const history = historyQuery.data || [];
   const overdue = useMemo(() => (lead ? isOverdue(lead) : false), [lead]);
 
-  if (loading || leadQuery.isLoading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
+  if (loading || leadQuery.isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-4 motion-enter-fade" data-testid="lead-detail-loading">
+          <ProgressIndicator label="Carregando lead" />
+          <SkeletonText lines={2} />
+          <SkeletonList count={4} />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (!lead) {
     return (

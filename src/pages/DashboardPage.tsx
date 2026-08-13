@@ -5,6 +5,7 @@ import LevelUpBanner from '@/components/dashboard/LevelUpBanner';
 import RealtimeEngagementToast from '@/components/dashboard/RealtimeEngagementToast';
 import NextStepPrompt from '@/components/dashboard/NextStepPrompt';
 import DashboardSkeleton from '@/components/dashboard/DashboardSkeleton';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
 import DashboardTour from '@/components/dashboard/DashboardTour';
 import DebugResetBar from '@/pages/dashboard/sections/DebugResetBar';
 import SectionSkeleton from '@/pages/dashboard/sections/_skeleton';
@@ -49,9 +50,18 @@ const DashboardPage = () => {
   const providerLayout = useDashboardLayout('provider');
   const [guideOpen, setGuideOpen] = useState(true);
 
-  if (loading) return <DashboardLayout><DashboardSkeleton /></DashboardLayout>;
+  const dashboardLoadingView = (
+    <DashboardLayout>
+      <div className="space-y-4 motion-enter-fade" data-testid="dashboard-loading">
+        <ProgressIndicator label="Carregando painel" />
+        <DashboardSkeleton />
+      </div>
+    </DashboardLayout>
+  );
+
+  if (loading) return dashboardLoadingView;
   // Onboarding redirect is owned exclusively by `OnboardingGate` in App.tsx.
-  if (profile && !profileType) return <DashboardLayout><DashboardSkeleton /></DashboardLayout>;
+  if (profile && !profileType) return dashboardLoadingView;
 
   const profileTypeLabel = (() => {
     switch (profile?.profile_type) {
@@ -163,6 +173,7 @@ const DashboardPage = () => {
   return (
     <DashboardLayout>
       <div className="-mx-4 -my-6 bg-slate-50 px-4 py-6 dark:bg-background sm:-mx-6 sm:px-6">
+        {countersLoading && <ProgressIndicator label="Atualizando indicadores" className="mb-3" />}
         {debugBar}
         <RealtimeEngagementToast />
         <LevelUpBanner />

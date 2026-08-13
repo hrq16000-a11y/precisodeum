@@ -69,6 +69,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Dialog,
@@ -1268,8 +1269,9 @@ const ProviderProfile = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen flex-col" data-testid="provider-loading">
         <Header />
+        <ProgressIndicator fixed label="Carregando perfil" />
         {/* Capa: mesmo aspect-ratio (16:5) da capa real → sem CLS quando o
             conteúdo final hidratar. Header CTA reserva 44px de altura. */}
         <Skeleton className="w-full aspect-[16/5] rounded-none" />
@@ -2172,6 +2174,12 @@ const ProviderProfile = () => {
                   providerHours={normalizeContactHours((provider as any)?.contact_hours)}
                   helperText="Ajuda o profissional a te ligar na hora certa."
                 />
+                {isSubmittingLead && (
+                  <ProgressIndicator
+                    label="Enviando solicitação"
+                    className="motion-enter-fade"
+                  />
+                )}
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button type="submit" disabled={isSubmittingLead} variant="accent" className="w-full gap-2 shadow-lg" style={accentBg ? { backgroundColor: accentBg } : undefined}>
                     <Send className="h-4 w-4" /> {isSubmittingLead ? 'Enviando…' : 'Enviar Solicitação'}

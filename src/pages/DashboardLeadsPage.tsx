@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
+import { SkeletonList } from '@/components/motion/Skeletons';
 import { Phone, MessageCircle, AlertTriangle, Inbox, Trash2, TrendingUp, Clock, Send, History, Paperclip, Bell, BellOff, Timer, Search, Filter, FileDown, FileText, CalendarClock, ExternalLink, Settings2, MapPin, Tag, Compass, Radar, Sparkles } from 'lucide-react';
 import { formatLeadOrigin, formatLeadLocation, hasLeadContext } from '@/lib/leadContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -340,7 +342,16 @@ const DashboardLeadsPage = () => {
     return () => { supabase.removeChannel(historyChannel); };
   }, [provider, playAlert]);
 
-  if (loading || leadsLoading) return <DashboardLayout><p className="text-muted-foreground">Carregando...</p></DashboardLayout>;
+  if (loading || leadsLoading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-4 motion-enter-fade" data-testid="leads-loading">
+          <ProgressIndicator label="Carregando leads" />
+          <SkeletonList count={6} />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (!limitsLoading && limits?.can_receive_leads === false) {
     return (

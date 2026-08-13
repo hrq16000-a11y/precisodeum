@@ -3,7 +3,7 @@
 export const SectionSkeleton = ({ minH = 'min-h-32' }: { minH?: string }) => (
   <div
     aria-hidden="true"
-    className={`mt-4 ${minH} animate-pulse rounded-2xl bg-card/40 border border-border/40`}
+    className={`mt-4 ${minH} skeleton-shimmer rounded-2xl bg-card/40 border border-border/40`}
   />
 );
 
