@@ -19,7 +19,7 @@ const report = (over: Partial<SeoHealthReport> = {}): SeoHealthReport => ({
     { url: 'https://www.precisodeum.com.br/categoria/eletricista', status: 'ok', http_status: 200, canonical: 'https://www.precisodeum.com.br/categoria/eletricista', noindex: false, issues: [] },
     { url: 'https://www.precisodeum.com.br/cidade/curitiba', status: 'warning', http_status: 200, canonical: 'https://www.precisodeum.com.br/cidade/curitiba', noindex: true, issues: ['noindex em URL do sitemap'] },
     { url: 'https://www.precisodeum.com.br/profissional/joao', status: 'error', http_status: 404, canonical: null, noindex: false, issues: ['HTTP 404'] },
-    { url: 'https://www.precisodeum.com.br/buscar?ordem=recentes', status: 'warning', http_status: 200, canonical: 'https://www.precisodeum.com.br/buscar', noindex: false, issues: ['canonical divergente'] },
+    { url: 'https://www.precisodeum.com.br/buscar?ordem=recentes', status: 'warning', http_status: 200, canonical: 'https://www.precisodeum.com.br/categorias', noindex: false, issues: ['canonical divergente'] },
   ],
   duration_ms: 1200,
   ...over,
