@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
   const { data: previous } = await admin
     .from('seo_audit_reports')
     .select('id, total_urls, error_count, findings')
-    .order('created_at', { ascending: false })
+    .order('ran_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
