@@ -2172,6 +2172,13 @@ const ProviderProfile = () => {
                   providerHours={normalizeContactHours((provider as any)?.contact_hours)}
                   helperText="Ajuda o profissional a te ligar na hora certa."
                 />
+                {isSubmittingLead && (
+                  <ProgressIndicator
+                    data-testid="lead-submit-progress"
+                    label="Enviando solicitação"
+                    className="motion-enter-fade"
+                  />
+                )}
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button type="submit" disabled={isSubmittingLead} variant="accent" className="w-full gap-2 shadow-lg" style={accentBg ? { backgroundColor: accentBg } : undefined}>
                     <Send className="h-4 w-4" /> {isSubmittingLead ? 'Enviando…' : 'Enviar Solicitação'}
