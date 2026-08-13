@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  Bell,
   CheckCircle2,
+  Download,
+  FlaskConical,
   Loader2,
   RefreshCw,
   Send,
@@ -19,6 +22,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -41,26 +47,51 @@ import {
   type GscCoverageSnapshot,
   type GscEnvironment,
 } from "@/lib/seo/gscSubmissions";
+import {
+  filterBySeverity,
+  submissionsToCsv,
+  submissionsToJson,
+  type AlertSeverityThreshold,
+} from "@/lib/seo/gscAlerts";
 import { summarizeAdsenseReports, type AdsenseRouteReport } from "@/lib/seo/adsenseCheck";
 
 const COVERAGE_SNAPSHOT_KEY = "gsc_coverage_snapshot";
+const ALERT_EMAIL_KEY = "gsc_alert_email";
+const ALERT_SLACK_KEY = "gsc_alert_slack_enabled";
+const ALERT_SEVERITY_KEY = "gsc_alert_severity";
 const ENVIRONMENTS: GscEnvironment[] = ["prod", "staging", "dev"];
+const SEVERITIES: AlertSeverityThreshold[] = ["critical", "warning", "info"];
 
 const fmt = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";
 
+const download = (content: string, filename: string, type: string) => {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 const AdminGscSubmissionsPage = () => {
   const [rows, setRows] = useState<GscAuditRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [running, setRunning] = useState<null | "validate" | "submit">(null);
+  const [running, setRunning] = useState<null | "validate" | "submit" | "dryRun">(null);
+  const [runLog, setRunLog] = useState<{ mode: string; at: string; payload: unknown } | null>(null);
   const [properties, setProperties] = useState<string[]>([]);
   const [env, setEnv] = useState<GscEnvironment>(() =>
     environmentFromHost(typeof window !== "undefined" ? window.location.hostname : ""),
   );
   const [envProperty, setEnvProperty] = useState<Record<string, string>>({});
   const [alerts, setAlerts] = useState<CoverageAlert[]>([]);
+  const [alertEmail, setAlertEmail] = useState("");
+  const [slackEnabled, setSlackEnabled] = useState(true);
+  const [severity, setSeverity] = useState<AlertSeverityThreshold>("warning");
+  const [sendingAlert, setSendingAlert] = useState(false);
   const [adsense, setAdsense] = useState<AdsenseRouteReport[] | null>(null);
   const [adsenseLoading, setAdsenseLoading] = useState(false);
+
 
   const loadLog = useCallback(async () => {
     setLoading(true);
