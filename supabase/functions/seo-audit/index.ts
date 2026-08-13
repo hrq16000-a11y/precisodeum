@@ -66,6 +66,55 @@ function extractCanonical(html: string): string | null {
   return m ? m[1] : null;
 }
 
+function extractTitle(html: string): string | null {
+  const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  return m ? m[1].replace(/\s+/g, ' ').trim() : null;
+}
+
+/** Coleta os @type de todos os blocos JSON-LD válidos da página. */
+function extractJsonLdTypes(html: string): { types: string[]; invalidBlocks: number } {
+  const types: string[] = [];
+  let invalidBlocks = 0;
+  const re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const raw = m[1].trim();
+    if (!raw) continue;
+    try {
+      const parsed = JSON.parse(raw);
+      const nodes = Array.isArray(parsed) ? parsed : [parsed];
+      for (const node of nodes) {
+        const t = node?.['@type'];
+        if (Array.isArray(t)) types.push(...t.map(String));
+        else if (t) types.push(String(t));
+      }
+    } catch {
+      invalidBlocks += 1;
+    }
+  }
+  return { types: [...new Set(types)], invalidBlocks };
+}
+
+/** @type esperado por família de rota — base para checar rich results. */
+function expectedJsonLdTypes(pathname: string): string[] {
+  if (/^\/profissional\//.test(pathname)) return ['BreadcrumbList', 'LocalBusiness'];
+  if (/^\/categoria\/[^/]+\/em\//.test(pathname)) return ['BreadcrumbList', 'ItemList'];
+  if (/^\/categoria\//.test(pathname)) return ['BreadcrumbList', 'Service'];
+  if (/^\/cidade\//.test(pathname)) return ['BreadcrumbList'];
+  return [];
+}
+
+/** Aceita subtipos equivalentes (ProfessionalService conta como LocalBusiness). */
+function hasType(found: string[], expected: string): boolean {
+  const equivalents: Record<string, string[]> = {
+    LocalBusiness: ['LocalBusiness', 'ProfessionalService', 'Organization'],
+    Service: ['Service', 'ItemList', 'CollectionPage'],
+    ItemList: ['ItemList', 'CollectionPage'],
+  };
+  const accepted = equivalents[expected] ?? [expected];
+  return found.some((t) => accepted.includes(t));
+}
+
 function auditRobots(text: string): { ok: boolean; issues: string[] } {
   const issues: string[] = [];
   const lower = text.toLowerCase();
