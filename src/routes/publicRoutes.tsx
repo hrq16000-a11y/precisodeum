@@ -39,6 +39,7 @@ const SponsorSlotsPage = lazy(() => import("@/pages/SponsorSlotsPage"));
 const SponsorContractPage = lazy(() => import("@/pages/SponsorContractPage"));
 const CadastroInicialPage = lazy(() => import("@/pages/CadastroInicialPage"));
 const InstitutionalPage = lazy(() => import("@/pages/InstitutionalPage"));
+const GuidePreviewPage = lazy(() => import("@/pages/GuidePreviewPage"));
 const PopularServicePage = lazy(() => import("@/pages/PopularServicePage"));
 const CityPage = lazy(() => import("@/pages/CityPage"));
 const NeighborhoodPage = lazy(() => import("@/pages/NeighborhoodPage"));
@@ -94,7 +95,7 @@ export const PUBLIC_PATH_PREFIXES = [
   '/cidade', '/cidades', '/categorias', '/servico', '/servicos', '/servico-detalhe',
   '/excluir-conta', '/exclusao-de-conta', '/delete-account',
   '/esqueci-senha', '/senha-redefinida', '/password-reset-success',
-  '/sitemap', '/p', '/error', '/status',
+  '/sitemap', '/p', '/error', '/status', '/preview',
 ] as const;
 
 /**
@@ -218,6 +219,8 @@ export const publicRoutes = (
     <Route path="/sitemap" element={<SitemapRedirect />} />
     <Route path="/sitemap.xml" element={<SitemapRedirect />} />
     <Route path="/p/:slug" element={<InstitutionalPage />} />
+    {/* Preview interno do modo guia comercial — noindex, fora do sitemap. */}
+    <Route path="/preview/guia" element={<GuidePreviewPage />} />
     <Route path="/error/404" element={<ErrorPage code={404} />} />
     <Route path="/error/500" element={<ErrorPage code={500} />} />
     <Route path="/500" element={<ErrorPage code={500} />} />

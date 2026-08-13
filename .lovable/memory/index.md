@@ -1,0 +1,1 @@
+- [Guide Mode Preview & JSON-LD Audit](mem://funcionalidades/seo/guide-mode-preview-e-jsonld-audit) — /preview/guia noindex com override escopado; auditJsonLd/auditRoutesJsonLd contra brand config; buildGuideSitemap/buildGuideRobotsTxt; npm run seo:dryrun (CSV+JSON); 12 testes em guide-mode-seo-suite.
