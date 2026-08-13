@@ -144,3 +144,69 @@ export function summarizeAdsenseReports(reports: AdsenseRouteReport[]) {
     routesWithErrors: errors.map((r) => r.route),
   };
 }
+
+/** Texto curto e acionável por código de erro do AdSense. */
+export const ADSENSE_ISSUE_HINTS: Record<AdsenseIssue["code"], string> = {
+  meta_missing:
+    'Adicione <meta name="google-adsense-account"> no <head> desta rota (index.html ou head dinâmico).',
+  meta_client_mismatch:
+    "O publisher da meta tag difere do configurado. Padronize o ca-pub-* em todas as rotas.",
+  script_missing:
+    "O script adsbygoogle.js não está sendo servido nesta rota. Verifique CSP, bloqueio por prerender ou carregamento condicional.",
+  script_client_mismatch:
+    "O parâmetro client do script difere da meta tag. Corrija a URL do script.",
+  script_not_async:
+    "Carregue o script com async para não bloquear a renderização (impacta LCP).",
+  script_missing_crossorigin:
+    'Inclua crossorigin="anonymous" no script para o AdSense reportar erros corretamente.',
+  ins_without_client:
+    "Blocos <ins class=adsbygoogle> precisam de data-ad-client para renderizar anúncios.",
+  ins_without_slot:
+    "Blocos <ins class=adsbygoogle> sem data-ad-slot não preenchem — defina o slot no painel do AdSense.",
+};
+
+export type AdsenseRouteFailure = {
+  route: string;
+  httpStatus: number | null;
+  level: AdsenseIssueLevel;
+  errorCodes: AdsenseIssue["code"][];
+  warningCodes: AdsenseIssue["code"][];
+  issues: Array<AdsenseIssue & { hint: string }>;
+  /** URL pública da rota (para abrir/inspecionar). */
+  routeUrl: string;
+  /** Rich Results / inspeção rápida da mesma URL. */
+  diagnosticUrl: string;
+};
+
+/**
+ * Resumo por rota apenas das rotas com falha (erro ou aviso),
+ * com códigos de erro e links diretos de diagnóstico.
+ */
+export function summarizeAdsenseFailuresByRoute(
+  reports: AdsenseRouteReport[],
+  origin: string,
+): AdsenseRouteFailure[] {
+  const base = origin.replace(/\/+$/, "");
+  return reports
+    .filter((r) => r.issues.length > 0 || r.httpStatus !== 200)
+    .map((r) => {
+      const issues = r.issues.map((i) => ({ ...i, hint: ADSENSE_ISSUE_HINTS[i.code] ?? "" }));
+      const errorCodes = issues.filter((i) => i.level === "error").map((i) => i.code);
+      const warningCodes = issues.filter((i) => i.level === "warning").map((i) => i.code);
+      const routeUrl = `${base}${r.route.startsWith("/") ? r.route : `/${r.route}`}`;
+      return {
+        route: r.route,
+        httpStatus: r.httpStatus,
+        level: errorCodes.length > 0 || r.httpStatus !== 200 ? "error" : "warning",
+        errorCodes,
+        warningCodes,
+        issues,
+        routeUrl,
+        diagnosticUrl: `https://search.google.com/test/rich-results?url=${encodeURIComponent(routeUrl)}`,
+      } as AdsenseRouteFailure;
+    })
+    .sort((a, b) => {
+      if (a.level !== b.level) return a.level === "error" ? -1 : 1;
+      return b.errorCodes.length + b.warningCodes.length - (a.errorCodes.length + a.warningCodes.length);
+    });
+}

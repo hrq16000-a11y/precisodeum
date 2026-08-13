@@ -3,6 +3,11 @@ import {
   AlertTriangle,
   Bell,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Filter,
+
   Download,
   FlaskConical,
   Loader2,
@@ -53,7 +58,21 @@ import {
   submissionsToJson,
   type AlertSeverityThreshold,
 } from "@/lib/seo/gscAlerts";
-import { summarizeAdsenseReports, type AdsenseRouteReport } from "@/lib/seo/adsenseCheck";
+import {
+  summarizeAdsenseReports,
+  summarizeAdsenseFailuresByRoute,
+  type AdsenseRouteReport,
+} from "@/lib/seo/adsenseCheck";
+import {
+  EMPTY_FILTERS,
+  availablePartitions,
+  filterSubmissions,
+  paginate,
+  partitionKey,
+  type SubmissionFilters,
+  type SubmissionStatusFilter,
+} from "@/lib/seo/gscSubmissionFilters";
+
 
 const COVERAGE_SNAPSHOT_KEY = "gsc_coverage_snapshot";
 const ALERT_EMAIL_KEY = "gsc_alert_email";
@@ -91,6 +110,10 @@ const AdminGscSubmissionsPage = () => {
   const [sendingAlert, setSendingAlert] = useState(false);
   const [adsense, setAdsense] = useState<AdsenseRouteReport[] | null>(null);
   const [adsenseLoading, setAdsenseLoading] = useState(false);
+  const [filters, setFilters] = useState<SubmissionFilters>(EMPTY_FILTERS);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
 
 
   const loadLog = useCallback(async () => {
@@ -157,6 +180,15 @@ const AdminGscSubmissionsPage = () => {
   const lastRun = runs[0] ?? null;
   const failures = perSitemap.filter((s) => !s.lastOk);
 
+  const partitions = useMemo(() => availablePartitions(rows), [rows]);
+  const filteredRows = useMemo(() => filterSubmissions(rows, filters), [rows, filters]);
+  const pageData = useMemo(() => paginate(filteredRows, page, pageSize), [filteredRows, page, pageSize]);
+  const patchFilters = (patch: Partial<SubmissionFilters>) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+    setPage(1);
+  };
+
+
   const saveEnvProperty = async (value: string) => {
     const key = GSC_PROPERTY_SETTING_KEYS[env];
     const { error } = await supabase
@@ -214,11 +246,29 @@ const AdminGscSubmissionsPage = () => {
         await refreshCoverage();
       }
     } catch (err) {
-      setRunLog({ mode, at: new Date().toISOString(), payload: { error: String(err) } });
-      toast.error(`Falha na execução: ${String(err)}`);
+      // A invoke reporta qualquer não-2xx como genérico: leia o corpo real da função.
+      let detail: unknown = { error: String(err) };
+      const ctx = (err as { context?: Response })?.context;
+      if (ctx && typeof ctx.text === "function") {
+        try {
+          detail = JSON.parse(await ctx.text());
+        } catch (_) {
+          /* mantém o texto genérico */
+        }
+      }
+      setRunLog({ mode, at: new Date().toISOString(), payload: detail });
+      const code = (detail as { error?: string })?.error;
+      if (code === "submission_in_progress") {
+        toast.error(
+          "Já existe um reenvio em andamento. Aguarde a conclusão para evitar submissões duplicadas.",
+        );
+      } else {
+        toast.error(`Falha na execução: ${(detail as { detail?: string })?.detail ?? String(err)}`);
+      }
     } finally {
       setRunning(null);
     }
+
   };
 
   const notifiableAlerts = useMemo(() => filterBySeverity(alerts, severity), [alerts, severity]);
@@ -255,18 +305,20 @@ const AdminGscSubmissionsPage = () => {
   };
 
   const exportHistory = (format: "csv" | "json") => {
-    if (rows.length === 0) {
+    const data = filteredRows.length > 0 ? filteredRows : rows;
+    if (data.length === 0) {
       toast.info("Nada para exportar ainda.");
       return;
     }
     const stamp = new Date().toISOString().slice(0, 10);
     if (format === "csv") {
-      download(submissionsToCsv(rows), `gsc-submissoes-${stamp}.csv`, "text/csv;charset=utf-8;");
+      download(submissionsToCsv(data), `gsc-submissoes-${stamp}.csv`, "text/csv;charset=utf-8;");
     } else {
-      download(submissionsToJson(rows), `gsc-submissoes-${stamp}.json`, "application/json");
+      download(submissionsToJson(data), `gsc-submissoes-${stamp}.json`, "application/json");
     }
-    toast.success(`Histórico exportado em ${format.toUpperCase()}.`);
+    toast.success(`Histórico exportado em ${format.toUpperCase()} (${data.length} linha(s)).`);
   };
+
 
 
   /** Lê cobertura atual no GSC, compara com o snapshot anterior e persiste o novo. */
@@ -323,6 +375,17 @@ const AdminGscSubmissionsPage = () => {
   };
 
   const adsenseSummary = adsense ? summarizeAdsenseReports(adsense) : null;
+  const adsenseFailures = useMemo(
+    () =>
+      adsense
+        ? summarizeAdsenseFailuresByRoute(
+            adsense,
+            typeof window !== "undefined" ? window.location.origin : "",
+          )
+        : [],
+    [adsense],
+  );
+
 
   return (
     <div className="space-y-4 motion-enter">
@@ -617,6 +680,231 @@ const AdminGscSubmissionsPage = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Histórico com filtros + paginação */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Filter className="h-4 w-4" aria-hidden />
+            Histórico de submissões
+          </CardTitle>
+          <CardDescription>
+            Busque por sitemap, partição, status e período. A exportação respeita os filtros ativos.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            <Input
+              placeholder="Buscar sitemap ou erro…"
+              value={filters.query}
+              onChange={(e) => patchFilters({ query: e.target.value })}
+              aria-label="Buscar no histórico de submissões"
+            />
+            <Select
+              value={filters.partition}
+              onValueChange={(v) => patchFilters({ partition: v })}
+            >
+              <SelectTrigger aria-label="Filtrar por partição">
+                <SelectValue placeholder="Partição" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as partições</SelectItem>
+                {partitions.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filters.status}
+              onValueChange={(v) => patchFilters({ status: v as SubmissionStatusFilter })}
+            >
+              <SelectTrigger aria-label="Filtrar por status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="ok">Somente sucesso</SelectItem>
+                <SelectItem value="failed">Somente falhas</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              type="date"
+              value={filters.from ?? ""}
+              onChange={(e) => patchFilters({ from: e.target.value || undefined })}
+              aria-label="Data inicial"
+            />
+            <Input
+              type="date"
+              value={filters.to ?? ""}
+              onChange={(e) => patchFilters({ to: e.target.value || undefined })}
+              aria-label="Data final"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span>
+              {pageData.totalItems} registro(s) · página {pageData.page} de {pageData.totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => {
+                  setPageSize(Number(v));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="h-8 w-[110px]" aria-label="Itens por página">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 20, 50, 100].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} / página
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFilters(EMPTY_FILTERS);
+                  setPage(1);
+                }}
+              >
+                Limpar filtros
+              </Button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            {loading ? (
+              <Skeleton className="h-40 w-full" />
+            ) : pageData.items.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhum registro para os filtros selecionados.
+              </p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="py-2">Data</th>
+                    <th>Partição</th>
+                    <th>Status</th>
+                    <th>Sitemap</th>
+                    <th>Erro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageData.items.map((r) => (
+                    <tr key={r.id} className="border-t border-border/60">
+                      <td className="whitespace-nowrap py-2 pr-3">{fmt(r.created_at)}</td>
+                      <td className="pr-3">{partitionKey(r.sitemap ?? "")}</td>
+                      <td>
+                        <Badge variant={r.ok ? "secondary" : "destructive"}>
+                          {r.ok ? "OK" : (r.status ?? "erro")}
+                        </Badge>
+                      </td>
+                      <td className="max-w-[280px] truncate text-xs text-muted-foreground">
+                        {r.sitemap}
+                      </td>
+                      <td className="max-w-[240px] truncate text-xs text-muted-foreground">
+                        {r.error ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pageData.hasPrev}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden /> Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pageData.hasNext}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próxima <ChevronRight className="h-4 w-4" aria-hidden />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Falhas de AdSense por rota */}
+      {adsenseFailures.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden />
+              Falhas do AdSense por rota
+            </CardTitle>
+            <CardDescription>
+              Códigos de erro detectados na verificação, com o que fazer e links diretos de
+              diagnóstico.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {adsenseFailures.map((f) => (
+              <div key={f.route} className="rounded-md border border-border/60 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{f.route}</span>
+                    <Badge variant={f.level === "error" ? "destructive" : "secondary"}>
+                      HTTP {f.httpStatus ?? "—"}
+                    </Badge>
+                    {[...f.errorCodes, ...f.warningCodes].map((code) => (
+                      <Badge key={code} variant="outline" className="font-mono text-[10px]">
+                        {code}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      className="text-xs underline underline-offset-2"
+                      href={f.routeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Abrir rota
+                    </a>
+                    <a
+                      className="inline-flex items-center gap-1 text-xs underline underline-offset-2"
+                      href={f.diagnosticUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Diagnóstico <ExternalLink className="h-3 w-3" aria-hidden />
+                    </a>
+                  </div>
+                </div>
+                <ul className="mt-2 space-y-1 text-xs">
+                  {f.issues.map((i, idx) => (
+                    <li
+                      key={`${f.route}-${i.code}-${idx}`}
+                      className={i.level === "error" ? "text-destructive" : "text-muted-foreground"}
+                    >
+                      • <span className="font-mono">{i.code}</span> — {i.message}{" "}
+                      <span className="text-muted-foreground">{i.hint}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
 
       {/* AdSense */}
       <Card>

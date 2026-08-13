@@ -82,6 +82,52 @@ async function readSetting(key: string): Promise<string | null> {
   }
 }
 
+/** Chama uma RPC com service_role (usada pelas travas de execução). */
+async function callRpc<T>(fn: string, payload: Record<string, unknown>): Promise<T | null> {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!SUPABASE_URL || !SERVICE_KEY) return null;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) return null;
+    return (await r.json()) as T;
+  } catch (_) {
+    return null;
+  }
+}
+
+export const SUBMIT_LOCK_KEY = "gsc-submit-sitemaps";
+const LOCK_TTL_SECONDS = 900;
+
+/** Trava idempotente: impede duas submissões simultâneas para a mesma propriedade. */
+async function acquireSubmitLock(holder: string, meta: Record<string, unknown>) {
+  const rows = await callRpc<Array<{ acquired: boolean; holder: string; expires_at: string }>>(
+    "gsc_try_acquire_lock",
+    { _lock_key: SUBMIT_LOCK_KEY, _holder: holder, _ttl_seconds: LOCK_TTL_SECONDS, _meta: meta },
+  );
+  // Sem service_role (ambiente local) o fluxo segue sem trava.
+  if (!rows) return { acquired: true, degraded: true, holder, expiresAt: null as string | null };
+  const row = rows[0];
+  return {
+    acquired: !!row?.acquired,
+    degraded: false,
+    holder: row?.holder ?? holder,
+    expiresAt: row?.expires_at ?? null,
+  };
+}
+
+async function releaseSubmitLock(holder: string) {
+  await callRpc("gsc_release_lock", { _lock_key: SUBMIT_LOCK_KEY, _holder: holder });
+}
+
 /** Extrai as <loc> de um sitemapindex. */
 export function extractSitemapLocs(xml: string): string[] {
   const locs = Array.from(xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)).map((m) =>
@@ -89,6 +135,7 @@ export function extractSitemapLocs(xml: string): string[] {
   );
   return Array.from(new Set(locs));
 }
+
 
 /** Escolhe a propriedade verificada que cobre a URL alvo. */
 export function pickProperty(
@@ -249,7 +296,29 @@ Deno.serve(async (req) => {
     "Content-Type": "application/json",
   };
 
+  // Trava idempotente: só para execuções que realmente submetem ao Google.
+  const mutating = !dryRun && !validateOnly;
+  const lockHolder = `${environment}:${authz.userId ?? "cron"}:${crypto.randomUUID()}`;
+  let lockAcquired = false;
+  if (mutating) {
+    const lock = await acquireSubmitLock(lockHolder, { environment, site });
+    if (!lock.acquired) {
+      return json(
+        {
+          error: "submission_in_progress",
+          detail:
+            "Já existe um reenvio de sitemaps em andamento. Aguarde a conclusão para evitar submissões duplicadas.",
+          holder: lock.holder,
+          expiresAt: lock.expiresAt,
+        },
+        409,
+      );
+    }
+    lockAcquired = !lock.degraded;
+  }
+
   try {
+
     // 1. Baixa o sitemap index e extrai as partições.
     const idxRes = await fetch(indexUrl, {
       headers: { "User-Agent": "precisodeum-sitemap-submitter/1.0" },
@@ -385,5 +454,8 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("gsc-submit-sitemaps failed:", err);
     return json({ error: "gateway_failure", detail: String(err) }, 502);
+  } finally {
+    if (lockAcquired) await releaseSubmitLock(lockHolder);
   }
+
 });
