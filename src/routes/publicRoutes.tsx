@@ -218,6 +218,8 @@ export const publicRoutes = (
     <Route path="/sitemap" element={<SitemapRedirect />} />
     <Route path="/sitemap.xml" element={<SitemapRedirect />} />
     <Route path="/p/:slug" element={<InstitutionalPage />} />
+    {/* Preview interno do modo guia comercial — noindex, fora do sitemap. */}
+    <Route path="/preview/guia" element={<GuidePreviewPage />} />
     <Route path="/error/404" element={<ErrorPage code={404} />} />
     <Route path="/error/500" element={<ErrorPage code={500} />} />
     <Route path="/500" element={<ErrorPage code={500} />} />
