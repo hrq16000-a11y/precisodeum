@@ -10,7 +10,9 @@
  *     (devolvida sem alteração se já apontar para o mesmo domínio).
  */
 
-const FALLBACK_BASE = 'https://precisodeum.com.br';
+import { BRAND_BASE_URL } from '@/config/brand';
+
+const FALLBACK_BASE = BRAND_BASE_URL;
 
 export function getSiteBaseUrl(): string {
   // Vite expõe variáveis em import.meta.env; em testes node usamos process.env.

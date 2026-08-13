@@ -28,7 +28,9 @@ export interface BreadcrumbItem {
   url: string;
 }
 
-const SITE_BASE_URL = 'https://precisodeum.com.br';
+import { BRAND_BASE_URL } from '@/config/brand';
+
+const SITE_BASE_URL = BRAND_BASE_URL;
 
 const safeName = (slug: string | null | undefined) =>
   (slug || '').replace(/-/g, ' ').trim();
