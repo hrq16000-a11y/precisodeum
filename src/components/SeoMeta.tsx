@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { buildCanonicalUrl } from '@/lib/canonicalUrl';
 import { normalizeSocialImageUrl } from '@/lib/imageUrlNormalizer';
+import { DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL } from '@/lib/siteAssets';
 
 /**
  * SeoMeta — wrapper enxuto sobre react-helmet-async para metadata per-route.
@@ -42,7 +43,11 @@ export function SeoMeta({ title, description, canonical, ogType = 'website', ogI
   const pathOrUrl = canonical
     || (typeof window !== 'undefined' ? window.location.pathname : '/');
   const canonicalUrl = buildCanonicalUrl(pathOrUrl);
-  const resolvedImage = ogImage ? normalizeSocialImageUrl(ogImage, 'og:image') : undefined;
+  // Imagem social sempre presente: usa a específica da rota ou a padrão da marca,
+  // garantindo preview correto em qualquer URL compartilhada.
+  const resolvedImage = (ogImage ? normalizeSocialImageUrl(ogImage, 'og:image') : '')
+    || DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL;
+  const imageType = /\.jpe?g$/i.test(resolvedImage) ? 'image/jpeg' : 'image/png';
 
   return (
     <Helmet prioritizeSeoTags>
@@ -54,7 +59,15 @@ export function SeoMeta({ title, description, canonical, ogType = 'website', ogI
       <meta property="og:description" content={desc} />
       <meta property="og:type" content={ogType} />
       <meta property="og:url" content={canonicalUrl} />
-      {resolvedImage && <meta property="og:image" content={resolvedImage} />}
+      <meta property="og:image" content={resolvedImage} />
+      <meta property="og:image:secure_url" content={resolvedImage} />
+      <meta property="og:image:type" content={imageType} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={fullTitle} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image" content={resolvedImage} />
+      <meta name="twitter:image:alt" content={fullTitle} />
     </Helmet>
   );
 }
