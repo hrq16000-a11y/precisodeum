@@ -110,14 +110,26 @@ const AdminGscSubmissionsPage = () => {
     const { data } = await supabase
       .from("site_settings")
       .select("key, value")
-      .in("key", [...Object.values(GSC_PROPERTY_SETTING_KEYS), COVERAGE_SNAPSHOT_KEY]);
+      .in("key", [
+        ...Object.values(GSC_PROPERTY_SETTING_KEYS),
+        COVERAGE_SNAPSHOT_KEY,
+        ALERT_EMAIL_KEY,
+        ALERT_SLACK_KEY,
+        ALERT_SEVERITY_KEY,
+      ]);
     const map: Record<string, string> = {};
     for (const r of data ?? []) {
       const v = (r as { key: string; value: unknown }).value;
       map[(r as { key: string }).key] = typeof v === "string" ? v : JSON.stringify(v);
     }
     setEnvProperty(map);
+    if (map[ALERT_EMAIL_KEY]) setAlertEmail(map[ALERT_EMAIL_KEY]);
+    if (map[ALERT_SLACK_KEY]) setSlackEnabled(map[ALERT_SLACK_KEY] !== "false");
+    if (SEVERITIES.includes(map[ALERT_SEVERITY_KEY] as AlertSeverityThreshold)) {
+      setSeverity(map[ALERT_SEVERITY_KEY] as AlertSeverityThreshold);
+    }
   }, []);
+
 
   const loadProperties = useCallback(async () => {
     try {
