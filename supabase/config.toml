@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.seo-adsense-check]
 verify_jwt = false
+
+[functions.gsc-coverage-alert]
+verify_jwt = false
