@@ -12,6 +12,8 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoPromptBanner from '@/components/GeoPromptBanner';
 import { Skeleton } from '@/components/ui/skeleton';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
+import { SkeletonCardGrid } from '@/components/motion/Skeletons';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
@@ -61,7 +63,7 @@ const CityPage = () => {
     );
   }, [slug]);
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ['city-page', slug],
     queryFn: async () => {
       // 1) Match exato pelo slug fornecido na URL
@@ -283,11 +285,10 @@ const CityPage = () => {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <div className="container py-8">
+        <div className="container py-8" data-testid="city-loading">
+          <ProgressIndicator label="Carregando cidade" className="mb-4" />
           <Skeleton className="mb-4 h-10 w-64" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64 rounded-xl" />)}
-          </div>
+          <SkeletonCardGrid count={6} />
         </div>
         <Footer />
       </div>
@@ -299,7 +300,7 @@ const CityPage = () => {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <div className="container flex flex-1 flex-col items-center justify-center gap-4 py-20 text-center">
+        <div role="alert" data-testid="city-error" className="motion-enter container flex flex-1 flex-col items-center justify-center gap-4 py-20 text-center">
           <p className="text-lg text-muted-foreground">
             Erro ao carregar cidade. Verifique sua conexão.
           </p>
@@ -358,8 +359,13 @@ const CityPage = () => {
         <p className="mb-6 text-sm text-muted-foreground">
           {providers.length} profissional(is) encontrado(s) em {city!.name}
         </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {paginatedProviders.map((p) => <ProviderCard key={p.id} provider={p as any} />)}
+        {isFetching && <ProgressIndicator label="Atualizando resultados" className="mb-3" />}
+        <div className="motion-stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {paginatedProviders.map((p) => (
+            <div key={p.id} className="motion-enter">
+              <ProviderCard provider={p as any} />
+            </div>
+          ))}
         </div>
         {providers.length === 0 && (
           <EmptyStateFallback

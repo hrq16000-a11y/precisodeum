@@ -41,6 +41,7 @@ const SponsorAdSlot = lazy(() => import('@/components/ads/SponsorAdSlot'));
 import PinnedSponsorCard from '@/components/sponsors/PinnedSponsorCard';
 import PinnedSponsorSkeleton from '@/components/sponsors/PinnedSponsorSkeleton';
 import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
 import { usePinnedSponsor } from '@/hooks/usePinnedSponsor';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
 import { useUrgencyMode } from '@/hooks/useUrgencyMode';
@@ -216,6 +217,7 @@ const SearchPage = () => {
   const {
     data: grouped,
     isLoading,
+    isFetching,
     isError: searchError,
     refetch,
   } = useSearchProvidersGrouped(query, effectiveCity, selectedCategory, minRating, geoState || '', userLat, userLon, radiusKm);
@@ -1353,13 +1355,18 @@ const SearchPage = () => {
               </Suspense>
             )}
 
+            {isFetching && !isLoading && (
+              <ProgressIndicator label="Atualizando resultados da busca" className="mb-3" />
+            )}
+
             {isLoading ? (
-              <>
+              <div data-testid="search-loading" className="motion-enter-fade">
+                <ProgressIndicator label="Buscando profissionais" className="mb-3" />
                 <PinnedSponsorSkeleton />
-                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+                <div className="motion-stagger grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                   <ProviderCardSkeleton count={4} />
                 </div>
-              </>
+              </div>
             ) : (
               <>
                 {/* Pinned (Categoria Exclusiva) — primeiro resultado, identificado como Patrocinado */}

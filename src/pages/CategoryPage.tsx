@@ -15,6 +15,7 @@ import GeoPromptBanner from '@/components/GeoPromptBanner';
 import EmptyStateFallback from '@/components/EmptyStateFallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
 import { Button } from '@/components/ui/button';
 import { useCategoryProviders, filterAndRankProvidersGrouped, type DbProvider } from '@/hooks/useProviders';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
@@ -56,7 +57,7 @@ const stagger = {
 const CategoryPage = () => {
   const { slug } = useParams();
   const { city: geoCity, state: geoState, latitude: userLat, longitude: userLon, radiusKm, setRadius, requestPreciseLocation } = useGeoCity();
-  const { data, isLoading, isError, refetch } = useCategoryProviders(slug || '');
+  const { data, isLoading, isFetching, isError, refetch } = useCategoryProviders(slug || '');
   const [page, setPage] = useState(1);
   
   const [showOutOfState, setShowOutOfState] = useState(false);
@@ -262,8 +263,9 @@ const CategoryPage = () => {
             <Skeleton className="mx-auto mt-2 h-4 w-40" />
           </div>
         </section>
-        <div className="container py-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="container py-8" data-testid="category-loading">
+          <ProgressIndicator label="Carregando categoria" className="mb-4" />
+          <div className="motion-stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <ProviderCardSkeleton count={6} />
           </div>
         </div>
@@ -277,7 +279,7 @@ const CategoryPage = () => {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <div className="container flex flex-1 flex-col items-center justify-center gap-4 py-20 text-center">
+        <div role="alert" data-testid="category-error" className="motion-enter container flex flex-1 flex-col items-center justify-center gap-4 py-20 text-center">
           <p className="text-lg text-muted-foreground">
             Erro ao carregar categoria. Verifique sua conexão.
           </p>
