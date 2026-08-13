@@ -227,7 +227,12 @@ export function validateRichResultBlock(
 
   if (!options.skipBrandAudit) {
     const brand = auditJsonLd(data, options);
-    for (const issue of brand.issues.filter((i) => i.severity === 'error')) {
+    // Domínio/marca divergentes tornam o rich result inelegível, mesmo quando
+    // o audit de marca os classifica apenas como aviso.
+    const blocking = new Set(['foreign_domain', 'relative_url', 'brand_name_mismatch']);
+    for (const issue of brand.issues.filter(
+      (i) => i.severity === 'error' || blocking.has(i.code),
+    )) {
       issues.push({
         severity: 'error',
         code: 'brand_mismatch',
