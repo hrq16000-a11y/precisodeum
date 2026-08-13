@@ -95,7 +95,7 @@ export const PUBLIC_PATH_PREFIXES = [
   '/cidade', '/cidades', '/categorias', '/servico', '/servicos', '/servico-detalhe',
   '/excluir-conta', '/exclusao-de-conta', '/delete-account',
   '/esqueci-senha', '/senha-redefinida', '/password-reset-success',
-  '/sitemap', '/p', '/error', '/status',
+  '/sitemap', '/p', '/error', '/status', '/preview',
 ] as const;
 
 /**
