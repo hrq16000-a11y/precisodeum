@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { buildCanonicalUrl } from '@/lib/canonicalUrl';
 import { normalizeSocialImageUrl } from '@/lib/imageUrlNormalizer';
+import { DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL } from '@/lib/siteAssets';
 
 /**
  * SeoMeta — wrapper enxuto sobre react-helmet-async para metadata per-route.
