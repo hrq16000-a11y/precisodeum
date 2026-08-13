@@ -48,7 +48,8 @@
     "test:coverage": "vitest run --coverage",
     "security:prescan": "node scripts/security-prescan.mjs",
     "security:prescan:strict": "node scripts/security-prescan.mjs --strict",
-    "prepublish:check": "node scripts/audit-rpc-grants.mjs && node scripts/lint-sensitive-payloads.mjs && node scripts/security-prescan.mjs"
+    "prepublish:check": "node scripts/audit-rpc-grants.mjs && node scripts/lint-sensitive-payloads.mjs && node scripts/security-prescan.mjs",
+    "seo:submit-sitemaps": "node scripts/gsc-submit-sitemaps.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.1",

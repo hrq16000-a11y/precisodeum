@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.notify-auth-errors]
 verify_jwt = false
+
+[functions.gsc-submit-sitemaps]
+verify_jwt = false
