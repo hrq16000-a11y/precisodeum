@@ -44,7 +44,7 @@ const LazyImage = ({
         alt={alt}
         loading={priority ? 'eager' : 'lazy'}
         decoding={priority ? 'sync' : 'async'}
-        fetchPriority={priority ? 'high' : 'auto'}
+        {...({ fetchpriority: priority ? 'high' : 'auto' } as Record<string, string>)}
         data-loaded={state === 'loaded' ? 'true' : 'false'}
         className={cn('motion-img h-full w-full object-cover', className)}
         onLoad={(e) => {
