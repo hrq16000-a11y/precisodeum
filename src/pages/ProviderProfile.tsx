@@ -69,6 +69,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Dialog,
@@ -1268,8 +1269,9 @@ const ProviderProfile = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen flex-col" data-testid="provider-loading">
         <Header />
+        <ProgressIndicator fixed label="Carregando perfil" />
         {/* Capa: mesmo aspect-ratio (16:5) da capa real → sem CLS quando o
             conteúdo final hidratar. Header CTA reserva 44px de altura. */}
         <Skeleton className="w-full aspect-[16/5] rounded-none" />
@@ -2174,7 +2176,6 @@ const ProviderProfile = () => {
                 />
                 {isSubmittingLead && (
                   <ProgressIndicator
-                    data-testid="lead-submit-progress"
                     label="Enviando solicitação"
                     className="motion-enter-fade"
                   />
