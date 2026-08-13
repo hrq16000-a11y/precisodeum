@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  Bell,
   CheckCircle2,
+  Download,
+  FlaskConical,
   Loader2,
   RefreshCw,
   Send,
@@ -19,6 +22,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -41,26 +47,51 @@ import {
   type GscCoverageSnapshot,
   type GscEnvironment,
 } from "@/lib/seo/gscSubmissions";
+import {
+  filterBySeverity,
+  submissionsToCsv,
+  submissionsToJson,
+  type AlertSeverityThreshold,
+} from "@/lib/seo/gscAlerts";
 import { summarizeAdsenseReports, type AdsenseRouteReport } from "@/lib/seo/adsenseCheck";
 
 const COVERAGE_SNAPSHOT_KEY = "gsc_coverage_snapshot";
+const ALERT_EMAIL_KEY = "gsc_alert_email";
+const ALERT_SLACK_KEY = "gsc_alert_slack_enabled";
+const ALERT_SEVERITY_KEY = "gsc_alert_severity";
 const ENVIRONMENTS: GscEnvironment[] = ["prod", "staging", "dev"];
+const SEVERITIES: AlertSeverityThreshold[] = ["critical", "warning", "info"];
 
 const fmt = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";
 
+const download = (content: string, filename: string, type: string) => {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 const AdminGscSubmissionsPage = () => {
   const [rows, setRows] = useState<GscAuditRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [running, setRunning] = useState<null | "validate" | "submit">(null);
+  const [running, setRunning] = useState<null | "validate" | "submit" | "dryRun">(null);
+  const [runLog, setRunLog] = useState<{ mode: string; at: string; payload: unknown } | null>(null);
   const [properties, setProperties] = useState<string[]>([]);
   const [env, setEnv] = useState<GscEnvironment>(() =>
     environmentFromHost(typeof window !== "undefined" ? window.location.hostname : ""),
   );
   const [envProperty, setEnvProperty] = useState<Record<string, string>>({});
   const [alerts, setAlerts] = useState<CoverageAlert[]>([]);
+  const [alertEmail, setAlertEmail] = useState("");
+  const [slackEnabled, setSlackEnabled] = useState(true);
+  const [severity, setSeverity] = useState<AlertSeverityThreshold>("warning");
+  const [sendingAlert, setSendingAlert] = useState(false);
   const [adsense, setAdsense] = useState<AdsenseRouteReport[] | null>(null);
   const [adsenseLoading, setAdsenseLoading] = useState(false);
+
 
   const loadLog = useCallback(async () => {
     setLoading(true);
@@ -79,14 +110,26 @@ const AdminGscSubmissionsPage = () => {
     const { data } = await supabase
       .from("site_settings")
       .select("key, value")
-      .in("key", [...Object.values(GSC_PROPERTY_SETTING_KEYS), COVERAGE_SNAPSHOT_KEY]);
+      .in("key", [
+        ...Object.values(GSC_PROPERTY_SETTING_KEYS),
+        COVERAGE_SNAPSHOT_KEY,
+        ALERT_EMAIL_KEY,
+        ALERT_SLACK_KEY,
+        ALERT_SEVERITY_KEY,
+      ]);
     const map: Record<string, string> = {};
     for (const r of data ?? []) {
       const v = (r as { key: string; value: unknown }).value;
       map[(r as { key: string }).key] = typeof v === "string" ? v : JSON.stringify(v);
     }
     setEnvProperty(map);
+    if (map[ALERT_EMAIL_KEY]) setAlertEmail(map[ALERT_EMAIL_KEY]);
+    if (map[ALERT_SLACK_KEY]) setSlackEnabled(map[ALERT_SLACK_KEY] !== "false");
+    if (SEVERITIES.includes(map[ALERT_SEVERITY_KEY] as AlertSeverityThreshold)) {
+      setSeverity(map[ALERT_SEVERITY_KEY] as AlertSeverityThreshold);
+    }
   }, []);
+
 
   const loadProperties = useCallback(async () => {
     try {
@@ -127,7 +170,19 @@ const AdminGscSubmissionsPage = () => {
     toast.success(`Propriedade de ${env} salva.`);
   };
 
-  const runSubmission = async (mode: "validate" | "submit") => {
+  const saveSetting = async (key: string, value: string) => {
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({ key, value }, { onConflict: "key" });
+    if (error) {
+      toast.error("Falha ao salvar a configuração de alertas.");
+      return;
+    }
+    setEnvProperty((prev) => ({ ...prev, [key]: value }));
+    toast.success("Configuração de alertas salva.");
+  };
+
+  const runSubmission = async (mode: "validate" | "submit" | "dryRun") => {
     setRunning(mode);
     try {
       const { data, error } = await supabase.functions.invoke("gsc-submit-sitemaps", {
@@ -135,12 +190,18 @@ const AdminGscSubmissionsPage = () => {
           environment: env,
           property: envProperty[GSC_PROPERTY_SETTING_KEYS[env]] || undefined,
           validateOnly: mode === "validate",
+          dryRun: mode === "dryRun",
         },
       });
       if (error) throw error;
       const res = data as Record<string, unknown>;
+      setRunLog({ mode, at: new Date().toISOString(), payload: res });
       if (mode === "validate") {
         toast.success(`Validação: ${res.valid} ok · ${res.invalid} com problema.`);
+      } else if (mode === "dryRun") {
+        toast.success(
+          `Dry-run: ${res.total} sitemap(s) seriam enviados a ${res.property} (${res.skipped} pulados).`,
+        );
       } else if (res.error) {
         toast.error(String(res.error));
       } else {
@@ -148,14 +209,65 @@ const AdminGscSubmissionsPage = () => {
           `Submetidos ${res.succeeded}/${res.submitted} sitemaps (${res.failed} falhas).`,
         );
       }
-      await loadLog();
-      await refreshCoverage();
+      if (mode !== "dryRun") {
+        await loadLog();
+        await refreshCoverage();
+      }
     } catch (err) {
+      setRunLog({ mode, at: new Date().toISOString(), payload: { error: String(err) } });
       toast.error(`Falha na execução: ${String(err)}`);
     } finally {
       setRunning(null);
     }
   };
+
+  const notifiableAlerts = useMemo(() => filterBySeverity(alerts, severity), [alerts, severity]);
+
+  const sendCoverageAlert = async (dryRun: boolean) => {
+    if (notifiableAlerts.length === 0) {
+      toast.info("Nenhum alerta no nível de gravidade selecionado.");
+      return;
+    }
+    setSendingAlert(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("gsc-coverage-alert", {
+        body: {
+          alerts: notifiableAlerts,
+          environment: env,
+          property: envProperty[GSC_PROPERTY_SETTING_KEYS[env]] || undefined,
+          dashboardUrl: `${window.location.origin}/admin/seo?tab=submissoes`,
+          email: alertEmail || undefined,
+          slack: slackEnabled,
+          dryRun,
+        },
+      });
+      if (error) throw error;
+      setRunLog({ mode: dryRun ? "alert-dry-run" : "alert", at: new Date().toISOString(), payload: data });
+      const res = data as { channels?: Array<{ channel: string; ok: boolean }> };
+      if (dryRun) toast.success("Prévia do alerta gerada (nada foi enviado).");
+      else if (res.channels?.some((c) => c.ok)) toast.success("Alerta de cobertura enviado.");
+      else toast.error("Nenhum canal de alerta pôde enviar. Veja o log detalhado.");
+    } catch (err) {
+      toast.error(`Falha ao enviar alerta: ${String(err)}`);
+    } finally {
+      setSendingAlert(false);
+    }
+  };
+
+  const exportHistory = (format: "csv" | "json") => {
+    if (rows.length === 0) {
+      toast.info("Nada para exportar ainda.");
+      return;
+    }
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (format === "csv") {
+      download(submissionsToCsv(rows), `gsc-submissoes-${stamp}.csv`, "text/csv;charset=utf-8;");
+    } else {
+      download(submissionsToJson(rows), `gsc-submissoes-${stamp}.json`, "application/json");
+    }
+    toast.success(`Histórico exportado em ${format.toUpperCase()}.`);
+  };
+
 
   /** Lê cobertura atual no GSC, compara com o snapshot anterior e persiste o novo. */
   const refreshCoverage = useCallback(async () => {
@@ -271,14 +383,34 @@ const AdminGscSubmissionsPage = () => {
               )}
               Validar partições
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => runSubmission("dryRun")}
+              disabled={running !== null}
+            >
+              {running === "dryRun" ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FlaskConical className="h-4 w-4" aria-hidden />
+              )}
+              Reenviar (dry-run)
+            </Button>
             <Button size="sm" onClick={() => runSubmission("submit")} disabled={running !== null}>
               {running === "submit" ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               ) : (
                 <Send className="h-4 w-4" aria-hidden />
               )}
-              Submeter agora
+              Reenviar sitemaps do último build
             </Button>
+            <Button variant="outline" size="sm" onClick={() => exportHistory("csv")}>
+              <Download className="h-4 w-4" aria-hidden /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => exportHistory("json")}>
+              <Download className="h-4 w-4" aria-hidden /> JSON
+            </Button>
+
           </div>
         </CardHeader>
         <CardContent>
@@ -303,6 +435,112 @@ const AdminGscSubmissionsPage = () => {
         </CardContent>
       </Card>
 
+      {/* Log detalhado da última execução manual */}
+      {runLog && (
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Log detalhado — {runLog.mode}</CardTitle>
+              <CardDescription>Execução manual em {fmt(runLog.at)}.</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setRunLog(null)}>
+              Limpar
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <pre className="max-h-80 overflow-auto rounded-md bg-muted p-3 text-xs">
+              {JSON.stringify(runLog.payload, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Configuração de alertas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bell className="h-4 w-4" aria-hidden />
+            Alertas de piora de cobertura
+          </CardTitle>
+          <CardDescription>
+            Envia e-mail e/ou Slack com as principais rotas afetadas e links diretos para o
+            diagnóstico.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-1">
+              <Label htmlFor="gsc-alert-email" className="text-xs">
+                E-mail de destino
+              </Label>
+              <Input
+                id="gsc-alert-email"
+                type="email"
+                placeholder="seo@precisodeum.com.br"
+                value={alertEmail}
+                onChange={(e) => setAlertEmail(e.target.value)}
+                onBlur={() => saveSetting(ALERT_EMAIL_KEY, alertEmail)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Gravidade mínima</Label>
+              <Select
+                value={severity}
+                onValueChange={(v) => {
+                  setSeverity(v as AlertSeverityThreshold);
+                  saveSetting(ALERT_SEVERITY_KEY, v);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SEVERITIES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end gap-2">
+              <Switch
+                id="gsc-alert-slack"
+                checked={slackEnabled}
+                onCheckedChange={(v) => {
+                  setSlackEnabled(v);
+                  saveSetting(ALERT_SLACK_KEY, String(v));
+                }}
+              />
+              <Label htmlFor="gsc-alert-slack" className="text-sm">
+                Enviar para o Slack
+              </Label>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => sendCoverageAlert(true)}
+              disabled={sendingAlert}
+            >
+              {sendingAlert ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FlaskConical className="h-4 w-4" aria-hidden />
+              )}
+              Pré-visualizar alerta
+            </Button>
+            <Button size="sm" onClick={() => sendCoverageAlert(false)} disabled={sendingAlert}>
+              <Bell className="h-4 w-4" aria-hidden /> Enviar alerta agora
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {notifiableAlerts.length} alerta(s) no nível “{severity}”.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Alertas de cobertura */}
       {alerts.length > 0 && (
         <Card>
@@ -324,6 +562,7 @@ const AdminGscSubmissionsPage = () => {
           </CardContent>
         </Card>
       )}
+
 
       {/* Resultado por sitemap */}
       <Card>
