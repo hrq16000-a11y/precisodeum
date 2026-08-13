@@ -313,6 +313,7 @@ export default function AdminSeoHealthPage() {
                       <th className="p-2">Avisos</th>
                       <th className="p-2">Noindex</th>
                       <th className="p-2">Problemas mais comuns</th>
+                      <th className="p-2 sr-only">Detalhes</th>
                     </tr>
                   </thead>
                   <tbody>
