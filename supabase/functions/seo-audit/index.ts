@@ -157,6 +157,9 @@ async function auditUrl(url: string, sitemap: string): Promise<Finding> {
   let httpStatus: number | undefined;
   let canonical: string | null = null;
   let noindex = false;
+  let title: string | null = null;
+  let description: string | null = null;
+  let jsonldTypes: string[] = [];
   try {
     const res = await fetchWithTimeout(url);
     httpStatus = res.status;
@@ -191,18 +194,58 @@ async function auditUrl(url: string, sitemap: string): Promise<Finding> {
 
     // Sitemap should NOT contain noindex pages
     if (noindex) issues.push('page is in sitemap but has noindex');
+
+    // <title> — obrigatório, sem default do template, tamanho saudável
+    title = extractTitle(html);
+    if (!title) issues.push('missing <title>');
+    else {
+      if (/lovable app|lovable generated project/i.test(title)) issues.push('title is a template default');
+      if (title.length < TITLE_MIN) issues.push(`title too short (${title.length} chars)`);
+      if (title.length > TITLE_MAX) issues.push(`title too long (${title.length} chars)`);
+    }
+
+    // meta description
+    description = extractMeta(html, 'description');
+    if (!description) issues.push('missing meta description');
+    else {
+      if (description.length < DESC_MIN) issues.push(`description too short (${description.length} chars)`);
+      if (description.length > DESC_MAX) issues.push(`description too long (${description.length} chars)`);
+    }
+
+    // JSON-LD (rich results) — presença, validade e @type esperados por rota
+    const { types, invalidBlocks } = extractJsonLdTypes(html);
+    jsonldTypes = types;
+    if (invalidBlocks > 0) issues.push(`${invalidBlocks} invalid JSON-LD block(s)`);
+    const pathname = new URL(url).pathname;
+    const expected = expectedJsonLdTypes(pathname);
+    if (expected.length > 0) {
+      if (types.length === 0) issues.push('missing JSON-LD (SSR/render failure?)');
+      else {
+        const missing = expected.filter((t) => !hasType(types, t));
+        if (missing.length) issues.push(`JSON-LD missing @type: ${missing.join(', ')}`);
+      }
+    }
   } catch (err) {
     issues.push(`fetch failed: ${(err as Error).message}`);
     return { url, source_sitemap: sitemap, issues, status: 'error' };
   }
 
+  const isError = (i: string) =>
+    i.startsWith('HTTP') ||
+    i.includes('noindex') ||
+    i.includes('other origin') ||
+    i.includes('missing <title>') ||
+    i.includes('missing JSON-LD') ||
+    i.includes('invalid JSON-LD');
+
   const status: Finding['status'] = issues.length === 0
     ? 'ok'
-    : (issues.some((i) => i.startsWith('HTTP') || i.includes('noindex') || i.includes('other origin'))
-        ? 'error'
-        : 'warning');
+    : (issues.some(isError) ? 'error' : 'warning');
 
-  return { url, source_sitemap: sitemap, http_status: httpStatus, canonical, noindex, issues, status };
+  return {
+    url, source_sitemap: sitemap, http_status: httpStatus, canonical, noindex,
+    title, description, jsonld_types: jsonldTypes, issues, status,
+  };
 }
 
 Deno.serve(async (req) => {
