@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useNavigate, useParams, Navigate } from 'react-router-dom';
-import { Globe, Activity, Map, BarChart2, Tags, LinkIcon, Search } from 'lucide-react';
+import { Globe, Activity, Map, BarChart2, Tags, LinkIcon, Search, Send } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -19,6 +19,7 @@ const AdminMetaTrackingQualityPage = lazy(() => import('./AdminMetaTrackingQuali
 const AdminMetaTagsPage = lazy(() => import('../AdminMetaTagsPage'));
 const AdminBrokenLinksPage = lazy(() => import('./AdminBrokenLinksPage'));
 const AdminSeoGscPage = lazy(() => import('./AdminSeoGscPage'));
+const AdminGscSubmissionsPage = lazy(() => import('./AdminGscSubmissionsPage'));
 
 const TABS = [
   { value: 'saude', label: 'Saúde SEO', icon: Activity, Component: AdminSeoHealthPage },
@@ -26,6 +27,7 @@ const TABS = [
   { value: 'runtime', label: 'Runtime (LCP/CTR)', icon: Activity, Component: AdminSeoRuntimeMetricsPage },
   { value: 'sitemap', label: 'Sitemap', icon: Map, Component: AdminSitemapAuditPage },
   { value: 'gsc', label: 'Search Console', icon: Search, Component: AdminSeoGscPage },
+  { value: 'submissoes', label: 'Submissões GSC', icon: Send, Component: AdminGscSubmissionsPage },
   { value: 'meta-tracking', label: 'Meta Tracking', icon: BarChart2, Component: AdminMetaTrackingQualityPage },
   { value: 'metatags', label: 'Meta Tags', icon: Tags, Component: AdminMetaTagsPage },
   { value: 'broken-links', label: 'Links Quebrados', icon: LinkIcon, Component: AdminBrokenLinksPage },

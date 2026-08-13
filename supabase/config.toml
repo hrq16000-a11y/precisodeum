@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.gsc-submit-sitemaps]
 verify_jwt = false
+
+[functions.seo-adsense-check]
+verify_jwt = false
