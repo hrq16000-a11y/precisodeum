@@ -100,8 +100,7 @@ describe('Motion system · componentes', () => {
 
   it('Reveal renderiza conteúdo mesmo sem IntersectionObserver', () => {
     const original = globalThis.IntersectionObserver;
-    // @ts-expect-error simulando ambiente sem suporte
-    globalThis.IntersectionObserver = undefined;
+    (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver = undefined;
     render(<Reveal>visível</Reveal>);
     expect(screen.getByText('visível')).toBeInTheDocument();
     globalThis.IntersectionObserver = original;
