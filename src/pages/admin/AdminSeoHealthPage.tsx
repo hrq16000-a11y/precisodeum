@@ -170,6 +170,27 @@ export default function AdminSeoHealthPage() {
   );
   const band = healthBand(score);
 
+  // ── Drill-down por rota ────────────────────────────────────────────────
+  const [openRoute, setOpenRoute] = useState<RouteGroup | null>(null);
+  const previous = reports[1] ?? null;
+  const drilldown = useMemo(
+    () => (openRoute ? buildRouteDrilldown(latest, openRoute) : null),
+    [latest, openRoute],
+  );
+  const routeDiff = useMemo(
+    () => (openRoute ? diffRouteBetweenReports(latest, previous, openRoute) : null),
+    [latest, previous, openRoute],
+  );
+
+  // ── Consistência do sitemap particionado (canônicos + noindex) ─────────
+  const consistency = useMemo(() => {
+    const entries: SitemapEntry[] = (latest?.findings ?? []).map((f) => ({
+      loc: f.url,
+      partition: f.source_sitemap ?? latest?.sitemap_url ?? 'sitemap.xml',
+    }));
+    return validateSitemapConsistency(entries, latest?.findings ?? []);
+  }, [latest]);
+
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
