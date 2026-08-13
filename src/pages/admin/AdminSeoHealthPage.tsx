@@ -337,6 +337,17 @@ export default function AdminSeoHealthPage() {
                             </div>
                           )}
                         </td>
+                        <td className="p-2 text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="motion-interactive gap-1"
+                            onClick={() => setOpenRoute(a.route)}
+                            aria-label={`Ver detalhes da rota ${a.route}`}
+                          >
+                            <Search className="h-3.5 w-3.5" aria-hidden /> Detalhes
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -344,6 +355,165 @@ export default function AdminSeoHealthPage() {
               </div>
             )}
           </section>
+
+          {/* Consistência do sitemap particionado */}
+          <section className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold">Consistência do sitemap (canônicos e noindex)</h2>
+              <div className="flex items-center gap-2">
+                <Badge className={consistency.passed ? BAND_CLASS.excellent : BAND_CLASS.critical}>
+                  {consistency.checked === 0
+                    ? 'sem dados'
+                    : consistency.passed
+                      ? 'consistente'
+                      : 'inconsistências críticas'}
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="motion-interactive gap-1"
+                  disabled={consistency.issues.length === 0}
+                  onClick={() =>
+                    downloadCsv(
+                      `sitemap-consistencia-${new Date().toISOString().slice(0, 10)}.csv`,
+                      consistencyIssuesToCsv(consistency),
+                    )
+                  }
+                >
+                  <Download className="h-3.5 w-3.5" aria-hidden /> CSV
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Validação automática após cada atualização incremental: URL não canônica, canonical divergente,
+              noindex listado, duplicata entre partições e rota fora da partição correta.
+              URL sem auditoria fica como “não confirmada” — nunca como aprovada.
+            </p>
+            <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))]">
+              <Metric icon={Gauge} label="Score de consistência" value={consistency.score != null ? String(consistency.score) : '—'} />
+              <Metric icon={CheckCircle2} label="URLs verificadas" value={String(consistency.checked)} hint={`${consistency.audited} com auditoria`} />
+              <Metric icon={FileWarning} label="Problemas" value={String(consistency.issues.length)} />
+              <Metric icon={ShieldCheck} label="Partições" value={String(consistency.byPartition.length)} />
+            </div>
+            {consistency.issues.length > 0 && (
+              <div className="max-h-80 overflow-auto rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-muted/60 text-left text-xs uppercase text-muted-foreground">
+                    <tr>
+                      <th className="p-2">Severidade</th>
+                      <th className="p-2">Problema</th>
+                      <th className="p-2">URL</th>
+                      <th className="p-2">Partição</th>
+                      <th className="p-2">Detalhe</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {consistency.issues.slice(0, 200).map((i, idx) => (
+                      <tr key={`${i.kind}-${i.url}-${idx}`} className="border-t transition-colors hover:bg-muted/30">
+                        <td className="p-2">
+                          <Badge variant={i.severity === 'critical' ? 'destructive' : 'outline'}>{i.severity}</Badge>
+                        </td>
+                        <td className="p-2">{CONSISTENCY_LABEL[i.kind]}</td>
+                        <td className="max-w-[22rem] truncate p-2 font-mono text-xs">{i.url}</td>
+                        <td className="p-2 font-mono text-xs">{i.partition}</td>
+                        <td className="p-2 text-xs text-muted-foreground">{i.detail}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          {/* Drill-down por rota */}
+          <Dialog open={!!openRoute} onOpenChange={(o) => !o && setOpenRoute(null)}>
+            <DialogContent className="max-h-[85vh] max-w-3xl overflow-auto">
+              <DialogHeader>
+                <DialogTitle className="font-mono">{openRoute ?? ''}</DialogTitle>
+                <DialogDescription>
+                  Amostras do problema, diferenças em relação à build anterior e exportação do histórico.
+                </DialogDescription>
+              </DialogHeader>
+
+              {drilldown && routeDiff && (
+                <div className="space-y-4">
+                  <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(9rem,1fr))]">
+                    <Metric icon={CheckCircle2} label="URLs" value={String(drilldown.total)} />
+                    <Metric icon={FileWarning} label="Erros" value={String(drilldown.errors)} />
+                    <Metric icon={AlertTriangle} label="Avisos" value={String(drilldown.warnings)} />
+                    <Metric icon={ShieldCheck} label="Noindex" value={String(drilldown.noindex)} />
+                  </div>
+
+                  <div className="rounded-lg border p-3 text-sm">
+                    <p className="mb-2 font-medium">Diferença vs build anterior</p>
+                    {!routeDiff.hasPrevious ? (
+                      <p className="text-xs text-muted-foreground">Não há build anterior para comparar.</p>
+                    ) : (
+                      <div className="grid gap-2 text-xs [grid-template-columns:repeat(auto-fit,minmax(9rem,1fr))]">
+                        <div>URLs: <DeltaPill value={routeDiff.totalDelta} /></div>
+                        <div>Erros: <DeltaPill value={routeDiff.errorsDelta} /></div>
+                        <div>Avisos: <DeltaPill value={routeDiff.warningsDelta} /></div>
+                        <div>Noindex: <DeltaPill value={routeDiff.noindexDelta} /></div>
+                      </div>
+                    )}
+                    {routeDiff.newProblemUrls.length > 0 && (
+                      <p className="mt-2 text-xs text-destructive">
+                        {routeDiff.newProblemUrls.length} URL(s) com problema novo: {routeDiff.newProblemUrls.slice(0, 5).join(', ')}
+                      </p>
+                    )}
+                    {routeDiff.resolvedUrls.length > 0 && (
+                      <p className="mt-1 text-xs text-emerald-600">
+                        {routeDiff.resolvedUrls.length} URL(s) resolvida(s) desde a build anterior.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-sm font-medium">Amostras do problema</p>
+                    {drilldown.samples.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Nenhuma URL com problema nesta rota.</p>
+                    ) : (
+                      <div className="overflow-x-auto rounded-lg border">
+                        <table className="w-full text-xs">
+                          <thead className="bg-muted/40 text-left uppercase text-muted-foreground">
+                            <tr>
+                              <th className="p-2">URL</th>
+                              <th className="p-2">HTTP</th>
+                              <th className="p-2">Canonical</th>
+                              <th className="p-2">Problemas</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {drilldown.samples.map((s) => (
+                              <tr key={s.url} className="border-t">
+                                <td className="max-w-[18rem] truncate p-2 font-mono">{s.url}</td>
+                                <td className="p-2 tabular-nums">{s.http_status ?? '—'}</td>
+                                <td className="max-w-[14rem] truncate p-2 font-mono">{s.canonical ?? '—'}</td>
+                                <td className="p-2">{(s.issues ?? []).join(', ') || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    className="motion-interactive gap-2"
+                    onClick={() =>
+                      downloadCsv(
+                        `seo-historico-${(openRoute ?? 'rota').replace(/\//g, '') || 'home'}.csv`,
+                        routeHistoryToCsv(reports, openRoute as RouteGroup),
+                      )
+                    }
+                  >
+                    <Download className="h-4 w-4" aria-hidden /> Exportar histórico (CSV)
+                  </Button>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* Histórico por build */}
           <section className="space-y-2">
