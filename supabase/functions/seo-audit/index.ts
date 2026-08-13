@@ -258,26 +258,11 @@ Deno.serve(async (req) => {
 
   const url = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-  // Auth check — caller must be admin.
-  const authHeader = req.headers.get('Authorization') || '';
-  const userClient = createClient(url, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: userData, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userData?.user) {
-    return new Response(JSON.stringify({ error: 'unauthorized' }), {
-      status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+  // Auth — admin autenticado, service_role ou scheduler (x-cron-secret).
+  const authz = await authorizeAdminOrCron(req, corsHeaders);
+  if (!authz.ok) return authz.response;
   const admin = createClient(url, serviceKey);
-  const { data: hasRole } = await admin.rpc('has_role', { _user_id: userData.user.id, _role: 'admin' });
-  if (!hasRole) {
-    return new Response(JSON.stringify({ error: 'forbidden' }), {
-      status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
 
   const body = await req.json().catch(() => ({}));
   const sample = Math.min(Math.max(parseInt(body.sample ?? `${DEFAULT_SAMPLE}`, 10) || DEFAULT_SAMPLE, 5), 200);
