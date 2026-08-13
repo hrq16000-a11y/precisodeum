@@ -1,0 +1,5 @@
+path,categorySlug,citySlug,providers,eligible,index,robots,canonicalPath,wordCount,faqCount,reasons
+/categoria/eletricista/em/curitiba,eletricista,curitiba,5,true,true,"index, follow",/categoria/eletricista/em/curitiba,327,7,providers
+/categoria/eletricista/em/pinhais,eletricista,pinhais,5,true,true,"index, follow",/categoria/eletricista/em/pinhais,327,7,providers
+/categoria/encanador/em/curitiba,encanador,curitiba,5,true,true,"index, follow",/categoria/encanador/em/curitiba,327,7,providers
+/categoria/encanador/em/pinhais,encanador,pinhais,5,true,true,"index, follow",/categoria/encanador/em/pinhais,327,7,providers

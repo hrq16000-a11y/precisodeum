@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-08-13T00:52:06.495Z",
+  "categories": 2,
+  "cities": 2,
+  "total": 4,
+  "indexable": 4,
+  "noindex": 0,
+  "rows": [
+    {
+      "path": "/categoria/eletricista/em/curitiba",
+      "categorySlug": "eletricista",
+      "citySlug": "curitiba",
+      "providers": 5,
+      "eligible": true,
+      "index": true,
+      "robots": "index, follow",
+      "canonicalPath": "/categoria/eletricista/em/curitiba",
+      "wordCount": 327,
+      "faqCount": 7,
+      "reasons": "providers"
+    },
+    {
+      "path": "/categoria/eletricista/em/pinhais",
+      "categorySlug": "eletricista",
+      "citySlug": "pinhais",
+      "providers": 5,
+      "eligible": true,
+      "index": true,
+      "robots": "index, follow",
+      "canonicalPath": "/categoria/eletricista/em/pinhais",
+      "wordCount": 327,
+      "faqCount": 7,
+      "reasons": "providers"
+    },
+    {
+      "path": "/categoria/encanador/em/curitiba",
+      "categorySlug": "encanador",
+      "citySlug": "curitiba",
+      "providers": 5,
+      "eligible": true,
+      "index": true,
+      "robots": "index, follow",
+      "canonicalPath": "/categoria/encanador/em/curitiba",
+      "wordCount": 327,
+      "faqCount": 7,
+      "reasons": "providers"
+    },
+    {
+      "path": "/categoria/encanador/em/pinhais",
+      "categorySlug": "encanador",
+      "citySlug": "pinhais",
+      "providers": 5,
+      "eligible": true,
+      "index": true,
+      "robots": "index, follow",
+      "canonicalPath": "/categoria/encanador/em/pinhais",
+      "wordCount": 327,
+      "faqCount": 7,
+      "reasons": "providers"
+    }
+  ]
+}
