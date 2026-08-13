@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
  * As rotas antigas continuam funcionando via aliases (ver adminRoutes.tsx).
  */
 const AdminSeoLandingsPage = lazy(() => import('./AdminSeoLandingsPage'));
+const AdminSeoHealthPage = lazy(() => import('./AdminSeoHealthPage'));
 const AdminSeoRuntimeMetricsPage = lazy(() => import('./AdminSeoRuntimeMetricsPage'));
 const AdminSitemapAuditPage = lazy(() => import('./AdminSitemapAuditPage'));
 const AdminMetaTrackingQualityPage = lazy(() => import('./AdminMetaTrackingQualityPage'));
@@ -20,6 +21,7 @@ const AdminBrokenLinksPage = lazy(() => import('./AdminBrokenLinksPage'));
 const AdminSeoGscPage = lazy(() => import('./AdminSeoGscPage'));
 
 const TABS = [
+  { value: 'saude', label: 'Saúde SEO', icon: Activity, Component: AdminSeoHealthPage },
   { value: 'landings', label: 'Landings', icon: Globe, Component: AdminSeoLandingsPage },
   { value: 'runtime', label: 'Runtime (LCP/CTR)', icon: Activity, Component: AdminSeoRuntimeMetricsPage },
   { value: 'sitemap', label: 'Sitemap', icon: Map, Component: AdminSitemapAuditPage },
@@ -30,6 +32,7 @@ const TABS = [
 ] as const;
 
 const DEFAULT_TAB = TABS[0].value;
+
 
 const AdminSeoPage = () => {
   const { tab } = useParams<{ tab?: string }>();
