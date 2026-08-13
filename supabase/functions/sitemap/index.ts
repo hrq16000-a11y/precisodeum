@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 ${entries.join('\n')}
 </sitemapindex>`;
 
-    return respond(xml);
+    return respond(xml, req);
   }
 
   // Janela de paginação para os sub-sitemaps de listagem grande.
@@ -373,17 +373,42 @@ ${entries.join('\n')}
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}</urlset>`;
 
-  return respond(xml);
+  return respond(xml, req);
 });
 
-function respond(xml: string) {
-  return new Response(xml, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Content-Type': 'application/xml',
-      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
-    },
-  });
+/**
+ * Revalidação incremental: ETag derivado do conteúdo + stale-while-revalidate.
+ * Espelha src/lib/seo/seoCache.ts (contentHash/computeEtag/buildSeoCacheHeaders).
+ */
+function contentHash(content: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < content.length; i++) {
+    hash ^= content.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
+const TTL_SECONDS = 3600;
+const SWR_SECONDS = TTL_SECONDS * 6;
+
+function respond(xml: string, req?: Request) {
+  const etag = `"${contentHash(xml)}-${xml.length.toString(16)}"`;
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/xml',
+    'Cache-Control': `public, max-age=300, s-maxage=${TTL_SECONDS}, stale-while-revalidate=${SWR_SECONDS}`,
+    ETag: etag,
+  };
+
+  const ifNoneMatch = req?.headers.get('if-none-match');
+  const matches = (ifNoneMatch || '')
+    .split(',')
+    .map((t) => t.trim().replace(/^W\//, ''))
+    .includes(etag);
+  if (matches) return new Response(null, { status: 304, headers });
+
+  return new Response(xml, { headers });
 }
 
 function fmtDate(date: string): string {
