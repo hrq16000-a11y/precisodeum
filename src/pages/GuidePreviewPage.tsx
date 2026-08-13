@@ -29,6 +29,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { GuideSlotMatrix } from '@/components/seo/GuideSlotMatrix';
 
 const DEMO_CATALOG = [
   { name: 'Eletricista', slug: 'eletricista', city: 'Curitiba' },
@@ -185,6 +186,8 @@ const GuidePreviewPage = () => {
           ))}
         </ol>
       </section>
+
+      <GuideSlotMatrix />
 
       {/* Lead */}
       <section aria-labelledby="lead-title" className="space-y-4" data-testid="guide-lead">

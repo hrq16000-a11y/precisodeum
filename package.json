@@ -22,6 +22,8 @@
     "validate:json-ld:strict": "node scripts/validate-json-ld.mjs --strict",
     "seo:seed": "bunx tsx scripts/seed-seo-content.ts",
     "seo:dryrun": "bunx tsx scripts/seo-index-dryrun.ts",
+    "seo:report": "node scripts/seo-build-report.mjs",
+    "seo:report:strict": "node scripts/seo-build-report.mjs --strict",
     "crawl:sitemaps": "node scripts/crawl-sitemaps.mjs",
     "crawl:report": "node scripts/crawl-report.mjs",
     "test:seo": "vitest run src/test/sitemap-pagination.test.ts src/test/breadcrumb-jsonld.test.tsx src/test/help-onboarding-faq-jsonld.test.tsx src/test/sitemap-e2e.test.ts src/test/sitemap-e2e-meta-robots.test.ts src/test/seo-breadcrumb-canonical-smoke.test.tsx src/test/jsonld-builders-validity.test.ts src/test/sitemap-redirect-chain.test.ts src/test/canonical-url-shared.test.ts src/test/seo-meta-robots-coverage.test.ts src/test/breadcrumb-listitem-fields.test.tsx && npm run validate:json-ld",
