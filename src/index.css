@@ -596,3 +596,20 @@ button, a, [role="button"] {
   .motion-surface { opacity: 1 !important; transform: none !important; }
   .motion-interactive:active { transform: none !important; }
 }
+
+/* Modal centralizado: preserva o translate(-50%,-50%) durante a animação. */
+@keyframes motionDialogIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.97); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.motion-dialog { animation: motionDialogIn var(--motion-base) var(--motion-ease-out) both; }
+.motion-dialog[data-state='closed'] {
+  animation: motionDialogIn var(--motion-fast) var(--motion-ease-in) reverse both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .motion-dialog {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
