@@ -435,6 +435,112 @@ const AdminGscSubmissionsPage = () => {
         </CardContent>
       </Card>
 
+      {/* Log detalhado da última execução manual */}
+      {runLog && (
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Log detalhado — {runLog.mode}</CardTitle>
+              <CardDescription>Execução manual em {fmt(runLog.at)}.</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setRunLog(null)}>
+              Limpar
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <pre className="max-h-80 overflow-auto rounded-md bg-muted p-3 text-xs">
+              {JSON.stringify(runLog.payload, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Configuração de alertas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bell className="h-4 w-4" aria-hidden />
+            Alertas de piora de cobertura
+          </CardTitle>
+          <CardDescription>
+            Envia e-mail e/ou Slack com as principais rotas afetadas e links diretos para o
+            diagnóstico.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-1">
+              <Label htmlFor="gsc-alert-email" className="text-xs">
+                E-mail de destino
+              </Label>
+              <Input
+                id="gsc-alert-email"
+                type="email"
+                placeholder="seo@precisodeum.com.br"
+                value={alertEmail}
+                onChange={(e) => setAlertEmail(e.target.value)}
+                onBlur={() => saveSetting(ALERT_EMAIL_KEY, alertEmail)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Gravidade mínima</Label>
+              <Select
+                value={severity}
+                onValueChange={(v) => {
+                  setSeverity(v as AlertSeverityThreshold);
+                  saveSetting(ALERT_SEVERITY_KEY, v);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SEVERITIES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end gap-2">
+              <Switch
+                id="gsc-alert-slack"
+                checked={slackEnabled}
+                onCheckedChange={(v) => {
+                  setSlackEnabled(v);
+                  saveSetting(ALERT_SLACK_KEY, String(v));
+                }}
+              />
+              <Label htmlFor="gsc-alert-slack" className="text-sm">
+                Enviar para o Slack
+              </Label>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => sendCoverageAlert(true)}
+              disabled={sendingAlert}
+            >
+              {sendingAlert ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FlaskConical className="h-4 w-4" aria-hidden />
+              )}
+              Pré-visualizar alerta
+            </Button>
+            <Button size="sm" onClick={() => sendCoverageAlert(false)} disabled={sendingAlert}>
+              <Bell className="h-4 w-4" aria-hidden /> Enviar alerta agora
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {notifiableAlerts.length} alerta(s) no nível “{severity}”.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Alertas de cobertura */}
       {alerts.length > 0 && (
         <Card>
@@ -456,6 +562,7 @@ const AdminGscSubmissionsPage = () => {
           </CardContent>
         </Card>
       )}
+
 
       {/* Resultado por sitemap */}
       <Card>
