@@ -1,13 +1,16 @@
 // SEO Audit edge function — fetches /robots.txt + sitemap (paginated index),
-// samples up to N URLs, checks: HTTP status, <link rel="canonical">, and
-// <meta name="robots" content="noindex">. Flags findings as ok/warning/error.
+// samples up to N URLs e checa: HTTP status, canonical, meta robots,
+// <title>, meta description e JSON-LD (presença + @type esperados por rota).
 //
-// Auth: admin only (validates JWT via SERVICE ROLE + has_role).
+// Auth: admin autenticado OU scheduler (x-cron-secret) OU service_role.
+// Quando roda por cron, compara com o relatório anterior e notifica admins
+// se houver regressão (mais erros, ou queda de páginas com JSON-LD).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { authorizeAdminOrCron } from '../_shared/adminOrCronAuth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -16,12 +19,20 @@ const ROBOTS_URL = `${SITE_URL}/robots.txt`;
 const DEFAULT_SAMPLE = 60; // cap to avoid timeouts (~30s budget on edge)
 const FETCH_TIMEOUT_MS = 8000;
 
+const TITLE_MIN = 15;
+const TITLE_MAX = 65;
+const DESC_MIN = 60;
+const DESC_MAX = 165;
+
 interface Finding {
   url: string;
   status: 'ok' | 'warning' | 'error';
   http_status?: number;
   canonical?: string | null;
   noindex?: boolean;
+  title?: string | null;
+  description?: string | null;
+  jsonld_types?: string[];
   issues: string[];
   source_sitemap?: string;
 }
