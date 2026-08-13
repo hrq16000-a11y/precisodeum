@@ -11,20 +11,50 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Activity, AlertTriangle, CheckCircle2, FileWarning, Gauge, Info,
-  Link2Off, RefreshCcw, ShieldCheck, TrendingDown, TrendingUp,
+  Activity, AlertTriangle, CheckCircle2, Download, FileWarning, Gauge, Info,
+  Link2Off, RefreshCcw, Search, ShieldCheck, TrendingDown, TrendingUp,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 import { AsyncBoundary, SkeletonCardGrid } from '@/components/motion';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import {
-  buildHistory, buildRouteAlerts, computeSeoHealthScore, crossReferenceSeo,
-  healthBand, summarizeGscCoverage, summarizeIndexation,
-  type CrossFinding, type GscCoverage, type GscSitemapEntry, type SeoHealthReport,
+  buildHistory, buildRouteAlerts, buildRouteDrilldown, computeSeoHealthScore, crossReferenceSeo,
+  diffRouteBetweenReports, healthBand, routeHistoryToCsv, summarizeGscCoverage, summarizeIndexation,
+  type CrossFinding, type GscCoverage, type GscSitemapEntry, type RouteGroup, type SeoHealthReport,
 } from '@/lib/seo/seoHealth';
+import {
+  CONSISTENCY_LABEL, consistencyIssuesToCsv, validateSitemapConsistency,
+  type SitemapEntry,
+} from '@/lib/seo/sitemapConsistency';
+
+/** Download client-side de um CSV gerado em memória (sem backend). */
+function downloadCsv(filename: string, csv: string) {
+  const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+const DeltaPill = ({ value, invert = false }: { value: number; invert?: boolean }) => {
+  if (value === 0) return <span className="text-muted-foreground">estável</span>;
+  const bad = invert ? value < 0 : value > 0;
+  const Icon = value > 0 ? TrendingUp : TrendingDown;
+  return (
+    <span className={`inline-flex items-center gap-1 ${bad ? 'text-destructive' : 'text-emerald-600'}`}>
+      <Icon className="h-3.5 w-3.5" aria-hidden />
+      {value > 0 ? `+${value}` : value}
+    </span>
+  );
+};
 
 const BAND_LABEL: Record<ReturnType<typeof healthBand>, string> = {
   unknown: 'Sem dados',
