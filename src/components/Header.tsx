@@ -241,7 +241,7 @@ const Header = () => {
         style={{ height: isCompact ? 48 : 56, minHeight: isCompact ? 48 : 56 }}
       >
         {/* Left: Logo + Geo */}
-        <div className="flex min-w-0 items-center gap-2 overflow-hidden -ml-1 sm:-ml-2">
+        <div className="flex shrink-0 items-center gap-2 overflow-visible -ml-1 sm:-ml-2">
           <Logo
             priority
             sizes="(max-width: 639px) 190px, 165px"
