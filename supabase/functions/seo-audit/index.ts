@@ -306,6 +306,37 @@ Deno.serve(async (req) => {
   const err = findings.filter((f) => f.status === 'error').length;
 
   const durationMs = Date.now() - t0;
+  const errorRate = findings.length ? err / findings.length : 0;
+  const jsonldPages = findings.filter((f) => (f.jsonld_types?.length ?? 0) > 0).length;
+  const jsonldRate = findings.length ? jsonldPages / findings.length : 0;
+
+  // Baseline: último relatório para detectar regressão.
+  const { data: previous } = await admin
+    .from('seo_audit_reports')
+    .select('id, total_urls, error_count, findings')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const regressions: string[] = [];
+  if (previous && (previous.total_urls ?? 0) > 0) {
+    const prevRate = (previous.error_count ?? 0) / previous.total_urls;
+    if (errorRate > prevRate + 0.05) {
+      regressions.push(
+        `erros subiram de ${(prevRate * 100).toFixed(1)}% para ${(errorRate * 100).toFixed(1)}% das páginas amostradas`,
+      );
+    }
+    const prevFindings = (previous.findings ?? []) as Finding[];
+    if (prevFindings.length) {
+      const prevJsonld = prevFindings.filter((f) => (f.jsonld_types?.length ?? 0) > 0).length / prevFindings.length;
+      if (jsonldRate < prevJsonld - 0.1) {
+        regressions.push(
+          `cobertura de JSON-LD caiu de ${(prevJsonld * 100).toFixed(0)}% para ${(jsonldRate * 100).toFixed(0)}%`,
+        );
+      }
+    }
+  }
+  if (!robotsOk) regressions.push(`robots.txt com problema: ${robotsIssues.join('; ')}`);
 
   const { data: report, error: insErr } = await admin.from('seo_audit_reports').insert({
     total_urls: findings.length,
@@ -317,7 +348,7 @@ Deno.serve(async (req) => {
     sitemap_url: `${SITE_URL}/sitemap`,
     findings,
     duration_ms: durationMs,
-    triggered_by: userData.user.id,
+    triggered_by: authz.userId,
   }).select().single();
 
   if (insErr) {
@@ -326,8 +357,28 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Alerta de regressão: notifica todos os admins (in-app).
+  let alerted = 0;
+  if (regressions.length > 0) {
+    const { data: admins } = await admin.from('user_roles').select('user_id').eq('role', 'admin');
+    const rows = (admins ?? []).map((a: { user_id: string }) => ({
+      user_id: a.user_id,
+      type: 'system',
+      title: 'Regressão de SEO detectada',
+      message: regressions.join(' · '),
+      link: '/admin/seo',
+    }));
+    if (rows.length) {
+      const { error: notifErr } = await admin.from('notifications').insert(rows);
+      if (!notifErr) alerted = rows.length;
+      else console.error('seo-audit: falha ao notificar admins', notifErr.message);
+    }
+  }
+
   return new Response(JSON.stringify({
     ok: true, report_id: report.id, total: findings.length, ok_count: ok,
     warning_count: warn, error_count: err, robots_ok: robotsOk, duration_ms: durationMs,
+    jsonld_coverage: Number(jsonldRate.toFixed(3)), regressions, admins_alerted: alerted,
+    via: authz.via,
   }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 });
