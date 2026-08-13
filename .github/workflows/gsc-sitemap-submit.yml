@@ -1,0 +1,49 @@
+name: GSC Sitemap Submit
+
+# Submete o sitemap index particionado (e cada sub-sitemap) ao Google Search
+# Console após cada build/publicação, acelerando a descoberta e indexação.
+#
+# Gatilhos:
+#   - release published  → após cada publicação
+#   - workflow_dispatch  → execução manual (com opção de dry-run)
+#   - schedule           → reforço diário às 05:40 UTC
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Somente listar o que seria submetido'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '40 5 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gsc-sitemap-submit
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SITE_BASE: https://www.precisodeum.com.br
+      SUPABASE_FUNCTIONS_URL: ${{ vars.SUPABASE_FUNCTIONS_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Submeter sitemaps ao Google Search Console
+        run: |
+          node scripts/gsc-submit-sitemaps.mjs \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
