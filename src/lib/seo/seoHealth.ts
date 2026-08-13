@@ -462,3 +462,129 @@ export function healthBand(score: number | null): 'unknown' | 'critical' | 'atte
   if (score < 90) return 'good';
   return 'excellent';
 }
+
+// ─────────────────────── Drill-down por rota (amostras + diff) ───────────────
+
+export interface RouteDrilldown {
+  route: RouteGroup;
+  total: number;
+  errors: number;
+  warnings: number;
+  noindex: number;
+  broken: number;
+  canonicalMismatch: number;
+  /** Amostras reais do problema (findings != ok), limitadas. */
+  samples: SeoHealthFinding[];
+  issueCounts: Array<{ issue: string; count: number }>;
+}
+
+/** Amostras e contagens de UMA rota, para investigação no painel. */
+export function buildRouteDrilldown(
+  report: SeoHealthReport | null | undefined,
+  route: RouteGroup,
+  maxSamples = 25,
+): RouteDrilldown {
+  const findings = (report?.findings ?? []).filter((f) => classifyRoute(f.url) === route);
+  const issues = new Map<string, number>();
+  let errors = 0;
+  let warnings = 0;
+  let noindex = 0;
+  let broken = 0;
+  let canonicalMismatch = 0;
+
+  for (const f of findings) {
+    if (f.status === 'error') errors += 1;
+    if (f.status === 'warning') warnings += 1;
+    if (f.noindex) noindex += 1;
+    if (isBroken(f)) broken += 1;
+    if (hasCanonicalMismatch(f)) canonicalMismatch += 1;
+    for (const i of f.issues ?? []) issues.set(i, (issues.get(i) ?? 0) + 1);
+  }
+
+  return {
+    route,
+    total: findings.length,
+    errors,
+    warnings,
+    noindex,
+    broken,
+    canonicalMismatch,
+    samples: findings.filter((f) => f.status !== 'ok').slice(0, maxSamples),
+    issueCounts: [...issues.entries()]
+      .map(([issue, count]) => ({ issue, count }))
+      .sort((a, b) => b.count - a.count),
+  };
+}
+
+export interface RouteDiff {
+  route: RouteGroup;
+  hasPrevious: boolean;
+  totalDelta: number;
+  errorsDelta: number;
+  warningsDelta: number;
+  noindexDelta: number;
+  /** URLs com problema que NÃO existiam na build anterior (regressões). */
+  newProblemUrls: string[];
+  /** URLs que tinham problema antes e agora estão ok/ausentes. */
+  resolvedUrls: string[];
+  /** Tipos de problema que surgiram nesta build. */
+  newIssues: string[];
+  /** Tipos de problema que desapareceram. */
+  resolvedIssues: string[];
+}
+
+/** Diferença de uma rota entre a build atual e a anterior. */
+export function diffRouteBetweenReports(
+  current: SeoHealthReport | null | undefined,
+  previous: SeoHealthReport | null | undefined,
+  route: RouteGroup,
+): RouteDiff {
+  const cur = buildRouteDrilldown(current, route, Number.MAX_SAFE_INTEGER);
+  const prev = buildRouteDrilldown(previous, route, Number.MAX_SAFE_INTEGER);
+  const hasPrevious = !!previous;
+
+  const curBad = new Set(cur.samples.map((f) => toPathname(f.url)));
+  const prevBad = new Set(prev.samples.map((f) => toPathname(f.url)));
+  const curIssues = new Set(cur.issueCounts.map((i) => i.issue));
+  const prevIssues = new Set(prev.issueCounts.map((i) => i.issue));
+
+  return {
+    route,
+    hasPrevious,
+    totalDelta: hasPrevious ? cur.total - prev.total : 0,
+    errorsDelta: hasPrevious ? cur.errors - prev.errors : 0,
+    warningsDelta: hasPrevious ? cur.warnings - prev.warnings : 0,
+    noindexDelta: hasPrevious ? cur.noindex - prev.noindex : 0,
+    newProblemUrls: hasPrevious ? [...curBad].filter((u) => !prevBad.has(u)) : [],
+    resolvedUrls: hasPrevious ? [...prevBad].filter((u) => !curBad.has(u)) : [],
+    newIssues: hasPrevious ? [...curIssues].filter((i) => !prevIssues.has(i)) : [],
+    resolvedIssues: hasPrevious ? [...prevIssues].filter((i) => !curIssues.has(i)) : [],
+  };
+}
+
+const csvCell = (v: unknown): string => {
+  const s = String(v ?? '');
+  return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+/** CSV do histórico de UMA rota, uma linha por execução (mais recente primeiro). */
+export function routeHistoryToCsv(reports: SeoHealthReport[], route: RouteGroup): string {
+  const header = ['ran_at', 'route', 'total', 'errors', 'warnings', 'noindex', 'broken', 'canonical_mismatch', 'top_issues'];
+  const rows = [...(reports ?? [])]
+    .sort((a, b) => new Date(b.ran_at).getTime() - new Date(a.ran_at).getTime())
+    .map((r) => {
+      const d = buildRouteDrilldown(r, route, 0);
+      return [
+        r.ran_at,
+        route,
+        d.total,
+        d.errors,
+        d.warnings,
+        d.noindex,
+        d.broken,
+        d.canonicalMismatch,
+        d.issueCounts.slice(0, 5).map((i) => `${i.issue}:${i.count}`).join(' | '),
+      ].map(csvCell).join(',');
+    });
+  return [header.join(','), ...rows].join('\n');
+}

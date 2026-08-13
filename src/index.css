@@ -541,3 +541,85 @@ button, a, [role="button"] {
   .motion-img { opacity: 1 !important; filter: none !important; }
 }
 
+
+/* ── Overlays (modais, toasts, popovers): motion CLS-safe ────────────────
+   Regras:
+   - Overlays vivem em layer fixa/portal → nunca empurram layout (zero CLS);
+   - entrada/saída só com opacity/transform;
+   - durações dos tokens globais;
+   - `prefers-reduced-motion` neutraliza tudo, mantendo conteúdo visível.   */
+.motion-overlay {
+  animation: motionEnterFade var(--motion-fast) var(--motion-ease-out) both;
+}
+.motion-overlay[data-state='closed'] {
+  animation: motionEnterFade var(--motion-fast) var(--motion-ease-in) reverse both;
+}
+
+.motion-surface {
+  animation: motionEnterScale var(--motion-base) var(--motion-ease-out) both;
+  will-change: opacity, transform;
+}
+.motion-surface[data-state='closed'] {
+  animation: motionEnterScale var(--motion-fast) var(--motion-ease-in) reverse both;
+}
+
+/* Toasts (Sonner) — camada fixa, sem reflow do documento. */
+[data-sonner-toaster] { position: fixed !important; }
+[data-sonner-toast] { transition-duration: var(--motion-base); }
+
+/* Estados interativos consistentes em todo o portal. */
+.motion-interactive {
+  transition:
+    background-color var(--motion-fast) var(--motion-ease-out),
+    color var(--motion-fast) var(--motion-ease-out),
+    border-color var(--motion-fast) var(--motion-ease-out),
+    box-shadow var(--motion-fast) var(--motion-ease-out),
+    transform var(--motion-fast) var(--motion-ease-out);
+}
+.motion-interactive:hover { box-shadow: 0 2px 10px hsl(var(--foreground) / 0.08); }
+.motion-interactive:active { transform: scale(0.985); }
+.motion-interactive:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+
+/* Modal centralizado: preserva o translate(-50%,-50%) durante a animação. */
+@keyframes motionDialogIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.97); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.motion-dialog { animation: motionDialogIn var(--motion-base) var(--motion-ease-out) both; }
+.motion-dialog[data-state='closed'] {
+  animation: motionDialogIn var(--motion-fast) var(--motion-ease-in) reverse both;
+}
+
+/* ── Reduced motion: bloco final consolidado ─────────────────────────────
+   Neutraliza TODAS as camadas de motion (rotas, seções, skeletons, imagens,
+   overlays, modais e toasts) mantendo o conteúdo visível e no lugar.       */
+@media (prefers-reduced-motion: reduce) {
+  .route-motion-enter,
+  .motion-enter,
+  .motion-enter-fade,
+  .motion-enter-scale,
+  .motion-exit,
+  .motion-stagger > *,
+  .motion-overlay,
+  .motion-surface,
+  [data-sonner-toast],
+  [data-state='open'],
+  [data-state='closed'] {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .skeleton-shimmer::after { animation: none !important; }
+  .motion-img { opacity: 1 !important; filter: none !important; }
+  .motion-interactive:active { transform: none !important; }
+  .motion-dialog {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
