@@ -892,6 +892,30 @@ export type Database = {
           },
         ]
       }
+      contacts_history_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          expires_at: string
+          payload: Json
+          user_id: string
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          expires_at: string
+          payload: Json
+          user_id: string
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          expires_at?: string
+          payload?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       cookie_consent_log: {
         Row: {
           analytics: boolean
