@@ -170,7 +170,19 @@ const AdminGscSubmissionsPage = () => {
     toast.success(`Propriedade de ${env} salva.`);
   };
 
-  const runSubmission = async (mode: "validate" | "submit") => {
+  const saveSetting = async (key: string, value: string) => {
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({ key, value }, { onConflict: "key" });
+    if (error) {
+      toast.error("Falha ao salvar a configuração de alertas.");
+      return;
+    }
+    setEnvProperty((prev) => ({ ...prev, [key]: value }));
+    toast.success("Configuração de alertas salva.");
+  };
+
+  const runSubmission = async (mode: "validate" | "submit" | "dryRun") => {
     setRunning(mode);
     try {
       const { data, error } = await supabase.functions.invoke("gsc-submit-sitemaps", {
@@ -178,12 +190,18 @@ const AdminGscSubmissionsPage = () => {
           environment: env,
           property: envProperty[GSC_PROPERTY_SETTING_KEYS[env]] || undefined,
           validateOnly: mode === "validate",
+          dryRun: mode === "dryRun",
         },
       });
       if (error) throw error;
       const res = data as Record<string, unknown>;
+      setRunLog({ mode, at: new Date().toISOString(), payload: res });
       if (mode === "validate") {
         toast.success(`Validação: ${res.valid} ok · ${res.invalid} com problema.`);
+      } else if (mode === "dryRun") {
+        toast.success(
+          `Dry-run: ${res.total} sitemap(s) seriam enviados a ${res.property} (${res.skipped} pulados).`,
+        );
       } else if (res.error) {
         toast.error(String(res.error));
       } else {
@@ -191,14 +209,65 @@ const AdminGscSubmissionsPage = () => {
           `Submetidos ${res.succeeded}/${res.submitted} sitemaps (${res.failed} falhas).`,
         );
       }
-      await loadLog();
-      await refreshCoverage();
+      if (mode !== "dryRun") {
+        await loadLog();
+        await refreshCoverage();
+      }
     } catch (err) {
+      setRunLog({ mode, at: new Date().toISOString(), payload: { error: String(err) } });
       toast.error(`Falha na execução: ${String(err)}`);
     } finally {
       setRunning(null);
     }
   };
+
+  const notifiableAlerts = useMemo(() => filterBySeverity(alerts, severity), [alerts, severity]);
+
+  const sendCoverageAlert = async (dryRun: boolean) => {
+    if (notifiableAlerts.length === 0) {
+      toast.info("Nenhum alerta no nível de gravidade selecionado.");
+      return;
+    }
+    setSendingAlert(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("gsc-coverage-alert", {
+        body: {
+          alerts: notifiableAlerts,
+          environment: env,
+          property: envProperty[GSC_PROPERTY_SETTING_KEYS[env]] || undefined,
+          dashboardUrl: `${window.location.origin}/admin/seo?tab=submissoes`,
+          email: alertEmail || undefined,
+          slack: slackEnabled,
+          dryRun,
+        },
+      });
+      if (error) throw error;
+      setRunLog({ mode: dryRun ? "alert-dry-run" : "alert", at: new Date().toISOString(), payload: data });
+      const res = data as { channels?: Array<{ channel: string; ok: boolean }> };
+      if (dryRun) toast.success("Prévia do alerta gerada (nada foi enviado).");
+      else if (res.channels?.some((c) => c.ok)) toast.success("Alerta de cobertura enviado.");
+      else toast.error("Nenhum canal de alerta pôde enviar. Veja o log detalhado.");
+    } catch (err) {
+      toast.error(`Falha ao enviar alerta: ${String(err)}`);
+    } finally {
+      setSendingAlert(false);
+    }
+  };
+
+  const exportHistory = (format: "csv" | "json") => {
+    if (rows.length === 0) {
+      toast.info("Nada para exportar ainda.");
+      return;
+    }
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (format === "csv") {
+      download(submissionsToCsv(rows), `gsc-submissoes-${stamp}.csv`, "text/csv;charset=utf-8;");
+    } else {
+      download(submissionsToJson(rows), `gsc-submissoes-${stamp}.json`, "application/json");
+    }
+    toast.success(`Histórico exportado em ${format.toUpperCase()}.`);
+  };
+
 
   /** Lê cobertura atual no GSC, compara com o snapshot anterior e persiste o novo. */
   const refreshCoverage = useCallback(async () => {
