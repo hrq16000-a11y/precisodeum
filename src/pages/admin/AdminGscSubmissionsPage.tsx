@@ -697,8 +697,155 @@ const AdminGscSubmissionsPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Bell className="h-4 w-4" aria-hidden />
+      {/* Alertas persistentes (regras configuráveis) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bell className="h-4 w-4" aria-hidden />
+            Alertas persistentes (GSC + AdSense)
+          </CardTitle>
+          <CardDescription>
+            Só dispara quando a mesma falha se repete por N execuções consecutivas. As regras ficam
+            salvas em configurações do site.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            {rules.map((rule) => (
+              <div key={rule.target} className="space-y-3 rounded-md border border-border/60 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">
+                    {rule.target === "gsc" ? "Search Console" : "AdSense"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor={`enabled-${rule.target}`} className="text-xs">
+                      Ativa
+                    </Label>
+                    <Switch
+                      id={`enabled-${rule.target}`}
+                      checked={rule.enabled}
+                      onCheckedChange={(v) => patchRule(rule.target, { enabled: v })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Execuções seguidas</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={rule.consecutive}
+                      onChange={(e) =>
+                        patchRule(rule.target, { consecutive: Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Severidade</Label>
+                    <Select
+                      value={rule.severity}
+                      onValueChange={(v) =>
+                        patchRule(rule.target, { severity: v as PersistentAlertSeverity })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SEVERITIES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id={`slack-${rule.target}`}
+                      checked={rule.slack}
+                      onCheckedChange={(v) => patchRule(rule.target, { slack: v })}
+                    />
+                    <Label htmlFor={`slack-${rule.target}`} className="text-xs">
+                      Slack
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id={`email-${rule.target}`}
+                      checked={rule.email}
+                      onCheckedChange={(v) => patchRule(rule.target, { email: v })}
+                    />
+                    <Label htmlFor={`email-${rule.target}`} className="text-xs">
+                      E-mail
+                    </Label>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {persistentAlerts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma falha atingiu o limiar configurado até agora.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {persistentAlerts.map((a) => (
+                <li
+                  key={`${a.target}-${a.key}`}
+                  className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 p-2 text-sm"
+                >
+                  <Badge variant={a.severity === "critical" ? "destructive" : "secondary"}>
+                    {a.severity}
+                  </Badge>
+                  <span className="font-medium">{a.label}</span>
+                  <span className="text-muted-foreground">
+                    {a.streak} execuções seguidas com falha (limiar {a.threshold})
+                  </span>
+                  {a.lastError && (
+                    <span className="font-mono text-xs text-destructive">{a.lastError}</span>
+                  )}
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    desde {fmt(a.firstFailureAt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={sendingAlert || persistentAlerts.length === 0}
+              onClick={() => sendPersistentAlerts(true)}
+            >
+              Pré-visualizar envio
+            </Button>
+            <Button
+              size="sm"
+              disabled={sendingAlert || persistentAlerts.length === 0}
+              onClick={() => sendPersistentAlerts(false)}
+            >
+              {sendingAlert ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+              Enviar agora
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Configuração de alertas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bell className="h-4 w-4" aria-hidden />
             Alertas de piora de cobertura
           </CardTitle>
+
           <CardDescription>
             Envia e-mail e/ou Slack com as principais rotas afetadas e links diretos para o
             diagnóstico.
