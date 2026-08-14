@@ -279,7 +279,7 @@ export function useOnboardingStatus(): OnboardingStatus {
         key: 'document',
         label: 'CPF ou CNPJ',
         description: 'Aumenta a credibilidade e desbloqueia recursos.',
-        done: isValidCpf(pr.cpf) || isValidCpf(p.tax_id) || isValidCnpj(pr.cnpj) || isValidCnpj(p.tax_id),
+        done: isValidCpf(pr.cpf) || isValidCnpj(pr.cnpj) || Boolean((p as any).tax_id_last4),
         required: false,
         cta: { label: 'Editar perfil', to: '/dashboard/perfil' },
       },

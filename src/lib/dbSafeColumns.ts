@@ -31,3 +31,10 @@ export const PROFILE_FULL_COLUMNS =
   'id, full_name, email, phone, avatar_url, role, created_at, updated_at, profile_type, status, whatsapp, user_ref, level_id, department, account_type_id, permissions, engagement_points, suspended_at, suspended_reason, suspended_by, onboarding_completed, is_suspicious, suspicious_reason, suspicious_ip, suspicious_at, staff_role, commercial_plan, trial_boost_until, onboarding_checklist_completed_at, referral_code, onboarding_step, celebration_muted, bio, city, state, preferred_category_ids, tax_id_last4, tax_id_kind, neighborhood, banned_at, ban_reason, registration_ip, registration_user_agent' as const;
 
 
+
+/**
+ * agencies.cnpj / email / legal_name foram revogados até para `authenticated`.
+ * Leitura apenas via RPC `get_agency_private` (dono ou admin).
+ */
+export const AGENCY_SAFE_COLUMNS =
+  'id, user_id, slug, name, description, city, state, whatsapp, website, logo_url, cover_image_url, status, created_at, updated_at, user_ref' as const;

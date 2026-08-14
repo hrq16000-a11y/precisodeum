@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import AvatarUpload from '@/components/AvatarUpload';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AGENCY_SAFE_COLUMNS } from '@/lib/dbSafeColumns';
 
 const schema = z.object({
   name: z.string().trim().min(2, 'Informe o nome da agência').max(120),
@@ -46,10 +47,14 @@ const DashboardAgencyDataPage = () => {
     (async () => {
       const { data } = await (supabase as any)
         .from('agencies')
-        .select('*')
+        .select(AGENCY_SAFE_COLUMNS)
         .eq('user_id', user.id)
         .maybeSingle();
       if (data) {
+        // cnpj / email / legal_name só via RPC SECURITY DEFINER (dono ou admin)
+        const { data: priv } = await (supabase as any).rpc('get_agency_private', { _agency_id: data.id });
+        const p0 = Array.isArray(priv) ? priv[0] : priv;
+        Object.assign(data, { cnpj: p0?.cnpj ?? null, email: p0?.email ?? null, legal_name: p0?.legal_name ?? null });
         setAgency(data);
         setForm({
           name: data.name || '',
@@ -95,7 +100,7 @@ const DashboardAgencyDataPage = () => {
         const { data: created, error } = await (supabase as any)
           .from('agencies')
           .insert([{ ...payload, slug, status: 'pending' }])
-          .select()
+          .select(AGENCY_SAFE_COLUMNS)
           .single();
         if (error) throw error;
         setAgency(created);

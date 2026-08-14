@@ -12,6 +12,8 @@ import ImageUploadField from '@/components/ImageUploadField';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sanitizePhone, isValidWhatsApp, autoFillWhatsApp } from '@/lib/whatsapp';
 import { parseJobText } from '@/lib/jobTextParser';
+import { JOB_PUBLIC_COLUMNS } from '@/lib/dbSafeColumns';
+import { mergeJobContacts } from '@/lib/jobContacts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SITE_BASE_URL } from '@/hooks/useSeoHead';
@@ -153,10 +155,10 @@ const DashboardJobsPage = () => {
       if (!user) return [];
       const { data } = await supabase
         .from('jobs')
-        .select('*, categories(name, icon)')
+        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, icon)` as const)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-      return data || [];
+      return await mergeJobContacts((data || []) as any[]);
     },
     enabled: !!user,
   });
