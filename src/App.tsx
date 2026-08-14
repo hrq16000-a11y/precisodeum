@@ -26,6 +26,7 @@ import { runOnboardingSelfHeal } from "@/lib/onboardingSelfHeal";
 import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 import { queryClient } from '@/lib/queryClient';
 import { pausePrefetching, cancelPendingPrefetches } from "@/lib/lazyWithRetry";
+import WebVitalsOverlay from "@/components/WebVitalsOverlay";
 import { markNavigationStart, markNavigationEnd, startWebVitalsMonitor } from "@/lib/webVitalsMonitor";
 
 // Route groups — extraídos para src/routes/* (PR 3 · split estrutural).
@@ -93,6 +94,8 @@ const DeferredShell = () => {
       <CookieConsent />
       <PwaInstallBanner />
       <GlobalLinkPrefetcher />
+      <WebVitalsOverlay />
+
     </Suspense>
   );
 };
