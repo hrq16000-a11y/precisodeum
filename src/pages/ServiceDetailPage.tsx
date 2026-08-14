@@ -12,12 +12,13 @@ import { MessageCircle, MapPin, ChevronRight, Clock, Globe } from 'lucide-react'
 import CategoryIcon from '@/components/CategoryIcon';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { formatLocationString } from '@/lib/normalize';
 import { formatCityState } from '@/lib/locationFormat';
 import { SERVICE_PUBLIC_COLUMNS } from '@/lib/dbSafeColumns';
+import { fetchProviderContact } from '@/lib/providerContact';
 
 const ServiceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,7 +35,7 @@ const ServiceDetailPage = () => {
       if (!svc) return null;
 
       const [{ data: provider }, { data: profile }, { data: images }, { data: scats }] = await Promise.all([
-        supabase.from('providers').select('id, user_id, business_name, description, photo_url, city, state, neighborhood, phone, whatsapp, website, years_experience, slug, rating_avg, review_count, status, category_id, categories(name, slug, icon)').eq('id', svc.provider_id).maybeSingle(),
+        supabase.from('providers').select('id, user_id, business_name, description, photo_url, city, state, neighborhood, website, years_experience, slug, rating_avg, review_count, status, category_id, categories(name, slug, icon)').eq('id', svc.provider_id).maybeSingle(),
         supabase.from('public_profiles' as any).select('full_name, avatar_url').eq('id', (await supabase.from('providers').select('user_id').eq('id', svc.provider_id).maybeSingle()).data?.user_id || '').maybeSingle() as any,
         supabase.from('service_images').select('*').eq('service_id', svc.id).order('display_order'),
         supabase.from('service_categories').select('category_id, categories(name, icon)').eq('service_id', svc.id),
@@ -50,6 +51,22 @@ const ServiceDetailPage = () => {
   const city = svc?.provider?.city || '';
   const state = svc?.provider?.state || '';
   const provSlug = svc?.provider?.slug || svc?.provider?.id || '';
+
+  // Contato protegido: revelado sob demanda via RPC (ver src/lib/providerContact.ts).
+  const [revealedWhatsapp, setRevealedWhatsapp] = useState('');
+  const handleRevealWhatsapp = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (revealedWhatsapp) return;
+    e.preventDefault();
+    const contact = await fetchProviderContact(svc?.provider?.id);
+    const number = contact.whatsapp || contact.phone;
+    if (!number) return;
+    setRevealedWhatsapp(number);
+    window.open(
+      whatsappLink(number, buildSmartMessage(providerName, catInfo?.name || svc?.service_name || '', userCity, userState)),
+      '_blank',
+      'noopener,noreferrer',
+    );
+  };
 
   useSeoHead({
     title: svc ? `${svc.service_name} em ${city} – ${providerName}` : 'Serviço',
@@ -162,7 +179,7 @@ const ServiceDetailPage = () => {
 
                 <div className="mt-4 space-y-2">
                   <Button variant="accent" className="w-full" asChild>
-                    <a href={whatsappLink(svc.provider?.whatsapp || '', buildSmartMessage(providerName, catInfo?.name || svc.service_name, userCity, userState))} target="_blank" rel="noopener noreferrer">
+                    <a onClick={handleRevealWhatsapp} href={whatsappLink(revealedWhatsapp, buildSmartMessage(providerName, catInfo?.name || svc.service_name, userCity, userState))} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="h-4 w-4" /> WhatsApp
                     </a>
                   </Button>
@@ -177,7 +194,8 @@ const ServiceDetailPage = () => {
       </main>
 
       <a
-        href={whatsappLink(svc.provider?.whatsapp || '', buildSmartMessage(providerName, catInfo?.name || svc.service_name, userCity, userState))}
+        onClick={handleRevealWhatsapp}
+        href={whatsappLink(revealedWhatsapp, buildSmartMessage(providerName, catInfo?.name || svc.service_name, userCity, userState))}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-110 lg:hidden animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"

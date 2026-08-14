@@ -8,6 +8,7 @@ import CategoryIcon from '@/components/CategoryIcon';
 import WorkingHoursDisplay from '@/components/profile/WorkingHoursDisplay';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical, sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
+import { fetchProviderContact } from '@/lib/providerContact';
 import { z } from 'zod';
 
 const leadSubmitSchema = z.object({
@@ -288,6 +289,21 @@ const ProviderProfile = () => {
   const navigate = useNavigate();
   const { requestWhatsApp } = useWhatsAppGate();
   const [provider, setProvider] = useState<any>(null);
+  // Contato protegido: telefone/WhatsApp não vêm mais no SELECT público —
+  // são buscados pela RPC `get_provider_contact` quando o perfil carrega.
+  const [providerContact, setProviderContact] = useState<{ phone: string; whatsapp: string }>({ phone: '', whatsapp: '' });
+  useEffect(() => {
+    let alive = true;
+    if (!provider?.id) {
+      setProviderContact({ phone: '', whatsapp: '' });
+      return;
+    }
+    fetchProviderContact(provider.id).then((c) => { if (alive) setProviderContact(c); });
+    return () => { alive = false; };
+  }, [provider?.id]);
+  const contactPhone = providerContact.phone || '';
+  const effectiveWhatsApp = toCanonical(providerContact.whatsapp || contactPhone || '');
+
   const [services, setServices] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
@@ -356,7 +372,7 @@ const ProviderProfile = () => {
 
       if (active) setLoading(true);
 
-      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, years_experience, ibge_code, latitude, longitude, created_at, website, meta_title, meta_description, contact_hours';
+      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, years_experience, ibge_code, latitude, longitude, created_at, website, meta_title, meta_description, contact_hours';
 
       let { data } = await supabase
         .from('providers')
@@ -644,7 +660,7 @@ const ProviderProfile = () => {
   }, [pageSettings.cover_image_url]);
 
   useEffect(() => {
-    const currentWhatsApp = toCanonical(provider?.whatsapp || provider?.phone || '');
+    const currentWhatsApp = effectiveWhatsApp;
     if (!isMobile || !currentWhatsApp) {
       setShowStickyContact(false);
       setShowEmergencyContact(false);
@@ -880,7 +896,7 @@ const ProviderProfile = () => {
       visualViewport?.removeEventListener('resize', updateSafeAreaAndVisibility);
       visualViewport?.removeEventListener('scroll', handleVisualViewportScroll);
     };
-  }, [isMobile, provider?.whatsapp, provider?.phone]);
+  }, [isMobile, effectiveWhatsApp]);
 
   // Sticky header: mostra nome + selo Top quando o título principal sai do viewport
   useEffect(() => {
@@ -955,7 +971,6 @@ const ProviderProfile = () => {
     (provider.portfolio_album_count || 0) >= (destaqueMinPortfolio || 1) &&
     (provider.review_count || 0) >= 1
   );
-  const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
   // Helpers de SEO: garantem limites recomendados (title <=60, description <=160).
@@ -1065,7 +1080,7 @@ const ProviderProfile = () => {
       description: provider.description || `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}.`,
       image: avatarUrl || undefined,
       url: `${SITE_BASE_URL}/profissional/${slug}`,
-      telephone: effectiveWhatsApp || provider.phone || undefined,
+      telephone: effectiveWhatsApp || undefined,
       priceRange: '$$',
       address: {
         '@type': 'PostalAddress',
@@ -1998,11 +2013,11 @@ const ProviderProfile = () => {
                 </motion.div>
               )}
               <div className="flex gap-2 justify-center">
-                {isMobile && provider.phone && telLink(provider.phone) && (
+                {isMobile && contactPhone && telLink(contactPhone) && (
                   <Button variant="outline" size="lg" className={tc.buttonOutline}
                     onClick={() => {
                       if (provider) trackContactClick(provider.id, 'phone', window.location.pathname);
-                      window.location.href = telLink(provider.phone) || '';
+                      window.location.href = telLink(contactPhone) || '';
                     }}
                   >
                     <Phone className="h-5 w-5" /> Ligar
