@@ -8,6 +8,7 @@ import CategoryIcon from '@/components/CategoryIcon';
 import WorkingHoursDisplay from '@/components/profile/WorkingHoursDisplay';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { whatsappLink, telLink, toCanonical, sanitizePhone, validateWhatsapp } from '@/lib/whatsapp';
+import { fetchProviderContact } from '@/lib/providerContact';
 import { z } from 'zod';
 
 const leadSubmitSchema = z.object({
@@ -644,7 +645,7 @@ const ProviderProfile = () => {
   }, [pageSettings.cover_image_url]);
 
   useEffect(() => {
-    const currentWhatsApp = toCanonical(provider?.whatsapp || provider?.phone || '');
+    const currentWhatsApp = effectiveWhatsApp;
     if (!isMobile || !currentWhatsApp) {
       setShowStickyContact(false);
       setShowEmergencyContact(false);
@@ -880,7 +881,7 @@ const ProviderProfile = () => {
       visualViewport?.removeEventListener('resize', updateSafeAreaAndVisibility);
       visualViewport?.removeEventListener('scroll', handleVisualViewportScroll);
     };
-  }, [isMobile, provider?.whatsapp, provider?.phone]);
+  }, [isMobile, effectiveWhatsApp]);
 
   // Sticky header: mostra nome + selo Top quando o título principal sai do viewport
   useEffect(() => {
@@ -955,7 +956,16 @@ const ProviderProfile = () => {
     (provider.portfolio_album_count || 0) >= (destaqueMinPortfolio || 1) &&
     (provider.review_count || 0) >= 1
   );
-  const effectiveWhatsApp = provider ? toCanonical(provider.whatsapp || provider.phone || '') : '';
+  // Contato protegido: telefone/WhatsApp não vêm mais no SELECT público —
+  // são buscados pela RPC `get_provider_contact` quando o perfil carrega.
+  const { data: providerContact } = useQuery({
+    queryKey: ['provider-contact', provider?.id],
+    queryFn: () => fetchProviderContact(provider?.id),
+    enabled: !!provider?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+  const contactPhone = providerContact?.phone || '';
+  const effectiveWhatsApp = toCanonical(providerContact?.whatsapp || contactPhone || '');
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
   // Helpers de SEO: garantem limites recomendados (title <=60, description <=160).
@@ -1065,7 +1075,7 @@ const ProviderProfile = () => {
       description: provider.description || `${name}, ${category} em ${formatCityState(provider.city, provider.state) || provider.city}.`,
       image: avatarUrl || undefined,
       url: `${SITE_BASE_URL}/profissional/${slug}`,
-      telephone: effectiveWhatsApp || provider.phone || undefined,
+      telephone: effectiveWhatsApp || undefined,
       priceRange: '$$',
       address: {
         '@type': 'PostalAddress',
@@ -1998,11 +2008,11 @@ const ProviderProfile = () => {
                 </motion.div>
               )}
               <div className="flex gap-2 justify-center">
-                {isMobile && provider.phone && telLink(provider.phone) && (
+                {isMobile && contactPhone && telLink(contactPhone) && (
                   <Button variant="outline" size="lg" className={tc.buttonOutline}
                     onClick={() => {
                       if (provider) trackContactClick(provider.id, 'phone', window.location.pathname);
-                      window.location.href = telLink(provider.phone) || '';
+                      window.location.href = telLink(contactPhone) || '';
                     }}
                   >
                     <Phone className="h-5 w-5" /> Ligar
