@@ -31,7 +31,7 @@ describe('Hero · contrato de imagem responsiva', () => {
   });
 
   it('gera srcSet nos três breakpoints (640/1280/1920)', () => {
-    const helper = src.match(/const heroSrcSet[\s\S]{0,400}?\n};/)?.[0] ?? '';
+    const helper = src.match(/HERO_WIDTHS\s*=\s*\[[^\]]*\]/)?.[0] ?? '';
     for (const width of [640, 1280, 1920]) {
       expect(helper).toContain(String(width));
     }
