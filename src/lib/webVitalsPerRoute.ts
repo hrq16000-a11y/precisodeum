@@ -124,6 +124,16 @@ const collectSamples = (s: RouteState): MetricSample[] => {
   if (s.ttfb != null) out.push({ name: 'TTFB', value: round(s.ttfb), rating: rate('TTFB', s.ttfb) });
   if (s.inpMax > 0) out.push({ name: 'INP', value: round(s.inpMax), rating: rate('INP', s.inpMax) });
   out.push({ name: 'CLS', value: round(s.cls), rating: rate('CLS', s.cls) });
+
+  // Saúde de imagem (hero/gallery) da rota — correlacionada com LCP no admin.
+  try {
+    const img = collectImageHealth();
+    if (img.audited > 0 || img.errors > 0) {
+      out.push({ name: 'IMG_ERROR', value: img.errors, rating: rate('IMG_ERROR', img.errors) });
+      out.push({ name: 'IMG_DEGRADED', value: img.degraded, rating: rate('IMG_DEGRADED', img.degraded) });
+    }
+  } catch { /* noop */ }
+
   return out;
 };
 
