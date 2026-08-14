@@ -1449,7 +1449,7 @@ const ProviderProfile = () => {
                             </div>
                           </>
                         ) : (
-                          <img src={url} srcSet={responsiveImageSrcSet(originalUrl(url), [300, 600, 900])} sizes="(max-width: 640px) 45vw, 300px" alt={`${album.name} ${i + 1}`} className="motion-img h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" decoding="async" onError={handleImageError} />
+                          <img src={url} srcSet={responsiveImageSrcSet(originalUrl(url), [300, 600, 900])} sizes="(max-width: 640px) 45vw, 300px" style={{ backgroundImage: `url(${optimizedImageUrl(originalUrl(url), { width: 24, quality: 30 })})`, backgroundSize: 'cover', backgroundPosition: 'center' }} alt={`${album.name} ${i + 1}`} className="motion-img h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" decoding="async" onError={handleImageError} />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         <motion.div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" whileHover={{ scale: 1.1 }}>
@@ -1511,7 +1511,7 @@ const ProviderProfile = () => {
                   </div>
                 </>
               ) : (
-                <img src={url} srcSet={responsiveImageSrcSet(originalUrl(url), [300, 600, 900])} sizes="(max-width: 640px) 45vw, 300px" alt={`Trabalho ${i + 1}`} className="motion-img h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" decoding="async" onError={handleImageError} />
+                <img src={url} srcSet={responsiveImageSrcSet(originalUrl(url), [300, 600, 900])} sizes="(max-width: 640px) 45vw, 300px" style={{ backgroundImage: `url(${optimizedImageUrl(originalUrl(url), { width: 24, quality: 30 })})`, backgroundSize: 'cover', backgroundPosition: 'center' }} alt={`Trabalho ${i + 1}`} className="motion-img h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" decoding="async" onError={handleImageError} />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <motion.div
