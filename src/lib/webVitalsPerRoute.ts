@@ -188,6 +188,7 @@ export const installWebVitalsPerRoute = () => {
 
   state = buildState(window.location.pathname);
   startObservers(state);
+  installImageHealthCollector();
 
   // Patch pushState / replaceState para detectar SPA navigation
   const wrap = (key: 'pushState' | 'replaceState') => {
