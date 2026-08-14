@@ -10299,6 +10299,15 @@ export type Database = {
         }[]
       }
       get_admin_sponsor_roi: { Args: { _days?: number }; Returns: Json }
+      get_agency_private: {
+        Args: { _agency_id: string }
+        Returns: {
+          cnpj: string
+          email: string
+          id: string
+          legal_name: string
+        }[]
+      }
       get_app_version_config: { Args: never; Returns: Json }
       get_categories_with_provider_count: {
         Args: never
@@ -10388,6 +10397,15 @@ export type Database = {
           contact_name: string
           contact_phone: string
           masked: boolean
+          whatsapp: string
+        }[]
+      }
+      get_jobs_contacts: {
+        Args: { _job_ids?: string[] }
+        Returns: {
+          contact_name: string
+          contact_phone: string
+          id: string
           whatsapp: string
         }[]
       }
