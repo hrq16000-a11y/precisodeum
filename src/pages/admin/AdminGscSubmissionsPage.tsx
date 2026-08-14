@@ -1307,9 +1307,74 @@ const AdminGscSubmissionsPage = () => {
           )}
         </CardContent>
       </Card>
+      {/* Drill-down: ocorrências históricas da rota selecionada */}
+      <Dialog open={!!drillRoute} onOpenChange={(open) => !open && setDrillRoute(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden />
+              Ocorrências em {drillRoute}
+            </DialogTitle>
+            <DialogDescription>
+              Todas as verificações registradas nesta rota, com código, horário e link de
+              diagnóstico.
+            </DialogDescription>
+          </DialogHeader>
+          {drillOccurrences.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Ainda não há histórico para esta rota. Rode a verificação do AdSense para começar a
+              registrar ocorrências.
+            </p>
+          ) : (
+            <div className="max-h-[60vh] overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground">
+                  <tr className="border-b border-border/60 text-left">
+                    <th className="py-2 pr-2">Quando</th>
+                    <th className="py-2 pr-2">HTTP</th>
+                    <th className="py-2 pr-2">Código</th>
+                    <th className="py-2 pr-2">Mensagem</th>
+                    <th className="py-2 pr-2">Diagnóstico</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {drillOccurrences.map((o, i) => (
+                    <tr key={`${o.at}-${o.code}-${i}`} className="border-b border-border/40 last:border-0">
+                      <td className="py-2 pr-2 whitespace-nowrap text-xs">{fmt(o.at)}</td>
+                      <td className="py-2 pr-2">
+                        <Badge variant={o.httpStatus === 200 ? "outline" : "destructive"}>
+                          {o.httpStatus ?? "—"}
+                        </Badge>
+                      </td>
+                      <td className="py-2 pr-2 font-mono text-xs">{o.code ?? "—"}</td>
+                      <td className="py-2 pr-2 text-xs">
+                        <span className={o.level === "error" ? "text-destructive" : ""}>
+                          {o.message}
+                        </span>
+                        {o.hint && <span className="block text-muted-foreground">{o.hint}</span>}
+                      </td>
+                      <td className="py-2 pr-2">
+                        <a
+                          className="inline-flex items-center gap-1 text-xs underline underline-offset-2"
+                          href={o.diagnosticUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Abrir <ExternalLink className="h-3 w-3" aria-hidden />
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
 
 const Kpi = ({
   label,
