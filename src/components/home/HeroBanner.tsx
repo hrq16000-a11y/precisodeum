@@ -15,6 +15,18 @@ const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBa
 
 type HeroPhraseInfo = { slug: string; label: string; prefix: 'need' | 'find' };
 
+const HERO_WIDTHS = [640, 1280, 1920] as const;
+
+/**
+ * Monta o srcSet responsivo das variantes de hero geradas por
+ * `scripts/generate-hero-variants.mjs` (`/hero-cat-<slug>-<width>.<ext>`).
+ */
+const heroSrcSet = (src: string, ext: 'avif' | 'webp'): string => {
+  const base = src.replace(/\.(webp|jpg|jpeg|png)$/i, '');
+  return HERO_WIDTHS.map((w) => `${base}-${w}.${ext} ${w}w`).join(', ');
+};
+
+
 const CriticalHeroSearch = ({
   onUpgrade,
   phraseRef,
