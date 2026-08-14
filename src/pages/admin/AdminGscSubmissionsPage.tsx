@@ -1176,15 +1176,28 @@ const AdminGscSubmissionsPage = () => {
               <div key={f.route} className="rounded-md border border-border/60 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{f.route}</span>
+                    <button
+                      type="button"
+                      className="font-medium underline underline-offset-4 hover:text-primary"
+                      onClick={() => setDrillRoute(f.route)}
+                      title="Ver todas as ocorrências desta rota"
+                    >
+                      {f.route}
+                    </button>
                     <Badge variant={f.level === "error" ? "destructive" : "secondary"}>
                       HTTP {f.httpStatus ?? "—"}
                     </Badge>
+                    {routeFailureStreak(adsenseHistory, f.route) > 1 && (
+                      <Badge variant="destructive" className="text-[10px]">
+                        {routeFailureStreak(adsenseHistory, f.route)}x seguidas
+                      </Badge>
+                    )}
                     {[...f.errorCodes, ...f.warningCodes].map((code) => (
                       <Badge key={code} variant="outline" className="font-mono text-[10px]">
                         {code}
                       </Badge>
                     ))}
+
                   </div>
                   <div className="flex items-center gap-2">
                     <a
