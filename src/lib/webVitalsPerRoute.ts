@@ -10,8 +10,9 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { collectImageHealth, installImageHealthCollector } from './webVitals/imageHealth';
 
-type MetricName = 'LCP' | 'INP' | 'CLS' | 'FCP' | 'TTFB';
+type MetricName = 'LCP' | 'INP' | 'CLS' | 'FCP' | 'TTFB' | 'IMG_ERROR' | 'IMG_DEGRADED';
 
 interface MetricSample {
   name: MetricName;
