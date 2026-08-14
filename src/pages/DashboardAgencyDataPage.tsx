@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import AvatarUpload from '@/components/AvatarUpload';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AGENCY_SAFE_COLUMNS } from '@/lib/dbSafeColumns';
 
 const schema = z.object({
   name: z.string().trim().min(2, 'Informe o nome da agência').max(120),
