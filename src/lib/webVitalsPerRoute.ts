@@ -10,8 +10,9 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { collectImageHealth, installImageHealthCollector } from './webVitals/imageHealth';
 
-type MetricName = 'LCP' | 'INP' | 'CLS' | 'FCP' | 'TTFB';
+type MetricName = 'LCP' | 'INP' | 'CLS' | 'FCP' | 'TTFB' | 'IMG_ERROR' | 'IMG_DEGRADED';
 
 interface MetricSample {
   name: MetricName;
@@ -29,6 +30,9 @@ const rate = (name: MetricName, value: number): MetricSample['rating'] => {
     case 'CLS': return value <= 0.1 ? 'good' : value <= 0.25 ? 'needs-improvement' : 'poor';
     case 'FCP': return value <= 1800 ? 'good' : value <= 3000 ? 'needs-improvement' : 'poor';
     case 'TTFB': return value <= 800 ? 'good' : value <= 1800 ? 'needs-improvement' : 'poor';
+    // Sinais de imagem: qualquer ocorrência já é regressão em potencial.
+    case 'IMG_ERROR': return value === 0 ? 'good' : 'poor';
+    case 'IMG_DEGRADED': return value === 0 ? 'good' : value <= 2 ? 'needs-improvement' : 'poor';
   }
 };
 
@@ -120,6 +124,16 @@ const collectSamples = (s: RouteState): MetricSample[] => {
   if (s.ttfb != null) out.push({ name: 'TTFB', value: round(s.ttfb), rating: rate('TTFB', s.ttfb) });
   if (s.inpMax > 0) out.push({ name: 'INP', value: round(s.inpMax), rating: rate('INP', s.inpMax) });
   out.push({ name: 'CLS', value: round(s.cls), rating: rate('CLS', s.cls) });
+
+  // Saúde de imagem (hero/gallery) da rota — correlacionada com LCP no admin.
+  try {
+    const img = collectImageHealth();
+    if (img.audited > 0 || img.errors > 0) {
+      out.push({ name: 'IMG_ERROR', value: img.errors, rating: rate('IMG_ERROR', img.errors) });
+      out.push({ name: 'IMG_DEGRADED', value: img.degraded, rating: rate('IMG_DEGRADED', img.degraded) });
+    }
+  } catch { /* noop */ }
+
   return out;
 };
 
@@ -174,6 +188,7 @@ export const installWebVitalsPerRoute = () => {
 
   state = buildState(window.location.pathname);
   startObservers(state);
+  installImageHealthCollector();
 
   // Patch pushState / replaceState para detectar SPA navigation
   const wrap = (key: 'pushState' | 'replaceState') => {
