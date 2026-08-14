@@ -100,7 +100,7 @@ const DashboardAgencyDataPage = () => {
         const { data: created, error } = await (supabase as any)
           .from('agencies')
           .insert([{ ...payload, slug, status: 'pending' }])
-          .select()
+          .select(AGENCY_SAFE_COLUMNS)
           .single();
         if (error) throw error;
         setAgency(created);
