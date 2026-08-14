@@ -153,10 +153,10 @@ const DashboardJobsPage = () => {
       if (!user) return [];
       const { data } = await supabase
         .from('jobs')
-        .select('*, categories(name, icon)')
+        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, icon)` as const)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-      return data || [];
+      return await mergeJobContacts((data || []) as any[]);
     },
     enabled: !!user,
   });

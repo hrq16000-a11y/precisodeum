@@ -73,11 +73,11 @@ const AdminJobsPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('jobs')
-        .select('*, categories(name, icon)')
+        .select(`${JOB_PUBLIC_COLUMNS}, categories(name, icon)` as const)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(500);
-      return data || [];
+      return await mergeJobContacts((data || []) as any[]);
     },
     enabled: isAdmin,
   });
