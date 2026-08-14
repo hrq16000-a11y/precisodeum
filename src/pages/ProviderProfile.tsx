@@ -356,7 +356,7 @@ const ProviderProfile = () => {
 
       if (active) setLoading(true);
 
-      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, phone, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, whatsapp, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, years_experience, ibge_code, latitude, longitude, created_at, website, meta_title, meta_description, contact_hours';
+      const PROVIDER_PUBLIC_COLS = 'id, user_id, business_name, category_id, category_custom, city, state, neighborhood, description, featured, photo_url, plan, portfolio_album_count, portfolio_photo_count, rating_avg, response_time, review_count, service_radius, services_count, slug, status, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, years_experience, ibge_code, latitude, longitude, created_at, website, meta_title, meta_description, contact_hours';
 
       let { data } = await supabase
         .from('providers')

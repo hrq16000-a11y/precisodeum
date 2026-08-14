@@ -428,7 +428,7 @@ function mapProvider(p: any, profileName?: string, serviceImage?: string, hasPor
 // para os filtros "Aberto agora", "Fim de semana", "Madrugada", "Sob demanda".
 // Campos não exibidos nos cards (avatar próprio, bio longa, metadados internos)
 // não constam aqui — quem precisar deles (ex.: ProviderProfile) usa select próprio.
-const providerSelect = 'id, user_id, created_at, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, phone, whatsapp, years_experience, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, accepts_on_demand, categories(name, slug, icon)';
+const providerSelect = 'id, user_id, created_at, business_name, description, photo_url, city, state, neighborhood, latitude, longitude, years_experience, slug, featured, rating_avg, review_count, status, category_id, portfolio_photo_count, portfolio_album_count, services_count, avg_response_minutes, community_verified, working_hours, working_hours_struct, opens_weekend, opens_late_night, opens_overnight, is_24h, accepts_on_demand, categories(name, slug, icon)';
 
 function compareEliteMerit(a: DbProvider, b: DbProvider): number {
   const levelDiff = (b.levelPriority || 0) - (a.levelPriority || 0);
