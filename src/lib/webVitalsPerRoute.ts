@@ -30,6 +30,9 @@ const rate = (name: MetricName, value: number): MetricSample['rating'] => {
     case 'CLS': return value <= 0.1 ? 'good' : value <= 0.25 ? 'needs-improvement' : 'poor';
     case 'FCP': return value <= 1800 ? 'good' : value <= 3000 ? 'needs-improvement' : 'poor';
     case 'TTFB': return value <= 800 ? 'good' : value <= 1800 ? 'needs-improvement' : 'poor';
+    // Sinais de imagem: qualquer ocorrência já é regressão em potencial.
+    case 'IMG_ERROR': return value === 0 ? 'good' : 'poor';
+    case 'IMG_DEGRADED': return value === 0 ? 'good' : value <= 2 ? 'needs-improvement' : 'poor';
   }
 };
 
