@@ -226,6 +226,36 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   const visibleBadges = badges.slice(0, MAX_BADGES_MOBILE);
   const hiddenCount = badges.length - visibleBadges.length;
 
+  // Contato: o número não vem mais na listagem (PII protegida). É revelado no
+  // clique via RPC e o link do WhatsApp abre em seguida, no mesmo gesto.
+  const [revealedWhatsapp, setRevealedWhatsapp] = useState<string>(
+    () => provider.whatsapp || getCachedProviderContact(provider.id)?.whatsapp || '',
+  );
+  const [revealing, setRevealing] = useState(false);
+
+  const handleWhatsappClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (revealedWhatsapp) {
+      trackWhatsAppClick(provider.id, provider.slug, trackingSource);
+      return;
+    }
+    e.preventDefault();
+    if (revealing) return;
+    setRevealing(true);
+    const contact = await fetchProviderContact(provider.id);
+    const number = contact.whatsapp || contact.phone;
+    setRevealing(false);
+    if (!number) return;
+    setRevealedWhatsapp(number);
+    trackWhatsAppClick(provider.id, provider.slug, trackingSource);
+    window.open(
+      whatsappLink(number, buildSmartMessage(displayName, provider.category, geoCity, geoState)),
+      '_blank',
+      'noopener,noreferrer',
+    );
+  };
+
+
+
   return (
     <div
       ref={impressionRef}
