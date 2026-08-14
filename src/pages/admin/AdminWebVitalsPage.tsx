@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AsyncBoundary, SkeletonCardGrid, SkeletonTable } from '@/components/motion';
+import ImageLcpCorrelationCard from '@/components/admin/ImageLcpCorrelationCard';
 import {
   CORE_METRICS,
   deviceOf,
