@@ -57,3 +57,34 @@ jobs:
           path: .rpc-grants-report.json
           if-no-files-found: ignore
 
+
+  tracking-anon-grants:
+    name: Tracking RPCs must stay callable as anon
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Smoke test anon EXECUTE on tracking RPCs
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "Segredos do backend ausentes — pulando smoke test de permissões."
+            exit 0
+          fi
+          node scripts/verify-anon-tracking-grants.mjs
+
+  tracking-observability-unit:
+    name: Tracking observability unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci --no-audit --no-fund
+      - name: Run tracking observability tests
+        run: npx vitest run src/test/tracking-observability.test.ts

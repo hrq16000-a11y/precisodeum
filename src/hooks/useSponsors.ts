@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { getPositionConfig } from '@/config/sponsorPositions';
 import { isSponsorDeliverable, resolveSponsorHealthStatus, logBlockedSponsor, reportBlockedSponsor } from '@/lib/sponsorDeliveryGuard';
 import { recordSponsorClick } from '@/lib/sponsorAttribution';
+import { trackingRpc } from '@/lib/tracking/safeRpc';
+import { trackingDedupeKey, claimLocalDedupe } from '@/lib/tracking/dedupeKey';
 
 export interface SponsorFull {
   id: string;
@@ -151,12 +153,16 @@ export function useSponsorsBySlot(
     const sponsor = (query.data || []).find((s) => s.id === id);
     if (!sponsor || !isSponsorDeliverable(sponsor as any)) return;
     impressionSet.current.add(id);
-    supabase.rpc('track_sponsor_metric', {
+    const path = getPagePath();
+    const key = trackingDedupeKey('impression', [id, position, path]);
+    if (!claimLocalDedupe(key)) return;
+    void trackingRpc('track_sponsor_metric', {
       _sponsor_id: id,
       _slot_slug: position,
       _event_type: 'impression',
-      _page_path: getPagePath(),
-    } as any).then(() => {}, (err) => { /* FIX 8 (Onda 4): silent catch — telemetria nunca quebra UI */ console.warn('[sponsor:impression] failed', err); });
+      _page_path: path,
+      _dedupe_key: key,
+    });
   }, [position, query.data]);
 
   const trackClick = useCallback((id: string) => {
@@ -165,12 +171,16 @@ export function useSponsorsBySlot(
     if (!sponsor || !isSponsorDeliverable(sponsor as any)) return;
     // FASE 2.3 — registra atribuição leve para o funil (TTL 30 min).
     recordSponsorClick(id, position);
-    supabase.rpc('track_sponsor_metric', {
+    const clickPath = getPagePath();
+    const clickKey = trackingDedupeKey('click', [id, position, clickPath]);
+    if (!claimLocalDedupe(clickKey)) return;
+    void trackingRpc('track_sponsor_metric', {
       _sponsor_id: id,
       _slot_slug: position,
       _event_type: 'click',
-      _page_path: getPagePath(),
-    } as any).then(() => {}, (err) => { console.warn('[sponsor:click] failed', err); });
+      _page_path: clickPath,
+      _dedupe_key: clickKey,
+    });
   }, [position, query.data]);
 
   return {

@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { trackingRpc } from '@/lib/tracking/safeRpc';
+import { trackingDedupeKey, claimLocalDedupe } from '@/lib/tracking/dedupeKey';
 
 export interface PinnedSponsor {
   sponsor_id: string;
@@ -48,21 +50,29 @@ export function usePinnedSponsor(params: {
   const trackImpression = useCallback((sponsorId: string) => {
     if (impressionTracked.current === sponsorId) return;
     impressionTracked.current = sponsorId;
-    supabase.rpc('track_sponsor_metric', {
+    const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+    const key = trackingDedupeKey('impression', [sponsorId, 'search-pinned', path]);
+    if (!claimLocalDedupe(key)) return;
+    void trackingRpc('track_sponsor_metric', {
       _sponsor_id: sponsorId,
       _slot_slug: 'search-pinned',
       _event_type: 'impression',
-      _page_path: typeof window !== 'undefined' ? window.location.pathname : '/',
-    } as any).then(() => {});
+      _page_path: path,
+      _dedupe_key: key,
+    });
   }, []);
 
   const trackClick = useCallback((sponsorId: string) => {
-    supabase.rpc('track_sponsor_metric', {
+    const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+    const key = trackingDedupeKey('click', [sponsorId, 'search-pinned', path]);
+    if (!claimLocalDedupe(key)) return;
+    void trackingRpc('track_sponsor_metric', {
       _sponsor_id: sponsorId,
       _slot_slug: 'search-pinned',
       _event_type: 'click',
-      _page_path: typeof window !== 'undefined' ? window.location.pathname : '/',
-    } as any).then(() => {});
+      _page_path: path,
+      _dedupe_key: key,
+    });
   }, []);
 
   return { ...query, trackImpression, trackClick };

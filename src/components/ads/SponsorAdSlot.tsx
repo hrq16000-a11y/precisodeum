@@ -7,6 +7,8 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdDebug } from '@/contexts/AdDebugContext';
 import SponsorImage from '@/components/SponsorImage';
 import { Skeleton } from '@/components/ui/skeleton';
+import { trackingRpc } from '@/lib/tracking/safeRpc';
+import { trackingDedupeKey, claimLocalDedupe } from '@/lib/tracking/dedupeKey';
 
 interface SponsorAd {
   id: string;
@@ -65,12 +67,16 @@ function useSponsorAds(locationKey: string, city: string | null, state: string |
 }
 
 function trackAdMetric(sponsorId: string, slotSlug: string, eventType: 'impression' | 'click') {
-  supabase.rpc('track_sponsor_metric', {
+  const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const key = trackingDedupeKey(eventType, [sponsorId, slotSlug, path]);
+  if (!claimLocalDedupe(key)) return;
+  void trackingRpc('track_sponsor_metric', {
     _sponsor_id: sponsorId,
     _slot_slug: slotSlug,
     _event_type: eventType,
-    _page_path: typeof window !== 'undefined' ? window.location.pathname : '/',
-  } as any).then(() => {});
+    _page_path: path,
+    _dedupe_key: key,
+  });
 }
 
 /* ─── X-Ray placeholder (admin debug mode) ─── */
