@@ -262,6 +262,8 @@ const AdminWebVitalsPage = () => {
             )}
           </CardContent>
         </Card>
+
+        <ImageLcpCorrelationCard samples={samples} />
       </AsyncBoundary>
     </div>
   );
