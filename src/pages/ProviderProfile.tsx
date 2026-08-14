@@ -289,6 +289,21 @@ const ProviderProfile = () => {
   const navigate = useNavigate();
   const { requestWhatsApp } = useWhatsAppGate();
   const [provider, setProvider] = useState<any>(null);
+  // Contato protegido: telefone/WhatsApp não vêm mais no SELECT público —
+  // são buscados pela RPC `get_provider_contact` quando o perfil carrega.
+  const [providerContact, setProviderContact] = useState<{ phone: string; whatsapp: string }>({ phone: '', whatsapp: '' });
+  useEffect(() => {
+    let alive = true;
+    if (!provider?.id) {
+      setProviderContact({ phone: '', whatsapp: '' });
+      return;
+    }
+    fetchProviderContact(provider.id).then((c) => { if (alive) setProviderContact(c); });
+    return () => { alive = false; };
+  }, [provider?.id]);
+  const contactPhone = providerContact.phone || '';
+  const effectiveWhatsApp = toCanonical(providerContact.whatsapp || contactPhone || '');
+
   const [services, setServices] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
@@ -956,16 +971,6 @@ const ProviderProfile = () => {
     (provider.portfolio_album_count || 0) >= (destaqueMinPortfolio || 1) &&
     (provider.review_count || 0) >= 1
   );
-  // Contato protegido: telefone/WhatsApp não vêm mais no SELECT público —
-  // são buscados pela RPC `get_provider_contact` quando o perfil carrega.
-  const { data: providerContact } = useQuery({
-    queryKey: ['provider-contact', provider?.id],
-    queryFn: () => fetchProviderContact(provider?.id),
-    enabled: !!provider?.id,
-    staleTime: 5 * 60 * 1000,
-  });
-  const contactPhone = providerContact?.phone || '';
-  const effectiveWhatsApp = toCanonical(providerContact?.whatsapp || contactPhone || '');
   const hasSocial = pageSettings.instagram_url || pageSettings.facebook_url || pageSettings.youtube_url || pageSettings.tiktok_url;
 
   // Helpers de SEO: garantem limites recomendados (title <=60, description <=160).
