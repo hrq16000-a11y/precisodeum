@@ -12,12 +12,13 @@ import { MessageCircle, MapPin, ChevronRight, Clock, Globe } from 'lucide-react'
 import CategoryIcon from '@/components/CategoryIcon';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { whatsappLink, buildSmartMessage } from '@/lib/whatsapp';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { formatLocationString } from '@/lib/normalize';
 import { formatCityState } from '@/lib/locationFormat';
 import { SERVICE_PUBLIC_COLUMNS } from '@/lib/dbSafeColumns';
+import { fetchProviderContact } from '@/lib/providerContact';
 
 const ServiceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,6 +51,22 @@ const ServiceDetailPage = () => {
   const city = svc?.provider?.city || '';
   const state = svc?.provider?.state || '';
   const provSlug = svc?.provider?.slug || svc?.provider?.id || '';
+
+  // Contato protegido: revelado sob demanda via RPC (ver src/lib/providerContact.ts).
+  const [revealedWhatsapp, setRevealedWhatsapp] = useState('');
+  const handleRevealWhatsapp = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (revealedWhatsapp) return;
+    e.preventDefault();
+    const contact = await fetchProviderContact(svc?.provider?.id);
+    const number = contact.whatsapp || contact.phone;
+    if (!number) return;
+    setRevealedWhatsapp(number);
+    window.open(
+      whatsappLink(number, buildSmartMessage(providerName, catInfo?.name || svc?.service_name || '', userCity, userState)),
+      '_blank',
+      'noopener,noreferrer',
+    );
+  };
 
   useSeoHead({
     title: svc ? `${svc.service_name} em ${city} – ${providerName}` : 'Serviço',
@@ -162,7 +179,7 @@ const ServiceDetailPage = () => {
 
                 <div className="mt-4 space-y-2">
                   <Button variant="accent" className="w-full" asChild>
-                    <a href={whatsappLink(revealedWhatsapp, buildSmartMessage(providerName, catInfo?.name || svc.service_name, userCity, userState))} target="_blank" rel="noopener noreferrer">
+                    <a onClick={handleRevealWhatsapp} href={whatsappLink(revealedWhatsapp, buildSmartMessage(providerName, catInfo?.name || svc.service_name, userCity, userState))} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="h-4 w-4" /> WhatsApp
                     </a>
                   </Button>
@@ -177,6 +194,7 @@ const ServiceDetailPage = () => {
       </main>
 
       <a
+        onClick={handleRevealWhatsapp}
         href={whatsappLink(revealedWhatsapp, buildSmartMessage(providerName, catInfo?.name || svc.service_name, userCity, userState))}
         target="_blank"
         rel="noopener noreferrer"
