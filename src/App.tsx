@@ -94,6 +94,8 @@ const DeferredShell = () => {
       <CookieConsent />
       <PwaInstallBanner />
       <GlobalLinkPrefetcher />
+      <WebVitalsOverlay />
+
     </Suspense>
   );
 };
