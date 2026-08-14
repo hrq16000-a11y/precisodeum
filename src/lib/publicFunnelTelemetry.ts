@@ -15,8 +15,9 @@
  * pelo servidor; aqui também filtramos curto-circuito.
  */
 
-import { supabase } from '@/integrations/supabase/client';
 import { getActiveSponsorRef } from '@/lib/sponsorAttribution';
+import { trackingRpc } from '@/lib/tracking/safeRpc';
+import { trackingDedupeKey } from '@/lib/tracking/dedupeKey';
 
 export type PublicFunnelAction =
   | 'public_search'
@@ -97,11 +98,19 @@ function fire(action: PublicFunnelAction, payload: Record<string, unknown>) {
   // (apenas para eventos de conversão — search/category/city não atribuem).
   const wantsAttr = action === 'profile_view' || action === 'lead_submit';
   const sponsorRef = wantsAttr ? getActiveSponsorRef() : null;
-  void supabase.rpc('record_public_funnel_event' as any, {
+  const dedupeKey = trackingDedupeKey('funnel', [
+    action,
+    String(payload._resource_id ?? ''),
+    String(payload._category ?? ''),
+    String(payload._city ?? ''),
+    String(payload._pathname ?? ''),
+  ]);
+  void trackingRpc('record_public_funnel_event', {
     _action: action,
     ...payload,
     ...(sponsorRef ? { _sponsor_ref: sponsorRef } : {}),
-  } as any).then(() => {}, () => {});
+    _dedupe_key: dedupeKey,
+  });
 }
 
 /** Registra uma busca (com cardinalidade dos resultados — alimenta zero-result insights). */

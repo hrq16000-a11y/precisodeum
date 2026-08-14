@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import SponsorImage from '@/components/SponsorImage';
+import { trackingRpc } from '@/lib/tracking/safeRpc';
+import { trackingDedupeKey, claimLocalDedupe } from '@/lib/tracking/dedupeKey';
 
 interface SlotSponsor {
   id: string;
@@ -94,12 +96,16 @@ function getPagePath(): string {
 }
 
 function trackMetric(sponsorId: string, slotSlug: string, eventType: 'impression' | 'click') {
-  supabase.rpc('track_sponsor_metric', {
+  const path = getPagePath();
+  const key = trackingDedupeKey(eventType, [sponsorId, slotSlug, path]);
+  if (!claimLocalDedupe(key)) return;
+  void trackingRpc('track_sponsor_metric', {
     _sponsor_id: sponsorId,
     _slot_slug: slotSlug,
     _event_type: eventType,
-    _page_path: getPagePath(),
-  } as any).then(() => {});
+    _page_path: path,
+    _dedupe_key: key,
+  });
 }
 
 const AdSlot = React.forwardRef<HTMLElement, AdSlotProps>(({ slotSlug, className = '', layout = 'banner', category, city, state, maxAds }, ref) => {

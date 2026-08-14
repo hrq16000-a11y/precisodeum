@@ -7769,6 +7769,57 @@ export type Database = {
         }
         Relationships: []
       }
+      tracking_event_dedupe: {
+        Row: {
+          created_at: string
+          dedupe_key: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string
+        }
+        Relationships: []
+      }
+      tracking_rpc_health: {
+        Row: {
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          is_authenticated: boolean
+          latency_ms: number | null
+          outcome: string
+          pathname: string | null
+          rpc_name: string
+        }
+        Insert: {
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          is_authenticated?: boolean
+          latency_ms?: number | null
+          outcome: string
+          pathname?: string | null
+          rpc_name: string
+        }
+        Update: {
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          is_authenticated?: boolean
+          latency_ms?: number | null
+          outcome?: string
+          pathname?: string | null
+          rpc_name?: string
+        }
+        Relationships: []
+      }
       uf_normalization_audit: {
         Row: {
           created_at: string
@@ -9844,6 +9895,31 @@ export type Database = {
           }
       admin_system_health: { Args: { _limit?: number }; Returns: Json }
       admin_system_health_full: { Args: never; Returns: Json }
+      admin_tracking_rpc_health_errors: {
+        Args: { _hours?: number; _limit?: number }
+        Returns: {
+          created_at: string
+          error_code: string
+          error_message: string
+          is_authenticated: boolean
+          pathname: string
+          rpc_name: string
+        }[]
+      }
+      admin_tracking_rpc_health_summary: {
+        Args: { _hours?: number }
+        Returns: {
+          avg_latency_ms: number
+          error_rate: number
+          errors: number
+          last_error_at: string
+          permission_denied: number
+          rpc_name: string
+          successes: number
+          top_error_code: string
+          total: number
+        }[]
+      }
       admin_update_billing_cycle: {
         Args: {
           _admin_note?: string
@@ -10933,6 +11009,7 @@ export type Database = {
           _category_name?: string
           _category_slug?: string
           _city?: string
+          _dedupe_key?: string
           _state?: string
           _visitor_id?: string
         }
@@ -11115,6 +11192,7 @@ export type Database = {
       purge_cold_storage_91d: { Args: never; Returns: number }
       purge_onboarding_events: { Args: never; Returns: Json }
       purge_telemetry_tables: { Args: never; Returns: Json }
+      purge_tracking_observability: { Args: never; Returns: undefined }
       realign_first_service: {
         Args: {
           _category_id: string
@@ -11187,6 +11265,7 @@ export type Database = {
           _action: string
           _category?: string
           _city?: string
+          _dedupe_key?: string
           _pathname?: string
           _resource_id?: string
           _result_count?: number
@@ -11206,6 +11285,17 @@ export type Database = {
           _reason: string
           _slot: string
           _sponsor_id: string
+        }
+        Returns: undefined
+      }
+      record_tracking_rpc_health: {
+        Args: {
+          _error_code?: string
+          _error_message?: string
+          _latency_ms?: number
+          _outcome: string
+          _pathname?: string
+          _rpc_name: string
         }
         Returns: undefined
       }
@@ -11431,12 +11521,17 @@ export type Database = {
       track_presence_heartbeat: { Args: never; Returns: Json }
       track_sponsor_metric: {
         Args: {
+          _dedupe_key?: string
           _event_type: string
           _page_path?: string
           _slot_slug: string
           _sponsor_id: string
         }
         Returns: undefined
+      }
+      tracking_dedupe_take: {
+        Args: { _key: string; _ttl_minutes?: number }
+        Returns: boolean
       }
       update_album_atomic: {
         Args: { p_album_id: string; p_data: Json }
