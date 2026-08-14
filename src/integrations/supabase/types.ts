@@ -10516,6 +10516,13 @@ export type Database = {
         Args: { _provider_id: string }
         Returns: number
       }
+      get_provider_contact: {
+        Args: { _provider_id: string }
+        Returns: {
+          phone: string
+          whatsapp: string
+        }[]
+      }
       get_provider_conversion_stats: {
         Args: { _days?: number; _provider_ids: string[] }
         Returns: {
