@@ -64,6 +64,40 @@ import {
   type AdsenseRouteReport,
 } from "@/lib/seo/adsenseCheck";
 import {
+  appendAdsenseRun,
+  loadAdsenseHistory,
+  routeFailureStreak,
+  routeOccurrences,
+  saveAdsenseHistory,
+  type AdsenseCheckRun,
+} from "@/lib/seo/adsenseHistory";
+import {
+  DEFAULT_PERSISTENT_RULES,
+  PERSISTENT_RULES_SETTING_KEY,
+  adsenseConsecutiveFailures,
+  buildPersistentAlertMessage,
+  evaluatePersistentAlerts,
+  gscConsecutiveFailures,
+  parseRules,
+  serializeRules,
+  type PersistentAlertRule,
+  type PersistentAlertSeverity,
+} from "@/lib/seo/persistentAlerts";
+import {
+  buildConsolidatedAudit,
+  consolidatedAuditToCsv,
+  consolidatedAuditToJson,
+} from "@/lib/seo/auditExport";
+import { computeGscMetrics } from "@/lib/seo/gscMetrics";
+import type { SeoHealthReport } from "@/lib/seo/seoHealth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   EMPTY_FILTERS,
   availablePartitions,
   filterSubmissions,
@@ -80,6 +114,7 @@ const ALERT_SLACK_KEY = "gsc_alert_slack_enabled";
 const ALERT_SEVERITY_KEY = "gsc_alert_severity";
 const ENVIRONMENTS: GscEnvironment[] = ["prod", "staging", "dev"];
 const SEVERITIES: AlertSeverityThreshold[] = ["critical", "warning", "info"];
+
 
 const fmt = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";
@@ -110,9 +145,15 @@ const AdminGscSubmissionsPage = () => {
   const [sendingAlert, setSendingAlert] = useState(false);
   const [adsense, setAdsense] = useState<AdsenseRouteReport[] | null>(null);
   const [adsenseLoading, setAdsenseLoading] = useState(false);
+  const [adsenseHistory, setAdsenseHistory] = useState<AdsenseCheckRun[]>(() => loadAdsenseHistory());
+  const [drillRoute, setDrillRoute] = useState<string | null>(null);
+  const [rules, setRules] = useState<PersistentAlertRule[]>(DEFAULT_PERSISTENT_RULES);
+  const [coverage, setCoverage] = useState<GscCoverageSnapshot[]>([]);
+  const [seoReport, setSeoReport] = useState<SeoHealthReport | null>(null);
   const [filters, setFilters] = useState<SubmissionFilters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+
 
 
 
@@ -139,6 +180,7 @@ const AdminGscSubmissionsPage = () => {
         ALERT_EMAIL_KEY,
         ALERT_SLACK_KEY,
         ALERT_SEVERITY_KEY,
+        PERSISTENT_RULES_SETTING_KEY,
       ]);
     const map: Record<string, string> = {};
     for (const r of data ?? []) {
@@ -151,7 +193,27 @@ const AdminGscSubmissionsPage = () => {
     if (SEVERITIES.includes(map[ALERT_SEVERITY_KEY] as AlertSeverityThreshold)) {
       setSeverity(map[ALERT_SEVERITY_KEY] as AlertSeverityThreshold);
     }
+    setRules(parseRules(map[PERSISTENT_RULES_SETTING_KEY]));
+    try {
+      const snapshot = map[COVERAGE_SNAPSHOT_KEY] ? JSON.parse(map[COVERAGE_SNAPSHOT_KEY]) : [];
+      if (Array.isArray(snapshot)) setCoverage(snapshot as GscCoverageSnapshot[]);
+    } catch {
+      setCoverage([]);
+    }
   }, []);
+
+  /** Último relatório do edge `seo-audit` — usado só no relatório consolidado. */
+  const loadSeoReport = useCallback(async () => {
+    const { data } = await supabase
+      .from("seo_audit_reports")
+      .select(
+        "id,ran_at,total_urls,ok_count,warning_count,error_count,robots_ok,robots_issues,sitemap_url,findings,duration_ms",
+      )
+      .order("ran_at", { ascending: false })
+      .limit(1);
+    setSeoReport(((data ?? [])[0] as unknown as SeoHealthReport) ?? null);
+  }, []);
+
 
 
   const loadProperties = useCallback(async () => {
@@ -173,7 +235,9 @@ const AdminGscSubmissionsPage = () => {
     loadLog();
     loadSettings();
     loadProperties();
-  }, [loadLog, loadSettings, loadProperties]);
+    loadSeoReport();
+  }, [loadLog, loadSettings, loadProperties, loadSeoReport]);
+
 
   const perSitemap = useMemo(() => summarizeBySitemap(rows), [rows]);
   const runs = useMemo(() => groupRuns(rows), [rows]);
@@ -349,6 +413,7 @@ const AdminGscSubmissionsPage = () => {
         previous = [];
       }
       setAlerts(diffCoverage(previous, current));
+      setCoverage(current);
 
       await supabase
         .from("site_settings")
@@ -366,13 +431,24 @@ const AdminGscSubmissionsPage = () => {
     try {
       const { data, error } = await supabase.functions.invoke("seo-adsense-check", { body: {} });
       if (error) throw error;
-      setAdsense(((data as { reports?: AdsenseRouteReport[] })?.reports ?? []) as AdsenseRouteReport[]);
+      const reports = ((data as { reports?: AdsenseRouteReport[] })?.reports ??
+        []) as AdsenseRouteReport[];
+      setAdsense(reports);
+      // Guarda a execução para permitir drill-down histórico por rota.
+      const next = appendAdsenseRun(adsenseHistory, {
+        at: new Date().toISOString(),
+        origin: typeof window !== "undefined" ? window.location.origin : "",
+        reports,
+      });
+      setAdsenseHistory(next);
+      saveAdsenseHistory(next);
     } catch (err) {
       toast.error(`Falha ao checar AdSense: ${String(err)}`);
     } finally {
       setAdsenseLoading(false);
     }
   };
+
 
   const adsenseSummary = adsense ? summarizeAdsenseReports(adsense) : null;
   const adsenseFailures = useMemo(
@@ -384,6 +460,96 @@ const AdminGscSubmissionsPage = () => {
           )
         : [],
     [adsense],
+  );
+
+  /* ── Alertas persistentes (N execuções consecutivas com falha) ── */
+  const persistentAlerts = useMemo(() => {
+    const gsc = evaluatePersistentAlerts(gscConsecutiveFailures(rows), rules, "gsc");
+    const ads = evaluatePersistentAlerts(
+      adsenseConsecutiveFailures(adsenseHistory),
+      rules,
+      "adsense",
+    );
+    return [...gsc, ...ads];
+  }, [rows, rules, adsenseHistory]);
+
+  const patchRule = async (target: PersistentAlertRule["target"], patch: Partial<PersistentAlertRule>) => {
+    const next = rules.map((r) => (r.target === target ? { ...r, ...patch } : r));
+    setRules(next);
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({ key: PERSISTENT_RULES_SETTING_KEY, value: serializeRules(next) }, { onConflict: "key" });
+    if (error) toast.error("Falha ao salvar as regras de alerta persistente.");
+  };
+
+  const sendPersistentAlerts = async (dryRun: boolean) => {
+    if (persistentAlerts.length === 0) {
+      toast.info("Nenhuma falha atingiu o limiar configurado.");
+      return;
+    }
+    const property = envProperty[GSC_PROPERTY_SETTING_KEYS[env]] || "—";
+    const dashboardUrl = `${window.location.origin}/admin/seo/submissoes`;
+    setSendingAlert(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("gsc-coverage-alert", {
+        body: {
+          environment: env,
+          property,
+          dashboardUrl,
+          email: persistentAlerts.some((a) => a.email) ? alertEmail || undefined : undefined,
+          slack: persistentAlerts.some((a) => a.slack),
+          dryRun,
+          customMessage: buildPersistentAlertMessage(persistentAlerts, { property, dashboardUrl }),
+          alerts: persistentAlerts.map((a) => ({
+            sitemap: a.label,
+            severity: a.severity,
+            metric: "errors" as const,
+            before: 0,
+            after: a.streak,
+            delta: a.streak,
+            message: `${a.target === "gsc" ? "Sitemap" : "Rota"} ${a.label} falhou ${a.streak}x seguidas (limiar ${a.threshold}).`,
+            suggestion: a.lastError ?? "Verifique a execução mais recente no painel.",
+          })),
+        },
+      });
+      if (error) throw error;
+      setRunLog({
+        mode: dryRun ? "persistent-alert-dry-run" : "persistent-alert",
+        at: new Date().toISOString(),
+        payload: data,
+      });
+      toast.success(dryRun ? "Prévia gerada (nada enviado)." : "Alerta persistente enviado.");
+    } catch (err) {
+      toast.error(`Falha ao enviar alerta persistente: ${String(err)}`);
+    } finally {
+      setSendingAlert(false);
+    }
+  };
+
+  /* ── Relatório consolidado da última auditoria ── */
+  const exportConsolidated = (format: "json" | "csv") => {
+    const audit = buildConsolidatedAudit({
+      origin: typeof window !== "undefined" ? window.location.origin : "",
+      environment: env,
+      property: envProperty[GSC_PROPERTY_SETTING_KEYS[env]] ?? null,
+      seoReport,
+      adsense,
+      submissions: perSitemap,
+      coverage,
+      metrics: computeGscMetrics(rows, { days: 7 }),
+    });
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (format === "json") {
+      download(consolidatedAuditToJson(audit), `auditoria-seo-${stamp}.json`, "application/json");
+    } else {
+      download(consolidatedAuditToCsv(audit), `auditoria-seo-${stamp}.csv`, "text/csv;charset=utf-8;");
+    }
+    toast.success(`Relatório consolidado exportado em ${format.toUpperCase()}.`);
+  };
+
+  const drillOccurrences = useMemo(
+    () => (drillRoute ? routeOccurrences(adsenseHistory, drillRoute) : []),
+    [drillRoute, adsenseHistory],
   );
 
 
@@ -473,6 +639,14 @@ const AdminGscSubmissionsPage = () => {
             <Button variant="outline" size="sm" onClick={() => exportHistory("json")}>
               <Download className="h-4 w-4" aria-hidden /> JSON
             </Button>
+            <Button variant="secondary" size="sm" onClick={() => exportConsolidated("json")}>
+              <Download className="h-4 w-4" aria-hidden /> Relatório consolidado (JSON)
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => exportConsolidated("csv")}>
+              <Download className="h-4 w-4" aria-hidden /> Relatório consolidado (CSV)
+            </Button>
+
+
 
           </div>
         </CardHeader>
