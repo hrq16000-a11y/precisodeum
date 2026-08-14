@@ -39,7 +39,7 @@
     "portability:restore-media": "node scripts/portability/restore-bundle.mjs",
     "portability:validate-restore": "node scripts/portability/validate-restore.mjs",
     "portability:report": "node scripts/portability/migration-report.mjs",
-    "ci:performance": "npm run lint && npm run test && npm run validate:json-ld && npm run build && npm run check:performance && npm run lighthouse:ci && node scripts/lighthouse-summary.mjs && node scripts/performance-regression.mjs",
+    "ci:performance": "npm run lint && npm run test && npm run test:images && npm run validate:json-ld && npm run build && npm run check:performance && npm run lighthouse:ci && node scripts/lighthouse-summary.mjs && node scripts/performance-regression.mjs",
     "health:ui": "node scripts/health-check-ui.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -49,7 +49,9 @@
     "security:prescan": "node scripts/security-prescan.mjs",
     "security:prescan:strict": "node scripts/security-prescan.mjs --strict",
     "prepublish:check": "node scripts/audit-rpc-grants.mjs && node scripts/lint-sensitive-payloads.mjs && node scripts/security-prescan.mjs",
-    "seo:submit-sitemaps": "node scripts/gsc-submit-sitemaps.mjs"
+    "seo:submit-sitemaps": "node scripts/gsc-submit-sitemaps.mjs",
+    "test:images": "vitest run src/test/hero-gallery-image-contract.test.ts src/test/motion-system.test.tsx src/test/overlay-motion-cls.test.tsx",
+    "test:images:e2e": "playwright test tests/e2e/hero-gallery-visual.spec.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.1",
