@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 
-import { avatarLarge, portfolioThumb, portfolioFull, coverImage, optimizedImageUrl, serviceImageThumb, originalUrl, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
+import { avatarLarge, portfolioThumb, portfolioFull, coverImage, optimizedImageUrl, serviceImageThumb, originalUrl, responsiveImageSrcSet, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';
 import { handleImageError } from '@/lib/imageResolver';
 import { MapPin, Phone, Globe, MessageCircle, Clock, ChevronRight, Crown, Copy, Instagram, Facebook, Youtube, Star, Send, X, Users, Briefcase, Image as ImageIcon, Shield, Award, CheckCircle2, Sparkles, ArrowRight, ThumbsUp, Zap, Eye, Share2, Play, Music, DollarSign, CalendarClock, FolderOpen, Building2, Wrench, Info, UserRound } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
@@ -1449,7 +1449,7 @@ const ProviderProfile = () => {
                             </div>
                           </>
                         ) : (
-                          <img src={url} alt={`${album.name} ${i + 1}`} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" onError={handleImageError} />
+                          <img src={url} srcSet={responsiveImageSrcSet(originalUrl(url), [300, 600, 900])} sizes="(max-width: 640px) 45vw, 300px" alt={`${album.name} ${i + 1}`} className="motion-img h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" decoding="async" onError={handleImageError} />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         <motion.div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" whileHover={{ scale: 1.1 }}>
@@ -1511,7 +1511,7 @@ const ProviderProfile = () => {
                   </div>
                 </>
               ) : (
-                <img src={url} alt={`Trabalho ${i + 1}`} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" onError={handleImageError} />
+                <img src={url} srcSet={responsiveImageSrcSet(originalUrl(url), [300, 600, 900])} sizes="(max-width: 640px) 45vw, 300px" alt={`Trabalho ${i + 1}`} className="motion-img h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110" loading="lazy" decoding="async" onError={handleImageError} />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <motion.div

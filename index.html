@@ -69,7 +69,16 @@
     <link rel="dns-prefetch" href="https://storage.googleapis.com" />
 
     <!-- LCP hero image — discoverable from initial HTML for fastest paint -->
-    <link rel="preload" as="image" href="/hero-cat-instalacoes.webp" type="image/webp" fetchpriority="high" />
+    <link
+      rel="preload"
+      as="image"
+      href="/hero-cat-instalacoes-1280.avif"
+      type="image/avif"
+      imagesrcset="/hero-cat-instalacoes-640.avif 640w, /hero-cat-instalacoes-1280.avif 1280w, /hero-cat-instalacoes-1920.avif 1920w"
+      imagesizes="100vw"
+      fetchpriority="high"
+    />
+
 
     <!-- Fonts: non-blocking with font-display:swap already in Google URL -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500&display=swap" />

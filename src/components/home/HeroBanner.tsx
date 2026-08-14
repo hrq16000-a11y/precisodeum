@@ -15,6 +15,18 @@ const SearchBar = lazy(() => importWithRetry(() => import('@/components/SearchBa
 
 type HeroPhraseInfo = { slug: string; label: string; prefix: 'need' | 'find' };
 
+const HERO_WIDTHS = [640, 1280, 1920] as const;
+
+/**
+ * Monta o srcSet responsivo das variantes de hero geradas por
+ * `scripts/generate-hero-variants.mjs` (`/hero-cat-<slug>-<width>.<ext>`).
+ */
+const heroSrcSet = (src: string, ext: 'avif' | 'webp'): string => {
+  const base = src.replace(/\.(webp|jpg|jpeg|png)$/i, '');
+  return HERO_WIDTHS.map((w) => `${base}-${w}.${ext} ${w}w`).join(', ');
+};
+
+
 const CriticalHeroSearch = ({
   onUpgrade,
   phraseRef,
@@ -142,17 +154,18 @@ const HeroBanner = () => {
       style={{ minHeight: 340 }}
     >
 
-      {/* Current background — dimensions explicit to prevent CLS.
-          Wrapped in <picture> to enable modern format negotiation.
-          AVIF source can be added later once variants are generated;
-          AVIF asset paths are intentionally omitted today to avoid 404s. */}
+      {/* Current background — dimensões explícitas evitam CLS.
+          <picture> negocia AVIF → WebP → JPG e usa srcSet 640/1280/1920
+          (variantes geradas por scripts/generate-hero-variants.mjs). */}
       <picture className="absolute inset-0 h-full w-full">
-        <source srcSet={displayedImage} type="image/webp" />
+        <source srcSet={heroSrcSet(displayedImage, 'avif')} sizes="100vw" type="image/avif" />
+        <source srcSet={heroSrcSet(displayedImage, 'webp')} sizes="100vw" type="image/webp" />
         <img
           src={displayedImage.replace(/\.webp$/i, '.jpg')}
           alt="Profissionais de serviços"
           width={1920}
           height={768}
+          sizes="100vw"
           fetchPriority="high"
           loading="eager"
           decoding="async"
@@ -166,18 +179,24 @@ const HeroBanner = () => {
 
 
       {nextImage && (
-        <img
-          src={nextImage}
-          alt=""
-          aria-hidden="true"
-          width={1920}
-          height={768}
-          loading="eager"
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-center animate-fade-in"
-          style={{ animationDuration: '800ms', width: '100%', height: '100%' }}
-        />
+        <picture className="absolute inset-0 h-full w-full">
+          <source srcSet={heroSrcSet(nextImage, 'avif')} sizes="100vw" type="image/avif" />
+          <source srcSet={heroSrcSet(nextImage, 'webp')} sizes="100vw" type="image/webp" />
+          <img
+            src={nextImage.replace(/\.webp$/i, '.jpg')}
+            alt=""
+            aria-hidden="true"
+            width={1920}
+            height={768}
+            sizes="100vw"
+            loading="eager"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-center animate-fade-in"
+            style={{ animationDuration: '800ms', width: '100%', height: '100%' }}
+          />
+        </picture>
       )}
+
 
       <div
         className="absolute inset-0"
