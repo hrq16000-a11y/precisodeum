@@ -94,11 +94,8 @@ const ContactConversionReport = ({ providerId }: Props) => {
         skeleton={<SkeletonTable rows={4} />}
         onRetry={() => void refetch()}
         empty={(data?.length ?? 0) === 0}
-        emptyState={
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            Ainda não há cliques de contato registrados nesta janela.
-          </p>
-        }
+        emptyTitle="Sem cliques de contato"
+        emptyDescription="Ainda não há cliques de contato registrados nesta janela."
       >
         <div className="flex flex-wrap gap-2 text-xs">
           <Badge variant="outline">WhatsApp: {totals.whatsapp}</Badge>
