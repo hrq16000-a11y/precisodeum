@@ -4,6 +4,7 @@ import LeadsChart from '@/components/dashboard/LeadsChart';
 import ConversionInsights from '@/components/dashboard/ConversionInsights';
 import LeadInsights from '@/components/dashboard/LeadInsights';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import ContactConversionReport from '@/components/dashboard/ContactConversionReport';
 
 interface ProviderAnalyticsGridProps {
   providerId: string;
