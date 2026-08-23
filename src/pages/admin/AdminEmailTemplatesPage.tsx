@@ -44,7 +44,11 @@ const EVENT_TONE: Record<string, 'default' | 'secondary' | 'destructive' | 'outl
 };
 
 const AdminEmailTemplatesPage = () => {
-  useSeoHead({ title: 'Templates de e-mail · Admin', noindex: true });
+  useSeoHead({
+    title: 'Templates de e-mail · Admin',
+    description: 'Edição e preview dos templates de e-mail transacional.',
+    noindex: true,
+  });
 
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [events, setEvents] = useState<EmailEvent[]>([]);
