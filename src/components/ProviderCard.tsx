@@ -475,7 +475,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" className={`h-10 px-3 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:text-sm min-w-[104px] max-w-[128px] shrink-0 whitespace-nowrap`} asChild>
+          <Button variant="outline" size="sm" className={`h-10 px-3 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:text-sm whitespace-nowrap ${contactUnavailable ? 'min-w-0 flex-1 basis-0' : 'min-w-[104px] max-w-[128px] shrink-0'}`} asChild>
             <Link
               to={`/profissional/${provider.slug}`}
               onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource)}
