@@ -45,6 +45,8 @@ const FloatingHelpButton = reactLazy(() => importWithRetry(() => import("./compo
 // Minimal page transition — no heavy loader, pages render instantly
 const CurtainReveal = reactLazy(() => importWithRetry(() => import("./components/CurtainReveal")));
 const GlobalLinkPrefetcher = reactLazy(() => importWithRetry(() => import("./components/GlobalLinkPrefetcher")));
+const AnalyticsLoader = reactLazy(() => importWithRetry(() => import("./components/AnalyticsLoader")));
+
 const RouteSkeleton = reactLazy(() => importWithRetry(() => import("./components/motion/RouteSkeleton")));
 
 /** Fallback de rota: barra de progresso + skeleton atrasado (sem flash). */
@@ -94,7 +96,9 @@ const DeferredShell = () => {
       <CookieConsent />
       <PwaInstallBanner />
       <GlobalLinkPrefetcher />
+      <AnalyticsLoader />
       <WebVitalsOverlay />
+
 
     </Suspense>
   );

@@ -22,6 +22,8 @@ const AdminSeoGscPage = lazy(() => import('./AdminSeoGscPage'));
 const AdminGscSubmissionsPage = lazy(() => import('./AdminGscSubmissionsPage'));
 const AdminSeoMetricsPage = lazy(() => import('./AdminSeoMetricsPage'));
 const AdminWebVitalsPage = lazy(() => import('./AdminWebVitalsPage'));
+const AdminAnalyticsSettingsPage = lazy(() => import('./AdminAnalyticsSettingsPage'));
+
 
 const TABS = [
   { value: 'saude', label: 'Saúde SEO', icon: Activity, Component: AdminSeoHealthPage },
@@ -33,6 +35,8 @@ const TABS = [
   { value: 'metricas', label: 'Métricas GSC (7d)', icon: BarChart2, Component: AdminSeoMetricsPage },
   { value: 'web-vitals', label: 'Core Web Vitals', icon: Activity, Component: AdminWebVitalsPage },
   { value: 'meta-tracking', label: 'Meta Tracking', icon: BarChart2, Component: AdminMetaTrackingQualityPage },
+  { value: 'analytics', label: 'Analytics (GA4/GTM)', icon: BarChart2, Component: AdminAnalyticsSettingsPage },
+
 
   { value: 'metatags', label: 'Meta Tags', icon: Tags, Component: AdminMetaTagsPage },
   { value: 'broken-links', label: 'Links Quebrados', icon: LinkIcon, Component: AdminBrokenLinksPage },
