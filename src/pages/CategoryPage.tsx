@@ -164,17 +164,25 @@ const CategoryPage = () => {
   }, [allProviders, minScore]);
 
   const cityForSeo = geoCity ? geoCity.trim() : '';
-  const dynamicTitle = category
+  // Página de oportunidade: categoria existente mas sem nenhum prestador.
+  const isOpportunityPage = !!category && allProviders.length === 0;
+  const opportunitySeo = useMemo(
+    () => (category && isOpportunityPage
+      ? buildOpportunitySeo(category.name, cityForSeo || null, geoState)
+      : null),
+    [category, isOpportunityPage, cityForSeo, geoState],
+  );
+  const dynamicTitle = opportunitySeo?.title ?? (category
     ? (cityForSeo
         ? `${category.name} em ${cityForSeo} - Profissionais Verificados | Preciso de Um`
         : `${category.name} no Brasil - Profissionais Verificados | Preciso de Um`)
-    : 'Categoria';
+    : 'Categoria');
   const seoCount = seoEligibleProviders.length || allProviders.length;
-  const dynamicDescription = category
+  const dynamicDescription = opportunitySeo?.description ?? (category
     ? (cityForSeo
         ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${seoCount} prestadores com cidade validada e perfil completo. Contato direto pelo WhatsApp.`
         : `Encontre os melhores profissionais de ${category.name} no Brasil. ${seoCount} prestadores com perfil completo e cidade validada.`)
-    : 'Encontre profissionais por categoria.';
+    : 'Encontre profissionais por categoria.');
 
   const seoCanonical = slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined;
 
