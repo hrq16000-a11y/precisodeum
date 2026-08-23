@@ -63,6 +63,7 @@ const CategoryPage = () => {
   const [page, setPage] = useState(1);
   
   const [showOutOfState, setShowOutOfState] = useState(false);
+  const [sortMode, setSortMode] = useState<'proximity' | 'rating'>('proximity');
 
   // Request GPS proactively on mount
   useEffect(() => {
