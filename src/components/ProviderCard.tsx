@@ -18,6 +18,8 @@ import { responsiveImageSrcSet } from '@/lib/imageOptimizer';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { fetchProviderContact, getCachedProviderContact } from '@/lib/providerContact';
+import { toast } from '@/hooks/use-toast';
+
 
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
@@ -232,6 +234,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     () => provider.whatsapp || getCachedProviderContact(provider.id)?.whatsapp || '',
   );
   const [revealing, setRevealing] = useState(false);
+  // Quando a RPC confirma que não há telefone/WhatsApp cadastrado, o CTA some
+  // (em vez de virar um botão morto) e "Ver Perfil" ocupa a linha inteira.
+  const [contactUnavailable, setContactUnavailable] = useState(false);
 
   const handleWhatsappClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (revealedWhatsapp) {
@@ -244,7 +249,14 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     const contact = await fetchProviderContact(provider.id);
     const number = contact.whatsapp || contact.phone;
     setRevealing(false);
-    if (!number) return;
+    if (!number) {
+      setContactUnavailable(true);
+      toast({
+        title: 'WhatsApp indisponível',
+        description: 'Este profissional ainda não cadastrou um número. Veja o perfil para outras formas de contato.',
+      });
+      return;
+    }
     setRevealedWhatsapp(number);
     trackWhatsAppClick(provider.id, provider.slug, trackingSource);
     window.open(
@@ -253,6 +265,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       'noopener,noreferrer',
     );
   };
+
 
 
 
@@ -437,7 +450,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
         <div className="flex-1" />
 
         <div className="mt-3 flex w-full min-w-0 flex-row items-stretch gap-2 overflow-hidden sm:mt-4">
-          {(
+          {!contactUnavailable && (
             <Button
               size="sm"
               aria-busy={revealing}
@@ -462,7 +475,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" className={`h-10 px-3 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:text-sm min-w-[104px] max-w-[128px] shrink-0 whitespace-nowrap`} asChild>
+          <Button variant="outline" size="sm" className={`h-10 px-3 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:text-sm whitespace-nowrap ${contactUnavailable ? 'min-w-0 flex-1 basis-0' : 'min-w-[104px] max-w-[128px] shrink-0'}`} asChild>
             <Link
               to={`/profissional/${provider.slug}`}
               onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource)}
