@@ -22,6 +22,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { AsyncBoundary, SkeletonCardGrid } from '@/components/motion';
+import GscThresholdAlertsCard from '@/components/admin/GscThresholdAlertsCard';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import {
   buildHistory, buildRouteAlerts, buildRouteDrilldown, computeSeoHealthScore, crossReferenceSeo,
@@ -275,6 +276,13 @@ export default function AdminSeoHealthPage() {
               </span>
             )}
           </Card>
+
+          <GscThresholdAlertsCard
+            sample={{
+              indexedRatio: coverage?.indexedRatio ?? null,
+              sitemapErrors: coverage?.errors ?? null,
+            }}
+          />
 
           {/* Alertas cruzados */}
           <section className="space-y-2">

@@ -1204,6 +1204,42 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          html: string
+          id: string
+          key: string
+          name: string
+          subject: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          html: string
+          id?: string
+          key: string
+          name: string
+          subject: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          html?: string
+          id?: string
+          key?: string
+          name?: string
+          subject?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       engagement_log: {
         Row: {
           action_key: string
@@ -10331,6 +10367,18 @@ export type Database = {
           id: string
           is_seed: boolean
           profile_type: string
+        }[]
+      }
+      get_contact_conversion_report: {
+        Args: { _days?: number; _provider_id?: string }
+        Returns: {
+          category_slug: string
+          page_path: string
+          phone_clicks: number
+          profile_clicks: number
+          provider_kind: string
+          total_clicks: number
+          whatsapp_clicks: number
         }[]
       }
       get_contact_impact_24h: {

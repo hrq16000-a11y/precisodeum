@@ -56,6 +56,7 @@ const AdminSponsorBillingPage = lazy(() => import("@/pages/AdminSponsorBillingPa
 const AdminProviderConversionPage = lazy(() => import("@/pages/AdminProviderConversionPage"));
 const AdminPublicFunnelHealthPage = lazy(() => import("@/pages/admin/AdminPublicFunnelHealthPage"));
 const AdminTrackingHealthPage = lazy(() => import("@/pages/admin/AdminTrackingHealthPage"));
+const AdminEmailTemplatesPage = lazy(() => import("@/pages/admin/AdminEmailTemplatesPage"));
 const AdminSeoPage = lazy(() => import("@/pages/admin/AdminSeoPage"));
 const AdminOnboardingHubPage = lazy(() => import("@/pages/admin/AdminOnboardingHubPage"));
 const AdminSponsorApprovalsPage = lazy(() => import("@/pages/AdminSponsorApprovalsPage"));
@@ -170,6 +171,7 @@ export const adminRoutes = (
     <Route path="/admin/seo-runtime" element={<Navigate to="/admin/seo/runtime" replace />} />
     <Route path="/admin/funil-health" element={guarded("AdminPublicFunnelHealthPage", <AdminPublicFunnelHealthPage />)} />
     <Route path="/admin/tracking-health" element={guarded("AdminTrackingHealthPage", <AdminTrackingHealthPage />)} />
+    <Route path="/admin/email-templates" element={guarded("AdminEmailTemplatesPage", <AdminEmailTemplatesPage />)} />
     <Route path="/admin/patrocinadores/aprovacoes" element={guarded("AdminSponsorApprovalsPage", <AdminSponsorApprovalsPage />)} />
     <Route path="/admin/servicos-populares" element={guarded("AdminPopularServicesPage", <AdminPopularServicesPage />)} />
     <Route path="/admin/faq" element={guarded("AdminFaqPage", <AdminFaqPage />)} />

@@ -4,6 +4,7 @@ import LeadsChart from '@/components/dashboard/LeadsChart';
 import ConversionInsights from '@/components/dashboard/ConversionInsights';
 import LeadInsights from '@/components/dashboard/LeadInsights';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import ContactConversionReport from '@/components/dashboard/ContactConversionReport';
 
 interface ProviderAnalyticsGridProps {
   providerId: string;
@@ -33,6 +34,12 @@ const ProviderAnalyticsGrid = ({
 
     <div className="lg:col-span-2">
       <LeadInsights providerId={providerId} />
+    </div>
+
+    <div className="lg:col-span-2">
+      <GlassCard variant="default" hoverEffect={false} delay={0.55}>
+        <ContactConversionReport providerId={providerId} />
+      </GlassCard>
     </div>
 
     {leadsCount > 0 && (
