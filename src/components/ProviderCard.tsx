@@ -237,19 +237,41 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
   // Quando a RPC confirma que não há telefone/WhatsApp cadastrado, o CTA some
   // (em vez de virar um botão morto) e "Ver Perfil" ocupa a linha inteira.
   const [contactUnavailable, setContactUnavailable] = useState(false);
+  // Fallback: profissional sem WhatsApp mas com telefone fixo/celular → botão "Ligar".
+  const [revealedPhone, setRevealedPhone] = useState<string>('');
+
+  const providerKind =
+    (provider.accountType || '').toString().toLowerCase() === 'company' ? 'company' : 'individual';
 
   const handleWhatsappClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (revealedWhatsapp) {
-      trackWhatsAppClick(provider.id, provider.slug, trackingSource);
+      trackWhatsAppClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind });
       return;
     }
     e.preventDefault();
     if (revealing) return;
     setRevealing(true);
     const contact = await fetchProviderContact(provider.id);
-    const number = contact.whatsapp || contact.phone;
     setRevealing(false);
+
+    if (contact.error) {
+      toast({
+        title: 'Não foi possível carregar o contato',
+        description: 'Houve uma falha ao buscar o WhatsApp deste profissional. Tente novamente em instantes.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const number = contact.whatsapp;
     if (!number) {
+      if (contact.phone) {
+        // Fallback por ligação: revela o telefone e já inicia a chamada.
+        setRevealedPhone(contact.phone);
+        trackPhoneClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind });
+        window.location.href = `tel:${contact.phone.replace(/[^\d+]/g, '')}`;
+        return;
+      }
       setContactUnavailable(true);
       toast({
         title: 'WhatsApp indisponível',
@@ -258,13 +280,14 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       return;
     }
     setRevealedWhatsapp(number);
-    trackWhatsAppClick(provider.id, provider.slug, trackingSource);
+    trackWhatsAppClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind });
     window.open(
       whatsappLink(number, buildSmartMessage(displayName, provider.category, geoCity, geoState)),
       '_blank',
       'noopener,noreferrer',
     );
   };
+
 
 
 
