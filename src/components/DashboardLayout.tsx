@@ -136,6 +136,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         >
           <Logo
             linkTo=""
+            context="dashboard"
             priority
             className="drop-shadow-sm"
           />
