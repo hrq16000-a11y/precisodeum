@@ -4,12 +4,14 @@ import { DEFAULT_LOGO_URL, DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL, SITE_BASE_URL as S
 import { buildCanonicalUrl } from '@/lib/canonicalUrl';
 import { normalizeSocialImageUrl } from '@/lib/imageUrlNormalizer';
 import { seoFallbackFromPath } from '@/lib/seoUrlFallback';
+import { resolveSocialImage, seoDebugLog, toSocialImageCandidates } from '@/lib/socialImageFallback';
 
 interface SeoHeadProps {
   title: string;
   description: string;
   canonical?: string;
-  ogImage?: string;
+  /** URL única ou lista de candidatos — a primeira válida é usada. */
+  ogImage?: string | string[];
   noindex?: boolean;
   ogType?: 'website' | 'article' | 'profile';
   articlePublishedTime?: string;
