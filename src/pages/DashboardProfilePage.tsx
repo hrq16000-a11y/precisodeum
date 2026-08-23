@@ -565,9 +565,13 @@ const DashboardProfilePage = () => {
         description: form.description || provider.description,
         photo_url: avatarUrl || (provider as any).photo_url,
       } : undefined,
+      // Sem estas contagens o checklist ficava travado (serviços/portfólio
+      // nunca marcavam como concluídos nesta tela).
+      servicesCount: completenessCounts.services,
+      portfolioAlbumsCount: completenessCounts.albums,
     });
     return checklistStats(items).pct;
-  }, [profile, provider, form, avatarUrl]);
+  }, [profile, provider, form, avatarUrl, completenessCounts]);
 
   const displayName = form.full_name || 'Usuário';
 
