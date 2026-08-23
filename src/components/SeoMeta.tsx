@@ -25,6 +25,8 @@ export interface SeoMetaProps {
   ogImage?: string;
   /** Emite robots="noindex, nofollow" para páginas inválidas/vazias. */
   noindex?: boolean;
+  /** Keywords locais (categoria + cidade). Opcional. */
+  keywords?: string;
 }
 
 const SUFFIX = 'Preciso de um';
