@@ -91,6 +91,7 @@ import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
 import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
 import { resolveWhatsappVariant, getWhatsappCtaLabel, ctaSourceTag } from '@/lib/ctaVariants';
+import { createVisibilityFrameScheduler } from '@/lib/visibilityFrameScheduler';
 
 /** Fire-and-forget contact click tracker */
 const getLeadSource = () => {
