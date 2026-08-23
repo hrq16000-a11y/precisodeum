@@ -232,6 +232,9 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     () => provider.whatsapp || getCachedProviderContact(provider.id)?.whatsapp || '',
   );
   const [revealing, setRevealing] = useState(false);
+  // Quando a RPC confirma que não há telefone/WhatsApp cadastrado, o CTA some
+  // (em vez de virar um botão morto) e "Ver Perfil" ocupa a linha inteira.
+  const [contactUnavailable, setContactUnavailable] = useState(false);
 
   const handleWhatsappClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (revealedWhatsapp) {
@@ -244,7 +247,14 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     const contact = await fetchProviderContact(provider.id);
     const number = contact.whatsapp || contact.phone;
     setRevealing(false);
-    if (!number) return;
+    if (!number) {
+      setContactUnavailable(true);
+      toast({
+        title: 'WhatsApp indisponível',
+        description: 'Este profissional ainda não cadastrou um número. Veja o perfil para outras formas de contato.',
+      });
+      return;
+    }
     setRevealedWhatsapp(number);
     trackWhatsAppClick(provider.id, provider.slug, trackingSource);
     window.open(
@@ -253,6 +263,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       'noopener,noreferrer',
     );
   };
+
 
 
 
