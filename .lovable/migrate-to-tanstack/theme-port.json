@@ -1,0 +1,21 @@
+{
+  "customizations": [
+    { "token": ":root/.dark HSL palette (background/foreground/card/popover/primary/secondary/muted/accent/destructive/border/input/ring/radius)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--sidebar-* (background/foreground/primary/accent/border/ring)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--success/--warning/--info (+foreground)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--hero-gradient / --card-shadow / --card-shadow-hover / --glow-orange", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--bet-* full palette (amber/orange/green/error/disabled + hover/active/soft/border/fg + gradient/glow/focus-ring)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "bg-hero / shadow-card / shadow-card-hover / shimmer / glass / glass-strong / scrollbar-hide utilities", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "icon system (.icon-base/.icon-state-*/.icon-interactive/.icon-cta/.icon-bounce + icon-spin/icon-nudge keyframes)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "hero animations (hero-img-cinematic, hero-prefix/service/fade in-out, animate-float)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "lazy image reveal (img[loading=lazy] + .img-revealed), .cv-auto, touch-action, reduced-motion blocks", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "motion system (--motion-* tokens, motion-enter/fade/scale/exit/stagger/indeterminate, skeleton-shimmer, motion-img, motion-overlay/surface/dialog/interactive, route-motion-enter, sonner rules)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "base layer rules (border-border + overflow-wrap, body overflow-x clip, mobile bottom-nav padding, font-display headings)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "fontFamily display/sans (Plus Jakarta Sans / Inter)", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "colors success/warning/info/sidebar/bet.* mappings", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "breakpoint xs 480px", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "container center+padding 1rem+2xl cap 1280px", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "zIndex scale (base/dropdown/sticky/bottomNav/overlay/modal/popover/tooltip/toast/max)", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "keyframes+animations (accordion-down/up, fade-in, fade-in-scale, slide-in-right/left, slide-up, count-up, bounce-subtle, spin-slow, gradient-shift, shimmer, wizard-shimmer, online-pulse, online-breath, pulse-soft, pulse-soft-slow, wiggle-rotate, glow-pulse-accent, ring-pulse-accent, float-y)", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css" }
+  ]
+}

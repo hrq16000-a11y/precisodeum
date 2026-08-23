@@ -11,23 +11,31 @@ const isTransientNetworkError = (error: unknown) => {
 };
 
 /**
- * QueryClient global — extraído para evitar ciclos de import entre
- * `App.tsx` e `useAuth.tsx` (signOut precisa chamar `queryClient.clear()`
+ * Fábrica com os defaultOptions do projeto — usada pelo router TanStack Start
+ * para criar um QueryClient POR REQUEST no servidor (evita vazamento de cache
+ * entre usuários durante SSR).
+ */
+export const createQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 30,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: true,
+        refetchOnMount: false,
+        retry: (failureCount, error) => {
+          if (isTransientNetworkError(error)) return failureCount < 3;
+          return failureCount < 1;
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+      },
+    },
+  });
+
+/**
+ * QueryClient global (browser) — extraído para evitar ciclos de import entre
+ * o router e `useAuth.tsx` (signOut precisa chamar `queryClient.clear()`
  * para impedir vazamento de PII após logout em dispositivos compartilhados).
  */
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 30,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
-      refetchOnMount: false,
-      retry: (failureCount, error) => {
-        if (isTransientNetworkError(error)) return failureCount < 3;
-        return failureCount < 1;
-      },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    },
-  },
-});
+export const queryClient = createQueryClient();
