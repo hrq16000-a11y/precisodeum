@@ -550,6 +550,21 @@ const DashboardProfilePage = () => {
     })();
   }, [user, profile, avatarUrl, refetchProfile]);
 
+  // Contagens reais de serviços e álbuns de portfólio — mesma base usada pelo
+  // Dashboard. Sem elas o percentual travava (ex.: 88%) mesmo com tudo pronto.
+  const { data: completenessCounts = { services: 0, albums: 0 } } = useQuery({
+    queryKey: ['profile-completeness-counts', provider?.id],
+    enabled: !!provider?.id,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const [services, albums] = await Promise.all([
+        supabase.from('services').select('id', { count: 'exact', head: true }).eq('provider_id', provider!.id),
+        supabase.from('portfolio_albums').select('id', { count: 'exact', head: true }).eq('provider_id', provider!.id),
+      ]);
+      return { services: services.count ?? 0, albums: albums.count ?? 0 };
+    },
+  });
+
   // Profile completeness — usa a ÚNICA fonte da verdade (mesma engine do
   // Dashboard/ProfileCompleteness/FirstLeadChecklist/OnboardingGate).
   // Regra oficial: contato = whatsapp OU phone (NÃO ambos).
