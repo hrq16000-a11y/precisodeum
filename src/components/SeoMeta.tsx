@@ -55,6 +55,7 @@ export function SeoMeta({ title, description, canonical, ogType = 'website', ogI
     <Helmet prioritizeSeoTags>
       <title>{fullTitle}</title>
       <meta name="description" content={desc} />
+      {keywords ? <meta name="keywords" content={keywords} /> : null}
       <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
       <link rel="canonical" href={canonicalUrl} />
       <meta property="og:title" content={fullTitle} />
