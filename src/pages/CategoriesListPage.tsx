@@ -82,12 +82,12 @@ const CategoriesListPage = () => {
       <section className="bg-hero py-10">
         <div className="container text-center">
           <h1 className="font-display text-2xl font-bold text-primary-foreground md:text-4xl">
-            Categorias de Serviços
+            Categorias de Serviços{cityLabel ? ` em ${cityLabel}` : ''}
           </h1>
           <p className="mx-auto mt-2 max-w-lg text-sm text-primary-foreground/70">
             Escolha a categoria do serviço que você precisa
           </p>
-          <div className="mx-auto mt-4 max-w-md">
+          <div className="mx-auto mt-4 grid max-w-2xl gap-2 sm:grid-cols-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -97,7 +97,37 @@ const CategoriesListPage = () => {
                 className="pl-9 bg-card"
               />
             </div>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Filtrar por cidade..."
+                value={cityFilter}
+                onChange={(e) => { setCityFilter(e.target.value); setVisibleCount(INITIAL); }}
+                className="pl-9 bg-card"
+              />
+            </div>
           </div>
+          {geoCity && !cityFilter && (
+            <button
+              type="button"
+              onClick={() => setCityFilter(geoCity)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1 text-xs font-semibold text-primary-foreground"
+            >
+              <MapPin className="h-3 w-3" /> Ver só {geoCity}
+            </button>
+          )}
+          {cityFilter && (
+            <div className="mt-2 flex items-center justify-center gap-2 text-xs text-primary-foreground/80">
+              {loadingRegion ? <span>Carregando {cityFilter}...</span> : <span>Exibindo resultados de {cityFilter}</span>}
+              <button
+                type="button"
+                onClick={() => setCityFilter('')}
+                className="rounded-full bg-primary-foreground/10 px-2 py-0.5 font-semibold text-primary-foreground"
+              >
+                limpar
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
