@@ -336,7 +336,7 @@ const CategoryPage = () => {
         title={dynamicTitle}
         description={dynamicDescription}
         canonical={seoCanonical}
-        keywords={buildCategoryKeywords(category.name, cityForSeo || null, geoState)}
+        keywords={opportunitySeo?.keywords ?? buildCategoryKeywords(category.name, cityForSeo || null, geoState)}
         ogImage={categorySocialImage || undefined}
       />
       <Header />
