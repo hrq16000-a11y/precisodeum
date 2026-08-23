@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, lazy, Suspense, useCallback, forwardRef } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { Link, useNavigate, useLocation } from '@/lib/router-compat';
+import { useHydrated } from '@tanstack/react-router';
 import PrefetchLink from '@/components/PrefetchLink';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
