@@ -276,6 +276,13 @@ export default function AdminSeoHealthPage() {
             )}
           </Card>
 
+          <GscThresholdAlertsCard
+            sample={{
+              indexedRatio: coverage?.indexedRatio ?? null,
+              sitemapErrors: coverage?.errors ?? null,
+            }}
+          />
+
           {/* Alertas cruzados */}
           <section className="space-y-2">
             <h2 className="text-lg font-semibold">Alertas cruzados (local × Search Console)</h2>
