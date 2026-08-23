@@ -18,6 +18,8 @@ import { responsiveImageSrcSet } from '@/lib/imageOptimizer';
 import { useCardImpression } from '@/hooks/useCardImpression';
 import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
 import { fetchProviderContact, getCachedProviderContact } from '@/lib/providerContact';
+import { toast } from '@/hooks/use-toast';
+
 
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { useIsProviderOnline } from '@/hooks/useOnlinePresence';
