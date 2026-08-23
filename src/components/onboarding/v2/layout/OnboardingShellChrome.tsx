@@ -28,6 +28,8 @@ interface OnboardingShellChromeProps {
   autoSaveSignal: unknown;
   /** Chave usada para re-disparar a transição entre fases. */
   phaseKey: string;
+  /** Ação opcional "Voltar ao começo" do wizard. */
+  onRestart?: () => void;
   /** Conteúdo da fase atual já resolvido pelo phaseComponentMap. */
   children: ReactNode;
 }
@@ -37,12 +39,13 @@ export const OnboardingShellChrome = ({
   showAutoSaveBadge,
   autoSaveSignal,
   phaseKey,
+  onRestart,
   children,
 }: OnboardingShellChromeProps) => {
   return (
     <>
       {/* Aviso "rascunho restaurado" — diferencia local x remoto. */}
-      <DraftRestoredBanner draftRestored={draftRestored} />
+      <DraftRestoredBanner draftRestored={draftRestored} phase={phaseKey} onRestart={onRestart} />
 
       <BetCardShell animated={false}>
         {showAutoSaveBadge && (
