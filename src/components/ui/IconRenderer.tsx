@@ -26,7 +26,7 @@ import { resolveIcon } from '@/lib/iconLibrary';
 
 const isLikelyEmoji = (s: string) => /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u.test(s);
 
-export interface IconRendererProps extends Omit<LucideProps, 'ref' | 'color' | 'size'> {
+export interface IconRendererProps extends Omit<LucideProps, 'ref' | 'color' | 'size' | 'name'> {
   /** Icon name string from the database (e.g. "Sparkles", "leaf", "circle-dot") */
   name?: string | null;
   /** Pixel size. Defaults to 18. */
