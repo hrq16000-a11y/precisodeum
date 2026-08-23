@@ -37,4 +37,4 @@ export const PROFILE_FULL_COLUMNS =
  * Leitura apenas via RPC `get_agency_private` (dono ou admin).
  */
 export const AGENCY_SAFE_COLUMNS =
-  'id, user_id, slug, name, description, city, state, whatsapp, website, logo_url, cover_image_url, status, created_at, updated_at, user_ref' as const;
+  'id, user_id, slug, name, description, city, state, website, logo_url, cover_image_url, status, created_at, updated_at, user_ref' as const;
