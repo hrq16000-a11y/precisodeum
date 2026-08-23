@@ -56,6 +56,7 @@ const AdminSponsorBillingPage = lazy(() => import("@/pages/AdminSponsorBillingPa
 const AdminProviderConversionPage = lazy(() => import("@/pages/AdminProviderConversionPage"));
 const AdminPublicFunnelHealthPage = lazy(() => import("@/pages/admin/AdminPublicFunnelHealthPage"));
 const AdminTrackingHealthPage = lazy(() => import("@/pages/admin/AdminTrackingHealthPage"));
+const AdminEmailTemplatesPage = lazy(() => import("@/pages/admin/AdminEmailTemplatesPage"));
 const AdminSeoPage = lazy(() => import("@/pages/admin/AdminSeoPage"));
 const AdminOnboardingHubPage = lazy(() => import("@/pages/admin/AdminOnboardingHubPage"));
 const AdminSponsorApprovalsPage = lazy(() => import("@/pages/AdminSponsorApprovalsPage"));
