@@ -68,7 +68,9 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     setMeta('description', safeDescription);
     setMeta('robots', noindex ? 'noindex, nofollow' : 'index, follow');
 
-    const resolvedOgImage = normalizeSocialImageUrl(ogImage || socialImageUrl(ogImage), 'og:image');
+    const ogCandidates = toSocialImageCandidates(ogImage);
+    // Sempre há um valor síncrono (nunca deixamos og:image vazio para o crawler).
+    const resolvedOgImage = ogCandidates[0] || normalizeSocialImageUrl(socialImageUrl(), 'og:image') || DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL;
     const resolvedLogo = toAbsoluteSiteUrl(DEFAULT_LOGO_URL);
 
     const setSocialImageMeta = (content: string) => {
