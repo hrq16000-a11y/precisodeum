@@ -450,7 +450,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
         <div className="flex-1" />
 
         <div className="mt-3 flex w-full min-w-0 flex-row items-stretch gap-2 overflow-hidden sm:mt-4">
-          {(
+          {!contactUnavailable && (
             <Button
               size="sm"
               aria-busy={revealing}
