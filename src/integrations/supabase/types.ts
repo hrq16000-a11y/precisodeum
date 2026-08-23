@@ -580,6 +580,96 @@ export type Database = {
           },
         ]
       }
+      category_opportunities: {
+        Row: {
+          banner_url: string | null
+          body_text: string | null
+          category_slug: string
+          created_at: string
+          cta_pro_label: string | null
+          cta_sponsor_label: string | null
+          enabled: boolean
+          headline: string | null
+          id: string
+          sponsor_id: string | null
+          subheadline: string | null
+          updated_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          body_text?: string | null
+          category_slug: string
+          created_at?: string
+          cta_pro_label?: string | null
+          cta_sponsor_label?: string | null
+          enabled?: boolean
+          headline?: string | null
+          id?: string
+          sponsor_id?: string | null
+          subheadline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          body_text?: string | null
+          category_slug?: string
+          created_at?: string
+          cta_pro_label?: string | null
+          cta_sponsor_label?: string | null
+          enabled?: boolean
+          headline?: string | null
+          id?: string
+          sponsor_id?: string | null
+          subheadline?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      category_opportunity_leads: {
+        Row: {
+          category_name: string | null
+          category_slug: string
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          kind: string
+          message: string | null
+          name: string
+          phone: string | null
+          source_path: string | null
+          status: string
+        }
+        Insert: {
+          category_name?: string | null
+          category_slug: string
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          kind?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+          source_path?: string | null
+          status?: string
+        }
+        Update: {
+          category_name?: string | null
+          category_slug?: string
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          kind?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+          source_path?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           blocked: boolean
