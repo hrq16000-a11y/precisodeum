@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Save, Sparkles, Users } from 'lucide-react';
+import { CheckCircle2, Download, Loader2, Save, Sparkles, Users } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,6 +129,49 @@ const AdminCategoryOpportunitiesPage = () => {
     },
     onError: () => toast.error('Não foi possível salvar. Verifique suas permissões.'),
   });
+
+  // ---- Leads: filtros, exportação e status ------------------------------
+  const [leadSearch, setLeadSearch] = useState('');
+  const [leadKind, setLeadKind] = useState('all');
+  const [leadStatus, setLeadStatus] = useState('all');
+
+  const filteredLeads = useMemo(() => {
+    const q = leadSearch.trim().toLowerCase();
+    return (leads as any[]).filter((l) => {
+      if (leadKind !== 'all' && l.kind !== leadKind) return false;
+      if (leadStatus !== 'all' && (l.status || 'new') !== leadStatus) return false;
+      if (!q) return true;
+      return [l.name, l.phone, l.email, l.city, l.category_name, l.category_slug]
+        .some((v) => String(v || '').toLowerCase().includes(q));
+    });
+  }, [leads, leadSearch, leadKind, leadStatus]);
+
+  const markContacted = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('category_opportunity_leads')
+        .update({ status: 'contacted', contacted_at: new Date().toISOString() } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Lead marcado como contatado');
+      void queryClient.invalidateQueries({ queryKey: ['admin-category-opportunity-leads'] });
+    },
+    onError: () => toast.error('Não foi possível atualizar o lead.'),
+  });
+
+  const exportLeadsCsv = () => {
+    const cols = ['created_at', 'category_slug', 'category_name', 'kind', 'name', 'phone', 'email', 'city', 'message', 'status'];
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = [cols.join(','), ...filteredLeads.map((l: any) => cols.map((c) => esc(l[c])).join(','))].join('\n');
+    const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leads-oportunidade-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <AdminLayout>
