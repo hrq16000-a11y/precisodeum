@@ -2,7 +2,12 @@ User-agent: *
 Allow: /
 Allow: /especialidades
 Allow: /categoria
+Allow: /categorias
+Allow: /cidade
+Allow: /cidades
+Allow: /profissional
 Allow: /como-funciona
+
 
 Disallow: /admin/
 Disallow: /login
