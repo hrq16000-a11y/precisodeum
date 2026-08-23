@@ -611,12 +611,29 @@ const CategoryPage = () => {
         )}
 
         {totalDisplay === 0 && outOfStateProviders.length === 0 && (
-          <CategoryOpportunityCTA
-            categoryName={category.name}
-            categorySlug={slug}
-            icon={category.icon}
-            city={geoCity}
-          />
+          <>
+            <CategoryOpportunityCTA
+              categoryName={category.name}
+              categorySlug={slug}
+              icon={category.icon}
+              city={geoCity}
+            />
+
+            {opportunitySeo && (
+              <section className="mx-auto my-8 max-w-3xl rounded-3xl border border-border bg-card p-5 md:p-8">
+                <h2 className="font-display text-lg font-bold text-foreground md:text-xl">
+                  {opportunitySeo.copy.heading}
+                </h2>
+                <div className="mt-3 space-y-3">
+                  {opportunitySeo.copy.paragraphs.map((p) => (
+                    <p key={p.slice(0, 40)} className="text-sm leading-relaxed text-muted-foreground">
+                      {p}
+                    </p>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
 
         <PaginationControls currentPage={page} totalItems={totalDisplay} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
