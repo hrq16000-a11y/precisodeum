@@ -440,6 +440,30 @@ const CategoryPage = () => {
           />
         )}
 
+        {/* Ordenação inteligente */}
+        {(localProviders.length + nearbyProviders.length) > 1 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Ordenar por:</span>
+            {([
+              { key: 'proximity' as const, label: 'Proximidade' },
+              { key: 'rating' as const, label: 'Melhor avaliação' },
+            ]).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => { setSortMode(opt.key); setPage(1); }}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                  sortMode === opt.key
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground hover:border-primary/40'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Local results grid */}
         {geoCity && !isFallback && localProviders.length > 0 && (
           <div className="mb-3 flex items-center gap-2">
