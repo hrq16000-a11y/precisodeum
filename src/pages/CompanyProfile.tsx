@@ -685,7 +685,7 @@ export default function CompanyProfile() {
                           {service.service_area}
                         </span>
                       )}
-                      {service.serviceCategories?.map((category) => category?.name).filter(Boolean).slice(0, 2).map((categoryName) => (
+                      {service.serviceCategories?.map((category: { name?: string | null } | null) => category?.name).filter((n): n is string => Boolean(n)).slice(0, 2).map((categoryName) => (
                         <span key={categoryName} className="rounded-md border border-border px-2 py-1">{categoryName}</span>
                       ))}
                     </div>

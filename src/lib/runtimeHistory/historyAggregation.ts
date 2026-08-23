@@ -59,7 +59,7 @@ export function summarizeHistoryParity(
 }
 
 export function summarizeHistoryFailures(window: RuntimeHistoryWindow): RuntimeFailureTrend {
-  const failures = window.entries.map((e) =>
+  const failures: number[] = window.entries.map((e) =>
     e.consistency === 'inconsistent' || e.consistency === 'orphaned' ? 1 : 0,
   );
   const total = window.entries.length || 1;
@@ -85,7 +85,7 @@ function summarizeConsistency(window: RuntimeHistoryWindow): RuntimeConsistencyT
 }
 
 function summarizeDrift(window: RuntimeHistoryWindow): RuntimeDriftTrend {
-  const driftSeries = window.entries.map((e) => (e.mirrorDependent || e.orphanRisk ? 1 : 0));
+  const driftSeries: number[] = window.entries.map((e) => (e.mirrorDependent || e.orphanRisk ? 1 : 0));
   const driftEvents = driftSeries.reduce((s, n) => s + n, 0);
   return {
     flow: window.flow,
@@ -97,7 +97,7 @@ function summarizeDrift(window: RuntimeHistoryWindow): RuntimeDriftTrend {
 }
 
 function summarizeOrdering(window: RuntimeHistoryWindow): RuntimeOrderingTrend {
-  const violationsSeries = window.entries.map((e) => (e.ordering !== 'expected' ? 1 : 0));
+  const violationsSeries: number[] = window.entries.map((e) => (e.ordering !== 'expected' ? 1 : 0));
   const violations = violationsSeries.reduce((s, n) => s + n, 0);
   return {
     flow: window.flow,

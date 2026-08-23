@@ -104,7 +104,7 @@ const DashboardClientContactsPage = () => {
     queryFn: async () => {
       const t0 = performance.now();
       const { data, error } = await supabase.rpc('list_whatsapp_contacts_history', {
-        _search: search || null,
+        _search: search || undefined,
         _sort: sort,
         _limit: PAGE_SIZE,
         _offset: offset,

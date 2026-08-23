@@ -118,7 +118,7 @@ const RhDashboardSection = ({
 
       {/* Botão "Ver minha página pública" */}
       <RhPublicPageLink userId={userId} />
-      <NextStepPrompt open={welcomeOpen} onClose={onCloseWelcome} context="welcome" providerSlug={providerSlug ?? null} />
+      <NextStepPrompt open={welcomeOpen} onClose={onCloseWelcome} context="welcome" providerSlug={providerSlug ?? undefined} />
     </>
   );
 };

@@ -65,8 +65,8 @@ function getSessionId(): string {
   try {
     let id = sessionStorage.getItem(SESSION_KEY);
     if (!id) {
-      id = (crypto as any)?.randomUUID?.() ||
-        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      id = String((crypto as any)?.randomUUID?.() ||
+        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
       sessionStorage.setItem(SESSION_KEY, id);
     }
     return id;

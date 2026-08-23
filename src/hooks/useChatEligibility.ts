@@ -40,7 +40,7 @@ export function useChatEligibility() {
       if (!profile) return { eligible: false, reason: 'Perfil não encontrado' };
 
       const allowedTypes: string[] = settings?.allowed_profile_types || ['provider', 'rh'];
-      if (!allowedTypes.includes(profile.profile_type)) {
+      if (!allowedTypes.includes(profile.profile_type ?? "")) {
         return { eligible: false, reason: 'Seu tipo de perfil não tem acesso ao chat' };
       }
 

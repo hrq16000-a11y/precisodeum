@@ -56,8 +56,8 @@ export default function AdminDefaultNeighborhoodPage() {
     setSelected(new Set());
     try {
       const { data, error } = await supabase.rpc('admin_list_default_neighborhood_providers', {
-        _city: city || null,
-        _state: state || null,
+        _city: city || undefined,
+        _state: state || undefined,
         _limit: 500,
       });
       if (error) throw error;

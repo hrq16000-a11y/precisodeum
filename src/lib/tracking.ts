@@ -85,7 +85,7 @@ async function recordLeadInteraction(
   try {
     await supabase.rpc('track_lead_interaction', {
       _provider_id: providerId,
-      _service_id: serviceId ?? null,
+      _service_id: serviceId ?? undefined,
       _type: type,
       _source: source,
       _ua_hash: getUaHash(),

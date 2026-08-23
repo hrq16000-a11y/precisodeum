@@ -82,8 +82,8 @@ function getOrCreateTabId(): string {
   try {
     let id = sessionStorage.getItem('onboarding_v2_tab_id');
     if (!id) {
-      id = (crypto as any)?.randomUUID?.() ||
-        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      id = String((crypto as any)?.randomUUID?.() ||
+        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
       sessionStorage.setItem('onboarding_v2_tab_id', id);
     }
     return id;

@@ -118,7 +118,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
 
     // NLP match card at top
     if (nlpMatch) {
-      const cat = suggestions.categories.find(c => c.slug === nlpMatch.categorySlug);
+      const cat = suggestions?.categories.find(c => c.slug === nlpMatch.categorySlug);
       results.push({
         label: cat?.name || nlpMatch.categorySlug,
         type: 'nlp',

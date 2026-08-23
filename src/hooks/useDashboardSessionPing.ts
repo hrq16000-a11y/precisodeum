@@ -22,8 +22,8 @@ export function useDashboardSessionPing(route?: string) {
       if (cancelled) return;
       void supabase
         .rpc('record_dashboard_session', {
-          _route: route || (typeof window !== 'undefined' ? window.location.pathname : null),
-          _ua: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 280) : null,
+          _route: route || (typeof window !== 'undefined' ? window.location.pathname : undefined),
+          _ua: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 280) : undefined,
         })
         .then(() => undefined, () => undefined);
     }, 1500);
