@@ -93,20 +93,45 @@ async function recordLeadInteraction(
   } catch { /* silent — tracking não bloqueia ação */ }
 }
 
-export function trackWhatsAppClick(providerId: string, slug: string, source = 'home', serviceId?: string) {
-  trackEvent({ event: 'click_whatsapp', provider_id: providerId, slug, source });
+/** Contexto extra de conversão: rota atual + tipo de profissional (pf/company). */
+function conversionContext(extra?: Record<string, string>): Record<string, string> {
+  let route = '';
+  try { route = window.location.pathname || ''; } catch { /* SSR/test */ }
+  return { route, ...(extra || {}) };
+}
+
+export function trackWhatsAppClick(
+  providerId: string,
+  slug: string,
+  source = 'home',
+  serviceId?: string,
+  extra?: Record<string, string>,
+) {
+  trackEvent({ event: 'click_whatsapp', provider_id: providerId, slug, source, extra: conversionContext(extra) });
   void recordLeadInteraction(providerId, 'whatsapp', source, serviceId);
 }
 
-export function trackPhoneClick(providerId: string, slug: string, source = 'home', serviceId?: string) {
-  trackEvent({ event: 'click_whatsapp', provider_id: providerId, slug, source, extra: { kind: 'phone' } });
+export function trackPhoneClick(
+  providerId: string,
+  slug: string,
+  source = 'home',
+  serviceId?: string,
+  extra?: Record<string, string>,
+) {
+  trackEvent({ event: 'click_whatsapp', provider_id: providerId, slug, source, extra: conversionContext({ kind: 'phone', ...(extra || {}) }) });
   void recordLeadInteraction(providerId, 'phone', source, serviceId);
 }
 
-export function trackProfileClick(providerId: string, slug: string, source = 'home') {
-  trackEvent({ event: 'click_profile', provider_id: providerId, slug, source });
+export function trackProfileClick(
+  providerId: string,
+  slug: string,
+  source = 'home',
+  extra?: Record<string, string>,
+) {
+  trackEvent({ event: 'click_profile', provider_id: providerId, slug, source, extra: conversionContext(extra) });
   void recordLeadInteraction(providerId, 'profile', source);
 }
+
 
 export function trackBannerClick(sponsorId: string, source = 'home') {
   trackEvent({ event: 'click_banner', sponsor_id: sponsorId, source });

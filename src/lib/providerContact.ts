@@ -14,9 +14,12 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ProviderContact {
   phone: string;
   whatsapp: string;
+  /** true quando a RPC falhou (rede/permissão) — diferente de "não tem número". */
+  error?: boolean;
 }
 
 const EMPTY: ProviderContact = { phone: '', whatsapp: '' };
+const FAILED: ProviderContact = { phone: '', whatsapp: '', error: true };
 
 /** Cache por sessão: um mesmo card/perfil não refaz a chamada. */
 const cache = new Map<string, ProviderContact>();
@@ -48,8 +51,9 @@ export async function fetchProviderContact(providerId?: string | null): Promise<
       cache.set(providerId, contact);
       return contact;
     } catch {
-      // Falha de rede/permissão não pode quebrar o CTA: devolve vazio e permite retry.
-      return EMPTY;
+      // Falha de rede/permissão não pode quebrar o CTA: sinaliza erro (sem cachear)
+      // para que a UI mostre mensagem clara e permita nova tentativa.
+      return FAILED;
     } finally {
       inflight.delete(providerId);
     }
@@ -58,6 +62,7 @@ export async function fetchProviderContact(providerId?: string | null): Promise<
   inflight.set(providerId, promise);
   return promise;
 }
+
 
 /** Usado em testes e após atualização do próprio cadastro. */
 export function clearProviderContactCache(providerId?: string) {
