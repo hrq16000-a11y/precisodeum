@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 // PR-A1: importar `icons` do lucide-react puxa o catálogo inteiro (~1500 SVGs)
 // e quebra o tree-shaking. Substituído por IconRenderer (resolve via

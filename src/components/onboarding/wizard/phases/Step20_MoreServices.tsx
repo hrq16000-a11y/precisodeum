@@ -13,7 +13,7 @@
  *  - Quando atinge 5 serviços, esconde o botão de adicionar.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Plus, ArrowRight, SkipForward, CheckCircle2, LayoutDashboard, UserRound, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PROVIDER_SAFE_COLUMNS } from '@/lib/dbSafeColumns';

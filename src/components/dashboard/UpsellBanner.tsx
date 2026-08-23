@@ -2,7 +2,7 @@ import { useUpsellTrigger } from '@/hooks/useUpsellTrigger';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, ArrowRight, TrendingUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 
 const UpsellBanner = () => {
   const { level, message, trigger, servicesPct, leadsPct, isPremium, loading } = useUpsellTrigger();

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Megaphone, Layout, Eye, Users, MessageSquare, PlusCircle } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import RhPublicPageLink from '@/components/dashboard/RhPublicPageLink';

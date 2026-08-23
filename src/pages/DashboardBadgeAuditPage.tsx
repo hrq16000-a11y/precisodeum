@@ -8,7 +8,7 @@
  *  - CTA direto para corrigir
  */
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { CheckCircle2, XCircle, MapPin, Navigation, Building2, ShieldCheck, AlertTriangle, ArrowRight } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card } from '@/components/ui/card';

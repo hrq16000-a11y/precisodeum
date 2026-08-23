@@ -20,7 +20,7 @@
  * O objeto é exportado para que testes possam inspecioná-lo.
  */
 import { useEffect, useRef } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from '@/lib/router-compat';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 // PR 4 (A3): usa apenas identidade — não re-renderiza quando profile/provider mudam.

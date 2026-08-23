@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { MapPin, Search } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '@/lib/router-compat';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
 import { useUrgencyMode } from '@/hooks/useUrgencyMode';

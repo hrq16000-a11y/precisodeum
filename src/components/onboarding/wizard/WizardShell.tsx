@@ -22,7 +22,7 @@
  * patches incrementais, drafts local + remote) permanece encapsulada lá.
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '@/lib/router-compat';
 import { LayoutDashboard, Briefcase, FolderOpen, Sparkles, ExternalLink } from 'lucide-react';
 import TriageOrchestrator from '@/components/onboarding/wizard/phases/bet/BetModeShell';
 import { OnboardingV2Shell as MainOrchestrator } from '@/components/onboarding/wizard/phases/v2/OnboardingV2Shell';

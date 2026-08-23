@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from '@/lib/router-compat';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
@@ -10,7 +10,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from '@/lib/router-compat';
 import DiscoverPreviewSection from '@/components/courses/DiscoverPreviewSection';
 
 /** Strip HTML tags and decode common entities */

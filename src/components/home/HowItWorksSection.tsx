@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '@/lib/router-compat';
 import { Search, Star, MessageCircle, BadgeCheck, ArrowRight, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import FadeInSection from '@/components/FadeInSection';

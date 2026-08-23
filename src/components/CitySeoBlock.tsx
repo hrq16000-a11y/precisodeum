@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, MapPin, Sparkles, HelpCircle, Building2, Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';

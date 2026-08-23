@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { Sparkles, ShieldCheck } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 

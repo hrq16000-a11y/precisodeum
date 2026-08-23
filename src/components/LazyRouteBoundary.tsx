@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "@/lib/router-compat";
 
 interface Props {
   children: ReactNode;

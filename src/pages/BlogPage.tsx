@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
@@ -11,7 +11,7 @@ import { CalendarDays, ArrowRight, Sparkles, Newspaper, User } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from '@/lib/router-compat';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];

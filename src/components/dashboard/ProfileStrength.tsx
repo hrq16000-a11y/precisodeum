@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Trophy, ArrowUp, Zap, Sparkles, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import IconRenderer from '@/components/ui/IconRenderer';
 import DopamineCounter from '@/components/dashboard/DopamineCounter';
 import { useSettingValue } from '@/hooks/useSiteSettings';

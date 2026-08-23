@@ -13,7 +13,7 @@
  *    se a página de status estiver aberta em outra aba, atualiza sozinha)
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { createElement } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';

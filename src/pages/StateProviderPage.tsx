@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from '@/lib/router-compat';
 import { useQuery } from '@tanstack/react-query';
 import { MapPin, ArrowLeft, Users, Sparkles, ArrowRight, TrendingUp } from 'lucide-react';
 import Header from '@/components/Header';

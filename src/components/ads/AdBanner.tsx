@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';
 import { getPositionConfig } from '@/config/sponsorPositions';

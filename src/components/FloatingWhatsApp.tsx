@@ -1,5 +1,5 @@
 import { whatsappLink } from '@/lib/whatsapp';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from '@/lib/router-compat';
 import { useSettingValue, useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { motion } from 'framer-motion';
 

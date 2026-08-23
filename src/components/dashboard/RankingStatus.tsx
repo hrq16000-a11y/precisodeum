@@ -4,7 +4,7 @@ import { TrendingUp, Crown, ArrowRight, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { formatCityState } from '@/lib/locationFormat';
 
 const RankingStatus = () => {

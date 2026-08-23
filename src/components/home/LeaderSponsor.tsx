@@ -1,5 +1,5 @@
 import { useEffect, useState, memo, useCallback, useRef, forwardRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { X, ExternalLink } from 'lucide-react';
 import { handleImageError } from '@/lib/imageResolver';
 import { optimizedImageUrl } from '@/lib/imageOptimizer';

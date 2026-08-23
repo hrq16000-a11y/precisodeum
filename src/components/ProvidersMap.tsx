@@ -5,7 +5,7 @@ import L from 'leaflet';
 import { MapPin, Star, Circle, Phone, Clock } from 'lucide-react';
 import { whatsappLink } from '@/lib/whatsapp';
 import type { DbProvider } from '@/hooks/useProviders';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 
 // Fix default marker icon issue with webpack/vite
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';

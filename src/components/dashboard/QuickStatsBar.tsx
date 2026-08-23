@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { PlusCircle, Eye, MessageSquare, Layout, Zap } from 'lucide-react';
 
 interface QuickStatsBarProps {

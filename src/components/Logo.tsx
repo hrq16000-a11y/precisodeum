@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { DEFAULT_LOGO_PNG_SRCSET, DEFAULT_LOGO_SRCSET, DEFAULT_LOGO_URL } from '@/lib/siteAssets';
 import { handleBrandImageError } from '@/lib/imageResolver';
 import { logHeaderFlicker } from '@/lib/headerFlickerDiagnostics';

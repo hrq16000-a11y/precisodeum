@@ -10,7 +10,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { PROVIDER_SAFE_COLUMNS } from '@/lib/dbSafeColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
 import BulkActionsBar from '@/components/admin/BulkActionsBar';

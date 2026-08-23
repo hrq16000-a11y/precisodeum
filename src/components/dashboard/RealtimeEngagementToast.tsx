@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 
 const ACTION_LABELS: Record<string, { label: string; message: string }> = {
   review_received: { label: 'Avaliação', message: 'Você recebeu uma nova avaliação!' },

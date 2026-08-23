@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '@/lib/router-compat';
 import { useQuery } from '@tanstack/react-query';
 import { MapPin, Search, ArrowRight, Users, Building2, Sparkles, TrendingUp, Navigation } from 'lucide-react';
 import Header from '@/components/Header';

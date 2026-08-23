@@ -6,7 +6,7 @@
  * (fire-and-forget, sem await, sem bloquear navegação). Apenas links
  * renderizados aqui — não instrumentar navbar/footer/menu global.
  */
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import type { SeoLink, SeoLinkBlock } from '@/lib/seoInternalLinking';
 import {
   trackInternalLinkClick,

@@ -28,7 +28,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAdmin } from '@/hooks/useAdmin';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
 import SponsorImage, { shapeLabelPt, type BannerShape } from '@/components/SponsorImage';

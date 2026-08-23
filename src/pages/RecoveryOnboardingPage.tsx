@@ -18,7 +18,7 @@
  * (categoria/cidade/etapa) — útil pra quem voltou mas continua travado.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '@/lib/router-compat';
 import { ArrowLeft, ArrowRight, Check, Circle, Compass, MessageCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

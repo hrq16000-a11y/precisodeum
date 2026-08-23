@@ -15,7 +15,7 @@
 import { CheckCircle2, AlertCircle, MapPin, Navigation, Building2, ChevronRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 
 interface Props {
   provider: {

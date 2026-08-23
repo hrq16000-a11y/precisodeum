@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from '@/lib/router-compat';
 import DashboardLayout from '@/components/DashboardLayout';
 import ProgressIndicator from '@/components/motion/ProgressIndicator';
 import { SkeletonList } from '@/components/motion/Skeletons';

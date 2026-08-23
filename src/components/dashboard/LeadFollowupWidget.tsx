@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
 import { AlertTriangle, ArrowRight, Inbox, Timer } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';

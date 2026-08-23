@@ -5,7 +5,7 @@
  * metadados de categoria/tema. Nenhum fetch aqui — a query continua no
  * orquestrador. Lazy load via React.lazy no consumidor.
  */
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
 import { ArrowRight, MapPin, Star, Users, UserRound } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';

@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ExternalLink } from 'lucide-react';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 
 const DashboardCommunityPage = () => {
   const { user, loading } = useAuthIdentity();

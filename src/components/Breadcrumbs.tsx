@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { ChevronRight, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useJsonLd } from '@/hooks/useJsonLd';

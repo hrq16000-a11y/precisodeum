@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import ImageUploadField from '@/components/ImageUploadField';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';

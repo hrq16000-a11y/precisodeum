@@ -9,7 +9,7 @@
  *  - Marcar como lida (individual ou em massa) via RPC
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link } from '@/lib/router-compat';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';

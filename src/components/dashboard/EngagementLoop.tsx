@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Briefcase, Image as ImageIcon, User, X, ArrowRight, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';

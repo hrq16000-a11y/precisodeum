@@ -1,5 +1,5 @@
 import { useState, forwardRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from '@/lib/router-compat';
 import { LifeBuoy, HelpCircle, MessageCircle, BookOpen, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingValue } from '@/hooks/useSiteSettings';

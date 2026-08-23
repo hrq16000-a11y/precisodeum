@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { ArrowRight, Crown, Star, MapPin, MessageCircle, Sparkles, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';

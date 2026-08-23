@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from '@/lib/router-compat';
 
 /**
  * Camada global de motion entre rotas.

@@ -10,7 +10,7 @@
  * usuário já completou o "núcleo viciante" e pode visitar o dashboard.
  */
 import { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from '@/lib/router-compat';
 import type { OnboardingPhase } from '@/components/onboarding/wizard/phases/v2/types';
 
 const BLOCKED_DESTINATIONS = ['/dashboard'];

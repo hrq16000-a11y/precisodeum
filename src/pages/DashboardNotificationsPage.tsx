@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Bell, Check, CheckCheck, ExternalLink, Trash2, Mail, Star, Briefcase, CheckCircle, MessageCircle, Flame, Zap, TrendingUp, Settings } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

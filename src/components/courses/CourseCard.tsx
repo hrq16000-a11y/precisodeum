@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import CategoryIcon from '@/components/CategoryIcon';
 import { ExternalLink, Award, Clock, Sparkles, Heart, TrendingUp } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { Button } from '@/components/ui/button';
 
 const LEVEL_COLORS: Record<string, string> = {

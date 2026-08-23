@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { useSeoHead } from '@/hooks/useSeoHead';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { useRef } from 'react';

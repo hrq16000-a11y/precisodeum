@@ -9,7 +9,7 @@
  * Rota noindex por definição (não entra no sitemap, bloqueada no robots.txt).
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import {
   Check, X, LayoutGrid, FileText, Send, Megaphone, ArrowRight,
 } from 'lucide-react';

@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2, ShieldAlert, FileLock2, AlertTriangle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,

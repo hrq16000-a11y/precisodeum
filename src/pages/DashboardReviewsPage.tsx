@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import DashboardLayout from '@/components/DashboardLayout';
 import StarRating from '@/components/StarRating';
 import { useAuth } from '@/hooks/useAuth';

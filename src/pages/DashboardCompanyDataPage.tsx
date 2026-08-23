@@ -11,7 +11,7 @@
  *    card público mostra rua/número ou apenas bairro/cidade.
  */
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Building2, Save, Loader2, Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
 import DashboardLayout from '@/components/DashboardLayout';

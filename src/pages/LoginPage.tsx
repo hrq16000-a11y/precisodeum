@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';

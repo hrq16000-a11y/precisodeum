@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from '@/lib/router-compat';
 import { ChevronRight, Home } from 'lucide-react';
 import {
   LayoutDashboard, User, Briefcase, MessageSquare, CreditCard, Layout, Megaphone, Users2, Bell, Gift, BarChart3, Trophy, ShieldCheck, Activity,

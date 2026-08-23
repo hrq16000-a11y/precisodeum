@@ -7,7 +7,7 @@
  * — essas NÃO recebem o guard.
  */
 import { useEffect, useRef } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from '@/lib/router-compat';
 import { toast } from 'sonner';
 import { usePermissions, type ProfilePermissions } from '@/hooks/usePermissions';
 

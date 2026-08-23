@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Search, X, Sparkles, TrendingUp, MapPin, Wrench, Grid3X3, Flame, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CategoryIcon from '@/components/CategoryIcon';

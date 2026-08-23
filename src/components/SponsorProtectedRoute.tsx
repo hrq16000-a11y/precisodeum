@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from '@/lib/router-compat';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 

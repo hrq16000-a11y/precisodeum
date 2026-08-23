@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { Trophy, AlertTriangle, EyeOff, Sparkles } from 'lucide-react';
 
 type Row = {

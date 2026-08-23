@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { Building2, MapPin, MessageCircle, Star, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

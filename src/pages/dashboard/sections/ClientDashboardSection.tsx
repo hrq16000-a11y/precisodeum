@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { User, Eye, Megaphone, Sparkles, ArrowRight } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import CoursesBanner from '@/components/dashboard/CoursesBanner';

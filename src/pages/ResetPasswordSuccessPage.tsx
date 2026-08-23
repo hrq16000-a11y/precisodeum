@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from '@/lib/router-compat';
 import { CheckCircle2, LogIn, ShieldCheck, ArrowRight } from 'lucide-react';
 import AuthPageShell from '@/components/auth/AuthPageShell';
 import { Button } from '@/components/ui/button';

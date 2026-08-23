@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
 import { ChevronRight, Users, MapPin, Globe, Sparkles } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';

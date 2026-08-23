@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 // PR 4 (A3): identidade pura — admin não depende de profile/provider.
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';

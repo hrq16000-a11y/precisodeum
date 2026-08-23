@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from '@/lib/router-compat';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, MapPin, MessageCircle, Globe, Instagram, Facebook, ExternalLink, Star, Send, ChevronRight, Image as ImageIcon, Briefcase, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';

@@ -4,7 +4,7 @@
  * Persiste histórico em public.seo_audit_reports.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from '@/lib/router-compat';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

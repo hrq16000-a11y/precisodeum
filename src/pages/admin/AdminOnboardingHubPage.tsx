@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { useNavigate, useParams, Navigate } from 'react-router-dom';
+import { useNavigate, useParams, Navigate } from '@/lib/router-compat';
 import { Telescope, BarChart3, LineChart, Activity, Bug } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
