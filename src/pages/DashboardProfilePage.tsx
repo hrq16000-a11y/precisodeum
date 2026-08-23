@@ -365,8 +365,14 @@ const DashboardProfilePage = () => {
       trackAction('profile_save_start', 'Salvando dados do perfil');
 
       // [SYNC-BEGIN]
+      // Persistência canônica: profiles espelha EXATAMENTE o mesmo formato
+      // gravado em providers (dígitos com prefixo 55). Sem isso o checklist
+      // divergia após recarregar a página.
       const { error: profileError } = await supabase.from('profiles').update({
-        full_name: form.full_name, phone: form.phone, email: user.email || '',
+        full_name: form.full_name,
+        phone: finalPhone || null,
+        whatsapp: finalWhatsapp || null,
+        email: user.email || '',
       }).eq('id', user.id);
       if (profileError) {
         failedStep = 'profile';
