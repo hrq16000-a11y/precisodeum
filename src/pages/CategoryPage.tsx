@@ -560,9 +560,11 @@ const CategoryPage = () => {
         )}
 
         {totalDisplay === 0 && outOfStateProviders.length === 0 && (
-          <EmptyStateFallback
-            title={`Nenhum profissional de ${category.name} encontrado`}
-            message="Seja o primeiro a se cadastrar nesta categoria!"
+          <CategoryOpportunityCTA
+            categoryName={category.name}
+            categorySlug={slug}
+            icon={category.icon}
+            city={geoCity}
           />
         )}
 
