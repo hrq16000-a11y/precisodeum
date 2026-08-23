@@ -4,6 +4,7 @@ import { Link, useNavigate } from '@/lib/router-compat';
 import RotatingServiceText from '@/components/home/RotatingServiceText';
 import UrgencyToggle from '@/components/home/UrgencyToggle';
 import { useUrgencyMode } from '@/hooks/useUrgencyMode';
+import { useHydrated } from '@tanstack/react-router';
 import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { importWithRetry } from '@/lib/lazyWithRetry';
@@ -99,6 +100,7 @@ const HeroBanner = () => {
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [enhancedSearch, setEnhancedSearch] = useState(false);
   const { city: geoCity } = useGeoCity();
+  const heroHydrated = useHydrated();
   const { enabled: urgencyMode, setEnabled: setUrgencyMode } = useUrgencyMode();
 
   const ctaPrimaryLinkText = useSettingValue('hero_cta_primary_link_text');
@@ -238,7 +240,7 @@ const HeroBanner = () => {
           <div className="mt-3 flex min-h-[2.5rem] flex-col items-center justify-center gap-2 text-xs text-primary-foreground/70 sm:min-h-[1.25rem] sm:flex-row sm:gap-3">
             <span className="inline-flex items-center gap-2">
               <Icon icon={MapPin} className="h-3.5 w-3.5 text-secondary" />
-              <span>{geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
+              <span>{heroHydrated && geoCity ? `Atendendo em ${geoCity} e região` : 'Profissionais próximos de você'}</span>
             </span>
             <UrgencyToggle
               enabled={urgencyMode}
