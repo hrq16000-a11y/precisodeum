@@ -93,6 +93,28 @@ async function recordLeadInteraction(
   } catch { /* silent — tracking não bloqueia ação */ }
 }
 
+/**
+ * Persiste o clique em `contact_clicks` com rota e categoria, permitindo
+ * relatórios consistentes de conversão por rota/categoria no admin.
+ */
+async function recordContactClick(
+  providerId: string,
+  type: 'whatsapp' | 'phone' | 'profile',
+  extra?: Record<string, string>,
+) {
+  try {
+    let path = '';
+    try { path = window.location.pathname || ''; } catch { /* SSR/test */ }
+    await supabase.rpc('log_contact_click' as never, {
+      _provider_id: providerId,
+      _contact_type: type,
+      _page_path: path,
+      _visitor_id: getUaHash(),
+      _category_slug: extra?.category_slug || extra?.category || null,
+    } as never);
+  } catch { /* silent */ }
+}
+
 /** Contexto extra de conversão: rota atual + tipo de profissional (pf/company). */
 function conversionContext(extra?: Record<string, string>): Record<string, string> {
   let route = '';
