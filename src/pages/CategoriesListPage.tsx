@@ -5,9 +5,11 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, MapPin } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
+import { useCategoriesInRegion } from '@/hooks/useCategoriesInRegion';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 const INITIAL = 12;
@@ -16,11 +18,25 @@ const MORE = 12;
 const CategoriesListPage = () => {
   const [search, setSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState(INITIAL);
+  const { city: geoCity, state: geoState } = useGeoCity();
+  const [cityFilter, setCityFilter] = useState<string>('');
   const { data: categories = [], isLoading } = useCategoriesWithCount();
 
+  const activeCity = cityFilter || null;
+  const { data: regional, isLoading: loadingRegion } = useCategoriesInRegion(
+    activeCity,
+    activeCity ? geoState : null,
+  );
+
+  const cityLabel = activeCity || '';
+
   useSeoHead({
-    title: 'Categorias de Serviços | Preciso de um',
-    description: 'Todas as categorias de serviços profissionais disponíveis na plataforma.',
+    title: cityLabel
+      ? `Categorias de Serviços em ${cityLabel} | Preciso de um`
+      : 'Categorias de Serviços | Preciso de um',
+    description: cityLabel
+      ? `Veja as categorias de serviços com profissionais disponíveis em ${cityLabel} e as categorias abertas para novos prestadores e patrocinadores.`
+      : 'Todas as categorias de serviços profissionais disponíveis na plataforma.',
     canonical: `${SITE_BASE_URL}/categorias`,
   });
 
@@ -41,8 +57,20 @@ const CategoriesListPage = () => {
     ? shuffled.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     : shuffled;
 
-  const withProviders = filtered.filter((c) => c.count > 0);
-  const withoutProviders = filtered.filter((c) => c.count === 0);
+  // Quando há filtro de cidade, "com prestador" passa a ser o conjunto regional.
+  const regionalIds = useMemo(
+    () => new Set((regional?.items || []).map((c) => c.id)),
+    [regional],
+  );
+  const regionalScopeIsCity = !!activeCity && regional?.scope === 'city';
+
+  const withProviders = activeCity
+    ? filtered.filter((c) => regionalIds.has(c.id) && regionalScopeIsCity)
+    : filtered.filter((c) => c.count > 0);
+  const withoutProviders = activeCity
+    ? filtered.filter((c) => !(regionalIds.has(c.id) && regionalScopeIsCity))
+    : filtered.filter((c) => c.count === 0);
+
 
   const visible = withProviders.slice(0, visibleCount);
   const hasMore = visibleCount < withProviders.length;
