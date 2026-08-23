@@ -171,6 +171,7 @@ export const adminRoutes = (
     <Route path="/admin/seo-runtime" element={<Navigate to="/admin/seo/runtime" replace />} />
     <Route path="/admin/funil-health" element={guarded("AdminPublicFunnelHealthPage", <AdminPublicFunnelHealthPage />)} />
     <Route path="/admin/tracking-health" element={guarded("AdminTrackingHealthPage", <AdminTrackingHealthPage />)} />
+    <Route path="/admin/email-templates" element={guarded("AdminEmailTemplatesPage", <AdminEmailTemplatesPage />)} />
     <Route path="/admin/patrocinadores/aprovacoes" element={guarded("AdminSponsorApprovalsPage", <AdminSponsorApprovalsPage />)} />
     <Route path="/admin/servicos-populares" element={guarded("AdminPopularServicesPage", <AdminPopularServicesPage />)} />
     <Route path="/admin/faq" element={guarded("AdminFaqPage", <AdminFaqPage />)} />
