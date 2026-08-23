@@ -131,6 +131,7 @@ export function trackWhatsAppClick(
 ) {
   trackEvent({ event: 'click_whatsapp', provider_id: providerId, slug, source, extra: conversionContext(extra) });
   void recordLeadInteraction(providerId, 'whatsapp', source, serviceId);
+  void recordContactClick(providerId, 'whatsapp', extra);
 }
 
 export function trackPhoneClick(
@@ -142,6 +143,7 @@ export function trackPhoneClick(
 ) {
   trackEvent({ event: 'click_whatsapp', provider_id: providerId, slug, source, extra: conversionContext({ kind: 'phone', ...(extra || {}) }) });
   void recordLeadInteraction(providerId, 'phone', source, serviceId);
+  void recordContactClick(providerId, 'phone', extra);
 }
 
 export function trackProfileClick(
@@ -152,6 +154,7 @@ export function trackProfileClick(
 ) {
   trackEvent({ event: 'click_profile', provider_id: providerId, slug, source, extra: conversionContext(extra) });
   void recordLeadInteraction(providerId, 'profile', source);
+  void recordContactClick(providerId, 'profile', extra);
 }
 
 
