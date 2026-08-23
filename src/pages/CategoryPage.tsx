@@ -90,8 +90,23 @@ const CategoryPage = () => {
   const allProviders = data?.providers || [];
 
   const { localProviders, nearbyProviders, outOfStateProviders, isFallback, expansionLevel } = useMemo(() => {
+    // Ordenação inteligente: 'proximity' mantém o ranking geográfico padrão;
+    // 'rating' reordena cada grupo pela melhor avaliação (desempate por distância).
+    const applySort = <T,>(list: T[]): T[] => {
+      if (sortMode !== 'rating') return list;
+      return [...list].sort((a: any, b: any) => {
+        const ra = Number(a?.rating ?? a?.average_rating ?? 0);
+        const rb = Number(b?.rating ?? b?.average_rating ?? 0);
+        if (rb !== ra) return rb - ra;
+        const ca = Number(a?.reviewCount ?? a?.review_count ?? 0);
+        const cb = Number(b?.reviewCount ?? b?.review_count ?? 0);
+        if (cb !== ca) return cb - ca;
+        return Number(a?._dist ?? Infinity) - Number(b?._dist ?? Infinity);
+      });
+    };
+
     if (!geoCity || allProviders.length === 0) {
-      return { localProviders: allProviders, nearbyProviders: [] as DbProvider[], outOfStateProviders: [] as DbProvider[], isFallback: false, expansionLevel: null };
+      return { localProviders: applySort(allProviders), nearbyProviders: [] as DbProvider[], outOfStateProviders: [] as DbProvider[], isFallback: false, expansionLevel: null };
     }
 
     const ranked = filterAndRankProvidersGrouped(
@@ -107,13 +122,13 @@ const CategoryPage = () => {
     );
 
     return {
-      localProviders: ranked.local,
-      nearbyProviders: ranked.nearby,
-      outOfStateProviders: ranked.outOfState,
+      localProviders: applySort(ranked.local),
+      nearbyProviders: applySort(ranked.nearby),
+      outOfStateProviders: applySort(ranked.outOfState),
       isFallback: ranked.isFallback,
       expansionLevel: ranked.isFallback ? 'all' as const : null,
     };
-  }, [allProviders, category?.name, geoCity, geoState, radiusKm, slug, userLat, userLon]);
+  }, [allProviders, category?.name, geoCity, geoState, radiusKm, slug, userLat, userLon, sortMode]);
 
   const nearestProvider = localProviders.length > 0 ? localProviders[0] : (nearbyProviders.length > 0 ? nearbyProviders[0] : undefined);
   const nearestDistanceKm = (nearestProvider as any)?._dist;
