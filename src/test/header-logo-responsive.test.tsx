@@ -48,7 +48,7 @@ describe('Logo · skeleton e fallback', () => {
     expect(wrapper.className).toContain('skeleton-shimmer');
     // espaço reservado → sem layout shift quando a imagem chega
     expect(wrapper.className).toMatch(/aspect-\[111\/40\]/);
-    expect(wrapper.className).toContain('h-14');
+    expect(wrapper.className).toContain('h-16');
   });
 
   it('remove o skeleton após o load da imagem', () => {
@@ -77,7 +77,7 @@ describe('Logo · skeleton e fallback', () => {
       const { container } = renderLogo({ priority: true });
       const img = container.querySelector('img') as HTMLImageElement;
       expect(img, `logo ausente em ${w}px`).toBeTruthy();
-      expect(img.className, `logo sem altura mínima em ${w}px`).toContain('min-h-14');
+      expect(img.className, `logo sem altura mínima em ${w}px`).toContain('min-h-16');
       expect(img.getAttribute('sizes'), `sizes ausente em ${w}px`).toBeTruthy();
     }
   });
