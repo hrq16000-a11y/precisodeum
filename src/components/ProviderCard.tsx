@@ -16,7 +16,7 @@ import { useGeoCity } from '@/hooks/useGeoCity';
 import { handleImageError, getOptimizedUrl } from '@/lib/imageResolver';
 import { responsiveImageSrcSet } from '@/lib/imageOptimizer';
 import { useCardImpression } from '@/hooks/useCardImpression';
-import { trackWhatsAppClick, trackProfileClick } from '@/lib/tracking';
+import { trackWhatsAppClick, trackProfileClick, trackPhoneClick } from '@/lib/tracking';
 import { fetchProviderContact, getCachedProviderContact } from '@/lib/providerContact';
 import { toast } from '@/hooks/use-toast';
 
