@@ -1,6 +1,7 @@
 import { Link } from '@/lib/router-compat';
 import { MessageCircle, Instagram, Facebook } from 'lucide-react';
-import { useMemo, lazy, Suspense } from 'react';
+import { useMemo, useState, useEffect, lazy, Suspense } from 'react';
+import { useHydrated } from '@tanstack/react-router';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
