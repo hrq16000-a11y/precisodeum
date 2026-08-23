@@ -68,7 +68,14 @@ const FooterLinkItem = ({ item }: { item: any }) => {
 };
 
 const Footer = () => {
-  const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
+  // SSR e primeiro render do cliente usam o mesmo item (evita hydration mismatch);
+  // a variação aleatória só entra após a hidratação.
+  const footerHydrated = useHydrated();
+  const [taglineIndex, setTaglineIndex] = useState(0);
+  useEffect(() => {
+    setTaglineIndex(Math.floor(Math.random() * footerTaglines.length));
+  }, []);
+  const tagline = footerTaglines[footerHydrated ? taglineIndex : 0];
   const blogEnabled = useFeatureEnabled('module_blog');
 
   const { data: menuGroups } = useMenuItemsByLocations(['footer', 'footer_eco']);
