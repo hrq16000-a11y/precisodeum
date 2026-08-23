@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, createElement, type JSX } from "react";
 
 interface SafeHTMLProps {
   html: string;
@@ -93,13 +93,10 @@ export function SafeHTML({
     };
   }, [html, allowIframes]);
 
-  return (
-    <Tag
-      className={className}
-      // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: clean }}
-    />
-  );
+  return createElement(Tag, {
+    className,
+    dangerouslySetInnerHTML: { __html: clean },
+  });
 }
 
 export default SafeHTML;
