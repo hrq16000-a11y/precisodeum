@@ -884,6 +884,11 @@ const ProviderProfile = () => {
     return () => {
       disposed = true;
       cancelScheduledVisibilityMeasure();
+      frameScheduler.dispose();
+      if (debugVisibilityMetrics) {
+        // eslint-disable-next-line no-console
+        console.debug('[StickyActionBar] frame scheduler metrics', frameScheduler.metrics());
+      }
       if (emergencyTimer !== null) window.clearTimeout(emergencyTimer);
       if (trailingScrollTimer !== null) {
         window.clearTimeout(trailingScrollTimer);
