@@ -614,6 +614,12 @@ const CategoryPage = () => {
         <PaginationControls currentPage={page} totalItems={totalDisplay} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
       </div>
       
+      <CategoryIntentContent
+        categorySlug={slug || ''}
+        categoryName={category.name}
+        city={geoCity}
+      />
+
       <CategorySeoBlock
         categorySlug={slug || ''}
         categoryName={category.name}
