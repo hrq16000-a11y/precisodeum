@@ -228,14 +228,46 @@ const AdminCategoryOpportunitiesPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="leads" className="mt-4">
+          <TabsContent value="leads" className="mt-4 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                placeholder="Buscar por nome, contato, categoria ou cidade..."
+                value={leadSearch}
+                onChange={(e) => setLeadSearch(e.target.value)}
+                className="h-9 w-full max-w-xs text-xs"
+              />
+              <select
+                value={leadKind}
+                onChange={(e) => setLeadKind(e.target.value)}
+                className="h-9 rounded-md border border-border bg-background px-2 text-xs"
+              >
+                <option value="all">Todos os tipos</option>
+                <option value="pro">Profissional</option>
+                <option value="sponsor">Patrocinador</option>
+              </select>
+              <select
+                value={leadStatus}
+                onChange={(e) => setLeadStatus(e.target.value)}
+                className="h-9 rounded-md border border-border bg-background px-2 text-xs"
+              >
+                <option value="all">Todos os status</option>
+                <option value="new">Novos</option>
+                <option value="contacted">Contatados</option>
+              </select>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={exportLeadsCsv} disabled={filteredLeads.length === 0}>
+                <Download className="h-3.5 w-3.5" /> Exportar CSV ({filteredLeads.length})
+              </Button>
+            </div>
+
             <div className="overflow-x-auto rounded-xl border border-border bg-card">
               {loadingLeads ? (
                 <div className="space-y-2 p-4">
                   {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 rounded-md" />)}
                 </div>
-              ) : leads.length === 0 ? (
-                <p className="p-6 text-sm text-muted-foreground">Nenhum lead de oportunidade ainda.</p>
+              ) : filteredLeads.length === 0 ? (
+                <p className="p-6 text-sm text-muted-foreground">
+                  {leads.length === 0 ? 'Nenhum lead de oportunidade ainda.' : 'Nenhum lead corresponde aos filtros.'}
+                </p>
               ) : (
                 <table className="w-full text-left text-xs">
                   <thead className="bg-muted/50 text-muted-foreground">
@@ -247,10 +279,11 @@ const AdminCategoryOpportunitiesPage = () => {
                       <th className="p-2">Contato</th>
                       <th className="p-2">Cidade</th>
                       <th className="p-2">Mensagem</th>
+                      <th className="p-2">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {leads.map((l: any) => (
+                    {filteredLeads.map((l: any) => (
                       <tr key={l.id} className="border-t border-border">
                         <td className="p-2 whitespace-nowrap">{new Date(l.created_at).toLocaleDateString('pt-BR')}</td>
                         <td className="p-2">{l.category_name || l.category_slug}</td>
@@ -259,6 +292,23 @@ const AdminCategoryOpportunitiesPage = () => {
                         <td className="p-2 whitespace-nowrap">{l.phone}{l.email ? ` · ${l.email}` : ''}</td>
                         <td className="p-2">{l.city || '—'}</td>
                         <td className="p-2 max-w-[240px] truncate">{l.message || '—'}</td>
+                        <td className="p-2 whitespace-nowrap">
+                          {l.status === 'contacted' ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 font-semibold text-emerald-600">
+                              <CheckCircle2 className="h-3 w-3" /> Contatado
+                            </span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 gap-1 text-[11px]"
+                              disabled={markContacted.isPending}
+                              onClick={() => markContacted.mutate(l.id)}
+                            >
+                              <CheckCircle2 className="h-3 w-3" /> Marcar contatado
+                            </Button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
