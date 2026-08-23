@@ -675,7 +675,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       void trackEvent({
         phase: state.phase,
         event: 'error',
-        userId: user?.id,
+        userId: undefined,
         meta: { code: WIZARD_ERROR_CODES.PERSIST_PHASE1_NO_USER },
       });
       toast.error('Sessão expirou. Faça login novamente.');
