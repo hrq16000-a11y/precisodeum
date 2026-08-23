@@ -365,8 +365,14 @@ const DashboardProfilePage = () => {
       trackAction('profile_save_start', 'Salvando dados do perfil');
 
       // [SYNC-BEGIN]
+      // Persistência canônica: profiles espelha EXATAMENTE o mesmo formato
+      // gravado em providers (dígitos com prefixo 55). Sem isso o checklist
+      // divergia após recarregar a página.
       const { error: profileError } = await supabase.from('profiles').update({
-        full_name: form.full_name, phone: form.phone, email: user.email || '',
+        full_name: form.full_name,
+        phone: finalPhone || null,
+        whatsapp: finalWhatsapp || null,
+        email: user.email || '',
       }).eq('id', user.id);
       if (profileError) {
         failedStep = 'profile';
@@ -550,6 +556,21 @@ const DashboardProfilePage = () => {
     })();
   }, [user, profile, avatarUrl, refetchProfile]);
 
+  // Contagens reais de serviços e álbuns de portfólio — mesma base usada pelo
+  // Dashboard. Sem elas o percentual travava (ex.: 88%) mesmo com tudo pronto.
+  const { data: completenessCounts = { services: 0, albums: 0 } } = useQuery({
+    queryKey: ['profile-completeness-counts', provider?.id],
+    enabled: !!provider?.id,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const [services, albums] = await Promise.all([
+        supabase.from('services').select('id', { count: 'exact', head: true }).eq('provider_id', provider!.id),
+        supabase.from('portfolio_albums').select('id', { count: 'exact', head: true }).eq('provider_id', provider!.id),
+      ]);
+      return { services: services.count ?? 0, albums: albums.count ?? 0 };
+    },
+  });
+
   // Profile completeness — usa a ÚNICA fonte da verdade (mesma engine do
   // Dashboard/ProfileCompleteness/FirstLeadChecklist/OnboardingGate).
   // Regra oficial: contato = whatsapp OU phone (NÃO ambos).
@@ -565,9 +586,13 @@ const DashboardProfilePage = () => {
         description: form.description || provider.description,
         photo_url: avatarUrl || (provider as any).photo_url,
       } : undefined,
+      // Sem estas contagens o checklist ficava travado (serviços/portfólio
+      // nunca marcavam como concluídos nesta tela).
+      servicesCount: completenessCounts.services,
+      portfolioAlbumsCount: completenessCounts.albums,
     });
     return checklistStats(items).pct;
-  }, [profile, provider, form, avatarUrl]);
+  }, [profile, provider, form, avatarUrl, completenessCounts]);
 
   const displayName = form.full_name || 'Usuário';
 

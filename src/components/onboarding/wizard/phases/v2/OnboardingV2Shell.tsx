@@ -2470,7 +2470,10 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
 
   return (
     <>
-      <OnboardingShellChrome {...render.chromeProps}>
+      <OnboardingShellChrome
+        {...render.chromeProps}
+        onRestart={state.phase === 'phase2_service' ? undefined : () => dispatch({ type: 'GO_TO', phase: 'phase2_service' })}
+      >
         {renderPhase()}
       </OnboardingShellChrome>
 
