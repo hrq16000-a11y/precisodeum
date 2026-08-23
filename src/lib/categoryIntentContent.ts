@@ -93,3 +93,50 @@ export function buildCategoryKeywords(
   }
   return Array.from(new Set(base)).join(', ');
 }
+
+/**
+ * SEO local das páginas de oportunidade (categorias sem prestador).
+ * Foca em intenção de captação: "seja o primeiro", "cadastre-se", "patrocine".
+ */
+export function buildOpportunitySeo(
+  categoryName: string,
+  city?: string | null,
+  state?: string | null,
+) {
+  const name = categoryName || 'Serviço';
+  const n = lower(name);
+  const c = city ? city.trim() : '';
+  const region = c ? `${c}${state ? ` (${state})` : ''}` : 'sua região';
+  const localSuffix = c ? ` em ${c}` : ' no Brasil';
+
+  const title = c
+    ? `${name} em ${c}: seja o primeiro profissional da região | Preciso de Um`
+    : `${name}: vaga aberta para profissionais e patrocinadores | Preciso de Um`;
+
+  const description = c
+    ? `Ainda não há profissionais de ${n} em ${c}. Cadastre seu serviço gratuitamente e apareça em primeiro lugar para quem procura ${n} na região — ou patrocine a categoria.`
+    : `Categoria de ${n} aberta: cadastre-se grátis e seja o primeiro profissional a receber contatos, ou patrocine a categoria e ganhe destaque exclusivo.`;
+
+  const keywords = Array.from(new Set([
+    n,
+    `${n}${localSuffix}`,
+    `cadastro de ${n}`,
+    `trabalhar como ${n}`,
+    `divulgar serviço de ${n}`,
+    `${n} clientes`,
+    ...(c ? [`${n} ${c}`, `profissional de ${n} em ${c}`, `patrocinar ${n} em ${c}`] : []),
+    ...(c && state ? [`${n} ${c} ${state}`] : []),
+  ])).join(', ');
+
+  const copy = {
+    heading: `Por que ser o primeiro profissional de ${n} em ${region}`,
+    paragraphs: [
+      `A categoria de ${n}${localSuffix} está aberta: nenhum profissional ocupou esse espaço ainda. Isso significa que todas as buscas por ${n} feitas${c ? ` em ${c}` : ''} hoje ficam sem resposta — e quem se cadastrar primeiro passa a receber esses contatos diretamente no WhatsApp, sem intermediário e sem comissão.`,
+      `O cadastro é 100% gratuito para profissionais. Você monta uma página própria com fotos dos seus trabalhos, áreas atendidas, horários e formas de contato. Quanto mais completo o perfil, melhor o posicionamento nas buscas por ${n}${localSuffix} — dentro do portal e nos buscadores.`,
+      `Para empresas e fornecedores, essa é uma categoria de patrocínio com concorrência zero${c ? ` em ${c}` : ''}: seu banner e sua marca aparecem em destaque exclusivo para todo mundo que procurar por ${n}, incluindo o público que chega pelas páginas de bairro e cidade.`,
+      `Preencha o formulário abaixo com seu nome e WhatsApp. Nossa equipe entra em contato para ajudar no cadastro ou apresentar as opções de patrocínio da categoria de ${n}${localSuffix}.`,
+    ],
+  };
+
+  return { title, description, keywords, copy };
+}

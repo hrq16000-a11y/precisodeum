@@ -51,10 +51,10 @@ const DashboardAgencyDataPage = () => {
         .eq('user_id', user.id)
         .maybeSingle();
       if (data) {
-        // cnpj / email / legal_name só via RPC SECURITY DEFINER (dono ou admin)
+        // cnpj / email / legal_name / whatsapp só via RPC SECURITY DEFINER (dono ou admin)
         const { data: priv } = await (supabase as any).rpc('get_agency_private', { _agency_id: data.id });
         const p0 = Array.isArray(priv) ? priv[0] : priv;
-        Object.assign(data, { cnpj: p0?.cnpj ?? null, email: p0?.email ?? null, legal_name: p0?.legal_name ?? null });
+        Object.assign(data, { cnpj: p0?.cnpj ?? null, email: p0?.email ?? null, legal_name: p0?.legal_name ?? null, whatsapp: p0?.whatsapp ?? null });
         setAgency(data);
         setForm({
           name: data.name || '',

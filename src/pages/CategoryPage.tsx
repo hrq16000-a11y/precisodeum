@@ -14,7 +14,7 @@ import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoPromptBanner from '@/components/GeoPromptBanner';
 import CategoryOpportunityCTA from '@/components/categories/CategoryOpportunityCTA';
 import CategoryIntentContent from '@/components/categories/CategoryIntentContent';
-import { buildCategoryKeywords } from '@/lib/categoryIntentContent';
+import { buildCategoryKeywords, buildOpportunitySeo } from '@/lib/categoryIntentContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import ProgressIndicator from '@/components/motion/ProgressIndicator';
@@ -164,17 +164,25 @@ const CategoryPage = () => {
   }, [allProviders, minScore]);
 
   const cityForSeo = geoCity ? geoCity.trim() : '';
-  const dynamicTitle = category
+  // Página de oportunidade: categoria existente mas sem nenhum prestador.
+  const isOpportunityPage = !!category && allProviders.length === 0;
+  const opportunitySeo = useMemo(
+    () => (category && isOpportunityPage
+      ? buildOpportunitySeo(category.name, cityForSeo || null, geoState)
+      : null),
+    [category, isOpportunityPage, cityForSeo, geoState],
+  );
+  const dynamicTitle = opportunitySeo?.title ?? (category
     ? (cityForSeo
         ? `${category.name} em ${cityForSeo} - Profissionais Verificados | Preciso de Um`
         : `${category.name} no Brasil - Profissionais Verificados | Preciso de Um`)
-    : 'Categoria';
+    : 'Categoria');
   const seoCount = seoEligibleProviders.length || allProviders.length;
-  const dynamicDescription = category
+  const dynamicDescription = opportunitySeo?.description ?? (category
     ? (cityForSeo
         ? `Os melhores profissionais de ${category.name} em ${cityForSeo}. ${seoCount} prestadores com cidade validada e perfil completo. Contato direto pelo WhatsApp.`
         : `Encontre os melhores profissionais de ${category.name} no Brasil. ${seoCount} prestadores com perfil completo e cidade validada.`)
-    : 'Encontre profissionais por categoria.';
+    : 'Encontre profissionais por categoria.');
 
   const seoCanonical = slug ? `${SITE_BASE_URL}/categoria/${slug}` : undefined;
 
@@ -328,7 +336,7 @@ const CategoryPage = () => {
         title={dynamicTitle}
         description={dynamicDescription}
         canonical={seoCanonical}
-        keywords={buildCategoryKeywords(category.name, cityForSeo || null, geoState)}
+        keywords={opportunitySeo?.keywords ?? buildCategoryKeywords(category.name, cityForSeo || null, geoState)}
         ogImage={categorySocialImage || undefined}
       />
       <Header />
@@ -603,12 +611,29 @@ const CategoryPage = () => {
         )}
 
         {totalDisplay === 0 && outOfStateProviders.length === 0 && (
-          <CategoryOpportunityCTA
-            categoryName={category.name}
-            categorySlug={slug}
-            icon={category.icon}
-            city={geoCity}
-          />
+          <>
+            <CategoryOpportunityCTA
+              categoryName={category.name}
+              categorySlug={slug}
+              icon={category.icon}
+              city={geoCity}
+            />
+
+            {opportunitySeo && (
+              <section className="mx-auto my-8 max-w-3xl rounded-3xl border border-border bg-card p-5 md:p-8">
+                <h2 className="font-display text-lg font-bold text-foreground md:text-xl">
+                  {opportunitySeo.copy.heading}
+                </h2>
+                <div className="mt-3 space-y-3">
+                  {opportunitySeo.copy.paragraphs.map((p) => (
+                    <p key={p.slice(0, 40)} className="text-sm leading-relaxed text-muted-foreground">
+                      {p}
+                    </p>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
 
         <PaginationControls currentPage={page} totalItems={totalDisplay} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />

@@ -627,9 +627,12 @@ export type Database = {
       }
       category_opportunity_leads: {
         Row: {
+          admin_notes: string | null
           category_name: string | null
           category_slug: string
           city: string | null
+          contacted_at: string | null
+          contacted_by: string | null
           created_at: string
           email: string | null
           id: string
@@ -637,13 +640,19 @@ export type Database = {
           message: string | null
           name: string
           phone: string | null
+          provider_id: string | null
           source_path: string | null
+          sponsor_id: string | null
           status: string
+          user_id: string | null
         }
         Insert: {
+          admin_notes?: string | null
           category_name?: string | null
           category_slug: string
           city?: string | null
+          contacted_at?: string | null
+          contacted_by?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -651,13 +660,19 @@ export type Database = {
           message?: string | null
           name: string
           phone?: string | null
+          provider_id?: string | null
           source_path?: string | null
+          sponsor_id?: string | null
           status?: string
+          user_id?: string | null
         }
         Update: {
+          admin_notes?: string | null
           category_name?: string | null
           category_slug?: string
           city?: string | null
+          contacted_at?: string | null
+          contacted_by?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -665,10 +680,70 @@ export type Database = {
           message?: string | null
           name?: string
           phone?: string | null
+          provider_id?: string | null
           source_path?: string | null
+          sponsor_id?: string | null
           status?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "category_opportunity_leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "lead_conversion_daily"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "category_opportunity_leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_audit_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "category_opportunity_leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_health_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_opportunity_leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_opportunity_leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "public_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_opportunity_leads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "user_master_view"
+            referencedColumns: ["provider_id"]
+          },
+          {
+            foreignKeyName: "category_opportunity_leads_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_opportunity_leads_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_conversations: {
         Row: {
@@ -10435,6 +10510,7 @@ export type Database = {
           email: string
           id: string
           legal_name: string
+          whatsapp: string
         }[]
       }
       get_app_version_config: { Args: never; Returns: Json }

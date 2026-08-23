@@ -101,13 +101,15 @@ const Header = () => {
   const location = useLocation();
   const { user, profile, signOut, loading } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
+  const rawWhatsappGroupUrl = useSettingValue('whatsapp_group_url');
   const { city: rawGeoCity, temp: rawGeoTemp } = useGeoCity();
   // A localização vem de localStorage/GPS: no SSR ela não existe. Só liberamos
   // após a hidratação para o 1º render do cliente bater com o do servidor.
   const hydrated = useHydrated();
   const geoCity = hydrated ? rawGeoCity : null;
   const geoTemp = hydrated ? rawGeoTemp : null;
+  // site_settings só resolve no cliente (react-query): manter null no 1º render.
+  const whatsappGroupUrl = hydrated ? rawWhatsappGroupUrl : null;
   const headerRef = useRef<HTMLElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
