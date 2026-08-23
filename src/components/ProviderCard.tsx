@@ -328,7 +328,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
             <Link
               to={`/profissional/${provider.slug}`}
               className="block min-w-0 max-w-full"
-              onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource)}
+              onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource, { provider_kind: providerKind })}
               {...handlers}
             >
               <div className="flex min-w-0 items-start justify-between gap-2 overflow-hidden">
@@ -514,7 +514,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
           <Button variant="outline" size="sm" className={`h-10 px-3 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:text-sm whitespace-nowrap ${contactUnavailable ? 'min-w-0 flex-1 basis-0' : 'min-w-[104px] max-w-[128px] shrink-0'}`} asChild>
             <Link
               to={`/profissional/${provider.slug}`}
-              onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource)}
+              onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource, { provider_kind: providerKind })}
               {...handlers}
               className="inline-flex w-full items-center justify-center gap-1 truncate"
             >
