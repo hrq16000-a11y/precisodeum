@@ -61,6 +61,7 @@ const menuGroups: { label: string; items: GroupItem[] }[] = [
       { label: 'Blocos', icon: 'PanelTop', path: '/admin/blocos' },
       { label: 'Páginas', icon: 'FileText', path: '/admin/paginas' },
       { label: 'Categorias', icon: 'FolderOpen', path: '/admin/categorias' },
+      { label: 'Oportunidades', icon: 'Sparkles', path: '/admin/oportunidades-categoria' },
       { label: 'Vagas', icon: 'ClipboardList', path: '/admin/vagas' },
       { label: 'Blog', icon: 'Newspaper', path: '/admin/blog' },
       { label: 'Serv. Populares', icon: 'Wrench', path: '/admin/servicos-populares' },

@@ -25,6 +25,8 @@ export interface SeoMetaProps {
   ogImage?: string;
   /** Emite robots="noindex, nofollow" para páginas inválidas/vazias. */
   noindex?: boolean;
+  /** Keywords locais (categoria + cidade). Opcional. */
+  keywords?: string;
 }
 
 const SUFFIX = 'Preciso de um';
@@ -34,7 +36,7 @@ function withSuffix(title: string) {
   return title.includes(SUFFIX) ? title : `${title} | ${SUFFIX}`;
 }
 
-export function SeoMeta({ title, description, canonical, ogType = 'website', ogImage, noindex }: SeoMetaProps) {
+export function SeoMeta({ title, description, canonical, ogType = 'website', ogImage, noindex, keywords }: SeoMetaProps) {
   const fullTitle = withSuffix(title);
   const desc = (description && description.trim().length >= 10)
     ? description
@@ -53,6 +55,7 @@ export function SeoMeta({ title, description, canonical, ogType = 'website', ogI
     <Helmet prioritizeSeoTags>
       <title>{fullTitle}</title>
       <meta name="description" content={desc} />
+      {keywords ? <meta name="keywords" content={keywords} /> : null}
       <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
       <link rel="canonical" href={canonicalUrl} />
       <meta property="og:title" content={fullTitle} />

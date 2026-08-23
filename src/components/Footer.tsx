@@ -1,6 +1,7 @@
 import { Link } from '@/lib/router-compat';
 import { MessageCircle, Instagram, Facebook } from 'lucide-react';
-import { useMemo, lazy, Suspense } from 'react';
+import { useMemo, useState, useEffect, lazy, Suspense } from 'react';
+import { useHydrated } from '@tanstack/react-router';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { useMenuItemsByLocations } from '@/hooks/useMenuItems';
 import { importWithRetry } from '@/lib/lazyWithRetry';
@@ -68,7 +69,14 @@ const FooterLinkItem = ({ item }: { item: any }) => {
 };
 
 const Footer = () => {
-  const tagline = useMemo(() => footerTaglines[Math.floor(Math.random() * footerTaglines.length)], []);
+  // SSR e primeiro render do cliente usam o mesmo item (evita hydration mismatch);
+  // a variação aleatória só entra após a hidratação.
+  const footerHydrated = useHydrated();
+  const [taglineIndex, setTaglineIndex] = useState(0);
+  useEffect(() => {
+    setTaglineIndex(Math.floor(Math.random() * footerTaglines.length));
+  }, []);
+  const tagline = footerTaglines[footerHydrated ? taglineIndex : 0];
   const blogEnabled = useFeatureEnabled('module_blog');
 
   const { data: menuGroups } = useMenuItemsByLocations(['footer', 'footer_eco']);

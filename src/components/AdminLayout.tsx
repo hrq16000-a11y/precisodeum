@@ -58,6 +58,7 @@ const menuGroups = [
       { label: 'Blocos de Página', icon: PanelTop, path: '/admin/blocos' },
       { label: 'Páginas', icon: FileText, path: '/admin/paginas' },
       { label: 'Categorias', icon: FolderOpen, path: '/admin/categorias' },
+      { label: 'Oportunidades', icon: Sparkles, path: '/admin/oportunidades-categoria' },
       { label: 'Vagas', icon: ClipboardList, path: '/admin/vagas' },
       { label: 'Importar Vagas', icon: ClipboardList, path: '/admin/vagas/importar' },
       { label: 'Blog / Notícias', icon: Newspaper, path: '/admin/blog' },

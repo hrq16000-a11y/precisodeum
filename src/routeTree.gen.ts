@@ -107,6 +107,7 @@ import { Route as AdminOnboardingRouteImport } from './routes/admin/onboarding'
 import { Route as AdminOnboardingFunnelRouteImport } from './routes/admin/onboarding-funnel'
 import { Route as AdminOnboardingRegressionRouteImport } from './routes/admin/onboarding-regression'
 import { Route as AdminOnboardingStatsRouteImport } from './routes/admin/onboarding-stats'
+import { Route as AdminOportunidadesCategoriaRouteImport } from './routes/admin/oportunidades-categoria'
 import { Route as AdminOverviewRouteImport } from './routes/admin/overview'
 import { Route as AdminPaginasRouteImport } from './routes/admin/paginas'
 import { Route as AdminPerfisOrfaosRouteImport } from './routes/admin/perfis-orfaos'
@@ -722,6 +723,12 @@ const AdminOnboardingStatsRoute = AdminOnboardingStatsRouteImport.update({
   path: '/admin/onboarding-stats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOportunidadesCategoriaRoute =
+  AdminOportunidadesCategoriaRouteImport.update({
+    id: '/admin/oportunidades-categoria',
+    path: '/admin/oportunidades-categoria',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminOverviewRoute = AdminOverviewRouteImport.update({
   id: '/admin/overview',
   path: '/admin/overview',
@@ -1440,6 +1447,7 @@ export interface FileRoutesByFullPath {
   '/admin/onboarding-funnel': typeof AdminOnboardingFunnelRoute
   '/admin/onboarding-regression': typeof AdminOnboardingRegressionRoute
   '/admin/onboarding-stats': typeof AdminOnboardingStatsRoute
+  '/admin/oportunidades-categoria': typeof AdminOportunidadesCategoriaRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/paginas': typeof AdminPaginasRoute
   '/admin/perfis-orfaos': typeof AdminPerfisOrfaosRoute
@@ -1661,6 +1669,7 @@ export interface FileRoutesByTo {
   '/admin/onboarding-funnel': typeof AdminOnboardingFunnelRoute
   '/admin/onboarding-regression': typeof AdminOnboardingRegressionRoute
   '/admin/onboarding-stats': typeof AdminOnboardingStatsRoute
+  '/admin/oportunidades-categoria': typeof AdminOportunidadesCategoriaRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/paginas': typeof AdminPaginasRoute
   '/admin/perfis-orfaos': typeof AdminPerfisOrfaosRoute
@@ -1883,6 +1892,7 @@ export interface FileRoutesById {
   '/admin/onboarding-funnel': typeof AdminOnboardingFunnelRoute
   '/admin/onboarding-regression': typeof AdminOnboardingRegressionRoute
   '/admin/onboarding-stats': typeof AdminOnboardingStatsRoute
+  '/admin/oportunidades-categoria': typeof AdminOportunidadesCategoriaRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/paginas': typeof AdminPaginasRoute
   '/admin/perfis-orfaos': typeof AdminPerfisOrfaosRoute
@@ -2106,6 +2116,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding-funnel'
     | '/admin/onboarding-regression'
     | '/admin/onboarding-stats'
+    | '/admin/oportunidades-categoria'
     | '/admin/overview'
     | '/admin/paginas'
     | '/admin/perfis-orfaos'
@@ -2327,6 +2338,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding-funnel'
     | '/admin/onboarding-regression'
     | '/admin/onboarding-stats'
+    | '/admin/oportunidades-categoria'
     | '/admin/overview'
     | '/admin/paginas'
     | '/admin/perfis-orfaos'
@@ -2548,6 +2560,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding-funnel'
     | '/admin/onboarding-regression'
     | '/admin/onboarding-stats'
+    | '/admin/oportunidades-categoria'
     | '/admin/overview'
     | '/admin/paginas'
     | '/admin/perfis-orfaos'
@@ -2770,6 +2783,7 @@ export interface RootRouteChildren {
   AdminOnboardingFunnelRoute: typeof AdminOnboardingFunnelRoute
   AdminOnboardingRegressionRoute: typeof AdminOnboardingRegressionRoute
   AdminOnboardingStatsRoute: typeof AdminOnboardingStatsRoute
+  AdminOportunidadesCategoriaRoute: typeof AdminOportunidadesCategoriaRoute
   AdminOverviewRoute: typeof AdminOverviewRoute
   AdminPaginasRoute: typeof AdminPaginasRoute
   AdminPerfisOrfaosRoute: typeof AdminPerfisOrfaosRoute
@@ -3581,6 +3595,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/onboarding-stats'
       fullPath: '/admin/onboarding-stats'
       preLoaderRoute: typeof AdminOnboardingStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/oportunidades-categoria': {
+      id: '/admin/oportunidades-categoria'
+      path: '/admin/oportunidades-categoria'
+      fullPath: '/admin/oportunidades-categoria'
+      preLoaderRoute: typeof AdminOportunidadesCategoriaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/overview': {
@@ -4530,6 +4551,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminOnboardingFunnelRoute: AdminOnboardingFunnelRoute,
   AdminOnboardingRegressionRoute: AdminOnboardingRegressionRoute,
   AdminOnboardingStatsRoute: AdminOnboardingStatsRoute,
+  AdminOportunidadesCategoriaRoute: AdminOportunidadesCategoriaRoute,
   AdminOverviewRoute: AdminOverviewRoute,
   AdminPaginasRoute: AdminPaginasRoute,
   AdminPerfisOrfaosRoute: AdminPerfisOrfaosRoute,

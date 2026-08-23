@@ -13,6 +13,8 @@ import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoPromptBanner from '@/components/GeoPromptBanner';
 import CategoryOpportunityCTA from '@/components/categories/CategoryOpportunityCTA';
+import CategoryIntentContent from '@/components/categories/CategoryIntentContent';
+import { buildCategoryKeywords } from '@/lib/categoryIntentContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import ProgressIndicator from '@/components/motion/ProgressIndicator';
@@ -61,6 +63,7 @@ const CategoryPage = () => {
   const [page, setPage] = useState(1);
   
   const [showOutOfState, setShowOutOfState] = useState(false);
+  const [sortMode, setSortMode] = useState<'proximity' | 'rating'>('proximity');
 
   // Request GPS proactively on mount
   useEffect(() => {
@@ -88,8 +91,23 @@ const CategoryPage = () => {
   const allProviders = data?.providers || [];
 
   const { localProviders, nearbyProviders, outOfStateProviders, isFallback, expansionLevel } = useMemo(() => {
+    // Ordenação inteligente: 'proximity' mantém o ranking geográfico padrão;
+    // 'rating' reordena cada grupo pela melhor avaliação (desempate por distância).
+    const applySort = <T,>(list: T[]): T[] => {
+      if (sortMode !== 'rating') return list;
+      return [...list].sort((a: any, b: any) => {
+        const ra = Number(a?.rating ?? a?.average_rating ?? 0);
+        const rb = Number(b?.rating ?? b?.average_rating ?? 0);
+        if (rb !== ra) return rb - ra;
+        const ca = Number(a?.reviewCount ?? a?.review_count ?? 0);
+        const cb = Number(b?.reviewCount ?? b?.review_count ?? 0);
+        if (cb !== ca) return cb - ca;
+        return Number(a?._dist ?? Infinity) - Number(b?._dist ?? Infinity);
+      });
+    };
+
     if (!geoCity || allProviders.length === 0) {
-      return { localProviders: allProviders, nearbyProviders: [] as DbProvider[], outOfStateProviders: [] as DbProvider[], isFallback: false, expansionLevel: null };
+      return { localProviders: applySort(allProviders), nearbyProviders: [] as DbProvider[], outOfStateProviders: [] as DbProvider[], isFallback: false, expansionLevel: null };
     }
 
     const ranked = filterAndRankProvidersGrouped(
@@ -105,13 +123,13 @@ const CategoryPage = () => {
     );
 
     return {
-      localProviders: ranked.local,
-      nearbyProviders: ranked.nearby,
-      outOfStateProviders: ranked.outOfState,
+      localProviders: applySort(ranked.local),
+      nearbyProviders: applySort(ranked.nearby),
+      outOfStateProviders: applySort(ranked.outOfState),
       isFallback: ranked.isFallback,
       expansionLevel: ranked.isFallback ? 'all' as const : null,
     };
-  }, [allProviders, category?.name, geoCity, geoState, radiusKm, slug, userLat, userLon]);
+  }, [allProviders, category?.name, geoCity, geoState, radiusKm, slug, userLat, userLon, sortMode]);
 
   const nearestProvider = localProviders.length > 0 ? localProviders[0] : (nearbyProviders.length > 0 ? nearbyProviders[0] : undefined);
   const nearestDistanceKm = (nearestProvider as any)?._dist;
@@ -310,6 +328,7 @@ const CategoryPage = () => {
         title={dynamicTitle}
         description={dynamicDescription}
         canonical={seoCanonical}
+        keywords={buildCategoryKeywords(category.name, cityForSeo || null, geoState)}
         ogImage={categorySocialImage || undefined}
       />
       <Header />
@@ -419,6 +438,30 @@ const CategoryPage = () => {
             nearestDistanceKm={nearestDistanceKm}
             nearestCity={nearestCity}
           />
+        )}
+
+        {/* Ordenação inteligente */}
+        {(localProviders.length + nearbyProviders.length) > 1 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Ordenar por:</span>
+            {([
+              { key: 'proximity' as const, label: 'Proximidade' },
+              { key: 'rating' as const, label: 'Melhor avaliação' },
+            ]).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => { setSortMode(opt.key); setPage(1); }}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                  sortMode === opt.key
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground hover:border-primary/40'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         )}
 
         {/* Local results grid */}
@@ -571,6 +614,12 @@ const CategoryPage = () => {
         <PaginationControls currentPage={page} totalItems={totalDisplay} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setPage} />
       </div>
       
+      <CategoryIntentContent
+        categorySlug={slug || ''}
+        categoryName={category.name}
+        city={geoCity}
+      />
+
       <CategorySeoBlock
         categorySlug={slug || ''}
         categoryName={category.name}

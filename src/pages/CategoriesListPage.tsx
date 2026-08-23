@@ -5,9 +5,11 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, MapPin } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
+import { useCategoriesInRegion } from '@/hooks/useCategoriesInRegion';
+import { useGeoCity } from '@/hooks/useGeoCity';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 const INITIAL = 12;
@@ -16,11 +18,25 @@ const MORE = 12;
 const CategoriesListPage = () => {
   const [search, setSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState(INITIAL);
+  const { city: geoCity, state: geoState } = useGeoCity();
+  const [cityFilter, setCityFilter] = useState<string>('');
   const { data: categories = [], isLoading } = useCategoriesWithCount();
 
+  const activeCity = cityFilter || null;
+  const { data: regional, isLoading: loadingRegion } = useCategoriesInRegion(
+    activeCity,
+    activeCity ? geoState : null,
+  );
+
+  const cityLabel = activeCity || '';
+
   useSeoHead({
-    title: 'Categorias de Serviços | Preciso de um',
-    description: 'Todas as categorias de serviços profissionais disponíveis na plataforma.',
+    title: cityLabel
+      ? `Categorias de Serviços em ${cityLabel} | Preciso de um`
+      : 'Categorias de Serviços | Preciso de um',
+    description: cityLabel
+      ? `Veja as categorias de serviços com profissionais disponíveis em ${cityLabel} e as categorias abertas para novos prestadores e patrocinadores.`
+      : 'Todas as categorias de serviços profissionais disponíveis na plataforma.',
     canonical: `${SITE_BASE_URL}/categorias`,
   });
 
@@ -41,8 +57,20 @@ const CategoriesListPage = () => {
     ? shuffled.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     : shuffled;
 
-  const withProviders = filtered.filter((c) => c.count > 0);
-  const withoutProviders = filtered.filter((c) => c.count === 0);
+  // Quando há filtro de cidade, "com prestador" passa a ser o conjunto regional.
+  const regionalIds = useMemo(
+    () => new Set((regional?.items || []).map((c) => c.id)),
+    [regional],
+  );
+  const regionalScopeIsCity = !!activeCity && regional?.scope === 'city';
+
+  const withProviders = activeCity
+    ? filtered.filter((c) => regionalIds.has(c.id) && regionalScopeIsCity)
+    : filtered.filter((c) => c.count > 0);
+  const withoutProviders = activeCity
+    ? filtered.filter((c) => !(regionalIds.has(c.id) && regionalScopeIsCity))
+    : filtered.filter((c) => c.count === 0);
+
 
   const visible = withProviders.slice(0, visibleCount);
   const hasMore = visibleCount < withProviders.length;
@@ -54,12 +82,12 @@ const CategoriesListPage = () => {
       <section className="bg-hero py-10">
         <div className="container text-center">
           <h1 className="font-display text-2xl font-bold text-primary-foreground md:text-4xl">
-            Categorias de Serviços
+            Categorias de Serviços{cityLabel ? ` em ${cityLabel}` : ''}
           </h1>
           <p className="mx-auto mt-2 max-w-lg text-sm text-primary-foreground/70">
             Escolha a categoria do serviço que você precisa
           </p>
-          <div className="mx-auto mt-4 max-w-md">
+          <div className="mx-auto mt-4 grid max-w-2xl gap-2 sm:grid-cols-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -69,7 +97,37 @@ const CategoriesListPage = () => {
                 className="pl-9 bg-card"
               />
             </div>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Filtrar por cidade..."
+                value={cityFilter}
+                onChange={(e) => { setCityFilter(e.target.value); setVisibleCount(INITIAL); }}
+                className="pl-9 bg-card"
+              />
+            </div>
           </div>
+          {geoCity && !cityFilter && (
+            <button
+              type="button"
+              onClick={() => setCityFilter(geoCity)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/10 px-3 py-1 text-xs font-semibold text-primary-foreground"
+            >
+              <MapPin className="h-3 w-3" /> Ver só {geoCity}
+            </button>
+          )}
+          {cityFilter && (
+            <div className="mt-2 flex items-center justify-center gap-2 text-xs text-primary-foreground/80">
+              {loadingRegion ? <span>Carregando {cityFilter}...</span> : <span>Exibindo resultados de {cityFilter}</span>}
+              <button
+                type="button"
+                onClick={() => setCityFilter('')}
+                className="rounded-full bg-primary-foreground/10 px-2 py-0.5 font-semibold text-primary-foreground"
+              >
+                limpar
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
