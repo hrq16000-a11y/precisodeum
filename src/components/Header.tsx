@@ -379,7 +379,7 @@ const Header = () => {
             {mobileNavLinks.filter(i => !i.parent_id).map((item, index) => {
               const active = isActiveLink(item.url);
               const ItemIcon = resolveIcon(item.icon) || CircleDot;
-              const baseCls = `group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:translate-x-0.5 ${active ? 'bg-accent/10 text-accent shadow-sm' : 'text-foreground hover:bg-muted'}`;
+              const baseCls = `group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:translate-x-0.5 ${active ? 'bg-accent/10 text-accent shadow-xs' : 'text-foreground hover:bg-muted'}`;
               const iconWrapCls = `flex h-7 w-7 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110 ${active ? 'bg-accent/15 text-accent' : 'bg-muted/60 text-muted-foreground group-hover:bg-accent/10 group-hover:text-accent'}`;
               const content = (
                 <>

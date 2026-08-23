@@ -388,7 +388,7 @@ const AdminJobsPage = () => {
       ) : (
         <div className="mt-6 space-y-2">
           {paginated.map((job: any) => (
-            <div key={job.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+            <div key={job.id} className="rounded-xl border border-border bg-card p-3 shadow-xs">
               <div className="flex items-start gap-2">
                 <SelectionCheckbox
                   checked={bulk.selectedIds.has(job.id)}

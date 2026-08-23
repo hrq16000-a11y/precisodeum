@@ -16,7 +16,7 @@ const QuickActionsHero = () => {
       <button
         type="button"
         onClick={() => navigate('/dashboard/portfolio?action=daily-post')}
-        className="group flex flex-col items-start gap-2 rounded-2xl border border-border bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-left text-white shadow-sm transition-transform hover:-translate-y-0.5 active:translate-y-0"
+        className="group flex flex-col items-start gap-2 rounded-2xl border border-border bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-left text-white shadow-xs transition-transform hover:-translate-y-0.5 active:translate-y-0"
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
           <Sparkles size={20} strokeWidth={1.5} />
@@ -30,7 +30,7 @@ const QuickActionsHero = () => {
       <button
         type="button"
         onClick={() => navigate('/dashboard/servicos?action=new')}
-        className="group flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-6 text-left text-foreground shadow-sm transition-transform hover:-translate-y-0.5 active:translate-y-0"
+        className="group flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-6 text-left text-foreground shadow-xs transition-transform hover:-translate-y-0.5 active:translate-y-0"
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
           <PlusCircle size={20} strokeWidth={1.5} />

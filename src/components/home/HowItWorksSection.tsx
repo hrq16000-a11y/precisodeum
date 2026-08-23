@@ -119,14 +119,14 @@ const HowItWorksSection = () => {
             const Icon = item.Icon;
             return (
               <FadeInSection key={item.step} delay={i * 0.06}>
-                <li className="group rounded-2xl border border-border bg-card p-3 shadow-sm transition-all hover:shadow-md hover:border-primary/30 md:p-4">
+                <li className="group rounded-2xl border border-border bg-card p-3 shadow-xs transition-all hover:shadow-md hover:border-primary/30 md:p-4">
                   {/* Linha principal — sempre única no mobile */}
                   <div className="flex items-center gap-3">
                     <div className="relative shrink-0">
                       <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/60 ring-1 ring-border transition-colors group-hover:bg-primary/5 group-hover:ring-primary/20 md:h-12 md:w-12">
                         <Icon className="h-5 w-5 text-primary md:h-6 md:w-6" strokeWidth={2} />
                       </div>
-                      <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground shadow ring-2 ring-card">
+                      <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground shadow-sm ring-2 ring-card">
                         {item.step}
                       </span>
                     </div>

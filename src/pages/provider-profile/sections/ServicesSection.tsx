@@ -239,7 +239,7 @@ const ServicesSection = ({
             >
               <div className="flex gap-3">
                 {s.serviceImages?.length > 0 && (
-                  <div className="shrink-0 h-20 w-20 overflow-hidden rounded-lg border border-border shadow-sm">
+                  <div className="shrink-0 h-20 w-20 overflow-hidden rounded-lg border border-border shadow-xs">
                     <img
                       src={serviceImageThumb(s.serviceImages[0].image_url)}
                       alt=""

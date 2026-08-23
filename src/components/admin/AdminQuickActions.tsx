@@ -75,7 +75,7 @@ const AdminQuickActions = () => {
         <button
           onClick={() => setConfirmOpen(true)}
           disabled={running}
-          className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/60 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 text-[11px] font-bold text-amber-800 shadow-sm hover:shadow-md transition-all disabled:opacity-60 dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-200"
+          className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/60 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 text-[11px] font-bold text-amber-800 shadow-xs hover:shadow-md transition-all disabled:opacity-60 dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-200"
           title="Recalcula engagement_points de todos os perfis e atualiza níveis (Iniciante → Mestre)"
         >
           {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trophy className="h-3.5 w-3.5" />}
@@ -94,7 +94,7 @@ const AdminQuickActions = () => {
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate(action.path)}
-              className="flex flex-col items-center gap-1.5 rounded-xl border border-border/50 bg-card p-3 shadow-sm hover:shadow-md transition-all"
+              className="flex flex-col items-center gap-1.5 rounded-xl border border-border/50 bg-card p-3 shadow-xs hover:shadow-md transition-all"
             >
               <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${action.color}`}>
                 <Icon className="h-4 w-4" />

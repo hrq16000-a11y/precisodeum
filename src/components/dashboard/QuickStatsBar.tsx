@@ -42,7 +42,7 @@ const QuickStatsBar = ({ pendingLeads, providerSlug }: QuickStatsBarProps) => {
               onClick={() => navigate(action.path)}
               className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-200 ${
                 action.accent
-                  ? 'bg-accent text-accent-foreground shadow-sm hover:shadow-md'
+                  ? 'bg-accent text-accent-foreground shadow-xs hover:shadow-md'
                   : 'bg-muted/60 text-foreground hover:bg-muted border border-border/50'
               }`}
             >

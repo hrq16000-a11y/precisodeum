@@ -76,7 +76,7 @@ const AdminAuthMetricsPage = () => {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+        <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">

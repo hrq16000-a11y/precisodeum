@@ -265,7 +265,7 @@ const JobsPage = () => {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40" />
         <div className="container relative z-10 px-4">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mx-auto max-w-3xl text-center">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-sm">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-xs">
               <Sparkles className="h-3.5 w-3.5" />
               Portal de Vagas & Oportunidades
             </div>
@@ -286,14 +286,14 @@ const JobsPage = () => {
                     placeholder="Cargo, empresa ou palavra-chave..."
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); resetPage(); }}
-                    className="h-12 w-full bg-transparent pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none sm:h-13"
+                    className="h-12 w-full bg-transparent pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden sm:h-13"
                   />
                 </div>
                 <div className="hidden items-center border-l border-border px-1 sm:flex">
                   <select
                     value={cityFilter}
                     onChange={(e) => { setCityFilter(e.target.value); resetPage(); }}
-                    className="h-full appearance-none bg-transparent px-3 text-sm text-foreground focus:outline-none"
+                    className="h-full appearance-none bg-transparent px-3 text-sm text-foreground focus:outline-hidden"
                   >
                     <option value="">Todas as cidades</option>
                     {cities.map((c: string) => <option key={c} value={c}>{c}</option>)}
@@ -326,7 +326,7 @@ const JobsPage = () => {
       </section>
 
       {/* ── Toolbar ── */}
-      <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
+      <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-xs">
         <div className="container px-4 py-2.5">
           <div className="flex flex-wrap items-center gap-2">
             {/* Mobile city */}
@@ -340,7 +340,7 @@ const JobsPage = () => {
             {/* Sort */}
             <div className="hidden items-center gap-1.5 sm:flex">
               <ListOrdered className="h-3.5 w-3.5 text-muted-foreground" />
-              <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); resetPage(); }} className="appearance-none bg-transparent text-xs font-medium text-foreground focus:outline-none">
+              <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); resetPage(); }} className="appearance-none bg-transparent text-xs font-medium text-foreground focus:outline-hidden">
                 {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
@@ -359,7 +359,7 @@ const JobsPage = () => {
               {/* Per page */}
               <div className="hidden items-center gap-1 sm:flex">
                 <span className="text-[10px] text-muted-foreground">Exibir:</span>
-                <select value={perPage} onChange={(e) => { setPerPage(Number(e.target.value)); resetPage(); }} className="appearance-none rounded border border-input bg-background px-1.5 py-1 text-xs text-foreground focus:outline-none">
+                <select value={perPage} onChange={(e) => { setPerPage(Number(e.target.value)); resetPage(); }} className="appearance-none rounded border border-input bg-background px-1.5 py-1 text-xs text-foreground focus:outline-hidden">
                   {PER_PAGE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
@@ -427,7 +427,7 @@ const JobsPage = () => {
           <aside className="hidden w-56 shrink-0 lg:block">
             <div className="sticky top-14 space-y-4">
               {/* Summary card */}
-              <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
                 <h3 className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                   <Briefcase className="h-3.5 w-3.5 text-accent" /> Resumo
                 </h3>
@@ -446,7 +446,7 @@ const JobsPage = () => {
               </div>
 
               {/* Categories */}
-              <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
                 <h3 className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                   <Tag className="h-3.5 w-3.5 text-accent" /> Categorias
                 </h3>
@@ -532,7 +532,7 @@ const JobsPage = () => {
               )}
 
               {/* Mobile sort */}
-              <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); resetPage(); }} className="appearance-none rounded border border-input bg-background px-2 py-1 text-[10px] text-foreground focus:outline-none sm:hidden">
+              <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); resetPage(); }} className="appearance-none rounded border border-input bg-background px-2 py-1 text-[10px] text-foreground focus:outline-hidden sm:hidden">
                 {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
@@ -578,7 +578,7 @@ const JobsPage = () => {
                       <Link
                         key={job.id}
                         to={`/vaga/${job.slug || job.id}`}
-                        className="group flex gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:shadow-md hover:border-accent/30 sm:gap-4 sm:p-4"
+                        className="group flex gap-3 rounded-xl border border-border bg-card p-3 shadow-xs transition-all hover:shadow-md hover:border-accent/30 sm:gap-4 sm:p-4"
                       >
                         {/* Icon */}
                         <div className="hidden shrink-0 sm:block">

@@ -72,7 +72,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackClick(s.id)}
-              className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5"
+              className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs transition-all hover:shadow-lg hover:-translate-y-0.5"
             >
               <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted/20">
                 {s.image_url ? (
@@ -89,7 +89,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
                   </div>
                 )}
                 {s.tier === 'premium' && (
-                  <span className="absolute top-2 left-2 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold text-accent-foreground shadow-sm">
+                  <span className="absolute top-2 left-2 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold text-accent-foreground shadow-xs">
                     Premium
                   </span>
                 )}
@@ -126,7 +126,7 @@ const AdShowcase = ({ className = '' }: { className?: string }) => {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackClick(current.id)}
-                  className="group block overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+                  className="group block overflow-hidden rounded-xl border border-border bg-card shadow-xs"
                 >
                   <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted/20">
                     {current.image_url ? (

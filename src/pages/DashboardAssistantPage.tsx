@@ -290,7 +290,7 @@ export default function DashboardAssistantPage() {
       </div>
 
       {/* Progress + Continue CTA */}
-      <div className="mb-5 rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <div className="mb-5 rounded-2xl border border-border bg-card p-4 shadow-xs">
         <div className="mb-2 flex items-center justify-between gap-3">
           <div className="text-sm font-medium text-foreground">
             Progresso geral

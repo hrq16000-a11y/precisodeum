@@ -154,7 +154,7 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
           variant === 'hero'
             ? 'border border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/90 hover:bg-primary-foreground/20'
-            : 'border border-border bg-card text-foreground shadow-sm hover:bg-muted'
+            : 'border border-border bg-card text-foreground shadow-xs hover:bg-muted'
         }`}
       >
         <MapPin className={`h-3.5 w-3.5 ${variant === 'hero' ? 'text-secondary' : 'text-accent'}`} />
@@ -216,7 +216,7 @@ const GeoLocationChip = ({ variant = 'default' }: GeoLocationChipProps) => {
               placeholder="Buscar cidade..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-hidden"
             />
           </div>
 

@@ -241,7 +241,7 @@ const SeoPage = () => {
             <div className="grid gap-4 sm:grid-cols-3">
               {providers.slice(0, 3).map((p, i) => (
                 <Link key={p.id} to={`/profissional/${p.slug}`}
-                  className="group rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+                  className="group rounded-2xl border border-border bg-card p-5 shadow-xs hover:shadow-md transition-all hover:-translate-y-0.5"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`flex h-10 w-10 items-center justify-center rounded-xl font-black text-sm ${

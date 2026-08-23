@@ -166,7 +166,7 @@ export const AdminGroupTabs = () => {
                 to={firstPath}
                 className={`relative whitespace-nowrap rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all duration-200 shrink-0 flex items-center gap-1.5 ${
                   active
-                    ? `${colors.active} shadow-sm`
+                    ? `${colors.active} shadow-xs`
                     : `text-muted-foreground ${colors.bg} hover:text-foreground`
                 }`}
               >

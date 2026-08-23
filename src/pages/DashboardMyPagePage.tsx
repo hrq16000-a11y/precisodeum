@@ -352,7 +352,7 @@ const DashboardMyPagePage = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all ${
                 activeTab === tab.id
-                  ? 'bg-card text-foreground shadow-sm'
+                  ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -408,7 +408,7 @@ const DashboardMyPagePage = () => {
                     }`}
                   >
                     <div
-                      className="h-8 w-8 rounded-full shadow-sm ring-1 ring-black/5"
+                      className="h-8 w-8 rounded-full shadow-xs ring-1 ring-black/5"
                       style={{ backgroundColor: c.color }}
                     />
                     <span className="text-[10px] text-muted-foreground font-medium">{c.label}</span>
@@ -425,7 +425,7 @@ const DashboardMyPagePage = () => {
                   <img src={coverImageUrl} alt="Capa" loading="lazy" decoding="async" width={1200} height={300} className="aspect-[4/1] h-full w-full object-cover" />
                   <button
                     onClick={() => setCoverImageUrl('')}
-                    className="absolute top-2 right-2 rounded-full bg-background/80 p-1.5 hover:bg-background shadow"
+                    className="absolute top-2 right-2 rounded-full bg-background/80 p-1.5 hover:bg-background shadow-sm"
                   >
                     <X className="h-4 w-4" />
                   </button>

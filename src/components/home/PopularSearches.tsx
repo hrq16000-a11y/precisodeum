@@ -87,7 +87,7 @@ const PopularSearches = () => {
               <Link
                 key={`${s.cat_slug}-${s.city_slug}`}
                 to={`/buscar?categoria=${s.cat_slug}&cidade=${s.city_slug}`}
-                className="group rounded-full border border-border bg-card px-4 py-2 text-xs text-muted-foreground transition-all duration-300 hover:border-primary hover:text-primary hover:bg-primary/5 hover:shadow-sm hover:-translate-y-0.5"
+                className="group rounded-full border border-border bg-card px-4 py-2 text-xs text-muted-foreground transition-all duration-300 hover:border-primary hover:text-primary hover:bg-primary/5 hover:shadow-xs hover:-translate-y-0.5"
                 style={{ animationDelay: `${i * 30}ms` }}
               >
                 <span className="flex items-center gap-1.5">

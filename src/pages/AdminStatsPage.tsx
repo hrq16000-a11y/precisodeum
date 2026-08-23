@@ -217,7 +217,7 @@ const AdminStatsPage = () => {
               <Activity className="h-5 w-5 text-primary" /> Audiência Global (Leads)
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
                 <p className="text-xs text-muted-foreground">Cliques (7 dias)</p>
                 <p className="text-3xl font-bold text-foreground mt-1">{s.clicks7d}</p>
                 <div className="flex items-center gap-2 mt-1.5 text-[10px]">
@@ -225,7 +225,7 @@ const AdminStatsPage = () => {
                   <span className="inline-flex items-center gap-0.5 text-blue-600"><Phone className="h-3 w-3" /> {s.ph7d}</span>
                 </div>
               </div>
-              <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
                 <p className="text-xs text-muted-foreground">Cliques (30 dias)</p>
                 <p className="text-3xl font-bold text-foreground mt-1">{s.clicks30d}</p>
                 {s.clicksPrev30d > 0 && (() => {
@@ -237,13 +237,13 @@ const AdminStatsPage = () => {
                   );
                 })()}
               </div>
-              <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/10 p-4 shadow-sm">
+              <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/10 p-4 shadow-xs">
                 <p className="text-xs text-muted-foreground">WhatsApp (30d)</p>
                 <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                   {(stats?.clicks30d || 0) > 0 ? Math.round(((stats?.wa7d || 0) / (stats?.clicks7d || 1)) * (stats?.clicks30d || 0)) : 0}
                 </p>
               </div>
-              <div className="rounded-2xl border border-blue-200 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/10 p-4 shadow-sm">
+              <div className="rounded-2xl border border-blue-200 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/10 p-4 shadow-xs">
                 <p className="text-xs text-muted-foreground">Telefone (30d)</p>
                 <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">
                   {(stats?.clicks30d || 0) > 0 ? Math.round(((stats?.ph7d || 0) / (stats?.clicks7d || 1)) * (stats?.clicks30d || 0)) : 0}

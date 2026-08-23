@@ -89,7 +89,7 @@ const DashboardPrivacyPage = () => {
             </p>
           </header>
 
-          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-xs">
             <div className="flex items-start gap-3">
               <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
                 <Download className="h-5 w-5" />

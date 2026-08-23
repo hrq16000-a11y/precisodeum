@@ -139,7 +139,7 @@ const SaleInviteSlot: React.FC<{ locationKey: string; layout: string }> = ({ loc
     <a
       href={href}
       aria-label="Anuncie sua marca nesta posição"
-      className="group relative flex w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-primary/30 shadow-sm transition-all duration-300 hover:border-primary/60 hover:shadow-md"
+      className="group relative flex w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-primary/30 shadow-xs transition-all duration-300 hover:border-primary/60 hover:shadow-md"
       style={{
         minHeight: minH,
         maxHeight: maxH,
@@ -292,7 +292,7 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
         {displayAds.map(ad => (
           <a key={ad.id} href={ad.link_url || '#'} target="_blank" rel="noopener noreferrer sponsored"
             onClick={() => handleClick(ad)}
-            className="block rounded-xl bg-card p-3 shadow-sm transition-all hover:shadow-md border border-border">
+            className="block rounded-xl bg-card p-3 shadow-xs transition-all hover:shadow-md border border-border">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
             {ad.image_url && (
               <div className="mt-2 rounded-lg overflow-hidden" style={{ aspectRatio: ar }}>
@@ -313,7 +313,7 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
         {displayAds.slice(0, 1).map(ad => (
           <a key={ad.id} href={ad.link_url || '#'} target="_blank" rel="noopener noreferrer sponsored"
             onClick={() => handleClick(ad)}
-            className="block rounded-xl border border-border bg-card p-4 transition-all hover:shadow-md shadow-sm">
+            className="block rounded-xl border border-border bg-card p-4 transition-all hover:shadow-md shadow-xs">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
             {ad.image_url && (
               <div className="mt-2 rounded-lg overflow-hidden" style={{ aspectRatio: ar }}>
@@ -335,7 +335,7 @@ const SponsorAdSlot: React.FC<SponsorAdSlotProps> = ({
   return (
     <section ref={containerRef} className={`my-4 sm:my-6 ${className}`}>
       <div className="container mx-auto px-4">
-        <div className="rounded-xl bg-muted/30 p-3 shadow-sm overflow-hidden">
+        <div className="rounded-xl bg-muted/30 p-3 shadow-xs overflow-hidden">
           <span className="mb-2 block text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
             Patrocinado{effectiveCity ? ` • ${effectiveCity}` : ''}
           </span>

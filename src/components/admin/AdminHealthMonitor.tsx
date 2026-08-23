@@ -100,7 +100,7 @@ const AdminHealthMonitor = () => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className={`rounded-2xl border ${overall.borderColor} bg-card p-4 shadow-sm`}
+      className={`rounded-2xl border ${overall.borderColor} bg-card p-4 shadow-xs`}
     >
       <div className="flex items-center gap-2.5 mb-3">
         <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${overall.bg}`}>

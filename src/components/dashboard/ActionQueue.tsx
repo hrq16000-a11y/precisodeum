@@ -138,7 +138,7 @@ const ActionQueue = ({ servicesCount: servicesOverride, portfolioAlbumsCount: al
               >
                 <Link
                   to={action.link}
-                  className={`flex items-center gap-3 rounded-xl border p-3 transition-all hover:shadow-sm group ${urgencyStyles[action.urgency]}`}
+                  className={`flex items-center gap-3 rounded-xl border p-3 transition-all hover:shadow-xs group ${urgencyStyles[action.urgency]}`}
                 >
                   <div className="relative shrink-0">
                     <Icon className="h-4 w-4 text-foreground/70" />

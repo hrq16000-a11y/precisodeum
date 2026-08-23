@@ -44,7 +44,7 @@ export default function SendWhatsappWithTemplates({
         href={whatsappLink(phone, defaultMessage)}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex h-9 min-w-[44px] items-center justify-center gap-1 rounded-l-full bg-emerald-500 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-600"
+        className="inline-flex h-9 min-w-[44px] items-center justify-center gap-1 rounded-l-full bg-emerald-500 px-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-emerald-600"
         title="Chamar no WhatsApp"
       >
         <MessageCircle className="h-4 w-4" />
@@ -52,7 +52,7 @@ export default function SendWhatsappWithTemplates({
       </a>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="inline-flex h-9 items-center justify-center rounded-r-full border-l border-emerald-600/50 bg-emerald-500 px-2 text-white shadow-sm transition-colors hover:bg-emerald-600"
+          className="inline-flex h-9 items-center justify-center rounded-r-full border-l border-emerald-600/50 bg-emerald-500 px-2 text-white shadow-xs transition-colors hover:bg-emerald-600"
           aria-label="Escolher modelo"
         >
           <ChevronDown className="h-4 w-4" />

@@ -162,7 +162,7 @@ function NotifyMeForm({
         placeholder="Seu e-mail ou WhatsApp"
         value={contact}
         onChange={(e) => setContact(e.target.value)}
-        className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
+        className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-300/40"
       />
       <Button type="submit" size="sm" disabled={submitting} className="rounded-full">
         {submitting ? '...' : 'Avisar'}

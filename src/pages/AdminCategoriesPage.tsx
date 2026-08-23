@@ -88,7 +88,7 @@ const AdminCategoriesPage = () => {
 
           {/* Preview card */}
           <div className="flex items-center gap-3 rounded-xl border border-border bg-sky-50 p-4 w-fit">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-xs">
               <DynIcon name={form.icon} size={24} />
             </span>
             <span className="text-sm font-bold text-foreground">{form.name || 'Nome da categoria'}</span>

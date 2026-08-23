@@ -281,7 +281,7 @@ const AdminOverviewPage = () => {
             return (
               <div
                 key={kpi.label}
-                className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm hover:shadow-md transition-shadow"
+                className="rounded-2xl border border-border/60 bg-card p-4 shadow-xs hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${kpi.iconBg}`}>
@@ -317,7 +317,7 @@ const AdminOverviewPage = () => {
           const pct = Math.min(100, Math.round((newProsThisMonth / goal) * 100));
           const remaining = Math.max(0, goal - newProsThisMonth);
           return (
-            <div className="rounded-2xl border-2 border-amber-300/60 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 via-card to-orange-50 dark:from-amber-500/5 dark:to-orange-500/5 p-5 shadow-sm">
+            <div className="rounded-2xl border-2 border-amber-300/60 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 via-card to-orange-50 dark:from-amber-500/5 dark:to-orange-500/5 p-5 shadow-xs">
               <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md">
@@ -346,7 +346,7 @@ const AdminOverviewPage = () => {
 
         {/* Charts Row */}
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs">
             <h3 className="text-sm font-semibold text-foreground mb-4">Usuários por Tipo</h3>
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -362,7 +362,7 @@ const AdminOverviewPage = () => {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs">
             <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
               <Megaphone className="h-4 w-4 text-muted-foreground" /> Top Patrocinadores (CTR)
             </h3>
@@ -386,7 +386,7 @@ const AdminOverviewPage = () => {
 
         {/* Sponsor performance table */}
         {topSponsors.length > 0 && (
-          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs">
             <h3 className="text-sm font-semibold text-foreground mb-4">Performance de Patrocinadores</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

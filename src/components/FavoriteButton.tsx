@@ -34,7 +34,7 @@ const FavoriteButton = ({ providerId, providerName, className }: Props) => {
       aria-label={fav ? 'Remover dos favoritos' : 'Salvar como favorito'}
       aria-pressed={fav}
       className={cn(
-        'inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/90 backdrop-blur shadow-sm border border-border/60 transition-colors hover:bg-background',
+        'inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/90 backdrop-blur shadow-xs border border-border/60 transition-colors hover:bg-background',
         className
       )}
     >

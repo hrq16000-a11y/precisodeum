@@ -2159,39 +2159,39 @@ const ProviderProfile = () => {
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Seu nome</label>
                   <input type="text" placeholder="Como quer ser chamado?" required value={leadForm.name}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden transition-all`} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Telefone</label>
                   <input type="tel" placeholder="(00) 00000-0000" required value={leadForm.phone}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden transition-all`} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Serviço necessário</label>
                   <input type="text" placeholder={category ? `Ex: ${category}` : 'Ex: Reforma de banheiro'} required value={leadForm.service}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, service: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden transition-all`} />
                 </div>
                 <div className="grid grid-cols-[1fr_84px] gap-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">Sua cidade</label>
                     <input type="text" placeholder="Cidade" value={leadForm.city}
                       onChange={(e) => setLeadForm(prev => ({ ...prev, city: e.target.value }))}
-                      className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                      className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden transition-all`} />
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">UF</label>
                     <input type="text" placeholder="UF" maxLength={2} value={leadForm.state}
                       onChange={(e) => setLeadForm(prev => ({ ...prev, state: e.target.value.toUpperCase().slice(0, 2) }))}
-                      className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm uppercase text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none transition-all`} />
+                      className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm uppercase text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden transition-all`} />
                   </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</label>
                   <textarea placeholder={category ? `Conte rapidamente o que precisa em ${category.toLowerCase()}...` : 'Descreva o que precisa...'} rows={3} value={leadForm.message}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
-                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none resize-none transition-all`} />
+                    className={`w-full ${tc.input} bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden resize-none transition-all`} />
                 </div>
                 <ContactWindowPicker
                   value={preferredWindow}
@@ -2223,7 +2223,7 @@ const ProviderProfile = () => {
             key="sticky-provider-name"
             role="banner"
             aria-label={`Cabeçalho fixo: ${name}`}
-            className="fixed inset-x-0 top-0 z-[998] border-b border-border bg-card/95 px-3 py-2 shadow-sm backdrop-blur-lg"
+            className="fixed inset-x-0 top-0 z-[998] border-b border-border bg-card/95 px-3 py-2 shadow-xs backdrop-blur-lg"
             initial={{ y: -40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -40, opacity: 0 }}
@@ -2295,7 +2295,7 @@ const ProviderProfile = () => {
               size="lg"
               aria-label={`Chamar ${name} no WhatsApp`}
               aria-describedby="sticky-whatsapp-description"
-              className="min-h-12 w-full gap-2 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="min-h-12 w-full gap-2 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={() => {
                 if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'sticky');
                 requestWhatsApp({
@@ -2330,7 +2330,7 @@ const ProviderProfile = () => {
               type="button"
               size="icon"
               aria-label={`Chamar ${name} no WhatsApp`}
-              className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={() => {
                 if (provider) trackContactClick(provider.id, 'whatsapp', window.location.pathname, undefined, 'sticky');
                 requestWhatsApp({

@@ -153,7 +153,7 @@ export default function WeeklyGoalsWidget({ leads, history, userId }: Props) {
           return (
             <div key={c.label} className="rounded-xl border border-border bg-muted/20 p-3">
               <div className="flex items-center justify-between gap-1">
-                <div className={`flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br ${c.color} text-white shadow-sm`}>
+                <div className={`flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br ${c.color} text-white shadow-xs`}>
                   <Icon className="h-3.5 w-3.5" />
                 </div>
                 {pct != null && (

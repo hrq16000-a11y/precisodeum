@@ -103,7 +103,7 @@ const SystemHealthPanel = () => {
   const bucketRows = openBucket ? (data?.[openBucket] ?? []) : [];
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+    <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -124,7 +124,7 @@ const SystemHealthPanel = () => {
           const pct = counts.total > 0 ? Math.round((value / counts.total) * 100) : 0;
           const status = pct > 50 ? 'critical' : pct > 20 ? 'warn' : 'ok';
           return (
-            <div key={b} className="rounded-xl border border-border/60 bg-background p-4 hover:shadow-sm transition-shadow">
+            <div key={b} className="rounded-xl border border-border/60 bg-background p-4 hover:shadow-xs transition-shadow">
               <div className="flex items-start justify-between mb-2">
                 <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-muted ${meta.color}`}>
                   <Icon className="h-4 w-4" />

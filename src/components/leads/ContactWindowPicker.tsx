@@ -187,7 +187,7 @@ export function ContactWindowPicker({
             <button
               type="button"
               onClick={applySuggestion}
-              className="mt-1.5 rounded-md bg-amber-600 px-2 py-1 text-[11px] font-semibold text-white shadow-sm hover:bg-amber-700"
+              className="mt-1.5 rounded-md bg-amber-600 px-2 py-1 text-[11px] font-semibold text-white shadow-xs hover:bg-amber-700"
             >
               Usar sugestão
             </button>

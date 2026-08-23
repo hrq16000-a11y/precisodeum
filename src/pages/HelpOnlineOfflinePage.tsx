@@ -93,7 +93,7 @@ const HelpOnlineOfflinePage = () => {
       </section>
 
       <main className="container mx-auto max-w-3xl px-4 py-10 space-y-8">
-        <article className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <article className="rounded-2xl border border-border bg-card p-6 shadow-xs">
           <header className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
               <Wifi className="h-4 w-4" />
@@ -124,7 +124,7 @@ const HelpOnlineOfflinePage = () => {
           </ul>
         </article>
 
-        <article className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <article className="rounded-2xl border border-border bg-card p-6 shadow-xs">
           <header className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
               <WifiOff className="h-4 w-4" />
@@ -144,7 +144,7 @@ const HelpOnlineOfflinePage = () => {
           </p>
         </article>
 
-        <article className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <article className="rounded-2xl border border-border bg-card p-6 shadow-xs">
           <header className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
               <ShieldCheck className="h-4 w-4" />
@@ -168,7 +168,7 @@ const HelpOnlineOfflinePage = () => {
           </ul>
         </article>
 
-        <article className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <article className="rounded-2xl border border-border bg-card p-6 shadow-xs">
           <header className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/10 text-amber-600">
               <Eye className="h-4 w-4" />
@@ -185,7 +185,7 @@ const HelpOnlineOfflinePage = () => {
           </div>
         </article>
 
-        <article className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <article className="rounded-2xl border border-border bg-card p-6 shadow-xs">
           <h2 className="text-lg font-semibold">Como o status influencia a busca</h2>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground list-disc pl-5">
             <li>
@@ -205,7 +205,7 @@ const HelpOnlineOfflinePage = () => {
         </article>
 
         {/* Plain Q&A list — mirrors the JSON-LD FAQPage above */}
-        <section aria-labelledby="faq-heading" className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <section aria-labelledby="faq-heading" className="rounded-2xl border border-border bg-card p-6 shadow-xs">
           <h2 id="faq-heading" className="text-lg font-semibold">Perguntas frequentes</h2>
           <dl className="mt-4 divide-y divide-border">
             {FAQ_ITEMS.map((item) => (

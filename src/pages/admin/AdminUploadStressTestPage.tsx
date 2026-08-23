@@ -725,7 +725,7 @@ export default function AdminUploadStressTestPage() {
                   {recentRows.map((r, i) => (
                     <tr
                       key={i}
-                      className="border-t cursor-pointer hover:bg-muted/40 focus-visible:bg-muted/60 focus-visible:outline-none"
+                      className="border-t cursor-pointer hover:bg-muted/40 focus-visible:bg-muted/60 focus-visible:outline-hidden"
                       onClick={() => setSelectedRow(r)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {

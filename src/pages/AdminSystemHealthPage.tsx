@@ -74,7 +74,7 @@ const Quadrant = ({
 }) => {
   const s = STATUS_STYLES[status];
   return (
-    <div className={`relative rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ${s.ring}`}>
+    <div className={`relative rounded-2xl border border-border/60 bg-card p-5 shadow-xs ring-1 ${s.ring}`}>
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${s.bg}`}>
@@ -369,7 +369,7 @@ export default function AdminSystemHealthPage() {
               </div>
             </Quadrant>
 
-            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${data.errors.unresolved_24h > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10'}`}>

@@ -16,7 +16,7 @@ const FabButton = ({ onClick, icon: Icon, label }: { onClick: () => void; icon: 
   <motion.button
     onClick={onClick}
     aria-label={label}
-    className="relative flex flex-col items-center justify-center w-14 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-md"
+    className="relative flex flex-col items-center justify-center w-14 py-1 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-md"
     whileTap={{ scale: 0.85 }}
   >
     <div

@@ -80,7 +80,7 @@ const UrgencyBanner = memo(() => {
             {subText}
           </div>
         </div>
-        <Button variant="accent" size="sm" className="rounded-full text-xs shadow-sm" asChild>
+        <Button variant="accent" size="sm" className="rounded-full text-xs shadow-xs" asChild>
           <Link to={ctaLink}>{ctaText}</Link>
         </Button>
       </div>

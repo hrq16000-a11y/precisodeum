@@ -186,7 +186,7 @@ const DashboardAnalytics = () => {
                 onClick={() => setPeriod(p.value)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                   active
-                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'text-muted-foreground hover:bg-muted'
                 }`}
               >

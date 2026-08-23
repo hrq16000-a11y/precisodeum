@@ -62,7 +62,7 @@ export function SortablePhotoTile({
         type="button"
         onClick={onOpenCaption}
         aria-label="Abrir legenda da foto"
-        className="absolute inset-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="absolute inset-0 cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
       >
         <LazyImage
           src={imageUrl}
@@ -88,7 +88,7 @@ export function SortablePhotoTile({
         aria-label="Arrastar para reordenar"
         data-testid="portfolio-drag-handle"
         data-photo-id={id}
-        className={`absolute left-1.5 bottom-1.5 flex h-9 w-9 cursor-grab touch-none items-center justify-center rounded-full bg-background/85 text-foreground shadow-md backdrop-blur-sm transition-opacity active:cursor-grabbing ${
+        className={`absolute left-1.5 bottom-1.5 flex h-9 w-9 cursor-grab touch-none items-center justify-center rounded-full bg-background/85 text-foreground shadow-md backdrop-blur-xs transition-opacity active:cursor-grabbing ${
           showHint ? 'opacity-100 ring-2 ring-accent/50 animate-pulse' : 'opacity-80 group-hover:opacity-100'
         }`}
         {...attributes}
@@ -112,7 +112,7 @@ export function SortablePhotoTile({
 
       {/* Indicador de legenda existente */}
       {hasCaption && (
-        <span className="pointer-events-none absolute left-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/80 text-foreground backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="pointer-events-none absolute left-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/80 text-foreground backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity">
           <Pencil className="h-3 w-3" />
         </span>
       )}

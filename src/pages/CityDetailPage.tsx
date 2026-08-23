@@ -412,7 +412,7 @@ const CityDetailPage = () => {
                 <Link
                   key={nc.slug}
                   to={`/cidades/${estado}/${nc.slug}`}
-                  className="flex items-center justify-between rounded-lg border border-border bg-card p-3 text-sm transition-all hover:border-primary/40 hover:shadow-sm group"
+                  className="flex items-center justify-between rounded-lg border border-border bg-card p-3 text-sm transition-all hover:border-primary/40 hover:shadow-xs group"
                 >
                   <span className="font-medium text-foreground group-hover:text-primary transition-colors truncate">{nc.name}</span>
                   {(nc as any).provider_count > 0 ? (

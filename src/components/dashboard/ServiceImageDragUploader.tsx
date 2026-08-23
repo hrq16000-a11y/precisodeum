@@ -64,7 +64,7 @@ function SortableCard({
       />
 
       {img.is_cover && (
-        <span className="absolute top-1 left-1 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground shadow">
+        <span className="absolute top-1 left-1 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground shadow-sm">
           <Star className="h-2.5 w-2.5 fill-current" /> Capa
         </span>
       )}

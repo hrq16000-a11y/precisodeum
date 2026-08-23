@@ -81,7 +81,7 @@ class RouteErrorBoundaryInner extends Component<Props, State> {
       <div
         role="alert"
         aria-live="assertive"
-        className="mx-auto my-8 max-w-xl rounded-lg border border-border bg-card p-6 shadow-sm"
+        className="mx-auto my-8 max-w-xl rounded-lg border border-border bg-card p-6 shadow-xs"
       >
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 flex-none text-destructive" aria-hidden="true" />

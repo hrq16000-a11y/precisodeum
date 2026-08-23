@@ -388,7 +388,7 @@ const AdminStaffPage = () => {
                                   } ${isSaving ? 'opacity-50' : ''}`}
                                 >
                                   <span
-                                    className={`h-5 w-5 rounded-full bg-background shadow transition-transform mt-0.5 ${
+                                    className={`h-5 w-5 rounded-full bg-background shadow-sm transition-transform mt-0.5 ${
                                       enabled ? 'translate-x-[22px]' : 'translate-x-0.5'
                                     }`}
                                   />

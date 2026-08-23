@@ -243,7 +243,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       <TopLoadingBar />
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border glass-strong px-4 lg:hidden">
         <div className="flex h-14 min-w-0 max-w-[calc(100%-3rem)] items-center gap-2 overflow-hidden">
-          <Logo priority context="admin" className="drop-shadow-sm" />
+          <Logo priority context="admin" className="drop-shadow-xs" />
           <span className="sr-only">Menu administrativo</span>
           <AdminMobileStats />
         </div>
@@ -268,7 +268,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 flex flex-col transform border-r border-sidebar-border bg-sidebar transition-transform duration-300 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} pt-14 lg:pt-0`}>
         <div className="flex h-14 min-w-0 shrink-0 items-center gap-2 overflow-hidden px-5 border-b border-sidebar-border">
-          <Logo priority context="admin" className="drop-shadow-sm" />
+          <Logo priority context="admin" className="drop-shadow-xs" />
           <span className="sr-only">Painel administrativo</span>
         </div>
         {/* Sidebar Search */}
@@ -281,7 +281,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               placeholder="Buscar menu..."
               value={sidebarSearch}
               onChange={(e) => setSidebarSearch(e.target.value)}
-              className="w-full rounded-xl border border-sidebar-border bg-sidebar-accent/30 pl-8 pr-12 py-2 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-colors"
+              className="w-full rounded-xl border border-sidebar-border bg-sidebar-accent/30 pl-8 pr-12 py-2 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-hidden focus:ring-1 focus:ring-accent/50 transition-colors"
             />
             <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded-md border border-sidebar-border/50 bg-sidebar-accent/20 px-1.5 py-0.5 text-[9px] text-sidebar-foreground/30 font-mono">
               ⌘K
@@ -347,7 +347,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                               key={item.path}
                               to={item.path}
                               onClick={() => setSidebarOpen(false)}
-                              className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
+                              className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-xs' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
                             >
                               {active && (
                                 <motion.div
@@ -411,7 +411,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
       <main className="flex-1 min-w-0 overflow-x-hidden pt-14 lg:ml-64 lg:pt-0 flex flex-col">
         {/* Desktop Header */}
-        <div className="hidden lg:flex h-12 items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-6 shrink-0">
+        <div className="hidden lg:flex h-12 items-center justify-between border-b border-border bg-background/80 backdrop-blur-xs px-6 shrink-0">
           {/* Breadcrumb */}
           {(() => {
             const current = menuGroups.flatMap(g => g.items).find(i => i.path === location.pathname);

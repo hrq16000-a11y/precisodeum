@@ -526,7 +526,7 @@ const AdminSponsorCrmPage = () => {
                 const ctr = s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(1) : '0.0';
                 const hasContact = contacts.some((c: any) => c.sponsor_id === s.id);
                 return (
-                  <div key={s.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                  <div key={s.id} className="rounded-xl border border-border bg-card p-3 shadow-xs">
                     <div className="flex items-start justify-between">
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-foreground text-sm">{s.title}</p>
@@ -630,7 +630,7 @@ const AdminSponsorCrmPage = () => {
             {/* Mobile cards */}
             <div className="space-y-3 sm:hidden">
               {contacts.map((c: any) => (
-                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-xs">
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-foreground text-sm">{getSponsorTitle(c.sponsor_id)}</p>
@@ -702,7 +702,7 @@ const AdminSponsorCrmPage = () => {
             {/* Mobile cards */}
             <div className="space-y-3 sm:hidden">
               {campaigns.map((c: any) => (
-                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-xs">
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-foreground text-sm">{c.name}</p>
@@ -772,7 +772,7 @@ const AdminSponsorCrmPage = () => {
             {/* Mobile cards */}
             <div className="space-y-3 sm:hidden">
               {contracts.map((c: any) => (
-                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                <div key={c.id} className="rounded-xl border border-border bg-card p-3 shadow-xs">
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-foreground text-sm">{getSponsorTitle(c.sponsor_id)}</p>

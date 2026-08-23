@@ -101,7 +101,7 @@ const CategoriesListPage = () => {
                   >
                     {/* Badge de quantidade */}
                     {cat.count > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-card">
+                      <span className="absolute -top-1.5 -right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white shadow-xs ring-2 ring-card">
                         {cat.count > 99 ? '99+' : cat.count}
                       </span>
                     )}

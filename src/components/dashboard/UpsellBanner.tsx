@@ -79,7 +79,7 @@ const UpsellBanner = () => {
             size="sm"
             onClick={() => navigate('/dashboard/plano')}
             className={`
-              flex-shrink-0 gap-1.5 group shadow-sm
+              flex-shrink-0 gap-1.5 group shadow-xs
               ${isCritical
                 ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
                 : 'bg-warning hover:bg-warning/90 text-warning-foreground'

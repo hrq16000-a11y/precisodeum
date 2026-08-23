@@ -37,7 +37,7 @@ const StepCard = ({
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         className="group relative mx-auto"
       >
-        <div className={`relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br ${gradients[color]} shadow-sm ring-1 transition-all duration-300 group-hover:shadow-md`}>
+        <div className={`relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br ${gradients[color]} shadow-xs ring-1 transition-all duration-300 group-hover:shadow-md`}>
           <Icon className="h-9 w-9 text-foreground/80" />
           <motion.span
             className={`absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shadow-md ring-2 ring-background ${badge[color]}`}

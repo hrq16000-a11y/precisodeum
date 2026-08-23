@@ -78,7 +78,7 @@ const FeaturedProviders = ({ providers, isLoading, isFetching, hasError, sortBy 
           </Button>
         </div>
 
-        <div className="mb-5 flex flex-wrap gap-2 rounded-xl border border-border bg-card/80 p-3 shadow-sm">
+        <div className="mb-5 flex flex-wrap gap-2 rounded-xl border border-border bg-card/80 p-3 shadow-xs">
           <div className="flex flex-wrap gap-2">
             {(['proximity', 'availability', 'category'] as FeaturedProviderSort[]).map((option) => (
               <Button key={option} type="button" size="sm" variant={sortBy === option ? 'default' : 'outline'} onClick={() => onSortChange?.(option)}>
@@ -175,7 +175,7 @@ const ProviderCardFeatured = memo(function ProviderCardFeatured({ provider: p }:
   return (
     <div
       ref={impressionRef}
-      className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+      className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
     >
       {/* Shine sweep */}
       <div className="card-shine-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent" style={{ left: '-100%', width: '50%' }} />

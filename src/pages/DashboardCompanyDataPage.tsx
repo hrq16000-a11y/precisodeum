@@ -180,7 +180,7 @@ const DashboardCompanyDataPage = () => {
           </div>
         </header>
 
-        <form onSubmit={onSave} className="space-y-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <form onSubmit={onSave} className="space-y-6 rounded-2xl border border-border bg-card p-5 shadow-xs">
           <section className="space-y-3">
             <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
               Identidade

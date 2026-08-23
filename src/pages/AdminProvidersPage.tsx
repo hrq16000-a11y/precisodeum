@@ -389,7 +389,7 @@ const AdminProvidersPage = () => {
               key={f}
               onClick={() => { setFilter(f); setPage(1); }}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                filter === f ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                filter === f ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
               {f === 'all' ? 'Todos' : statusLabels[f]?.label || f}

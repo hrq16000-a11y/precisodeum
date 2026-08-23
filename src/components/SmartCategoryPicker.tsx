@@ -191,7 +191,7 @@ const SmartCategoryPicker = ({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={placeholder}
-                className="w-full bg-transparent py-1.5 text-xs text-foreground outline-none placeholder:text-muted-foreground"
+                className="w-full bg-transparent py-1.5 text-xs text-foreground outline-hidden placeholder:text-muted-foreground"
               />
               {search && (
                 <button type="button" onClick={() => setSearch('')}>
@@ -207,7 +207,7 @@ const SmartCategoryPicker = ({
               filteredTree.map(({ macro, subs }) => (
                 <div key={macro.id}>
                   {subs.length > 0 ? (
-                    <div className="sticky top-0 bg-muted/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <div className="sticky top-0 bg-muted/60 backdrop-blur-xs px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                       <CategoryIcon icon={macro.icon} size={12} className="text-muted-foreground" /> {macro.name}
                     </div>
                   ) : (

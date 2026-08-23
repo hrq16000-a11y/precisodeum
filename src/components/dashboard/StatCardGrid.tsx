@@ -35,7 +35,7 @@ const StatCardGrid = ({ cards }: StatCardGridProps) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.08 + i * 0.05 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className={`group relative rounded-2xl border border-border/60 bg-gradient-to-br ${stat.gradient} p-4 shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-default`}
+              className={`group relative rounded-2xl border border-border/60 bg-gradient-to-br ${stat.gradient} p-4 shadow-xs hover:shadow-md transition-shadow overflow-hidden cursor-default`}
             >
               {/* Hover shine */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
@@ -51,7 +51,7 @@ const StatCardGrid = ({ cards }: StatCardGridProps) => {
               )}
 
               <div className="flex items-center justify-between">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm ${stat.iconColor} transition-transform duration-300 group-hover:scale-110`}>
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-background/60 backdrop-blur-xs ${stat.iconColor} transition-transform duration-300 group-hover:scale-110`}>
                   <Icon className="h-5 w-5" />
                 </div>
                 {stat.sublabel && (

@@ -182,7 +182,7 @@ const AdminGovernancePage = () => {
               const Icon = meta.icon;
               const count = scopeCount(s);
               return (
-                <TabsTrigger key={s} value={s} className="data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 text-xs px-3 py-1.5">
+                <TabsTrigger key={s} value={s} className="data-[state=active]:bg-background data-[state=active]:shadow-xs gap-1.5 text-xs px-3 py-1.5">
                   <Icon className={`h-3.5 w-3.5 ${meta.color}`} />
                   <span className="font-medium">{meta.label}</span>
                   <Badge variant="outline" className="ml-0.5 h-4 min-w-[20px] px-1 text-[10px] font-mono">{count}</Badge>

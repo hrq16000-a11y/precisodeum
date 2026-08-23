@@ -13,7 +13,7 @@ interface DebugResetBarProps {
  * Extraído de DashboardPage.tsx — contrato visual preservado.
  */
 const DebugResetBar = ({ profileTypeLabel, onAssistant, onReset }: DebugResetBarProps) => (
-  <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm">
+  <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-xs">
     <div className="flex items-center gap-2 text-[12px] text-foreground min-w-0">
       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
         <User className="h-3.5 w-3.5" />

@@ -184,7 +184,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
     badges.push(
       <span
         key="trial-boost"
-        className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent to-primary px-2 py-0.5 text-[11px] font-bold text-white shadow-sm animate-pulse-soft"
+        className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-accent to-primary px-2 py-0.5 text-[11px] font-bold text-white shadow-xs animate-pulse-soft"
       >
         <Rocket className="h-3 w-3" /> Novo em Destaque
       </span>

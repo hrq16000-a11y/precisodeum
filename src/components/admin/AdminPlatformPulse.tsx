@@ -77,7 +77,7 @@ const AdminPlatformPulse = () => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.25 }}
-      className="rounded-2xl border border-border bg-card p-4 shadow-sm"
+      className="rounded-2xl border border-border bg-card p-4 shadow-xs"
     >
       <div className="flex items-center gap-2.5 mb-3">
         <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-accent/10">

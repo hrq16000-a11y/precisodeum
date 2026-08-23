@@ -41,7 +41,7 @@ const CoursesCta = () => (
       whileInView={{ scale: 1 }}
       viewport={{ once: true }}
       transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-      className="relative inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 mb-5 text-xs font-semibold text-amber-300 border border-white/15"
+      className="relative inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-xs rounded-full px-4 py-1.5 mb-5 text-xs font-semibold text-amber-300 border border-white/15"
     >
       <Sparkles className="h-3.5 w-3.5" /> Destaque-se na plataforma
     </motion.div>

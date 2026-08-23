@@ -81,7 +81,7 @@ const HelpCenterPage = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por palavra-chave..."
-              className="w-full rounded-2xl border border-border bg-card pl-12 pr-4 py-4 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
+              className="w-full rounded-2xl border border-border bg-card pl-12 pr-4 py-4 text-sm text-foreground shadow-xs focus:outline-hidden focus:ring-2 focus:ring-accent/30"
             />
           </motion.div>
         </div>
@@ -95,7 +95,7 @@ const HelpCenterPage = () => {
               <motion.a
                 key={sec.key}
                 href={`#${sec.key}`}
-                className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center shadow-sm hover:shadow-md hover:border-accent/30 transition-all"
+                className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center shadow-xs hover:shadow-md hover:border-accent/30 transition-all"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
@@ -119,7 +119,7 @@ const HelpCenterPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link
               to="/ajuda/online-offline"
-              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-sm hover:shadow-md hover:border-emerald-500/30 transition-all"
+              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-xs hover:shadow-md hover:border-emerald-500/30 transition-all"
             >
               <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
                 <Wifi className="h-5 w-5" />
@@ -136,7 +136,7 @@ const HelpCenterPage = () => {
             </Link>
             <Link
               to="/ajuda/ordenacao-busca"
-              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
+              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-xs hover:shadow-md hover:border-primary/30 transition-all"
             >
               <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <ArrowUpDown className="h-5 w-5" />

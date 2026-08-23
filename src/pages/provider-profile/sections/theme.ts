@@ -43,8 +43,8 @@ export const THEME_CLASSES: Record<string, ThemeConfig> = {
     input: 'rounded-xl border-0 bg-muted/50 shadow-inner',
   },
   classico: {
-    card: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 shadow-sm',
-    section: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 p-6 shadow-sm',
+    card: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 shadow-xs',
+    section: 'rounded-lg border-2 border-amber-200/60 bg-amber-50/30 p-6 shadow-xs',
     page: 'bg-amber-50/20',
     heading: "font-['Playfair_Display'] italic",
     button: 'rounded-lg border-2',

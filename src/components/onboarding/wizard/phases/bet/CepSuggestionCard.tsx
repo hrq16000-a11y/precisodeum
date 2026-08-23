@@ -220,7 +220,7 @@ export default function CepSuggestionCard({
         <button
           type="button"
           onClick={() => onApply(hit!.cep, hit!)}
-          className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white shadow-sm hover:bg-emerald-700"
+          className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white shadow-xs hover:bg-emerald-700"
           data-testid="cep-suggestion-apply"
         >
           <Search className="h-3 w-3" /> Usar este CEP

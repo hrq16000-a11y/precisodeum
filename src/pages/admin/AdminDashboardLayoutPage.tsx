@@ -72,7 +72,7 @@ function SortableRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5 shadow-sm hover:shadow-md transition-shadow"
+      className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5 shadow-xs hover:shadow-md transition-shadow"
     >
       <button
         type="button"

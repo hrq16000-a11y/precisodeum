@@ -157,7 +157,7 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
             value={isPf ? formatCpf(state.document) : formatCnpj(state.document)}
             onChange={(e) => handleDoc(e.target.value)}
             placeholder={isPf ? '000.000.000-00' : '00.000.000/0000-00'}
-            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
+            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-hidden transition focus:ring-2 ${
               docValid
                 ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
                 : 'border-input focus:border-amber-400 focus:ring-amber-300/40'
@@ -175,7 +175,7 @@ export default function PhaseProDocument({ state, patch, next, addPoints }: Prop
               value={state.company_name}
               onChange={(e) => patch({ company_name: e.target.value })}
               placeholder="Como a empresa é conhecida"
-              className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
+              className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-hidden transition focus:ring-2 ${
                 state.company_name.trim().length >= 2
                   ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
                   : 'border-input focus:border-amber-400 focus:ring-amber-300/40'

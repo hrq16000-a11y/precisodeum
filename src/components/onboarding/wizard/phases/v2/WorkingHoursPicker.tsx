@@ -198,7 +198,7 @@ export const WorkingHoursPicker = ({ value, onChange }: Props) => {
             return (
             <div
               key={idx}
-              className={`space-y-2 rounded-md border bg-card p-3 shadow-sm ${
+              className={`space-y-2 rounded-md border bg-card p-3 shadow-xs ${
                 hasErr ? 'border-destructive/60 ring-1 ring-destructive/20' : 'border-border'
               }`}
             >

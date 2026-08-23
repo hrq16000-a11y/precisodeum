@@ -118,7 +118,7 @@ const SponsorApprovalCelebration = ({
               </p>
             </div>
 
-            <Button asChild size="sm" className="shrink-0 gap-2 shadow-sm">
+            <Button asChild size="sm" className="shrink-0 gap-2 shadow-xs">
               <Link to="/sponsor-panel/metricas">
                 <BarChart3 className="h-4 w-4" />
                 Ver estatísticas agora

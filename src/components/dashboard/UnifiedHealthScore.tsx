@@ -19,7 +19,7 @@ const UnifiedHealthScore = ({ score, remaining }: Props) => {
 
   return (
     <section
-      className="rounded-2xl border border-border bg-card p-6 shadow-sm"
+      className="rounded-2xl border border-border bg-card p-6 shadow-xs"
       aria-label="Score de Saúde do Perfil"
     >
       <div className="flex items-start justify-between gap-4">

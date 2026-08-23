@@ -261,9 +261,9 @@ export default function CompanyAddressForm({
   void cepHistory;
 
   const inputBase =
-    'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30';
+    'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-hidden transition focus:border-primary focus:ring-2 focus:ring-primary/30';
   const inputSuggested =
-    'w-full rounded-lg border-2 border-amber-300 bg-amber-50/50 px-3 py-2 text-sm text-foreground outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-300/40';
+    'w-full rounded-lg border-2 border-amber-300 bg-amber-50/50 px-3 py-2 text-sm text-foreground outline-hidden transition focus:border-amber-500 focus:ring-2 focus:ring-amber-300/40';
 
   const SuggestedTag = () => (
     <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700">

@@ -62,7 +62,7 @@ const AdBanner = React.forwardRef<HTMLDivElement, AdBannerProps>(({ position, cl
       onTouchEnd={handleTouchEnd}
     >
       <div className="relative rounded-2xl bg-muted/10 shadow-card overflow-hidden">
-        <span className="absolute left-2 top-1.5 z-20 rounded-md bg-background/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/60 backdrop-blur-sm">
+        <span className="absolute left-2 top-1.5 z-20 rounded-md bg-background/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/60 backdrop-blur-xs">
           Anúncio
         </span>
         <a
@@ -94,7 +94,7 @@ const AdBanner = React.forwardRef<HTMLDivElement, AdBannerProps>(({ position, cl
             <div className="absolute left-2 bottom-1.5 z-20">
               <Link
                 to={internalHref}
-                className="rounded-md bg-background/70 px-1.5 py-0.5 text-[9px] font-medium text-foreground/70 backdrop-blur-sm hover:text-accent hover:underline"
+                className="rounded-md bg-background/70 px-1.5 py-0.5 text-[9px] font-medium text-foreground/70 backdrop-blur-xs hover:text-accent hover:underline"
               >
                 {current.title}
               </Link>
