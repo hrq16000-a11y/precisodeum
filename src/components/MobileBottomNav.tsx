@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from '@/lib/router-compat';
 import { Home, Search, LayoutGrid, User, Plus, Bell, Heart, Star, Settings, MessageCircle, Briefcase, MapPin, Grid, Menu, Bookmark, ShoppingBag, Zap, type LucideIcon } from 'lucide-react';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';

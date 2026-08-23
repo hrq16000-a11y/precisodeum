@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useRef } from 'react';
-import { Link, type LinkProps } from 'react-router-dom';
+import { Link, type LinkProps } from '@/lib/router-compat';
 import { prefetchRoute } from '@/lib/routePrefetchRegistry';
 
 type PrefetchLinkProps = LinkProps & {

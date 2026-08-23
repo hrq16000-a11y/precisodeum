@@ -20,7 +20,7 @@
  *    criar o 1º serviço sem repetir nome, WhatsApp e cidade já capturados.
  */
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from '@/lib/router-compat';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';

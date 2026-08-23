@@ -5,6 +5,6 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 const DashboardPage = reactLazy(() => importWithRetry(() => import("@/pages/DashboardPage")));
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/dashboard/")({
   component: () => (<ProtectedRoute><DashboardPage /></ProtectedRoute>),
 });

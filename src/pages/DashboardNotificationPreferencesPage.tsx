@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Mail, MessageCircle, Bell, Smartphone, Send, BellRing, Activity, Volume2, Flame, MailCheck, Zap } from 'lucide-react';
 import { playHornBeep } from '@/lib/soundFx';
 import DashboardLayout from '@/components/DashboardLayout';

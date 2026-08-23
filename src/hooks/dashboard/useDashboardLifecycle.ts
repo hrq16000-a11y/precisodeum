@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from '@/lib/router-compat';
 import { toast } from 'sonner';
 import { CELEBRATION_IDS, celebrate } from '@/lib/celebrate';
 import { supabase } from '@/integrations/supabase/client';

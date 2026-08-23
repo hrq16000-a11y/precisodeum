@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserCog, Check, X, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';

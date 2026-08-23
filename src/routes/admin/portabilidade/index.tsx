@@ -6,6 +6,6 @@ import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 
 const AdminPortabilityPage = reactLazy(() => importWithRetry(() => import("@/pages/AdminPortabilityPage")));
 
-export const Route = createFileRoute("/admin/portabilidade")({
+export const Route = createFileRoute("/admin/portabilidade/")({
   component: () => (<AdminGuard><RouteErrorBoundary sectionName="AdminPortabilityPage"><AdminPortabilityPage /></RouteErrorBoundary></AdminGuard>),
 });

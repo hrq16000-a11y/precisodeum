@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from '@/lib/router-compat';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

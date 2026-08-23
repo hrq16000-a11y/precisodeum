@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
 import { Briefcase, Image as ImageIcon, Eye, Sparkles, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';

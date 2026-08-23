@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { GraduationCap, ArrowRight, Sparkles, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 
 const CoursesBanner = forwardRef<HTMLDivElement>((_, ref) => {
   const navigate = useNavigate();

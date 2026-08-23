@@ -17,7 +17,7 @@
  * Sem emojis, ícones Lucide, paleta semântica do tema.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import {
   CheckCircle2,
   Circle,

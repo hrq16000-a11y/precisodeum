@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from '@/lib/router-compat';
 import { LayoutDashboard, Image, BarChart3, FileText, Bell, LogOut, Menu, X, Megaphone, Settings, Shield, Globe, CreditCard, Pencil, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthIdentity } from '@/hooks/useAuth';

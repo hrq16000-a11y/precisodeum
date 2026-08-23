@@ -6,7 +6,7 @@
  * Dispensável (X) por sessão — guarda em sessionStorage para não atrapalhar.
  */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { AlertTriangle, ArrowRight, X } from 'lucide-react';
 
 const DISMISS_KEY = 'incomplete_location_alert_dismissed';

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from '@/lib/router-compat';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import Header from '@/components/Header';

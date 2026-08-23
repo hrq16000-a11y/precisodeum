@@ -9,7 +9,7 @@
  * Somente leitura: consome o snapshot do `webVitalsMonitor` já instalado.
  */
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from '@/lib/router-compat';
 import { Activity, X } from 'lucide-react';
 import { getWebVitalsSnapshot } from '@/lib/webVitalsMonitor';
 import { formatMetric, rateMetric, type Rating } from '@/lib/webVitals/summary';

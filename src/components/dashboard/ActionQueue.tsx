@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, MessageSquare, User, Camera, Star, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';

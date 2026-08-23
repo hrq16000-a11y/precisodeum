@@ -1,5 +1,5 @@
 import { useMemo, useRef, useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { MapPin, MessageCircle, Briefcase, ArrowRight, ChevronUp, ChevronDown, Clock } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';

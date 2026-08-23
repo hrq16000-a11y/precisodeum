@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Activity, Sparkles, ChevronRight, Camera, FileText, Briefcase, Image, Phone, Star, Zap, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthIdentity } from '@/hooks/useAuth';

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { BarChart3, ArrowRight, Eye, MessageSquare, Percent } from 'lucide-react';
 import AnimatedCounter from '@/components/ui/AnimatedCounter';
 

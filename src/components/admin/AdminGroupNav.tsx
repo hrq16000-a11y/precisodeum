@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';

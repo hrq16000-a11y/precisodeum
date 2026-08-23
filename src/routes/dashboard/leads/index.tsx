@@ -6,6 +6,6 @@ import DashboardRouteGuard from "@/components/dashboard/DashboardRouteGuard";
 
 const DashboardLeadsPage = reactLazy(() => importWithRetry(() => import("@/pages/DashboardLeadsPage")));
 
-export const Route = createFileRoute("/dashboard/leads")({
+export const Route = createFileRoute("/dashboard/leads/")({
   component: () => (<ProtectedRoute allowedTypes={['provider']}><DashboardRouteGuard requiredPermission="leads"><DashboardLeadsPage /></DashboardRouteGuard></ProtectedRoute>),
 });

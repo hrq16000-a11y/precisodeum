@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { MapPin, Crown, Clock, Circle, ArrowRight, Trophy, Sparkles, Zap, Rocket, Phone } from 'lucide-react';
 import { usePrefetchProvider, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { Button } from '@/components/ui/button';

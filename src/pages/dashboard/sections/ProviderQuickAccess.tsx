@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Settings, Eye, PlusCircle, Building2, Sparkles } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import CelebrationMuteToggle from '@/components/dashboard/CelebrationMuteToggle';

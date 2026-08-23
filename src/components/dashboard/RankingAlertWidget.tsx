@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, TrendingDown, TrendingUp, ArrowRight, MapPin, Shield, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 
 const RankingAlertWidget = () => {
   const { provider, profile } = useAuth();

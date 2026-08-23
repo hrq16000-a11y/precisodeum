@@ -5,7 +5,7 @@ import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Search, HelpCircle, Users, Briefcase, CreditCard, Shield, ChevronDown, Wifi, ArrowRight, ArrowUpDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { motion, AnimatePresence } from 'framer-motion';
 import OpenSupportTicketCard from '@/components/support/OpenSupportTicketCard';
 

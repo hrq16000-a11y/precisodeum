@@ -19,7 +19,7 @@
  * vem do hook (mesmo do CategoryPage).
  */
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
 import { ChevronRight, MapPin, Search, Users } from 'lucide-react';
 import Header from '@/components/Header';

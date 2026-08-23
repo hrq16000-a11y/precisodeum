@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from '@/lib/router-compat';
 import { SafeHTML } from '@/components/ui/SafeHTML';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';

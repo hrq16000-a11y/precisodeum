@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "@/lib/router-compat";
 import { AlertTriangle, RotateCcw, Home } from "lucide-react";
 import { reportError } from "@/lib/errorReporter";
 

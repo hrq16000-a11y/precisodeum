@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { MessageCircle, Instagram, Facebook } from 'lucide-react';
 import { useMemo, lazy, Suspense } from 'react';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';

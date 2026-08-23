@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Phone, MapPin, FileText, Briefcase, Image as ImageIcon, CheckCircle2, Sparkles, Rocket, Loader2, Trophy, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';

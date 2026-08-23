@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { usePrefetchCategory, usePrefetchHandlers } from '@/hooks/usePrefetch';
 import { motion } from 'framer-motion';
 import CategoryIcon from '@/components/CategoryIcon';

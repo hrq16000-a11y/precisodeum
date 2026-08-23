@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import { compressImage } from '@/lib/compressImage';
 import { getSuggestedTags } from '@/data/tagSuggestions';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from '@/lib/router-compat';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';

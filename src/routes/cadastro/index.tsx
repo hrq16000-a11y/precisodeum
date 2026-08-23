@@ -4,6 +4,6 @@ import { importWithRetry } from "@/lib/lazyWithRetry";
 
 const LoginPage = reactLazy(() => importWithRetry(() => import("@/pages/LoginPage")));
 
-export const Route = createFileRoute("/cadastro")({
+export const Route = createFileRoute("/cadastro/")({
   component: () => (<LoginPage />),
 });

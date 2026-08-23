@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Button } from '@/components/ui/button';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import SponsorScarcityBadge from './SponsorScarcityBadge';

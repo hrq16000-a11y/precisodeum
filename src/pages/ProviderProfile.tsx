@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from '@/lib/router-compat';
 import { Helmet } from 'react-helmet-async';
 
 import { avatarLarge, portfolioThumb, portfolioFull, coverImage, optimizedImageUrl, serviceImageThumb, originalUrl, responsiveImageSrcSet, isVideoUrl, isYouTubeUrl, getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/imageOptimizer';

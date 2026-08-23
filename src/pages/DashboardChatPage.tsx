@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from '@/lib/router-compat';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useChatEligibility } from '@/hooks/useChatEligibility';
 import ChatConversationList from '@/components/chat/ChatConversationList';

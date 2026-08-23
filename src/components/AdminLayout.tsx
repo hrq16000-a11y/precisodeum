@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from '@/lib/router-compat';
 import { LayoutDashboard, Users, Briefcase, FolderOpen, BarChart3, MapPin, LogOut, Menu, X, Shield, ShieldCheck, Megaphone, Globe, HelpCircle, Wrench, Sparkles, ClipboardList, Users2, Newspaper, HandshakeIcon, LayoutGrid, ScrollText, Trash2, Database, Image as ImageIcon, Smartphone, Crown, FileImage, FileText, Package, Blocks, PanelTop, Footprints, MessageSquareQuote, MousePointerClick, LayoutList, Target, CreditCard, Search as SearchIcon, ChevronDown, Star, Rocket, Receipt, UserPlus, Bell, MessageSquare, Pin, AlertTriangle } from 'lucide-react';
 import AdminGroupNav, { AdminGroupTabs } from '@/components/admin/AdminGroupNav';
 import PreviewBuildNotice from '@/components/admin/PreviewBuildNotice';

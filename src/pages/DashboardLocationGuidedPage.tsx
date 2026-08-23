@@ -7,7 +7,7 @@
  * quem fechou o wizard sem cidade ou sem coordenadas.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, MapPin, Navigation, Building2, Sparkles } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';

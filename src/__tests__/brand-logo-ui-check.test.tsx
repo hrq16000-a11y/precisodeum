@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from '@/lib/router-compat';
 import fs from 'node:fs';
 import path from 'node:path';
 import Logo from '@/components/Logo';

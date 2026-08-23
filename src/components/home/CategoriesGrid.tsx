@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { ChevronRight, SearchX, Search } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Skeleton } from '@/components/ui/skeleton';

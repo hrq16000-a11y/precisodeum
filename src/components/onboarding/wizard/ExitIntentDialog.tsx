@@ -18,7 +18,7 @@
  * permitindo medir conversão por criativo × etapa × tipo de usuário.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, X, HelpCircle, Save } from 'lucide-react';

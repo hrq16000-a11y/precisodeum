@@ -5,6 +5,6 @@ import SponsorProtectedRoute from "@/components/SponsorProtectedRoute";
 
 const SponsorDashboardPage = reactLazy(() => importWithRetry(() => import("@/pages/sponsor/SponsorDashboardPage")));
 
-export const Route = createFileRoute("/sponsor-panel")({
+export const Route = createFileRoute("/sponsor-panel/")({
   component: () => (<SponsorProtectedRoute><SponsorDashboardPage /></SponsorProtectedRoute>),
 });

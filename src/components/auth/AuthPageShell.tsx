@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { ArrowLeft, HelpCircle } from 'lucide-react';
 import Logo from '@/components/Logo';
 

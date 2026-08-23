@@ -3,7 +3,7 @@ import { Bell, Check, CheckCheck, Trash2, ExternalLink, Settings, BellRing, Bell
 import { Button } from '@/components/ui/button';
 import { useNotifications, usePushSubscription, type Notification } from '@/hooks/useNotifications';
 import { useAuthIdentity } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';

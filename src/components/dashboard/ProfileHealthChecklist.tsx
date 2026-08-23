@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
 import { Camera, FileText, Image as ImageIcon, ShieldCheck, Briefcase, Check, ChevronRight, ListChecks } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';

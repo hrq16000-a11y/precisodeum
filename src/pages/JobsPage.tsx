@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from '@/lib/router-compat';
 import { MapPin, Briefcase, Search, MessageCircle, Filter, Building2, X, Sparkles, ArrowRight, ChevronLeft, ChevronRight, SlidersHorizontal, Clock, ListOrdered, CalendarDays, Tag } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
 import GeoFallbackBanner from '@/components/GeoFallbackBanner';

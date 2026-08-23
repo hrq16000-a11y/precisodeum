@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, memo, lazy, Suspense } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from '@/lib/router-compat';
 import { ShieldAlert } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import AdminLayout from '@/components/AdminLayout';

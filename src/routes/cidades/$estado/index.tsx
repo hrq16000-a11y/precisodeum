@@ -4,6 +4,6 @@ import { importWithRetry } from "@/lib/lazyWithRetry";
 
 const StateProviderPage = reactLazy(() => importWithRetry(() => import("@/pages/StateProviderPage")));
 
-export const Route = createFileRoute("/cidades/$estado")({
+export const Route = createFileRoute("/cidades/$estado/")({
   component: () => (<StateProviderPage />),
 });

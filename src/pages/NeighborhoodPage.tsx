@@ -14,7 +14,7 @@
  * NÃO gera páginas por profissional × cidade que ele atende (doorway clássico).
  */
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
 import { ChevronRight, MapPin, Search, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';

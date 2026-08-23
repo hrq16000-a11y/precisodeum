@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { MapPin, RefreshCw, AlertTriangle, ExternalLink, Wand2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 

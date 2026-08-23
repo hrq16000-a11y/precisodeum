@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Building2, ExternalLink, Save, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import DashboardLayout from '@/components/DashboardLayout';

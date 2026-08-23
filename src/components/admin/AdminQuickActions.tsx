@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { UserPlus, FolderPlus, Megaphone, FileText, Image, Settings, Zap, Trophy, Loader2 } from 'lucide-react';
 import { useFeatureEnabled } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';

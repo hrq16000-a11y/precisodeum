@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from '@/lib/router-compat';
 import { ArrowRight, Lightbulb, ChevronRight, HelpCircle, ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';

@@ -1,6 +1,6 @@
 import { useSponsorsBySlot } from '@/hooks/useSponsors';
 import { useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { Megaphone } from 'lucide-react';
 import SponsorImage from '@/components/SponsorImage';
 import { rankAndOptimise, recordImpression } from '@/lib/sponsorRanking';

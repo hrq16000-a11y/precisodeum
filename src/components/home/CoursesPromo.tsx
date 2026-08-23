@@ -1,7 +1,7 @@
 import { GraduationCap, BookOpen, Award, ArrowRight, Sparkles, TrendingUp, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 
 const highlights = [
   { icon: GraduationCap, label: '100% Gratuito', desc: 'Sem custos, sem taxas' },

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { DollarSign, ArrowRight, Sparkles, TrendingUp } from 'lucide-react';
 import CategoryIcon from '@/components/CategoryIcon';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';

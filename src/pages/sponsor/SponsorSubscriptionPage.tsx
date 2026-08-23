@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { supabase } from '@/integrations/supabase/client';
 import { useSponsorAuth } from '@/hooks/useSponsorAuth';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';

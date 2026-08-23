@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { Mail, MapPin, Building2, User, Shield, Zap, Calendar, MoreHorizontal, Eye, Edit2, Key, Ban, Trash2, ExternalLink } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';

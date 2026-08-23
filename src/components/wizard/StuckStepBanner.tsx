@@ -7,7 +7,7 @@
 import { AlertCircle, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 
 interface StuckStepBannerProps {
   /** Lista de campos faltantes (ex: ["Categoria", "Cidade"]). */

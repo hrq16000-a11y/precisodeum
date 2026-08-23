@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from '@/lib/router-compat';
 import SponsorLayout from '@/components/sponsor/SponsorLayout';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { useSponsorAuth } from '@/hooks/useSponsorAuth';

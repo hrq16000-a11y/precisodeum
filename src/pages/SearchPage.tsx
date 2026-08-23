@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, lazy, Suspense, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from '@/lib/router-compat';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SearchBar from '@/components/SearchBar';

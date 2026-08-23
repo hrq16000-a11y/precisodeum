@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useSearchParams } from '@/lib/router-compat';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
