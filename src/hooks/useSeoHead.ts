@@ -154,18 +154,14 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
 
     return () => {
       cancelled = true;
-      headController?.abort();
-      window.clearTimeout(headTimeout);
-      if (imageProbe) {
-        imageProbe.onload = null;
-        imageProbe.onerror = null;
-      }
       // Limpa rel=prev/next ao desmontar (outras rotas não devem herdar).
       document.querySelector('link[rel="prev"]')?.remove();
       document.querySelector('link[rel="next"]')?.remove();
       document.title = 'Preciso de um | Encontre um profissional para qualquer tipo de serviço no Brasil';
     };
-  }, [title, description, canonical, ogImage, noindex, gscId, gaId, ogType, articlePublishedTime, articleModifiedTime, articleAuthor, prevUrl, nextUrl]);
+    // ogKey: array literal muda de identidade a cada render — usamos a chave estável.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, description, canonical, ogKey, noindex, gscId, gaId, ogType, articlePublishedTime, articleModifiedTime, articleAuthor, prevUrl, nextUrl]);
 }
 
 export const SITE_BASE_URL = SITE_URL;
