@@ -97,7 +97,7 @@ function getSessionId(): string {
     const k = 'onboarding_v2_session_id';
     let id = sessionStorage.getItem(k);
     if (!id) {
-      id = (crypto as any)?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      id = String((crypto as any)?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
       sessionStorage.setItem(k, id);
     }
     return id;

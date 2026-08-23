@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from '@/lib/router-compat';
+import type { TablesUpdate } from '@/integrations/supabase/types';
 import { PROVIDER_SAFE_COLUMNS } from '@/lib/dbSafeColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -674,7 +675,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
       void trackEvent({
         phase: state.phase,
         event: 'error',
-        userId: user?.id,
+        userId: undefined,
         meta: { code: WIZARD_ERROR_CODES.PERSIST_PHASE1_NO_USER },
       });
       toast.error('Sessão expirou. Faça login novamente.');
@@ -706,7 +707,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
               city: (currentProfile.city || '').trim() ? currentProfile.city : (prof.city || currentProfile.city),
               state: (currentProfile.state || '').trim() ? currentProfile.state : (prof.state || currentProfile.state),
               neighborhood: (currentProfile.neighborhood || '').trim() ? currentProfile.neighborhood : (prof.neighborhood || currentProfile.neighborhood),
-              profile_type: (currentProfile.profile_type || (prof.profile_type as typeof currentProfile.profile_type) || 'provider') as typeof currentProfile.profile_type,
+              profile_type: (currentProfile.profile_type || (prof.profile_type as unknown as typeof currentProfile.profile_type) || 'provider') as typeof currentProfile.profile_type,
               avatar_url: currentProfile.avatar_url || prof.avatar_url || currentProfile.avatar_url,
             };
             p = merged;
@@ -1653,7 +1654,7 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         const fieldsSkipped = optionalSources.filter((o) => !o.present).map((o) => o.key);
         const { error: detErr } = await supabase
           .from('services')
-          .update(detailsPatch)
+          .update(detailsPatch as TablesUpdate<'services'>)
           .eq('id', resolvedServiceId);
         if (detErr) {
           console.warn('[onboardingV2] sync details on reused service failed', detErr);

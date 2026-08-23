@@ -66,7 +66,7 @@ const CitySeoBlock = ({ citySlug, cityName, state, providersCount, featuredProvi
       const { data } = await supabase
         .from('cities')
         .select('slug, name, state')
-        .eq('state', state)
+        .eq('state', state ?? '')
         .neq('slug', citySlug)
         .order('name')
         .limit(8);

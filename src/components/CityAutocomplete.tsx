@@ -102,7 +102,7 @@ const CityAutocomplete = ({
       // 1) RPC priorizada
       const prio = await supabase.rpc('search_cities_prioritized', {
         term,
-        preferred_uf: normalizedPreferredUF || null,
+        preferred_uf: normalizedPreferredUF || undefined,
       });
       if (cancelled) return;
       if (!prio.error && prio.data) {

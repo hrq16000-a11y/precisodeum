@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import { lazy, Suspense } from 'react';
 import WelcomeHero from '@/components/dashboard/WelcomeHero';
 import QuickStatsBar from '@/components/dashboard/QuickStatsBar';

@@ -79,7 +79,7 @@ export function useWizardDuplicateCheck(): UseWizardDuplicateCheckResult {
         // exato — sem expor o documento bruto ao cliente.
         const { data, error } = await supabase.rpc('check_tax_id_duplicate', {
           _digits: clean,
-          _ignore_user_id: ignoreUserId ?? null,
+          _ignore_user_id: ignoreUserId ?? undefined,
         });
         if (error) {
           setDuplicates((d) => ({ ...d, tax_id: false }));

@@ -27,8 +27,9 @@ const PrefetchLink = forwardRef<HTMLAnchorElement, PrefetchLinkProps>(function P
 
   const pathFromTo = useCallback((): string | null => {
     if (typeof to === 'string') return to;
-    if (to && typeof to === 'object' && 'pathname' in to && typeof to.pathname === 'string') {
-      return to.pathname;
+    if (to && typeof to === 'object') {
+      const p = (to as { pathname?: unknown }).pathname;
+      if (typeof p === 'string') return p;
     }
     return null;
   }, [to]);

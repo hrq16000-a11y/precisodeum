@@ -51,12 +51,12 @@ export function useNearbyProviders({ lat, lng, radiusM = 50000, categorySlug, li
     queryKey: ['nearby-providers', lat, lng, radiusM, categorySlug, limit, onlineIds.length],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('nearby_providers', {
-        _lat: lat ?? null,
-        _lng: lng ?? null,
+        _lat: lat ?? undefined,
+        _lng: lng ?? undefined,
         _radius_m: radiusM,
-        _category_slug: categorySlug || null,
+        _category_slug: categorySlug || undefined,
         _limit: limit,
-        _online_user_ids: onlineIds.length > 0 ? onlineIds : null,
+        _online_user_ids: onlineIds.length > 0 ? onlineIds : undefined,
       });
 
       if (error) throw error;

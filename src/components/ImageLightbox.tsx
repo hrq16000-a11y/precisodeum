@@ -71,7 +71,7 @@ const ImageLightbox = ({ images, initialIndex = 0, open, onClose }: ImageLightbo
   const pinchStartScale = useRef(1);
   const lastPinchCenter = useRef<{ x: number; y: number } | null>(null);
   const panStart = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
-  const controlsTimer = useRef<ReturnType<typeof setTimeout>>();
+  const controlsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (open) {

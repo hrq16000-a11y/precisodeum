@@ -86,7 +86,7 @@ export interface LeadConversionStats {
 export async function fetchLeadConversionStats(opts: { providerId?: string; days?: number } = {}): Promise<LeadConversionStats | null> {
   try {
     const { data, error } = await supabase.rpc('get_lead_conversion_stats', {
-      _provider_id: opts.providerId ?? null,
+      _provider_id: opts.providerId ?? undefined,
       _days: opts.days ?? 30,
     });
     if (error) return null;

@@ -193,7 +193,7 @@ export const installWebVitalsPerRoute = () => {
   // Patch pushState / replaceState para detectar SPA navigation
   const wrap = (key: 'pushState' | 'replaceState') => {
     const orig = history[key];
-    history[key] = function (...args: any[]) {
+    history[key] = function (this: History, ...args: any[]) {
       const ret = orig.apply(this, args as any);
       window.dispatchEvent(new Event('locationchange'));
       return ret;

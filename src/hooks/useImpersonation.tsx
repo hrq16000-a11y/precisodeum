@@ -60,7 +60,7 @@ export async function startImpersonation(opts: {
     return false;
   }
   const data = res.data;
-  if (res.error || !data?.hashed_token) {
+  if (res.error || !data?.hashed_token || !data.session_id) {
     toast.error(res.error?.message ?? 'Falha ao gerar acesso');
     return false;
   }

@@ -64,10 +64,12 @@ export function calculateAuditedDistanceKm(
 
   if (!Number.isFinite(userLat) || !Number.isFinite(userLon)) return baseAudit;
   if (!hasCoordinates(provider.latitude, provider.longitude)) return baseAudit;
+  const pLat = provider.latitude as number;
+  const pLng = provider.longitude as number;
 
   const directKm = calculateDistanceKm(
     { latitude: userLat as number, longitude: userLon as number },
-    { latitude: provider.latitude, longitude: provider.longitude },
+    { latitude: pLat, longitude: pLng },
   );
   baseAudit.rawDirectKm = directKm;
 
@@ -85,12 +87,12 @@ export function calculateAuditedDistanceKm(
   }
 
   const providerToOwnCenterKm = calculateDistanceKm(
-    { latitude: provider.latitude, longitude: provider.longitude },
+    { latitude: pLat, longitude: pLng },
     { latitude: providerCityCenter.lat, longitude: providerCityCenter.lon },
   );
   baseAudit.providerToOwnCenterKm = providerToOwnCenterKm;
   const providerToUserCenterKm = calculateDistanceKm(
-    { latitude: provider.latitude, longitude: provider.longitude },
+    { latitude: pLat, longitude: pLng },
     { latitude: userCityCenter.lat, longitude: userCityCenter.lon },
   );
   baseAudit.cityToCityKm = calculateDistanceKm(

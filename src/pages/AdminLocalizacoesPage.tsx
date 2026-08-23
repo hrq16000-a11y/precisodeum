@@ -10,6 +10,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { TablesUpdate } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -222,7 +223,7 @@ export default function AdminLocalizacoesPage() {
       };
       const { data, error } = await supabase
         .from('providers')
-        .update(payload)
+        .update(payload as TablesUpdate<'providers'>)
         .eq('id', editing.id)
         .select('id,business_name,city,neighborhood,state,geo_source,updated_at')
         .single();

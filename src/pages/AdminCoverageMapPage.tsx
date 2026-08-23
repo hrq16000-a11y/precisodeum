@@ -67,7 +67,7 @@ const AdminCoverageMapPage = () => {
         _lat: center[0],
         _lng: center[1],
         _radius_m: radiusMeters,
-        _category_slug: category || null,
+        _category_slug: category || undefined,
         _limit: 200,
       });
       if (error) throw error;
