@@ -26,6 +26,9 @@ interface SeoHeadProps {
 export function useSeoHead({ title, description, canonical, ogImage, noindex, ogType, articlePublishedTime, articleModifiedTime, articleAuthor, prevUrl, nextUrl }: SeoHeadProps) {
   const gscId = useSettingValue('google_search_console_id');
   const gaId = useSettingValue('google_analytics_id');
+  const ogKey = Array.isArray(ogImage) ? ogImage.join('|') : (ogImage || '');
+
+
 
   useEffect(() => {
     // Resiliência: se title/description vierem vazios (ex.: query ainda
