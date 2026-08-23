@@ -141,7 +141,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@400;500&display=swap" },
     ],
     scripts: [
-      { src: "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3762170279587706", async: true, crossOrigin: "anonymous" },
+      // AdSense é injetado pós-hidratação em clientBootstrap.ts — o script no
+      // head SSR insere <ins class="adsbygoogle-noablate"> antes do React
+      // hidratar e causa hydration mismatch em todas as páginas.
       { type: "application/ld+json", children: JSON_LD },
     ],
   }),

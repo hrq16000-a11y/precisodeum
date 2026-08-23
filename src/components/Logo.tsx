@@ -147,7 +147,7 @@ const Logo = ({
           height="209"
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
-          // PR 7: fetchpriority é DOM attr nativo; React 18 não reconhece a versão
+          // React 19 reconhece fetchPriority nativamente
           // camelCase e emite warning. Passamos via spread em lowercase.
           {...({ fetchpriority: priority ? 'high' : 'auto' } as Record<string, string>)}
           onLoad={() => {

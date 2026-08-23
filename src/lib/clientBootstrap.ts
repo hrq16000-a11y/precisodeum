@@ -227,6 +227,20 @@ export function installClientBootstrap() {
 
   installBootstrapGuards();
 
+  // AdSense pós-hidratação: carregar no head SSR faz o script injetar um
+  // <ins class="adsbygoogle-noablate"> antes do React hidratar → mismatch.
+  deferWork(() => {
+    try {
+      if (!document.querySelector('script[src*="adsbygoogle.js"]')) {
+        const s = document.createElement("script");
+        s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3762170279587706";
+        s.async = true;
+        s.crossOrigin = "anonymous";
+        document.head.appendChild(s);
+      }
+    } catch { /* best-effort */ }
+  });
+
   import("@/lib/globalErrorMonitor")
     .then((m) => m.installGlobalErrorMonitor())
     .catch((err) => console.warn("[bootstrap] globalErrorMonitor skip", err));
