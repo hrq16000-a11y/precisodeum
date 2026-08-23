@@ -353,7 +353,7 @@ const ServiceImageUpload = ({ serviceId, userId }: ServiceImageUploadProps) => {
           {images.map((img, idx) => (
             <div key={img.id} className="relative group rounded-lg overflow-hidden border border-border">
               {idx === 0 && (
-                <span className="absolute left-1 top-1 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground shadow">
+                <span className="absolute left-1 top-1 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm">
                   Capa
                 </span>
               )}

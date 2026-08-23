@@ -198,7 +198,7 @@ const AdminLeadsPage = () => {
           ].map(k => {
             const Icon = k.icon;
             return (
-              <div key={k.label} className="rounded-xl border border-border/60 bg-card p-3 shadow-sm">
+              <div key={k.label} className="rounded-xl border border-border/60 bg-card p-3 shadow-xs">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{k.label}</p>
@@ -214,7 +214,7 @@ const AdminLeadsPage = () => {
         </div>
 
         {/* Filters */}
-        <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm space-y-3">
+        <div className="rounded-xl border border-border/60 bg-card p-3 shadow-xs space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             {FILTER_TABS.map(t => {
               const active = statusFilter === t.key;
@@ -225,7 +225,7 @@ const AdminLeadsPage = () => {
                   onClick={() => { setStatusFilter(t.key); setPage(1); }}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                     active
-                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
                       : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
@@ -280,7 +280,7 @@ const AdminLeadsPage = () => {
         )}
 
         {/* Table */}
-        <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

@@ -41,7 +41,7 @@ export default function DailyPostHighlight({ providerId }: Props) {
     <motion.section
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-fuchsia-500/25 bg-gradient-to-br from-fuchsia-500/10 via-pink-500/5 to-transparent p-4 shadow-sm"
+      className="rounded-2xl border border-fuchsia-500/25 bg-gradient-to-br from-fuchsia-500/10 via-pink-500/5 to-transparent p-4 shadow-xs"
       aria-label="Obra do Dia"
     >
       <header className="mb-3 flex items-center gap-2">

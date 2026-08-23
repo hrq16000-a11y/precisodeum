@@ -487,8 +487,8 @@ const DashboardLeadsPage = () => {
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all min-h-[36px] ${
                 active
                   ? isOverdueChip
-                    ? 'bg-destructive text-destructive-foreground shadow-sm'
-                    : 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-destructive text-destructive-foreground shadow-xs'
+                    : 'bg-primary text-primary-foreground shadow-xs'
                   : 'bg-card border border-border text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
@@ -505,7 +505,7 @@ const DashboardLeadsPage = () => {
       </div>
 
       {/* Toolbar sticky: busca + filtros + exportação */}
-      <div className="sticky top-0 z-20 mt-3 -mx-4 rounded-none border-y border-border bg-card/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:mx-0 sm:rounded-xl sm:border sm:px-3 sm:shadow-card">
+      <div className="sticky top-0 z-20 mt-3 -mx-4 rounded-none border-y border-border bg-card/95 px-4 py-3 shadow-xs backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:mx-0 sm:rounded-xl sm:border sm:px-3 sm:shadow-card">
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="relative min-w-[200px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

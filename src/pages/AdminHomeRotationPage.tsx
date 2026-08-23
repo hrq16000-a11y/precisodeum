@@ -163,7 +163,7 @@ export default function AdminHomeRotationPage() {
                   htmlFor={`strategy-${opt.value}`}
                   className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-all ${
                     active
-                      ? 'border-accent bg-accent/5 shadow-sm'
+                      ? 'border-accent bg-accent/5 shadow-xs'
                       : 'border-border bg-card hover:border-accent/40'
                   }`}
                 >

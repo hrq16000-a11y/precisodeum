@@ -93,7 +93,7 @@ export default function LeadsFunnelBoard({ leads, active, onChange }: Props) {
               aria-pressed={isActive}
             >
               <div className="flex items-start justify-between gap-2">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br ${stage.color} text-white shadow-sm`}>
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br ${stage.color} text-white shadow-xs`}>
                   <Icon className="h-4 w-4" />
                 </div>
                 <span className="rounded-full bg-background/80 px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">

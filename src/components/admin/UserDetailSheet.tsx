@@ -1020,7 +1020,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                           onChange={(name, val) => { handlePhoneChange(name, val); if (profilePhoneError) setProfilePhoneError(null); }}
                           aria-invalid={!!profilePhoneError}
                           aria-describedby={profilePhoneError ? 'admin-user-phone-error' : undefined}
-                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                         />
                         {profilePhoneError && (
                           <p id="admin-user-phone-error" data-testid="admin-user-phone-error" className="mt-1 text-[10px] text-destructive">
@@ -1037,7 +1037,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                           onChange={(name, val) => { handlePhoneChange(name, val); if (profileWhatsappError) setProfileWhatsappError(null); }}
                           aria-invalid={!!profileWhatsappError}
                           aria-describedby={profileWhatsappError ? 'admin-user-whatsapp-error' : undefined}
-                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                         />
                         {profileWhatsappError ? (
                           <p id="admin-user-whatsapp-error" data-testid="admin-user-whatsapp-error" className="mt-1 text-[10px] text-destructive">
@@ -1151,7 +1151,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                               onChange={(n, v) => { handleProviderPhoneChange(n, v); if (providerPhoneError) setProviderPhoneError(null); }}
                               aria-invalid={!!providerPhoneError}
                               aria-describedby={providerPhoneError ? 'admin-provider-phone-error' : undefined}
-                              className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                             />
                             {providerPhoneError && (
                               <p id="admin-provider-phone-error" data-testid="admin-provider-phone-error" className="mt-1 text-[10px] text-destructive">{providerPhoneError}</p>
@@ -1166,7 +1166,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                               onChange={(n, v) => { handleProviderPhoneChange(n, v); if (providerWhatsappError) setProviderWhatsappError(null); }}
                               aria-invalid={!!providerWhatsappError}
                               aria-describedby={providerWhatsappError ? 'admin-provider-whatsapp-error' : undefined}
-                              className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                             />
                             {providerWhatsappError && (
                               <p id="admin-provider-whatsapp-error" data-testid="admin-provider-whatsapp-error" className="mt-1 text-[10px] text-destructive">{providerWhatsappError}</p>
@@ -1207,7 +1207,7 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                         { label: 'Fotos', value: String(provider.portfolio_photo_count || 0), sub: `${provider.portfolio_album_count || 0} albuns`, color: 'text-emerald-600 dark:text-emerald-400' },
                         { label: 'Contatos', value: String(contactClicks.length), sub: 'cliques totais', color: 'text-purple-600 dark:text-purple-400' },
                       ].map(m => (
-                        <div key={m.label} className="rounded-lg bg-card border border-border/60 p-2.5 text-center shadow-sm">
+                        <div key={m.label} className="rounded-lg bg-card border border-border/60 p-2.5 text-center shadow-xs">
                           <p className={`text-xl font-bold ${m.color}`}>{m.value}</p>
                           <p className="text-[10px] font-semibold text-foreground uppercase tracking-wide">{m.label}</p>
                           <p className="text-[9px] text-muted-foreground">{m.sub}</p>
@@ -1464,15 +1464,15 @@ const UserDetailSheet = ({ user, isAdmin, onClose, onRefresh }: UserDetailSheetP
                 return (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="rounded-xl border border-border p-4 bg-card text-center shadow-sm">
+                      <div className="rounded-xl border border-border p-4 bg-card text-center shadow-xs">
                         <p className="text-2xl font-bold text-primary">{last30.length}</p>
                         <p className="text-xs text-muted-foreground">Leads (30 dias)</p>
                       </div>
-                      <div className="rounded-xl border border-border p-4 bg-card text-center shadow-sm">
+                      <div className="rounded-xl border border-border p-4 bg-card text-center shadow-xs">
                         <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{wa30}</p>
                         <p className="text-xs text-muted-foreground">Cliques WhatsApp</p>
                       </div>
-                      <div className="rounded-xl border border-border p-4 bg-card text-center shadow-sm">
+                      <div className="rounded-xl border border-border p-4 bg-card text-center shadow-xs">
                         <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{ph30}</p>
                         <p className="text-xs text-muted-foreground">Cliques Telefone</p>
                       </div>

@@ -130,7 +130,7 @@ const CoursesPage = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="flex flex-col sm:flex-row gap-3 mb-8 bg-card/50 backdrop-blur-sm border border-border/40 rounded-2xl p-4"
+          className="flex flex-col sm:flex-row gap-3 mb-8 bg-card/50 backdrop-blur-xs border border-border/40 rounded-2xl p-4"
         >
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

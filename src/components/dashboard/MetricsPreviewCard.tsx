@@ -29,7 +29,7 @@ const MetricsPreviewCard = ({
   return (
     <Link
       to="/dashboard/metricas"
-      className="group block rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md sm:p-5"
+      className="group block rounded-2xl border border-border bg-card p-4 shadow-xs transition-all hover:border-primary/40 hover:shadow-md sm:p-5"
       aria-label="Ver métricas completas"
     >
       <div className="mb-3 flex items-center justify-between gap-3">

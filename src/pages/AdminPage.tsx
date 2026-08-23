@@ -310,7 +310,7 @@ const AdminPage = () => {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20, height: 0 }}
                         transition={{ duration: 0.3, delay: i * 0.05 }}
-                        className="flex items-center justify-between rounded-xl border border-amber-200/60 bg-background/80 backdrop-blur-sm p-3 dark:border-amber-800"
+                        className="flex items-center justify-between rounded-xl border border-amber-200/60 bg-background/80 backdrop-blur-xs p-3 dark:border-amber-800"
                       >
                         <div className="min-w-0 flex-1">
                           <h3 className="text-sm font-medium text-foreground truncate">{job.title}</h3>
@@ -352,7 +352,7 @@ const AdminPage = () => {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20, height: 0 }}
                         transition={{ duration: 0.3, delay: i * 0.05 }}
-                        className="flex items-center justify-between rounded-xl border border-blue-200/60 bg-background/80 backdrop-blur-sm p-3 dark:border-blue-800"
+                        className="flex items-center justify-between rounded-xl border border-blue-200/60 bg-background/80 backdrop-blur-xs p-3 dark:border-blue-800"
                       >
                         <div className="min-w-0 flex-1">
                           <h3 className="text-sm font-medium text-foreground truncate">{(p as any)._profileName || p.business_name || 'Sem nome'}</h3>

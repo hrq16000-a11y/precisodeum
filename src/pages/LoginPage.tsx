@@ -437,7 +437,7 @@ const LoginPage = () => {
                       onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
                       aria-invalid={!!emailError}
                       aria-describedby={emailError ? 'login-email-error' : undefined}
-                      className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground ${emailError ? 'border-destructive focus:outline-none focus:ring-1 focus:ring-destructive' : 'border-input'}`}
+                      className={`w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground ${emailError ? 'border-destructive focus:outline-hidden focus:ring-1 focus:ring-destructive' : 'border-input'}`}
                     />
                     {emailError && (
                       <p id="login-email-error" className="mt-1 text-xs text-destructive">{emailError}</p>

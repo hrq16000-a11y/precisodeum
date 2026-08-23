@@ -49,7 +49,7 @@ const StatItem = memo(({ stat, value, index }: { stat: typeof stats[number]; val
   return (
     <div
       ref={ref}
-      className="group relative flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm"
+      className="group relative flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-card/50 backdrop-blur-xs border border-border/50 shadow-xs"
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-[0.06] transition-opacity duration-500 rounded-xl`} />
       

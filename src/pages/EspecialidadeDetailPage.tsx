@@ -139,7 +139,7 @@ const EspecialidadeDetailPage = () => {
             {tips.map((tip, i) => (
               <article
                 key={i}
-                className="rounded-xl border border-border bg-card p-4 shadow-sm"
+                className="rounded-xl border border-border bg-card p-4 shadow-xs"
               >
                 <h3 className="text-sm font-semibold text-foreground">Dica {i + 1}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{tip}</p>

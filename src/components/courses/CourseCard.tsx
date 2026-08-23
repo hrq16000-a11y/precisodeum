@@ -65,7 +65,7 @@ const CourseCard = ({ course, index, featured = false }: CourseCardProps) => {
               {/* Featured badge */}
               {featured && (
                 <div className="absolute top-2.5 left-2.5">
-                  <Badge className="bg-accent/90 text-accent-foreground backdrop-blur-sm text-[10px] gap-1 px-2 py-0.5 shadow-sm">
+                  <Badge className="bg-accent/90 text-accent-foreground backdrop-blur-xs text-[10px] gap-1 px-2 py-0.5 shadow-xs">
                     <Sparkles className="h-3 w-3" /> Destaque
                   </Badge>
                 </div>
@@ -74,7 +74,7 @@ const CourseCard = ({ course, index, featured = false }: CourseCardProps) => {
               {/* Certificate badge on image */}
               {course.has_certificate && (
                 <div className="absolute top-2.5 right-2.5">
-                  <Badge className="bg-card/80 backdrop-blur-sm text-accent text-[10px] gap-1 px-2 py-0.5 border border-accent/20 shadow-sm">
+                  <Badge className="bg-card/80 backdrop-blur-xs text-accent text-[10px] gap-1 px-2 py-0.5 border border-accent/20 shadow-xs">
                     <Award className="h-3 w-3" /> Certificado
                   </Badge>
                 </div>
@@ -82,14 +82,14 @@ const CourseCard = ({ course, index, featured = false }: CourseCardProps) => {
 
               {/* Provider on image */}
               <div className="absolute bottom-2.5 left-2.5">
-                <span className="text-[11px] font-semibold text-foreground bg-card/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-border/30 shadow-sm">
+                <span className="text-[11px] font-semibold text-foreground bg-card/80 backdrop-blur-xs px-2.5 py-1 rounded-full border border-border/30 shadow-xs">
                   {course.provider}
                 </span>
               </div>
 
               {/* Motivational tip */}
               <div className="absolute bottom-2.5 right-2.5">
-                <span className="text-[10px] text-muted-foreground bg-card/70 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                <span className="text-[10px] text-muted-foreground bg-card/70 backdrop-blur-xs px-2 py-0.5 rounded-full">
                   {tip}
                 </span>
               </div>
@@ -119,7 +119,7 @@ const CourseCard = ({ course, index, featured = false }: CourseCardProps) => {
                   flex-shrink-0 h-10 w-10 rounded-xl flex items-center justify-center
                   transition-colors duration-300
                   ${featured
-                    ? 'bg-gradient-to-br from-accent/20 to-accent/10 shadow-sm shadow-accent/10'
+                    ? 'bg-gradient-to-br from-accent/20 to-accent/10 shadow-xs shadow-accent/10'
                     : 'bg-muted group-hover:bg-accent/10'
                   }
                 `}

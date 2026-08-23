@@ -944,7 +944,7 @@ const SearchPage = () => {
               <Button
                 size="sm"
                 variant="default"
-                className="rounded-full px-4 text-xs font-semibold shadow-sm"
+                className="rounded-full px-4 text-xs font-semibold shadow-xs"
                 onClick={() => {
                   const target = (geoCity || effectiveCity).trim();
                   if (!target) return;
@@ -1525,7 +1525,7 @@ const SearchPage = () => {
                   >
                     <button
                       onClick={() => { setShowOutOfState(true); setPage(1); }}
-                      className="group relative inline-flex items-center gap-2 sm:gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-4 py-3 sm:px-6 sm:py-4 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98]"
+                      className="group relative inline-flex items-center gap-2 sm:gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-4 py-3 sm:px-6 sm:py-4 text-sm font-semibold text-foreground shadow-xs transition-all hover:shadow-md hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98]"
                     >
                       <span className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                         <Globe className="h-4 w-4 sm:h-5 sm:w-5" />

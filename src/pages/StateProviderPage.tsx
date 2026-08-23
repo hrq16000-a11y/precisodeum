@@ -112,7 +112,7 @@ const StateProviderPage = () => {
             {Array.from({ length: 12 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
           </div>
         ) : cities.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card p-12 text-center shadow-sm">
+          <div className="rounded-xl border border-border bg-card p-12 text-center shadow-xs">
             <Sparkles className="mx-auto mb-3 h-8 w-8 text-accent" />
             <p className="text-lg font-semibold text-foreground">Nenhuma cidade cadastrada em {stateName}</p>
             <p className="mt-2 text-sm text-muted-foreground">Seja o primeiro profissional da região!</p>
@@ -133,7 +133,7 @@ const StateProviderPage = () => {
                     <motion.div key={city.slug} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                       <Link
                         to={`/cidades/${estado}/${city.slug}`}
-                        className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-md group"
+                        className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-xs transition-all hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-md group"
                       >
                         <div className="flex items-center gap-3">
                           <MapPin className="h-4 w-4 text-accent shrink-0" />

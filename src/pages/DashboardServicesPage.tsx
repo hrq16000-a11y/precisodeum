@@ -815,7 +815,7 @@ const DashboardServicesPage = () => {
         {filtered.map(s => {
           const imgUrl = serviceImages[s.id];
           return (
-            <div key={s.id} className="rounded-xl border border-border bg-card shadow-sm overflow-hidden group">
+            <div key={s.id} className="rounded-xl border border-border bg-card shadow-xs overflow-hidden group">
               <div className="relative aspect-[4/3] bg-muted">
                 {imgUrl ? (
                   <img src={imgUrl} alt={s.service_name} loading="lazy" decoding="async" width={400} height={300} className="w-full h-full object-cover" onError={handleImageError} />
@@ -827,14 +827,14 @@ const DashboardServicesPage = () => {
                 {s.serviceCategories?.length > 0 && (
                   <div className="absolute top-2 left-2 flex flex-wrap gap-1">
                     {s.serviceCategories.slice(0, 2).map((cat: any, i: number) => (
-                      <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-card/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm">
+                      <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-card/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-medium text-foreground shadow-xs">
                         <CategoryIcon icon={cat.icon} size={12} className="text-current" /> {cat.name}
                       </span>
                     ))}
                   </div>
                 )}
                 {s.is_emergency && (
-                  <span className="absolute top-2 right-2 inline-flex items-center gap-0.5 rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">
+                  <span className="absolute top-2 right-2 inline-flex items-center gap-0.5 rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
                     <Zap className="h-3 w-3" /> 24h
                   </span>
                 )}
@@ -1093,7 +1093,7 @@ const DashboardServicesPage = () => {
                     value={form.service_name}
                     onChange={handleChange}
                     placeholder="Ex: Instalação de Ar Condicionado"
-                    className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.service_name ? 'border-destructive' : 'border-input'}`}
+                    className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden ${formErrors.service_name ? 'border-destructive' : 'border-input'}`}
                   />
                   {formErrors.service_name && <p className="text-xs text-destructive mt-1">{formErrors.service_name}</p>}
                 </div>
@@ -1163,7 +1163,7 @@ const DashboardServicesPage = () => {
                     value={form.description}
                     onChange={handleChange}
                     placeholder="Descreva seu serviço, diferenciais e o que está incluso no valor..."
-                    className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.description ? 'border-destructive' : 'border-input'}`}
+                    className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden ${formErrors.description ? 'border-destructive' : 'border-input'}`}
                   />
                   {/* Linter anti-leilão: sugestão + botão "Reescrever com qualidade" */}
                   {(() => {
@@ -1222,7 +1222,7 @@ const DashboardServicesPage = () => {
                       onChange={handleChange}
                       inputMode="decimal"
                       placeholder="A partir de R$ 150,00"
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden"
                     />
                   </div>
                    <div>
@@ -1313,7 +1313,7 @@ const DashboardServicesPage = () => {
                       }}
                       onFocus={() => { if (citySearch.length >= 2) setShowCityDropdown(true); }}
                       placeholder="Digite o nome da cidade..."
-                      className={`w-full rounded-lg border bg-background pl-9 pr-8 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none ${formErrors.service_area ? 'border-destructive' : 'border-input'}`}
+                      className={`w-full rounded-lg border bg-background pl-9 pr-8 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden ${formErrors.service_area ? 'border-destructive' : 'border-input'}`}
                     />
                     {form.service_area && (
                       <button type="button" onClick={clearCity} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -1427,7 +1427,7 @@ const DashboardServicesPage = () => {
                     value={form.whatsapp}
                     onChange={handleChange}
                     placeholder="(61) 99999-9999"
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden"
                   />
                   {(() => {
                     const candidate = form.whatsapp || provider?.whatsapp || '';
@@ -1475,15 +1475,15 @@ const DashboardServicesPage = () => {
                   <label className="block text-sm font-medium text-foreground">Redes Sociais</label>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground text-sm">📸</span>
-                    <input name="instagram_url" value={form.instagram_url} onChange={handleChange} placeholder="https://instagram.com/seu_perfil" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
+                    <input name="instagram_url" value={form.instagram_url} onChange={handleChange} placeholder="https://instagram.com/seu_perfil" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground text-sm">📘</span>
-                    <input name="facebook_url" value={form.facebook_url} onChange={handleChange} placeholder="https://facebook.com/sua_pagina" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
+                    <input name="facebook_url" value={form.facebook_url} onChange={handleChange} placeholder="https://facebook.com/sua_pagina" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground text-sm">🎬</span>
-                    <input name="youtube_url" value={form.youtube_url} onChange={handleChange} placeholder="https://youtube.com/watch?v=..." className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none" />
+                    <input name="youtube_url" value={form.youtube_url} onChange={handleChange} placeholder="https://youtube.com/watch?v=..." className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden" />
                   </div>
                 </div>
 
@@ -1519,7 +1519,7 @@ const DashboardServicesPage = () => {
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
                       placeholder="Ex: reformas, elétrica, urgência"
-                      className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-none"
+                      className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-accent/30 focus:border-accent outline-hidden"
                     />
                     <Button type="button" variant="outline" size="sm" onClick={addTag} className="shrink-0">+</Button>
                   </div>

@@ -601,7 +601,7 @@ const DashboardProfilePage = () => {
 
         {/* Progress bar */}
         <motion.div
-          className="mt-5 rounded-xl border border-border bg-card p-4 shadow-sm"
+          className="mt-5 rounded-xl border border-border bg-card p-4 shadow-xs"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -620,7 +620,7 @@ const DashboardProfilePage = () => {
 
         {/* Avatar + Preview */}
         <motion.div
-          className="mt-5 rounded-xl border border-border bg-card p-5 shadow-sm"
+          className="mt-5 rounded-xl border border-border bg-card p-5 shadow-xs"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
@@ -666,7 +666,7 @@ const DashboardProfilePage = () => {
 
             {/* Tab: Pessoal */}
             <TabsContent value="pessoal">
-              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
+              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4" variants={fadeIn} initial="hidden" animate="visible">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className={labelCls} htmlFor="profile-full-name">Nome completo *</label>
@@ -720,7 +720,7 @@ const DashboardProfilePage = () => {
 
             {/* Tab: Profissional */}
             <TabsContent value="profissional">
-              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
+              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4" variants={fadeIn} initial="hidden" animate="visible">
                 {/* Pergunta inicial: Autônomo ou Empresa? */}
                 <div className="rounded-xl border-2 border-accent/30 bg-accent/5 p-4">
                   <div className="flex items-start gap-2 mb-3">
@@ -736,7 +736,7 @@ const DashboardProfilePage = () => {
                       onClick={() => setForm(prev => ({ ...prev, account_kind: 'autonomo', cnpj: '', business_name: '' }))}
                       className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left transition-all ${
                         form.account_kind === 'autonomo'
-                          ? 'border-accent bg-accent/15 shadow-sm'
+                          ? 'border-accent bg-accent/15 shadow-xs'
                           : 'border-border bg-card hover:border-accent/50'
                       }`}
                     >
@@ -751,7 +751,7 @@ const DashboardProfilePage = () => {
                       onClick={() => setForm(prev => ({ ...prev, account_kind: 'empresa' }))}
                       className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left transition-all ${
                         form.account_kind === 'empresa'
-                          ? 'border-accent bg-accent/15 shadow-sm'
+                          ? 'border-accent bg-accent/15 shadow-xs'
                           : 'border-border bg-card hover:border-accent/50'
                       }`}
                     >
@@ -801,7 +801,7 @@ const DashboardProfilePage = () => {
                             <div key={macro.id}>
                               {subs.length > 0 ? (
                                 <>
-                                  <div className="sticky top-0 bg-muted/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                                  <div className="sticky top-0 bg-muted/60 backdrop-blur-xs px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                                      <CategoryIcon icon={macro.icon} size={12} className="text-muted-foreground" /> {macro.name}
                                   </div>
                                   {subs.map((sub: any) => (
@@ -916,7 +916,7 @@ const DashboardProfilePage = () => {
 
             {/* Tab: Localização */}
             <TabsContent value="localizacao">
-              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4" variants={fadeIn} initial="hidden" animate="visible">
+              <motion.div className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4" variants={fadeIn} initial="hidden" animate="visible">
                 <div>
                   <label className={labelCls}>Cidade *</label>
                   <button type="button" onClick={handleAutoLocate} disabled={locating}

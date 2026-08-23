@@ -255,11 +255,11 @@ const CourseDetailPage = () => {
               {/* Badges on image */}
               <div className="absolute bottom-4 left-4 flex items-center gap-2">
                 {course.has_certificate && (
-                  <Badge className="bg-white/90 text-foreground text-xs gap-1 shadow-sm backdrop-blur-sm">
+                  <Badge className="bg-white/90 text-foreground text-xs gap-1 shadow-xs backdrop-blur-xs">
                     <Award className="h-3 w-3 text-accent" /> Certificado incluso
                   </Badge>
                 )}
-                <Badge className="bg-white/90 text-success text-xs font-bold shadow-sm backdrop-blur-sm">
+                <Badge className="bg-white/90 text-success text-xs font-bold shadow-xs backdrop-blur-xs">
                   <DollarSign className="h-3 w-3" /> 100% Gratuito
                 </Badge>
               </div>

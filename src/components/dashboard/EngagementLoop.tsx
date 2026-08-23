@@ -178,7 +178,7 @@ const EngagementLoop = ({ servicesCount: servicesOverride, portfolioAlbumsCount:
         </button>
         <div className="flex items-start gap-3 pr-6">
           <motion.div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-background/80 shadow-sm"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-background/80 shadow-xs"
             animate={{ scale: [1, 1.06, 1] }}
             transition={{ duration: 2.2, repeat: Infinity }}
           >

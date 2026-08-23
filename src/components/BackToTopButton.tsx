@@ -40,7 +40,7 @@ const BackToTopButton = () => {
       aria-label="Voltar ao topo"
       aria-hidden={!visible}
       tabIndex={visible ? 0 : -1}
-      className="fixed right-3 z-40 flex h-7 w-7 items-center justify-center rounded-full bg-muted/80 text-muted-foreground backdrop-blur-sm shadow-sm transition-[opacity,transform] duration-200 ease-out hover:opacity-100 active:scale-95"
+      className="fixed right-3 z-40 flex h-7 w-7 items-center justify-center rounded-full bg-muted/80 text-muted-foreground backdrop-blur-xs shadow-xs transition-[opacity,transform] duration-200 ease-out hover:opacity-100 active:scale-95"
       style={{
         top: '60vh',
         width: '28px',

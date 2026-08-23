@@ -54,7 +54,7 @@ const CategoryCombobox = ({ categories, value, onChange, placeholder = 'Buscar c
           setOpen(true);
           setTimeout(() => inputRef.current?.focus(), 30);
         }}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-ring"
       >
         <span className="flex items-center gap-2 truncate">
           {selected ? (
@@ -79,7 +79,7 @@ const CategoryCombobox = ({ categories, value, onChange, placeholder = 'Buscar c
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Digite para buscar..."
-                className="w-full bg-transparent py-1.5 text-xs outline-none placeholder:text-muted-foreground"
+                className="w-full bg-transparent py-1.5 text-xs outline-hidden placeholder:text-muted-foreground"
               />
               {search && (
                 <button type="button" onClick={() => setSearch('')}>

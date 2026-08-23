@@ -494,7 +494,7 @@ const ServiceWizard = ({ providerId, userId, provider, categories, onComplete, o
                           onChange={e => { setCategorySearch(e.target.value); setShowCatDrop(true); }}
                           onFocus={() => setShowCatDrop(true)}
                           placeholder="Buscar categoria..."
-                          className="w-full border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                          className="w-full border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-hidden placeholder:text-muted-foreground"
                         />
                       </div>
                     )}

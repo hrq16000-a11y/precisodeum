@@ -113,7 +113,7 @@ export default function WhatsappTemplatesModal({ open, onOpenChange, previewVars
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ex: Primeiro contato após pedido"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-300/40"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-emerald-400 focus:ring-2 focus:ring-emerald-300/40"
               />
             </label>
 
@@ -124,7 +124,7 @@ export default function WhatsappTemplatesModal({ open, onOpenChange, previewVars
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Olá {{cliente}}, aqui é {{meu_nome}}. Vi que você precisa de {{servico}}…"
-                className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-300/40"
+                className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-emerald-400 focus:ring-2 focus:ring-emerald-300/40"
               />
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {TEMPLATE_VARIABLES.map((v) => (

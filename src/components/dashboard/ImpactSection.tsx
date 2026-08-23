@@ -40,7 +40,7 @@ const ImpactSection = ({ views, whatsappClicks, leads }: Props) => {
   return (
     <section
       aria-label="Impacto na Rede"
-      className="rounded-2xl border border-border bg-card p-6 shadow-sm"
+      className="rounded-2xl border border-border bg-card p-6 shadow-xs"
     >
       <header className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">Impacto na Rede</h2>

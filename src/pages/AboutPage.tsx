@@ -209,7 +209,7 @@ const PartnersMarquee = () => {
           {partners.map((name, i) => (
             <div
               key={`${name}-${i}`}
-              className="flex items-center gap-3 bg-card border border-border rounded-2xl px-8 py-5 shadow-sm shrink-0 hover:border-accent/30 hover:shadow-md transition-all"
+              className="flex items-center gap-3 bg-card border border-border rounded-2xl px-8 py-5 shadow-xs shrink-0 hover:border-accent/30 hover:shadow-md transition-all"
             >
               <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
                 <BookOpen className="h-5 w-5 text-accent" />
@@ -279,7 +279,7 @@ const TimelineSection = () => {
                 <div className={`ml-20 md:ml-0 md:w-[calc(50%-2rem)] ${isLeft ? 'md:pr-8 md:text-right' : 'md:pl-8 md:ml-auto'}`}>
                   <motion.div
                     whileHover={{ y: -4 }}
-                    className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-accent/30 transition-all"
+                    className="bg-card border border-border rounded-2xl p-5 shadow-xs hover:shadow-md hover:border-accent/30 transition-all"
                   >
                     <span className="text-xs font-bold text-accent bg-accent/10 rounded-full px-3 py-1">{item.year}</span>
                     <h3 className="font-display text-base font-bold text-foreground mt-3 mb-1">{item.title}</h3>
@@ -604,7 +604,7 @@ const AboutPage = () => {
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.012, duration: 0.3 }}
                   whileHover={{ scale: 1.08, y: -2 }}
-                  className="rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground shadow-sm hover:border-accent/40 hover:bg-accent/5 hover:shadow-md transition-all cursor-default"
+                  className="rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground shadow-xs hover:border-accent/40 hover:bg-accent/5 hover:shadow-md transition-all cursor-default"
                 >
                   {name}
                 </motion.span>
@@ -673,7 +673,7 @@ const AboutPage = () => {
                     Quero me valorizar no mercado <ArrowRight className="h-5 w-5 ml-1" />
                   </Link>
                 </Button>
-                <Button variant="outline" size="xl" className="rounded-full border-accent/50 text-accent font-semibold hover:bg-accent/10 hover:border-accent backdrop-blur-sm" asChild>
+                <Button variant="outline" size="xl" className="rounded-full border-accent/50 text-accent font-semibold hover:bg-accent/10 hover:border-accent backdrop-blur-xs" asChild>
                   <Link to="/buscar">Buscar Profissional</Link>
                 </Button>
               </div>

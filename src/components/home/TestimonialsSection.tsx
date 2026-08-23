@@ -83,7 +83,7 @@ const TestimonialsSection = () => {
             return (
               <div
                 key={t.id}
-                className="group relative rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-primary/20 animate-fade-in"
+                className="group relative rounded-2xl border border-border bg-card/80 backdrop-blur-xs p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-primary/20 animate-fade-in"
                 style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'both' }}
               >
                 <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
@@ -93,7 +93,7 @@ const TestimonialsSection = () => {
                 <p className="mt-4 text-sm text-foreground/90 leading-relaxed italic">"{t.text}"</p>
 
                 <div className="mt-5 flex items-center gap-3 border-t border-border/50 pt-4">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${grad} text-sm font-bold text-primary shadow-sm ring-2 ring-background`}>
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${grad} text-sm font-bold text-primary shadow-xs ring-2 ring-background`}>
                     {t.name.charAt(0)}
                   </div>
                   <div className="text-sm">
@@ -117,7 +117,7 @@ const TestimonialsSection = () => {
                   key={i}
                   onClick={() => { goTo(i); resetTimer(); }}
                   aria-label={`Ir para página ${i + 1}`}
-                  className={`h-2 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  className={`h-2 rounded-full transition-all duration-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                     i === page ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
                   }`}
                 />

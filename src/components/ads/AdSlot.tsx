@@ -158,7 +158,7 @@ const AdSlot = React.forwardRef<HTMLElement, AdSlotProps>(({ slotSlug, className
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => handleClick(s)}
-            className="block rounded-xl bg-card p-3 shadow-sm transition-all hover:shadow-md"
+            className="block rounded-xl bg-card p-3 shadow-xs transition-all hover:shadow-md"
           >
             <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Patrocinado</span>
             {s.image_url && (

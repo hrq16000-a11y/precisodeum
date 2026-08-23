@@ -395,7 +395,7 @@ function TestimonialsCarousel() {
             exit={{ opacity: 0, x: -60 }}
             transition={{ duration: 0.4 }}
           >
-            <Card className="border-2 border-secondary/10 shadow-xl bg-card/80 backdrop-blur-sm">
+            <Card className="border-2 border-secondary/10 shadow-xl bg-card/80 backdrop-blur-xs">
               <CardContent className="p-8 md:p-12">
                 <div className="flex items-center gap-1 mb-6">
                   {[1, 2, 3, 4, 5].map(s => (
@@ -438,7 +438,7 @@ function TestimonialsCarousel() {
               key={i}
               onClick={() => { setAutoplay(false); setCurrent(i); }}
               aria-label={`Ir para depoimento ${i + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+              className={`h-2 rounded-full transition-all duration-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                 i === current ? 'w-8 bg-secondary' : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
               }`}
             />
@@ -727,7 +727,7 @@ export default function SponsorLandingPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="text-lg px-8 py-7 bg-white/5 border-white/20 text-primary-foreground backdrop-blur-sm hover:bg-white/10"
+                  className="text-lg px-8 py-7 bg-white/5 border-white/20 text-primary-foreground backdrop-blur-xs hover:bg-white/10"
                   onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   Ver Planos <ChevronDown className="w-4 h-4 ml-2" />
@@ -746,7 +746,7 @@ export default function SponsorLandingPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 1.2 + i * 0.1 }}
-                    className="flex items-center gap-3 bg-white/5 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/10"
+                    className="flex items-center gap-3 bg-white/5 backdrop-blur-xs rounded-2xl px-5 py-3 border border-white/10"
                   >
                     <stat.icon className="w-5 h-5 text-amber-300/80" />
                     <div className="text-left">
@@ -1131,7 +1131,7 @@ export default function SponsorLandingPage() {
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.05 }}
                   >
-                    <AccordionItem value={`faq-${i}`} className="bg-card border rounded-xl px-6 shadow-sm hover:shadow-md transition-shadow">
+                    <AccordionItem value={`faq-${i}`} className="bg-card border rounded-xl px-6 shadow-xs hover:shadow-md transition-shadow">
                       <AccordionTrigger className="text-left text-foreground font-medium hover:text-secondary transition-colors py-5">
                         {faq.q}
                       </AccordionTrigger>
@@ -1344,7 +1344,7 @@ export default function SponsorLandingPage() {
             className="max-w-3xl mx-auto text-center relative"
           >
             <motion.div
-              className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20"
+              className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-white/10 backdrop-blur-xs flex items-center justify-center border border-white/20"
               animate={{ rotate: [0, 5, -5, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
             >

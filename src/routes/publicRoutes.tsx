@@ -115,7 +115,7 @@ const WizardSupportTestHarness = () => {
 
   return (
     <main className="min-h-screen bg-background px-4 py-6 text-foreground">
-      <section className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-sm">
+      <section className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-xs">
         <h1 className="text-base font-semibold">Algo travou no cadastro</h1>
         <p className="text-sm text-muted-foreground">
           O fallback de erro tomou o lugar da tela em branco e manteve o contexto real do problema.

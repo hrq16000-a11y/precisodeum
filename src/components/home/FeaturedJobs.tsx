@@ -124,7 +124,7 @@ const FeaturedJobs = () => {
         </div>
 
         <div className="mt-4 flex justify-center">
-          <Button variant="accent" size="sm" asChild className="rounded-full shadow-sm">
+          <Button variant="accent" size="sm" asChild className="rounded-full shadow-xs">
             <Link to="/dashboard/vagas">
               <Briefcase className="mr-1.5 h-3.5 w-3.5" /> Cadastre uma vaga grátis
             </Link>

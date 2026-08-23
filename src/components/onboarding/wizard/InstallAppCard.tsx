@@ -91,7 +91,7 @@ export default function InstallAppCard({
     : 'Notificações em tempo real e acesso pela tela inicial — sem ocupar memória.';
 
   return (
-    <div className="rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 p-4 shadow-sm">
+    <div className="rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 p-4 shadow-xs">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
           <Smartphone className="h-5 w-5" />

@@ -98,7 +98,7 @@ const ShareProfileCard = () => {
                 <motion.span
                   initial={{ scale: 0.8 }}
                   animate={{ scale: 1 }}
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold mt-3 shadow-sm"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold mt-3 shadow-xs"
                   style={{ backgroundColor: `${levelColor}20`, color: levelColor, border: `1px solid ${levelColor}30` }}
                 >
                   {levelName}

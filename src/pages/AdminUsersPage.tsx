@@ -836,7 +836,7 @@ const AdminUsersPage = () => {
         ].map((kpi) => {
           const Icon = kpi.icon;
           return (
-            <div key={kpi.label} className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm hover:shadow-md transition-shadow">
+            <div key={kpi.label} className="rounded-2xl border border-border/60 bg-card p-4 shadow-xs hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-3">
                 <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${kpi.iconBg}`}>
                   <Icon className={`h-4 w-4 ${kpi.iconColor}`} />
@@ -963,7 +963,7 @@ const AdminUsersPage = () => {
                 type="button"
                 onClick={() => { setViewMode('list'); localStorage.setItem('admin_users_view', 'list'); }}
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  viewMode === 'list' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  viewMode === 'list' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="Visualização em lista"
               >
@@ -973,7 +973,7 @@ const AdminUsersPage = () => {
                 type="button"
                 onClick={() => { setViewMode('grid'); localStorage.setItem('admin_users_view', 'grid'); }}
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  viewMode === 'grid' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  viewMode === 'grid' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="Visualização em miniaturas"
               >
@@ -984,7 +984,7 @@ const AdminUsersPage = () => {
 
           {/* Bulk actions */}
           {selectedIds.size > 0 && (
-            <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 shadow-sm">
+            <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 shadow-xs">
               <span className="text-sm font-medium text-foreground mr-2">{selectedIds.size} selecionado(s)</span>
               <Button size="sm" variant="outline" onClick={() => bulkSetStatus('active')} disabled={bulkLoading} className="text-green-600 border-green-200 h-7 text-xs gap-1">
                 <CheckCircle className="h-3 w-3" /> Ativar

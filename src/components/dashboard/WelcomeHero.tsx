@@ -114,7 +114,7 @@ const WelcomeHero = ({
               <motion.img
                 src={avatarUrl}
                 alt={name}
-                className="h-12 w-12 rounded-2xl object-cover shadow-sm border-2 border-accent/20"
+                className="h-12 w-12 rounded-2xl object-cover shadow-xs border-2 border-accent/20"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
@@ -127,7 +127,7 @@ const WelcomeHero = ({
             </motion.div>
           ) : (
             <motion.div
-              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 shadow-sm"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 shadow-xs"
               animate={{ rotate: [0, 3, -3, 0] }}
               transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
             >

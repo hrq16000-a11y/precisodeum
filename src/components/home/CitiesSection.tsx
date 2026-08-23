@@ -80,7 +80,7 @@ const CitiesSection = ({ cities }: Props) => {
         </div>
 
         <div className="mt-6 text-center animate-fade-in" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
-          <Button variant="outline" size="sm" className="rounded-full gap-1.5 shadow-sm" asChild>
+          <Button variant="outline" size="sm" className="rounded-full gap-1.5 shadow-xs" asChild>
             <Link to="/cidades">Ver mais cidades <ChevronRight className="h-3 w-3" /></Link>
           </Button>
         </div>

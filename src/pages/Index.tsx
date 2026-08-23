@@ -90,7 +90,7 @@ const FeaturedProvidersFallback = () => (
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="h-56 rounded-2xl border border-border bg-card shadow-sm">
+          <div key={index} className="h-56 rounded-2xl border border-border bg-card shadow-xs">
             <div className="h-1 rounded-t-2xl bg-muted" />
             <div className="space-y-4 p-4">
               <div className="flex gap-3">

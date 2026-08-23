@@ -74,7 +74,7 @@ export default function PhaseIdentity({ state, patch, next, awardReward }: Props
             onChange={(e) => patch({ full_name: e.target.value })}
             onBlur={() => phoneRef.current?.focus()}
             placeholder="Seu nome aqui"
-            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
+            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-hidden transition focus:ring-2 ${
               state.rewards.name
                 ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
                 : 'border-input focus:border-amber-400 focus:ring-amber-300/40'
@@ -96,7 +96,7 @@ export default function PhaseIdentity({ state, patch, next, awardReward }: Props
             name="whatsapp"
             value={state.whatsapp}
             onChange={(_, raw) => patch({ whatsapp: raw })}
-            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-none transition focus:ring-2 ${
+            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-base text-foreground outline-hidden transition focus:ring-2 ${
               state.rewards.whatsapp
                 ? 'border-emerald-500 ring-2 ring-emerald-300/50 shadow-[0_0_14px_rgba(16,185,129,0.35)] focus:border-emerald-500 focus:ring-emerald-300/50'
                 : 'border-input focus:border-amber-400 focus:ring-amber-300/40'

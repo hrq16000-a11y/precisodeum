@@ -58,7 +58,7 @@ const UserGrid = ({
         return (
           <div
             key={p.id}
-            className={`group relative rounded-xl border bg-card p-3 shadow-sm transition-all hover:shadow-md hover:border-primary/40 ${
+            className={`group relative rounded-xl border bg-card p-3 shadow-xs transition-all hover:shadow-md hover:border-primary/40 ${
               p.is_suspicious ? 'border-destructive/40 bg-destructive/5' :
               isInactive ? 'opacity-60' :
               isSelected ? 'border-accent bg-accent/5' : 'border-border/60'

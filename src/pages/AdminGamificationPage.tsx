@@ -520,7 +520,7 @@ const AdminGamificationPage = () => {
               const isEditing = editingLevel === level.id;
               const userCount = counts[level.id] ?? 0;
               return (
-                <Card key={level.id} className={`${!level.active ? 'opacity-50' : ''} border-l-4 transition-shadow hover:shadow-sm`} style={{ borderLeftColor: level.color }}>
+                <Card key={level.id} className={`${!level.active ? 'opacity-50' : ''} border-l-4 transition-shadow hover:shadow-xs`} style={{ borderLeftColor: level.color }}>
                   <CardContent className="p-3.5">
                     {isEditing ? (
                       <LevelEditForm level={level} onSave={saveLevel} onCancel={() => setEditingLevel(null)} />

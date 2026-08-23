@@ -114,7 +114,7 @@ const CoursesHero = () => (
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.6 + i * 0.1 }}
               whileHover={{ scale: 1.05, y: -2 }}
-              className="flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 text-xs text-primary-foreground/70 shadow-sm cursor-default"
+              className="flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 text-xs text-primary-foreground/70 shadow-xs cursor-default"
             >
               <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
               <span className="font-medium">{item.label}</span>

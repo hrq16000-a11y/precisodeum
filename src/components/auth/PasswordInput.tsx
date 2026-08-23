@@ -63,7 +63,7 @@ const PasswordInput = forwardRef<HTMLInputElement, Props>(function PasswordInput
           aria-describedby={showRules ? rulesId : undefined}
           className={
             'w-full rounded-md border border-input bg-background px-3 py-2 pr-11 text-sm text-foreground ' +
-            'focus:outline-none focus:ring-2 focus:ring-ring ' +
+            'focus:outline-hidden focus:ring-2 focus:ring-ring ' +
             className
           }
         />
@@ -73,7 +73,7 @@ const PasswordInput = forwardRef<HTMLInputElement, Props>(function PasswordInput
           aria-label={visible ? hideLabel : showLabel}
           aria-pressed={visible}
           tabIndex={0}
-          className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring rounded-md"
+          className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring rounded-md"
         >
           {visible ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
         </button>

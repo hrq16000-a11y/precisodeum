@@ -177,7 +177,7 @@ const LazyImage = ({
         fetchPriority={resolvedFetchPriority}
         className={cn(
           'transition-all duration-700 ease-out',
-          loaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-sm scale-[1.02]',
+          loaded ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-xs scale-[1.02]',
           blurDataUrl && !loaded && 'opacity-100 blur-0',
           placeholderClass,
           className,

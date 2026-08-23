@@ -138,7 +138,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             linkTo=""
             context="dashboard"
             priority
-            className="drop-shadow-sm"
+            className="drop-shadow-xs"
           />
         </Link>
         <div className="flex items-center gap-1">
@@ -241,7 +241,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   aria-current={active ? 'page' : undefined}
-                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm ring-1 ring-accent/30' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
+                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 relative ${active ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-xs ring-1 ring-accent/30' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}
                 >
                   {active && (
                     <motion.div
@@ -273,7 +273,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                             <motion.span
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
-                              className={`flex h-5 min-w-[34px] items-center justify-center rounded-full px-1.5 text-[9px] font-bold shadow-sm cursor-help ${badgeColor}`}
+                              className={`flex h-5 min-w-[34px] items-center justify-center rounded-full px-1.5 text-[9px] font-bold shadow-xs cursor-help ${badgeColor}`}
                             >
                               {item.percent}%
                             </motion.span>
@@ -327,7 +327,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1.5 text-[9px] font-bold text-accent-foreground shadow-sm"
+                      className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1.5 text-[9px] font-bold text-accent-foreground shadow-xs"
                     >
                       {item.badge > 99 ? '99+' : item.badge}
                     </motion.span>

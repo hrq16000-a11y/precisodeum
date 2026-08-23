@@ -141,7 +141,7 @@ const ProfileTypeSwitcher = () => {
               disabled={switching}
               onClick={() => handleSwitch(t.value)}
               className={`inline-flex items-center gap-1.5 rounded-lg border-2 px-3 py-2 text-xs font-medium transition-all ${
-                isActive ? t.color + ' shadow-sm' : 'border-border text-muted-foreground hover:border-muted-foreground/30'
+                isActive ? t.color + ' shadow-xs' : 'border-border text-muted-foreground hover:border-muted-foreground/30'
               } ${switching ? 'opacity-50' : ''}`}
             >
               <Icon className="h-3.5 w-3.5" />

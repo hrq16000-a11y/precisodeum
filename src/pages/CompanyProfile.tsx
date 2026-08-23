@@ -540,9 +540,9 @@ export default function CompanyProfile() {
 
         <section className="py-6">
           <div className="container">
-            <div className="mx-auto max-w-4xl overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            <div className="mx-auto max-w-4xl overflow-hidden rounded-xl border border-border bg-card shadow-xs">
               <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-start">
-                <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted shadow-sm sm:h-32 sm:w-32">
+                <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted shadow-xs sm:h-32 sm:w-32">
                   {company.photo_url ? (
                     <img
                       src={company.photo_url}
@@ -827,7 +827,7 @@ export default function CompanyProfile() {
                     required
                     value={leadForm.name}
                     onChange={(e) => setLeadForm((prev) => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-hidden"
                     placeholder="Como quer ser chamado?"
                   />
                 </div>
@@ -838,7 +838,7 @@ export default function CompanyProfile() {
                     required
                     value={leadForm.phone}
                     onChange={(e) => setLeadForm((prev) => ({ ...prev, phone: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-hidden"
                     placeholder="(00) 00000-0000"
                   />
                 </div>
@@ -849,7 +849,7 @@ export default function CompanyProfile() {
                     required
                     value={leadForm.service}
                     onChange={(e) => setLeadForm((prev) => ({ ...prev, service: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-hidden"
                     placeholder={services[0]?.service_name || services[0]?.name || 'Ex: Instalação, manutenção, atendimento'}
                   />
                 </div>
@@ -860,7 +860,7 @@ export default function CompanyProfile() {
                       type="text"
                       value={leadForm.city}
                       onChange={(e) => setLeadForm((prev) => ({ ...prev, city: e.target.value }))}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-hidden"
                       placeholder="Cidade"
                     />
                   </div>
@@ -871,7 +871,7 @@ export default function CompanyProfile() {
                       maxLength={2}
                       value={leadForm.state}
                       onChange={(e) => setLeadForm((prev) => ({ ...prev, state: e.target.value.toUpperCase().slice(0, 2) }))}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm uppercase text-foreground outline-none"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm uppercase text-foreground outline-hidden"
                       placeholder="UF"
                     />
                   </div>
@@ -882,7 +882,7 @@ export default function CompanyProfile() {
                     rows={3}
                     value={leadForm.message}
                     onChange={(e) => setLeadForm((prev) => ({ ...prev, message: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-hidden"
                     placeholder="Descreva rapidamente sua necessidade"
                   />
                 </div>

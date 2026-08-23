@@ -284,7 +284,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
         <button
           type="button"
           onClick={() => cameraInputRef.current?.click()}
-          className="rounded-xl border border-border bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+          className="rounded-xl border border-border bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
           data-testid="phase4-avatar-camera"
         >
           <span className="flex items-center justify-center gap-2">
@@ -294,7 +294,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
         <button
           type="button"
           onClick={() => galleryInputRef.current?.click()}
-          className="rounded-xl border border-border bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+          className="rounded-xl border border-border bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
           data-testid="phase4-avatar-gallery"
         >
           <span className="flex items-center justify-center gap-2">
@@ -305,7 +305,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
           <button
             type="button"
             onClick={() => onChange({ avatar_url: socialUrl, avatar_source: 'social' })}
-            className="rounded-xl border border-border bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            className="rounded-xl border border-border bg-card p-3 text-[12px] font-medium text-foreground hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500"
             data-testid="phase4-avatar-use-google"
           >
             <span className="flex items-center justify-center gap-2">
@@ -329,7 +329,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
                 type="button"
                 onClick={() => setVariantCount(n)}
                 aria-pressed={variantCount === n}
-                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 ${
                   variantCount === n
                     ? 'bg-amber-500 text-white'
                     : 'bg-muted/40 text-muted-foreground hover:bg-muted/70'
@@ -359,7 +359,7 @@ export const Phase4Avatar = ({ data, onChange, onContinue, onSkip, onBack, savin
                 aria-checked={isSelected}
                 aria-label={`Avatar variação ${v.seed + 1}`}
                 onClick={() => handlePickVariant(v.seed, v.url)}
-                className={`relative aspect-square overflow-hidden rounded-full border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                className={`relative aspect-square overflow-hidden rounded-full border-2 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 ${
                   isSelected
                     ? 'border-amber-400 ring-2 ring-amber-400/40 scale-105'
                     : 'border-border hover:border-amber-300'
@@ -567,7 +567,7 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
                 checked={goOnline}
                 onChange={(e) => setGoOnline(e.target.checked)}
                 aria-describedby="phase4-go-online-desc"
-                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-emerald-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               />
               <label htmlFor="phase4-go-online" className="cursor-pointer text-[13px] leading-snug text-foreground">
                 <span className="font-semibold">Ficar ONLINE agora</span>

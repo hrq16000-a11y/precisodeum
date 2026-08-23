@@ -33,7 +33,7 @@ export function ScoreTooltipBadge({ rating, reviewCount, distanceKm, weights }: 
           <button
             type="button"
             aria-label={`Score combinado ${pct} de 100 — toque para ver explicação`}
-            className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-primary/95 px-2 py-0.5 text-[10px] font-bold text-primary-foreground shadow-sm backdrop-blur-sm hover:bg-primary"
+            className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-primary/95 px-2 py-0.5 text-[10px] font-bold text-primary-foreground shadow-xs backdrop-blur-xs hover:bg-primary"
             onClick={(e) => e.stopPropagation()}
           >
             <Sparkles className="h-3 w-3" strokeWidth={2} />

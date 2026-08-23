@@ -246,7 +246,7 @@ const DashboardNotificationsPage = () => {
           placeholder="Buscar por título, mensagem ou cidade…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+          className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-accent/40"
           aria-label="Buscar notificações"
         />
         <input

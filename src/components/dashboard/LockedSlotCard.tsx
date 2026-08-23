@@ -29,7 +29,7 @@ const LockedSlotCard = ({ label, variant = 'default' }: LockedSlotCardProps) => 
       role="group"
       aria-label={`Slot bloqueado — ${label}`}
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background border border-border shadow-sm">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background border border-border shadow-xs">
         <Lock className="h-4 w-4 text-muted-foreground" />
       </div>
       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>

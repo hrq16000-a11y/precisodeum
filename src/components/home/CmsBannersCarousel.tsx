@@ -52,7 +52,7 @@ const CmsBannersCarousel = () => {
 
       <div className={`container relative z-10 flex flex-col ${alignClass}`}>
         <div key={banner.id} className="animate-fade-in">
-          <h2 className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-4xl drop-shadow-sm">
+          <h2 className="font-display text-2xl font-extrabold tracking-tight text-primary-foreground sm:text-3xl md:text-4xl drop-shadow-xs">
             {banner.title}
           </h2>
           {banner.subtitle && (

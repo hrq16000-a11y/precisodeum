@@ -73,7 +73,7 @@ const CriticalHeroSearch = ({
         onChange={(event) => setQuery(event.target.value)}
         onFocus={() => { onUpgrade(); trackCtaClick('focus'); }}
         placeholder="O que você precisa?"
-        className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 outline-none"
+        className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 outline-hidden"
         autoComplete="off"
         inputMode="search"
       />

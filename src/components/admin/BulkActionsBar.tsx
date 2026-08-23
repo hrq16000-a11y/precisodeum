@@ -36,7 +36,7 @@ const BulkActionsBar = ({
   if (count === 0) return null;
 
   return (
-    <div className="sticky top-0 z-20 flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-2.5 shadow-sm">
+    <div className="sticky top-0 z-20 flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-2.5 shadow-xs">
       <CheckSquare className="h-4 w-4 text-accent" />
       <span className="text-sm font-medium text-foreground">
         {count} selecionado(s)

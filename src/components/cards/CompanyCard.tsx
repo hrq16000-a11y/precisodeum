@@ -64,7 +64,7 @@ const CompanyCard = memo(function CompanyCard({
   return (
     <article
       ref={impressionRef as any}
-      className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+      className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
       aria-label={`Empresa ${displayName}`}
     >
       {/* Accent bar — paridade com ProviderCardFeatured */}

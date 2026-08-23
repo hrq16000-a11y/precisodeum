@@ -288,7 +288,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             onClick={() => handleSelectSuggestion(s)}
             onMouseEnter={() => setHighlightIdx(i)}
           >
-            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm ring-1 transition-transform duration-200 group-hover:scale-110 ${
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-xs ring-1 transition-transform duration-200 group-hover:scale-110 ${
               s.type === 'nlp'
                 ? 'bg-gradient-to-br from-orange-500/20 to-accent/20 ring-orange-500/20'
                 : 'bg-gradient-to-br from-accent/10 to-primary/10 ring-accent/10'
@@ -354,7 +354,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
               onFocus={handleFocus}
               onBlur={() => setIsFocused(false)}
               onKeyDown={handleKeyDown}
-              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-hidden"
               autoComplete="off"
             />
             {query && (
@@ -397,7 +397,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
               onFocus={handleFocus}
               onBlur={() => setIsFocused(false)}
               onKeyDown={handleKeyDown}
-              className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 outline-none"
+              className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 outline-hidden"
               autoComplete="off"
             />
             {query && (
@@ -433,7 +433,7 @@ const SearchBar = ({ variant = 'hero' }: SearchBarProps) => {
             onFocus={handleFocus}
             onBlur={() => setIsFocused(false)}
             onKeyDown={handleKeyDown}
-            className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-none"
+            className="min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-hidden"
             autoComplete="off"
           />
           {query && (

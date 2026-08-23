@@ -31,7 +31,7 @@ const CoursesPromo = () => {
             {/* Left — text */}
             <div>
               <div className="animate-fade-in">
-                <Badge className="mb-4 bg-white/10 text-primary-foreground border border-white/20 backdrop-blur-sm">
+                <Badge className="mb-4 bg-white/10 text-primary-foreground border border-white/20 backdrop-blur-xs">
                   <Sparkles className="w-3 h-3 mr-1" /> Portal de Capacitação
                 </Badge>
               </div>
@@ -66,7 +66,7 @@ const CoursesPromo = () => {
               {highlights.map((item, i) => (
                 <div
                   key={item.label}
-                  className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all duration-300 group cursor-default animate-fade-in"
+                  className="bg-white/5 backdrop-blur-xs border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all duration-300 group cursor-default animate-fade-in"
                   style={{ animationDelay: `${200 + i * 100}ms`, animationFillMode: 'both' }}
                 >
                   <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-105">

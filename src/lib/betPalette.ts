@@ -26,7 +26,7 @@ export const bet = {
       'shadow-[var(--bet-glow)]',
       'transition-all duration-200',
       'hover:from-bet-amber-hover hover:via-bet-orange-hover hover:to-bet-green-hover hover:scale-[1.02]',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bet-orange focus-visible:ring-offset-2',
+      'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-bet-orange focus-visible:ring-offset-2',
       'active:scale-[0.98]',
       'disabled:bg-bet-disabled-bg disabled:bg-none disabled:text-bet-disabled-fg disabled:shadow-none disabled:cursor-not-allowed disabled:hover:scale-100',
     ].join(' '),
@@ -38,7 +38,7 @@ export const bet = {
       'rounded-xl px-4 py-2.5 font-medium',
       'transition-colors duration-200',
       'hover:bg-bet-orange-soft hover:border-bet-orange',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bet-orange focus-visible:ring-offset-1',
+      'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-bet-orange focus-visible:ring-offset-1',
       'active:bg-bet-amber-soft',
       'disabled:bg-bet-disabled-bg disabled:text-bet-disabled-fg disabled:border-transparent disabled:cursor-not-allowed',
     ].join(' '),
@@ -47,7 +47,7 @@ export const bet = {
     ghost: [
       'inline-flex items-center gap-1.5 text-bet-orange-fg',
       'hover:text-bet-orange-active hover:bg-bet-orange-soft',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bet-orange focus-visible:ring-offset-1',
+      'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-bet-orange focus-visible:ring-offset-1',
       'rounded-lg px-3 py-1.5 transition-colors duration-150',
       'disabled:text-bet-disabled-fg disabled:cursor-not-allowed',
     ].join(' '),
@@ -58,7 +58,7 @@ export const bet = {
       'bg-bet-error text-white rounded-xl px-4 py-2.5 font-medium',
       'transition-colors duration-200',
       'hover:bg-bet-error/90',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bet-error focus-visible:ring-offset-2',
+      'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-bet-error focus-visible:ring-offset-2',
       'disabled:opacity-50 disabled:cursor-not-allowed',
     ].join(' '),
   },
@@ -70,7 +70,7 @@ export const bet = {
       'text-foreground placeholder:text-muted-foreground',
       'transition-colors duration-150',
       'hover:border-bet-orange-border',
-      'focus:outline-none focus:ring-2 focus:ring-bet-orange focus:border-bet-orange',
+      'focus:outline-hidden focus:ring-2 focus:ring-bet-orange focus:border-bet-orange',
       'disabled:bg-bet-disabled-bg disabled:text-bet-disabled-fg disabled:cursor-not-allowed',
     ].join(' '),
     /** Estado de erro — aplique junto com input.base */
@@ -82,7 +82,7 @@ export const bet = {
   // ── Superfícies / cards ──
   surface: {
     /** Card padrão branco com hover suave âmbar */
-    card: 'rounded-2xl bg-card border border-border shadow-sm transition-all duration-200 hover:border-bet-orange-border hover:shadow-md',
+    card: 'rounded-2xl bg-card border border-border shadow-xs transition-all duration-200 hover:border-bet-orange-border hover:shadow-md',
     /** Card selecionável (ex.: select de serviço) */
     selectable:
       'rounded-2xl border bg-card p-4 cursor-pointer transition-all duration-200 hover:border-bet-orange hover:bg-bet-amber-soft/50 focus-within:ring-2 focus-within:ring-bet-orange',
@@ -118,7 +118,7 @@ export const bet = {
 
   // ── Estados de foco/seleção (utilitários soltos) ──
   state: {
-    focusRing: 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bet-orange focus-visible:ring-offset-2',
+    focusRing: 'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-bet-orange focus-visible:ring-offset-2',
     hoverLift: 'transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]',
     disabled: 'disabled:bg-bet-disabled-bg disabled:text-bet-disabled-fg disabled:cursor-not-allowed disabled:hover:scale-100',
   },

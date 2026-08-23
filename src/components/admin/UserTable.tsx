@@ -110,7 +110,7 @@ const UserTable = ({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-xs">
       {/* Table header */}
       <div className="hidden md:grid grid-cols-[28px_minmax(220px,2fr)_minmax(180px,1.5fr)_140px_120px_120px_90px_44px] gap-2 items-center border-b border-border/60 bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         <span />

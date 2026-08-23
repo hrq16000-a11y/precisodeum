@@ -19,7 +19,7 @@ const SponsorCard = memo(({ sponsor, onClickTrack }: { sponsor: any; onClickTrac
       className="group relative block overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
     >
       {isPremium && (
-        <span className="absolute top-2 right-2 z-10 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold text-accent-foreground shadow-sm">
+        <span className="absolute top-2 right-2 z-10 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold text-accent-foreground shadow-xs">
           Premium
         </span>
       )}

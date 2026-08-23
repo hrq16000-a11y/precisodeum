@@ -565,7 +565,7 @@ const DashboardPortfolioPage = () => {
                       {photos.length > 0 && photos.length < MAX_PHOTOS_PER_ALBUM && (
                         <label className="block aspect-square cursor-pointer">
                           <div className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 p-4 text-center transition-colors hover:bg-muted/35">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-xs">
                               <Plus className="h-4 w-4 text-primary" />
                             </div>
                             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -732,7 +732,7 @@ const DashboardPortfolioPage = () => {
                         <ImagePlus className="h-10 w-10 text-muted-foreground/70" />
                       </div>
                     )}
-                    <div className="absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-xs font-medium text-foreground backdrop-blur-sm">
+                    <div className="absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-xs font-medium text-foreground backdrop-blur-xs">
                       {album.photo_count || 0} fotos
                     </div>
                   </div>

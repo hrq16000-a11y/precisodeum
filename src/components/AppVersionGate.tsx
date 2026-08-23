@@ -70,7 +70,7 @@ const AppVersionGate = () => {
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="app-update-force-title"
-        className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-background/95 backdrop-blur-sm p-6"
+        className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-background/95 backdrop-blur-xs p-6"
       >
         <div className="w-full max-w-md rounded-2xl border border-destructive/30 bg-card p-8 shadow-2xl text-center space-y-5">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">

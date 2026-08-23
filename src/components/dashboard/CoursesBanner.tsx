@@ -21,7 +21,7 @@ const CoursesBanner = forwardRef<HTMLDivElement>((_, ref) => {
 
       <div className="relative flex items-center gap-4 flex-wrap">
         <motion.div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xs border border-white/15"
           animate={{ rotate: [0, 5, -5, 0] }}
           transition={{ duration: 4, repeat: Infinity }}
         >
