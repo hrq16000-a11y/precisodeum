@@ -114,7 +114,7 @@ export function useSearchParams(): [URLSearchParams, (init: URLSearchParams | Re
 
 // ---------- Link ----------
 
-type LinkProps = Omit<ComponentProps<typeof TSLink>, "to"> & {
+export type LinkProps = Omit<ComponentProps<typeof TSLink>, "to"> & {
   to: string;
   replace?: boolean;
   state?: unknown;
@@ -153,6 +153,45 @@ export function Navigate({ to, replace, state }: { to: string; replace?: boolean
 
 export const Outlet = TSOutlet;
 
-// ---------- NavLink (minimal) ----------
+// ---------- NavLink ----------
 
-export const NavLink = Link;
+type NavLinkRenderState = { isActive: boolean; isPending: boolean };
+
+export type NavLinkProps = Omit<LinkProps, "className" | "style"> & {
+  className?: string | ((state: NavLinkRenderState) => string | undefined);
+  style?: React.CSSProperties | ((state: NavLinkRenderState) => React.CSSProperties | undefined);
+  end?: boolean;
+};
+
+export const NavLink = forwardRef<HTMLAnchorElement, NavLinkProps>(function NavLink(
+  { className, style, end, to, ...rest },
+  ref,
+) {
+  const loc = tsLocation();
+  const { pathname } = parseTo(to);
+  const isActive = end
+    ? loc.pathname === pathname
+    : loc.pathname === pathname || loc.pathname.startsWith(pathname.endsWith("/") ? pathname : `${pathname}/`);
+  const state: NavLinkRenderState = { isActive, isPending: false };
+  return (
+    <Link
+      ref={ref}
+      to={to}
+      className={typeof className === "function" ? className(state) : className}
+      style={typeof style === "function" ? style(state) : style}
+      {...rest}
+    />
+  );
+});
+
+// ---------- MemoryRouter (test-compat only) ----------
+
+/**
+ * Compat de compilação para testes legados que envolviam componentes em
+ * <MemoryRouter>. O router real vem do RouterProvider do app; aqui apenas
+ * renderizamos os filhos. Testes que dependem de navegação real precisam
+ * ser religados ao setup TanStack (follow-up).
+ */
+export function MemoryRouter({ children }: { children?: ReactNode; initialEntries?: string[] }) {
+  return <>{children}</>;
+}
