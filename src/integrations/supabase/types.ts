@@ -824,6 +824,7 @@ export type Database = {
       }
       contact_clicks: {
         Row: {
+          category_slug: string | null
           contact_type: string
           created_at: string
           id: string
@@ -832,6 +833,7 @@ export type Database = {
           visitor_id: string | null
         }
         Insert: {
+          category_slug?: string | null
           contact_type?: string
           created_at?: string
           id?: string
@@ -840,6 +842,7 @@ export type Database = {
           visitor_id?: string | null
         }
         Update: {
+          category_slug?: string | null
           contact_type?: string
           created_at?: string
           id?: string
@@ -10948,15 +10951,26 @@ export type Database = {
         }
         Returns: Json
       }
-      log_contact_click: {
-        Args: {
-          _contact_type?: string
-          _page_path?: string
-          _provider_id: string
-          _visitor_id?: string
-        }
-        Returns: string
-      }
+      log_contact_click:
+        | {
+            Args: {
+              _contact_type?: string
+              _page_path?: string
+              _provider_id: string
+              _visitor_id?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _category_slug?: string
+              _contact_type: string
+              _page_path?: string
+              _provider_id: string
+              _visitor_id?: string
+            }
+            Returns: string
+          }
       log_error_page_event: {
         Args: {
           _code: number

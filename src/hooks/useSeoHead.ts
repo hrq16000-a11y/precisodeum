@@ -4,12 +4,14 @@ import { DEFAULT_LOGO_URL, DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL, SITE_BASE_URL as S
 import { buildCanonicalUrl } from '@/lib/canonicalUrl';
 import { normalizeSocialImageUrl } from '@/lib/imageUrlNormalizer';
 import { seoFallbackFromPath } from '@/lib/seoUrlFallback';
+import { resolveSocialImage, seoDebugLog, toSocialImageCandidates } from '@/lib/socialImageFallback';
 
 interface SeoHeadProps {
   title: string;
   description: string;
   canonical?: string;
-  ogImage?: string;
+  /** URL única ou lista de candidatos — a primeira válida é usada. */
+  ogImage?: string | string[];
   noindex?: boolean;
   ogType?: 'website' | 'article' | 'profile';
   articlePublishedTime?: string;
@@ -24,6 +26,9 @@ interface SeoHeadProps {
 export function useSeoHead({ title, description, canonical, ogImage, noindex, ogType, articlePublishedTime, articleModifiedTime, articleAuthor, prevUrl, nextUrl }: SeoHeadProps) {
   const gscId = useSettingValue('google_search_console_id');
   const gaId = useSettingValue('google_analytics_id');
+  const ogKey = Array.isArray(ogImage) ? ogImage.join('|') : (ogImage || '');
+
+
 
   useEffect(() => {
     // Resiliência: se title/description vierem vazios (ex.: query ainda
@@ -66,7 +71,9 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     setMeta('description', safeDescription);
     setMeta('robots', noindex ? 'noindex, nofollow' : 'index, follow');
 
-    const resolvedOgImage = normalizeSocialImageUrl(ogImage || socialImageUrl(ogImage), 'og:image');
+    const ogCandidates = toSocialImageCandidates(ogImage);
+    // Sempre há um valor síncrono (nunca deixamos og:image vazio para o crawler).
+    const resolvedOgImage = ogCandidates[0] || normalizeSocialImageUrl(socialImageUrl(), 'og:image') || DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL;
     const resolvedLogo = toAbsoluteSiteUrl(DEFAULT_LOGO_URL);
 
     const setSocialImageMeta = (content: string) => {
@@ -102,49 +109,14 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     setMeta('twitter:description', safeDescription);
 
     let cancelled = false;
-    let imageProbe: HTMLImageElement | null = null;
-    const headController = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const headTimeout = window.setTimeout(() => headController?.abort(), 1200);
-
-    const validateWithImageProbe = () => {
-      if (cancelled) return;
-      imageProbe = new Image();
-      imageProbe.onload = () => {
-        if (!cancelled) setSocialImageMeta(resolvedOgImage);
-      };
-      imageProbe.onerror = () => {
-        if (!cancelled) setSocialImageMeta(DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL);
-      };
-      imageProbe.src = resolvedOgImage || DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL;
-    };
 
     const validateSocialImage = async () => {
-      if (!resolvedOgImage || resolvedOgImage === DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL) return;
-
-      if (typeof fetch !== 'function' || !headController) {
-        validateWithImageProbe();
-        return;
-      }
-
-      try {
-        const response = await fetch(resolvedOgImage, {
-          method: 'HEAD',
-          cache: 'force-cache',
-          signal: headController.signal,
-        });
-
-        if (cancelled) return;
-        if (response.status === 403 || response.status === 404 || !response.ok) {
-          setSocialImageMeta(DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL);
-          return;
-        }
-
-        setSocialImageMeta(resolvedOgImage);
-      } catch {
-        validateWithImageProbe();
-      } finally {
-        window.clearTimeout(headTimeout);
-      }
+      if (ogCandidates.length === 0) return;
+      if (ogCandidates.length === 1 && ogCandidates[0] === DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL) return;
+      const result = await resolveSocialImage(ogCandidates);
+      if (cancelled) return;
+      seoDebugLog('og:image resolvido', { url: result.url, reason: result.reason, index: result.index, attempts: result.attempts });
+      setSocialImageMeta(result.url);
     };
 
     void validateSocialImage();
@@ -185,18 +157,14 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
 
     return () => {
       cancelled = true;
-      headController?.abort();
-      window.clearTimeout(headTimeout);
-      if (imageProbe) {
-        imageProbe.onload = null;
-        imageProbe.onerror = null;
-      }
       // Limpa rel=prev/next ao desmontar (outras rotas não devem herdar).
       document.querySelector('link[rel="prev"]')?.remove();
       document.querySelector('link[rel="next"]')?.remove();
       document.title = 'Preciso de um | Encontre um profissional para qualquer tipo de serviço no Brasil';
     };
-  }, [title, description, canonical, ogImage, noindex, gscId, gaId, ogType, articlePublishedTime, articleModifiedTime, articleAuthor, prevUrl, nextUrl]);
+    // ogKey: array literal muda de identidade a cada render — usamos a chave estável.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, description, canonical, ogKey, noindex, gscId, gaId, ogType, articlePublishedTime, articleModifiedTime, articleAuthor, prevUrl, nextUrl]);
 }
 
 export const SITE_BASE_URL = SITE_URL;

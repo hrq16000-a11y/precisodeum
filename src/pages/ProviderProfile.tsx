@@ -91,6 +91,7 @@ import { useWhatsAppGate } from '@/contexts/WhatsAppGateContext';
 import { ContactWindowPicker } from '@/components/leads/ContactWindowPicker';
 import { normalizeContactHours, type PreferredWindow } from '@/lib/contactWindow';
 import { resolveWhatsappVariant, getWhatsappCtaLabel, ctaSourceTag } from '@/lib/ctaVariants';
+import { createVisibilityFrameScheduler } from '@/lib/visibilityFrameScheduler';
 
 /** Fire-and-forget contact click tracker */
 const getLeadSource = () => {
@@ -807,11 +808,16 @@ const ProviderProfile = () => {
         }
       }
     };
-    const cancelScheduledVisibilityMeasure = () => {
-      if (frame !== null) {
-        cancelAnimationFrame(frame);
+    // Estado único (frame id + flags + origem) compartilhado por scroll/resize/observer.
+    const frameScheduler = createVisibilityFrameScheduler({
+      debug: debugVisibilityMetrics,
+      measure: () => {
         frame = null;
-      }
+        measureVisibility();
+      },
+    });
+    const cancelScheduledVisibilityMeasure = () => {
+      if (frameScheduler.cancel()) frame = null;
     };
     const scheduleVisibilityMeasure = (source: 'scroll' | 'observer' | 'resize' | 'init' = 'init') => {
       if (disposed) return;
@@ -822,14 +828,13 @@ const ProviderProfile = () => {
         if (source === 'observer') visibilityMetrics.observerSchedules += 1;
         if (source === 'resize') visibilityMetrics.resizeSchedules += 1;
       }
-      if (frame !== null) {
-        if (debugVisibilityMetrics) visibilityMetrics.skippedFrames += 1;
-        return;
-      }
-      frame = requestAnimationFrame(measureVisibility);
+      const wasPending = frameScheduler.isPending();
+      if (wasPending && debugVisibilityMetrics) visibilityMetrics.skippedFrames += 1;
+      frameScheduler.schedule(source);
+      frame = frameScheduler.isPending() ? 1 : null;
       if (hasLimitedApiSupport && emergencyTimer === null) {
         emergencyTimer = window.setTimeout(() => {
-          if (frame !== null) setShowEmergencyContact(true);
+          if (frameScheduler.isPending()) setShowEmergencyContact(true);
         }, 180);
       }
     };
@@ -879,6 +884,11 @@ const ProviderProfile = () => {
     return () => {
       disposed = true;
       cancelScheduledVisibilityMeasure();
+      frameScheduler.dispose();
+      if (debugVisibilityMetrics) {
+        // eslint-disable-next-line no-console
+        console.debug('[StickyActionBar] frame scheduler metrics', frameScheduler.metrics());
+      }
       if (emergencyTimer !== null) window.clearTimeout(emergencyTimer);
       if (trailingScrollTimer !== null) {
         window.clearTimeout(trailingScrollTimer);
