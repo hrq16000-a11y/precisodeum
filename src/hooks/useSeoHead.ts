@@ -106,49 +106,14 @@ export function useSeoHead({ title, description, canonical, ogImage, noindex, og
     setMeta('twitter:description', safeDescription);
 
     let cancelled = false;
-    let imageProbe: HTMLImageElement | null = null;
-    const headController = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const headTimeout = window.setTimeout(() => headController?.abort(), 1200);
-
-    const validateWithImageProbe = () => {
-      if (cancelled) return;
-      imageProbe = new Image();
-      imageProbe.onload = () => {
-        if (!cancelled) setSocialImageMeta(resolvedOgImage);
-      };
-      imageProbe.onerror = () => {
-        if (!cancelled) setSocialImageMeta(DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL);
-      };
-      imageProbe.src = resolvedOgImage || DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL;
-    };
 
     const validateSocialImage = async () => {
-      if (!resolvedOgImage || resolvedOgImage === DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL) return;
-
-      if (typeof fetch !== 'function' || !headController) {
-        validateWithImageProbe();
-        return;
-      }
-
-      try {
-        const response = await fetch(resolvedOgImage, {
-          method: 'HEAD',
-          cache: 'force-cache',
-          signal: headController.signal,
-        });
-
-        if (cancelled) return;
-        if (response.status === 403 || response.status === 404 || !response.ok) {
-          setSocialImageMeta(DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL);
-          return;
-        }
-
-        setSocialImageMeta(resolvedOgImage);
-      } catch {
-        validateWithImageProbe();
-      } finally {
-        window.clearTimeout(headTimeout);
-      }
+      if (ogCandidates.length === 0) return;
+      if (ogCandidates.length === 1 && ogCandidates[0] === DEFAULT_SOCIAL_IMAGE_ABSOLUTE_URL) return;
+      const result = await resolveSocialImage(ogCandidates);
+      if (cancelled) return;
+      seoDebugLog('og:image resolvido', { url: result.url, reason: result.reason, index: result.index, attempts: result.attempts });
+      setSocialImageMeta(result.url);
     };
 
     void validateSocialImage();
