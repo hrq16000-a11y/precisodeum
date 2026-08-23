@@ -8,6 +8,7 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { renderTemplate, type TemplateName } from "../_shared/email-templates.ts";
 import { validateServiceRoleRequest } from "../_shared/serviceRoleAuth.ts";
+import { isLocalEnv, mockExternalCall } from "../_shared/localEnv.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -76,10 +77,12 @@ export async function handle(req: Request): Promise<Response> {
   const authError = validateServiceRoleRequest(req);
   if (authError) return authError;
 
+  const localMock = isLocalEnv();
+
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY não configurada" }, 500);
+  if (!LOVABLE_API_KEY && !localMock) return json({ error: "LOVABLE_API_KEY não configurada" }, 500);
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-  if (!RESEND_API_KEY) return json({ error: "RESEND_API_KEY não configurada" }, 500);
+  if (!RESEND_API_KEY && !localMock) return json({ error: "RESEND_API_KEY não configurada" }, 500);
 
   const raw = await req.json().catch(() => null);
   if (!raw || typeof raw !== "object") {
@@ -128,6 +131,12 @@ export async function handle(req: Request): Promise<Response> {
     reply_to: reply_to || defaults.reply_to,
     tags,
   };
+
+  if (localMock) {
+    // Ambiente local/offline: nenhum e-mail real é enviado.
+    mockExternalCall("resend/send-email", { to: payload.to, subject: payload.subject });
+    return json({ ok: true, id: `local-mock-${crypto.randomUUID()}`, mocked: true }, 200);
+  }
 
   try {
     const res = await fetch(`${GATEWAY_URL}/emails`, {

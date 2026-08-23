@@ -11,6 +11,7 @@
 // Body opcional:
 //   { site, property, environment: 'prod'|'staging'|'dev', dryRun, validateOnly, skipInvalid }
 import { authorizeAdminOrCron } from "../_shared/adminOrCronAuth.ts";
+import { isLocalEnv, mockExternalCall } from "../_shared/localEnv.ts";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_search_console";
 const DEFAULT_SITE = "https://www.precisodeum.com.br/";
@@ -231,6 +232,11 @@ async function submitWithRetry(
   url: string,
   headers: Record<string, string>,
 ): Promise<{ ok: boolean; status: number; body: string; attempts: number }> {
+  if (isLocalEnv()) {
+    mockExternalCall("google-search-console/submit-sitemap", { url });
+    return { ok: true, status: 200, body: '{"mocked":true}', attempts: 1 };
+  }
+
   let attempt = 0;
   let last = { ok: false, status: 0, body: "" };
   while (attempt < MAX_RETRIES) {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, lazy, Suspense, useCallback, forwardRef } from 'react';
 import { importWithRetry } from '@/lib/lazyWithRetry';
 import { Link, useNavigate, useLocation } from '@/lib/router-compat';
+import { useHydrated } from '@tanstack/react-router';
 import PrefetchLink from '@/components/PrefetchLink';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,7 +102,12 @@ const Header = () => {
   const { user, profile, signOut, loading } = useAuth();
   const { isAdmin } = useIsAdmin();
   const whatsappGroupUrl = useSettingValue('whatsapp_group_url');
-  const { city: geoCity, temp: geoTemp } = useGeoCity();
+  const { city: rawGeoCity, temp: rawGeoTemp } = useGeoCity();
+  // A localização vem de localStorage/GPS: no SSR ela não existe. Só liberamos
+  // após a hidratação para o 1º render do cliente bater com o do servidor.
+  const hydrated = useHydrated();
+  const geoCity = hydrated ? rawGeoCity : null;
+  const geoTemp = hydrated ? rawGeoTemp : null;
   const headerRef = useRef<HTMLElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
