@@ -126,12 +126,14 @@ const RotatingServiceText = ({ onServiceChange, onPhraseChange }: Props) => {
 
   const categories = dbCategories && dbCategories.length > 0 ? dbCategories : HERO_CATEGORY_POOL;
 
+  // Primeiro render (SSR + hidratação) usa ordem DETERMINÍSTICA para não
+  // gerar mismatch de hidratação. A ordem aleatória é aplicada logo após a
+  // montagem pelo effect abaixo (já em ambiente cliente).
   const orderRef = useRef<HeroCategory[]>([]);
   if (orderRef.current.length === 0) {
-    const { order, nextHistory } = pickNextOrder(categories);
-    orderRef.current = order;
-    commitHistory(nextHistory);
+    orderRef.current = categories.slice(0, 8) as HeroCategory[];
   }
+
 
   const [serviceIdx, setServiceIdx] = useState(0);
   const [prefixIdx, setPrefixIdx] = useState<0 | 1>(0);
