@@ -77,9 +77,9 @@ function ensureLogoPreload() {
     return;
   }
   const link = document.createElement('link');
-  link.rel = 'preload';
-  link.as = 'image';
-  link.href = DEFAULT_LOGO_URL;
+  link.setAttribute('rel', 'preload');
+  link.setAttribute('as', 'image');
+  link.setAttribute('href', DEFAULT_LOGO_URL);
   link.setAttribute('imagesrcset', DEFAULT_LOGO_PNG_SRCSET);
   link.setAttribute('imagesizes', LOGO_SIZES_ATTR.header);
   link.setAttribute('fetchpriority', 'high');
