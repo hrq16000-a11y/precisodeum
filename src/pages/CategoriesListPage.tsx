@@ -135,28 +135,29 @@ const CategoriesListPage = () => {
                 <div className="mb-4 flex items-center gap-3">
                   <div className="h-px flex-1 bg-border" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Categorias em breve
+                    Categorias abertas — seja o primeiro
                   </span>
                   <div className="h-px flex-1 bg-border" />
                 </div>
                 <div className="grid gap-[0.75rem]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}>
                   {withoutProviders.map((cat) => (
-                    <div
+                    <Link
                       key={cat.id}
-                      className="flex items-center gap-[0.625rem] rounded-xl border border-border bg-card/50 p-[0.75rem] opacity-50 cursor-default min-h-[3.5rem]"
+                      to={`/categoria/${cat.slug}`}
+                      className="group flex items-center gap-[0.625rem] rounded-xl border border-dashed border-primary/30 bg-card/60 p-[0.75rem] min-h-[3.5rem] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-card"
                     >
-                      <span className="flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                        <CategoryIcon icon={cat.icon} size={22} className="text-muted-foreground" />
+                      <span className="flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/5 transition-transform duration-300 group-hover:scale-110">
+                        <CategoryIcon icon={cat.icon} size={22} className="text-muted-foreground group-hover:text-primary transition-colors" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <span className="text-xs sm:text-sm font-semibold leading-tight text-muted-foreground line-clamp-2 break-words" style={{ hyphens: 'auto' }}>
+                        <span className="text-xs sm:text-sm font-semibold leading-tight text-foreground/80 group-hover:text-primary transition-colors line-clamp-2 break-words" style={{ hyphens: 'auto' }}>
                           {cat.name}
                         </span>
-                        <p className="text-[10px] leading-tight text-muted-foreground/70 mt-0.5">
-                          Ainda não temos prestadores. Participe!
+                        <p className="text-[10px] leading-tight text-muted-foreground/80 mt-0.5">
+                          Vaga aberta · cadastre-se ou patrocine
                         </p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
