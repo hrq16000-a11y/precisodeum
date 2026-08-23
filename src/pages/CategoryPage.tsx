@@ -13,6 +13,8 @@ import GeoFallbackBanner from '@/components/GeoFallbackBanner';
 import GeoLocationChip from '@/components/GeoLocationChip';
 import GeoPromptBanner from '@/components/GeoPromptBanner';
 import CategoryOpportunityCTA from '@/components/categories/CategoryOpportunityCTA';
+import CategoryIntentContent from '@/components/categories/CategoryIntentContent';
+import { buildCategoryKeywords } from '@/lib/categoryIntentContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import ProgressIndicator from '@/components/motion/ProgressIndicator';
