@@ -147,9 +147,7 @@ const Logo = ({
           height="209"
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
-          // React 19 reconhece fetchPriority nativamente
-          // camelCase e emite warning. Passamos via spread em lowercase.
-          {...({ fetchpriority: priority ? 'high' : 'auto' } as Record<string, string>)}
+          fetchPriority={priority ? 'high' : 'auto'}
           onLoad={() => {
             const elapsed = Date.now() - startedAt.current;
             if (elapsed > 600) logHeaderFlicker('logo_load_delay', { elapsed_ms: elapsed });
