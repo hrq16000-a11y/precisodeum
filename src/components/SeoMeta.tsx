@@ -36,7 +36,7 @@ function withSuffix(title: string) {
   return title.includes(SUFFIX) ? title : `${title} | ${SUFFIX}`;
 }
 
-export function SeoMeta({ title, description, canonical, ogType = 'website', ogImage, noindex }: SeoMetaProps) {
+export function SeoMeta({ title, description, canonical, ogType = 'website', ogImage, noindex, keywords }: SeoMetaProps) {
   const fullTitle = withSuffix(title);
   const desc = (description && description.trim().length >= 10)
     ? description
