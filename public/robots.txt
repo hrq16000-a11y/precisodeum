@@ -64,7 +64,7 @@ Allow: /
 # AND category+city pairs at /categoria/:slug/em/:cidade — page is noindex
 # automatic when the pair has 0 eligible providers, so the sitemap only emits
 # pairs with eligible content).
-Sitemap: https://www.precisodeum.com.br/sitemap.xml
+Sitemap: https://precisodeum.com.br/sitemap.xml
 
 # AI content guide
-# https://www.precisodeum.com.br/llms.txt
+# https://precisodeum.com.br/llms.txt

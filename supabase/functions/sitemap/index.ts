@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const siteUrl = 'https://www.precisodeum.com.br';
+  const siteUrl = 'https://precisodeum.com.br';
   const today = new Date().toISOString().split('T')[0];
 
   const url = new URL(req.url);

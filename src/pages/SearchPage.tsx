@@ -1157,6 +1157,14 @@ const SearchPage = () => {
               </div>
             )}
 
+            <h1 className="mb-2 text-lg sm:text-2xl font-bold tracking-tight text-foreground text-balance">
+              {query
+                ? `${query}${effectiveCity ? ` em ${effectiveCity}` : ''}`
+                : effectiveCity
+                  ? `Profissionais em ${effectiveCity}`
+                  : 'Profissionais de serviços no Brasil'}
+            </h1>
+
             <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs sm:text-sm text-muted-foreground">
                 {isLoading ? (
