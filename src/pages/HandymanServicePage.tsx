@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from '@/lib/router-compat';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -9,6 +10,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import StarRating from '@/components/StarRating';
 import { Button } from '@/components/ui/button';
 import { SkeletonCardGrid } from '@/components/motion/Skeletons';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import CategoryIcon from '@/components/CategoryIcon';
@@ -22,9 +24,15 @@ import {
   HANDYMAN_STEPS,
   HANDYMAN_TASKS,
   buildHandymanFaq,
+  buildHandymanNeighborhoodSeo,
   buildHandymanSeo,
   handymanCityPath,
+  handymanNeighborhoodPath,
+  handymanNeighborhoodSlug,
+  handymanSlugCandidates,
+  humanizeSlug,
 } from '@/lib/handymanServiceContent';
+
 
 interface Props {
   /** Quando true, lê o parâmetro citySlug da rota programática. */
@@ -41,33 +49,47 @@ const HandymanServicePage = ({ regional = false }: Props) => {
   const citySlug = regional ? params.citySlug || '' : '';
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  /** Resolve a cidade da rota regional (slug direto, prefixo ou nome). */
-  const { data: city } = useQuery({
-    queryKey: ['handyman-city', citySlug],
+  /**
+   * Resolve cidade (e opcionalmente bairro) do slug da rota regional.
+   * "curitiba" -> cidade; "curitiba-batel" -> cidade Curitiba + bairro Batel.
+   */
+  const { data: place } = useQuery({
+    queryKey: ['handyman-place', citySlug],
     enabled: !!citySlug,
     staleTime: 1000 * 60 * 30,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data: exact } = await supabase
+      const candidates = handymanSlugCandidates(citySlug);
+      const { data } = await supabase
         .from('cities')
         .select('name, state, slug')
-        .eq('slug', citySlug)
-        .maybeSingle();
-      if (exact) return exact as any;
-      const { data: prefixed } = await supabase
-        .from('cities')
-        .select('name, state, slug')
-        .ilike('slug', `${citySlug}%`)
-        .limit(1);
-      if (prefixed?.length) return prefixed[0] as any;
-      return null;
+        .in('slug', candidates);
+      const rows = (data as any[] | null) || [];
+      // Match mais longo vence (evita "sao" ganhar de "sao-jose-dos-pinhais").
+      const match = rows.sort((a, b) => b.slug.length - a.slug.length)[0] || null;
+      if (!match) {
+        const { data: prefixed } = await supabase
+          .from('cities')
+          .select('name, state, slug')
+          .ilike('slug', `${candidates[candidates.length - 1]}%`)
+          .limit(1);
+        return { city: (prefixed?.[0] as any) || null, neighborhoodSlug: '' };
+      }
+      return { city: match, neighborhoodSlug: handymanNeighborhoodSlug(citySlug, match.slug) };
     },
   });
 
-  const cityLabel = city?.name || (citySlug ? citySlug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '');
+  const city = place?.city || null;
+  const neighborhoodSlug = place?.neighborhoodSlug || '';
+  const neighborhoodLabel = neighborhoodSlug ? humanizeSlug(neighborhoodSlug) : '';
+  const cityLabel = city?.name || (citySlug ? humanizeSlug(citySlug) : '');
 
-  const { data: providers = [], isLoading } = useQuery({
-    queryKey: ['handyman-providers', citySlug, city?.name],
+
+  const { data: providers = [], isLoading, isPlaceholderData } = useQuery({
+    queryKey: ['handyman-providers', citySlug, city?.name, neighborhoodSlug],
     staleTime: 1000 * 60 * 5,
+    // Mantém a listagem anterior visível enquanto a nova rota carrega.
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data: cats } = await supabase.from('categories').select('id').eq('slug', HANDYMAN_SLUG);
       const catId = cats?.[0]?.id;
@@ -80,6 +102,9 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         .order('rating_avg', { ascending: false })
         .limit(24);
       if (city?.name) query = query.ilike('city', `${city.name}%`);
+      // Bairro: filtro estrito para a landing hiperlocal não virar conteúdo genérico.
+      if (neighborhoodLabel) query = query.ilike('neighborhood', `%${neighborhoodLabel}%`);
+
       const { data } = await query;
       const rows = (data as any[] | null) || [];
       if (!rows.length) return [];
@@ -146,15 +171,39 @@ const HandymanServicePage = ({ regional = false }: Props) => {
     return map;
   }, [providers]);
 
-  const faqs = useMemo(() => buildHandymanFaq(cityLabel || null), [cityLabel]);
-  const seo = useMemo(
-    () => buildHandymanSeo(citySlug ? { label: cityLabel, state: city?.state, slug: city?.slug || citySlug } : null, providers.length),
-    [citySlug, cityLabel, city?.state, city?.slug, providers.length],
-  );
+  const localLabel = neighborhoodLabel ? `${neighborhoodLabel}, ${cityLabel}` : cityLabel;
+
+  /** Bairros reais dos profissionais listados — alimenta a malha hiperlocal. */
+  const neighborhoodLinks = useMemo(() => {
+    const seen = new Map<string, { slug: string; label: string }>();
+    providers.forEach((p: any) => {
+      const label = (p.neighborhood || '').trim();
+      if (!label || label.toLowerCase() === (cityLabel || '').toLowerCase()) return;
+      const slug = label
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      if (slug && !seen.has(slug)) seen.set(slug, { slug, label });
+    });
+    return [...seen.values()].slice(0, 24);
+  }, [providers, cityLabel]);
+
+  const faqs = useMemo(() => buildHandymanFaq(localLabel || null), [localLabel]);
+  const seo = useMemo(() => {
+    if (!citySlug) return buildHandymanSeo(null, providers.length);
+    const cityRef = { label: cityLabel, state: city?.state, slug: city?.slug || citySlug };
+    if (neighborhoodSlug && city?.slug) {
+      return buildHandymanNeighborhoodSeo(cityRef, { label: neighborhoodLabel, slug: neighborhoodSlug }, providers.length);
+    }
+    return buildHandymanSeo(cityRef, providers.length);
+  }, [citySlug, cityLabel, city?.state, city?.slug, neighborhoodSlug, neighborhoodLabel, providers.length]);
 
   const canonical = `${SITE_BASE_URL}${seo.canonicalPath}`;
-  // Cidade sem profissional é conteúdo raso — não indexamos.
+  // Cidade/bairro sem profissional é conteúdo raso — não indexamos.
   const noindex = !!citySlug && providers.length === 0;
+
 
   useSeoHead({ title: seo.title, description: seo.description, canonical, noindex });
 
@@ -170,12 +219,23 @@ const HandymanServicePage = ({ regional = false }: Props) => {
   useJsonLd({
     '@context': 'https://schema.org',
     '@type': 'Service',
-    name: citySlug ? `Marido de aluguel em ${cityLabel}` : HANDYMAN_LABEL,
+    name: citySlug ? `Marido de aluguel em ${localLabel}` : HANDYMAN_LABEL,
     serviceType: HANDYMAN_LABEL,
     description: seo.description,
     areaServed: citySlug
-      ? { '@type': 'City', name: cityLabel, address: { '@type': 'PostalAddress', addressLocality: cityLabel, addressRegion: city?.state || undefined, addressCountry: 'BR' } }
+      ? {
+          '@type': neighborhoodLabel ? 'Place' : 'City',
+          name: localLabel,
+          address: {
+            '@type': 'PostalAddress',
+            ...(neighborhoodLabel ? { streetAddress: neighborhoodLabel } : {}),
+            addressLocality: cityLabel,
+            addressRegion: city?.state || undefined,
+            addressCountry: 'BR',
+          },
+        }
       : { '@type': 'Country', name: 'Brasil' },
+
     provider: { '@type': 'Organization', name: 'Preciso de um', url: SITE_BASE_URL },
     offers: {
       '@type': 'AggregateOffer',
@@ -222,19 +282,26 @@ const HandymanServicePage = ({ regional = false }: Props) => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      {isPlaceholderData && <ProgressIndicator fixed label="Carregando profissionais" />}
       <main className="flex-1">
         {/* Hero */}
         <section className="bg-gradient-to-br from-primary/10 via-background to-accent/10 py-12">
           <div className="container">
             <Breadcrumbs
               items={citySlug
-                ? [{ label: HANDYMAN_LABEL, url: `/servico/${HANDYMAN_SLUG}` }, { label: cityLabel }]
+                ? (neighborhoodLabel
+                    ? [
+                        { label: HANDYMAN_LABEL, url: `/servico/${HANDYMAN_SLUG}` },
+                        { label: cityLabel, url: handymanCityPath(city?.slug || citySlug) },
+                        { label: neighborhoodLabel },
+                      ]
+                    : [{ label: HANDYMAN_LABEL, url: `/servico/${HANDYMAN_SLUG}` }, { label: cityLabel }])
                 : [{ label: HANDYMAN_LABEL }]}
             />
             <div className="mt-4 max-w-3xl">
               {citySlug && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  <MapPin className="h-3.5 w-3.5" /> {cityLabel}{city?.state ? ` - ${city.state}` : ''}
+                  <MapPin className="h-3.5 w-3.5" /> {localLabel}{city?.state ? ` - ${city.state}` : ''}
                 </span>
               )}
               <h1 className="mt-3 font-display text-3xl font-bold text-foreground md:text-4xl">{seo.h1}</h1>
@@ -262,7 +329,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section className="py-12">
           <div className="container">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              O que faz um marido de aluguel{citySlug ? ` em ${cityLabel}` : ''}
+              O que faz um marido de aluguel{citySlug ? ` em ${localLabel}` : ''}
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               É o profissional de manutenção geral que resolve as pendências da casa sem precisar contratar
@@ -301,7 +368,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section className="py-12">
           <div className="container">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              Quanto custa um marido de aluguel{citySlug ? ` em ${cityLabel}` : ''}
+              Quanto custa um marido de aluguel{citySlug ? ` em ${localLabel}` : ''}
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               Faixas médias praticadas no mercado, apenas como referência. O valor final é combinado
@@ -334,9 +401,9 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section className="bg-muted/40 py-12">
           <div className="container">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              Profissionais de marido de aluguel{citySlug ? ` em ${cityLabel}` : ' no Brasil'}
+              Profissionais de marido de aluguel{citySlug ? ` em ${localLabel}` : ' no Brasil'}
             </h2>
-            {isLoading ? (
+            {isLoading && !isPlaceholderData ? (
               <div className="mt-6"><SkeletonCardGrid count={6} /></div>
             ) : providers.length > 0 ? (
               <>
@@ -354,7 +421,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
             ) : (
               <div className="mt-6 rounded-2xl border border-dashed border-primary/30 bg-card p-6 text-center">
                 <p className="text-sm font-semibold text-foreground">
-                  Ainda não há profissionais cadastrados{citySlug ? ` em ${cityLabel}` : ''}.
+                  Ainda não há profissionais cadastrados{citySlug ? ` em ${localLabel}` : ''}.
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Deixe seu contato abaixo: avisamos assim que alguém atender a sua região — ou cadastre-se
@@ -430,7 +497,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section id="contato" className="py-12">
           <div className="container max-w-3xl">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              Precisa de um marido de aluguel{citySlug ? ` em ${cityLabel}` : ''}?
+              Precisa de um marido de aluguel{citySlug ? ` em ${localLabel}` : ''}?
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Deixe seu contato que encaminhamos para os profissionais da região — ou fale agora com quem já
@@ -441,12 +508,36 @@ const HandymanServicePage = ({ regional = false }: Props) => {
                 categorySlug={HANDYMAN_SLUG}
                 categoryName={HANDYMAN_LABEL}
                 city={cityLabel || null}
+                categoryContextPath={seo.canonicalPath}
               />
             </div>
           </div>
         </section>
 
+        {/* Malha interna de bairros (só na página de cidade) */}
+        {!!citySlug && !neighborhoodLabel && neighborhoodLinks.length > 0 && (
+          <section className="py-12">
+            <div className="container">
+              <h2 className="font-display text-xl font-bold text-foreground">
+                Bairros atendidos em {cityLabel}
+              </h2>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {neighborhoodLinks.map((n) => (
+                  <Link
+                    key={n.slug}
+                    to={handymanNeighborhoodPath(city?.slug || citySlug, n.slug)}
+                    className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                  >
+                    {n.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Malha interna de cidades */}
+
         <section className="bg-muted/40 py-12">
           <div className="container">
             <h2 className="font-display text-xl font-bold text-foreground">Marido de aluguel por cidade</h2>

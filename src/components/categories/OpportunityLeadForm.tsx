@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { trackLeadSubmit } from '@/lib/publicFunnelTelemetry';
 import {
   checkLeadRateLimit,
   normalizeEmail,
@@ -27,6 +28,8 @@ interface Props {
   categorySlug: string;
   categoryName: string;
   city?: string | null;
+  /** Caminho canônico da landing — usado na telemetria de conversão por URL. */
+  categoryContextPath?: string;
 }
 
 const KINDS = [
@@ -47,7 +50,7 @@ function readUrlContext(): { city: string; intent: string } {
  * Formulário de interesse exibido nas categorias sem prestador.
  * Persiste o lead em `category_opportunity_leads` para contato comercial.
  */
-const OpportunityLeadForm = ({ categorySlug, categoryName, city }: Props) => {
+const OpportunityLeadForm = ({ categorySlug, categoryName, city, categoryContextPath }: Props) => {
   const [kind, setKind] = useState<'professional' | 'sponsor'>('professional');
   const [form, setForm] = useState({ name: '', email: '', phone: '', city: city || '', message: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -121,6 +124,14 @@ const OpportunityLeadForm = ({ categorySlug, categoryName, city }: Props) => {
       return;
     }
     if (storage) recordLeadSubmission(RATE_KEY, Date.now(), storage);
+    // Telemetria de conversão orgânica por URL (sem PII).
+    trackLeadSubmit({
+      providerId: `opportunity:${categorySlug}`,
+      category: categorySlug,
+      city: (form.city || city || '').trim() || null,
+      source: `opportunity_form:${kind}`,
+      pathname: categoryContextPath,
+    });
     setDone(true);
     toast.success('Recebemos seu interesse! Vamos entrar em contato.');
   };

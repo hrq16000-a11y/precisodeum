@@ -146,3 +146,53 @@ export function buildHandymanSeo(city?: { label: string; state?: string | null; 
     canonicalPath: handymanCityPath(city.slug),
   };
 }
+
+/** Caminho programático por bairro: /marido-de-aluguel-curitiba-batel */
+export function handymanNeighborhoodPath(citySlug: string, neighborhoodSlug: string) {
+  return `/${HANDYMAN_SLUG}-${citySlug}-${neighborhoodSlug}`;
+}
+
+/**
+ * Gera os prefixos candidatos a slug de cidade a partir do slug da rota,
+ * do mais longo para o mais curto. O resto vira o slug do bairro.
+ * Ex.: "curitiba-batel" -> ["curitiba-batel", "curitiba"]
+ */
+export function handymanSlugCandidates(slug: string): string[] {
+  const parts = slug.split('-').filter(Boolean);
+  const out: string[] = [];
+  for (let i = parts.length; i >= 1; i--) out.push(parts.slice(0, i).join('-'));
+  return out;
+}
+
+/** Deriva o slug do bairro a partir do slug completo e do slug da cidade. */
+export function handymanNeighborhoodSlug(fullSlug: string, citySlug: string): string {
+  if (!citySlug || fullSlug === citySlug) return '';
+  if (!fullSlug.startsWith(`${citySlug}-`)) return '';
+  return fullSlug.slice(citySlug.length + 1);
+}
+
+/** "batel" -> "Batel"; "vila-nova-conceicao" -> "Vila Nova Conceição" (sem acento). */
+export function humanizeSlug(slug: string): string {
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map((w) => (w.length <= 2 ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(' ');
+}
+
+/** Metadados de bairro com palavras-chave hiperlocais. */
+export function buildHandymanNeighborhoodSeo(
+  city: { label: string; state?: string | null; slug: string },
+  neighborhood: { label: string; slug: string },
+  providerCount = 0,
+): HandymanSeo {
+  const place = city.state ? `${city.label} - ${city.state}` : city.label;
+  const countLabel = providerCount > 0 ? `${providerCount} profissionais` : 'profissionais';
+  return {
+    title: `Marido de aluguel no ${neighborhood.label}, ${city.label} | Reparos hoje`,
+    description: `Marido de aluguel no bairro ${neighborhood.label}, em ${place}: ${countLabel} para reparos hidráulicos, elétricos, fixações e montagem de móveis. Avaliações reais e contato direto.`,
+    keywords: `marido de aluguel ${neighborhood.label}, marido de aluguel ${neighborhood.label} ${city.label}, pequenos reparos ${neighborhood.label}, montagem de móveis ${neighborhood.label}, manutenção residencial ${city.label}`,
+    h1: `Marido de aluguel no ${neighborhood.label}, ${city.label}`,
+    canonicalPath: handymanNeighborhoodPath(city.slug, neighborhood.slug),
+  };
+}
