@@ -4,7 +4,7 @@
 
 ## Sobre o site
 - Nome: Preciso de um
-- URL: https://www.precisodeum.com.br
+- URL: https://precisodeum.com.br
 - Idioma: Português (Brasil)
 - Tipo: Marketplace de serviços profissionais
 - Região: Brasil
@@ -46,8 +46,8 @@
 4. Após o serviço, pode avaliar o profissional.
 
 ## Sitemap
-https://www.precisodeum.com.br/sitemap.xml
+https://precisodeum.com.br/sitemap.xml
 
 ## Contato
-- Site: https://www.precisodeum.com.br
+- Site: https://precisodeum.com.br
 - WhatsApp: disponível no site
