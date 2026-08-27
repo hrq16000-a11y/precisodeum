@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { CheckCircle2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,10 +7,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  checkLeadRateLimit,
+  normalizeEmail,
+  normalizePhoneBr,
+  rateLimitMessage,
+  recordLeadSubmission,
+} from '@/lib/leadAntiSpam';
 
 const schema = z.object({
   name: z.string().trim().min(2, 'Informe seu nome').max(120, 'Nome muito longo'),
-  email: z.string().trim().email('E-mail inválido').max(200).optional().or(z.literal('')),
+  email: z.string().trim().max(200).optional().or(z.literal('')),
   phone: z.string().trim().min(8, 'Telefone/WhatsApp inválido').max(30),
   city: z.string().trim().max(120).optional().or(z.literal('')),
   message: z.string().trim().max(1000).optional().or(z.literal('')),
@@ -27,6 +34,15 @@ const KINDS = [
   { value: 'sponsor', label: 'Quero patrocinar' },
 ] as const;
 
+const RATE_KEY = 'lead_rate:opportunity';
+
+/** Lê cidade/intenção preservadas na URL pelo card de "vaga aberta". */
+function readUrlContext(): { city: string; intent: string } {
+  if (typeof window === 'undefined') return { city: '', intent: '' };
+  const params = new URLSearchParams(window.location.search);
+  return { city: params.get('cidade') || '', intent: params.get('intencao') || '' };
+}
+
 /**
  * Formulário de interesse exibido nas categorias sem prestador.
  * Persiste o lead em `category_opportunity_leads` para contato comercial.
@@ -38,34 +54,65 @@ const OpportunityLeadForm = ({ categorySlug, categoryName, city }: Props) => {
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
 
+  // Preserva o contexto vindo do card de vaga aberta (?cidade=&intencao=).
+  useEffect(() => {
+    const ctx = readUrlContext();
+    if (ctx.intent === 'vaga') setKind('professional');
+    setForm((prev) => (prev.city ? prev : { ...prev, city: ctx.city || city || '' }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [city]);
+
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((prev) => ({ ...prev, [k]: e.target.value }));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse(form);
+    const next: Record<string, string> = {};
     if (!parsed.success) {
-      const next: Record<string, string> = {};
       parsed.error.issues.forEach((issue) => {
         const key = String(issue.path[0] ?? '');
         if (key && !next[key]) next[key] = issue.message;
       });
+    }
+
+    const phone = normalizePhoneBr(form.phone);
+    if (!phone.ok) next.phone = 'Informe um WhatsApp válido com DDD.';
+    const email = normalizeEmail(form.email);
+    if (!email.ok) {
+      next.email = email.reason === 'disposable'
+        ? 'Use um e-mail permanente.'
+        : 'E-mail inválido.';
+    }
+
+    if (Object.keys(next).length) {
       setErrors(next);
       return;
     }
     setErrors({});
+
+    // Rate limiting local antes de tocar no banco.
+    const storage = typeof window !== 'undefined' ? window.localStorage : null;
+    if (storage) {
+      const check = checkLeadRateLimit(RATE_KEY, Date.now(), storage);
+      if (!check.allowed) {
+        toast.error(rateLimitMessage(check));
+        return;
+      }
+    }
+
     setSending(true);
     const { error } = await supabase.from('category_opportunity_leads').insert({
       category_slug: categorySlug,
       category_name: categoryName,
       kind,
-      name: parsed.data.name,
-      email: parsed.data.email || null,
-      phone: parsed.data.phone,
-      city: parsed.data.city || null,
-      message: parsed.data.message || null,
+      name: parsed.data!.name,
+      email: email.value || null,
+      phone: phone.value,
+      city: form.city.trim() || null,
+      message: form.message.trim() || null,
       status: 'new',
-      source_path: typeof window !== 'undefined' ? window.location.pathname : null,
+      source_path: typeof window !== 'undefined' ? window.location.pathname + window.location.search : null,
     });
     setSending(false);
 
@@ -73,6 +120,7 @@ const OpportunityLeadForm = ({ categorySlug, categoryName, city }: Props) => {
       toast.error('Não foi possível enviar agora. Tente novamente em instantes.');
       return;
     }
+    if (storage) recordLeadSubmission(RATE_KEY, Date.now(), storage);
     setDone(true);
     toast.success('Recebemos seu interesse! Vamos entrar em contato.');
   };
@@ -84,7 +132,7 @@ const OpportunityLeadForm = ({ categorySlug, categoryName, city }: Props) => {
         <p className="text-sm font-bold text-foreground">Interesse registrado</p>
         <p className="text-xs text-muted-foreground">
           Nossa equipe entra em contato sobre {categoryName}
-          {city ? ` em ${city}` : ''} em breve.
+          {form.city ? ` em ${form.city}` : ''} em breve.
         </p>
       </div>
     );
@@ -95,7 +143,7 @@ const OpportunityLeadForm = ({ categorySlug, categoryName, city }: Props) => {
       <h3 className="text-sm font-bold text-foreground">Quero receber os contatos desta categoria</h3>
       <p className="mt-1 text-xs text-muted-foreground">
         Deixe seus dados e avisamos assim que alguém procurar {categoryName.toLowerCase()}
-        {city ? ` em ${city}` : ''}.
+        {form.city ? ` em ${form.city}` : ''}.
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
