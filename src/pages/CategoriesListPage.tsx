@@ -128,10 +128,18 @@ const CategoriesListPage = () => {
               <Input
                 placeholder="Filtrar por cidade..."
                 value={cityFilter}
+                list="categorias-cidades"
+                autoComplete="off"
                 onChange={(e) => { setCityFilter(e.target.value); setVisibleCount(INITIAL); }}
                 className="pl-9 bg-card"
               />
+              <datalist id="categorias-cidades">
+                {citySuggestions.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </div>
+
           </div>
           {geoCity && !cityFilter && (
             <button
