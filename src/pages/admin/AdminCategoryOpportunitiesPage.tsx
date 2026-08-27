@@ -347,7 +347,9 @@ const AdminCategoryOpportunitiesPage = () => {
                 <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setSelectedLeads([])}>
                   Limpar seleção
                 </Button>
-            </div>
+              </div>
+            )}
+
 
             <div className="overflow-x-auto rounded-xl border border-border bg-card">
               {loadingLeads ? (
