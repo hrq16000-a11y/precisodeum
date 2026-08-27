@@ -171,6 +171,24 @@ const HandymanServicePage = ({ regional = false }: Props) => {
   }, [providers]);
 
   const localLabel = neighborhoodLabel ? `${neighborhoodLabel}, ${cityLabel}` : cityLabel;
+
+  /** Bairros reais dos profissionais listados — alimenta a malha hiperlocal. */
+  const neighborhoodLinks = useMemo(() => {
+    const seen = new Map<string, { slug: string; label: string }>();
+    providers.forEach((p: any) => {
+      const label = (p.neighborhood || '').trim();
+      if (!label || label.toLowerCase() === (cityLabel || '').toLowerCase()) return;
+      const slug = label
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      if (slug && !seen.has(slug)) seen.set(slug, { slug, label });
+    });
+    return [...seen.values()].slice(0, 24);
+  }, [providers, cityLabel]);
+
   const faqs = useMemo(() => buildHandymanFaq(localLabel || null), [localLabel]);
   const seo = useMemo(() => {
     if (!citySlug) return buildHandymanSeo(null, providers.length);
