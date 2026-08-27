@@ -62,14 +62,17 @@ const CategoriesListPage = () => {
     () => new Set((regional?.items || []).map((c) => c.id)),
     [regional],
   );
-  const regionalScopeIsCity = !!activeCity && regional?.scope === 'city';
+  // Só restringimos ao conjunto regional quando o hook realmente resolveu a cidade.
+  // Caso contrário (cidade não encontrada, texto parcial, fallback estado/global),
+  // mantemos o critério padrão de contagem para não esvaziar a lista.
+  const useRegionalSplit = !!activeCity && !loadingRegion && regional?.scope === 'city';
 
-  const withProviders = activeCity
-    ? filtered.filter((c) => regionalIds.has(c.id) && regionalScopeIsCity)
-    : filtered.filter((c) => c.count > 0);
-  const withoutProviders = activeCity
-    ? filtered.filter((c) => !(regionalIds.has(c.id) && regionalScopeIsCity))
-    : filtered.filter((c) => c.count === 0);
+  const matchesProviders = (c: { id: string; count: number }) =>
+    useRegionalSplit ? regionalIds.has(c.id) : c.count > 0;
+
+  const withProviders = filtered.filter(matchesProviders);
+  const withoutProviders = filtered.filter((c) => !matchesProviders(c));
+
 
 
   const visible = withProviders.slice(0, visibleCount);
