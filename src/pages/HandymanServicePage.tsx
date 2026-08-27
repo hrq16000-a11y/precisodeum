@@ -23,9 +23,15 @@ import {
   HANDYMAN_STEPS,
   HANDYMAN_TASKS,
   buildHandymanFaq,
+  buildHandymanNeighborhoodSeo,
   buildHandymanSeo,
   handymanCityPath,
+  handymanNeighborhoodPath,
+  handymanNeighborhoodSlug,
+  handymanSlugCandidates,
+  humanizeSlug,
 } from '@/lib/handymanServiceContent';
+
 
 interface Props {
   /** Quando true, lê o parâmetro citySlug da rota programática. */
