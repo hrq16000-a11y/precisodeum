@@ -19,5 +19,7 @@ export const PUBLIC_PATH_PREFIXES = [
 
 export const isPublicPath = (pathname: string) => {
   if (pathname === '/' || pathname === '/index') return true;
+  // Landings programáticas por cidade usam hífen (ex.: /marido-de-aluguel-curitiba).
+  if (pathname.startsWith('/marido-de-aluguel')) return true;
   return PUBLIC_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 };
