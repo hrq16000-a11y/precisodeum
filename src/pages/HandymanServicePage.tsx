@@ -10,6 +10,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import StarRating from '@/components/StarRating';
 import { Button } from '@/components/ui/button';
 import { SkeletonCardGrid } from '@/components/motion/Skeletons';
+import ProgressIndicator from '@/components/motion/ProgressIndicator';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
 import CategoryIcon from '@/components/CategoryIcon';
@@ -281,6 +282,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      {isPlaceholderData && <ProgressIndicator fixed label="Carregando profissionais" />}
       <main className="flex-1">
         {/* Hero */}
         <section className="bg-gradient-to-br from-primary/10 via-background to-accent/10 py-12">
