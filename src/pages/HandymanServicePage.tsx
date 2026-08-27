@@ -48,29 +48,41 @@ const HandymanServicePage = ({ regional = false }: Props) => {
   const citySlug = regional ? params.citySlug || '' : '';
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  /** Resolve a cidade da rota regional (slug direto, prefixo ou nome). */
-  const { data: city } = useQuery({
-    queryKey: ['handyman-city', citySlug],
+  /**
+   * Resolve cidade (e opcionalmente bairro) do slug da rota regional.
+   * "curitiba" -> cidade; "curitiba-batel" -> cidade Curitiba + bairro Batel.
+   */
+  const { data: place } = useQuery({
+    queryKey: ['handyman-place', citySlug],
     enabled: !!citySlug,
     staleTime: 1000 * 60 * 30,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data: exact } = await supabase
+      const candidates = handymanSlugCandidates(citySlug);
+      const { data } = await supabase
         .from('cities')
         .select('name, state, slug')
-        .eq('slug', citySlug)
-        .maybeSingle();
-      if (exact) return exact as any;
-      const { data: prefixed } = await supabase
-        .from('cities')
-        .select('name, state, slug')
-        .ilike('slug', `${citySlug}%`)
-        .limit(1);
-      if (prefixed?.length) return prefixed[0] as any;
-      return null;
+        .in('slug', candidates);
+      const rows = (data as any[] | null) || [];
+      // Match mais longo vence (evita "sao" ganhar de "sao-jose-dos-pinhais").
+      const match = rows.sort((a, b) => b.slug.length - a.slug.length)[0] || null;
+      if (!match) {
+        const { data: prefixed } = await supabase
+          .from('cities')
+          .select('name, state, slug')
+          .ilike('slug', `${candidates[candidates.length - 1]}%`)
+          .limit(1);
+        return { city: (prefixed?.[0] as any) || null, neighborhoodSlug: '' };
+      }
+      return { city: match, neighborhoodSlug: handymanNeighborhoodSlug(citySlug, match.slug) };
     },
   });
 
-  const cityLabel = city?.name || (citySlug ? citySlug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '');
+  const city = place?.city || null;
+  const neighborhoodSlug = place?.neighborhoodSlug || '';
+  const neighborhoodLabel = neighborhoodSlug ? humanizeSlug(neighborhoodSlug) : '';
+  const cityLabel = city?.name || (citySlug ? humanizeSlug(citySlug) : '');
+
 
   const { data: providers = [], isLoading } = useQuery({
     queryKey: ['handyman-providers', citySlug, city?.name],
