@@ -129,7 +129,7 @@ export interface HandymanSeo {
 export function buildHandymanSeo(city?: { label: string; state?: string | null; slug: string } | null, providerCount = 0): HandymanSeo {
   if (!city) {
     return {
-      title: 'Marido de aluguel: encontre profissionais de reparos perto de você',
+      title: 'Marido de aluguel: reparos e manutenção perto de você',
       description: 'Marido de aluguel para pequenos reparos: hidráulica, elétrica, montagem de móveis, fixação e pintura. Veja preços médios, avaliações reais e fale direto com o profissional.',
       keywords: 'marido de aluguel, serviços de marido de aluguel, pequenos reparos residenciais, montagem de móveis, reparo hidráulico, eletricista residencial',
       h1: 'Marido de aluguel: pequenos reparos resolvidos por profissionais avaliados',
