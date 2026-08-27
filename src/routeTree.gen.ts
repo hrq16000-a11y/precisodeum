@@ -194,6 +194,7 @@ import { Route as PreviewGuiaRouteImport } from './routes/preview/guia'
 import { Route as ProfissionalSlugRouteImport } from './routes/profissional/$slug'
 import { Route as ServicoDetalheIdRouteImport } from './routes/servico-detalhe/$id'
 import { Route as ServicoSlugRouteImport } from './routes/servico/$slug'
+import { Route as ServicoMaridoDeAluguelRouteImport } from './routes/servico/marido-de-aluguel'
 import { Route as SponsorPanelIndexRouteImport } from './routes/sponsor-panel/index'
 import { Route as SponsorPanelAssinaturaRouteImport } from './routes/sponsor-panel/assinatura'
 import { Route as SponsorPanelBannersRouteImport } from './routes/sponsor-panel/banners'
@@ -1168,6 +1169,11 @@ const ServicoSlugRoute = ServicoSlugRouteImport.update({
   path: '/servico/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ServicoMaridoDeAluguelRoute = ServicoMaridoDeAluguelRouteImport.update({
+  id: '/servico/marido-de-aluguel',
+  path: '/servico/marido-de-aluguel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SponsorPanelIndexRoute = SponsorPanelIndexRouteImport.update({
   id: '/sponsor-panel/',
   path: '/sponsor-panel/',
@@ -1534,6 +1540,7 @@ export interface FileRoutesByFullPath {
   '/profissional/$slug': typeof ProfissionalSlugRoute
   '/servico-detalhe/$id': typeof ServicoDetalheIdRoute
   '/servico/$slug': typeof ServicoSlugRoute
+  '/servico/marido-de-aluguel': typeof ServicoMaridoDeAluguelRoute
   '/sponsor-panel/assinatura': typeof SponsorPanelAssinaturaRoute
   '/sponsor-panel/banners': typeof SponsorPanelBannersRoute
   '/sponsor-panel/campanhas': typeof SponsorPanelCampanhasRoute
@@ -1757,6 +1764,7 @@ export interface FileRoutesByTo {
   '/profissional/$slug': typeof ProfissionalSlugRoute
   '/servico-detalhe/$id': typeof ServicoDetalheIdRoute
   '/servico/$slug': typeof ServicoSlugRoute
+  '/servico/marido-de-aluguel': typeof ServicoMaridoDeAluguelRoute
   '/sponsor-panel/assinatura': typeof SponsorPanelAssinaturaRoute
   '/sponsor-panel/banners': typeof SponsorPanelBannersRoute
   '/sponsor-panel/campanhas': typeof SponsorPanelCampanhasRoute
@@ -1981,6 +1989,7 @@ export interface FileRoutesById {
   '/profissional/$slug': typeof ProfissionalSlugRoute
   '/servico-detalhe/$id': typeof ServicoDetalheIdRoute
   '/servico/$slug': typeof ServicoSlugRoute
+  '/servico/marido-de-aluguel': typeof ServicoMaridoDeAluguelRoute
   '/sponsor-panel/assinatura': typeof SponsorPanelAssinaturaRoute
   '/sponsor-panel/banners': typeof SponsorPanelBannersRoute
   '/sponsor-panel/campanhas': typeof SponsorPanelCampanhasRoute
@@ -2206,6 +2215,7 @@ export interface FileRouteTypes {
     | '/profissional/$slug'
     | '/servico-detalhe/$id'
     | '/servico/$slug'
+    | '/servico/marido-de-aluguel'
     | '/sponsor-panel/assinatura'
     | '/sponsor-panel/banners'
     | '/sponsor-panel/campanhas'
@@ -2429,6 +2439,7 @@ export interface FileRouteTypes {
     | '/profissional/$slug'
     | '/servico-detalhe/$id'
     | '/servico/$slug'
+    | '/servico/marido-de-aluguel'
     | '/sponsor-panel/assinatura'
     | '/sponsor-panel/banners'
     | '/sponsor-panel/campanhas'
@@ -2652,6 +2663,7 @@ export interface FileRouteTypes {
     | '/profissional/$slug'
     | '/servico-detalhe/$id'
     | '/servico/$slug'
+    | '/servico/marido-de-aluguel'
     | '/sponsor-panel/assinatura'
     | '/sponsor-panel/banners'
     | '/sponsor-panel/campanhas'
@@ -2876,6 +2888,7 @@ export interface RootRouteChildren {
   ProfissionalSlugRoute: typeof ProfissionalSlugRoute
   ServicoDetalheIdRoute: typeof ServicoDetalheIdRoute
   ServicoSlugRoute: typeof ServicoSlugRoute
+  ServicoMaridoDeAluguelRoute: typeof ServicoMaridoDeAluguelRoute
   SponsorPanelAssinaturaRoute: typeof SponsorPanelAssinaturaRoute
   SponsorPanelBannersRoute: typeof SponsorPanelBannersRoute
   SponsorPanelCampanhasRoute: typeof SponsorPanelCampanhasRoute
@@ -4220,6 +4233,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicoSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/servico/marido-de-aluguel': {
+      id: '/servico/marido-de-aluguel'
+      path: '/servico/marido-de-aluguel'
+      fullPath: '/servico/marido-de-aluguel'
+      preLoaderRoute: typeof ServicoMaridoDeAluguelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sponsor-panel/': {
       id: '/sponsor-panel/'
       path: '/sponsor-panel'
@@ -4653,6 +4673,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfissionalSlugRoute: ProfissionalSlugRoute,
   ServicoDetalheIdRoute: ServicoDetalheIdRoute,
   ServicoSlugRoute: ServicoSlugRoute,
+  ServicoMaridoDeAluguelRoute: ServicoMaridoDeAluguelRoute,
   SponsorPanelAssinaturaRoute: SponsorPanelAssinaturaRoute,
   SponsorPanelBannersRoute: SponsorPanelBannersRoute,
   SponsorPanelCampanhasRoute: SponsorPanelCampanhasRoute,
