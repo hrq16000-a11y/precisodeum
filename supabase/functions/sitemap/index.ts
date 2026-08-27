@@ -5,6 +5,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/** Cidades-semente das landings programáticas /marido-de-aluguel-{cidade}. */
+const HANDYMAN_CITY_SLUGS = [
+  'sao-paulo', 'rio-de-janeiro', 'belo-horizonte', 'brasilia', 'curitiba',
+  'porto-alegre', 'salvador', 'recife', 'fortaleza', 'goiania', 'campinas',
+  'manaus', 'belem', 'florianopolis', 'sao-jose-dos-pinhais',
+];
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -88,6 +95,11 @@ ${entries.join('\n')}
     urls += entry(siteUrl, '/privacidade', today, 'yearly', '0.2');
     urls += entry(siteUrl, '/termos', today, 'yearly', '0.2');
     urls += entry(siteUrl, '/cookies', today, 'yearly', '0.2');
+    // Landing editorial "marido de aluguel" + variações programáticas por cidade.
+    urls += entry(siteUrl, '/servico/marido-de-aluguel', today, 'weekly', '0.9');
+    for (const slug of HANDYMAN_CITY_SLUGS) {
+      urls += entry(siteUrl, `/marido-de-aluguel-${slug}`, today, 'weekly', '0.8');
+    }
   }
 
   // ─── Quality gates (precomputado para todos os tipos que dependem) ───

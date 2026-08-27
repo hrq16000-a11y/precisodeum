@@ -27,6 +27,7 @@ import { Route as ExclusaoDeContaRouteImport } from './routes/exclusao-de-conta'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MaridoDeAluguelChar123citySlugChar125RouteImport } from './routes/marido-de-aluguel-{$citySlug}'
 import { Route as PasswordResetSuccessRouteImport } from './routes/password-reset-success'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as QueroSerPatrocinadorRouteImport } from './routes/quero-ser-patrocinador'
@@ -193,6 +194,7 @@ import { Route as PreviewGuiaRouteImport } from './routes/preview/guia'
 import { Route as ProfissionalSlugRouteImport } from './routes/profissional/$slug'
 import { Route as ServicoDetalheIdRouteImport } from './routes/servico-detalhe/$id'
 import { Route as ServicoSlugRouteImport } from './routes/servico/$slug'
+import { Route as ServicoMaridoDeAluguelRouteImport } from './routes/servico/marido-de-aluguel'
 import { Route as SponsorPanelIndexRouteImport } from './routes/sponsor-panel/index'
 import { Route as SponsorPanelAssinaturaRouteImport } from './routes/sponsor-panel/assinatura'
 import { Route as SponsorPanelBannersRouteImport } from './routes/sponsor-panel/banners'
@@ -320,6 +322,12 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MaridoDeAluguelChar123citySlugChar125Route =
+  MaridoDeAluguelChar123citySlugChar125RouteImport.update({
+    id: '/marido-de-aluguel-{$citySlug}',
+    path: '/marido-de-aluguel-{$citySlug}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PasswordResetSuccessRoute = PasswordResetSuccessRouteImport.update({
   id: '/password-reset-success',
   path: '/password-reset-success',
@@ -1161,6 +1169,11 @@ const ServicoSlugRoute = ServicoSlugRouteImport.update({
   path: '/servico/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ServicoMaridoDeAluguelRoute = ServicoMaridoDeAluguelRouteImport.update({
+  id: '/servico/marido-de-aluguel',
+  path: '/servico/marido-de-aluguel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SponsorPanelIndexRoute = SponsorPanelIndexRouteImport.update({
   id: '/sponsor-panel/',
   path: '/sponsor-panel/',
@@ -1369,6 +1382,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/marido-de-aluguel-{$citySlug}': typeof MaridoDeAluguelChar123citySlugChar125Route
   '/password-reset-success': typeof PasswordResetSuccessRoute
   '/privacidade': typeof PrivacidadeRoute
   '/quero-ser-patrocinador': typeof QueroSerPatrocinadorRoute
@@ -1526,6 +1540,7 @@ export interface FileRoutesByFullPath {
   '/profissional/$slug': typeof ProfissionalSlugRoute
   '/servico-detalhe/$id': typeof ServicoDetalheIdRoute
   '/servico/$slug': typeof ServicoSlugRoute
+  '/servico/marido-de-aluguel': typeof ServicoMaridoDeAluguelRoute
   '/sponsor-panel/assinatura': typeof SponsorPanelAssinaturaRoute
   '/sponsor-panel/banners': typeof SponsorPanelBannersRoute
   '/sponsor-panel/campanhas': typeof SponsorPanelCampanhasRoute
@@ -1591,6 +1606,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/marido-de-aluguel-{$citySlug}': typeof MaridoDeAluguelChar123citySlugChar125Route
   '/password-reset-success': typeof PasswordResetSuccessRoute
   '/privacidade': typeof PrivacidadeRoute
   '/quero-ser-patrocinador': typeof QueroSerPatrocinadorRoute
@@ -1748,6 +1764,7 @@ export interface FileRoutesByTo {
   '/profissional/$slug': typeof ProfissionalSlugRoute
   '/servico-detalhe/$id': typeof ServicoDetalheIdRoute
   '/servico/$slug': typeof ServicoSlugRoute
+  '/servico/marido-de-aluguel': typeof ServicoMaridoDeAluguelRoute
   '/sponsor-panel/assinatura': typeof SponsorPanelAssinaturaRoute
   '/sponsor-panel/banners': typeof SponsorPanelBannersRoute
   '/sponsor-panel/campanhas': typeof SponsorPanelCampanhasRoute
@@ -1814,6 +1831,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/marido-de-aluguel-{$citySlug}': typeof MaridoDeAluguelChar123citySlugChar125Route
   '/password-reset-success': typeof PasswordResetSuccessRoute
   '/privacidade': typeof PrivacidadeRoute
   '/quero-ser-patrocinador': typeof QueroSerPatrocinadorRoute
@@ -1971,6 +1989,7 @@ export interface FileRoutesById {
   '/profissional/$slug': typeof ProfissionalSlugRoute
   '/servico-detalhe/$id': typeof ServicoDetalheIdRoute
   '/servico/$slug': typeof ServicoSlugRoute
+  '/servico/marido-de-aluguel': typeof ServicoMaridoDeAluguelRoute
   '/sponsor-panel/assinatura': typeof SponsorPanelAssinaturaRoute
   '/sponsor-panel/banners': typeof SponsorPanelBannersRoute
   '/sponsor-panel/campanhas': typeof SponsorPanelCampanhasRoute
@@ -2038,6 +2057,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/forgot-password'
     | '/login'
+    | '/marido-de-aluguel-{$citySlug}'
     | '/password-reset-success'
     | '/privacidade'
     | '/quero-ser-patrocinador'
@@ -2195,6 +2215,7 @@ export interface FileRouteTypes {
     | '/profissional/$slug'
     | '/servico-detalhe/$id'
     | '/servico/$slug'
+    | '/servico/marido-de-aluguel'
     | '/sponsor-panel/assinatura'
     | '/sponsor-panel/banners'
     | '/sponsor-panel/campanhas'
@@ -2260,6 +2281,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/forgot-password'
     | '/login'
+    | '/marido-de-aluguel-{$citySlug}'
     | '/password-reset-success'
     | '/privacidade'
     | '/quero-ser-patrocinador'
@@ -2417,6 +2439,7 @@ export interface FileRouteTypes {
     | '/profissional/$slug'
     | '/servico-detalhe/$id'
     | '/servico/$slug'
+    | '/servico/marido-de-aluguel'
     | '/sponsor-panel/assinatura'
     | '/sponsor-panel/banners'
     | '/sponsor-panel/campanhas'
@@ -2482,6 +2505,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/forgot-password'
     | '/login'
+    | '/marido-de-aluguel-{$citySlug}'
     | '/password-reset-success'
     | '/privacidade'
     | '/quero-ser-patrocinador'
@@ -2639,6 +2663,7 @@ export interface FileRouteTypes {
     | '/profissional/$slug'
     | '/servico-detalhe/$id'
     | '/servico/$slug'
+    | '/servico/marido-de-aluguel'
     | '/sponsor-panel/assinatura'
     | '/sponsor-panel/banners'
     | '/sponsor-panel/campanhas'
@@ -2705,6 +2730,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  MaridoDeAluguelChar123citySlugChar125Route: typeof MaridoDeAluguelChar123citySlugChar125Route
   PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   QueroSerPatrocinadorRoute: typeof QueroSerPatrocinadorRoute
@@ -2862,6 +2888,7 @@ export interface RootRouteChildren {
   ProfissionalSlugRoute: typeof ProfissionalSlugRoute
   ServicoDetalheIdRoute: typeof ServicoDetalheIdRoute
   ServicoSlugRoute: typeof ServicoSlugRoute
+  ServicoMaridoDeAluguelRoute: typeof ServicoMaridoDeAluguelRoute
   SponsorPanelAssinaturaRoute: typeof SponsorPanelAssinaturaRoute
   SponsorPanelBannersRoute: typeof SponsorPanelBannersRoute
   SponsorPanelCampanhasRoute: typeof SponsorPanelCampanhasRoute
@@ -3035,6 +3062,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marido-de-aluguel-{$citySlug}': {
+      id: '/marido-de-aluguel-{$citySlug}'
+      path: '/marido-de-aluguel-{$citySlug}'
+      fullPath: '/marido-de-aluguel-{$citySlug}'
+      preLoaderRoute: typeof MaridoDeAluguelChar123citySlugChar125RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/password-reset-success': {
@@ -4199,6 +4233,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicoSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/servico/marido-de-aluguel': {
+      id: '/servico/marido-de-aluguel'
+      path: '/servico/marido-de-aluguel'
+      fullPath: '/servico/marido-de-aluguel'
+      preLoaderRoute: typeof ServicoMaridoDeAluguelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sponsor-panel/': {
       id: '/sponsor-panel/'
       path: '/sponsor-panel'
@@ -4473,6 +4514,8 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  MaridoDeAluguelChar123citySlugChar125Route:
+    MaridoDeAluguelChar123citySlugChar125Route,
   PasswordResetSuccessRoute: PasswordResetSuccessRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   QueroSerPatrocinadorRoute: QueroSerPatrocinadorRoute,
@@ -4630,6 +4673,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfissionalSlugRoute: ProfissionalSlugRoute,
   ServicoDetalheIdRoute: ServicoDetalheIdRoute,
   ServicoSlugRoute: ServicoSlugRoute,
+  ServicoMaridoDeAluguelRoute: ServicoMaridoDeAluguelRoute,
   SponsorPanelAssinaturaRoute: SponsorPanelAssinaturaRoute,
   SponsorPanelBannersRoute: SponsorPanelBannersRoute,
   SponsorPanelCampanhasRoute: SponsorPanelCampanhasRoute,
