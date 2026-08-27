@@ -88,6 +88,11 @@ ${entries.join('\n')}
     urls += entry(siteUrl, '/privacidade', today, 'yearly', '0.2');
     urls += entry(siteUrl, '/termos', today, 'yearly', '0.2');
     urls += entry(siteUrl, '/cookies', today, 'yearly', '0.2');
+    // Landing editorial "marido de aluguel" + variações programáticas por cidade.
+    urls += entry(siteUrl, '/servico/marido-de-aluguel', today, 'weekly', '0.9');
+    for (const slug of HANDYMAN_CITY_SLUGS) {
+      urls += entry(siteUrl, `/marido-de-aluguel-${slug}`, today, 'weekly', '0.8');
+    }
   }
 
   // ─── Quality gates (precomputado para todos os tipos que dependem) ───
