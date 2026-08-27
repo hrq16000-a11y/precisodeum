@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,6 +11,9 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { useCategoriesInRegion } from '@/hooks/useCategoriesInRegion';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useDebounce } from '@/hooks/useDebounce';
+import { supabase } from '@/integrations/supabase/client';
+import { partitionCategories, buildCategoryHref } from '@/lib/categoryCityFilter';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 const INITIAL = 12;
@@ -20,13 +24,30 @@ const CategoriesListPage = () => {
   const [visibleCount, setVisibleCount] = useState(INITIAL);
   const { city: geoCity, state: geoState } = useGeoCity();
   const [cityFilter, setCityFilter] = useState<string>('');
+  const debouncedCity = useDebounce(cityFilter.trim(), 400);
   const { data: categories = [], isLoading } = useCategoriesWithCount();
 
-  const activeCity = cityFilter || null;
+  const activeCity = debouncedCity.length >= 3 ? debouncedCity : null;
   const { data: regional, isLoading: loadingRegion } = useCategoriesInRegion(
     activeCity,
     activeCity ? geoState : null,
   );
+
+  // Autocomplete de cidades (datalist nativo — zero custo de layout).
+  const { data: citySuggestions = [] } = useQuery({
+    queryKey: ['city-autocomplete', debouncedCity],
+    enabled: debouncedCity.length >= 2,
+    staleTime: 1000 * 60 * 10,
+    queryFn: async (): Promise<string[]> => {
+      const { data, error } = await supabase
+        .from('cities')
+        .select('name, state')
+        .ilike('name', `${debouncedCity}%`)
+        .limit(8);
+      if (error) return [];
+      return (data || []).map((c: any) => (c.state ? `${c.name}` : c.name));
+    },
+  });
 
   const cityLabel = activeCity || '';
 
@@ -57,21 +78,23 @@ const CategoriesListPage = () => {
     ? shuffled.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     : shuffled;
 
-  // Quando há filtro de cidade, "com prestador" passa a ser o conjunto regional.
   const regionalIds = useMemo(
     () => new Set((regional?.items || []).map((c) => c.id)),
     [regional],
   );
-  // Só restringimos ao conjunto regional quando o hook realmente resolveu a cidade.
-  // Caso contrário (cidade não encontrada, texto parcial, fallback estado/global),
-  // mantemos o critério padrão de contagem para não esvaziar a lista.
-  const useRegionalSplit = !!activeCity && !loadingRegion && regional?.scope === 'city';
 
-  const matchesProviders = (c: { id: string; count: number }) =>
-    useRegionalSplit ? regionalIds.has(c.id) : c.count > 0;
+  // Fonte única da regra: categorias com prestador nunca somem da interface.
+  const { withProviders, withoutProviders } = useMemo(
+    () =>
+      partitionCategories(filtered, {
+        cityQuery: activeCity,
+        scope: regional?.scope,
+        loading: loadingRegion,
+        regionalIds,
+      }),
+    [filtered, activeCity, regional?.scope, loadingRegion, regionalIds],
+  );
 
-  const withProviders = filtered.filter(matchesProviders);
-  const withoutProviders = filtered.filter((c) => !matchesProviders(c));
 
 
 
