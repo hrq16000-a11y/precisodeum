@@ -84,9 +84,11 @@ const HandymanServicePage = ({ regional = false }: Props) => {
   const cityLabel = city?.name || (citySlug ? humanizeSlug(citySlug) : '');
 
 
-  const { data: providers = [], isLoading } = useQuery({
-    queryKey: ['handyman-providers', citySlug, city?.name],
+  const { data: providers = [], isLoading, isPlaceholderData } = useQuery({
+    queryKey: ['handyman-providers', citySlug, city?.name, neighborhoodSlug],
     staleTime: 1000 * 60 * 5,
+    // Mantém a listagem anterior visível enquanto a nova rota carrega.
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data: cats } = await supabase.from('categories').select('id').eq('slug', HANDYMAN_SLUG);
       const catId = cats?.[0]?.id;
@@ -99,6 +101,9 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         .order('rating_avg', { ascending: false })
         .limit(24);
       if (city?.name) query = query.ilike('city', `${city.name}%`);
+      // Bairro: filtro estrito para a landing hiperlocal não virar conteúdo genérico.
+      if (neighborhoodLabel) query = query.ilike('neighborhood', `%${neighborhoodLabel}%`);
+
       const { data } = await query;
       const rows = (data as any[] | null) || [];
       if (!rows.length) return [];
