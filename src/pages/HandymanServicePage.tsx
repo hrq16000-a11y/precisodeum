@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { SkeletonCardGrid } from '@/components/motion/Skeletons';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 import { useJsonLd } from '@/hooks/useJsonLd';
-import Icon from '@/components/Icon';
+import CategoryIcon from '@/components/CategoryIcon';
 import { ArrowRight, ChevronDown, MapPin, MessageCircle, Quote, Search, ShieldCheck } from 'lucide-react';
 import OpportunityLeadForm from '@/components/categories/OpportunityLeadForm';
 import {
@@ -228,7 +228,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
           <div className="container">
             <Breadcrumbs
               items={citySlug
-                ? [{ label: HANDYMAN_LABEL, href: `/servico/${HANDYMAN_SLUG}` }, { label: cityLabel }]
+                ? [{ label: HANDYMAN_LABEL, url: `/servico/${HANDYMAN_SLUG}` }, { label: cityLabel }]
                 : [{ label: HANDYMAN_LABEL }]}
             />
             <div className="mt-4 max-w-3xl">
@@ -272,7 +272,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
               {HANDYMAN_TASKS.map((task) => (
                 <div key={task.title} className="motion-enter rounded-2xl border border-border bg-card p-5">
                   <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Icon name={task.icon} className="h-5 w-5" />
+                    <CategoryIcon icon={task.icon} size={20} className="text-primary" />
                   </span>
                   <h3 className="text-sm font-semibold text-foreground">{task.title}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{task.description}</p>
@@ -386,7 +386,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
                           ) : 'Profissional avaliado'}
                           {prov?.city ? ` · ${prov.city}` : ''}
                         </span>
-                        <StarRating rating={Number(r.rating) || 0} size="sm" />
+                        <StarRating rating={Number(r.rating) || 0} size={14} />
                       </figcaption>
                     </figure>
                   );
