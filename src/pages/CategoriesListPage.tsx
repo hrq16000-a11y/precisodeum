@@ -188,7 +188,7 @@ const CategoriesListPage = () => {
                   transition={{ duration: 0.35 }}
                 >
                   <Link
-                    to={`/categoria/${cat.slug}`}
+                    to={buildCategoryHref(cat.slug, { city: activeCity, intent: 'busca' })}
                     className="group relative flex items-center gap-[0.625rem] rounded-3xl border border-border/50 bg-card p-[0.75rem] shadow-[0_2px_12px_-2px_rgb(0_0_0/0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] hover:-translate-y-0.5 hover:border-primary/30 overflow-hidden min-h-[3.5rem]"
                   >
                     {/* Badge de quantidade */}
@@ -235,7 +235,7 @@ const CategoriesListPage = () => {
                   {withoutProviders.map((cat) => (
                     <Link
                       key={cat.id}
-                      to={`/categoria/${cat.slug}`}
+                      to={buildCategoryHref(cat.slug, { city: activeCity, intent: 'busca' })}
                       className="group flex items-center gap-[0.625rem] rounded-xl border border-dashed border-primary/30 bg-card/60 p-[0.75rem] min-h-[3.5rem] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-card"
                     >
                       <span className="flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/5 transition-transform duration-300 group-hover:scale-110">
