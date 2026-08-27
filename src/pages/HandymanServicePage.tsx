@@ -170,15 +170,21 @@ const HandymanServicePage = ({ regional = false }: Props) => {
     return map;
   }, [providers]);
 
-  const faqs = useMemo(() => buildHandymanFaq(cityLabel || null), [cityLabel]);
-  const seo = useMemo(
-    () => buildHandymanSeo(citySlug ? { label: cityLabel, state: city?.state, slug: city?.slug || citySlug } : null, providers.length),
-    [citySlug, cityLabel, city?.state, city?.slug, providers.length],
-  );
+  const localLabel = neighborhoodLabel ? `${neighborhoodLabel}, ${cityLabel}` : cityLabel;
+  const faqs = useMemo(() => buildHandymanFaq(localLabel || null), [localLabel]);
+  const seo = useMemo(() => {
+    if (!citySlug) return buildHandymanSeo(null, providers.length);
+    const cityRef = { label: cityLabel, state: city?.state, slug: city?.slug || citySlug };
+    if (neighborhoodSlug && city?.slug) {
+      return buildHandymanNeighborhoodSeo(cityRef, { label: neighborhoodLabel, slug: neighborhoodSlug }, providers.length);
+    }
+    return buildHandymanSeo(cityRef, providers.length);
+  }, [citySlug, cityLabel, city?.state, city?.slug, neighborhoodSlug, neighborhoodLabel, providers.length]);
 
   const canonical = `${SITE_BASE_URL}${seo.canonicalPath}`;
-  // Cidade sem profissional é conteúdo raso — não indexamos.
+  // Cidade/bairro sem profissional é conteúdo raso — não indexamos.
   const noindex = !!citySlug && providers.length === 0;
+
 
   useSeoHead({ title: seo.title, description: seo.description, canonical, noindex });
 
