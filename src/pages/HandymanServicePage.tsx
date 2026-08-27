@@ -200,12 +200,23 @@ const HandymanServicePage = ({ regional = false }: Props) => {
   useJsonLd({
     '@context': 'https://schema.org',
     '@type': 'Service',
-    name: citySlug ? `Marido de aluguel em ${cityLabel}` : HANDYMAN_LABEL,
+    name: citySlug ? `Marido de aluguel em ${localLabel}` : HANDYMAN_LABEL,
     serviceType: HANDYMAN_LABEL,
     description: seo.description,
     areaServed: citySlug
-      ? { '@type': 'City', name: cityLabel, address: { '@type': 'PostalAddress', addressLocality: cityLabel, addressRegion: city?.state || undefined, addressCountry: 'BR' } }
+      ? {
+          '@type': neighborhoodLabel ? 'Place' : 'City',
+          name: localLabel,
+          address: {
+            '@type': 'PostalAddress',
+            ...(neighborhoodLabel ? { streetAddress: neighborhoodLabel } : {}),
+            addressLocality: cityLabel,
+            addressRegion: city?.state || undefined,
+            addressCountry: 'BR',
+          },
+        }
       : { '@type': 'Country', name: 'Brasil' },
+
     provider: { '@type': 'Organization', name: 'Preciso de um', url: SITE_BASE_URL },
     offers: {
       '@type': 'AggregateOffer',
