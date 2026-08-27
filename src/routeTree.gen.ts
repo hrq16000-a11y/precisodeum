@@ -27,6 +27,7 @@ import { Route as ExclusaoDeContaRouteImport } from './routes/exclusao-de-conta'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MaridoDeAluguelChar123citySlugChar125RouteImport } from './routes/marido-de-aluguel-{$citySlug}'
 import { Route as PasswordResetSuccessRouteImport } from './routes/password-reset-success'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as QueroSerPatrocinadorRouteImport } from './routes/quero-ser-patrocinador'
@@ -320,6 +321,12 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MaridoDeAluguelChar123citySlugChar125Route =
+  MaridoDeAluguelChar123citySlugChar125RouteImport.update({
+    id: '/marido-de-aluguel-{$citySlug}',
+    path: '/marido-de-aluguel-{$citySlug}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PasswordResetSuccessRoute = PasswordResetSuccessRouteImport.update({
   id: '/password-reset-success',
   path: '/password-reset-success',
@@ -1369,6 +1376,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/marido-de-aluguel-{$citySlug}': typeof MaridoDeAluguelChar123citySlugChar125Route
   '/password-reset-success': typeof PasswordResetSuccessRoute
   '/privacidade': typeof PrivacidadeRoute
   '/quero-ser-patrocinador': typeof QueroSerPatrocinadorRoute
@@ -1591,6 +1599,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/marido-de-aluguel-{$citySlug}': typeof MaridoDeAluguelChar123citySlugChar125Route
   '/password-reset-success': typeof PasswordResetSuccessRoute
   '/privacidade': typeof PrivacidadeRoute
   '/quero-ser-patrocinador': typeof QueroSerPatrocinadorRoute
@@ -1814,6 +1823,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/marido-de-aluguel-{$citySlug}': typeof MaridoDeAluguelChar123citySlugChar125Route
   '/password-reset-success': typeof PasswordResetSuccessRoute
   '/privacidade': typeof PrivacidadeRoute
   '/quero-ser-patrocinador': typeof QueroSerPatrocinadorRoute
@@ -2038,6 +2048,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/forgot-password'
     | '/login'
+    | '/marido-de-aluguel-{$citySlug}'
     | '/password-reset-success'
     | '/privacidade'
     | '/quero-ser-patrocinador'
@@ -2260,6 +2271,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/forgot-password'
     | '/login'
+    | '/marido-de-aluguel-{$citySlug}'
     | '/password-reset-success'
     | '/privacidade'
     | '/quero-ser-patrocinador'
@@ -2482,6 +2494,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/forgot-password'
     | '/login'
+    | '/marido-de-aluguel-{$citySlug}'
     | '/password-reset-success'
     | '/privacidade'
     | '/quero-ser-patrocinador'
@@ -2705,6 +2718,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  MaridoDeAluguelChar123citySlugChar125Route: typeof MaridoDeAluguelChar123citySlugChar125Route
   PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   QueroSerPatrocinadorRoute: typeof QueroSerPatrocinadorRoute
@@ -3035,6 +3049,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marido-de-aluguel-{$citySlug}': {
+      id: '/marido-de-aluguel-{$citySlug}'
+      path: '/marido-de-aluguel-{$citySlug}'
+      fullPath: '/marido-de-aluguel-{$citySlug}'
+      preLoaderRoute: typeof MaridoDeAluguelChar123citySlugChar125RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/password-reset-success': {
@@ -4473,6 +4494,8 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  MaridoDeAluguelChar123citySlugChar125Route:
+    MaridoDeAluguelChar123citySlugChar125Route,
   PasswordResetSuccessRoute: PasswordResetSuccessRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   QueroSerPatrocinadorRoute: QueroSerPatrocinadorRoute,
