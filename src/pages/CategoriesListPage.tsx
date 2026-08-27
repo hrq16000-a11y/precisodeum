@@ -235,7 +235,8 @@ const CategoriesListPage = () => {
                   {withoutProviders.map((cat) => (
                     <Link
                       key={cat.id}
-                      to={buildCategoryHref(cat.slug, { city: activeCity, intent: 'busca' })}
+                      to={buildCategoryHref(cat.slug, { city: activeCity || cityFilter.trim(), intent: 'vaga' })}
+
                       className="group flex items-center gap-[0.625rem] rounded-xl border border-dashed border-primary/30 bg-card/60 p-[0.75rem] min-h-[3.5rem] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-card"
                     >
                       <span className="flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/5 transition-transform duration-300 group-hover:scale-110">
