@@ -269,13 +269,19 @@ const HandymanServicePage = ({ regional = false }: Props) => {
           <div className="container">
             <Breadcrumbs
               items={citySlug
-                ? [{ label: HANDYMAN_LABEL, url: `/servico/${HANDYMAN_SLUG}` }, { label: cityLabel }]
+                ? (neighborhoodLabel
+                    ? [
+                        { label: HANDYMAN_LABEL, url: `/servico/${HANDYMAN_SLUG}` },
+                        { label: cityLabel, url: handymanCityPath(city?.slug || citySlug) },
+                        { label: neighborhoodLabel },
+                      ]
+                    : [{ label: HANDYMAN_LABEL, url: `/servico/${HANDYMAN_SLUG}` }, { label: cityLabel }])
                 : [{ label: HANDYMAN_LABEL }]}
             />
             <div className="mt-4 max-w-3xl">
               {citySlug && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  <MapPin className="h-3.5 w-3.5" /> {cityLabel}{city?.state ? ` - ${city.state}` : ''}
+                  <MapPin className="h-3.5 w-3.5" /> {localLabel}{city?.state ? ` - ${city.state}` : ''}
                 </span>
               )}
               <h1 className="mt-3 font-display text-3xl font-bold text-foreground md:text-4xl">{seo.h1}</h1>
@@ -303,7 +309,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section className="py-12">
           <div className="container">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              O que faz um marido de aluguel{citySlug ? ` em ${cityLabel}` : ''}
+              O que faz um marido de aluguel{citySlug ? ` em ${localLabel}` : ''}
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               É o profissional de manutenção geral que resolve as pendências da casa sem precisar contratar
@@ -342,7 +348,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section className="py-12">
           <div className="container">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              Quanto custa um marido de aluguel{citySlug ? ` em ${cityLabel}` : ''}
+              Quanto custa um marido de aluguel{citySlug ? ` em ${localLabel}` : ''}
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               Faixas médias praticadas no mercado, apenas como referência. O valor final é combinado
@@ -375,9 +381,9 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section className="bg-muted/40 py-12">
           <div className="container">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              Profissionais de marido de aluguel{citySlug ? ` em ${cityLabel}` : ' no Brasil'}
+              Profissionais de marido de aluguel{citySlug ? ` em ${localLabel}` : ' no Brasil'}
             </h2>
-            {isLoading ? (
+            {isLoading && !isPlaceholderData ? (
               <div className="mt-6"><SkeletonCardGrid count={6} /></div>
             ) : providers.length > 0 ? (
               <>
@@ -395,7 +401,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
             ) : (
               <div className="mt-6 rounded-2xl border border-dashed border-primary/30 bg-card p-6 text-center">
                 <p className="text-sm font-semibold text-foreground">
-                  Ainda não há profissionais cadastrados{citySlug ? ` em ${cityLabel}` : ''}.
+                  Ainda não há profissionais cadastrados{citySlug ? ` em ${localLabel}` : ''}.
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Deixe seu contato abaixo: avisamos assim que alguém atender a sua região — ou cadastre-se
@@ -471,7 +477,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section id="contato" className="py-12">
           <div className="container max-w-3xl">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              Precisa de um marido de aluguel{citySlug ? ` em ${cityLabel}` : ''}?
+              Precisa de um marido de aluguel{citySlug ? ` em ${localLabel}` : ''}?
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Deixe seu contato que encaminhamos para os profissionais da região — ou fale agora com quem já
@@ -482,6 +488,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
                 categorySlug={HANDYMAN_SLUG}
                 categoryName={HANDYMAN_LABEL}
                 city={cityLabel || null}
+                categoryContextPath={seo.canonicalPath}
               />
             </div>
           </div>
