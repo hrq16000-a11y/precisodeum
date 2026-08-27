@@ -184,7 +184,7 @@ const Index = () => {
   useSeoHead({
     title: geoCity
       ? `Profissionais confiáveis em ${geoCity} | Preciso de um`
-      : 'Preciso de um | Encontre um profissional para qualquer tipo de serviço no Brasil',
+      : 'Preciso de um | Profissionais de serviços perto de você',
     description: geoCity
       ? `Encontre eletricistas, encanadores, técnicos e mais em ${geoCity}. Veja avaliações e fale direto com o profissional.`
       : 'Marketplace de serviços profissionais. Encontre eletricistas, encanadores, técnicos e muito mais na sua cidade. Cadastre-se gratuitamente.',
