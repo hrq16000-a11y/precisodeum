@@ -10,7 +10,7 @@ export const PUBLIC_PATH_PREFIXES = [
   '/especialidade', '/especialidades', '/popular', '/institucional',
   '/forgot-password', '/reset-password', '/cookies', '/privacidade',
   '/termos',
-  '/sobre', '/como-funciona',
+  '/sobre', '/como-funciona', '/marido-de-aluguel',
   '/cidade', '/cidades', '/categorias', '/servico', '/servicos', '/servico-detalhe',
   '/excluir-conta', '/exclusao-de-conta', '/delete-account',
   '/esqueci-senha', '/senha-redefinida', '/password-reset-success',
