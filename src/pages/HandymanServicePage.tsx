@@ -494,7 +494,30 @@ const HandymanServicePage = ({ regional = false }: Props) => {
           </div>
         </section>
 
+        {/* Malha interna de bairros (só na página de cidade) */}
+        {!!citySlug && !neighborhoodLabel && neighborhoodLinks.length > 0 && (
+          <section className="py-12">
+            <div className="container">
+              <h2 className="font-display text-xl font-bold text-foreground">
+                Bairros atendidos em {cityLabel}
+              </h2>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {neighborhoodLinks.map((n) => (
+                  <Link
+                    key={n.slug}
+                    to={handymanNeighborhoodPath(city?.slug || citySlug, n.slug)}
+                    className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                  >
+                    {n.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Malha interna de cidades */}
+
         <section className="bg-muted/40 py-12">
           <div className="container">
             <h2 className="font-display text-xl font-bold text-foreground">Marido de aluguel por cidade</h2>
