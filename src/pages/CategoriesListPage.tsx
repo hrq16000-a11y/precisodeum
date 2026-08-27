@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from '@/lib/router-compat';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,6 +11,9 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { useCategoriesWithCount } from '@/hooks/useProviders';
 import { useCategoriesInRegion } from '@/hooks/useCategoriesInRegion';
 import { useGeoCity } from '@/hooks/useGeoCity';
+import { useDebounce } from '@/hooks/useDebounce';
+import { supabase } from '@/integrations/supabase/client';
+import { partitionCategories, buildCategoryHref } from '@/lib/categoryCityFilter';
 import { useSeoHead, SITE_BASE_URL } from '@/hooks/useSeoHead';
 
 const INITIAL = 12;
@@ -20,13 +24,30 @@ const CategoriesListPage = () => {
   const [visibleCount, setVisibleCount] = useState(INITIAL);
   const { city: geoCity, state: geoState } = useGeoCity();
   const [cityFilter, setCityFilter] = useState<string>('');
+  const debouncedCity = useDebounce(cityFilter.trim(), 400);
   const { data: categories = [], isLoading } = useCategoriesWithCount();
 
-  const activeCity = cityFilter || null;
+  const activeCity = debouncedCity.length >= 3 ? debouncedCity : null;
   const { data: regional, isLoading: loadingRegion } = useCategoriesInRegion(
     activeCity,
     activeCity ? geoState : null,
   );
+
+  // Autocomplete de cidades (datalist nativo — zero custo de layout).
+  const { data: citySuggestions = [] } = useQuery({
+    queryKey: ['city-autocomplete', debouncedCity],
+    enabled: debouncedCity.length >= 2,
+    staleTime: 1000 * 60 * 10,
+    queryFn: async (): Promise<string[]> => {
+      const { data, error } = await supabase
+        .from('cities')
+        .select('name, state')
+        .ilike('name', `${debouncedCity}%`)
+        .limit(8);
+      if (error) return [];
+      return (data || []).map((c: any) => (c.state ? `${c.name}` : c.name));
+    },
+  });
 
   const cityLabel = activeCity || '';
 
@@ -57,21 +78,23 @@ const CategoriesListPage = () => {
     ? shuffled.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     : shuffled;
 
-  // Quando há filtro de cidade, "com prestador" passa a ser o conjunto regional.
   const regionalIds = useMemo(
     () => new Set((regional?.items || []).map((c) => c.id)),
     [regional],
   );
-  // Só restringimos ao conjunto regional quando o hook realmente resolveu a cidade.
-  // Caso contrário (cidade não encontrada, texto parcial, fallback estado/global),
-  // mantemos o critério padrão de contagem para não esvaziar a lista.
-  const useRegionalSplit = !!activeCity && !loadingRegion && regional?.scope === 'city';
 
-  const matchesProviders = (c: { id: string; count: number }) =>
-    useRegionalSplit ? regionalIds.has(c.id) : c.count > 0;
+  // Fonte única da regra: categorias com prestador nunca somem da interface.
+  const { withProviders, withoutProviders } = useMemo(
+    () =>
+      partitionCategories(filtered, {
+        cityQuery: activeCity,
+        scope: regional?.scope,
+        loading: loadingRegion,
+        regionalIds,
+      }),
+    [filtered, activeCity, regional?.scope, loadingRegion, regionalIds],
+  );
 
-  const withProviders = filtered.filter(matchesProviders);
-  const withoutProviders = filtered.filter((c) => !matchesProviders(c));
 
 
 
@@ -105,10 +128,18 @@ const CategoriesListPage = () => {
               <Input
                 placeholder="Filtrar por cidade..."
                 value={cityFilter}
+                list="categorias-cidades"
+                autoComplete="off"
                 onChange={(e) => { setCityFilter(e.target.value); setVisibleCount(INITIAL); }}
                 className="pl-9 bg-card"
               />
+              <datalist id="categorias-cidades">
+                {citySuggestions.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </div>
+
           </div>
           {geoCity && !cityFilter && (
             <button
@@ -143,7 +174,21 @@ const CategoriesListPage = () => {
           </div>
         ) : (
           <>
+            {activeCity && withProviders.length === 0 && (
+              <div
+                data-testid="categories-empty-city"
+                className="motion-enter mb-6 rounded-2xl border border-dashed border-primary/30 bg-card/60 p-6 text-center"
+              >
+                <p className="text-sm font-semibold text-foreground">
+                  Ainda não há profissionais cadastrados em {activeCity}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Veja abaixo as categorias abertas nessa cidade ou limpe o filtro para ver todo o Brasil.
+                </p>
+              </div>
+            )}
             <motion.div
+
               className="grid gap-[0.75rem]"
               style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}
               initial="hidden"
@@ -157,7 +202,7 @@ const CategoriesListPage = () => {
                   transition={{ duration: 0.35 }}
                 >
                   <Link
-                    to={`/categoria/${cat.slug}`}
+                    to={buildCategoryHref(cat.slug, { city: activeCity, intent: 'busca' })}
                     className="group relative flex items-center gap-[0.625rem] rounded-3xl border border-border/50 bg-card p-[0.75rem] shadow-[0_2px_12px_-2px_rgb(0_0_0/0.08)] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.12)] hover:-translate-y-0.5 hover:border-primary/30 overflow-hidden min-h-[3.5rem]"
                   >
                     {/* Badge de quantidade */}
@@ -204,7 +249,8 @@ const CategoriesListPage = () => {
                   {withoutProviders.map((cat) => (
                     <Link
                       key={cat.id}
-                      to={`/categoria/${cat.slug}`}
+                      to={buildCategoryHref(cat.slug, { city: activeCity || cityFilter.trim(), intent: 'vaga' })}
+
                       className="group flex items-center gap-[0.625rem] rounded-xl border border-dashed border-primary/30 bg-card/60 p-[0.75rem] min-h-[3.5rem] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-card"
                     >
                       <span className="flex min-h-[2.5rem] min-w-[2.5rem] h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/5 transition-transform duration-300 group-hover:scale-110">

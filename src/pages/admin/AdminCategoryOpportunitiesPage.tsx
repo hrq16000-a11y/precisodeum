@@ -146,6 +146,33 @@ const AdminCategoryOpportunitiesPage = () => {
     });
   }, [leads, leadSearch, leadKind, leadStatus]);
 
+  const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
+  const toggleLead = (id: string) =>
+    setSelectedLeads((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const allVisibleSelected =
+    filteredLeads.length > 0 && filteredLeads.every((l: any) => selectedLeads.includes(l.id));
+  const toggleAllVisible = () =>
+    setSelectedLeads(allVisibleSelected ? [] : filteredLeads.map((l: any) => l.id));
+
+  const bulkStatus = useMutation({
+    mutationFn: async (status: 'new' | 'contacted' | 'archived') => {
+      if (selectedLeads.length === 0) return;
+      const patch: Record<string, unknown> = { status };
+      if (status === 'contacted') patch.contacted_at = new Date().toISOString();
+      const { error } = await supabase
+        .from('category_opportunity_leads')
+        .update(patch as any)
+        .in('id', selectedLeads);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Status atualizado em lote');
+      setSelectedLeads([]);
+      void queryClient.invalidateQueries({ queryKey: ['admin-category-opportunity-leads'] });
+    },
+    onError: () => toast.error('Não foi possível atualizar os leads selecionados.'),
+  });
+
   const markContacted = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -161,10 +188,13 @@ const AdminCategoryOpportunitiesPage = () => {
     onError: () => toast.error('Não foi possível atualizar o lead.'),
   });
 
-  const exportLeadsCsv = () => {
+  const exportLeadsCsv = (onlySelected = false) => {
+    const rows = onlySelected
+      ? filteredLeads.filter((l: any) => selectedLeads.includes(l.id))
+      : filteredLeads;
     const cols = ['created_at', 'category_slug', 'category_name', 'kind', 'name', 'phone', 'email', 'city', 'message', 'status'];
     const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const csv = [cols.join(','), ...filteredLeads.map((l: any) => cols.map((c) => esc(l[c])).join(','))].join('\n');
+    const csv = [cols.join(','), ...rows.map((l: any) => cols.map((c) => esc(l[c])).join(','))].join('\n');
     const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }));
     const a = document.createElement('a');
     a.href = url;
@@ -274,7 +304,7 @@ const AdminCategoryOpportunitiesPage = () => {
           <TabsContent value="leads" className="mt-4 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <Input
-                placeholder="Buscar por nome, contato, categoria ou cidade..."
+                placeholder="Buscar por nome, telefone, e-mail, categoria ou cidade..."
                 value={leadSearch}
                 onChange={(e) => setLeadSearch(e.target.value)}
                 className="h-9 w-full max-w-xs text-xs"
@@ -297,10 +327,29 @@ const AdminCategoryOpportunitiesPage = () => {
                 <option value="new">Novos</option>
                 <option value="contacted">Contatados</option>
               </select>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={exportLeadsCsv} disabled={filteredLeads.length === 0}>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => exportLeadsCsv(false)} disabled={filteredLeads.length === 0}>
                 <Download className="h-3.5 w-3.5" /> Exportar CSV ({filteredLeads.length})
               </Button>
             </div>
+
+            {selectedLeads.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-2 text-xs">
+                <span className="font-semibold text-foreground">{selectedLeads.length} selecionado(s)</span>
+                <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={() => exportLeadsCsv(true)}>
+                  <Download className="h-3 w-3" /> Exportar seleção
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" disabled={bulkStatus.isPending} onClick={() => bulkStatus.mutate('contacted')}>
+                  <CheckCircle2 className="h-3 w-3" /> Marcar contatados
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 text-[11px]" disabled={bulkStatus.isPending} onClick={() => bulkStatus.mutate('new')}>
+                  Voltar para novos
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setSelectedLeads([])}>
+                  Limpar seleção
+                </Button>
+              </div>
+            )}
+
 
             <div className="overflow-x-auto rounded-xl border border-border bg-card">
               {loadingLeads ? (
@@ -315,6 +364,14 @@ const AdminCategoryOpportunitiesPage = () => {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-muted/50 text-muted-foreground">
                     <tr>
+                      <th className="p-2">
+                        <input
+                          type="checkbox"
+                          aria-label="Selecionar todos"
+                          checked={allVisibleSelected}
+                          onChange={toggleAllVisible}
+                        />
+                      </th>
                       <th className="p-2">Data</th>
                       <th className="p-2">Categoria</th>
                       <th className="p-2">Tipo</th>
@@ -328,6 +385,14 @@ const AdminCategoryOpportunitiesPage = () => {
                   <tbody>
                     {filteredLeads.map((l: any) => (
                       <tr key={l.id} className="border-t border-border">
+                        <td className="p-2">
+                          <input
+                            type="checkbox"
+                            aria-label={`Selecionar lead ${l.name}`}
+                            checked={selectedLeads.includes(l.id)}
+                            onChange={() => toggleLead(l.id)}
+                          />
+                        </td>
                         <td className="p-2 whitespace-nowrap">{new Date(l.created_at).toLocaleDateString('pt-BR')}</td>
                         <td className="p-2">{l.category_name || l.category_slug}</td>
                         <td className="p-2">{l.kind === 'sponsor' ? 'Patrocinador' : 'Profissional'}</td>
