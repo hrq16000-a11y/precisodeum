@@ -174,7 +174,21 @@ const CategoriesListPage = () => {
           </div>
         ) : (
           <>
+            {activeCity && withProviders.length === 0 && (
+              <div
+                data-testid="categories-empty-city"
+                className="motion-enter mb-6 rounded-2xl border border-dashed border-primary/30 bg-card/60 p-6 text-center"
+              >
+                <p className="text-sm font-semibold text-foreground">
+                  Ainda não há profissionais cadastrados em {activeCity}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Veja abaixo as categorias abertas nessa cidade ou limpe o filtro para ver todo o Brasil.
+                </p>
+              </div>
+            )}
             <motion.div
+
               className="grid gap-[0.75rem]"
               style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))' }}
               initial="hidden"
