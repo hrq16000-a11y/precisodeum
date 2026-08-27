@@ -738,6 +738,19 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         }
       }
 
+      // Fallbacks de identidade — nunca deixe o cadastro travar por um campo
+      // que ainda será coletado numa fase posterior do wizard.
+      const authPhone = String(
+        (user as any)?.phone || (user as any)?.user_metadata?.phone || (user as any)?.user_metadata?.whatsapp || '',
+      ).replace(/\D/g, '');
+      if (!(p.whatsapp || '').trim() && authPhone.length >= 10) {
+        p = { ...p, whatsapp: authPhone } as typeof p;
+      }
+      if (!(p.full_name || '').trim()) {
+        const fallbackName = (user.email?.split('@')[0] || '').replace(/[._-]+/g, ' ').trim();
+        if (fallbackName) p = { ...p, full_name: fallbackName } as typeof p;
+      }
+
       const contactValidation = getOnboardingContactValidation({
         fullName: p.full_name,
         whatsapp: p.whatsapp,
@@ -757,6 +770,8 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
         return false;
       }
 
+      // WhatsApp ausente NÃO é mais bloqueante aqui: o provider é criado como
+      // rascunho (status pending) e o número é cobrado numa fase posterior.
       if (!contactValidation.whatsapp) {
         void trackEvent({
           phase: state.phase,
@@ -765,27 +780,34 @@ export const OnboardingV2Shell = ({ internalHandoffFromTriage = false, seedState
           meta: {
             code: WIZARD_ERROR_CODES.PERSIST_PHASE1_MISSING_FIELDS,
             missing_fields: ['whatsapp'],
+            non_blocking: true,
           },
         });
-        toast.error('Informe um WhatsApp válido com DDD para continuar.');
-        return false;
       }
 
-      // 1) profile (nome, avatar, profile_type, whatsapp)
+      // 1) profile (nome, avatar, profile_type, whatsapp, localização)
       const profilePatch: any = {
         full_name: p.full_name,
-        whatsapp: p.whatsapp,
-        phone: p.whatsapp,
         avatar_url: p.avatar_url,
         profile_type: p.profile_type || 'provider',
         onboarding_step: 4,
         onboarding_completed: false,
       };
+      if (contactValidation.whatsapp) {
+        profilePatch.whatsapp = p.whatsapp;
+        profilePatch.phone = p.whatsapp;
+      }
+      // Persistir localização no profile é o que permite a hidratação futura
+      // (sem isso, city/state se perdem entre sessões e o wizard trava).
+      if ((p.city || '').trim()) profilePatch.city = p.city;
+      if ((p.state || '').trim()) profilePatch.state = p.state;
+      if ((p.neighborhood || '').trim()) profilePatch.neighborhood = p.neighborhood;
       const { error: profErr } = await supabase
         .from('profiles')
         .update(profilePatch)
         .eq('id', user.id);
       if (profErr) throw profErr;
+
 
       // 2) provider apenas se for prestador
       if ((p.profile_type || 'provider') === 'provider') {
