@@ -18,6 +18,13 @@ const SponsorAdSlot = lazy(() => import('@/components/ads/SponsorAdSlot'));
 
 const ITEMS_PER_PAGE = 12;
 
+const normalizeLocation = (value: string) => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim();
+
 const parseSeoSlug = async (slug: string) => {
   const { data: categories } = await supabase.from('categories').select('name, slug').order('name');
   if (!categories) return null;
@@ -79,18 +86,23 @@ const SeoPage = () => {
         if (cat) query = query.eq('category_id', cat.id);
       }
       if (parsed.city) query = query.ilike('city', `%${parsed.city}%`);
-      if (parsed.neighborhood) query = query.ilike('neighborhood', `%${parsed.neighborhood}%`);
+      // PostgreSQL ILIKE is accent-sensitive. Fetch the city/category slice
+      // and compare normalized labels locally so `agua-verde` matches `Água Verde`.
 
       const { data: provs } = await query.order('rating_avg', { ascending: false });
 
-      const userIds = [...new Set((provs || []).map((p) => p.user_id))];
+      const neighborhoodKey = normalizeLocation(parsed.neighborhood || '');
+      const matchedProvs = neighborhoodKey
+        ? (provs || []).filter((p) => normalizeLocation(p.neighborhood || '') === neighborhoodKey)
+        : (provs || []);
+      const userIds = [...new Set(matchedProvs.map((p) => p.user_id))];
       let profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase.from('public_profiles' as any).select('id, full_name').in('id', userIds) as { data: { id: string; full_name: string }[] | null };
         (profiles || []).forEach((p: any) => { profileMap[p.id] = p.full_name; });
       }
 
-      const providers = (provs || []).map((p) => ({
+      const providers = matchedProvs.map((p) => ({
         id: p.id,
         userId: p.user_id,
         name: profileMap[p.user_id] || p.business_name || 'Profissional',

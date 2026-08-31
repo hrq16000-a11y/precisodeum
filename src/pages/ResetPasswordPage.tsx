@@ -20,7 +20,10 @@ const ResetPasswordPage = () => {
     const params = new URLSearchParams(location.search);
     const next = sanitizeNextPath(params.get('next'), '/dashboard');
     const message = params.get('message') || 'Senha atualizada com sucesso. Entre novamente para continuar.';
-    return buildLoginUrl(next, message, window.location.origin);
+    // This component is rendered by the SSR entry before hydration.
+    // `window` is unavailable there, so defer to the relative login URL.
+    const origin = typeof window === 'undefined' ? undefined : window.location.origin;
+    return buildLoginUrl(next, message, origin);
   }, [location.search]);
 
   useEffect(() => {

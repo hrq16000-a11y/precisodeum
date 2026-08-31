@@ -92,7 +92,9 @@ export function useSponsorsBySlot(
       // Lista explícita evita "permission denied for column ..." no select('*').
       // Donos e admins recebem campos sensíveis por outras queries autenticadas.
       let q = supabase
-        .from('sponsors')
+        // Public view is intentionally column-limited and granted to anon.
+        // Direct table reads are restricted by the LGPD hardening migration.
+        .from('sponsors_public' as any)
         .select(
           'id, user_id, slug, title, company_name, short_description, full_description, ' +
           'logo_url, image_url, link_url, external_link, ' +

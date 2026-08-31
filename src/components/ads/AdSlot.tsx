@@ -61,7 +61,7 @@ function useSlotSponsors(slotSlug: string, category?: string, city?: string, sta
 
       const sponsorIds = validAssignments.map(a => a.sponsor_id);
       const { data: sponsors } = await supabase
-        .from('sponsors')
+        .from('sponsors_public' as any)
         .select('id, title, image_url, logo_url, link_url, tier, status, active, sponsor_type, linked_city_slug, linked_category_slug, campaign_end, end_date, pacing_status')
         .in('id', sponsorIds)
         .eq('active', true)
