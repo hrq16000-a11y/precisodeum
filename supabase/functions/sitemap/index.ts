@@ -222,9 +222,10 @@ ${entries.join('\n')}
       .not('city', 'is', null)
       .not('neighborhood', 'is', null);
     const { data: citiesData } = await supabase.from('cities').select('slug, name');
+    const normalize = (value: string) => String(value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const citySlugByNorm = new Map<string, string>();
     for (const c of citiesData || []) {
-      const norm = String(c.name || c.slug || '').trim().toLowerCase();
+      const norm = normalize(c.name || c.slug || '');
       if (norm) citySlugByNorm.set(norm, c.slug);
     }
     const slugify = (s: string) =>
@@ -232,7 +233,7 @@ ${entries.join('\n')}
        .toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const pairCounts = new Map<string, number>(); // `citySlug::hoodSlug`
     for (const row of rows || []) {
-      const cityNorm = String(row.city || '').trim().toLowerCase();
+      const cityNorm = normalize(row.city || '');
       const citySlug = citySlugByNorm.get(cityNorm);
       if (!citySlug) continue;
       const hood = String(row.neighborhood || '').trim();
