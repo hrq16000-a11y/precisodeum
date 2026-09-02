@@ -5,6 +5,7 @@ import { buildVerticalSeo, getServiceVertical } from "@/lib/programmaticServices
 import { SITE_BASE_URL } from "@/lib/siteAssets";
 
 const ServiceVerticalPage = reactLazy(() => importWithRetry(() => import("@/pages/HandymanServicePage")));
+const PopularServicePage = reactLazy(() => importWithRetry(() => import("@/pages/PopularServicePage")));
 
 /** Landing nacional programática: /servico/pintor, /servico/eletricista, ... */
 export const Route = createFileRoute("/servico/$serviceSlug/")({
@@ -27,5 +28,12 @@ export const Route = createFileRoute("/servico/$serviceSlug/")({
       links: [{ rel: "canonical", href: url }],
     };
   },
-  component: () => <ServiceVerticalPage />,
+  component: ServiceLandingPage,
 });
+
+function ServiceLandingPage() {
+  const { serviceSlug } = Route.useParams();
+  return getServiceVertical(serviceSlug)
+    ? <ServiceVerticalPage />
+    : <PopularServicePage />;
+}

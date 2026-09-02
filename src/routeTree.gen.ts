@@ -194,7 +194,6 @@ import { Route as PreviewGuiaRouteImport } from './routes/preview/guia'
 import { Route as ProfissionalSlugRouteImport } from './routes/profissional/$slug'
 import { Route as ServicoDetalheIdRouteImport } from './routes/servico-detalhe/$id'
 import { Route as ServicoServiceSlugRouteImport } from './routes/servico/$serviceSlug'
-import { Route as ServicoSlugRouteImport } from './routes/servico/$slug'
 import { Route as ServicoMaridoDeAluguelRouteImport } from './routes/servico/marido-de-aluguel'
 import { Route as SponsorPanelIndexRouteImport } from './routes/sponsor-panel/index'
 import { Route as SponsorPanelAssinaturaRouteImport } from './routes/sponsor-panel/assinatura'
@@ -1172,11 +1171,6 @@ const ServicoServiceSlugRoute = ServicoServiceSlugRouteImport.update({
   path: '/servico/$serviceSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ServicoSlugRoute = ServicoSlugRouteImport.update({
-  id: '/servico/$slug',
-  path: '/servico/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ServicoMaridoDeAluguelRoute = ServicoMaridoDeAluguelRouteImport.update({
   id: '/servico/marido-de-aluguel',
   path: '/servico/marido-de-aluguel',
@@ -1559,7 +1553,6 @@ export interface FileRoutesByFullPath {
   '/profissional/$slug': typeof ProfissionalSlugRoute
   '/servico-detalhe/$id': typeof ServicoDetalheIdRoute
   '/servico/$serviceSlug': typeof ServicoServiceSlugRouteWithChildren
-  '/servico/$slug': typeof ServicoSlugRoute
   '/servico/marido-de-aluguel': typeof ServicoMaridoDeAluguelRoute
   '/sponsor-panel/assinatura': typeof SponsorPanelAssinaturaRoute
   '/sponsor-panel/banners': typeof SponsorPanelBannersRoute
@@ -1785,7 +1778,6 @@ export interface FileRoutesByTo {
   '/preview/guia': typeof PreviewGuiaRoute
   '/profissional/$slug': typeof ProfissionalSlugRoute
   '/servico-detalhe/$id': typeof ServicoDetalheIdRoute
-  '/servico/$slug': typeof ServicoSlugRoute
   '/servico/marido-de-aluguel': typeof ServicoMaridoDeAluguelRoute
   '/sponsor-panel/assinatura': typeof SponsorPanelAssinaturaRoute
   '/sponsor-panel/banners': typeof SponsorPanelBannersRoute
@@ -2013,7 +2005,6 @@ export interface FileRoutesById {
   '/profissional/$slug': typeof ProfissionalSlugRoute
   '/servico-detalhe/$id': typeof ServicoDetalheIdRoute
   '/servico/$serviceSlug': typeof ServicoServiceSlugRouteWithChildren
-  '/servico/$slug': typeof ServicoSlugRoute
   '/servico/marido-de-aluguel': typeof ServicoMaridoDeAluguelRoute
   '/sponsor-panel/assinatura': typeof SponsorPanelAssinaturaRoute
   '/sponsor-panel/banners': typeof SponsorPanelBannersRoute
@@ -2242,7 +2233,6 @@ export interface FileRouteTypes {
     | '/profissional/$slug'
     | '/servico-detalhe/$id'
     | '/servico/$serviceSlug'
-    | '/servico/$slug'
     | '/servico/marido-de-aluguel'
     | '/sponsor-panel/assinatura'
     | '/sponsor-panel/banners'
@@ -2468,7 +2458,6 @@ export interface FileRouteTypes {
     | '/preview/guia'
     | '/profissional/$slug'
     | '/servico-detalhe/$id'
-    | '/servico/$slug'
     | '/servico/marido-de-aluguel'
     | '/sponsor-panel/assinatura'
     | '/sponsor-panel/banners'
@@ -2695,7 +2684,6 @@ export interface FileRouteTypes {
     | '/profissional/$slug'
     | '/servico-detalhe/$id'
     | '/servico/$serviceSlug'
-    | '/servico/$slug'
     | '/servico/marido-de-aluguel'
     | '/sponsor-panel/assinatura'
     | '/sponsor-panel/banners'
@@ -2923,7 +2911,6 @@ export interface RootRouteChildren {
   ProfissionalSlugRoute: typeof ProfissionalSlugRoute
   ServicoDetalheIdRoute: typeof ServicoDetalheIdRoute
   ServicoServiceSlugRoute: typeof ServicoServiceSlugRouteWithChildren
-  ServicoSlugRoute: typeof ServicoSlugRoute
   ServicoMaridoDeAluguelRoute: typeof ServicoMaridoDeAluguelRoute
   SponsorPanelAssinaturaRoute: typeof SponsorPanelAssinaturaRoute
   SponsorPanelBannersRoute: typeof SponsorPanelBannersRoute
@@ -4269,13 +4256,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicoServiceSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/servico/$slug': {
-      id: '/servico/$slug'
-      path: '/servico/$slug'
-      fullPath: '/servico/$slug'
-      preLoaderRoute: typeof ServicoSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/servico/marido-de-aluguel': {
       id: '/servico/marido-de-aluguel'
       path: '/servico/marido-de-aluguel'
@@ -4743,7 +4723,6 @@ const rootRouteChildren: RootRouteChildren = {
   ProfissionalSlugRoute: ProfissionalSlugRoute,
   ServicoDetalheIdRoute: ServicoDetalheIdRoute,
   ServicoServiceSlugRoute: ServicoServiceSlugRouteWithChildren,
-  ServicoSlugRoute: ServicoSlugRoute,
   ServicoMaridoDeAluguelRoute: ServicoMaridoDeAluguelRoute,
   SponsorPanelAssinaturaRoute: SponsorPanelAssinaturaRoute,
   SponsorPanelBannersRoute: SponsorPanelBannersRoute,
