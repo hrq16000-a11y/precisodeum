@@ -31,6 +31,7 @@ import {
   handymanNeighborhoodSlug,
   handymanSlugCandidates,
   humanizeSlug,
+  slugifyNeighborhood,
 } from '@/lib/handymanServiceContent';
 
 
