@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Trash2, CheckCircle, XCircle, Search, MessageSquare, Download } from 'lucide-react';
+import { Trash2, CheckCircle, XCircle, Search, MessageSquare, Download, Pencil } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -22,9 +22,13 @@ const AdminReviewsPage = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterCity, setFilterCity] = useState('all');
   const [page, setPage] = useState(1);
   const [moderateReview, setModerateReview] = useState<any | null>(null);
   const [adminNote, setAdminNote] = useState('');
+  const [editReview, setEditReview] = useState<any | null>(null);
+  const [editComment, setEditComment] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchReviews = async () => {
     const { data } = await supabase
@@ -49,9 +53,20 @@ const AdminReviewsPage = () => {
 
   useEffect(() => { if (isAdmin) fetchReviews(); }, [isAdmin]);
 
+  // Cidades presentes nas avaliações (derivadas do prestador avaliado).
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>();
+    reviews.forEach(r => {
+      const city = (r.providers as any)?.city;
+      if (city) set.add(city);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [reviews]);
+
   const filtered = useMemo(() => {
     let list = reviews;
     if (filterStatus !== 'all') list = list.filter(r => (r.approval_status || 'pending') === filterStatus);
+    if (filterCity !== 'all') list = list.filter(r => ((r.providers as any)?.city || '') === filterCity);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(r =>
@@ -61,7 +76,7 @@ const AdminReviewsPage = () => {
       );
     }
     return list;
-  }, [reviews, search, filterStatus]);
+  }, [reviews, search, filterStatus, filterCity]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -100,6 +115,31 @@ const AdminReviewsPage = () => {
     setAdminNote('');
     fetchReviews();
   };
+
+  /** Edição de texto da avaliação — registra antes/depois no audit log. */
+  const handleSaveEdit = async () => {
+    if (!editReview) return;
+    const before = editReview.comment || '';
+    if (editComment.trim() === before.trim()) { setEditReview(null); return; }
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from('reviews')
+      .update({ comment: editComment.trim() } as any)
+      .eq('id', editReview.id);
+    setSavingEdit(false);
+    if (error) { toast.error(error.message); return; }
+    await logAuditAction({
+      action: 'update',
+      resource_type: 'review',
+      resource_id: editReview.id,
+      details: { before, after: editComment.trim() },
+    });
+    toast.success('Comentário atualizado');
+    setEditReview(null);
+    setEditComment('');
+    fetchReviews();
+  };
+
 
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir esta avaliação permanentemente?')) return;
@@ -171,6 +211,13 @@ const AdminReviewsPage = () => {
             <SelectItem value="rejected">Rejeitadas</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={filterCity} onValueChange={v => { setFilterCity(v); setPage(1); }}>
+          <SelectTrigger className="w-48"><SelectValue placeholder="Cidade" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as cidades</SelectItem>
+            {cityOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-1" /> Exportar
         </Button>
@@ -222,6 +269,9 @@ const AdminReviewsPage = () => {
                     <XCircle className="h-4 w-4" />
                   </Button>
                 )}
+                <Button variant="ghost" size="sm" onClick={() => { setEditReview(r); setEditComment(r.comment || ''); }} title="Editar comentário">
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(r.id)} title="Excluir">
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -252,6 +302,27 @@ const AdminReviewsPage = () => {
             <Button variant="outline" onClick={() => setModerateReview(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleReject}>
               <XCircle className="h-4 w-4 mr-1" /> Rejeitar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Editar comentário */}
+      <Dialog open={!!editReview} onOpenChange={open => !open && setEditReview(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Editar comentário</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Avaliação de <strong>{(editReview?.profiles as any)?.full_name || 'Anônimo'}</strong> sobre{' '}
+            <strong>{(editReview?.providers as any)?.business_name || 'prestador'}</strong>
+          </p>
+          <div>
+            <Label>Comentário</Label>
+            <Textarea value={editComment} onChange={e => setEditComment(e.target.value)} rows={5} placeholder="Texto da avaliação..." />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditReview(null)}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit}>
+              {savingEdit ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>
