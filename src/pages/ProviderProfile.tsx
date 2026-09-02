@@ -434,6 +434,8 @@ const ProviderProfile = () => {
           supabase.from('reviews')
             .select('id, provider_id, user_id, rating, comment, created_at')
             .eq('provider_id', data.id)
+            // Prova social: apenas avaliações moderadas e aprovadas são públicas.
+            .eq('approval_status', 'approved')
             .order('created_at', { ascending: false })
             .limit(50),
           supabase.from('provider_page_settings').select('provider_id, sections_order, hidden_sections, headline, tagline, cta_text, cta_whatsapp_text, accent_color, cover_image_url, instagram_url, facebook_url, youtube_url, tiktok_url, theme').eq('provider_id', data.id).maybeSingle(),
