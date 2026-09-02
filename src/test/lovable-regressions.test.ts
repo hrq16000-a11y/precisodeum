@@ -24,4 +24,10 @@ describe('Lovable regressions', () => {
     expect(index).toContain('<PopularServicePage />');
     expect(fs.existsSync('src/routes/servico/$slug.tsx')).toBe(false);
   });
+  it('keeps critical auth alerting and delayed realtime setup guarded', () => {
+    const notifier = fs.readFileSync('supabase/functions/notify-auth-errors/index.ts', 'utf8');
+    const verification = fs.readFileSync('src/components/profile/VerificationStatusBadge.tsx', 'utf8');
+    expect(notifier).toContain('const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")');
+    expect(verification).toContain('if (alive && prov?.id)');
+  });
 });
