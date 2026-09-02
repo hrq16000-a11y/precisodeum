@@ -269,6 +269,9 @@ const AdminReviewsPage = () => {
                     <XCircle className="h-4 w-4" />
                   </Button>
                 )}
+                <Button variant="ghost" size="sm" onClick={() => { setEditReview(r); setEditComment(r.comment || ''); }} title="Editar comentário">
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(r.id)} title="Excluir">
                   <Trash2 className="h-4 w-4" />
                 </Button>
