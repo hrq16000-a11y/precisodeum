@@ -12,6 +12,13 @@ const HANDYMAN_CITY_SLUGS = [
   'manaus', 'belem', 'florianopolis', 'sao-jose-dos-pinhais',
 ];
 
+/** Verticais programáticas /servico/{slug}[/{cidade[-bairro]}]. */
+const SERVICE_VERTICALS: { slug: string; categorySlugs: string[] }[] = [
+  { slug: 'pintor', categorySlugs: ['pintor'] },
+  { slug: 'eletricista', categorySlugs: ['eletricista', 'eletricista-residencial'] },
+  { slug: 'encanador', categorySlugs: ['encanador'] },
+];
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -50,7 +57,7 @@ Deno.serve(async (req) => {
     };
     const sitemaps = [
       'static', 'categories', 'especialidades', 'providers', 'companies', 'cities',
-      'neighborhoods',
+      'neighborhoods', 'services',
       'blog', 'jobs', 'pages', 'popular', 'seo', 'seo-cep',
     ];
     const entries: string[] = [];
@@ -254,6 +261,68 @@ ${entries.join('\n')}
         'monthly',
         '0.5',
       );
+    }
+  }
+
+  if (type === 'services') {
+    // Landings programáticas por vertical: nacional, cidade e bairro.
+    // Gate anti-thin: cidade precisa de >= 1 provider aprovado; bairro, >= 2.
+    const allCatSlugs = SERVICE_VERTICALS.flatMap((v) => v.categorySlugs);
+    const [{ data: cats }, { data: citiesData }] = await Promise.all([
+      supabase.from('categories').select('id, slug').in('slug', allCatSlugs),
+      supabase.from('cities').select('slug, name'),
+    ]);
+    const catIdToSlug = new Map<string, string>();
+    for (const c of cats || []) catIdToSlug.set(c.id, c.slug);
+
+    const normalizeTxt = (value: string) =>
+      String(value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const slugifyTxt = (value: string) =>
+      normalizeTxt(value).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const citySlugByNormName = new Map<string, string>();
+    for (const c of citiesData || []) {
+      const norm = normalizeTxt(c.name || c.slug || '');
+      if (norm) citySlugByNormName.set(norm, c.slug);
+    }
+
+    const { data: provRows } = await supabase
+      .from('providers')
+      .select('category_id, city, neighborhood')
+      .eq('status', 'approved')
+      .in('category_id', [...catIdToSlug.keys()])
+      .not('city', 'is', null);
+
+    const cityCounts = new Map<string, number>(); // `vertical::citySlug`
+    const hoodCounts = new Map<string, number>(); // `vertical::citySlug::hoodSlug`
+    for (const row of (provRows || []) as any[]) {
+      const catSlug = catIdToSlug.get(row.category_id);
+      if (!catSlug) continue;
+      const vertical = SERVICE_VERTICALS.find((v) => v.categorySlugs.includes(catSlug));
+      if (!vertical) continue;
+      const citySlug = citySlugByNormName.get(normalizeTxt(row.city || ''));
+      if (!citySlug) continue;
+      const cityKey = `${vertical.slug}::${citySlug}`;
+      cityCounts.set(cityKey, (cityCounts.get(cityKey) || 0) + 1);
+      const hood = String(row.neighborhood || '').trim();
+      if (!hood || hood.length < 3) continue;
+      const hoodSlug = slugifyTxt(hood);
+      if (!hoodSlug || hoodSlug === citySlug) continue;
+      const hoodKey = `${cityKey}::${hoodSlug}`;
+      hoodCounts.set(hoodKey, (hoodCounts.get(hoodKey) || 0) + 1);
+    }
+
+    for (const vertical of SERVICE_VERTICALS) {
+      urls += entry(siteUrl, `/servico/${vertical.slug}`, today, 'weekly', '0.9');
+    }
+    for (const [key] of cityCounts) {
+      const [verticalSlug, citySlug] = key.split('::');
+      urls += entry(siteUrl, `/servico/${verticalSlug}/${citySlug}`, today, 'weekly', '0.8');
+    }
+    const MIN_HOOD_PROVIDERS = 2;
+    for (const [key, count] of hoodCounts) {
+      if (count < MIN_HOOD_PROVIDERS) continue;
+      const [verticalSlug, citySlug, hoodSlug] = key.split('::');
+      urls += entry(siteUrl, `/servico/${verticalSlug}/${citySlug}-${hoodSlug}`, today, 'monthly', '0.6');
     }
   }
 
