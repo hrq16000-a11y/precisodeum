@@ -116,6 +116,31 @@ const AdminReviewsPage = () => {
     fetchReviews();
   };
 
+  /** Edição de texto da avaliação — registra antes/depois no audit log. */
+  const handleSaveEdit = async () => {
+    if (!editReview) return;
+    const before = editReview.comment || '';
+    if (editComment.trim() === before.trim()) { setEditReview(null); return; }
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from('reviews')
+      .update({ comment: editComment.trim() } as any)
+      .eq('id', editReview.id);
+    setSavingEdit(false);
+    if (error) { toast.error(error.message); return; }
+    await logAuditAction({
+      action: 'edit',
+      resource_type: 'review',
+      resource_id: editReview.id,
+      details: { before, after: editComment.trim() },
+    });
+    toast.success('Comentário atualizado');
+    setEditReview(null);
+    setEditComment('');
+    fetchReviews();
+  };
+
+
   const handleDelete = async (id: string) => {
     if (!confirm('Excluir esta avaliação permanentemente?')) return;
     const { error } = await supabase.from('reviews').delete().eq('id', id);
