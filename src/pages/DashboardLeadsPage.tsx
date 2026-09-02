@@ -697,6 +697,13 @@ const DashboardLeadsPage = () => {
                             {formatLeadLocation(lead.lead_context)}
                           </span>
                         )}
+                        {formatLeadNeighborhood(lead.lead_context) && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                            <MapPin size={12} strokeWidth={1.5} />
+                            {formatLeadNeighborhood(lead.lead_context)}
+                          </span>
+                        )}
+
                         {lead.lead_context?.category && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-600 dark:text-violet-400">
                             <Tag size={12} strokeWidth={1.5} />
