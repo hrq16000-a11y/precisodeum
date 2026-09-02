@@ -67,6 +67,7 @@ import { Route as AdminComunidadeRouteImport } from './routes/admin/comunidade'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin/configuracoes'
 import { Route as AdminConsentRevocationsRouteImport } from './routes/admin/consent-revocations'
 import { Route as AdminConversaoRouteImport } from './routes/admin/conversao'
+import { Route as AdminConversaoGeoRouteImport } from './routes/admin/conversao-geo'
 import { Route as AdminCrmPatrocinadoresRouteImport } from './routes/admin/crm-patrocinadores'
 import { Route as AdminCrmUsuariosRouteImport } from './routes/admin/crm-usuarios'
 import { Route as AdminCtaBlocosRouteImport } from './routes/admin/cta-blocos'
@@ -523,6 +524,11 @@ const AdminConsentRevocationsRoute = AdminConsentRevocationsRouteImport.update({
 const AdminConversaoRoute = AdminConversaoRouteImport.update({
   id: '/admin/conversao',
   path: '/admin/conversao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminConversaoGeoRoute = AdminConversaoGeoRouteImport.update({
+  id: '/admin/conversao-geo',
+  path: '/admin/conversao-geo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminCrmPatrocinadoresRoute = AdminCrmPatrocinadoresRouteImport.update({
@@ -1433,6 +1439,7 @@ export interface FileRoutesByFullPath {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/consent-revocations': typeof AdminConsentRevocationsRoute
   '/admin/conversao': typeof AdminConversaoRoute
+  '/admin/conversao-geo': typeof AdminConversaoGeoRoute
   '/admin/crm-patrocinadores': typeof AdminCrmPatrocinadoresRoute
   '/admin/crm-usuarios': typeof AdminCrmUsuariosRoute
   '/admin/cta-blocos': typeof AdminCtaBlocosRoute
@@ -1659,6 +1666,7 @@ export interface FileRoutesByTo {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/consent-revocations': typeof AdminConsentRevocationsRoute
   '/admin/conversao': typeof AdminConversaoRoute
+  '/admin/conversao-geo': typeof AdminConversaoGeoRoute
   '/admin/crm-patrocinadores': typeof AdminCrmPatrocinadoresRoute
   '/admin/crm-usuarios': typeof AdminCrmUsuariosRoute
   '/admin/cta-blocos': typeof AdminCtaBlocosRoute
@@ -1885,6 +1893,7 @@ export interface FileRoutesById {
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/consent-revocations': typeof AdminConsentRevocationsRoute
   '/admin/conversao': typeof AdminConversaoRoute
+  '/admin/conversao-geo': typeof AdminConversaoGeoRoute
   '/admin/crm-patrocinadores': typeof AdminCrmPatrocinadoresRoute
   '/admin/crm-usuarios': typeof AdminCrmUsuariosRoute
   '/admin/cta-blocos': typeof AdminCtaBlocosRoute
@@ -2113,6 +2122,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/consent-revocations'
     | '/admin/conversao'
+    | '/admin/conversao-geo'
     | '/admin/crm-patrocinadores'
     | '/admin/crm-usuarios'
     | '/admin/cta-blocos'
@@ -2339,6 +2349,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/consent-revocations'
     | '/admin/conversao'
+    | '/admin/conversao-geo'
     | '/admin/crm-patrocinadores'
     | '/admin/crm-usuarios'
     | '/admin/cta-blocos'
@@ -2564,6 +2575,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/consent-revocations'
     | '/admin/conversao'
+    | '/admin/conversao-geo'
     | '/admin/crm-patrocinadores'
     | '/admin/crm-usuarios'
     | '/admin/cta-blocos'
@@ -2791,6 +2803,7 @@ export interface RootRouteChildren {
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminConsentRevocationsRoute: typeof AdminConsentRevocationsRoute
   AdminConversaoRoute: typeof AdminConversaoRoute
+  AdminConversaoGeoRoute: typeof AdminConversaoGeoRoute
   AdminCrmPatrocinadoresRoute: typeof AdminCrmPatrocinadoresRoute
   AdminCrmUsuariosRoute: typeof AdminCrmUsuariosRoute
   AdminCtaBlocosRoute: typeof AdminCtaBlocosRoute
@@ -3365,6 +3378,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/conversao'
       fullPath: '/admin/conversao'
       preLoaderRoute: typeof AdminConversaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/conversao-geo': {
+      id: '/admin/conversao-geo'
+      path: '/admin/conversao-geo'
+      fullPath: '/admin/conversao-geo'
+      preLoaderRoute: typeof AdminConversaoGeoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/crm-patrocinadores': {
@@ -4603,6 +4623,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminConsentRevocationsRoute: AdminConsentRevocationsRoute,
   AdminConversaoRoute: AdminConversaoRoute,
+  AdminConversaoGeoRoute: AdminConversaoGeoRoute,
   AdminCrmPatrocinadoresRoute: AdminCrmPatrocinadoresRoute,
   AdminCrmUsuariosRoute: AdminCrmUsuariosRoute,
   AdminCtaBlocosRoute: AdminCtaBlocosRoute,

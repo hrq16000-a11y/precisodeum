@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   FileText, Search, Edit2, Trash2, TrendingUp, Phone, Wrench,
-  Building2, Calendar, Inbox, Sparkles, CheckCircle2, Clock, XCircle,
+  Building2, Calendar, Inbox, Sparkles, CheckCircle2, Clock, XCircle, MapPin, Tag, ExternalLink, MessageCircle,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,8 @@ import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { useDebounce } from '@/hooks/useDebounce';
 import { format, formatDistanceToNow } from 'date-fns';
+import { Link } from '@tanstack/react-router';
+import { formatLeadLocation, formatLeadNeighborhood } from '@/lib/leadContext';
 import { ptBR } from 'date-fns/locale';
 
 const PAGE_SIZE = 30;
@@ -76,7 +78,7 @@ const AdminLeadsPage = () => {
     let query = supabase
       .from('leads')
       .select(
-        'id, status, created_at, client_name, phone, service_needed, message, lead_score, score_factors, provider_id, providers(business_name)',
+        'id, status, created_at, client_name, phone, service_needed, message, lead_score, score_factors, lead_context, provider_id, providers(business_name, slug, city, state, neighborhood)',
         { count: 'exact' }
       );
 
@@ -291,6 +293,8 @@ const AdminLeadsPage = () => {
                   <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hidden sm:table-cell">Contato</th>
                   <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hidden md:table-cell">Serviço</th>
                   <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hidden lg:table-cell">Prestador</th>
+                  <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hidden md:table-cell">Local</th>
+                  <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hidden lg:table-cell">Categoria</th>
                   <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status</th>
                   <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hidden lg:table-cell">Quando</th>
                   <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Ações</th>
@@ -349,6 +353,27 @@ const AdminLeadsPage = () => {
                           <span className="truncate">{l.providers?.business_name || '—'}</span>
                         </div>
                       </td>
+                      <td className="px-3 py-3 hidden md:table-cell">
+                        <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center gap-1 truncate max-w-[170px]">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            {formatLeadLocation(l.lead_context)
+                              || [l.providers?.city, l.providers?.state].filter(Boolean).join(' - ')
+                              || '—'}
+                          </span>
+                          {(formatLeadNeighborhood(l.lead_context) || l.providers?.neighborhood) && (
+                            <span className="truncate max-w-[170px] pl-4 text-[11px]">
+                              {formatLeadNeighborhood(l.lead_context) || l.providers?.neighborhood}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 hidden lg:table-cell">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate max-w-[150px]">
+                          <Tag className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{(l.lead_context as any)?.category || '—'}</span>
+                        </div>
+                      </td>
                       <td className="px-3 py-3">
                         <Badge variant="outline" className={`gap-1 text-[10px] font-semibold ${sm.cls}`}>
                           <StatusIcon className="h-3 w-3" />
@@ -370,6 +395,24 @@ const AdminLeadsPage = () => {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex justify-end gap-0.5">
+                          {l.providers?.slug && (
+                            <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0" title="Abrir perfil do profissional">
+                              <Link to="/profissional/$slug" params={{ slug: l.providers.slug }} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </Link>
+                            </Button>
+                          )}
+                          {l.phone && (
+                            <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0" title="Contato direto por WhatsApp">
+                              <a
+                                href={`https://wa.me/${String(l.phone).replace(/\D/g, '').replace(/^(?!55)/, '55')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+                              </a>
+                            </Button>
+                          )}
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setEditLead(l)} title="Editar">
                             <Edit2 className="h-3.5 w-3.5" />
                           </Button>
@@ -383,7 +426,7 @@ const AdminLeadsPage = () => {
                 })}
                 {paginated.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-16 text-center">
+                    <td colSpan={11} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                           <Inbox className="h-5 w-5 text-muted-foreground" />

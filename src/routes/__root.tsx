@@ -292,6 +292,15 @@ const OnboardingGate = ({ children }: { children: ReactNode }) => {
   const isWizardTestRoute = location.pathname === "/__test/report-button";
   const publicRoute = isPublicPath(location.pathname);
 
+  // Hidratação determinística: o servidor nunca conhece a sessão, então rotas
+  // privadas renderizam SEMPRE o skeleton no SSR e no primeiro render do
+  // cliente. Sem isso o cliente podia resolver a sessão do storage antes da
+  // hidratação e divergir da árvore SSR (hydration mismatch fatal).
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   // Self-heal idempotente para perfis legados — read-only gate, efeito desacoplado.
   useEffect(() => {
     if (loading) return;
@@ -318,7 +327,7 @@ const OnboardingGate = ({ children }: { children: ReactNode }) => {
     return <>{children}</>;
   }
 
-  if (loading || (user && !profile)) {
+  if (!hydrated || loading || (user && !profile)) {
     return (
       <div
         role="status"
@@ -336,6 +345,7 @@ const OnboardingGate = ({ children }: { children: ReactNode }) => {
       </div>
     );
   }
+
 
   const onboardingStep = Number(profile?.onboarding_step ?? 0);
   // GATE GUARD (regression-locked): bloqueia o dashboard enquanto
