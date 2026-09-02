@@ -22,9 +22,13 @@ const AdminReviewsPage = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterCity, setFilterCity] = useState('all');
   const [page, setPage] = useState(1);
   const [moderateReview, setModerateReview] = useState<any | null>(null);
   const [adminNote, setAdminNote] = useState('');
+  const [editReview, setEditReview] = useState<any | null>(null);
+  const [editComment, setEditComment] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchReviews = async () => {
     const { data } = await supabase
@@ -49,9 +53,20 @@ const AdminReviewsPage = () => {
 
   useEffect(() => { if (isAdmin) fetchReviews(); }, [isAdmin]);
 
+  // Cidades presentes nas avaliações (derivadas do prestador avaliado).
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>();
+    reviews.forEach(r => {
+      const city = (r.providers as any)?.city;
+      if (city) set.add(city);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [reviews]);
+
   const filtered = useMemo(() => {
     let list = reviews;
     if (filterStatus !== 'all') list = list.filter(r => (r.approval_status || 'pending') === filterStatus);
+    if (filterCity !== 'all') list = list.filter(r => ((r.providers as any)?.city || '') === filterCity);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(r =>
@@ -61,7 +76,7 @@ const AdminReviewsPage = () => {
       );
     }
     return list;
-  }, [reviews, search, filterStatus]);
+  }, [reviews, search, filterStatus, filterCity]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
