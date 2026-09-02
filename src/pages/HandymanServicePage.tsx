@@ -18,26 +18,27 @@ import { ArrowRight, ChevronDown, MapPin, MessageCircle, Quote, Search, ShieldCh
 import OpportunityLeadForm from '@/components/categories/OpportunityLeadForm';
 import {
   HANDYMAN_CITY_SEEDS,
-  HANDYMAN_LABEL,
-  HANDYMAN_PRICES,
   HANDYMAN_SLUG,
-  HANDYMAN_STEPS,
-  HANDYMAN_TASKS,
-  buildHandymanFaq,
-  buildHandymanNeighborhoodSeo,
-  buildHandymanSeo,
-  handymanCityPath,
-  handymanNeighborhoodPath,
   handymanNeighborhoodSlug,
   handymanSlugCandidates,
   humanizeSlug,
   slugifyNeighborhood,
 } from '@/lib/handymanServiceContent';
+import {
+  buildVerticalSeo,
+  getServiceVertical,
+  SERVICE_VERTICALS,
+  verticalCityPath,
+  verticalNeighborhoodPath,
+  verticalPath,
+} from '@/lib/programmaticServices';
 
 
 interface Props {
   /** Quando true, lê o parâmetro citySlug da rota programática. */
   regional?: boolean;
+  /** Vertical programática renderizada (default: marido de aluguel). */
+  serviceSlug?: string;
 }
 
 const PROVIDER_COLUMNS =
@@ -45,9 +46,11 @@ const PROVIDER_COLUMNS =
   'photo_url, description, years_experience, featured, services_count, portfolio_album_count, ' +
   'portfolio_photo_count, created_at, categories(name, slug, icon)';
 
-const HandymanServicePage = ({ regional = false }: Props) => {
-  const params = useParams<{ citySlug?: string }>();
-  const citySlug = regional ? params.citySlug || '' : '';
+const HandymanServicePage = ({ regional = false, serviceSlug }: Props) => {
+  const params = useParams<{ citySlug?: string; serviceSlug?: string; localSlug?: string }>();
+  const resolvedServiceSlug = serviceSlug || params.serviceSlug || HANDYMAN_SLUG;
+  const vertical = getServiceVertical(resolvedServiceSlug) || SERVICE_VERTICALS[0];
+  const citySlug = regional ? params.citySlug || params.localSlug || '' : '';
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   /**
@@ -55,7 +58,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
    * "curitiba" -> cidade; "curitiba-batel" -> cidade Curitiba + bairro Batel.
    */
   const { data: place } = useQuery({
-    queryKey: ['handyman-place', citySlug],
+    queryKey: ['vertical-place', citySlug],
     enabled: !!citySlug,
     staleTime: 1000 * 60 * 30,
     placeholderData: keepPreviousData,
@@ -96,18 +99,18 @@ const HandymanServicePage = ({ regional = false }: Props) => {
 
 
   const { data: providers = [], isLoading, isPlaceholderData } = useQuery({
-    queryKey: ['handyman-providers', citySlug, city?.name, neighborhoodSlug],
+    queryKey: ['vertical-providers', vertical.slug, citySlug, city?.name, neighborhoodSlug],
     staleTime: 1000 * 60 * 5,
     // Mantém a listagem anterior visível enquanto a nova rota carrega.
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data: cats } = await supabase.from('categories').select('id').eq('slug', HANDYMAN_SLUG);
-      const catId = cats?.[0]?.id;
-      if (!catId) return [];
+      const { data: cats } = await supabase.from('categories').select('id').in('slug', vertical.categorySlugs);
+      const catIds = (cats || []).map((c: any) => c.id);
+      if (!catIds.length) return [];
       let query = supabase
         .from('providers')
         .select(PROVIDER_COLUMNS)
-        .eq('category_id', catId)
+        .in('category_id', catIds)
         .eq('status', 'approved')
         .order('rating_avg', { ascending: false })
         // Com bairro, filtramos client-side (ilike não ignora acentos) — busca ampla primeiro.
@@ -138,9 +141,9 @@ const HandymanServicePage = ({ regional = false }: Props) => {
           userId: p.user_id,
           name: profile?.full_name || p.business_name || 'Profissional',
           businessName: p.business_name || undefined,
-          category: cat?.name || HANDYMAN_LABEL,
-          categorySlug: cat?.slug || HANDYMAN_SLUG,
-          categoryIcon: cat?.icon || 'Wrench',
+          category: cat?.name || vertical.label,
+          categorySlug: cat?.slug || vertical.slug,
+          categoryIcon: cat?.icon || vertical.icon,
           city: p.city,
           state: p.state,
           neighborhood: p.neighborhood,
@@ -164,7 +167,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
 
   /** Prova social: avaliações reais aprovadas dos profissionais listados. */
   const { data: reviews = [] } = useQuery({
-    queryKey: ['handyman-reviews', providerIds.join(',')],
+    queryKey: ['vertical-reviews', providerIds.join(',')],
     enabled: providerIds.length > 0,
     staleTime: 1000 * 60 * 10,
     queryFn: async () => {
@@ -207,15 +210,21 @@ const HandymanServicePage = ({ regional = false }: Props) => {
     return [...seen.values()].slice(0, 24);
   }, [providers, cityLabel]);
 
-  const faqs = useMemo(() => buildHandymanFaq(localLabel || null), [localLabel]);
+  const faqs = useMemo(() => vertical.buildFaq(localLabel || null), [vertical, localLabel]);
   const seo = useMemo(() => {
-    if (!citySlug) return buildHandymanSeo(null, providers.length);
-    const cityRef = { label: cityLabel, state: city?.state, slug: city?.slug || citySlug };
-    if (neighborhoodSlug && city?.slug) {
-      return buildHandymanNeighborhoodSeo(cityRef, { label: neighborhoodLabel, slug: neighborhoodSlug }, providers.length);
-    }
-    return buildHandymanSeo(cityRef, providers.length);
-  }, [citySlug, cityLabel, city?.state, city?.slug, neighborhoodSlug, neighborhoodLabel, providers.length]);
+    if (!citySlug) return buildVerticalSeo(vertical, null, providers.length);
+    return buildVerticalSeo(
+      vertical,
+      {
+        cityLabel,
+        state: city?.state,
+        citySlug: city?.slug || citySlug,
+        neighborhoodLabel: neighborhoodSlug ? neighborhoodLabel : null,
+        neighborhoodSlug: city?.slug ? neighborhoodSlug : null,
+      },
+      providers.length,
+    );
+  }, [vertical, citySlug, cityLabel, city?.state, city?.slug, neighborhoodSlug, neighborhoodLabel, providers.length]);
 
   const canonical = `${SITE_BASE_URL}${seo.canonicalPath}`;
   // Cidade/bairro sem profissional é conteúdo raso — não indexamos.
@@ -236,8 +245,8 @@ const HandymanServicePage = ({ regional = false }: Props) => {
   useJsonLd({
     '@context': 'https://schema.org',
     '@type': 'Service',
-    name: citySlug ? `Marido de aluguel em ${localLabel}` : HANDYMAN_LABEL,
-    serviceType: HANDYMAN_LABEL,
+    name: citySlug ? `${vertical.label} em ${localLabel}` : vertical.label,
+    serviceType: vertical.label,
     description: seo.description,
     areaServed: citySlug
       ? {
@@ -257,11 +266,11 @@ const HandymanServicePage = ({ regional = false }: Props) => {
     offers: {
       '@type': 'AggregateOffer',
       priceCurrency: 'BRL',
-      lowPrice: 70,
-      highPrice: 900,
+      lowPrice: vertical.priceRange.low,
+      highPrice: vertical.priceRange.high,
       offerCount: providers.length || undefined,
     },
-  }, 'json-ld-handyman-service');
+  }, 'json-ld-vertical-service');
 
   useJsonLd({
     '@context': 'https://schema.org',
@@ -271,7 +280,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
       name: f.question,
       acceptedAnswer: { '@type': 'Answer', text: f.answer },
     })),
-  }, 'json-ld-handyman-faq');
+  }, 'json-ld-vertical-faq');
 
   useJsonLd(providers.length > 0 ? {
     '@context': 'https://schema.org',
@@ -290,11 +299,12 @@ const HandymanServicePage = ({ regional = false }: Props) => {
           : {}),
       },
     })),
-  } : null, 'json-ld-handyman-list');
+  } : null, 'json-ld-vertical-list');
 
+  const searchQuery = encodeURIComponent(vertical.inlineLabel);
   const searchHref = citySlug
-    ? `/buscar?q=marido+de+aluguel&cidade=${encodeURIComponent(cityLabel)}`
-    : '/buscar?q=marido+de+aluguel';
+    ? `/buscar?q=${searchQuery}&cidade=${encodeURIComponent(cityLabel)}`
+    : `/buscar?q=${searchQuery}`;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -308,12 +318,12 @@ const HandymanServicePage = ({ regional = false }: Props) => {
               items={citySlug
                 ? (neighborhoodLabel
                     ? [
-                        { label: HANDYMAN_LABEL, url: `/servico/${HANDYMAN_SLUG}` },
-                        { label: cityLabel, url: handymanCityPath(city?.slug || citySlug) },
+                        { label: vertical.label, url: verticalPath(vertical) },
+                        { label: cityLabel, url: verticalCityPath(vertical, city?.slug || citySlug) },
                         { label: neighborhoodLabel },
                       ]
-                    : [{ label: HANDYMAN_LABEL, url: `/servico/${HANDYMAN_SLUG}` }, { label: cityLabel }])
-                : [{ label: HANDYMAN_LABEL }]}
+                    : [{ label: vertical.label, url: verticalPath(vertical) }, { label: cityLabel }])
+                : [{ label: vertical.label }]}
             />
             <div className="mt-4 max-w-3xl">
               {citySlug && (
@@ -346,14 +356,13 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section className="py-12">
           <div className="container">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              O que faz um marido de aluguel{citySlug ? ` em ${localLabel}` : ''}
+              O que faz {vertical.article} {vertical.inlineLabel}{citySlug ? ` em ${localLabel}` : ''}
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              É o profissional de manutenção geral que resolve as pendências da casa sem precisar contratar
-              um especialista para cada tarefa. Os serviços mais pedidos:
+              {vertical.whatItIs} Os serviços mais pedidos:
             </p>
             <div className="mt-6 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
-              {HANDYMAN_TASKS.map((task) => (
+              {vertical.tasks.map((task) => (
                 <div key={task.title} className="motion-enter rounded-2xl border border-border bg-card p-5">
                   <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <CategoryIcon icon={task.icon} size={20} className="text-primary" />
@@ -371,7 +380,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
           <div className="container">
             <h2 className="font-display text-2xl font-bold text-foreground">Como funciona a contratação</h2>
             <div className="mt-6 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
-              {HANDYMAN_STEPS.map((step) => (
+              {vertical.steps.map((step) => (
                 <div key={step.title} className="rounded-2xl border border-border bg-card p-5">
                   <h3 className="text-sm font-semibold text-foreground">{step.title}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{step.description}</p>
@@ -385,7 +394,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section className="py-12">
           <div className="container">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              Quanto custa um marido de aluguel{citySlug ? ` em ${localLabel}` : ''}
+              Quanto custa {vertical.article} {vertical.inlineLabel}{citySlug ? ` em ${localLabel}` : ''}
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               Faixas médias praticadas no mercado, apenas como referência. O valor final é combinado
@@ -401,7 +410,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {HANDYMAN_PRICES.map((row) => (
+                  {vertical.prices.map((row) => (
                     <tr key={row.service} className="border-t border-border">
                       <td className="px-4 py-3 font-medium text-foreground">{row.service}</td>
                       <td className="px-4 py-3 font-semibold text-primary">{row.range}</td>
@@ -418,7 +427,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section className="bg-muted/40 py-12">
           <div className="container">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              Profissionais de marido de aluguel{citySlug ? ` em ${localLabel}` : ' no Brasil'}
+              Profissionais de {vertical.inlineLabel}{citySlug ? ` em ${localLabel}` : ' no Brasil'}
             </h2>
             {isLoading && !isPlaceholderData ? (
               <div className="mt-6"><SkeletonCardGrid count={6} /></div>
@@ -426,7 +435,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
               <>
                 <div className="mt-6 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
                   {providers.slice(0, 12).map((p: any, i: number) => (
-                    <ProviderCard key={p.id} provider={p as any} index={i} trackingSource="handyman_landing" />
+                    <ProviderCard key={p.id} provider={p as any} index={i} trackingSource={`vertical_${vertical.slug}`} />
                   ))}
                 </div>
                 <div className="mt-6">
@@ -514,7 +523,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         <section id="contato" className="py-12">
           <div className="container max-w-3xl">
             <h2 className="font-display text-2xl font-bold text-foreground">
-              Precisa de um marido de aluguel{citySlug ? ` em ${localLabel}` : ''}?
+              Precisa de {vertical.article} {vertical.inlineLabel}{citySlug ? ` em ${localLabel}` : ''}?
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Deixe seu contato que encaminhamos para os profissionais da região — ou fale agora com quem já
@@ -522,8 +531,8 @@ const HandymanServicePage = ({ regional = false }: Props) => {
             </p>
             <div className="mt-6">
               <OpportunityLeadForm
-                categorySlug={HANDYMAN_SLUG}
-                categoryName={HANDYMAN_LABEL}
+                categorySlug={vertical.slug}
+                categoryName={vertical.label}
                 city={cityLabel || null}
                 categoryContextPath={seo.canonicalPath}
               />
@@ -542,7 +551,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
                 {neighborhoodLinks.map((n) => (
                   <Link
                     key={n.slug}
-                    to={handymanNeighborhoodPath(city?.slug || citySlug, n.slug)}
+                    to={verticalNeighborhoodPath(vertical, city?.slug || citySlug, n.slug)}
                     className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
                   >
                     {n.label}
@@ -557,12 +566,12 @@ const HandymanServicePage = ({ regional = false }: Props) => {
 
         <section className="bg-muted/40 py-12">
           <div className="container">
-            <h2 className="font-display text-xl font-bold text-foreground">Marido de aluguel por cidade</h2>
+            <h2 className="font-display text-xl font-bold text-foreground">{vertical.label} por cidade</h2>
             <div className="mt-4 flex flex-wrap gap-2">
               {HANDYMAN_CITY_SEEDS.filter((c) => c.slug !== (city?.slug || citySlug)).map((c) => (
                 <Link
                   key={c.slug}
-                  to={handymanCityPath(c.slug)}
+                  to={verticalCityPath(vertical, c.slug)}
                   className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
                 >
                   {c.label} - {c.state}
@@ -570,7 +579,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
               ))}
               {citySlug && (
                 <Link
-                  to={`/servico/${HANDYMAN_SLUG}`}
+                  to={verticalPath(vertical)}
                   className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary"
                 >
                   Ver página nacional
