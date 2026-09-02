@@ -375,6 +375,20 @@ const HandymanServicePage = ({ regional = false, serviceSlug }: Props) => {
           </div>
         </section>
 
+        {/* Conteúdo editorial diferenciado por cidade (anti duplicate content) */}
+        {cityEditorial.length > 0 && (
+          <section className="py-12">
+            <div className="container grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
+              {cityEditorial.map((block) => (
+                <article key={block.title} className="rounded-2xl border border-border bg-card p-6">
+                  <h2 className="font-display text-xl font-bold text-foreground">{block.title}</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">{block.body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Como funciona */}
         <section className="bg-muted/40 py-12">
           <div className="container">
