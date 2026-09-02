@@ -59,3 +59,9 @@ export function hasLeadContext(ctx?: LeadContext | null): boolean {
     (ctx.origin && ctx.origin !== 'unknown')
   );
 }
+
+/** Bairro do lead (quando capturado pelo formulário/página de origem). */
+export function formatLeadNeighborhood(ctx?: LeadContext | null): string | null {
+  const hood = typeof ctx?.neighborhood === 'string' ? ctx.neighborhood.trim() : '';
+  return hood || null;
+}
