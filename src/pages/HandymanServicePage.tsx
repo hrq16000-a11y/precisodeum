@@ -68,12 +68,22 @@ const HandymanServicePage = ({ regional = false }: Props) => {
       // Match mais longo vence (evita "sao" ganhar de "sao-jose-dos-pinhais").
       const match = rows.sort((a, b) => b.slug.length - a.slug.length)[0] || null;
       if (!match) {
-        const { data: prefixed } = await supabase
-          .from('cities')
-          .select('name, state, slug')
-          .ilike('slug', `${candidates[candidates.length - 1]}%`)
-          .limit(1);
-        return { city: (prefixed?.[0] as any) || null, neighborhoodSlug: '' };
+        // Fallback por prefixo: tenta do candidato mais longo ao mais curto,
+        // escolhendo o slug mais curto que casa — evita "santo" resolver "Santos".
+        for (const cand of candidates.slice(0, -1)) {
+          const { data: prefixed } = await supabase
+            .from('cities')
+            .select('name, state, slug')
+            .ilike('slug', `${cand}%`)
+            .order('slug', { ascending: true })
+            .limit(20);
+          const best = ((prefixed as any[] | null) || [])
+            .sort((a, b) => a.slug.length - b.slug.length)[0];
+          if (best) {
+            return { city: best, neighborhoodSlug: handymanNeighborhoodSlug(citySlug, best.slug) };
+          }
+        }
+        return { city: null, neighborhoodSlug: '' };
       }
       return { city: match, neighborhoodSlug: handymanNeighborhoodSlug(citySlug, match.slug) };
     },
@@ -81,7 +91,6 @@ const HandymanServicePage = ({ regional = false }: Props) => {
 
   const city = place?.city || null;
   const neighborhoodSlug = place?.neighborhoodSlug || '';
-  const neighborhoodLabel = neighborhoodSlug ? humanizeSlug(neighborhoodSlug) : '';
   const cityLabel = city?.name || (citySlug ? humanizeSlug(citySlug) : '');
 
 
