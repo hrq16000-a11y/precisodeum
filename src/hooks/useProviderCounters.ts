@@ -80,7 +80,8 @@ async function fetchCounters(providerId: string, userId: string | null): Promise
       supabase
         .from('reviews')
         .select('id', { count: 'estimated', head: true })
-        .eq('provider_id', providerId),
+        .eq('provider_id', providerId)
+        .eq('approval_status', 'approved'),
       { count: 0, error: null } as any,
     ),
     userId
