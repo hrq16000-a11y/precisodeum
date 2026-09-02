@@ -32,6 +32,7 @@ import {
   verticalNeighborhoodPath,
   verticalPath,
 } from '@/lib/programmaticServices';
+import { buildCityEditorial } from '@/lib/serviceCityEditorial';
 
 
 interface Props {
