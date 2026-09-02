@@ -109,13 +109,18 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         .eq('category_id', catId)
         .eq('status', 'approved')
         .order('rating_avg', { ascending: false })
-        .limit(24);
+        // Com bairro, filtramos client-side (ilike não ignora acentos) — busca ampla primeiro.
+        .limit(neighborhoodSlug ? 200 : 24);
       if (city?.name) query = query.ilike('city', `${city.name}%`);
-      // Bairro: filtro estrito para a landing hiperlocal não virar conteúdo genérico.
-      if (neighborhoodLabel) query = query.ilike('neighborhood', `%${neighborhoodLabel}%`);
 
       const { data } = await query;
-      const rows = (data as any[] | null) || [];
+      let rows = (data as any[] | null) || [];
+      // Bairro: match por slug (acento-insensitivo), estrito para a landing hiperlocal.
+      if (neighborhoodSlug) {
+        rows = rows
+          .filter((p) => slugifyNeighborhood(p.neighborhood || '') === neighborhoodSlug)
+          .slice(0, 24);
+      }
       if (!rows.length) return [];
       const userIds = [...new Set(rows.map((p) => p.user_id))];
       const { data: profiles } = await supabase
