@@ -306,6 +306,27 @@ const AdminReviewsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Editar comentário */}
+      <Dialog open={!!editReview} onOpenChange={open => !open && setEditReview(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Editar comentário</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Avaliação de <strong>{(editReview?.profiles as any)?.full_name || 'Anônimo'}</strong> sobre{' '}
+            <strong>{(editReview?.providers as any)?.business_name || 'prestador'}</strong>
+          </p>
+          <div>
+            <Label>Comentário</Label>
+            <Textarea value={editComment} onChange={e => setEditComment(e.target.value)} rows={5} placeholder="Texto da avaliação..." />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditReview(null)}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit}>
+              {savingEdit ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
