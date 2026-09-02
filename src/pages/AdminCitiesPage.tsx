@@ -568,6 +568,11 @@ const AdminCitiesPage = () => {
             )}
           </TabsContent>
 
+          {/* ═══ PROGRAMMATIC PAGES TAB ═══ */}
+          <TabsContent value="programaticas" className="space-y-4">
+            <ProgrammaticPagesTab />
+          </TabsContent>
+
           {/* ═══ NEIGHBORHOODS TAB ═══ */}
           <TabsContent value="neighborhoods" className="space-y-4">
             <NeighborhoodsTab cities={cities} isAdmin={isAdmin} />
