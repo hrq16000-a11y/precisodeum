@@ -210,6 +210,21 @@ const HandymanServicePage = ({ regional = false, serviceSlug }: Props) => {
     return [...seen.values()].slice(0, 24);
   }, [providers, cityLabel]);
 
+  const cityEditorial = useMemo(() => (
+    citySlug
+      ? buildCityEditorial({
+          verticalSlug: vertical.slug,
+          verticalLabel: vertical.label,
+          inlineLabel: vertical.inlineLabel,
+          citySlug: city?.slug || citySlug,
+          cityLabel,
+          state: city?.state,
+          providerCount: providers.length,
+          neighborhoodLabels: neighborhoodLinks.map((n) => n.label),
+        })
+      : []
+  ), [vertical, citySlug, city?.slug, city?.state, cityLabel, providers.length, neighborhoodLinks]);
+
   const faqs = useMemo(() => vertical.buildFaq(localLabel || null), [vertical, localLabel]);
   const seo = useMemo(() => {
     if (!citySlug) return buildVerticalSeo(vertical, null, providers.length);
