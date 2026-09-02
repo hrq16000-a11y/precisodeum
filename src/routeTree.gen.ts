@@ -230,6 +230,7 @@ import { Route as DashboardLeadsIndexRouteImport } from './routes/dashboard/lead
 import { Route as DashboardLeadsLeadIdRouteImport } from './routes/dashboard/leads/$leadId'
 import { Route as DashboardNotificacoesIndexRouteImport } from './routes/dashboard/notificacoes/index'
 import { Route as DashboardNotificacoesPreferenciasRouteImport } from './routes/dashboard/notificacoes/preferencias'
+import { Route as ServicoServiceSlugIndexRouteImport } from './routes/servico/$serviceSlug.index'
 import { Route as ServicoServiceSlugLocalSlugRouteImport } from './routes/servico/$serviceSlug.$localSlug'
 import { Route as CategoriaSlugEmCidadeRouteImport } from './routes/categoria/$slug/em/$cidade'
 import { Route as CidadeCitySlugBairroNeighborhoodSlugRouteImport } from './routes/cidade/$citySlug/bairro/$neighborhoodSlug'
@@ -1358,6 +1359,11 @@ const DashboardNotificacoesPreferenciasRoute =
     path: '/dashboard/notificacoes/preferencias',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ServicoServiceSlugIndexRoute = ServicoServiceSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ServicoServiceSlugRoute,
+} as any)
 const ServicoServiceSlugLocalSlugRoute =
   ServicoServiceSlugLocalSlugRouteImport.update({
     id: '/$localSlug',
@@ -1599,6 +1605,7 @@ export interface FileRoutesByFullPath {
   '/cidades/$estado/': typeof CidadesEstadoIndexRoute
   '/dashboard/leads/': typeof DashboardLeadsIndexRoute
   '/dashboard/notificacoes/': typeof DashboardNotificacoesIndexRoute
+  '/servico/$serviceSlug/': typeof ServicoServiceSlugIndexRoute
   '/categoria/$slug/em/$cidade': typeof CategoriaSlugEmCidadeRoute
   '/cidade/$citySlug/bairro/$neighborhoodSlug': typeof CidadeCitySlugBairroNeighborhoodSlugRoute
 }
@@ -1778,7 +1785,6 @@ export interface FileRoutesByTo {
   '/preview/guia': typeof PreviewGuiaRoute
   '/profissional/$slug': typeof ProfissionalSlugRoute
   '/servico-detalhe/$id': typeof ServicoDetalheIdRoute
-  '/servico/$serviceSlug': typeof ServicoServiceSlugRouteWithChildren
   '/servico/$slug': typeof ServicoSlugRoute
   '/servico/marido-de-aluguel': typeof ServicoMaridoDeAluguelRoute
   '/sponsor-panel/assinatura': typeof SponsorPanelAssinaturaRoute
@@ -1825,6 +1831,7 @@ export interface FileRoutesByTo {
   '/cidades/$estado': typeof CidadesEstadoIndexRoute
   '/dashboard/leads': typeof DashboardLeadsIndexRoute
   '/dashboard/notificacoes': typeof DashboardNotificacoesIndexRoute
+  '/servico/$serviceSlug': typeof ServicoServiceSlugIndexRoute
   '/categoria/$slug/em/$cidade': typeof CategoriaSlugEmCidadeRoute
   '/cidade/$citySlug/bairro/$neighborhoodSlug': typeof CidadeCitySlugBairroNeighborhoodSlugRoute
 }
@@ -2052,6 +2059,7 @@ export interface FileRoutesById {
   '/cidades/$estado/': typeof CidadesEstadoIndexRoute
   '/dashboard/leads/': typeof DashboardLeadsIndexRoute
   '/dashboard/notificacoes/': typeof DashboardNotificacoesIndexRoute
+  '/servico/$serviceSlug/': typeof ServicoServiceSlugIndexRoute
   '/categoria/$slug/em/$cidade': typeof CategoriaSlugEmCidadeRoute
   '/cidade/$citySlug/bairro/$neighborhoodSlug': typeof CidadeCitySlugBairroNeighborhoodSlugRoute
 }
@@ -2280,6 +2288,7 @@ export interface FileRouteTypes {
     | '/cidades/$estado/'
     | '/dashboard/leads/'
     | '/dashboard/notificacoes/'
+    | '/servico/$serviceSlug/'
     | '/categoria/$slug/em/$cidade'
     | '/cidade/$citySlug/bairro/$neighborhoodSlug'
   fileRoutesByTo: FileRoutesByTo
@@ -2459,7 +2468,6 @@ export interface FileRouteTypes {
     | '/preview/guia'
     | '/profissional/$slug'
     | '/servico-detalhe/$id'
-    | '/servico/$serviceSlug'
     | '/servico/$slug'
     | '/servico/marido-de-aluguel'
     | '/sponsor-panel/assinatura'
@@ -2506,6 +2514,7 @@ export interface FileRouteTypes {
     | '/cidades/$estado'
     | '/dashboard/leads'
     | '/dashboard/notificacoes'
+    | '/servico/$serviceSlug'
     | '/categoria/$slug/em/$cidade'
     | '/cidade/$citySlug/bairro/$neighborhoodSlug'
   id:
@@ -2732,6 +2741,7 @@ export interface FileRouteTypes {
     | '/cidades/$estado/'
     | '/dashboard/leads/'
     | '/dashboard/notificacoes/'
+    | '/servico/$serviceSlug/'
     | '/categoria/$slug/em/$cidade'
     | '/cidade/$citySlug/bairro/$neighborhoodSlug'
   fileRoutesById: FileRoutesById
@@ -4511,6 +4521,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardNotificacoesPreferenciasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/servico/$serviceSlug/': {
+      id: '/servico/$serviceSlug/'
+      path: '/'
+      fullPath: '/servico/$serviceSlug/'
+      preLoaderRoute: typeof ServicoServiceSlugIndexRouteImport
+      parentRoute: typeof ServicoServiceSlugRoute
+    }
     '/servico/$serviceSlug/$localSlug': {
       id: '/servico/$serviceSlug/$localSlug'
       path: '/$localSlug'
@@ -4537,10 +4554,12 @@ declare module '@tanstack/react-router' {
 
 interface ServicoServiceSlugRouteChildren {
   ServicoServiceSlugLocalSlugRoute: typeof ServicoServiceSlugLocalSlugRoute
+  ServicoServiceSlugIndexRoute: typeof ServicoServiceSlugIndexRoute
 }
 
 const ServicoServiceSlugRouteChildren: ServicoServiceSlugRouteChildren = {
   ServicoServiceSlugLocalSlugRoute: ServicoServiceSlugLocalSlugRoute,
+  ServicoServiceSlugIndexRoute: ServicoServiceSlugIndexRoute,
 }
 
 const ServicoServiceSlugRouteWithChildren =
