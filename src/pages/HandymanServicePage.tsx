@@ -31,6 +31,7 @@ import {
   handymanNeighborhoodSlug,
   handymanSlugCandidates,
   humanizeSlug,
+  slugifyNeighborhood,
 } from '@/lib/handymanServiceContent';
 
 
@@ -68,12 +69,22 @@ const HandymanServicePage = ({ regional = false }: Props) => {
       // Match mais longo vence (evita "sao" ganhar de "sao-jose-dos-pinhais").
       const match = rows.sort((a, b) => b.slug.length - a.slug.length)[0] || null;
       if (!match) {
-        const { data: prefixed } = await supabase
-          .from('cities')
-          .select('name, state, slug')
-          .ilike('slug', `${candidates[candidates.length - 1]}%`)
-          .limit(1);
-        return { city: (prefixed?.[0] as any) || null, neighborhoodSlug: '' };
+        // Fallback por prefixo: tenta do candidato mais longo ao mais curto,
+        // escolhendo o slug mais curto que casa — evita "santo" resolver "Santos".
+        for (const cand of candidates.slice(0, -1)) {
+          const { data: prefixed } = await supabase
+            .from('cities')
+            .select('name, state, slug')
+            .ilike('slug', `${cand}%`)
+            .order('slug', { ascending: true })
+            .limit(20);
+          const best = ((prefixed as any[] | null) || [])
+            .sort((a, b) => a.slug.length - b.slug.length)[0];
+          if (best) {
+            return { city: best, neighborhoodSlug: handymanNeighborhoodSlug(citySlug, best.slug) };
+          }
+        }
+        return { city: null, neighborhoodSlug: '' };
       }
       return { city: match, neighborhoodSlug: handymanNeighborhoodSlug(citySlug, match.slug) };
     },
@@ -81,7 +92,6 @@ const HandymanServicePage = ({ regional = false }: Props) => {
 
   const city = place?.city || null;
   const neighborhoodSlug = place?.neighborhoodSlug || '';
-  const neighborhoodLabel = neighborhoodSlug ? humanizeSlug(neighborhoodSlug) : '';
   const cityLabel = city?.name || (citySlug ? humanizeSlug(citySlug) : '');
 
 
@@ -100,13 +110,18 @@ const HandymanServicePage = ({ regional = false }: Props) => {
         .eq('category_id', catId)
         .eq('status', 'approved')
         .order('rating_avg', { ascending: false })
-        .limit(24);
+        // Com bairro, filtramos client-side (ilike não ignora acentos) — busca ampla primeiro.
+        .limit(neighborhoodSlug ? 200 : 24);
       if (city?.name) query = query.ilike('city', `${city.name}%`);
-      // Bairro: filtro estrito para a landing hiperlocal não virar conteúdo genérico.
-      if (neighborhoodLabel) query = query.ilike('neighborhood', `%${neighborhoodLabel}%`);
 
       const { data } = await query;
-      const rows = (data as any[] | null) || [];
+      let rows = (data as any[] | null) || [];
+      // Bairro: match por slug (acento-insensitivo), estrito para a landing hiperlocal.
+      if (neighborhoodSlug) {
+        rows = rows
+          .filter((p) => slugifyNeighborhood(p.neighborhood || '') === neighborhoodSlug)
+          .slice(0, 24);
+      }
       if (!rows.length) return [];
       const userIds = [...new Set(rows.map((p) => p.user_id))];
       const { data: profiles } = await supabase
@@ -171,6 +186,13 @@ const HandymanServicePage = ({ regional = false }: Props) => {
     return map;
   }, [providers]);
 
+  // Rótulo do bairro: prefere o valor real do banco (com acentos, ex. "Água Verde").
+  const neighborhoodLabel = useMemo(() => {
+    if (!neighborhoodSlug) return '';
+    const fromDb = providers.find((p: any) => slugifyNeighborhood(p.neighborhood || '') === neighborhoodSlug)?.neighborhood;
+    return (fromDb || '').trim() || humanizeSlug(neighborhoodSlug);
+  }, [neighborhoodSlug, providers]);
+
   const localLabel = neighborhoodLabel ? `${neighborhoodLabel}, ${cityLabel}` : cityLabel;
 
   /** Bairros reais dos profissionais listados — alimenta a malha hiperlocal. */
@@ -179,12 +201,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
     providers.forEach((p: any) => {
       const label = (p.neighborhood || '').trim();
       if (!label || label.toLowerCase() === (cityLabel || '').toLowerCase()) return;
-      const slug = label
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
+      const slug = slugifyNeighborhood(label);
       if (slug && !seen.has(slug)) seen.set(slug, { slug, label });
     });
     return [...seen.values()].slice(0, 24);

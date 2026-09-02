@@ -171,6 +171,16 @@ export function handymanNeighborhoodSlug(fullSlug: string, citySlug: string): st
   return fullSlug.slice(citySlug.length + 1);
 }
 
+/** "Água Verde" -> "agua-verde" — mesmo slug usado nos chips e nas rotas. */
+export function slugifyNeighborhood(label: string): string {
+  return (label || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 /** "batel" -> "Batel"; "vila-nova-conceicao" -> "Vila Nova Conceição" (sem acento). */
 export function humanizeSlug(slug: string): string {
   return slug
