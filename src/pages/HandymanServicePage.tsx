@@ -186,6 +186,13 @@ const HandymanServicePage = ({ regional = false }: Props) => {
     return map;
   }, [providers]);
 
+  // Rótulo do bairro: prefere o valor real do banco (com acentos, ex. "Água Verde").
+  const neighborhoodLabel = useMemo(() => {
+    if (!neighborhoodSlug) return '';
+    const fromDb = providers.find((p: any) => slugifyNeighborhood(p.neighborhood || '') === neighborhoodSlug)?.neighborhood;
+    return (fromDb || '').trim() || humanizeSlug(neighborhoodSlug);
+  }, [neighborhoodSlug, providers]);
+
   const localLabel = neighborhoodLabel ? `${neighborhoodLabel}, ${cityLabel}` : cityLabel;
 
   /** Bairros reais dos profissionais listados — alimenta a malha hiperlocal. */
@@ -194,12 +201,7 @@ const HandymanServicePage = ({ regional = false }: Props) => {
     providers.forEach((p: any) => {
       const label = (p.neighborhood || '').trim();
       if (!label || label.toLowerCase() === (cityLabel || '').toLowerCase()) return;
-      const slug = label
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
+      const slug = slugifyNeighborhood(label);
       if (slug && !seen.has(slug)) seen.set(slug, { slug, label });
     });
     return [...seen.values()].slice(0, 24);
