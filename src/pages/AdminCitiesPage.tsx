@@ -19,6 +19,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
 import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
+import ProgrammaticPagesTab from '@/components/admin/ProgrammaticPagesTab';
 import PaginationControls from '@/components/PaginationControls';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { toast } from 'sonner';
