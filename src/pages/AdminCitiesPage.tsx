@@ -19,6 +19,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { useAdminBulkActions } from '@/hooks/useAdminBulkActions';
 import BulkActionsBar from '@/components/admin/BulkActionsBar';
 import SelectionCheckbox from '@/components/admin/SelectionCheckbox';
+import ProgrammaticPagesTab from '@/components/admin/ProgrammaticPagesTab';
 import PaginationControls from '@/components/PaginationControls';
 import { logAuditAction } from '@/hooks/useAuditLog';
 import { toast } from 'sonner';
@@ -418,6 +419,7 @@ const AdminCitiesPage = () => {
             <TabsTrigger value="list">📋 Lista</TabsTrigger>
             <TabsTrigger value="neighborhoods">🏘️ Bairros</TabsTrigger>
             <TabsTrigger value="states">🗺️ Por Estado</TabsTrigger>
+            <TabsTrigger value="programaticas">Páginas programáticas</TabsTrigger>
           </TabsList>
 
           {/* ═══ LIST TAB ═══ */}
@@ -565,6 +567,11 @@ const AdminCitiesPage = () => {
                 {totalPages > 1 && <PaginationControls currentPage={page} totalItems={filtered.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} />}
               </>
             )}
+          </TabsContent>
+
+          {/* ═══ PROGRAMMATIC PAGES TAB ═══ */}
+          <TabsContent value="programaticas" className="space-y-4">
+            <ProgrammaticPagesTab />
           </TabsContent>
 
           {/* ═══ NEIGHBORHOODS TAB ═══ */}

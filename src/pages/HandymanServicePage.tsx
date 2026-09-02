@@ -32,6 +32,7 @@ import {
   verticalNeighborhoodPath,
   verticalPath,
 } from '@/lib/programmaticServices';
+import { buildCityEditorial } from '@/lib/serviceCityEditorial';
 
 
 interface Props {
@@ -210,6 +211,21 @@ const HandymanServicePage = ({ regional = false, serviceSlug }: Props) => {
     return [...seen.values()].slice(0, 24);
   }, [providers, cityLabel]);
 
+  const cityEditorial = useMemo(() => (
+    citySlug
+      ? buildCityEditorial({
+          verticalSlug: vertical.slug,
+          verticalLabel: vertical.label,
+          inlineLabel: vertical.inlineLabel,
+          citySlug: city?.slug || citySlug,
+          cityLabel,
+          state: city?.state,
+          providerCount: providers.length,
+          neighborhoodLabels: neighborhoodLinks.map((n) => n.label),
+        })
+      : []
+  ), [vertical, citySlug, city?.slug, city?.state, cityLabel, providers.length, neighborhoodLinks]);
+
   const faqs = useMemo(() => vertical.buildFaq(localLabel || null), [vertical, localLabel]);
   const seo = useMemo(() => {
     if (!citySlug) return buildVerticalSeo(vertical, null, providers.length);
@@ -374,6 +390,20 @@ const HandymanServicePage = ({ regional = false, serviceSlug }: Props) => {
             </div>
           </div>
         </section>
+
+        {/* Conteúdo editorial diferenciado por cidade (anti duplicate content) */}
+        {cityEditorial.length > 0 && (
+          <section className="py-12">
+            <div className="container grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
+              {cityEditorial.map((block) => (
+                <article key={block.title} className="rounded-2xl border border-border bg-card p-6">
+                  <h2 className="font-display text-xl font-bold text-foreground">{block.title}</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">{block.body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Como funciona */}
         <section className="bg-muted/40 py-12">
