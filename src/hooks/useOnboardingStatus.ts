@@ -18,6 +18,7 @@ import { createElement } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { acquireChannel, releaseChannel } from '@/lib/realtimeRegistry';
 
 /* ───────────────── Validators ───────────────── */
 
@@ -180,20 +181,21 @@ export function useOnboardingStatus(): OnboardingStatus {
   // Isso garante que SALVAR no Wizard atualiza o status SEM o usuário voltar.
   useEffect(() => {
     if (!user?.id || !provider?.id) return;
-    const channel = (supabase as any)
-      .channel(`onb-status-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'services', filter: `provider_id=eq.${provider.id}` },
-        () => { void fetchCounts(true); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'media', filter: `user_ref=eq.${user.id}` },
-        () => { void fetchCounts(true); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'portfolio_albums', filter: `provider_id=eq.${provider.id}` },
-        () => { void fetchCounts(true); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `user_id=eq.${user.id}` },
-        () => { void refetchProfile?.(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'providers', filter: `user_id=eq.${user.id}` },
-        () => { void refetchProfile?.(); })
-      .subscribe();
-    return () => { try { (supabase as any).removeChannel(channel); } catch { /* noop */ } };
+    const channelName = `onb-status-${user.id}`;
+    acquireChannel(channelName, {
+      setup: (channel) => channel
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'services', filter: `provider_id=eq.${provider.id}` },
+          () => { void fetchCounts(true); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'media', filter: `user_ref=eq.${user.id}` },
+          () => { void fetchCounts(true); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'portfolio_albums', filter: `provider_id=eq.${provider.id}` },
+          () => { void fetchCounts(true); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `user_id=eq.${user.id}` },
+          () => { void refetchProfile?.(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'providers', filter: `user_id=eq.${user.id}` },
+          () => { void refetchProfile?.(); }),
+    });
+    return () => releaseChannel(channelName);
   }, [user?.id, provider?.id, fetchCounts, refetchProfile]);
 
   // Custom event "onboarding-progress-changed" — disparado pelo Wizard ao

@@ -150,7 +150,7 @@ export const VerificationStatusBadge = ({
         if (!alive) return;
         computeFromRows(prov as ProviderRow | null, taxIdFilled);
 
-        if (prov?.id) {
+        if (alive && prov?.id) {
           channel = supabase
             .channel(`verification-status:${prov.id}`)
             .on('postgres_changes',

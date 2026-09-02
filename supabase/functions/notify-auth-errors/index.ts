@@ -16,6 +16,7 @@ const CRITICAL_CODES = new Set([
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const ALERT_TO = Deno.env.get("AUTH_ALERT_EMAIL_TO");
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const SITE_URL =
   Deno.env.get("SITE_URL") ?? "https://precisodeum.com.br";
 

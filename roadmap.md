@@ -1,5 +1,15 @@
 # Roadmap — SEO, Moderação, Telemetria e Admin
 
+## Incidente de estabilidade — 2026-09-02
+
+- [x] Correlacionar códigos da tela fatal com `error_reports` e logs publicados.
+- [x] Eliminar corrida de dupla assinatura Realtime no status de onboarding.
+- [x] Isolar recuperação de senha de acesso a `window` durante SSR.
+- [x] Consolidar o conflito de rotas `/servico/:slug` em um único proprietário.
+- [x] Confirmar anúncios públicos pela projeção segura `sponsors_public`.
+- [x] Revalidar grants de PII em agências, vagas e prestadores.
+- [ ] Publicar e acompanhar recorrência por versão/build durante 24 horas.
+
 Prioridade adotada: **MVP = Sitemap + Canonical + Moderação de avaliações** (esta iteração).
 Demais blocos ficam listados como tickets prontos para as próximas iterações.
 
