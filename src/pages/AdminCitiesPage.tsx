@@ -418,6 +418,7 @@ const AdminCitiesPage = () => {
             <TabsTrigger value="list">📋 Lista</TabsTrigger>
             <TabsTrigger value="neighborhoods">🏘️ Bairros</TabsTrigger>
             <TabsTrigger value="states">🗺️ Por Estado</TabsTrigger>
+            <TabsTrigger value="programaticas">Páginas programáticas</TabsTrigger>
           </TabsList>
 
           {/* ═══ LIST TAB ═══ */}
