@@ -129,7 +129,7 @@ const AdminReviewsPage = () => {
     setSavingEdit(false);
     if (error) { toast.error(error.message); return; }
     await logAuditAction({
-      action: 'edit',
+      action: 'update',
       resource_type: 'review',
       resource_id: editReview.id,
       details: { before, after: editComment.trim() },
