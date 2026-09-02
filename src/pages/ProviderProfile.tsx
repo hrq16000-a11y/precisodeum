@@ -1237,9 +1237,11 @@ const ProviderProfile = () => {
     const finalMessage = `${leadForm.message || ''}${ctxBlock}`.trim();
 
     const leadContext = {
-      city: leadForm.city || null,
-      state: leadForm.state || null,
+      city: leadForm.city || provider.city || null,
+      state: leadForm.state || provider.state || null,
+      neighborhood: provider.neighborhood || null,
       category: category || null,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : null,
       origin: getLeadSource() || 'direto',
       page: 'provider_profile',
       provider_slug: slug || null,
