@@ -211,6 +211,13 @@ const AdminReviewsPage = () => {
             <SelectItem value="rejected">Rejeitadas</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={filterCity} onValueChange={v => { setFilterCity(v); setPage(1); }}>
+          <SelectTrigger className="w-48"><SelectValue placeholder="Cidade" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as cidades</SelectItem>
+            {cityOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-1" /> Exportar
         </Button>
