@@ -110,6 +110,7 @@ import { Route as AdminOnboardingFunnelRouteImport } from './routes/admin/onboar
 import { Route as AdminOnboardingRegressionRouteImport } from './routes/admin/onboarding-regression'
 import { Route as AdminOnboardingStatsRouteImport } from './routes/admin/onboarding-stats'
 import { Route as AdminOportunidadesCategoriaRouteImport } from './routes/admin/oportunidades-categoria'
+import { Route as AdminOtimizacaoLocalRouteImport } from './routes/admin/otimizacao-local'
 import { Route as AdminOverviewRouteImport } from './routes/admin/overview'
 import { Route as AdminPaginasRouteImport } from './routes/admin/paginas'
 import { Route as AdminPerfisOrfaosRouteImport } from './routes/admin/perfis-orfaos'
@@ -745,6 +746,11 @@ const AdminOportunidadesCategoriaRoute =
     path: '/admin/oportunidades-categoria',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminOtimizacaoLocalRoute = AdminOtimizacaoLocalRouteImport.update({
+  id: '/admin/otimizacao-local',
+  path: '/admin/otimizacao-local',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminOverviewRoute = AdminOverviewRouteImport.update({
   id: '/admin/overview',
   path: '/admin/overview',
@@ -1482,6 +1488,7 @@ export interface FileRoutesByFullPath {
   '/admin/onboarding-regression': typeof AdminOnboardingRegressionRoute
   '/admin/onboarding-stats': typeof AdminOnboardingStatsRoute
   '/admin/oportunidades-categoria': typeof AdminOportunidadesCategoriaRoute
+  '/admin/otimizacao-local': typeof AdminOtimizacaoLocalRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/paginas': typeof AdminPaginasRoute
   '/admin/perfis-orfaos': typeof AdminPerfisOrfaosRoute
@@ -1709,6 +1716,7 @@ export interface FileRoutesByTo {
   '/admin/onboarding-regression': typeof AdminOnboardingRegressionRoute
   '/admin/onboarding-stats': typeof AdminOnboardingStatsRoute
   '/admin/oportunidades-categoria': typeof AdminOportunidadesCategoriaRoute
+  '/admin/otimizacao-local': typeof AdminOtimizacaoLocalRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/paginas': typeof AdminPaginasRoute
   '/admin/perfis-orfaos': typeof AdminPerfisOrfaosRoute
@@ -1936,6 +1944,7 @@ export interface FileRoutesById {
   '/admin/onboarding-regression': typeof AdminOnboardingRegressionRoute
   '/admin/onboarding-stats': typeof AdminOnboardingStatsRoute
   '/admin/oportunidades-categoria': typeof AdminOportunidadesCategoriaRoute
+  '/admin/otimizacao-local': typeof AdminOtimizacaoLocalRoute
   '/admin/overview': typeof AdminOverviewRoute
   '/admin/paginas': typeof AdminPaginasRoute
   '/admin/perfis-orfaos': typeof AdminPerfisOrfaosRoute
@@ -2165,6 +2174,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding-regression'
     | '/admin/onboarding-stats'
     | '/admin/oportunidades-categoria'
+    | '/admin/otimizacao-local'
     | '/admin/overview'
     | '/admin/paginas'
     | '/admin/perfis-orfaos'
@@ -2392,6 +2402,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding-regression'
     | '/admin/onboarding-stats'
     | '/admin/oportunidades-categoria'
+    | '/admin/otimizacao-local'
     | '/admin/overview'
     | '/admin/paginas'
     | '/admin/perfis-orfaos'
@@ -2618,6 +2629,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding-regression'
     | '/admin/onboarding-stats'
     | '/admin/oportunidades-categoria'
+    | '/admin/otimizacao-local'
     | '/admin/overview'
     | '/admin/paginas'
     | '/admin/perfis-orfaos'
@@ -2846,6 +2858,7 @@ export interface RootRouteChildren {
   AdminOnboardingRegressionRoute: typeof AdminOnboardingRegressionRoute
   AdminOnboardingStatsRoute: typeof AdminOnboardingStatsRoute
   AdminOportunidadesCategoriaRoute: typeof AdminOportunidadesCategoriaRoute
+  AdminOtimizacaoLocalRoute: typeof AdminOtimizacaoLocalRoute
   AdminOverviewRoute: typeof AdminOverviewRoute
   AdminPaginasRoute: typeof AdminPaginasRoute
   AdminPerfisOrfaosRoute: typeof AdminPerfisOrfaosRoute
@@ -3679,6 +3692,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/oportunidades-categoria'
       fullPath: '/admin/oportunidades-categoria'
       preLoaderRoute: typeof AdminOportunidadesCategoriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/otimizacao-local': {
+      id: '/admin/otimizacao-local'
+      path: '/admin/otimizacao-local'
+      fullPath: '/admin/otimizacao-local'
+      preLoaderRoute: typeof AdminOtimizacaoLocalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/overview': {
@@ -4666,6 +4686,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminOnboardingRegressionRoute: AdminOnboardingRegressionRoute,
   AdminOnboardingStatsRoute: AdminOnboardingStatsRoute,
   AdminOportunidadesCategoriaRoute: AdminOportunidadesCategoriaRoute,
+  AdminOtimizacaoLocalRoute: AdminOtimizacaoLocalRoute,
   AdminOverviewRoute: AdminOverviewRoute,
   AdminPaginasRoute: AdminPaginasRoute,
   AdminPerfisOrfaosRoute: AdminPerfisOrfaosRoute,
