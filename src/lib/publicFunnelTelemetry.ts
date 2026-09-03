@@ -99,13 +99,15 @@ function shouldSend(key: string): boolean {
 function fire(action: PublicFunnelAction, payload: Record<string, unknown>) {
   // Atribuição leve: anexa sponsor_ref se houver clique sponsor recente
   // (apenas para eventos de conversão — search/category/city não atribuem).
-  const wantsAttr = action === 'profile_view' || action === 'lead_submit';
+  const wantsAttr = action === 'profile_view' || action === 'lead_submit'
+    || action === 'form_submit' || action === 'whatsapp_click';
   const sponsorRef = wantsAttr ? getActiveSponsorRef() : null;
   const dedupeKey = trackingDedupeKey('funnel', [
     action,
     String(payload._resource_id ?? ''),
     String(payload._category ?? ''),
     String(payload._city ?? ''),
+    String(payload._neighborhood ?? ''),
     String(payload._pathname ?? ''),
   ]);
   void trackingRpc('record_public_funnel_event', {
