@@ -30,6 +30,13 @@ describe('Lovable regressions', () => {
     expect(phase4).toContain('if (channelName) releaseChannel(channelName)');
     expect(phase4).not.toContain(".channel(`provider-status:");
   });
+  it('gives recreated realtime channels unique physical topics', () => {
+    const registry = fs.readFileSync('src/lib/realtimeRegistry.ts', 'utf8');
+    expect(registry).toContain('channelGeneration += 1');
+    expect(registry).toContain('`${name}:g${channelGeneration}`');
+    expect(registry).toContain('supabase.channel(physicalName)');
+    expect(registry).not.toContain('supabase.channel(name)');
+  });
   it('uses one route owner for both programmatic and popular service landings', () => {
     const layout = fs.readFileSync('src/routes/servico/$serviceSlug.tsx', 'utf8');
     const index = fs.readFileSync('src/routes/servico/$serviceSlug.index.tsx', 'utf8');

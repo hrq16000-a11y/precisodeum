@@ -23,11 +23,13 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface Entry {
   channel: RealtimeChannel;
+  physicalName: string;
   refCount: number;
   disposeTimer: ReturnType<typeof setTimeout> | null;
 }
 
 const registry = new Map<string, Entry>();
+let channelGeneration = 0;
 
 /** Janela curta para absorver unmount→remount do StrictMode/navegação. */
 const DISPOSE_DELAY_MS = 50;
@@ -50,8 +52,14 @@ export function acquireChannel(name: string, opts: AcquireOptions): RealtimeChan
     existing.refCount += 1;
     return existing.channel;
   }
-  const channel = opts.setup(supabase.channel(name)).subscribe();
-  registry.set(name, { channel, refCount: 1, disposeTimer: null });
+  // O nome lógico continua estável no registry, mas cada criação física usa
+  // uma geração exclusiva. O cliente Realtime pode manter por alguns ticks
+  // um tópico recém-removido; recriá-lo com o mesmo nome nesse intervalo faz
+  // `.on()` encontrar um canal já assinado e lançar uma exceção fatal.
+  channelGeneration += 1;
+  const physicalName = `${name}:g${channelGeneration}`;
+  const channel = opts.setup(supabase.channel(physicalName)).subscribe();
+  registry.set(name, { channel, physicalName, refCount: 1, disposeTimer: null });
   return channel;
 }
 
@@ -73,6 +81,7 @@ export function releaseChannel(name: string): void {
 export function __realtimeRegistrySnapshot() {
   return Array.from(registry.entries()).map(([name, e]) => ({
     name,
+    physicalName: e.physicalName,
     refCount: e.refCount,
     pendingDispose: e.disposeTimer != null,
   }));
