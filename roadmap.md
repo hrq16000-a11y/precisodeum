@@ -4,6 +4,8 @@
 
 - [x] Correlacionar códigos da tela fatal com `error_reports` e logs publicados.
 - [x] Eliminar corrida de dupla assinatura Realtime no status de onboarding.
+- [x] Eliminar corrida do canal Realtime de engajamento no pós-cadastro/dashboard.
+- [x] Corrigir vazamento do canal de status do prestador na etapa final do Wizard.
 - [x] Isolar recuperação de senha de acesso a `window` durante SSR.
 - [x] Consolidar o conflito de rotas `/servico/:slug` em um único proprietário.
 - [x] Confirmar anúncios públicos pela projeção segura `sponsors_public`.

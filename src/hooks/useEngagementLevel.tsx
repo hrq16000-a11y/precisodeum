@@ -3,6 +3,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthIdentity } from '@/hooks/useAuth';
 import { useSettingValue } from '@/hooks/useSiteSettings';
 import { resolveGamificationMultiplier, scaleGamificationPoints } from '@/lib/gamification';
+import { acquireChannel, releaseChannel } from '@/lib/realtimeRegistry';
+
+/**
+ * Um único canal atende todas as instâncias do hook para o mesmo usuário.
+ * Os listeners locais preservam o refresh individual sem tentar adicionar
+ * callbacks a um canal que já passou por subscribe().
+ */
+const refreshListenersByUser = new Map<string, Set<() => void>>();
+
+function refreshEngagementConsumers(userId: string): void {
+  refreshListenersByUser.get(userId)?.forEach((listener) => listener());
+}
 
 export interface LevelInfo {
   id: string;
@@ -86,14 +98,26 @@ export const useEngagementLevel = () => {
   // Realtime: atualiza quando engagement_log muda
   useEffect(() => {
     if (!user?.id) return;
-    const ch = supabase
-      .channel(`engagement-${user.id}`)
-      .on('postgres_changes', {
+    const userId = user.id;
+    const channelName = `engagement-${userId}`;
+    const listener = () => { void refresh(); };
+    const listeners = refreshListenersByUser.get(userId) ?? new Set<() => void>();
+    listeners.add(listener);
+    refreshListenersByUser.set(userId, listeners);
+
+    acquireChannel(channelName, {
+      setup: (channel) => channel.on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'engagement_log',
-        filter: `user_id=eq.${user.id}`,
-      }, () => { void refresh(); })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+        filter: `user_id=eq.${userId}`,
+      }, () => refreshEngagementConsumers(userId)),
+    });
+
+    return () => {
+      const current = refreshListenersByUser.get(userId);
+      current?.delete(listener);
+      if (current?.size === 0) refreshListenersByUser.delete(userId);
+      releaseChannel(channelName);
+    };
   }, [user?.id, refresh]);
 
   return { ...state, refresh };
