@@ -97,6 +97,7 @@ const menuGroups = [
       { label: 'Funil de Cadastro', icon: BarChart3, path: '/admin/onboarding-funnel' },
       { label: 'Métricas de Conversão', icon: Target, path: '/admin/conversao' },
       { label: 'Conversão por Local', icon: Target, path: '/admin/conversao-geo' },
+      { label: 'Otimização Local', icon: Target, path: '/admin/otimizacao-local' },
 
       { label: 'Monitoramento de Erros', icon: AlertTriangle, path: '/admin/erros' },
       { label: 'Alertas Erro 500', icon: Shield, path: '/admin/erros-500' },
