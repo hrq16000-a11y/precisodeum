@@ -29,6 +29,7 @@ const ProgrammaticSeoTab = lazy(() => import('@/components/admin/ProgrammaticSeo
 const TABS = [
   { value: 'saude', label: 'Saúde SEO', icon: Activity, Component: AdminSeoHealthPage },
   { value: 'landings', label: 'Landings', icon: Globe, Component: AdminSeoLandingsPage },
+  { value: 'programaticas', label: 'Páginas programáticas', icon: Globe, Component: ProgrammaticSeoTab },
   { value: 'runtime', label: 'Runtime (LCP/CTR)', icon: Activity, Component: AdminSeoRuntimeMetricsPage },
   { value: 'sitemap', label: 'Sitemap', icon: Map, Component: AdminSitemapAuditPage },
   { value: 'gsc', label: 'Search Console', icon: Search, Component: AdminSeoGscPage },
