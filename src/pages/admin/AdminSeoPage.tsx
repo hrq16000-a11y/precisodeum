@@ -25,13 +25,16 @@ const AdminWebVitalsPage = lazy(() => import('./AdminWebVitalsPage'));
 const AdminAnalyticsSettingsPage = lazy(() => import('./AdminAnalyticsSettingsPage'));
 const ProgrammaticSeoTab = lazy(() => import('@/components/admin/ProgrammaticSeoTab'));
 const LocalKeywordsTab = lazy(() => import('@/components/admin/LocalKeywordsTab'));
+const CitySeoPanel = lazy(() => import('@/components/admin/CitySeoPanel'));
 
 
 const TABS = [
   { value: 'saude', label: 'Saúde SEO', icon: Activity, Component: AdminSeoHealthPage },
   { value: 'landings', label: 'Landings', icon: Globe, Component: AdminSeoLandingsPage },
+  { value: 'cidades', label: 'SEO por cidade', icon: Map, Component: CitySeoPanel },
   { value: 'programaticas', label: 'Páginas programáticas', icon: Globe, Component: ProgrammaticSeoTab },
   { value: 'palavras-chave', label: 'Palavras-chave locais', icon: Tags, Component: LocalKeywordsTab },
+
   { value: 'runtime', label: 'Runtime (LCP/CTR)', icon: Activity, Component: AdminSeoRuntimeMetricsPage },
   { value: 'sitemap', label: 'Sitemap', icon: Map, Component: AdminSitemapAuditPage },
   { value: 'gsc', label: 'Search Console', icon: Search, Component: AdminSeoGscPage },
