@@ -195,6 +195,8 @@ const AdminLeadGeoConversionPage = () => {
           <BucketTable title="Bairros" icon={Building2} buckets={hoodBuckets} loading={loading} />
           <BucketTable title="Categorias" icon={Tag} buckets={categoryBuckets} loading={loading} />
         </div>
+
+        <LocalFunnelPanel days={Number(days)} />
       </div>
     </AdminLayout>
   );
