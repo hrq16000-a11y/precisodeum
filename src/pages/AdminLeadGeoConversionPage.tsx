@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Tag, Building2, Download, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatLeadLocation, formatLeadNeighborhood } from '@/lib/leadContext';
+import LocalFunnelPanel from '@/components/admin/LocalFunnelPanel';
 
 type LeadRow = {
   id: string;
