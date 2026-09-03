@@ -20,6 +20,7 @@ A falha ocorre em `/dashboard`, logo após o cadastro. O hook `useEngagementLeve
 
 2. **Blindar os canais relacionados**
    - Revisar os consumidores simultâneos de engajamento no dashboard e onboarding para garantir nomes/configurações independentes.
+   - Corrigir o vazamento confirmado em `Phase4Final`: hoje o cleanup de `provider-status:<id>` é retornado por uma função assíncrona interna e nunca chega ao React. Mover esse canal para o registro compartilhado, com liberação no cleanup real do efeito.
    - Confirmar que nenhum caminho compartilhado adiciona handlers depois de `.subscribe()`.
    - Manter o canal de toast separado, pois sua finalidade e callback são diferentes.
 
