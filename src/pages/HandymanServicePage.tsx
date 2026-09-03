@@ -33,6 +33,7 @@ import {
   verticalPath,
 } from '@/lib/programmaticServices';
 import { buildCityEditorial } from '@/lib/serviceCityEditorial';
+import { trackLocalPageView } from '@/lib/publicFunnelTelemetry';
 
 
 interface Props {
@@ -248,6 +249,18 @@ const HandymanServicePage = ({ regional = false, serviceSlug }: Props) => {
 
 
   useSeoHead({ title: seo.title, description: seo.description, canonical, noindex });
+
+  // Telemetria hiperlocal: page_view com cidade + bairro (alimenta /admin/conversao-geo).
+  useEffect(() => {
+    trackLocalPageView({
+      category: vertical.slug,
+      city: city?.slug || citySlug || null,
+      neighborhood: neighborhoodSlug || null,
+      resourceId: seo.canonicalPath,
+      source: citySlug ? (neighborhoodSlug ? 'programmatic_neighborhood' : 'programmatic_city') : 'programmatic_vertical',
+      pathname: seo.canonicalPath,
+    });
+  }, [vertical.slug, city?.slug, citySlug, neighborhoodSlug, seo.canonicalPath]);
 
   useEffect(() => {
     const el = document.querySelector('meta[name="keywords"]') as HTMLMetaElement | null;
@@ -565,6 +578,8 @@ const HandymanServicePage = ({ regional = false, serviceSlug }: Props) => {
                 categoryName={vertical.label}
                 city={cityLabel || null}
                 categoryContextPath={seo.canonicalPath}
+                citySlug={city?.slug || citySlug || null}
+                neighborhoodSlug={neighborhoodSlug || null}
               />
             </div>
           </div>

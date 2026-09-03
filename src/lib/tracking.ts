@@ -6,6 +6,7 @@
  * `track_lead_interaction` no banco de forma assíncrona (fire-and-forget).
  */
 import { supabase } from '@/integrations/supabase/client';
+import { trackLocalWhatsappClick } from '@/lib/publicFunnelTelemetry';
 
 type TrackEvent = 'card_view' | 'click_whatsapp' | 'click_profile' | 'click_banner'
   | 'click_highlight'
@@ -132,6 +133,13 @@ export function trackWhatsAppClick(
   trackEvent({ event: 'click_whatsapp', provider_id: providerId, slug, source, extra: conversionContext(extra) });
   void recordLeadInteraction(providerId, 'whatsapp', source, serviceId);
   void recordContactClick(providerId, 'whatsapp', extra);
+  trackLocalWhatsappClick({
+    category: extra?.category_slug || extra?.category || null,
+    city: extra?.city_slug || extra?.city || null,
+    neighborhood: extra?.neighborhood_slug || extra?.neighborhood || null,
+    resourceId: providerId,
+    source,
+  });
 }
 
 export function trackPhoneClick(

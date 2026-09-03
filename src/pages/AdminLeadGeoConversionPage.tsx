@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Tag, Building2, Download, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatLeadLocation, formatLeadNeighborhood } from '@/lib/leadContext';
+import LocalFunnelPanel from '@/components/admin/LocalFunnelPanel';
 
 type LeadRow = {
   id: string;
@@ -195,6 +196,8 @@ const AdminLeadGeoConversionPage = () => {
           <BucketTable title="Bairros" icon={Building2} buckets={hoodBuckets} loading={loading} />
           <BucketTable title="Categorias" icon={Tag} buckets={categoryBuckets} loading={loading} />
         </div>
+
+        <LocalFunnelPanel days={Number(days)} />
       </div>
     </AdminLayout>
   );
