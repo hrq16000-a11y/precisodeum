@@ -261,3 +261,54 @@ export function trackLeadSubmit(ev: LeadSubmitEvent): void {
     _pathname: path,
   });
 }
+
+/* ------------------------------------------------------------------ */
+/* Eventos hiperlocais (cidade + bairro) — alimentam /admin/conversao-geo */
+/* ------------------------------------------------------------------ */
+
+export interface LocalEvent extends BaseEvent {
+  /** Slug/identificador da cidade (city_id lógico). */
+  city?: string | null;
+  /** Slug/identificador do bairro (neighborhood_id lógico). */
+  neighborhood?: string | null;
+  category?: string | null;
+  resourceId?: string | null;
+}
+
+function localPayload(ev: LocalEvent, path: string) {
+  return {
+    _category: ev.category?.toLowerCase() || null,
+    _city: ev.city?.toLowerCase() || null,
+    _neighborhood: ev.neighborhood?.toLowerCase() || null,
+    _resource_id: ev.resourceId || null,
+    _source: ev.source || null,
+    _pathname: path,
+  };
+}
+
+/** Visualização de página programática (serviço × cidade × bairro). */
+export function trackLocalPageView(ev: LocalEvent): void {
+  if (typeof window === 'undefined') return;
+  const path = getPath(ev.pathname);
+  const key = `pgv|${ev.category ?? ''}|${ev.city ?? ''}|${ev.neighborhood ?? ''}|${path}`;
+  if (!shouldSend(key)) return;
+  fire('page_view', localPayload(ev, path));
+}
+
+/** Envio de formulário de contato/interesse a partir de uma página local. */
+export function trackLocalFormSubmit(ev: LocalEvent): void {
+  if (typeof window === 'undefined') return;
+  const path = getPath(ev.pathname);
+  const key = `fsub|${ev.category ?? ''}|${ev.city ?? ''}|${ev.neighborhood ?? ''}|${path}`;
+  if (!shouldSend(key)) return;
+  fire('form_submit', localPayload(ev, path));
+}
+
+/** Clique no botão de WhatsApp a partir de uma página local. */
+export function trackLocalWhatsappClick(ev: LocalEvent): void {
+  if (typeof window === 'undefined') return;
+  const path = getPath(ev.pathname);
+  const key = `wac|${ev.resourceId ?? ''}|${ev.neighborhood ?? ''}|${path}`;
+  if (!shouldSend(key)) return;
+  fire('whatsapp_click', localPayload(ev, path));
+}
