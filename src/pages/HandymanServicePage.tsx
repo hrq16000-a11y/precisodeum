@@ -34,6 +34,11 @@ import {
 } from '@/lib/programmaticServices';
 import { buildCityEditorial } from '@/lib/serviceCityEditorial';
 import { trackLocalPageView } from '@/lib/publicFunnelTelemetry';
+import {
+  useProgrammaticOverride,
+  applyOverrideToSeo,
+  isOverrideDisabled,
+} from '@/lib/seo/programmaticOverrides';
 
 
 interface Props {
