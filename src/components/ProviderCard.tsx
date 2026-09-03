@@ -245,7 +245,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
 
   const handleWhatsappClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (revealedWhatsapp) {
-      trackWhatsAppClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind });
+      trackWhatsAppClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind, city: (provider as any).city || '', neighborhood: (provider as any).neighborhood || '' });
       return;
     }
     e.preventDefault();
@@ -268,7 +268,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       if (contact.phone) {
         // Fallback por ligação: revela o telefone e já inicia a chamada.
         setRevealedPhone(contact.phone);
-        trackPhoneClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind });
+        trackPhoneClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind, city: (provider as any).city || '', neighborhood: (provider as any).neighborhood || '' });
         window.location.href = `tel:${contact.phone.replace(/[^\d+]/g, '')}`;
         return;
       }
@@ -280,7 +280,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
       return;
     }
     setRevealedWhatsapp(number);
-    trackWhatsAppClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind });
+    trackWhatsAppClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind, city: (provider as any).city || '', neighborhood: (provider as any).neighborhood || '' });
     window.open(
       whatsappLink(number, buildSmartMessage(displayName, provider.category, geoCity, geoState)),
       '_blank',
@@ -328,7 +328,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
             <Link
               to={`/profissional/${provider.slug}`}
               className="block min-w-0 max-w-full"
-              onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource, { provider_kind: providerKind })}
+              onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource, { provider_kind: providerKind, city: (provider as any).city || '', neighborhood: (provider as any).neighborhood || '' })}
               {...handlers}
             >
               <div className="flex min-w-0 items-start justify-between gap-2 overflow-hidden">
@@ -495,7 +495,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
                 data-wa-target-id={provider.id}
                 data-wa-target-label={displayName}
                 onClick={revealedPhone
-                  ? () => trackPhoneClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind })
+                  ? () => trackPhoneClick(provider.id, provider.slug, trackingSource, undefined, { provider_kind: providerKind, city: (provider as any).city || '', neighborhood: (provider as any).neighborhood || '' })
                   : handleWhatsappClick}
                 className="inline-flex w-full min-w-0 items-center justify-center gap-1.5 truncate"
               >
@@ -514,7 +514,7 @@ const ProviderCard = ({ provider, isFallback = false, trackingSource = 'home', i
           <Button variant="outline" size="sm" className={`h-10 px-3 text-xs transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] sm:text-sm whitespace-nowrap ${contactUnavailable ? 'min-w-0 flex-1 basis-0' : 'min-w-[104px] max-w-[128px] shrink-0'}`} asChild>
             <Link
               to={`/profissional/${provider.slug}`}
-              onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource, { provider_kind: providerKind })}
+              onClick={() => trackProfileClick(provider.id, provider.slug, trackingSource, { provider_kind: providerKind, city: (provider as any).city || '', neighborhood: (provider as any).neighborhood || '' })}
               {...handlers}
               className="inline-flex w-full items-center justify-center gap-1 truncate"
             >
