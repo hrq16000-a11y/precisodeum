@@ -233,7 +233,7 @@ const HandymanServicePage = ({ regional = false, serviceSlug }: Props) => {
   ), [vertical, citySlug, city?.slug, city?.state, cityLabel, providers.length, neighborhoodLinks]);
 
   const faqs = useMemo(() => vertical.buildFaq(localLabel || null), [vertical, localLabel]);
-  const seo = useMemo(() => {
+  const generatedSeo = useMemo(() => {
     if (!citySlug) return buildVerticalSeo(vertical, null, providers.length);
     return buildVerticalSeo(
       vertical,
@@ -248,9 +248,14 @@ const HandymanServicePage = ({ regional = false, serviceSlug }: Props) => {
     );
   }, [vertical, citySlug, cityLabel, city?.state, city?.slug, neighborhoodSlug, neighborhoodLabel, providers.length]);
 
+  // Overrides editoriais definidos no admin (title/description/keywords/ativação).
+  const { data: override } = useProgrammaticOverride(generatedSeo.canonicalPath);
+  const seo = useMemo(() => applyOverrideToSeo(generatedSeo, override), [generatedSeo, override]);
+
   const canonical = `${SITE_BASE_URL}${seo.canonicalPath}`;
   // Cidade/bairro sem profissional é conteúdo raso — não indexamos.
-  const noindex = !!citySlug && providers.length === 0;
+  // Página desativada manualmente no admin também sai do índice.
+  const noindex = (!!citySlug && providers.length === 0) || isOverrideDisabled(override);
 
 
   useSeoHead({ title: seo.title, description: seo.description, canonical, noindex });
