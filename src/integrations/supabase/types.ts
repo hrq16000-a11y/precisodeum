@@ -9783,6 +9783,17 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_local_funnel_stats: {
+        Args: { _days?: number }
+        Returns: {
+          action: string
+          category: string
+          city: string
+          day: string
+          events: number
+          neighborhood: string
+        }[]
+      }
       admin_log_impersonation_end: {
         Args: { _session_id: string }
         Returns: undefined
@@ -11523,6 +11534,7 @@ export type Database = {
           _category?: string
           _city?: string
           _dedupe_key?: string
+          _neighborhood?: string
           _pathname?: string
           _resource_id?: string
           _result_count?: number
