@@ -4228,6 +4228,54 @@ export type Database = {
           },
         ]
       }
+      programmatic_page_overrides: {
+        Row: {
+          city_slug: string | null
+          created_at: string
+          created_by: string | null
+          editorial_note: string | null
+          enabled: boolean
+          id: string
+          keywords: string | null
+          meta_description: string | null
+          neighborhood_slug: string | null
+          path: string
+          title: string | null
+          updated_at: string
+          vertical: string
+        }
+        Insert: {
+          city_slug?: string | null
+          created_at?: string
+          created_by?: string | null
+          editorial_note?: string | null
+          enabled?: boolean
+          id?: string
+          keywords?: string | null
+          meta_description?: string | null
+          neighborhood_slug?: string | null
+          path: string
+          title?: string | null
+          updated_at?: string
+          vertical: string
+        }
+        Update: {
+          city_slug?: string | null
+          created_at?: string
+          created_by?: string | null
+          editorial_note?: string | null
+          enabled?: boolean
+          id?: string
+          keywords?: string | null
+          meta_description?: string | null
+          neighborhood_slug?: string | null
+          path?: string
+          title?: string | null
+          updated_at?: string
+          vertical?: string
+        }
+        Relationships: []
+      }
       provider_daily_stats: {
         Row: {
           created_at: string
