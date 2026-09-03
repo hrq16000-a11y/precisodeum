@@ -25,7 +25,10 @@ export type PublicFunnelAction =
   | 'city_view'
   | 'profile_view'
   | 'lead_submit'
-  | 'internal_link_click';
+  | 'internal_link_click'
+  | 'page_view'
+  | 'form_submit'
+  | 'whatsapp_click';
 
 export type InternalLinkAnchorType =
   | 'related_category'
