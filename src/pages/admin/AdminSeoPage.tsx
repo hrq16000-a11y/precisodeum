@@ -24,6 +24,7 @@ const AdminSeoMetricsPage = lazy(() => import('./AdminSeoMetricsPage'));
 const AdminWebVitalsPage = lazy(() => import('./AdminWebVitalsPage'));
 const AdminAnalyticsSettingsPage = lazy(() => import('./AdminAnalyticsSettingsPage'));
 const ProgrammaticSeoTab = lazy(() => import('@/components/admin/ProgrammaticSeoTab'));
+const LocalKeywordsTab = lazy(() => import('@/components/admin/LocalKeywordsTab'));
 
 
 const TABS = [
