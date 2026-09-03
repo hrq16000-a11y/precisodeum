@@ -34,6 +34,7 @@ import type { OnboardingProfileData } from './types';
 import { useFocusFieldFromReview } from './useFocusFieldFromReview';
 import { wizardStyles as ws, wizardEnter } from './wizardStyles';
 import { scheduleWizardTimeout } from '@/lib/wizardZombieGuard';
+import { acquireChannel, releaseChannel } from '@/lib/realtimeRegistry';
 
 /* ───── 4.0 Foto de perfil (se ainda faltar) ───── */
 
@@ -464,27 +465,30 @@ export const Phase4Document = ({ data, onChange, onContinue, onSkip, saving, use
   useEffect(() => {
     if (!userId) return;
     let alive = true;
-    (async () => {
+    let channelName: string | null = null;
+    void (async () => {
       const { data: prov } = await supabase
         .from('providers')
         .select('id, status')
         .eq('user_id', userId)
         .maybeSingle();
       if (alive && prov) setProviderStatus(prov.status as string);
-      if (!prov?.id) return;
-      const channel = supabase
-        .channel(`provider-status:${prov.id}`)
-        .on('postgres_changes',
+      if (!alive || !prov?.id) return;
+      channelName = `provider-status:${prov.id}`;
+      acquireChannel(channelName, {
+        setup: (channel) => channel.on('postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'providers', filter: `id=eq.${prov.id}` },
           (payload: any) => {
             if (!alive) return;
             const next = payload.new?.status;
             if (next) setProviderStatus(next);
-          })
-        .subscribe();
-      return () => { supabase.removeChannel(channel); };
+          }),
+      });
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+      if (channelName) releaseChannel(channelName);
+    };
   }, [userId]);
 
   // Timer da animação pós-verify — rastreado para cleanup no unmount.
