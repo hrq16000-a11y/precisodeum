@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { trackLeadSubmit } from '@/lib/publicFunnelTelemetry';
+import { trackLeadSubmit, trackLocalFormSubmit } from '@/lib/publicFunnelTelemetry';
 import {
   checkLeadRateLimit,
   normalizeEmail,
@@ -30,6 +30,9 @@ interface Props {
   city?: string | null;
   /** Caminho canônico da landing — usado na telemetria de conversão por URL. */
   categoryContextPath?: string;
+  /** Identificadores locais para telemetria de conversão (city_id/neighborhood_id lógicos). */
+  citySlug?: string | null;
+  neighborhoodSlug?: string | null;
 }
 
 const KINDS = [
@@ -50,7 +53,7 @@ function readUrlContext(): { city: string; intent: string } {
  * Formulário de interesse exibido nas categorias sem prestador.
  * Persiste o lead em `category_opportunity_leads` para contato comercial.
  */
-const OpportunityLeadForm = ({ categorySlug, categoryName, city, categoryContextPath }: Props) => {
+const OpportunityLeadForm = ({ categorySlug, categoryName, city, categoryContextPath, citySlug, neighborhoodSlug }: Props) => {
   const [kind, setKind] = useState<'professional' | 'sponsor'>('professional');
   const [form, setForm] = useState({ name: '', email: '', phone: '', city: city || '', message: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -129,6 +132,14 @@ const OpportunityLeadForm = ({ categorySlug, categoryName, city, categoryContext
       providerId: `opportunity:${categorySlug}`,
       category: categorySlug,
       city: (form.city || city || '').trim() || null,
+      source: `opportunity_form:${kind}`,
+      pathname: categoryContextPath,
+    });
+    trackLocalFormSubmit({
+      category: categorySlug,
+      city: citySlug || (form.city || city || '').trim() || null,
+      neighborhood: neighborhoodSlug || null,
+      resourceId: categoryContextPath || null,
       source: `opportunity_form:${kind}`,
       pathname: categoryContextPath,
     });
