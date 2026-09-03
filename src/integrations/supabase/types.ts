@@ -4228,6 +4228,54 @@ export type Database = {
           },
         ]
       }
+      programmatic_page_overrides: {
+        Row: {
+          city_slug: string | null
+          created_at: string
+          created_by: string | null
+          editorial_note: string | null
+          enabled: boolean
+          id: string
+          keywords: string | null
+          meta_description: string | null
+          neighborhood_slug: string | null
+          path: string
+          title: string | null
+          updated_at: string
+          vertical: string
+        }
+        Insert: {
+          city_slug?: string | null
+          created_at?: string
+          created_by?: string | null
+          editorial_note?: string | null
+          enabled?: boolean
+          id?: string
+          keywords?: string | null
+          meta_description?: string | null
+          neighborhood_slug?: string | null
+          path: string
+          title?: string | null
+          updated_at?: string
+          vertical: string
+        }
+        Update: {
+          city_slug?: string | null
+          created_at?: string
+          created_by?: string | null
+          editorial_note?: string | null
+          enabled?: boolean
+          id?: string
+          keywords?: string | null
+          meta_description?: string | null
+          neighborhood_slug?: string | null
+          path?: string
+          title?: string | null
+          updated_at?: string
+          vertical?: string
+        }
+        Relationships: []
+      }
       provider_daily_stats: {
         Row: {
           created_at: string
@@ -9783,6 +9831,17 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_local_funnel_stats: {
+        Args: { _days?: number }
+        Returns: {
+          action: string
+          category: string
+          city: string
+          day: string
+          events: number
+          neighborhood: string
+        }[]
+      }
       admin_log_impersonation_end: {
         Args: { _session_id: string }
         Returns: undefined
@@ -11523,6 +11582,7 @@ export type Database = {
           _category?: string
           _city?: string
           _dedupe_key?: string
+          _neighborhood?: string
           _pathname?: string
           _resource_id?: string
           _result_count?: number
